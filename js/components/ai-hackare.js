@@ -25,6 +25,12 @@ window.AIHackareComponent = (function() {
         this.closeSettings = document.getElementById('close-settings');
         this.clearChat = document.getElementById('clear-chat');
         
+        // Share link elements
+        this.createShareLinkBtn = document.getElementById('create-share-link');
+        this.shareLinkContainer = document.getElementById('share-link-container');
+        this.shareLink = document.getElementById('share-link');
+        this.copyShareLinkBtn = document.getElementById('copy-share-link');
+        
         // Model info elements
         this.modelNameElement = document.querySelector('.model-name');
         this.modelDeveloperElement = document.querySelector('.model-developer');
@@ -48,14 +54,47 @@ window.AIHackareComponent = (function() {
      * Initialize the application
      */
     AIHackare.prototype.init = function() {
-        // Check if API key exists
-        this.apiKey = StorageService.getApiKey();
-        
-        if (!this.apiKey) {
-            this.showApiKeyModal();
+        // Check if there's a shared API key in the URL
+        if (ShareService.hasSharedApiKey()) {
+            const sharedApiKey = ShareService.extractSharedApiKey();
+            
+            if (sharedApiKey) {
+                // Save the shared API key
+                StorageService.saveApiKey(sharedApiKey);
+                this.apiKey = sharedApiKey;
+                
+                // Clear the shared API key from the URL
+                ShareService.clearSharedApiKeyFromUrl();
+                
+                // Add a message to inform the user
+                this.addSystemMessage('API key from shared link has been applied.');
+                
+                // Fetch available models with the new API key
+                this.fetchAvailableModels();
+            } else {
+                // If decryption failed, show an error message
+                this.addSystemMessage('Error: Could not decrypt the shared API key.');
+                
+                // Check if API key exists
+                this.apiKey = StorageService.getApiKey();
+                
+                if (!this.apiKey) {
+                    this.showApiKeyModal();
+                } else {
+                    // Fetch available models if API key exists
+                    this.fetchAvailableModels();
+                }
+            }
         } else {
-            // Fetch available models if API key exists
-            this.fetchAvailableModels();
+            // Check if API key exists
+            this.apiKey = StorageService.getApiKey();
+            
+            if (!this.apiKey) {
+                this.showApiKeyModal();
+            } else {
+                // Fetch available models if API key exists
+                this.fetchAvailableModels();
+            }
         }
         
         // Load saved model preference
@@ -174,6 +213,20 @@ window.AIHackareComponent = (function() {
                 this.hideSettingsModal();
             }
         });
+        
+        // Create share link button
+        if (this.createShareLinkBtn) {
+            this.createShareLinkBtn.addEventListener('click', () => {
+                this.createShareableLink();
+            });
+        }
+        
+        // Copy share link button
+        if (this.copyShareLinkBtn) {
+            this.copyShareLinkBtn.addEventListener('click', () => {
+                this.copyShareableLink();
+            });
+        }
         
         // Handle keyboard shortcuts
         document.addEventListener('keydown', (e) => {
@@ -768,6 +821,56 @@ window.AIHackareComponent = (function() {
         
         // Update the display
         this.updateContextUsage(percentage);
+    };
+    
+    /**
+     * Create a shareable link with the encrypted API key
+     */
+    AIHackare.prototype.createShareableLink = function() {
+        if (!this.apiKey) {
+            this.addSystemMessage('Error: No API key available to share.');
+            return;
+        }
+        
+        try {
+            // Create a shareable link with the encrypted API key
+            const shareableLink = ShareService.createShareableLink(this.apiKey);
+            
+            // Display the link in the input field
+            if (this.shareLink && this.shareLinkContainer) {
+                this.shareLink.value = shareableLink;
+                this.shareLinkContainer.style.display = 'flex';
+                
+                // Select the link text for easy copying
+                this.shareLink.select();
+                this.shareLink.focus();
+            }
+        } catch (error) {
+            console.error('Error creating shareable link:', error);
+            this.addSystemMessage('Error creating shareable link. Please try again.');
+        }
+    };
+    
+    /**
+     * Copy the shareable link to the clipboard
+     */
+    AIHackare.prototype.copyShareableLink = function() {
+        if (this.shareLink && this.shareLink.value) {
+            try {
+                // Select the link text
+                this.shareLink.select();
+                this.shareLink.focus();
+                
+                // Copy to clipboard
+                document.execCommand('copy');
+                
+                // Show a success message
+                this.addSystemMessage('Shareable link copied to clipboard.');
+            } catch (error) {
+                console.error('Error copying link to clipboard:', error);
+                this.addSystemMessage('Error copying link. Please select and copy manually.');
+            }
+        }
     };
 
     // Return the constructor
