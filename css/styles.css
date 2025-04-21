@@ -100,6 +100,12 @@ header {
     padding: 0.5rem 1rem;
     border-radius: var(--border-radius);
     margin: 0 1rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.model-info:hover {
+    background-color: rgba(255, 255, 255, 0.2);
 }
 
 .active-model {
@@ -484,6 +490,45 @@ footer a:hover {
     gap: 1rem;
 }
 
+/* ===== Model Dropdown ===== */
+.model-dropdown {
+    position: absolute;
+    z-index: 1000;
+    width: 300px;
+    padding: 0.75rem;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    background-color: var(--light-color);
+    box-shadow: var(--box-shadow);
+    display: none;
+}
+
+.model-dropdown.active {
+    display: block;
+}
+
+.model-dropdown select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.model-dropdown select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.model-dropdown-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
 /* ===== Responsive Design ===== */
 @media (max-width: 768px) {
     header {
@@ -497,6 +542,12 @@ footer a:hover {
     .modal-content {
         width: 95%;
         padding: 1.5rem;
+    }
+    
+    .model-dropdown {
+        width: 90%;
+        max-width: none;
+        left: 5% !important;
     }
 }
 
