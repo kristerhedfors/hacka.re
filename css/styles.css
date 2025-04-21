@@ -408,6 +408,38 @@ footer a:hover {
     color: var(--secondary-color);
 }
 
+/* ===== Share Link ===== */
+.share-actions {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+#share-link-container {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+#share-link {
+    flex: 1;
+    padding: 0.75rem;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: var(--border-radius);
+    font-size: 0.9rem;
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+#copy-share-link {
+    background-color: var(--primary-color);
+    color: var(--light-text);
+    border-radius: var(--border-radius);
+}
+
+#copy-share-link:hover {
+    background-color: var(--primary-dark);
+}
+
 /* ===== Modal ===== */
 .modal {
     display: none;
