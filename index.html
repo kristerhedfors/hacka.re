@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ai.hacka.re - Chat with GroqCloud AI Models</title>
+    <title>hacka.re - Chat with GroqCloud AI Models</title>
     <meta name="description" content="A simple chat interface for GroqCloud's OpenAI API">
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/themes.css">
@@ -18,7 +18,7 @@
     <div class="app-container">
         <header>
             <div class="logo">
-                <h1>ai.hacka.re</h1>
+                <h1>hacka.re</h1>
                 <p class="tagline">för ai-hackare, av ai-hackare</p>
             </div>
             <div class="model-info">
@@ -66,6 +66,7 @@
                     <div class="form-group">
                         <label for="model-select">Model</label>
                         <select id="model-select">
+                            <option value="meta-llama/llama-4-maverick-17b-128e-instruct" selected>Llama 4 Maverick 17B</option>
                             <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant</option>
                             <option value="llama-3.1-70b-versatile">Llama 3.1 70B Versatile</option>
                             <option value="llama-3.1-405b-versatile">Llama 3.1 405B Versatile</option>
@@ -90,7 +91,7 @@
                 <div id="chat-messages">
                     <div class="message system">
                         <div class="message-content">
-                            <p>Welcome to ai.hacka.re! Start a conversation with GroqCloud AI models.</p>
+                            <p>Welcome to hacka.re! Start a conversation with GroqCloud AI models.</p>
                         </div>
                     </div>
                 </div>
