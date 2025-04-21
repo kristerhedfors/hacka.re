@@ -32,6 +32,8 @@ window.AIHackareComponent = (function() {
         this.shareLinkContainer = document.getElementById('share-link-container');
         this.shareLink = document.getElementById('share-link');
         this.copyShareLinkBtn = document.getElementById('copy-share-link');
+        this.qrShareLinkBtn = document.getElementById('qr-share-link');
+        this.qrCodeContainer = document.getElementById('qr-code-container');
         
         // Model info elements
         this.modelNameElement = document.querySelector('.model-name');
@@ -212,6 +214,13 @@ window.AIHackareComponent = (function() {
         if (this.copyShareLinkBtn) {
             this.copyShareLinkBtn.addEventListener('click', () => {
                 this.copyShareableLink();
+            });
+        }
+        
+        // QR code button
+        if (this.qrShareLinkBtn) {
+            this.qrShareLinkBtn.addEventListener('click', () => {
+                this.generateQRCode();
             });
         }
         
@@ -1100,6 +1109,9 @@ window.AIHackareComponent = (function() {
                     // Select the link text for easy copying
                     this.shareLink.select();
                     this.shareLink.focus();
+                    
+                    // Automatically generate QR code
+                    this.generateQRCode();
                 }
                 
                 // Remove the password modal
@@ -1188,6 +1200,83 @@ window.AIHackareComponent = (function() {
             } catch (error) {
                 console.error('Error copying link to clipboard:', error);
                 this.addSystemMessage('Error copying link. Please select and copy manually.');
+            }
+        }
+    };
+    
+    /**
+     * Generate a QR code for the shareable link
+     */
+    AIHackare.prototype.generateQRCode = function() {
+        if (this.shareLink && this.shareLink.value) {
+            try {
+                // Clear any existing QR code
+                this.qrCodeContainer.innerHTML = '';
+                
+                // Check if the link is too long for QR code generation
+                // QR codes have data capacity limits, especially with long system prompts
+                if (this.shareLink.value.length > 1500) {
+                    // Create a warning message
+                    const warningDiv = document.createElement('div');
+                    warningDiv.className = 'qr-warning';
+                    warningDiv.style.padding = '15px';
+                    warningDiv.style.backgroundColor = '#fff3cd';
+                    warningDiv.style.color = '#856404';
+                    warningDiv.style.borderRadius = '5px';
+                    warningDiv.style.marginTop = '10px';
+                    warningDiv.textContent = 'The link is too long to generate a QR code. This typically happens with links that include long system prompts.';
+                    
+                    // Add the warning to the container
+                    this.qrCodeContainer.appendChild(warningDiv);
+                    
+                    // Show the QR code container
+                    this.qrCodeContainer.style.display = 'block';
+                    
+                    // Show a warning message
+                    this.addSystemMessage('Warning: Link is too long for QR code generation. Consider using a shorter system prompt or copy the link directly.');
+                    return;
+                }
+                
+                // Create a new QR code with lower error correction level to handle longer URLs
+                new QRCode(this.qrCodeContainer, {
+                    text: this.shareLink.value,
+                    width: 250,
+                    height: 250,
+                    colorDark: '#000000',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.L // Low error correction level for longer data
+                });
+                
+                // Show the QR code container
+                this.qrCodeContainer.style.display = 'block';
+                
+                // Show a success message
+                this.addSystemMessage('QR code generated for shareable link.');
+            } catch (error) {
+                console.error('Error generating QR code:', error);
+                
+                // Check if the error is related to code length overflow
+                if (error.message && error.message.includes('code length overflow')) {
+                    // Create a warning message
+                    const warningDiv = document.createElement('div');
+                    warningDiv.className = 'qr-warning';
+                    warningDiv.style.padding = '15px';
+                    warningDiv.style.backgroundColor = '#fff3cd';
+                    warningDiv.style.color = '#856404';
+                    warningDiv.style.borderRadius = '5px';
+                    warningDiv.style.marginTop = '10px';
+                    warningDiv.textContent = 'The link is too long to generate a QR code. This typically happens with links that include long system prompts.';
+                    
+                    // Add the warning to the container
+                    this.qrCodeContainer.appendChild(warningDiv);
+                    
+                    // Show the QR code container
+                    this.qrCodeContainer.style.display = 'block';
+                    
+                    this.addSystemMessage('Error: Link is too long for QR code generation. Consider using a shorter system prompt or copy the link directly.');
+                } else {
+                    this.addSystemMessage('Error generating QR code. Please try again.');
+                }
             }
         }
     };
