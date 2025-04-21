@@ -8,7 +8,8 @@ window.StorageService = (function() {
     const STORAGE_KEYS = {
         API_KEY: 'aihackare_api_key',
         MODEL: 'aihackare_model',
-        HISTORY: 'aihackare_history'
+        HISTORY: 'aihackare_history',
+        SYSTEM_PROMPT: 'aihackare_system_prompt'
     };
 
     /**
@@ -67,6 +68,22 @@ window.StorageService = (function() {
         localStorage.removeItem(STORAGE_KEYS.HISTORY);
     }
 
+    /**
+     * Save system prompt to local storage
+     * @param {string} prompt - The system prompt to save
+     */
+    function saveSystemPrompt(prompt) {
+        localStorage.setItem(STORAGE_KEYS.SYSTEM_PROMPT, prompt);
+    }
+
+    /**
+     * Get system prompt from local storage
+     * @returns {string|null} The stored system prompt or null if not found
+     */
+    function getSystemPrompt() {
+        return localStorage.getItem(STORAGE_KEYS.SYSTEM_PROMPT);
+    }
+
     // Public API
     return {
         saveApiKey: saveApiKey,
@@ -75,6 +92,8 @@ window.StorageService = (function() {
         getModel: getModel,
         saveChatHistory: saveChatHistory,
         loadChatHistory: loadChatHistory,
-        clearChatHistory: clearChatHistory
+        clearChatHistory: clearChatHistory,
+        saveSystemPrompt: saveSystemPrompt,
+        getSystemPrompt: getSystemPrompt
     };
 })();
