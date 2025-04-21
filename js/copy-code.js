@@ -3,13 +3,20 @@
  * Adds copy buttons to code blocks in the chat interface
  */
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Function to add copy buttons to all code blocks
+window.CopyCodeService = (function() {
+    /**
+     * Add copy buttons to all code blocks
+     */
     function addCopyButtons() {
         // Find all pre > code elements
         const codeBlocks = document.querySelectorAll('pre > code');
         
         codeBlocks.forEach((codeBlock, index) => {
+            // Skip if the parent already has a copy button
+            if (codeBlock.parentNode.querySelector('.copy-code-button')) {
+                return;
+            }
+            
             // Create the copy button
             const copyButton = document.createElement('button');
             copyButton.className = 'copy-code-button';
@@ -55,32 +62,46 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Initial call to add copy buttons to existing code blocks
-    addCopyButtons();
-    
-    // Create a MutationObserver to watch for new code blocks
-    const observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            if (mutation.addedNodes && mutation.addedNodes.length > 0) {
-                // Check if any of the added nodes contain code blocks
-                mutation.addedNodes.forEach(function(node) {
-                    if (node.nodeType === 1) { // Element node
-                        const codeBlocks = node.querySelectorAll('pre > code');
-                        if (codeBlocks.length > 0) {
-                            addCopyButtons();
+    /**
+     * Initialize the copy code functionality
+     */
+    function init() {
+        // Initial call to add copy buttons to existing code blocks
+        addCopyButtons();
+        
+        // Create a MutationObserver to watch for new code blocks
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.addedNodes && mutation.addedNodes.length > 0) {
+                    // Check if any of the added nodes contain code blocks
+                    mutation.addedNodes.forEach(function(node) {
+                        if (node.nodeType === 1) { // Element node
+                            const codeBlocks = node.querySelectorAll('pre > code');
+                            if (codeBlocks.length > 0) {
+                                addCopyButtons();
+                            }
                         }
-                    }
-                });
-            }
+                    });
+                }
+            });
         });
-    });
-    
-    // Start observing the chat messages container
-    const chatMessages = document.getElementById('chat-messages');
-    if (chatMessages) {
-        observer.observe(chatMessages, {
-            childList: true,
-            subtree: true
-        });
+        
+        // Start observing the chat messages container
+        const chatMessages = document.getElementById('chat-messages');
+        if (chatMessages) {
+            observer.observe(chatMessages, {
+                childList: true,
+                subtree: true
+            });
+        }
     }
-});
+    
+    // Initialize when DOM is loaded
+    document.addEventListener('DOMContentLoaded', init);
+    
+    // Public API
+    return {
+        init: init,
+        addCopyButtons: addCopyButtons
+    };
+})();
