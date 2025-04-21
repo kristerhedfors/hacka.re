@@ -28,6 +28,7 @@ window.AIHackareComponent = (function() {
         
         // Share link elements
         this.createShareLinkBtn = document.getElementById('create-share-link');
+        this.createInsecureShareLinkBtn = document.getElementById('create-insecure-share-link');
         this.shareLinkContainer = document.getElementById('share-link-container');
         this.shareLink = document.getElementById('share-link');
         this.copyShareLinkBtn = document.getElementById('copy-share-link');
@@ -60,24 +61,30 @@ window.AIHackareComponent = (function() {
     AIHackare.prototype.init = function() {
         // Check if there's a shared API key in the URL
         if (ShareService.hasSharedApiKey()) {
-            const sharedApiKey = ShareService.extractSharedApiKey();
+            const sharedData = ShareService.extractSharedApiKey();
             
-            if (sharedApiKey) {
+            if (sharedData && sharedData.apiKey) {
                 // Save the shared API key
-                StorageService.saveApiKey(sharedApiKey);
-                this.apiKey = sharedApiKey;
+                StorageService.saveApiKey(sharedData.apiKey);
+                this.apiKey = sharedData.apiKey;
                 
-                // Clear the shared API key from the URL
+                // If there's a system prompt, save it too
+                if (sharedData.systemPrompt) {
+                    StorageService.saveSystemPrompt(sharedData.systemPrompt);
+                    this.systemPrompt = sharedData.systemPrompt;
+                    this.addSystemMessage('API key and system prompt from shared link have been applied.');
+                } else {
+                    this.addSystemMessage('API key from shared link has been applied.');
+                }
+                
+                // Clear the shared data from the URL
                 ShareService.clearSharedApiKeyFromUrl();
-                
-                // Add a message to inform the user
-                this.addSystemMessage('API key from shared link has been applied.');
                 
                 // Fetch available models with the new API key
                 this.fetchAvailableModels();
             } else {
                 // If decryption failed, show an error message
-                this.addSystemMessage('Error: Could not decrypt the shared API key.');
+                this.addSystemMessage('Error: Could not decrypt the shared data.');
                 
                 // Check if API key exists
                 this.apiKey = StorageService.getApiKey();
@@ -221,10 +228,16 @@ window.AIHackareComponent = (function() {
             }
         });
         
-        // Create share link button
+        // Create share link buttons
         if (this.createShareLinkBtn) {
             this.createShareLinkBtn.addEventListener('click', () => {
                 this.createShareableLink();
+            });
+        }
+        
+        if (this.createInsecureShareLinkBtn) {
+            this.createInsecureShareLinkBtn.addEventListener('click', () => {
+                this.createInsecureShareableLink();
             });
         }
         
@@ -871,6 +884,37 @@ window.AIHackareComponent = (function() {
         } catch (error) {
             console.error('Error creating shareable link:', error);
             this.addSystemMessage('Error creating shareable link. Please try again.');
+        }
+    };
+    
+    /**
+     * Create an insecure shareable link with the encrypted API key and system prompt
+     */
+    AIHackare.prototype.createInsecureShareableLink = function() {
+        if (!this.apiKey) {
+            this.addSystemMessage('Error: No API key available to share.');
+            return;
+        }
+        
+        try {
+            // Get the current system prompt
+            const systemPrompt = this.systemPromptInput.value.trim();
+            
+            // Create a shareable link with the encrypted API key and system prompt
+            const shareableLink = ShareService.createInsecureShareableLink(this.apiKey, systemPrompt);
+            
+            // Display the link in the input field
+            if (this.shareLink && this.shareLinkContainer) {
+                this.shareLink.value = shareableLink;
+                this.shareLinkContainer.style.display = 'flex';
+                
+                // Select the link text for easy copying
+                this.shareLink.select();
+                this.shareLink.focus();
+            }
+        } catch (error) {
+            console.error('Error creating insecure shareable link:', error);
+            this.addSystemMessage('Error creating insecure shareable link. Please try again.');
         }
     };
     
