@@ -69,12 +69,15 @@ window.AIHackareComponent = (function() {
                 this.apiKey = sharedData.apiKey;
                 
                 // If there's a system prompt, save it too
+                // Mask the API key to show only first and last 4 bytes
+                const maskedApiKey = this.maskApiKey(sharedData.apiKey);
+                
                 if (sharedData.systemPrompt) {
                     StorageService.saveSystemPrompt(sharedData.systemPrompt);
                     this.systemPrompt = sharedData.systemPrompt;
-                    this.addSystemMessage('API key and system prompt from shared link have been applied.');
+                    this.addSystemMessage(`API key (${maskedApiKey}) and system prompt from shared link have been applied.`);
                 } else {
-                    this.addSystemMessage('API key from shared link has been applied.');
+                    this.addSystemMessage(`API key (${maskedApiKey}) from shared link has been applied.`);
                 }
                 
                 // Clear the shared data from the URL
@@ -920,6 +923,24 @@ window.AIHackareComponent = (function() {
             console.error('Error creating insecure shareable link:', error);
             this.addSystemMessage('Error creating insecure shareable link. Please try again.');
         }
+    };
+    
+    /**
+     * Mask an API key, showing only first and last 4 bytes
+     * @param {string} apiKey - The API key to mask
+     * @returns {string} Masked API key
+     */
+    AIHackare.prototype.maskApiKey = function(apiKey) {
+        if (!apiKey || apiKey.length < 8) {
+            return "Invalid API key format";
+        }
+        
+        const first4 = apiKey.substring(0, 4);
+        const last4 = apiKey.substring(apiKey.length - 4);
+        const maskedLength = apiKey.length - 8;
+        const maskedPart = '*'.repeat(maskedLength);
+        
+        return `${first4}${maskedPart}${last4}`;
     };
     
     /**
