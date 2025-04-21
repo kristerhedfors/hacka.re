@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en" class="theme-modern">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ai.hacka.re - Chat with GroqCloud AI Models</title>
+    <meta name="description" content="A simple chat interface for GroqCloud's OpenAI API">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/themes.css">
+    <link rel="stylesheet" href="../css/copy-code.css">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Markdown parser -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="logo">
+                <h1>ai.hacka.re</h1>
+                <p class="tagline">för ai-hackare, av ai-hackare</p>
+            </div>
+            <div class="model-info">
+                <div class="active-model">
+                    <span class="model-name">Loading model...</span>
+                </div>
+                <div class="model-stats">
+                    <span class="model-developer"></span>
+                    <span class="model-context"></span>
+                    <span class="context-usage">
+                        <div class="usage-bar">
+                            <div class="usage-fill" style="width: 0%"></div>
+                        </div>
+                        <span class="usage-text">0%</span>
+                    </span>
+                </div>
+            </div>
+            <div class="settings">
+                <button id="settings-btn" class="icon-btn" title="Settings">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+        </header>
+
+        <div id="api-key-modal" class="modal">
+            <div class="modal-content">
+                <h2>Enter your GroqCloud API Key</h2>
+                <p>Your API key is stored locally in your browser and never sent to any server other than GroqCloud.</p>
+                <form id="api-key-form">
+                    <div class="form-group">
+                        <label for="api-key">API Key</label>
+                        <input type="password" id="api-key" placeholder="Enter your GroqCloud API key" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn primary-btn">Save API Key</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="settings-modal" class="modal">
+            <div class="modal-content">
+                <h2>Settings</h2>
+                <form id="settings-form">
+                    <div class="form-group">
+                        <label for="model-select">Model</label>
+                        <select id="model-select">
+                            <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant</option>
+                            <option value="llama-3.1-70b-versatile">Llama 3.1 70B Versatile</option>
+                            <option value="llama-3.1-405b-versatile">Llama 3.1 405B Versatile</option>
+                            <option value="mixtral-8x7b-32768">Mixtral 8x7B 32K</option>
+                            <option value="gemma-7b-it">Gemma 7B IT</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="api-key-update">API Key</label>
+                        <input type="password" id="api-key-update" placeholder="Update your GroqCloud API key">
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn primary-btn">Save Settings</button>
+                        <button type="button" class="btn secondary-btn" id="close-settings">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <main>
+            <div id="chat-container">
+                <div id="chat-messages">
+                    <div class="message system">
+                        <div class="message-content">
+                            <p>Welcome to ai.hacka.re! Start a conversation with GroqCloud AI models.</p>
+                        </div>
+                    </div>
+                </div>
+                <div id="chat-input-container">
+                    <form id="chat-form">
+                        <textarea id="message-input" placeholder="Type your message here..." rows="1"></textarea>
+                        <button type="submit" id="send-btn" class="icon-btn" title="Send message">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                    <div class="chat-actions">
+                        <a href="#" id="clear-chat">Clear Chat</a>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p><a href="https://hacka.ai" target="_blank">hacka.ai</a></p>
+        </footer>
+    </div>
+
+    <script src="js/script.js"></script>
+    <script src="js/themes.js"></script>
+    <script src="../js/copy-code.js"></script>
+</body>
+</html>

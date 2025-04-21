@@ -1,0 +1,685 @@
+/* 
+ * Theme Stylesheet for ai.hacka.re
+ * Contains styles for different themes: Modern, Retro Game, and Hacker Terminal
+ */
+
+/* ===== Theme Variables ===== */
+
+/* Modern Theme (Default) */
+.theme-modern {
+    --primary-color: #6366f1;      /* Indigo */
+    --primary-dark: #4f46e5;       /* Darker indigo */
+    --secondary-color: #10b981;    /* Emerald */
+    --dark-color: #1f2937;         /* Gray 800 */
+    --light-color: #f9fafb;        /* Gray 50 */
+    --text-color: #374151;         /* Gray 700 */
+    --light-text: #ffffff;
+    --accent-color: #f59e0b;       /* Amber */
+    --border-radius: 8px;
+    --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --transition: all 0.3s ease;
+    
+    /* Chat message colors */
+    --user-msg-bg: #e0e7ff;        /* Indigo 100 */
+    --ai-msg-bg: #f3f4f6;          /* Gray 100 */
+    --system-msg-bg: #fef3c7;      /* Amber 100 */
+}
+
+/* Retro Game Theme */
+.theme-retro {
+    --primary-color: #ff5555;      /* Retro red */
+    --primary-dark: #ff0000;       /* Darker red */
+    --secondary-color: #55ff55;    /* Retro green */
+    --dark-color: #0f0f1b;         /* Retro black */
+    --light-color: #0f0f1b;        /* Dark background for retro feel */
+    --text-color: #d9d94c;         /* Retro yellow for text */
+    --light-text: #f5f5f5;         /* Retro white */
+    --accent-color: #55ffff;       /* Retro cyan */
+    --border-radius: 0px;          /* Sharp edges for pixelated feel */
+    --box-shadow: 0 4px 0 rgba(255, 255, 255, 0.8); /* White chunky shadow */
+    --transition: all 0.2s steps(5); /* Stepped transition for pixelated effect */
+    
+    /* Chat message colors */
+    --user-msg-bg: #5555ff;        /* Retro blue */
+    --ai-msg-bg: #ff55ff;          /* Retro purple */
+    --system-msg-bg: #d9d94c;      /* Retro yellow */
+    
+    /* Font family override - using web-safe pixel-style fonts */
+    font-family: 'Courier New', monospace !important;
+    letter-spacing: 0px;
+    font-weight: bold;
+}
+
+/* Hacker Terminal Theme */
+.theme-terminal {
+    --primary-color: #00ff00;      /* Terminal green */
+    --primary-dark: #00aa00;       /* Darker green */
+    --secondary-color: #00aa00;    /* Darker green */
+    --dark-color: #000000;         /* Black */
+    --light-color: #000000;        /* Black background */
+    --text-color: #00ff00;         /* Terminal green text */
+    --light-text: #00ff00;         /* Terminal green */
+    --accent-color: #ffffff;       /* White for accent */
+    --border-radius: 0px;          /* No rounded corners */
+    --box-shadow: 0 0 10px rgba(0, 255, 0, 0.5); /* Green glow */
+    --transition: all 0.1s linear; /* Quick transitions */
+    
+    /* Chat message colors */
+    --user-msg-bg: #001a00;        /* Dark green */
+    --ai-msg-bg: #002200;          /* Slightly lighter green */
+    --system-msg-bg: #003300;      /* Even lighter green */
+    
+    /* Font family override */
+    font-family: 'Courier New', monospace !important;
+}
+
+/* ===== Theme-Specific Styles ===== */
+
+/* Retro Game Theme Specific Styles */
+.theme-retro body {
+    background-color: var(--dark-color);
+    color: var(--text-color);
+    image-rendering: pixelated;
+    letter-spacing: 1px;
+    line-height: 1.8;
+}
+
+.theme-retro header {
+    border-bottom: 4px solid var(--light-text);
+}
+
+.theme-retro h1, .theme-retro h2, .theme-retro h3, .theme-retro h4, .theme-retro h5, .theme-retro h6 {
+    color: var(--light-text);
+    text-transform: uppercase;
+    text-shadow: 2px 2px 0 var(--dark-color);
+}
+
+.theme-retro .btn {
+    border: 2px solid var(--light-text);
+    text-transform: uppercase;
+    font-size: 0.8rem;
+}
+
+.theme-retro .primary-btn:hover {
+    background-color: var(--accent-color);
+    color: var(--dark-color);
+}
+
+.theme-retro footer {
+    border-top: 4px solid var(--light-text);
+}
+
+.theme-retro .message-content {
+    border: 2px solid var(--light-text);
+}
+
+.theme-retro .message-content code {
+    background-color: var(--dark-color);
+    color: var(--light-text);
+}
+
+.theme-retro .message-content pre {
+    background-color: var(--dark-color);
+    border: 2px solid var(--light-text);
+    color: var(--light-text) !important; /* Ensure text inside pre is white */
+}
+
+/* Syntax highlighting for code blocks in retro theme */
+.theme-retro .message-content pre,
+.theme-retro .message-content pre code,
+.theme-retro .message-content pre * {
+    background-color: transparent !important;
+    color: var(--light-text) !important; /* Default white for all code elements */
+}
+
+/* Override for specific syntax elements */
+/* Keywords */
+.theme-retro .message-content pre code span[class*="keyword"],
+.theme-retro .message-content pre code span[class*="reserved"],
+.theme-retro .message-content pre code span[class*="selector"],
+.theme-retro .message-content pre code span[class*="tag"],
+.theme-retro .message-content pre code span[class*="built_in"],
+.theme-retro .message-content pre code span[class*="name"],
+.theme-retro .message-content pre code span[class*="def"],
+.theme-retro .message-content pre code span[class*="class"],
+.theme-retro .message-content pre code span[class*="property"],
+.theme-retro .message-content pre code .keyword,
+.theme-retro .message-content pre code .reserved,
+.theme-retro .message-content pre code .hljs-keyword,
+.theme-retro .message-content pre code .hljs-selector-tag,
+.theme-retro .message-content pre code .hljs-built_in,
+.theme-retro .message-content pre code .hljs-name,
+.theme-retro .message-content pre code .hljs-tag,
+.theme-retro .message-content pre code .hljs-class,
+.theme-retro .message-content pre code .hljs-property {
+    color: #ff55ff !important; /* Retro purple for keywords */
+}
+
+/* Strings */
+.theme-retro .message-content pre code span[class*="string"],
+.theme-retro .message-content pre code span[class*="title"],
+.theme-retro .message-content pre code span[class*="section"],
+.theme-retro .message-content pre code span[class*="attribute"],
+.theme-retro .message-content pre code span[class*="literal"],
+.theme-retro .message-content pre code span[class*="template"],
+.theme-retro .message-content pre code span[class*="type"],
+.theme-retro .message-content pre code span[class*="addition"],
+.theme-retro .message-content pre code .string,
+.theme-retro .message-content pre code .hljs-string,
+.theme-retro .message-content pre code .hljs-title,
+.theme-retro .message-content pre code .hljs-section,
+.theme-retro .message-content pre code .hljs-attribute,
+.theme-retro .message-content pre code .hljs-literal,
+.theme-retro .message-content pre code .hljs-template-tag,
+.theme-retro .message-content pre code .hljs-template-variable,
+.theme-retro .message-content pre code .hljs-type,
+.theme-retro .message-content pre code .hljs-addition {
+    color: #d9d94c !important; /* Retro yellow for strings */
+}
+
+/* Comments */
+.theme-retro .message-content pre code span[class*="comment"],
+.theme-retro .message-content pre code span[class*="quote"],
+.theme-retro .message-content pre code span[class*="deletion"],
+.theme-retro .message-content pre code span[class*="meta"],
+.theme-retro .message-content pre code .comment,
+.theme-retro .message-content pre code .hljs-comment,
+.theme-retro .message-content pre code .hljs-quote,
+.theme-retro .message-content pre code .hljs-deletion,
+.theme-retro .message-content pre code .hljs-meta {
+    color: #55ffff !important; /* Retro cyan for comments */
+}
+
+/* Numbers */
+.theme-retro .message-content pre code span[class*="number"],
+.theme-retro .message-content pre code span[class*="regexp"],
+.theme-retro .message-content pre code span[class*="variable"],
+.theme-retro .message-content pre code span[class*="link"],
+.theme-retro .message-content pre code .number,
+.theme-retro .message-content pre code .hljs-number,
+.theme-retro .message-content pre code .hljs-regexp,
+.theme-retro .message-content pre code .hljs-literal,
+.theme-retro .message-content pre code .hljs-variable,
+.theme-retro .message-content pre code .hljs-template-variable,
+.theme-retro .message-content pre code .hljs-link {
+    color: #ff5555 !important; /* Retro red for numbers */
+}
+
+/* Functions */
+.theme-retro .message-content pre code span[class*="function"],
+.theme-retro .message-content pre code span[class*="params"],
+.theme-retro .message-content pre code .function,
+.theme-retro .message-content pre code .hljs-function,
+.theme-retro .message-content pre code .hljs-params {
+    color: #5555ff !important; /* Retro blue for functions */
+}
+
+/* Direct targeting of Python syntax elements */
+.theme-retro .message-content pre code.language-python,
+.theme-retro .message-content pre code.python,
+.theme-retro .message-content pre code[class*="language-python"] {
+    color: var(--light-text) !important; /* Default white for Python code */
+}
+
+.theme-retro .message-content pre code.language-python span,
+.theme-retro .message-content pre code.python span,
+.theme-retro .message-content pre code[class*="language-python"] span {
+    color: var(--light-text) !important; /* Default white for all spans in Python code */
+}
+
+/* Python keywords */
+.theme-retro .message-content pre code.language-python span[class*="keyword"],
+.theme-retro .message-content pre code.python span[class*="keyword"],
+.theme-retro .message-content pre code[class*="language-python"] span[class*="keyword"],
+.theme-retro .message-content pre code.language-python .keyword,
+.theme-retro .message-content pre code.python .keyword,
+.theme-retro .message-content pre code[class*="language-python"] .keyword {
+    color: #ff55ff !important; /* Retro purple for Python keywords */
+}
+
+/* Python strings */
+.theme-retro .message-content pre code.language-python span[class*="string"],
+.theme-retro .message-content pre code.python span[class*="string"],
+.theme-retro .message-content pre code[class*="language-python"] span[class*="string"],
+.theme-retro .message-content pre code.language-python .string,
+.theme-retro .message-content pre code.python .string,
+.theme-retro .message-content pre code[class*="language-python"] .string {
+    color: #d9d94c !important; /* Retro yellow for Python strings */
+}
+
+/* Python comments */
+.theme-retro .message-content pre code.language-python span[class*="comment"],
+.theme-retro .message-content pre code.python span[class*="comment"],
+.theme-retro .message-content pre code[class*="language-python"] span[class*="comment"],
+.theme-retro .message-content pre code.language-python .comment,
+.theme-retro .message-content pre code.python .comment,
+.theme-retro .message-content pre code[class*="language-python"] .comment {
+    color: #55ffff !important; /* Retro cyan for Python comments */
+}
+
+/* Python numbers */
+.theme-retro .message-content pre code.language-python span[class*="number"],
+.theme-retro .message-content pre code.python span[class*="number"],
+.theme-retro .message-content pre code[class*="language-python"] span[class*="number"],
+.theme-retro .message-content pre code.language-python .number,
+.theme-retro .message-content pre code.python .number,
+.theme-retro .message-content pre code[class*="language-python"] .number {
+    color: #ff5555 !important; /* Retro red for Python numbers */
+}
+
+/* Python functions */
+.theme-retro .message-content pre code.language-python span[class*="function"],
+.theme-retro .message-content pre code.python span[class*="function"],
+.theme-retro .message-content pre code[class*="language-python"] span[class*="function"],
+.theme-retro .message-content pre code.language-python .function,
+.theme-retro .message-content pre code.python .function,
+.theme-retro .message-content pre code[class*="language-python"] .function {
+    color: #5555ff !important; /* Retro blue for Python functions */
+}
+
+/* Extremely aggressive selector to override any other styles */
+.theme-retro .message-content pre *,
+.theme-retro .message-content pre code *,
+.theme-retro .message-content pre code span {
+    color: var(--light-text) !important; /* Default white for all elements */
+}
+
+/* Then override with specific syntax highlighting */
+.theme-retro .message-content pre code span[style*="color"],
+.theme-retro .message-content pre code span[class] {
+    color: var(--light-text) !important; /* Default white for styled spans */
+}
+
+/* Then apply our specific syntax highlighting */
+.theme-retro .message-content pre code span[style*="color: rgb(0, 0, 255)"],
+.theme-retro .message-content pre code span[style*="color: blue"],
+.theme-retro .message-content pre code span[style*="color: #0000FF"],
+.theme-retro .message-content pre code span[class*="keyword"] {
+    color: #ff55ff !important; /* Retro purple for keywords (often blue in default highlighting) */
+}
+
+.theme-retro .message-content pre code span[style*="color: rgb(163, 21, 21)"],
+.theme-retro .message-content pre code span[style*="color: red"],
+.theme-retro .message-content pre code span[style*="color: #A31515"],
+.theme-retro .message-content pre code span[class*="string"] {
+    color: #d9d94c !important; /* Retro yellow for strings (often red in default highlighting) */
+}
+
+.theme-retro .message-content pre code span[style*="color: rgb(0, 128, 0)"],
+.theme-retro .message-content pre code span[style*="color: green"],
+.theme-retro .message-content pre code span[style*="color: #008000"],
+.theme-retro .message-content pre code span[class*="comment"] {
+    color: #55ffff !important; /* Retro cyan for comments (often green in default highlighting) */
+}
+
+.theme-retro .message-content pre code span[style*="color: rgb(0, 0, 128)"],
+.theme-retro .message-content pre code span[style*="color: navy"],
+.theme-retro .message-content pre code span[style*="color: #000080"],
+.theme-retro .message-content pre code span[class*="function"] {
+    color: #5555ff !important; /* Retro blue for functions (often navy in default highlighting) */
+}
+
+.theme-retro .message-content pre code span[style*="color: rgb(128, 0, 0)"],
+.theme-retro .message-content pre code span[style*="color: maroon"],
+.theme-retro .message-content pre code span[style*="color: #800000"],
+.theme-retro .message-content pre code span[class*="number"] {
+    color: #ff5555 !important; /* Retro red for numbers (often maroon in default highlighting) */
+}
+
+.theme-retro #message-input {
+    background-color: var(--dark-color);
+    color: var(--light-text);
+    border: 2px solid var(--light-text);
+}
+
+.theme-retro .modal-content {
+    background-color: var(--dark-color);
+    border: 4px solid var(--light-text);
+}
+
+.theme-retro .form-group input,
+.theme-retro .form-group select {
+    background-color: var(--dark-color);
+    color: var(--light-text);
+    border: 2px solid var(--light-text);
+}
+
+/* Add scanline effect for retro theme */
+.theme-retro::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    background-size: 100% 2px, 3px 100%;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.15;
+}
+
+/* Hacker Terminal Theme Specific Styles */
+.theme-terminal body {
+    background-color: var(--dark-color);
+    color: var(--text-color);
+}
+
+.theme-terminal header {
+    background-color: var(--dark-color);
+    border-bottom: 1px solid var(--primary-color);
+}
+
+.theme-terminal h1, .theme-terminal h2, .theme-terminal h3, .theme-terminal h4, .theme-terminal h5, .theme-terminal h6 {
+    color: var(--primary-color);
+}
+
+.theme-terminal .btn {
+    background-color: var(--dark-color);
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+}
+
+.theme-terminal .primary-btn:hover {
+    background-color: var(--primary-color);
+    color: var(--dark-color);
+    box-shadow: 0 0 10px var(--primary-color);
+}
+
+.theme-terminal footer {
+    background-color: var(--dark-color);
+    border-top: 1px solid var(--primary-color);
+}
+
+.theme-terminal .message-content {
+    border: 1px solid var(--primary-color);
+    background-color: var(--dark-color);
+}
+
+.theme-terminal .message-content code {
+    background-color: rgba(0, 255, 0, 0.1);
+    color: var(--primary-color);
+}
+
+.theme-terminal .message-content pre {
+    background-color: rgba(0, 0, 0, 0.7);
+    border: 1px solid var(--primary-color);
+    color: #00ff00 !important; /* Ensure text inside pre is green */
+}
+
+/* Syntax highlighting for code blocks in terminal theme */
+.theme-terminal .message-content pre,
+.theme-terminal .message-content pre code,
+.theme-terminal .message-content pre * {
+    background-color: transparent !important;
+    color: #00ff00 !important; /* Default green for all code elements */
+}
+
+/* Override for specific syntax elements */
+/* Keywords */
+.theme-terminal .message-content pre code span[class*="keyword"],
+.theme-terminal .message-content pre code span[class*="reserved"],
+.theme-terminal .message-content pre code span[class*="selector"],
+.theme-terminal .message-content pre code span[class*="tag"],
+.theme-terminal .message-content pre code span[class*="built_in"],
+.theme-terminal .message-content pre code span[class*="name"],
+.theme-terminal .message-content pre code span[class*="def"],
+.theme-terminal .message-content pre code span[class*="class"],
+.theme-terminal .message-content pre code span[class*="property"],
+.theme-terminal .message-content pre code .keyword,
+.theme-terminal .message-content pre code .reserved,
+.theme-terminal .message-content pre code .hljs-keyword,
+.theme-terminal .message-content pre code .hljs-selector-tag,
+.theme-terminal .message-content pre code .hljs-built_in,
+.theme-terminal .message-content pre code .hljs-name,
+.theme-terminal .message-content pre code .hljs-tag,
+.theme-terminal .message-content pre code .hljs-class,
+.theme-terminal .message-content pre code .hljs-property {
+    color: #ff00ff !important; /* Magenta for keywords */
+}
+
+/* Strings */
+.theme-terminal .message-content pre code span[class*="string"],
+.theme-terminal .message-content pre code span[class*="title"],
+.theme-terminal .message-content pre code span[class*="section"],
+.theme-terminal .message-content pre code span[class*="attribute"],
+.theme-terminal .message-content pre code span[class*="literal"],
+.theme-terminal .message-content pre code span[class*="template"],
+.theme-terminal .message-content pre code span[class*="type"],
+.theme-terminal .message-content pre code span[class*="addition"],
+.theme-terminal .message-content pre code .string,
+.theme-terminal .message-content pre code .hljs-string,
+.theme-terminal .message-content pre code .hljs-title,
+.theme-terminal .message-content pre code .hljs-section,
+.theme-terminal .message-content pre code .hljs-attribute,
+.theme-terminal .message-content pre code .hljs-literal,
+.theme-terminal .message-content pre code .hljs-template-tag,
+.theme-terminal .message-content pre code .hljs-template-variable,
+.theme-terminal .message-content pre code .hljs-type,
+.theme-terminal .message-content pre code .hljs-addition {
+    color: #ffff00 !important; /* Yellow for strings */
+}
+
+/* Comments */
+.theme-terminal .message-content pre code span[class*="comment"],
+.theme-terminal .message-content pre code span[class*="quote"],
+.theme-terminal .message-content pre code span[class*="deletion"],
+.theme-terminal .message-content pre code span[class*="meta"],
+.theme-terminal .message-content pre code .comment,
+.theme-terminal .message-content pre code .hljs-comment,
+.theme-terminal .message-content pre code .hljs-quote,
+.theme-terminal .message-content pre code .hljs-deletion,
+.theme-terminal .message-content pre code .hljs-meta {
+    color: #00aaaa !important; /* Cyan for comments */
+}
+
+/* Numbers */
+.theme-terminal .message-content pre code span[class*="number"],
+.theme-terminal .message-content pre code span[class*="regexp"],
+.theme-terminal .message-content pre code span[class*="variable"],
+.theme-terminal .message-content pre code span[class*="link"],
+.theme-terminal .message-content pre code .number,
+.theme-terminal .message-content pre code .hljs-number,
+.theme-terminal .message-content pre code .hljs-regexp,
+.theme-terminal .message-content pre code .hljs-literal,
+.theme-terminal .message-content pre code .hljs-variable,
+.theme-terminal .message-content pre code .hljs-template-variable,
+.theme-terminal .message-content pre code .hljs-link {
+    color: #ff8800 !important; /* Orange for numbers */
+}
+
+/* Functions */
+.theme-terminal .message-content pre code span[class*="function"],
+.theme-terminal .message-content pre code span[class*="params"],
+.theme-terminal .message-content pre code .function,
+.theme-terminal .message-content pre code .hljs-function,
+.theme-terminal .message-content pre code .hljs-params {
+    color: #00ffff !important; /* Bright cyan for functions */
+}
+
+/* Direct targeting of Python syntax elements */
+.theme-terminal .message-content pre code.language-python,
+.theme-terminal .message-content pre code.python,
+.theme-terminal .message-content pre code[class*="language-python"] {
+    color: #00ff00 !important; /* Default green for Python code */
+}
+
+.theme-terminal .message-content pre code.language-python span,
+.theme-terminal .message-content pre code.python span,
+.theme-terminal .message-content pre code[class*="language-python"] span {
+    color: #00ff00 !important; /* Default green for all spans in Python code */
+}
+
+/* Python keywords */
+.theme-terminal .message-content pre code.language-python span[class*="keyword"],
+.theme-terminal .message-content pre code.python span[class*="keyword"],
+.theme-terminal .message-content pre code[class*="language-python"] span[class*="keyword"],
+.theme-terminal .message-content pre code.language-python .keyword,
+.theme-terminal .message-content pre code.python .keyword,
+.theme-terminal .message-content pre code[class*="language-python"] .keyword {
+    color: #ff00ff !important; /* Magenta for Python keywords */
+}
+
+/* Python strings */
+.theme-terminal .message-content pre code.language-python span[class*="string"],
+.theme-terminal .message-content pre code.python span[class*="string"],
+.theme-terminal .message-content pre code[class*="language-python"] span[class*="string"],
+.theme-terminal .message-content pre code.language-python .string,
+.theme-terminal .message-content pre code.python .string,
+.theme-terminal .message-content pre code[class*="language-python"] .string {
+    color: #ffff00 !important; /* Yellow for Python strings */
+}
+
+/* Python comments */
+.theme-terminal .message-content pre code.language-python span[class*="comment"],
+.theme-terminal .message-content pre code.python span[class*="comment"],
+.theme-terminal .message-content pre code[class*="language-python"] span[class*="comment"],
+.theme-terminal .message-content pre code.language-python .comment,
+.theme-terminal .message-content pre code.python .comment,
+.theme-terminal .message-content pre code[class*="language-python"] .comment {
+    color: #00aaaa !important; /* Cyan for Python comments */
+}
+
+/* Python numbers */
+.theme-terminal .message-content pre code.language-python span[class*="number"],
+.theme-terminal .message-content pre code.python span[class*="number"],
+.theme-terminal .message-content pre code[class*="language-python"] span[class*="number"],
+.theme-terminal .message-content pre code.language-python .number,
+.theme-terminal .message-content pre code.python .number,
+.theme-terminal .message-content pre code[class*="language-python"] .number {
+    color: #ff8800 !important; /* Orange for Python numbers */
+}
+
+/* Python functions */
+.theme-terminal .message-content pre code.language-python span[class*="function"],
+.theme-terminal .message-content pre code.python span[class*="function"],
+.theme-terminal .message-content pre code[class*="language-python"] span[class*="function"],
+.theme-terminal .message-content pre code.language-python .function,
+.theme-terminal .message-content pre code.python .function,
+.theme-terminal .message-content pre code[class*="language-python"] .function {
+    color: #00ffff !important; /* Bright cyan for Python functions */
+}
+
+/* Extremely aggressive selector to override any other styles */
+.theme-terminal .message-content pre *,
+.theme-terminal .message-content pre code *,
+.theme-terminal .message-content pre code span {
+    color: #00ff00 !important; /* Default green for all elements */
+}
+
+/* Then override with specific syntax highlighting */
+.theme-terminal .message-content pre code span[style*="color"],
+.theme-terminal .message-content pre code span[class] {
+    color: #00ff00 !important; /* Default green for styled spans */
+}
+
+/* Then apply our specific syntax highlighting */
+.theme-terminal .message-content pre code span[style*="color: rgb(0, 0, 255)"],
+.theme-terminal .message-content pre code span[style*="color: blue"],
+.theme-terminal .message-content pre code span[style*="color: #0000FF"],
+.theme-terminal .message-content pre code span[class*="keyword"] {
+    color: #ff00ff !important; /* Magenta for keywords (often blue in default highlighting) */
+}
+
+.theme-terminal .message-content pre code span[style*="color: rgb(163, 21, 21)"],
+.theme-terminal .message-content pre code span[style*="color: red"],
+.theme-terminal .message-content pre code span[style*="color: #A31515"],
+.theme-terminal .message-content pre code span[class*="string"] {
+    color: #ffff00 !important; /* Yellow for strings (often red in default highlighting) */
+}
+
+.theme-terminal .message-content pre code span[style*="color: rgb(0, 128, 0)"],
+.theme-terminal .message-content pre code span[style*="color: green"],
+.theme-terminal .message-content pre code span[style*="color: #008000"],
+.theme-terminal .message-content pre code span[class*="comment"] {
+    color: #00aaaa !important; /* Cyan for comments (often green in default highlighting) */
+}
+
+.theme-terminal .message-content pre code span[style*="color: rgb(0, 0, 128)"],
+.theme-terminal .message-content pre code span[style*="color: navy"],
+.theme-terminal .message-content pre code span[style*="color: #000080"],
+.theme-terminal .message-content pre code span[class*="function"] {
+    color: #00ffff !important; /* Bright cyan for functions (often navy in default highlighting) */
+}
+
+.theme-terminal .message-content pre code span[style*="color: rgb(128, 0, 0)"],
+.theme-terminal .message-content pre code span[style*="color: maroon"],
+.theme-terminal .message-content pre code span[style*="color: #800000"],
+.theme-terminal .message-content pre code span[class*="number"] {
+    color: #ff8800 !important; /* Orange for numbers (often maroon in default highlighting) */
+}
+
+.theme-terminal #message-input {
+    background-color: var(--dark-color);
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+}
+
+.theme-terminal .modal-content {
+    background-color: var(--dark-color);
+    border: 1px solid var(--primary-color);
+}
+
+.theme-terminal .form-group input,
+.theme-terminal .form-group select {
+    background-color: var(--dark-color);
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+}
+
+.theme-terminal a {
+    color: var(--primary-color);
+    text-decoration: underline;
+}
+
+.theme-terminal a:hover {
+    color: var(--accent-color);
+    text-decoration: none;
+}
+
+/* Add terminal cursor blink effect */
+.theme-terminal::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(rgba(0, 255, 0, 0.03) 50%, rgba(0, 255, 0, 0.02) 50%);
+    background-size: 100% 2px;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.1;
+    animation: terminal-scan 10s linear infinite;
+}
+
+@keyframes terminal-scan {
+    0% { background-position: 0 0; }
+    100% { background-position: 0 100vh; }
+}
+
+/* ===== Theme Switcher Styles ===== */
+.theme-option {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    cursor: pointer;
+}
+
+.theme-option input[type="radio"] {
+    margin-right: 10px;
+}
+
+.theme-option-label {
+    display: flex;
+    align-items: center;
+}
+
+.theme-icon {
+    margin-right: 8px;
+    width: 16px;
+    height: 16px;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+}
