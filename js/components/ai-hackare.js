@@ -61,44 +61,8 @@ window.AIHackareComponent = (function() {
     AIHackare.prototype.init = function() {
         // Check if there's a shared API key in the URL
         if (ShareService.hasSharedApiKey()) {
-            const sharedData = ShareService.extractSharedApiKey();
-            
-            if (sharedData && sharedData.apiKey) {
-                // Save the shared API key
-                StorageService.saveApiKey(sharedData.apiKey);
-                this.apiKey = sharedData.apiKey;
-                
-                // If there's a system prompt, save it too
-                // Mask the API key to show only first and last 4 bytes
-                const maskedApiKey = this.maskApiKey(sharedData.apiKey);
-                
-                if (sharedData.systemPrompt) {
-                    StorageService.saveSystemPrompt(sharedData.systemPrompt);
-                    this.systemPrompt = sharedData.systemPrompt;
-                    this.addSystemMessage(`API key (${maskedApiKey}) and system prompt from shared link have been applied.`);
-                } else {
-                    this.addSystemMessage(`API key (${maskedApiKey}) from shared link has been applied.`);
-                }
-                
-                // Clear the shared data from the URL
-                ShareService.clearSharedApiKeyFromUrl();
-                
-                // Fetch available models with the new API key
-                this.fetchAvailableModels();
-            } else {
-                // If decryption failed, show an error message
-                this.addSystemMessage('Error: Could not decrypt the shared data.');
-                
-                // Check if API key exists
-                this.apiKey = StorageService.getApiKey();
-                
-                if (!this.apiKey) {
-                    this.showApiKeyModal();
-                } else {
-                    // Fetch available models if API key exists
-                    this.fetchAvailableModels();
-                }
-            }
+            // Show password prompt for decryption
+            this.promptForDecryptionPassword();
         } else {
             // Check if API key exists
             this.apiKey = StorageService.getApiKey();
@@ -863,33 +827,320 @@ window.AIHackareComponent = (function() {
     };
     
     /**
-     * Create a shareable link with the encrypted API key only
-     * This creates a link that contains just the API key, allowing
-     * the recipient to use their own system prompt.
+     * Prompt for password to decrypt shared data from URL
      */
-    AIHackare.prototype.createShareableLink = function() {
+    AIHackare.prototype.promptForDecryptionPassword = function() {
+        // Create a modal for password input
+        const passwordModal = document.createElement('div');
+        passwordModal.className = 'modal active';
+        passwordModal.id = 'password-modal';
+        
+        const modalContent = document.createElement('div');
+        modalContent.className = 'modal-content';
+        
+        const heading = document.createElement('h2');
+        heading.textContent = 'Enter Password';
+        
+        const paragraph = document.createElement('p');
+        paragraph.textContent = 'This shared link is password-protected. Please enter the password to decrypt the data.';
+        
+        const form = document.createElement('form');
+        form.id = 'password-form';
+        
+        const formGroup = document.createElement('div');
+        formGroup.className = 'form-group';
+        
+        const label = document.createElement('label');
+        label.htmlFor = 'decrypt-password';
+        label.textContent = 'Password';
+        
+        const input = document.createElement('input');
+        input.type = 'password';
+        input.id = 'decrypt-password';
+        input.placeholder = 'Enter password';
+        input.required = true;
+        
+        const formActions = document.createElement('div');
+        formActions.className = 'form-actions';
+        
+        const submitButton = document.createElement('button');
+        submitButton.type = 'submit';
+        submitButton.className = 'btn primary-btn';
+        submitButton.textContent = 'Decrypt';
+        
+        // Assemble the modal
+        formGroup.appendChild(label);
+        formGroup.appendChild(input);
+        
+        formActions.appendChild(submitButton);
+        
+        form.appendChild(formGroup);
+        form.appendChild(formActions);
+        
+        modalContent.appendChild(heading);
+        modalContent.appendChild(paragraph);
+        modalContent.appendChild(form);
+        
+        passwordModal.appendChild(modalContent);
+        
+        // Add to document
+        document.body.appendChild(passwordModal);
+        
+        // Focus the input
+        input.focus();
+        
+        // Handle form submission
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const password = input.value.trim();
+            if (!password) return;
+            
+            // Try to decrypt with the provided password
+            const sharedData = ShareService.extractSharedApiKey(password);
+            
+            if (sharedData && sharedData.apiKey) {
+                // Save the shared API key
+                StorageService.saveApiKey(sharedData.apiKey);
+                this.apiKey = sharedData.apiKey;
+                
+                // If there's a system prompt, save it too
+                // Mask the API key to show only first and last 4 bytes
+                const maskedApiKey = this.maskApiKey(sharedData.apiKey);
+                
+                if (sharedData.systemPrompt) {
+                    StorageService.saveSystemPrompt(sharedData.systemPrompt);
+                    this.systemPrompt = sharedData.systemPrompt;
+                    this.addSystemMessage(`API key (${maskedApiKey}) and system prompt from shared link have been applied.`);
+                } else {
+                    this.addSystemMessage(`API key (${maskedApiKey}) from shared link has been applied.`);
+                }
+                
+                // Clear the shared data from the URL
+                ShareService.clearSharedApiKeyFromUrl();
+                
+                // Remove the password modal
+                passwordModal.remove();
+                
+                // Fetch available models with the new API key
+                this.fetchAvailableModels();
+            } else {
+                // If decryption failed, show an error message
+                paragraph.textContent = 'Incorrect password. Please try again.';
+                paragraph.style.color = 'red';
+                input.value = '';
+                input.focus();
+            }
+        });
+        
+        // Close modal when clicking outside
+        passwordModal.addEventListener('click', (e) => {
+            if (e.target === passwordModal) {
+                passwordModal.remove();
+                
+                // Check if API key exists
+                this.apiKey = StorageService.getApiKey();
+                
+                if (!this.apiKey) {
+                    this.showApiKeyModal();
+                } else {
+                    // Fetch available models if API key exists
+                    this.fetchAvailableModels();
+                }
+            }
+        });
+        
+        // Handle escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && document.getElementById('password-modal')) {
+                passwordModal.remove();
+                
+                // Check if API key exists
+                this.apiKey = StorageService.getApiKey();
+                
+                if (!this.apiKey) {
+                    this.showApiKeyModal();
+                } else {
+                    // Fetch available models if API key exists
+                    this.fetchAvailableModels();
+                }
+            }
+        });
+    };
+    
+    /**
+     * Prompt for password to encrypt data for sharing
+     * @param {string} type - Type of link to create ('api' for API key only, 'full' for API key + system prompt)
+     */
+    AIHackare.prototype.promptForEncryptionPassword = function(type) {
         if (!this.apiKey) {
             this.addSystemMessage('Error: No API key available to share.');
             return;
         }
         
-        try {
-            // Create a shareable link with the encrypted API key
-            const shareableLink = ShareService.createShareableLink(this.apiKey);
+        // Create a modal for password input
+        const passwordModal = document.createElement('div');
+        passwordModal.className = 'modal active';
+        passwordModal.id = 'password-modal';
+        
+        const modalContent = document.createElement('div');
+        modalContent.className = 'modal-content';
+        
+        const heading = document.createElement('h2');
+        heading.textContent = 'Create Password-Protected Link';
+        
+        const paragraph = document.createElement('p');
+        paragraph.textContent = 'Enter a password to protect your shared link. The recipient will need this password to access the shared data.';
+        
+        const form = document.createElement('form');
+        form.id = 'password-form';
+        
+        const formGroup = document.createElement('div');
+        formGroup.className = 'form-group';
+        
+        const label = document.createElement('label');
+        label.htmlFor = 'encrypt-password';
+        label.textContent = 'Password';
+        
+        const input = document.createElement('input');
+        input.type = 'password';
+        input.id = 'encrypt-password';
+        input.placeholder = 'Enter password';
+        input.required = true;
+        
+        const confirmGroup = document.createElement('div');
+        confirmGroup.className = 'form-group';
+        
+        const confirmLabel = document.createElement('label');
+        confirmLabel.htmlFor = 'confirm-password';
+        confirmLabel.textContent = 'Confirm Password';
+        
+        const confirmInput = document.createElement('input');
+        confirmInput.type = 'password';
+        confirmInput.id = 'confirm-password';
+        confirmInput.placeholder = 'Confirm password';
+        confirmInput.required = true;
+        
+        const formActions = document.createElement('div');
+        formActions.className = 'form-actions';
+        
+        const submitButton = document.createElement('button');
+        submitButton.type = 'submit';
+        submitButton.className = 'btn primary-btn';
+        submitButton.textContent = 'Create Link';
+        
+        const cancelButton = document.createElement('button');
+        cancelButton.type = 'button';
+        cancelButton.className = 'btn secondary-btn';
+        cancelButton.textContent = 'Cancel';
+        
+        // Assemble the modal
+        formGroup.appendChild(label);
+        formGroup.appendChild(input);
+        
+        confirmGroup.appendChild(confirmLabel);
+        confirmGroup.appendChild(confirmInput);
+        
+        formActions.appendChild(submitButton);
+        formActions.appendChild(cancelButton);
+        
+        form.appendChild(formGroup);
+        form.appendChild(confirmGroup);
+        form.appendChild(formActions);
+        
+        modalContent.appendChild(heading);
+        modalContent.appendChild(paragraph);
+        modalContent.appendChild(form);
+        
+        passwordModal.appendChild(modalContent);
+        
+        // Add to document
+        document.body.appendChild(passwordModal);
+        
+        // Focus the input
+        input.focus();
+        
+        // Handle form submission
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
             
-            // Display the link in the input field
-            if (this.shareLink && this.shareLinkContainer) {
-                this.shareLink.value = shareableLink;
-                this.shareLinkContainer.style.display = 'flex';
-                
-                // Select the link text for easy copying
-                this.shareLink.select();
-                this.shareLink.focus();
+            const password = input.value.trim();
+            const confirmPassword = confirmInput.value.trim();
+            
+            if (!password) return;
+            
+            // Check if passwords match
+            if (password !== confirmPassword) {
+                paragraph.textContent = 'Passwords do not match. Please try again.';
+                paragraph.style.color = 'red';
+                confirmInput.value = '';
+                confirmInput.focus();
+                return;
             }
-        } catch (error) {
-            console.error('Error creating shareable link:', error);
-            this.addSystemMessage('Error creating shareable link. Please try again.');
-        }
+            
+            try {
+                let shareableLink;
+                
+                if (type === 'api') {
+                    // Create a shareable link with the encrypted API key only
+                    shareableLink = ShareService.createShareableLink(this.apiKey, password);
+                } else {
+                    // Get the current system prompt
+                    const systemPrompt = this.systemPromptInput.value.trim();
+                    
+                    // Create a shareable link with the encrypted API key and system prompt
+                    shareableLink = ShareService.createInsecureShareableLink(this.apiKey, systemPrompt, password);
+                }
+                
+                // Display the link in the input field
+                if (this.shareLink && this.shareLinkContainer) {
+                    this.shareLink.value = shareableLink;
+                    this.shareLinkContainer.style.display = 'flex';
+                    
+                    // Select the link text for easy copying
+                    this.shareLink.select();
+                    this.shareLink.focus();
+                }
+                
+                // Remove the password modal
+                passwordModal.remove();
+                
+                // Show a success message
+                this.addSystemMessage('Password-protected link created successfully. Remember to share the password separately.');
+            } catch (error) {
+                console.error('Error creating shareable link:', error);
+                this.addSystemMessage('Error creating shareable link. Please try again.');
+                passwordModal.remove();
+            }
+        });
+        
+        // Handle cancel button
+        cancelButton.addEventListener('click', () => {
+            passwordModal.remove();
+        });
+        
+        // Close modal when clicking outside
+        passwordModal.addEventListener('click', (e) => {
+            if (e.target === passwordModal) {
+                passwordModal.remove();
+            }
+        });
+        
+        // Handle escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && document.getElementById('password-modal')) {
+                passwordModal.remove();
+            }
+        });
+    };
+    
+    /**
+     * Create a shareable link with the encrypted API key only
+     * This creates a link that contains just the API key, allowing
+     * the recipient to use their own system prompt.
+     */
+    AIHackare.prototype.createShareableLink = function() {
+        this.promptForEncryptionPassword('api');
     };
     
     /**
@@ -898,31 +1149,7 @@ window.AIHackareComponent = (function() {
      * allowing the recipient to use your exact configuration.
      */
     AIHackare.prototype.createInsecureShareableLink = function() {
-        if (!this.apiKey) {
-            this.addSystemMessage('Error: No API key available to share.');
-            return;
-        }
-        
-        try {
-            // Get the current system prompt
-            const systemPrompt = this.systemPromptInput.value.trim();
-            
-            // Create a shareable link with the encrypted API key and system prompt
-            const shareableLink = ShareService.createInsecureShareableLink(this.apiKey, systemPrompt);
-            
-            // Display the link in the input field
-            if (this.shareLink && this.shareLinkContainer) {
-                this.shareLink.value = shareableLink;
-                this.shareLinkContainer.style.display = 'flex';
-                
-                // Select the link text for easy copying
-                this.shareLink.select();
-                this.shareLink.focus();
-            }
-        } catch (error) {
-            console.error('Error creating insecure shareable link:', error);
-            this.addSystemMessage('Error creating insecure shareable link. Please try again.');
-        }
+        this.promptForEncryptionPassword('full');
     };
     
     /**
