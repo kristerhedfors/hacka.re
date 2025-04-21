@@ -16,6 +16,8 @@
     <!-- TweetNaCl for encryption (local) -->
     <script src="lib/tweetnacl/nacl-fast.min.js"></script>
     <script src="lib/tweetnacl/nacl-util.min.js"></script>
+    <!-- QRCode.js for QR code generation (local) -->
+    <script src="lib/qrcode/qrcode.min.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -93,6 +95,7 @@
                                 <i class="fas fa-copy"></i>
                             </button>
                         </div>
+                        <div id="qr-code-container" style="display: none; margin-top: 15px; text-align: center;"></div>
                     </div>
                     <div class="form-actions">
                         <button type="submit" class="btn primary-btn">Save Settings</button>
