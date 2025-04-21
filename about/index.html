@@ -183,16 +183,16 @@
                         <p>Visual tracking of context window usage to optimize your conversations.</p>
                     </div>
                     <div class="feature-card">
-                        <h4><span class="emoji-icon">🎨</span>Modern Interface</h4>
-                        <p>Clean, contemporary design with a focus on readability and minimalism.</p>
-                    </div>
-                    <div class="feature-card">
                         <h4><span class="emoji-icon">📝</span>Markdown Support</h4>
                         <p>Rich formatting for AI responses including code blocks with syntax highlighting.</p>
                     </div>
                     <div class="feature-card">
                         <h4><span class="emoji-icon">💾</span>Persistent History</h4>
                         <p>Conversation history is saved locally between sessions for continuity.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><span class="emoji-icon">🔗</span>Shareable links with API key</h4>
+                        <p>Create obfuscated but INSECURE shareable links to share your API key with trusted individuals over trusted channels.</p>
                     </div>
                 </div>
             </div>
@@ -286,6 +286,73 @@ while (true) {
     // Process SSE format...
 }</pre>
                 </div>
+            </div>
+
+            <div class="feature-section">
+                <h3>Shareable API Keys - Technical Details</h3>
+                <p>
+                    <a href="https://hacka.re" target="_blank">hacka.re</a> includes a feature to share your API key with others through URL-based sharing. 
+                    It's important to understand that this feature provides <strong>obfuscation rather than true security</strong>, 
+                    as the encryption and decryption mechanisms are available in the client-side source code.
+                </p>
+                <br />
+                
+                <p>
+                    <strong>How it works:</strong>
+                </p>
+                <ol>
+                    <li>When you create a shareable link, your API key is encrypted with a randomly generated key</li>
+                    <li>Both the encrypted API key <em>and the encryption key itself</em> are included in the URL after the # symbol</li>
+                    <li>When someone opens the link, the application extracts both pieces from the URL</li>
+                    <li>The API key is decrypted in the browser using the included key and saved to localStorage</li>
+                    <li>The URL is immediately cleared to remove the sensitive data from the browser's address bar</li>
+                </ol>
+                
+                <p>
+                    <strong>Technical implementation:</strong> The feature uses TweetNaCl.js (a JavaScript port of the NaCl crypto library) 
+                    for the encryption. While the cryptography itself is strong, the security model has limitations:
+                </p>
+                
+                <div class="code-block">
+                    <pre>// Simplified version of how the encryption works
+function createShareableLink(apiKey) {
+    // Generate a random key
+    const key = nacl.randomBytes(nacl.secretbox.keyLength);
+    const nonce = nacl.randomBytes(nacl.secretbox.nonceLength);
+    
+    // Encrypt the API key
+    const box = nacl.secretbox(nacl.util.decodeUTF8(apiKey), nonce, key);
+    
+    // Combine nonce and encrypted data
+    const fullMessage = new Uint8Array(nonce.length + box.length);
+    fullMessage.set(nonce);
+    fullMessage.set(box, nonce.length);
+    
+    // Convert to base64 for URL-friendly format
+    const base64FullMessage = nacl.util.encodeBase64(fullMessage);
+    const base64Key = nacl.util.encodeBase64(key);
+    
+    // Create URL with both the encrypted data AND the key
+    return `${window.location.href.split('#')[0]}#shared=${base64FullMessage}:${base64Key}`;
+}</pre>
+                </div>
+                
+                <p>
+                    <strong>Security considerations:</strong>
+                </p>
+                <ul>
+                    <li><strong>Not true end-to-end encryption:</strong> Since the decryption key is included in the URL, anyone who intercepts the URL can decrypt the API key</li>
+                    <li><strong>URL fragment (#) usage:</strong> The data after # is not sent to servers when requesting a page, providing some protection against server logging</li>
+                    <li><strong>Primarily an obfuscation technique:</strong> This approach prevents casual observers from seeing your API key in plaintext</li>
+                    <li><strong>Intended for trusted sharing:</strong> Only share these links with people you trust, as they will have full access to your GroqCloud account</li>
+                    <li><strong>Temporary usage:</strong> Consider revoking your API key after sharing if you're concerned about unauthorized access</li>
+                </ul>
+                
+                <p>
+                    This feature is designed for convenience when sharing with trusted individuals, not as a secure method 
+                    for distributing API keys in high-security environments. Always be cautious about who you share your API key with, 
+                    as they will have the same level of access to your GroqCloud account as you do.
+                </p>
             </div>
 
             <div class="feature-section">
