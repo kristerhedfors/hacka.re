@@ -1,6 +1,13 @@
 /**
  * Share Service
  * Handles encryption, decryption, and sharing of API keys and system prompts
+ * 
+ * This service provides two types of shareable links:
+ * 1. API Key Only: Shares just the API key (createShareableLink)
+ * 2. API Key + System Prompt: Shares both API key and system prompt (createInsecureShareableLink)
+ * 
+ * Both links use NaCl encryption for obfuscation, but are still considered INSECURE
+ * because the encryption key is included in the URL.
  */
 
 window.ShareService = (function() {
@@ -114,9 +121,12 @@ window.ShareService = (function() {
     
     /**
      * Create a shareable INSECURE link with encrypted API key and system prompt
+     * This creates a link that contains both the API key and system prompt,
+     * allowing the recipient to use your exact configuration.
+     * 
      * @param {string} apiKey - The API key to share
      * @param {string} systemPrompt - The system prompt to share
-     * @returns {string} Shareable URL
+     * @returns {string} Shareable URL with #insecure= fragment
      */
     function createInsecureShareableLink(apiKey, systemPrompt) {
         // Encrypt the API key and system prompt together

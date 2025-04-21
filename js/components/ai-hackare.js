@@ -860,7 +860,9 @@ window.AIHackareComponent = (function() {
     };
     
     /**
-     * Create a shareable link with the encrypted API key
+     * Create a shareable link with the encrypted API key only
+     * This creates a link that contains just the API key, allowing
+     * the recipient to use their own system prompt.
      */
     AIHackare.prototype.createShareableLink = function() {
         if (!this.apiKey) {
@@ -889,6 +891,8 @@ window.AIHackareComponent = (function() {
     
     /**
      * Create an insecure shareable link with the encrypted API key and system prompt
+     * This creates a link that contains both the API key and system prompt,
+     * allowing the recipient to use your exact configuration.
      */
     AIHackare.prototype.createInsecureShareableLink = function() {
         if (!this.apiKey) {

@@ -191,8 +191,8 @@
                         <p>Conversation history is saved locally between sessions for continuity.</p>
                     </div>
                     <div class="feature-card">
-                        <h4><span class="emoji-icon">🔗</span>Shareable links with API key</h4>
-                        <p>Create obfuscated but INSECURE shareable links to share your API key with trusted individuals over trusted channels.</p>
+                        <h4><span class="emoji-icon">🔗</span>Shareable links</h4>
+                        <p>Create obfuscated but INSECURE shareable links to share your API key or both your API key and system prompt with trusted individuals.</p>
                     </div>
                 </div>
             </div>
@@ -289,22 +289,30 @@ while (true) {
             </div>
 
             <div class="feature-section">
-                <h3>Shareable API Keys - Technical Details</h3>
+                <h3>Shareable Links - Technical Details</h3>
                 <p>
-                    <a href="https://hacka.re/" target="_blank">hacka.re</a> includes a feature to share your API key with others through URL-based sharing. 
+                    <a href="https://hacka.re/" target="_blank">hacka.re</a> includes a feature to share your API key and system prompt with others through URL-based sharing. 
                     It's important to understand that this feature provides <strong>obfuscation rather than true security</strong>, 
                     as the encryption and decryption mechanisms are available in the client-side source code.
                 </p>
                 <br />
                 
                 <p>
+                    <strong>Two types of shareable links:</strong>
+                </p>
+                <ol>
+                    <li><strong>API Key Only:</strong> Shares just your API key</li>
+                    <li><strong>API Key + System Prompt:</strong> Shares both your API key and your custom system prompt</li>
+                </ol>
+                
+                <p>
                     <strong>How it works:</strong>
                 </p>
                 <ol>
-                    <li>When you create a shareable link, your API key is encrypted with a randomly generated key</li>
-                    <li>Both the encrypted API key <em>and the encryption key itself</em> are included in the URL after the # symbol</li>
+                    <li>When you create a shareable link, your data (API key or API key + system prompt) is encrypted with a randomly generated key</li>
+                    <li>Both the encrypted data <em>and the encryption key itself</em> are included in the URL after the # symbol</li>
                     <li>When someone opens the link, the application extracts both pieces from the URL</li>
-                    <li>The API key is decrypted in the browser using the included key and saved to localStorage</li>
+                    <li>The data is decrypted in the browser using the included key and saved to localStorage</li>
                     <li>The URL is immediately cleared to remove the sensitive data from the browser's address bar</li>
                 </ol>
                 
@@ -315,6 +323,7 @@ while (true) {
                 
                 <div class="code-block">
                     <pre>// Simplified version of how the encryption works
+// For API key only
 function createShareableLink(apiKey) {
     // Generate a random key
     const key = nacl.randomBytes(nacl.secretbox.keyLength);
@@ -334,6 +343,32 @@ function createShareableLink(apiKey) {
     
     // Create URL with both the encrypted data AND the key
     return `${window.location.href.split('#')[0]}#shared=${base64FullMessage}:${base64Key}`;
+}
+
+// For API key + system prompt
+function createInsecureShareableLink(apiKey, systemPrompt) {
+    // Encrypt the API key and system prompt together
+    const data = { apiKey, systemPrompt };
+    const dataStr = JSON.stringify(data);
+    
+    // Generate a random key
+    const key = nacl.randomBytes(nacl.secretbox.keyLength);
+    const nonce = nacl.randomBytes(nacl.secretbox.nonceLength);
+    
+    // Encrypt the data
+    const box = nacl.secretbox(nacl.util.decodeUTF8(dataStr), nonce, key);
+    
+    // Combine nonce and encrypted data
+    const fullMessage = new Uint8Array(nonce.length + box.length);
+    fullMessage.set(nonce);
+    fullMessage.set(box, nonce.length);
+    
+    // Convert to base64 for URL-friendly format
+    const base64FullMessage = nacl.util.encodeBase64(fullMessage);
+    const base64Key = nacl.util.encodeBase64(key);
+    
+    // Create URL with both the encrypted data AND the key
+    return `${window.location.href.split('#')[0]}#insecure=${base64FullMessage}:${base64Key}`;
 }</pre>
                 </div>
                 
@@ -341,11 +376,28 @@ function createShareableLink(apiKey) {
                     <strong>Security considerations:</strong>
                 </p>
                 <ul>
-                    <li><strong>Not true end-to-end encryption:</strong> Since the decryption key is included in the URL, anyone who intercepts the URL can decrypt the API key</li>
+                    <li><strong>Not true end-to-end encryption:</strong> Since the decryption key is included in the URL, anyone who intercepts the URL can decrypt the data</li>
                     <li><strong>URL fragment (#) usage:</strong> The data after # is not sent to servers when requesting a page, providing some protection against server logging</li>
-                    <li><strong>Primarily an obfuscation technique:</strong> This approach prevents casual observers from seeing your API key in plaintext</li>
+                    <li><strong>Primarily an obfuscation technique:</strong> This approach prevents casual observers from seeing your API key and system prompt in plaintext</li>
                     <li><strong>Intended for trusted sharing:</strong> Only share these links with people you trust, as they will have full access to your GroqCloud account</li>
                     <li><strong>Temporary usage:</strong> Consider revoking your API key after sharing if you're concerned about unauthorized access</li>
+                </ul>
+                
+                <p>
+                    <strong>Why are both links labeled "INSECURE"?</strong>
+                </p>
+                <p>
+                    Both types of shareable links are labeled as "INSECURE" because they both contain sensitive information (your API key) 
+                    that could grant someone full access to your GroqCloud account. The second option includes even more sensitive information 
+                    (your system prompt), which might contain proprietary instructions or configurations.
+                </p>
+                
+                <p>
+                    <strong>When to use each type:</strong>
+                </p>
+                <ul>
+                    <li><strong>API Key Only:</strong> When you want someone to use your GroqCloud account but with their own system prompt</li>
+                    <li><strong>API Key + System Prompt:</strong> When you want to share your complete configuration, including any custom instructions you've set up</li>
                 </ul>
                 
                 <p>
