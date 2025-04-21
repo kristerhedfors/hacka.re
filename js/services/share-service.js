@@ -1,6 +1,6 @@
 /**
  * Share Service
- * Handles encryption, decryption, and sharing of API keys
+ * Handles encryption, decryption, and sharing of API keys and system prompts
  */
 
 window.ShareService = (function() {
@@ -17,19 +17,22 @@ window.ShareService = (function() {
     }
     
     /**
-     * Encrypt an API key
-     * @param {string} apiKey - The API key to encrypt
+     * Encrypt data (string or object)
+     * @param {string|Object} data - The data to encrypt
      * @returns {Object} Object containing the encrypted data and the key
      */
-    function encryptApiKey(apiKey) {
+    function encryptData(data) {
         // Generate a random key and nonce
         const key = generateKey();
         const nonce = nacl.randomBytes(NONCE_LENGTH);
         
-        // Convert API key to Uint8Array
-        const messageUint8 = nacl.util.decodeUTF8(apiKey);
+        // Convert data to string if it's an object
+        const dataStr = typeof data === 'object' ? JSON.stringify(data) : data;
         
-        // Encrypt the API key
+        // Convert data to Uint8Array
+        const messageUint8 = nacl.util.decodeUTF8(dataStr);
+        
+        // Encrypt the data
         const box = nacl.secretbox(messageUint8, nonce, key);
         
         // Combine nonce and box
@@ -48,12 +51,13 @@ window.ShareService = (function() {
     }
     
     /**
-     * Decrypt an encrypted API key
+     * Decrypt encrypted data
      * @param {string} encryptedData - Base64-encoded encrypted data
      * @param {string} keyBase64 - Base64-encoded key
-     * @returns {string|null} Decrypted API key or null if decryption fails
+     * @param {boolean} parseJson - Whether to parse the decrypted data as JSON
+     * @returns {string|Object|null} Decrypted data or null if decryption fails
      */
-    function decryptApiKey(encryptedData, keyBase64) {
+    function decryptData(encryptedData, keyBase64, parseJson = false) {
         try {
             // Convert from base64
             const fullMessage = nacl.util.decodeBase64(encryptedData);
@@ -71,7 +75,19 @@ window.ShareService = (function() {
             }
             
             // Convert from Uint8Array to string
-            return nacl.util.encodeUTF8(decrypted);
+            const decryptedStr = nacl.util.encodeUTF8(decrypted);
+            
+            // Parse as JSON if requested
+            if (parseJson) {
+                try {
+                    return JSON.parse(decryptedStr);
+                } catch (e) {
+                    console.error('Error parsing decrypted JSON:', e);
+                    return decryptedStr;
+                }
+            }
+            
+            return decryptedStr;
         } catch (error) {
             console.error('Decryption error:', error);
             return null;
@@ -85,7 +101,7 @@ window.ShareService = (function() {
      */
     function createShareableLink(apiKey) {
         // Encrypt the API key
-        const { encryptedData, key } = encryptApiKey(apiKey);
+        const { encryptedData, key } = encryptData(apiKey);
         
         // Create a combined payload with both encrypted data and key
         // Format: {data}:{key}
@@ -97,40 +113,88 @@ window.ShareService = (function() {
     }
     
     /**
+     * Create a shareable INSECURE link with encrypted API key and system prompt
+     * @param {string} apiKey - The API key to share
+     * @param {string} systemPrompt - The system prompt to share
+     * @returns {string} Shareable URL
+     */
+    function createInsecureShareableLink(apiKey, systemPrompt) {
+        // Encrypt the API key and system prompt together
+        const data = { apiKey, systemPrompt };
+        const { encryptedData, key } = encryptData(data);
+        
+        // Create a combined payload with both encrypted data and key
+        // Format: {data}:{key}
+        const payload = `${encryptedData}:${key}`;
+        
+        // Create URL with hash fragment
+        const baseUrl = window.location.href.split('#')[0];
+        return `${baseUrl}#insecure=${payload}`;
+    }
+    
+    /**
      * Check if the current URL contains a shared API key
      * @returns {boolean} True if URL contains a shared API key
      */
     function hasSharedApiKey() {
         const hash = window.location.hash;
-        return hash.includes('#shared=');
+        return hash.includes('#shared=') || hash.includes('#insecure=');
     }
     
     /**
      * Extract and decrypt a shared API key from the URL
-     * @returns {string|null} Decrypted API key or null if extraction/decryption fails
+     * @returns {Object} Object containing apiKey and systemPrompt (if available)
      */
     function extractSharedApiKey() {
         try {
             // Get the hash fragment
             const hash = window.location.hash;
             
-            // Check if it contains a shared API key
-            if (!hash.includes('#shared=')) {
-                return null;
+            // Check if it contains a secure shared API key (API key only)
+            if (hash.includes('#shared=')) {
+                // Extract the payload
+                const payload = hash.split('#shared=')[1];
+                
+                // Split the payload into encrypted data and key
+                const [encryptedData, key] = payload.split(':');
+                
+                if (!encryptedData || !key) {
+                    return null;
+                }
+                
+                // Decrypt the API key
+                const apiKey = decryptData(encryptedData, key);
+                
+                if (!apiKey) {
+                    return null;
+                }
+                
+                return { apiKey, systemPrompt: null };
             }
             
-            // Extract the payload
-            const payload = hash.split('#shared=')[1];
-            
-            // Split the payload into encrypted data and key
-            const [encryptedData, key] = payload.split(':');
-            
-            if (!encryptedData || !key) {
-                return null;
+            // Check if it contains an insecure shared API key (API key + system prompt)
+            if (hash.includes('#insecure=')) {
+                // Extract the payload
+                const payload = hash.split('#insecure=')[1];
+                
+                // Split the payload into encrypted data and key
+                const [encryptedData, key] = payload.split(':');
+                
+                if (!encryptedData || !key) {
+                    return null;
+                }
+                
+                // Decrypt the data
+                const data = decryptData(encryptedData, key, true);
+                
+                if (!data || !data.apiKey) {
+                    return null;
+                }
+                
+                return { apiKey: data.apiKey, systemPrompt: data.systemPrompt || null };
             }
             
-            // Decrypt the API key
-            return decryptApiKey(encryptedData, key);
+            return null;
         } catch (error) {
             console.error('Error extracting shared API key:', error);
             return null;
@@ -148,6 +212,7 @@ window.ShareService = (function() {
     // Public API
     return {
         createShareableLink: createShareableLink,
+        createInsecureShareableLink: createInsecureShareableLink,
         hasSharedApiKey: hasSharedApiKey,
         extractSharedApiKey: extractSharedApiKey,
         clearSharedApiKeyFromUrl: clearSharedApiKeyFromUrl
