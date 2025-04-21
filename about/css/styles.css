@@ -1,9 +1,30 @@
 /* 
- * Stylesheet for AIHackare
+ * Stylesheet for AIHackare About Page
  * A simple chat interface for GroqCloud's OpenAI API
  */
 
 /* ===== Base Styles ===== */
+/* Ensure text wrapping on all elements */
+p, h1, h2, h3, h4, h5, h6, li, a, span, div {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    max-width: 100%;
+}
+
+/* Ensure images don't overflow their containers */
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Ensure code blocks wrap properly */
+pre, code {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
 :root {
     --primary-color: #6366f1;      /* Indigo */
     --primary-dark: #4f46e5;       /* Darker indigo */
@@ -485,6 +506,22 @@ footer a:hover {
         width: 95%;
         padding: 1.5rem;
     }
+    
+    /* Responsive adjustments for feature grid and model grid */
+    .feature-grid, .model-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Ensure code blocks don't overflow on mobile */
+    .code-block {
+        max-width: 100%;
+        overflow-x: auto;
+    }
+    
+    /* Adjust container padding for better mobile display */
+    .container {
+        padding: 0 10px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -495,6 +532,45 @@ footer a:hover {
     
     .btn {
         width: 100%;
+    }
+    
+    /* Further adjustments for very small screens */
+    main {
+        padding: 1rem !important;
+    }
+    
+    h2, h3 {
+        font-size: 1.3rem;
+    }
+    
+    .feature-card, .model-card {
+        padding: 15px;
+    }
+    
+    /* Ensure proper text wrapping on small screens */
+    p, li, a {
+        word-break: break-word;
+    }
+}
+
+/* Instagram mode specific adjustments (narrow portrait) */
+@media (max-width: 450px) {
+    .container {
+        width: 100%;
+        padding: 0 8px;
+    }
+    
+    p, li {
+        font-size: 0.95rem;
+    }
+    
+    .feature-section {
+        margin: 25px 0;
+    }
+    
+    /* Force line breaks to happen */
+    p, h1, h2, h3, h4, h5, h6, li, a {
+        word-break: break-word;
     }
 }
 
