@@ -7,8 +7,8 @@
 
 /* Modern Theme (Default) */
 .theme-modern {
-    --primary-color: #6366f1;      /* Indigo */
-    --primary-dark: #4f46e5;       /* Darker indigo */
+    --primary-color: #006AA7;      /* Swedish flag blue */
+    --primary-dark: #005486;       /* Darker Swedish blue */
     --secondary-color: #10b981;    /* Emerald */
     --dark-color: #1f2937;         /* Gray 800 */
     --light-color: #f9fafb;        /* Gray 50 */
@@ -22,13 +22,13 @@
     /* Chat message colors */
     --user-msg-bg: #e0e7ff;        /* Indigo 100 */
     --ai-msg-bg: #f3f4f6;          /* Gray 100 */
-    --system-msg-bg: #fef3c7;      /* Amber 100 */
+    --system-msg-bg: #FFFDF0;      /* Very whitish yellow */
 }
 
 /* Apply modern theme to html element by default */
 html {
-    --primary-color: #6366f1;      /* Indigo */
-    --primary-dark: #4f46e5;       /* Darker indigo */
+    --primary-color: #006AA7;      /* Swedish flag blue */
+    --primary-dark: #005486;       /* Darker Swedish blue */
     --secondary-color: #10b981;    /* Emerald */
     --dark-color: #1f2937;         /* Gray 800 */
     --light-color: #f9fafb;        /* Gray 50 */
@@ -42,5 +42,5 @@ html {
     /* Chat message colors */
     --user-msg-bg: #e0e7ff;        /* Indigo 100 */
     --ai-msg-bg: #f3f4f6;          /* Gray 100 */
-    --system-msg-bg: #fef3c7;      /* Amber 100 */
+    --system-msg-bg: #FFFDF0;      /* Very whitish yellow */
 }
