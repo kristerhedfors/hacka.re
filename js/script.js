@@ -40,7 +40,7 @@ class AIHackare {
         this.controller = null;
         
         // Default model
-        this.currentModel = 'llama-3.1-70b-versatile';
+        this.currentModel = 'meta-llama/llama-4-scout-17b-16e-instruct';
         
         // API endpoints
         this.chatEndpoint = 'https://api.groq.com/openai/v1/chat/completions';
@@ -107,9 +107,12 @@ class AIHackare {
     }
     
     updateModelInfoDisplay() {
+        // Get a simplified display name for the model
+        const displayName = this.getDisplayName(this.currentModel);
+        
         // Update model name
         if (this.modelNameElement) {
-            this.modelNameElement.textContent = this.currentModel;
+            this.modelNameElement.textContent = displayName;
         }
         
         // Get model info
@@ -266,9 +269,12 @@ class AIHackare {
             
             const data = await response.json();
             
+            // Clear existing options
+            this.modelSelect.innerHTML = '';
+            
             // Create optgroups for different model types
             const standardGroup = document.createElement('optgroup');
-            standardGroup.label = 'Standard Models';
+            standardGroup.label = 'Production Models';
             
             const previewGroup = document.createElement('optgroup');
             previewGroup.label = 'Preview Models';
@@ -276,47 +282,115 @@ class AIHackare {
             const systemGroup = document.createElement('optgroup');
             systemGroup.label = 'Preview Systems';
             
-            // Other models group for models not in our predefined list
-            const otherGroup = document.createElement('optgroup');
-            otherGroup.label = 'Other Models';
+            // Get list of fetched model IDs
+            const fetchedModelIds = data.data.map(model => model.id);
             
-            // Clear existing options
-            this.modelSelect.innerHTML = '';
+            // Production Models
+            const productionModels = [
+                'gemma2-9b-it',
+                'llama-3.3-70b-versatile',
+                'llama-3.1-8b-instant',
+                'llama-guard-3-8b',
+                'llama3-70b-8192',
+                'llama3-8b-8192',
+                'whisper-large-v3',
+                'whisper-large-v3-turbo',
+                'distil-whisper-large-v3-en'
+            ];
             
-            // Process fetched models
-            data.data.forEach(model => {
-                const option = document.createElement('option');
-                option.value = model.id;
-                
-                // Check if we have info for this model
-                const info = this.modelInfo[model.id];
-                
-                if (info) {
-                    // Format the display text with model details
-                    let displayText = `${model.id} (${info.developer})`;
-                    if (info.contextWindow !== '-') {
-                        displayText += ` - ${info.contextWindow} ctx`;
+            // Preview Models
+            const previewModels = [
+                'meta-llama/llama-4-maverick-17b-128e-instruct',
+                'meta-llama/llama-4-scout-17b-16e-instruct',
+                'allam-2-7b',
+                'deepseek-r1-distill-llama-70b',
+                'mistral-saba-24b',
+                'playai-tts',
+                'playai-tts-arabic',
+                'qwen-qwq-32b'
+            ];
+            
+            // Preview Systems
+            const systemModels = [
+                'compound-beta',
+                'compound-beta-mini'
+            ];
+            
+            // Add production models if they exist in fetched models
+            productionModels.forEach(modelId => {
+                if (fetchedModelIds.includes(modelId)) {
+                    const option = document.createElement('option');
+                    option.value = modelId;
+                    
+                    // Get simplified display name
+                    option.textContent = this.getDisplayName(modelId);
+                    
+                    // Set selected if it matches current model
+                    if (modelId === this.currentModel) {
+                        option.selected = true;
                     }
                     
-                    option.textContent = displayText;
+                    standardGroup.appendChild(option);
+                }
+            });
+            
+            // Add preview models if they exist in fetched models
+            previewModels.forEach(modelId => {
+                if (fetchedModelIds.includes(modelId)) {
+                    const option = document.createElement('option');
+                    option.value = modelId;
                     
-                    // Add to appropriate group
-                    if (info.system) {
-                        systemGroup.appendChild(option);
-                    } else if (info.preview) {
+                    // Get simplified display name
+                    option.textContent = this.getDisplayName(modelId);
+                    
+                    // Set selected if it matches current model
+                    if (modelId === this.currentModel) {
+                        option.selected = true;
+                    }
+                    
+                    previewGroup.appendChild(option);
+                }
+            });
+            
+            // Add system models if they exist in fetched models
+            systemModels.forEach(modelId => {
+                if (fetchedModelIds.includes(modelId)) {
+                    const option = document.createElement('option');
+                    option.value = modelId;
+                    
+                    // Get simplified display name
+                    option.textContent = this.getDisplayName(modelId);
+                    
+                    // Set selected if it matches current model
+                    if (modelId === this.currentModel) {
+                        option.selected = true;
+                    }
+                    
+                    systemGroup.appendChild(option);
+                }
+            });
+            
+            // Add other available models that aren't in our predefined lists
+            const knownModelIds = [...productionModels, ...previewModels, ...systemModels];
+            data.data.forEach(model => {
+                if (!knownModelIds.includes(model.id)) {
+                    const option = document.createElement('option');
+                    option.value = model.id;
+                    
+                    // Try to get a simplified name, or use the model ID
+                    option.textContent = this.getDisplayName(model.id);
+                    
+                    // Set selected if it matches current model
+                    if (model.id === this.currentModel) {
+                        option.selected = true;
+                    }
+                    
+                    // Add to appropriate group based on naming patterns
+                    if (model.id.includes('preview') || model.id.includes('beta')) {
                         previewGroup.appendChild(option);
                     } else {
                         standardGroup.appendChild(option);
                     }
-                } else {
-                    // For models not in our predefined list
-                    option.textContent = model.id;
-                    otherGroup.appendChild(option);
-                }
-                
-                // Set selected if it matches current model
-                if (model.id === this.currentModel) {
-                    option.selected = true;
                 }
             });
             
@@ -331,10 +405,6 @@ class AIHackare {
             
             if (systemGroup.children.length > 0) {
                 this.modelSelect.appendChild(systemGroup);
-            }
-            
-            if (otherGroup.children.length > 0) {
-                this.modelSelect.appendChild(otherGroup);
             }
             
             // Update model info display
@@ -353,7 +423,7 @@ class AIHackare {
         
         // Create optgroups for different model types
         const standardGroup = document.createElement('optgroup');
-        standardGroup.label = 'Standard Models';
+        standardGroup.label = 'Production Models';
         
         const previewGroup = document.createElement('optgroup');
         previewGroup.label = 'Preview Models';
@@ -361,31 +431,88 @@ class AIHackare {
         const systemGroup = document.createElement('optgroup');
         systemGroup.label = 'Preview Systems';
         
-        // Add models to appropriate groups
-        Object.entries(this.modelInfo).forEach(([modelId, info]) => {
-            const option = document.createElement('option');
-            option.value = modelId;
-            
-            // Format the display text with model details
-            let displayText = `${modelId} (${info.developer})`;
-            if (info.contextWindow !== '-') {
-                displayText += ` - ${info.contextWindow} ctx`;
-            }
-            
-            option.textContent = displayText;
-            
-            // Set selected if it matches current model
-            if (modelId === this.currentModel) {
-                option.selected = true;
-            }
-            
-            // Add to appropriate group
-            if (info.system) {
-                systemGroup.appendChild(option);
-            } else if (info.preview) {
-                previewGroup.appendChild(option);
-            } else {
+        // Production Models
+        const productionModels = [
+            'gemma2-9b-it',
+            'llama-3.3-70b-versatile',
+            'llama-3.1-8b-instant',
+            'llama-guard-3-8b',
+            'llama3-70b-8192',
+            'llama3-8b-8192',
+            'whisper-large-v3',
+            'whisper-large-v3-turbo',
+            'distil-whisper-large-v3-en'
+        ];
+        
+        // Preview Models
+        const previewModels = [
+            'meta-llama/llama-4-maverick-17b-128e-instruct',
+            'meta-llama/llama-4-scout-17b-16e-instruct',
+            'allam-2-7b',
+            'deepseek-r1-distill-llama-70b',
+            'mistral-saba-24b',
+            'playai-tts',
+            'playai-tts-arabic',
+            'qwen-qwq-32b'
+        ];
+        
+        // Preview Systems
+        const systemModels = [
+            'compound-beta',
+            'compound-beta-mini'
+        ];
+        
+        // Add production models
+        productionModels.forEach(modelId => {
+            if (this.modelInfo[modelId]) {
+                const option = document.createElement('option');
+                option.value = modelId;
+                
+                // Get simplified display name
+                option.textContent = this.getDisplayName(modelId);
+                
+                // Set selected if it matches current model
+                if (modelId === this.currentModel) {
+                    option.selected = true;
+                }
+                
                 standardGroup.appendChild(option);
+            }
+        });
+        
+        // Add preview models
+        previewModels.forEach(modelId => {
+            if (this.modelInfo[modelId]) {
+                const option = document.createElement('option');
+                option.value = modelId;
+                
+                // Get simplified display name
+                option.textContent = this.getDisplayName(modelId);
+                
+                // Set selected if it matches current model
+                if (modelId === this.currentModel) {
+                    option.selected = true;
+                }
+                
+                previewGroup.appendChild(option);
+            }
+        });
+        
+        // Add system models
+        systemModels.forEach(modelId => {
+            if (this.modelInfo[modelId]) {
+                const option = document.createElement('option');
+                option.value = modelId;
+                
+                // Get simplified display name
+                option.textContent = this.getDisplayName(modelId);
+                
+                // Set selected if it matches current model
+                if (modelId === this.currentModel) {
+                    option.selected = true;
+                }
+                
+                systemGroup.appendChild(option);
             }
         });
         
@@ -404,6 +531,54 @@ class AIHackare {
         
         // Update model info display
         this.updateModelInfoDisplay();
+    }
+    
+    // Helper method to get a simplified display name for a model
+    getDisplayName(modelId) {
+        let displayName = modelId;
+        
+        // Simplify model names for better readability
+        if (modelId === 'meta-llama/llama-4-maverick-17b-128e-instruct') {
+            displayName = 'Llama 4 Maverick 17B';
+        } else if (modelId === 'meta-llama/llama-4-scout-17b-16e-instruct') {
+            displayName = 'Llama 4 Scout 17B';
+        } else if (modelId.includes('llama-3.1')) {
+            displayName = modelId.replace('llama-3.1-', 'Llama 3.1 ').replace('-versatile', ' Versatile').replace('-instant', ' Instant');
+        } else if (modelId.includes('llama-3.3')) {
+            displayName = modelId.replace('llama-3.3-', 'Llama 3.3 ').replace('-versatile', ' Versatile');
+        } else if (modelId.includes('llama3-')) {
+            displayName = modelId.replace('llama3-', 'Llama 3 ');
+        } else if (modelId === 'llama-guard-3-8b') {
+            displayName = 'Llama Guard 3 8B';
+        } else if (modelId === 'gemma2-9b-it') {
+            displayName = 'Gemma 2 9B IT';
+        } else if (modelId === 'mixtral-8x7b-32768') {
+            displayName = 'Mixtral 8x7B 32K';
+        } else if (modelId === 'whisper-large-v3') {
+            displayName = 'Whisper Large v3';
+        } else if (modelId === 'whisper-large-v3-turbo') {
+            displayName = 'Whisper Large v3 Turbo';
+        } else if (modelId === 'distil-whisper-large-v3-en') {
+            displayName = 'Distil Whisper Large v3 (EN)';
+        } else if (modelId === 'allam-2-7b') {
+            displayName = 'Allam 2 7B';
+        } else if (modelId === 'deepseek-r1-distill-llama-70b') {
+            displayName = 'DeepSeek R1 Distill Llama 70B';
+        } else if (modelId === 'mistral-saba-24b') {
+            displayName = 'Mistral Saba 24B';
+        } else if (modelId === 'playai-tts') {
+            displayName = 'PlayAI TTS';
+        } else if (modelId === 'playai-tts-arabic') {
+            displayName = 'PlayAI TTS Arabic';
+        } else if (modelId === 'qwen-qwq-32b') {
+            displayName = 'Qwen QWQ 32B';
+        } else if (modelId === 'compound-beta') {
+            displayName = 'Compound Beta';
+        } else if (modelId === 'compound-beta-mini') {
+            displayName = 'Compound Beta Mini';
+        }
+        
+        return displayName;
     }
     
     showSettingsModal() {
@@ -465,8 +640,11 @@ class AIHackare {
         // Hide modal
         this.hideSettingsModal();
         
+        // Get a simplified display name for the model
+        const displayName = this.getDisplayName(selectedModel);
+        
         // Add confirmation message
-        this.addSystemMessage(`Settings saved. Using model: ${selectedModel}`);
+        this.addSystemMessage(`Settings saved. Using model: ${displayName}`);
     }
     
     sendMessage() {

@@ -465,6 +465,19 @@ footer a:hover {
     box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
 }
 
+/* Improved select dropdown styling */
+.form-group select option {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.95rem;
+    line-height: 1.2;
+}
+
+/* Ensure consistent height and alignment */
+#model-select {
+    height: auto;
+    appearance: menulist;
+}
+
 .form-actions {
     display: flex;
     justify-content: flex-end;
