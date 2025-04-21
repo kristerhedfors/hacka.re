@@ -43,11 +43,23 @@ window.ApiService = (function() {
      * @param {Array} messages - Array of chat messages
      * @param {AbortSignal} signal - AbortController signal for cancellation
      * @param {Function} onChunk - Callback function for handling streaming chunks
+     * @param {string} systemPrompt - Optional system prompt to prepend to messages
      * @returns {Promise<string>} - Promise resolving to the complete AI response
      */
-    async function generateChatCompletion(apiKey, model, messages, signal, onChunk) {
+    async function generateChatCompletion(apiKey, model, messages, signal, onChunk, systemPrompt) {
         if (!apiKey) {
             throw new Error('API key is required');
+        }
+        
+        // Create a copy of the messages array to avoid modifying the original
+        let apiMessages = [...messages];
+        
+        // Add system prompt if provided
+        if (systemPrompt && systemPrompt.trim()) {
+            apiMessages.unshift({
+                role: 'system',
+                content: systemPrompt
+            });
         }
         
         const response = await fetch(ENDPOINTS.CHAT, {
@@ -58,7 +70,7 @@ window.ApiService = (function() {
             },
             body: JSON.stringify({
                 model: model,
-                messages: messages,
+                messages: apiMessages,
                 stream: true
             }),
             signal: signal

@@ -77,6 +77,11 @@
                         <input type="password" id="api-key-update" placeholder="Update your GroqCloud API key">
                     </div>
                     <div class="form-group">
+                        <label for="system-prompt">System Prompt (max 7000 tokens)</label>
+                        <textarea id="system-prompt" placeholder="Enter a system prompt to customize AI behavior" rows="6"></textarea>
+                        <div class="form-help">This prompt will be sent as a system message at the beginning of each conversation.</div>
+                    </div>
+                    <div class="form-group">
                         <label>Share API Key</label>
                         <div class="share-actions">
                             <button type="button" class="btn secondary-btn" id="create-share-link">Create Shareable INSECURE Link with API key</button>
