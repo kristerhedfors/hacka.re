@@ -22,6 +22,7 @@ window.AIHackareComponent = (function() {
         this.settingsForm = document.getElementById('settings-form');
         this.modelSelect = document.getElementById('model-select');
         this.apiKeyUpdate = document.getElementById('api-key-update');
+        this.systemPromptInput = document.getElementById('system-prompt');
         this.closeSettings = document.getElementById('close-settings');
         this.clearChat = document.getElementById('clear-chat');
         
@@ -48,6 +49,9 @@ window.AIHackareComponent = (function() {
         
         // API key
         this.apiKey = null;
+        
+        // System prompt
+        this.systemPrompt = null;
     }
     
     /**
@@ -103,6 +107,9 @@ window.AIHackareComponent = (function() {
             this.currentModel = savedModel;
             this.modelSelect.value = savedModel;
         }
+        
+        // Load saved system prompt
+        this.systemPrompt = StorageService.getSystemPrompt();
         
         // Update model info in header
         this.updateModelInfoDisplay();
@@ -497,6 +504,16 @@ window.AIHackareComponent = (function() {
         // Set current model
         this.modelSelect.value = this.currentModel;
         
+        // Set current system prompt
+        if (this.systemPrompt) {
+            this.systemPromptInput.value = this.systemPrompt;
+        } else {
+            this.systemPromptInput.value = '';
+        }
+        
+        // Apply auto-resize to system prompt textarea
+        UIUtils.setupTextareaAutoResize(this.systemPromptInput);
+        
         this.settingsModal.classList.add('active');
     };
     
@@ -544,6 +561,11 @@ window.AIHackareComponent = (function() {
             StorageService.saveApiKey(newApiKey);
             this.apiKey = newApiKey;
         }
+        
+        // Save system prompt
+        const systemPrompt = this.systemPromptInput.value.trim();
+        StorageService.saveSystemPrompt(systemPrompt);
+        this.systemPrompt = systemPrompt;
         
         // Update model info in header
         this.updateModelInfoDisplay();
@@ -628,7 +650,8 @@ window.AIHackareComponent = (function() {
                 this.currentModel,
                 apiMessages,
                 signal,
-                (content) => this.updateAIMessage(content, aiMessageId)
+                (content) => this.updateAIMessage(content, aiMessageId),
+                this.systemPrompt
             );
             
             // Remove typing indicator
