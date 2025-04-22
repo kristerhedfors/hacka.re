@@ -76,13 +76,72 @@ window.ShareManager = (function() {
          */
         function regeneratePassword() {
             if (elements.sharePassword) {
-                elements.sharePassword.value = ShareService.generateStrongPassword();
+                // Generate a new password
+                const newPassword = ShareService.generateStrongPassword();
                 
-                // If password is visible, keep it visible
+                // If the password is masked (type="password"), show a sweeping animation
+                if (elements.sharePassword.type === 'password') {
+                    // Create a temporary input for the animation
+                    const tempInput = document.createElement('input');
+                    tempInput.type = 'text';
+                    tempInput.className = elements.sharePassword.className;
+                    tempInput.style.position = 'absolute';
+                    tempInput.style.top = '0';
+                    tempInput.style.left = '0';
+                    tempInput.style.width = '100%';
+                    tempInput.style.height = '100%';
+                    tempInput.style.zIndex = '10';
+                    tempInput.style.backgroundColor = elements.sharePassword.style.backgroundColor || 'white';
+                    
+                    // Add the temporary input to the password container
+                    const container = elements.sharePassword.parentNode;
+                    if (container) {
+                        container.style.position = 'relative';
+                        container.appendChild(tempInput);
+                        
+                        // Create a string of stars with the same length as the password
+                        const stars = '*'.repeat(newPassword.length);
+                        tempInput.value = stars;
+                        
+                        // Perform the sweeping animation
+                        animateSweep(tempInput, stars, 0);
+                    }
+                }
+                
+                // Set the new password
+                elements.sharePassword.value = newPassword;
+                
+                // If password was visible, keep it visible
                 if (elements.sharePassword.type === 'text') {
                     elements.sharePassword.type = 'text';
                 }
             }
+        }
+        
+        /**
+         * Animate a sweeping effect through the masked password
+         * @param {HTMLElement} input - The input element to animate
+         * @param {string} stars - The string of stars
+         * @param {number} position - The current position in the sweep
+         */
+        function animateSweep(input, stars, position) {
+            if (position >= stars.length) {
+                // Animation complete, remove the temporary input
+                if (input.parentNode) {
+                    input.parentNode.removeChild(input);
+                }
+                return;
+            }
+            
+            // Replace the character at the current position with a dot
+            const chars = stars.split('');
+            chars[position] = '.';
+            input.value = chars.join('');
+            
+            // Move to the next position after a short delay
+            setTimeout(() => {
+                animateSweep(input, stars, position + 1);
+            }, 15); // Adjust speed as needed (lower = faster)
         }
         
         /**
@@ -144,6 +203,9 @@ window.ShareManager = (function() {
                         addSystemMessage('Password copied to clipboard.');
                     }
                     
+                    // Show a visual notification
+                    showCopyNotification();
+                    
                     return true;
                 } catch (error) {
                     console.error('Error copying password to clipboard:', error);
@@ -154,6 +216,47 @@ window.ShareManager = (function() {
                 }
             }
             return false;
+        }
+        
+        /**
+         * Show a visual notification that the password was copied
+         */
+        function showCopyNotification() {
+            // Create a notification element
+            const notification = document.createElement('div');
+            notification.className = 'copy-notification';
+            notification.textContent = 'Session key copied!';
+            notification.style.position = 'absolute';
+            notification.style.top = '50%';
+            notification.style.left = '50%';
+            notification.style.transform = 'translate(-50%, -50%)';
+            notification.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+            notification.style.color = 'white';
+            notification.style.padding = '10px 15px';
+            notification.style.borderRadius = '5px';
+            notification.style.zIndex = '1000';
+            notification.style.opacity = '0';
+            notification.style.transition = 'opacity 0.3s ease-in-out';
+            
+            // Add to the share modal
+            if (elements.shareModal) {
+                elements.shareModal.appendChild(notification);
+                
+                // Fade in
+                setTimeout(() => {
+                    notification.style.opacity = '1';
+                }, 10);
+                
+                // Fade out and remove after 1.5 seconds
+                setTimeout(() => {
+                    notification.style.opacity = '0';
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.parentNode.removeChild(notification);
+                        }
+                    }, 300);
+                }, 1500);
+            }
         }
         
         /**
@@ -251,6 +354,9 @@ window.ShareManager = (function() {
                         addSystemMessage('Shareable link copied to clipboard.');
                     }
                     
+                    // Show a visual notification
+                    showCopyLinkNotification();
+                    
                     return true;
                 } catch (error) {
                     console.error('Error copying link to clipboard:', error);
@@ -261,6 +367,47 @@ window.ShareManager = (function() {
                 }
             }
             return false;
+        }
+        
+        /**
+         * Show a visual notification that the link was copied
+         */
+        function showCopyLinkNotification() {
+            // Create a notification element
+            const notification = document.createElement('div');
+            notification.className = 'copy-notification';
+            notification.textContent = 'Link copied!';
+            notification.style.position = 'absolute';
+            notification.style.top = '50%';
+            notification.style.left = '50%';
+            notification.style.transform = 'translate(-50%, -50%)';
+            notification.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+            notification.style.color = 'white';
+            notification.style.padding = '10px 15px';
+            notification.style.borderRadius = '5px';
+            notification.style.zIndex = '1000';
+            notification.style.opacity = '0';
+            notification.style.transition = 'opacity 0.3s ease-in-out';
+            
+            // Add to the share modal
+            if (elements.shareModal) {
+                elements.shareModal.appendChild(notification);
+                
+                // Fade in
+                setTimeout(() => {
+                    notification.style.opacity = '1';
+                }, 10);
+                
+                // Fade out and remove after 1.5 seconds
+                setTimeout(() => {
+                    notification.style.opacity = '0';
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.parentNode.removeChild(notification);
+                        }
+                    }, 300);
+                }, 1500);
+            }
         }
         
         /**
