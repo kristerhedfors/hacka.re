@@ -10,7 +10,7 @@ This document summarizes the features and achievements of hacka.re as of Release
 
 - **GroqCloud API Integration**: Seamless integration with GroqCloud's OpenAI-compatible API for AI model access
 - **Streaming Responses**: Real-time streaming of AI responses with token speed display
-- **Context Window Management**: Visual tracking of context window usage with progress bar
+- **Context Window Visualization**: Real-time display of token usage within model's context limit with progress bar
 - **Chat History**: Persistent chat history stored locally in the browser
 - **Markdown Support**: Full markdown rendering in AI responses including code blocks
 - **Code Highlighting**: Syntax highlighting for code blocks in AI responses
@@ -62,7 +62,7 @@ This document summarizes the features and achievements of hacka.re as of Release
 - **Conversation Sharing**: Option to share recent conversation history
 - **Customizable Sharing**: Checkboxes to select exactly what to include in the shared link
 - **QR Code Generation**: QR codes for easy sharing of links with size warnings
-- **Password Management**: Generate strong passwords, toggle visibility, and copy to clipboard
+- **Session Key Management**: Generate strong session keys, toggle visibility, copy to clipboard, and lock for team sharing
 - **NaCl Encryption**: Strong encryption for shared data
 - **Password-Based Key Derivation**: Improved security through key derivation
 

@@ -251,8 +251,8 @@
                         <p>Your API key and conversations stay in your browser, never stored on external servers.</p>
                     </div>
                     <div class="feature-card">
-                        <h4><span class="emoji-icon">📊</span>Context Tracking</h4>
-                        <p>Visual tracking of context window usage to optimize your conversations.</p>
+                        <h4><span class="emoji-icon">📊</span>Context Window Visualization</h4>
+                        <p>Real-time display of token usage within model's context limit to optimize your conversations.</p>
                     </div>
                     <div class="feature-card">
                         <h4><span class="emoji-icon">📝</span>Markdown Support</h4>
@@ -384,14 +384,26 @@ while (true) {
                 <ol>
                     <li>When you create a shareable link, you select what to include (API key, system prompt, model, conversation data)</li>
                     <li>A real-time link length indicator shows the estimated size of the generated link</li>
-                    <li>You can generate a strong random password or provide your own</li>
-                    <li>Your selected data is encrypted using a key derived from your password with cryptographically sound methods</li>
+                    <li>You can generate a strong random session key or provide your own</li>
+                    <li>Your selected data is encrypted using a key derived from your session key with cryptographically sound methods</li>
                     <li>Only the encrypted data is included in the URL after the # symbol (the encryption key is NOT included)</li>
-                    <li>When someone opens the link, they're prompted to enter the password</li>
-                    <li>The application derives the decryption key from the entered password and attempts to decrypt the data</li>
+                    <li>When someone opens the link, they're prompted to enter the session key</li>
+                    <li>The application derives the decryption key from the entered session key and attempts to decrypt the data</li>
                     <li>If successful, the data is applied to their session and the URL is cleared from the browser history</li>
                     <li>For model preferences, the system verifies availability with the recipient's API key and falls back gracefully if needed</li>
-                    <li>If unsuccessful (wrong password), they're prompted to try again</li>
+                    <li>If unsuccessful (wrong session key), they're prompted to try again</li>
+                </ol>
+                
+                <p>
+                    <strong>Team collaboration with session keys:</strong>
+                </p>
+                <ol>
+                    <li>Teams can agree on a common session key to use for sharing links</li>
+                    <li>Each team member can enter and lock this session key in their sharing settings</li>
+                    <li>When a team member receives a link created with the team's session key, the system automatically tries the locked session key first</li>
+                    <li>If the session key works, the shared data is applied without prompting for the session key</li>
+                    <li>This allows seamless sharing among team members without repeatedly entering the same session key</li>
+                    <li>The session key should be shared through a secure channel separate from the links themselves</li>
                 </ol>
                 
                 <p>
@@ -534,11 +546,11 @@ function extractSharedData(password) {
                     <strong>Security considerations:</strong>
                 </p>
                 <ul>
-                    <li><strong>True password-based encryption:</strong> The encryption key is derived from the password and is never included in the URL</li>
+                    <li><strong>True session key-based encryption:</strong> The encryption key is derived from the session key and is never included in the URL</li>
                     <li><strong>Salt-based key derivation:</strong> A unique salt is generated for each link, protecting against rainbow table attacks</li>
                     <li><strong>Multiple hashing iterations:</strong> The key derivation process uses multiple iterations to increase security</li>
                     <li><strong>URL fragment (#) usage:</strong> The data after # is not sent to servers when requesting a page, providing protection against server logging</li>
-                    <li><strong>Password confirmation:</strong> When creating a link, you must confirm your password to prevent typos</li>
+                    <li><strong>Session key confirmation:</strong> When creating a link, you must confirm your session key to prevent typos</li>
                     <li><strong>Intended for trusted sharing:</strong> Still only share these links with people you trust, as they will have full access to your GroqCloud account once they enter the correct password</li>
                     <li><strong>Temporary usage:</strong> Consider revoking your API key after sharing if you're concerned about unauthorized access</li>
                 </ul>
@@ -554,8 +566,22 @@ function extractSharedData(password) {
                 </ul>
                 
                 <p>
-                    <strong>Password sharing:</strong> You'll need to share the password with the recipient through a separate, secure channel (e.g., encrypted messaging, phone call, in-person). 
-                    Never include the password in the same communication as the link itself.
+                    <strong>QR code generation:</strong>
+                </p>
+                <ol>
+                    <li>After generating a shareable link, a QR code is automatically created for easy mobile sharing</li>
+                    <li>The QR code encodes the complete shareable link including the encrypted data</li>
+                    <li>The system monitors the link length and provides warnings when approaching QR code capacity limits</li>
+                    <li>Standard QR codes can typically handle up to 1,500-2,000 bytes of data</li>
+                    <li>When links exceed this limit (common with large system prompts or conversation history), a warning is displayed</li>
+                    <li>The QR code uses error correction level L (low) to maximize data capacity</li>
+                    <li>Recipients can scan the QR code with any standard QR code scanner to open the link</li>
+                    <li>They will still need the session key to decrypt the data</li>
+                </ol>
+                
+                <p>
+                    <strong>Session key sharing:</strong> You'll need to share the session key with the recipient through a separate, secure channel (e.g., encrypted messaging, phone call, in-person). 
+                    Never include the session key in the same communication as the link or QR code itself.
                 </p>
                 
                 <p>
