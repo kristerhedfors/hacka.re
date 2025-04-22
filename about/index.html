@@ -264,7 +264,7 @@
                     </div>
                     <div class="feature-card">
                         <h4><span class="emoji-icon">🔗</span>Comprehensive Secure Sharing</h4>
-                        <p>Create password-protected shareable links to securely share your API key, system prompt, active model, and conversation data with trusted individuals, with real-time link length monitoring.</p>
+                        <p>Create session key-protected shareable links to securely share your API key, system prompt, active model, and conversation data with trusted individuals, with real-time link length monitoring.</p>
                     </div>
                 </div>
             </div>
@@ -363,8 +363,8 @@ while (true) {
             <div class="feature-section">
                 <h3>Comprehensive Secure Sharing - Technical Details</h3>
                 <p>
-                    <a href="https://hacka.re/" target="_blank">hacka.re</a> includes a sophisticated feature to securely share various aspects of your configuration with others through password-protected URL-based sharing. 
-                    This feature provides enhanced security through cryptographically sound password-based key derivation, ensuring that only those with the correct password can access your shared data.
+                    <a href="https://hacka.re/" target="_blank">hacka.re</a> includes a sophisticated feature to securely share various aspects of your configuration with others through session key-protected URL-based sharing. 
+                    This feature provides enhanced security through cryptographically sound session key-based key derivation, ensuring that only those with the correct session key can access your shared data.
                 </p>
                 <br />
                 
@@ -408,14 +408,14 @@ while (true) {
                 
                 <p>
                     <strong>Technical implementation:</strong> The feature uses TweetNaCl.js (a JavaScript port of the NaCl crypto library) 
-                    for the encryption, combined with password-based key derivation:
+                    for the encryption, combined with session key-based key derivation:
                 </p>
                 
                 <div class="code-block">
                     <pre>// Simplified version of the comprehensive sharing implementation
 
-// Generate a strong random alphanumeric password
-function generateStrongPassword() {
+// Generate a strong random alphanumeric session key
+function generateStrongSessionKey() {
     const length = 12; // Fixed length of 12 characters
     const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     let password = "";
@@ -424,7 +424,7 @@ function generateStrongPassword() {
     const randomValues = new Uint8Array(length);
     window.crypto.getRandomValues(randomValues);
     
-    // Convert to password characters
+    // Convert to session key characters
     for (let i = 0; i < length; i++) {
         password += charset[randomValues[i] % charset.length];
     }
@@ -433,7 +433,7 @@ function generateStrongPassword() {
 }
 
 // Create a comprehensive shareable link with selected data
-function createComprehensiveShareableLink(options, password) {
+function createComprehensiveShareableLink(options, sessionKey) {
     // Create a payload object with only the selected data
     const payload = {};
     
@@ -460,22 +460,22 @@ function createComprehensiveShareableLink(options, password) {
         payload.messages = options.messages.slice(startIndex);
     }
     
-    // Encrypt the payload using the password
-    const encryptedData = encryptData(payload, password);
+    // Encrypt the payload using the session key
+    const encryptedData = encryptData(payload, sessionKey);
     
     // Create URL with only the encrypted data (no key)
     return `${window.location.href.split('#')[0]}#shared=${encryptedData}`;
 }
 
-// Encrypt data with a password
-function encryptData(payloadObj, password) {
+// Encrypt data with a session key
+function encryptData(payloadObj, sessionKey) {
     // Convert to JSON string
     const jsonString = JSON.stringify(payloadObj);
     const plain = nacl.util.decodeUTF8(jsonString);
     
     // Generate salt and derive key
     const salt = nacl.randomBytes(SALT_LENGTH);
-    const key = deriveSeed(password, salt);
+    const key = deriveSeed(sessionKey, salt);
     
     // Generate nonce for secretbox
     const nonce = nacl.randomBytes(nacl.secretbox.nonceLength);
@@ -504,7 +504,7 @@ function encryptData(payloadObj, password) {
 }
 
 // Extract and decrypt shared data from the URL
-function extractSharedData(password) {
+function extractSharedData(sessionKey) {
     try {
         // Get the hash fragment
         const hash = window.location.hash;
@@ -519,7 +519,7 @@ function extractSharedData(password) {
             }
             
             // Decrypt the data
-            const data = decryptData(encryptedData, password);
+            const data = decryptData(encryptedData, sessionKey);
             
             if (!data) {
                 return null;
@@ -551,7 +551,7 @@ function extractSharedData(password) {
                     <li><strong>Multiple hashing iterations:</strong> The key derivation process uses multiple iterations to increase security</li>
                     <li><strong>URL fragment (#) usage:</strong> The data after # is not sent to servers when requesting a page, providing protection against server logging</li>
                     <li><strong>Session key confirmation:</strong> When creating a link, you must confirm your session key to prevent typos</li>
-                    <li><strong>Intended for trusted sharing:</strong> Still only share these links with people you trust, as they will have full access to your GroqCloud account once they enter the correct password</li>
+                    <li><strong>Intended for trusted sharing:</strong> Still only share these links with people you trust, as they will have full access to your GroqCloud account once they enter the correct session key</li>
                     <li><strong>Temporary usage:</strong> Consider revoking your API key after sharing if you're concerned about unauthorized access</li>
                 </ul>
                 
@@ -585,9 +585,9 @@ function extractSharedData(password) {
                 </p>
                 
                 <p>
-                    This feature provides a secure method for sharing your API key with trusted individuals. The password-based encryption ensures that 
-                    even if the link is intercepted, the attacker cannot access your API key without knowing the password. Always be cautious about who you share your API key with, 
-                    as they will have the same level of access to your GroqCloud account as you do once they have the password.
+                    This feature provides a secure method for sharing your API key with trusted individuals. The session key-based encryption ensures that 
+                    even if the link is intercepted, the attacker cannot access your API key without knowing the session key. Always be cautious about who you share your API key with, 
+                    as they will have the same level of access to your GroqCloud account as you do once they have the session key.
                 </p>
             </div>
 

@@ -9,7 +9,7 @@ A simple chat interface for GroqCloud's OpenAI API.
 - Context window visualization: Real-time display of token usage within model's context limit
 - Markdown support: Rich formatting for AI responses
 - Persistent history: Conversation history is saved locally
-- Password-protected sharing: Securely share your API key, system prompt, active model, and conversation data with session key functionality for teams
+- Session key sharing: Securely share your API key, system prompt, active model, and conversation data with lockable session keys for team collaboration
 
 ## Getting Started
 
