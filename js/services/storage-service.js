@@ -9,7 +9,8 @@ window.StorageService = (function() {
         API_KEY: 'aihackare_api_key',
         MODEL: 'aihackare_model',
         HISTORY: 'aihackare_history',
-        SYSTEM_PROMPT: 'aihackare_system_prompt'
+        SYSTEM_PROMPT: 'aihackare_system_prompt',
+        SHARE_OPTIONS: 'aihackare_share_options'
     };
 
     /**
@@ -84,6 +85,29 @@ window.StorageService = (function() {
         return localStorage.getItem(STORAGE_KEYS.SYSTEM_PROMPT);
     }
 
+    /**
+     * Save share options to local storage
+     * @param {Object} options - The share options to save
+     */
+    function saveShareOptions(options) {
+        localStorage.setItem(STORAGE_KEYS.SHARE_OPTIONS, JSON.stringify(options));
+    }
+
+    /**
+     * Get share options from local storage
+     * @returns {Object|null} The stored share options or default values if not found
+     */
+    function getShareOptions() {
+        const savedOptions = localStorage.getItem(STORAGE_KEYS.SHARE_OPTIONS);
+        return savedOptions ? JSON.parse(savedOptions) : {
+            includeApiKey: true,
+            includeSystemPrompt: false,
+            includeModel: false,
+            includeConversation: false,
+            messageCount: 1
+        };
+    }
+
     // Public API
     return {
         saveApiKey: saveApiKey,
@@ -94,6 +118,8 @@ window.StorageService = (function() {
         loadChatHistory: loadChatHistory,
         clearChatHistory: clearChatHistory,
         saveSystemPrompt: saveSystemPrompt,
-        getSystemPrompt: getSystemPrompt
+        getSystemPrompt: getSystemPrompt,
+        saveShareOptions: saveShareOptions,
+        getShareOptions: getShareOptions
     };
 })();

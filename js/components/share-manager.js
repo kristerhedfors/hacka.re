@@ -21,6 +21,57 @@ window.ShareManager = (function() {
         }
         
         /**
+         * Save share options to local storage
+         */
+        function saveShareOptions() {
+            if (elements.shareApiKeyCheckbox && elements.shareSystemPromptCheckbox && 
+                elements.shareModelCheckbox && elements.shareConversationCheckbox && 
+                elements.messageHistoryCount) {
+                
+                const options = {
+                    includeApiKey: elements.shareApiKeyCheckbox.checked,
+                    includeSystemPrompt: elements.shareSystemPromptCheckbox.checked,
+                    includeModel: elements.shareModelCheckbox.checked,
+                    includeConversation: elements.shareConversationCheckbox.checked,
+                    messageCount: parseInt(elements.messageHistoryCount.value, 10) || 1
+                };
+                
+                StorageService.saveShareOptions(options);
+            }
+        }
+        
+        /**
+         * Load share options from local storage
+         */
+        function loadShareOptions() {
+            const options = StorageService.getShareOptions();
+            
+            if (options && elements.shareApiKeyCheckbox && elements.shareSystemPromptCheckbox && 
+                elements.shareModelCheckbox && elements.shareConversationCheckbox && 
+                elements.messageHistoryCount) {
+                
+                elements.shareApiKeyCheckbox.checked = options.includeApiKey;
+                elements.shareSystemPromptCheckbox.checked = options.includeSystemPrompt;
+                elements.shareModelCheckbox.checked = options.includeModel;
+                elements.shareConversationCheckbox.checked = options.includeConversation;
+                elements.messageHistoryCount.value = options.messageCount;
+                
+                // Update message history input state
+                if (options.includeConversation) {
+                    elements.messageHistoryCount.disabled = false;
+                    if (elements.messageHistoryContainer) {
+                        elements.messageHistoryContainer.classList.add('active');
+                    }
+                } else {
+                    elements.messageHistoryCount.disabled = true;
+                    if (elements.messageHistoryContainer) {
+                        elements.messageHistoryContainer.classList.remove('active');
+                    }
+                }
+            }
+        }
+        
+        /**
          * Regenerate a strong password
          */
         function regeneratePassword() {
@@ -228,6 +279,15 @@ window.ShareManager = (function() {
             sessionKey = key;
         }
         
+        /**
+         * Check if the session key is locked
+         * @returns {boolean} True if the session key is locked, false otherwise
+         */
+        function isSessionKeyLocked() {
+            return sessionKey !== null && elements.passwordInputContainer && 
+                   elements.passwordInputContainer.classList.contains('locked');
+        }
+        
         // Public API
         return {
             init,
@@ -237,7 +297,10 @@ window.ShareManager = (function() {
             generateComprehensiveShareLink,
             copyGeneratedLink,
             getSessionKey,
-            setSessionKey
+            setSessionKey,
+            isSessionKeyLocked,
+            saveShareOptions,
+            loadShareOptions
         };
     }
 

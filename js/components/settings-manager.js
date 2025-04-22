@@ -424,10 +424,7 @@ window.SettingsManager = (function() {
                             // We'll fetch models first and then check if the model is available
                             pendingSharedModel = sharedData.model;
                             
-                            if (addSystemMessage) {
-                                const displayName = ModelInfoService.getDisplayName(sharedData.model);
-                                addSystemMessage(`Shared model preference "${displayName}" will be applied if available.`);
-                            }
+                            // No need to show a message about the model preference, as it will either load or fail with its own message
                         }
                         
                         // If there are shared messages, update the chat
@@ -551,10 +548,7 @@ window.SettingsManager = (function() {
                         // We'll fetch models first and then check if the model is available
                         pendingSharedModel = sharedData.model;
                         
-                        if (addSystemMessage) {
-                            const displayName = ModelInfoService.getDisplayName(sharedData.model);
-                            addSystemMessage(`Shared model preference "${displayName}" will be applied if available.`);
-                        }
+                        // No need to show a message about the model preference, as it will either load or fail with its own message
                     }
                     
                     // If there are shared messages, update the chat

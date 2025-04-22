@@ -88,34 +88,39 @@ window.AIHackareComponent = (function() {
                 });
             }
             
-            // Add event listeners for link length calculation
+            // Add event listeners for link length calculation and save options
             if (this.elements.shareApiKeyCheckbox) {
                 this.elements.shareApiKeyCheckbox.addEventListener('change', () => {
                     this.updateLinkLengthBar();
+                    this.shareManager.saveShareOptions();
                 });
             }
             
             if (this.elements.shareSystemPromptCheckbox) {
                 this.elements.shareSystemPromptCheckbox.addEventListener('change', () => {
                     this.updateLinkLengthBar();
+                    this.shareManager.saveShareOptions();
                 });
             }
             
             if (this.elements.shareModelCheckbox) {
                 this.elements.shareModelCheckbox.addEventListener('change', () => {
                     this.updateLinkLengthBar();
+                    this.shareManager.saveShareOptions();
                 });
             }
             
             if (this.elements.shareConversationCheckbox) {
                 this.elements.shareConversationCheckbox.addEventListener('change', () => {
                     this.toggleMessageHistoryInput();
+                    this.shareManager.saveShareOptions();
                 });
             }
             
             if (this.elements.messageHistoryCount) {
                 this.elements.messageHistoryCount.addEventListener('input', () => {
                     this.updateLinkLengthBar();
+                    this.shareManager.saveShareOptions();
                 });
             }
             
@@ -133,12 +138,7 @@ window.AIHackareComponent = (function() {
                 });
             }
             
-            // Share conversation checkbox
-            if (this.elements.shareConversationCheckbox) {
-                this.elements.shareConversationCheckbox.addEventListener('change', () => {
-                    this.uiManager.toggleMessageHistoryInput();
-                });
-            }
+            // This is a duplicate event listener for shareConversationCheckbox, so we can remove it
             
             // Generate share link button
             if (this.elements.generateShareLinkBtn) {
@@ -270,7 +270,10 @@ window.AIHackareComponent = (function() {
     AIHackare.prototype.showShareModal = function() {
         const success = this.uiManager.showShareModal(
             this.settingsManager.getApiKey(),
-            this.updateLinkLengthBar.bind(this)
+            this.updateLinkLengthBar.bind(this),
+            this.shareManager.getSessionKey(),
+            this.shareManager.isSessionKeyLocked(),
+            this.shareManager.loadShareOptions.bind(this.shareManager)
         );
         
         if (!success) {
