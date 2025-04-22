@@ -263,8 +263,8 @@
                         <p>Conversation history is saved locally between sessions for continuity.</p>
                     </div>
                     <div class="feature-card">
-                        <h4><span class="emoji-icon">🔗</span>Password-Protected Sharing</h4>
-                        <p>Create password-protected shareable links to securely share your API key or both your API key and system prompt with trusted individuals.</p>
+                        <h4><span class="emoji-icon">🔗</span>Comprehensive Secure Sharing</h4>
+                        <p>Create password-protected shareable links to securely share your API key, system prompt, active model, and conversation data with trusted individuals, with real-time link length monitoring.</p>
                     </div>
                 </div>
             </div>
@@ -361,31 +361,36 @@ while (true) {
             </div>
 
             <div class="feature-section">
-                <h3>Password-Protected Sharing - Technical Details</h3>
+                <h3>Comprehensive Secure Sharing - Technical Details</h3>
                 <p>
-                    <a href="https://hacka.re/" target="_blank">hacka.re</a> includes a feature to securely share your API key and system prompt with others through password-protected URL-based sharing. 
-                    This feature provides enhanced security through password-based key derivation, ensuring that only those with the correct password can access your shared data.
+                    <a href="https://hacka.re/" target="_blank">hacka.re</a> includes a sophisticated feature to securely share various aspects of your configuration with others through password-protected URL-based sharing. 
+                    This feature provides enhanced security through cryptographically sound password-based key derivation, ensuring that only those with the correct password can access your shared data.
                 </p>
                 <br />
                 
                 <p>
-                    <strong>Two types of shareable links:</strong>
+                    <strong>Comprehensive sharing options:</strong>
                 </p>
                 <ol>
-                    <li><strong>API Key Only:</strong> Shares just your API key</li>
-                    <li><strong>API Key + System Prompt:</strong> Shares both your API key and your custom system prompt</li>
+                    <li><strong>API Key:</strong> Share your GroqCloud API key for access to models</li>
+                    <li><strong>System Prompt:</strong> Share your custom system prompt for consistent AI behavior</li>
+                    <li><strong>Active Model:</strong> Share your selected model preference with automatic fallback if unavailable</li>
+                    <li><strong>Conversation Data:</strong> Share recent conversation history with configurable message count</li>
                 </ol>
                 
                 <p>
                     <strong>How it works:</strong>
                 </p>
                 <ol>
-                    <li>When you create a shareable link, you're prompted to enter a password</li>
-                    <li>Your data (API key or API key + system prompt) is encrypted using a key derived from your password</li>
+                    <li>When you create a shareable link, you select what to include (API key, system prompt, model, conversation data)</li>
+                    <li>A real-time link length indicator shows the estimated size of the generated link</li>
+                    <li>You can generate a strong random password or provide your own</li>
+                    <li>Your selected data is encrypted using a key derived from your password with cryptographically sound methods</li>
                     <li>Only the encrypted data is included in the URL after the # symbol (the encryption key is NOT included)</li>
                     <li>When someone opens the link, they're prompted to enter the password</li>
                     <li>The application derives the decryption key from the entered password and attempts to decrypt the data</li>
-                    <li>If successful, the data is saved to localStorage and the URL is cleared</li>
+                    <li>If successful, the data is applied to their session and the URL is cleared from the browser history</li>
+                    <li>For model preferences, the system verifies availability with the recipient's API key and falls back gracefully if needed</li>
                     <li>If unsuccessful (wrong password), they're prompted to try again</li>
                 </ol>
                 
@@ -395,85 +400,133 @@ while (true) {
                 </p>
                 
                 <div class="code-block">
-                    <pre>// Simplified version of how the password-based encryption works
-// Constants
-const SALT_LENGTH = 16; // 16 bytes for salt
-const KEY_ITERATIONS = 10000; // Number of iterations for key derivation
+                    <pre>// Simplified version of the comprehensive sharing implementation
 
-// Derive an encryption key from a password and salt
-function deriveKey(password, salt) {
-    // Convert password to Uint8Array
-    const passwordBytes = nacl.util.decodeUTF8(password);
+// Generate a strong random alphanumeric password
+function generateStrongPassword() {
+    const length = 12; // Fixed length of 12 characters
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let password = "";
     
-    // Combine password and salt
-    const combined = new Uint8Array(passwordBytes.length + salt.length);
-    combined.set(passwordBytes);
-    combined.set(salt, passwordBytes.length);
+    // Get cryptographically strong random values
+    const randomValues = new Uint8Array(length);
+    window.crypto.getRandomValues(randomValues);
     
-    // Perform multiple iterations of hashing to derive the key
-    let key = combined;
-    for (let i = 0; i < KEY_ITERATIONS; i++) {
-        // Use TweetNaCl's hash function (SHA-512)
-        key = nacl.hash(key);
-        // We only need the first 32 bytes for secretbox
-        key = key.slice(0, KEY_LENGTH);
+    // Convert to password characters
+    for (let i = 0; i < length; i++) {
+        password += charset[randomValues[i] % charset.length];
     }
     
-    return key;
+    return password;
 }
 
-// For API key only
-function createShareableLink(apiKey, password) {
-    // Generate a random salt and nonce
-    const salt = nacl.randomBytes(SALT_LENGTH);
-    const nonce = nacl.randomBytes(nacl.secretbox.nonceLength);
+// Create a comprehensive shareable link with selected data
+function createComprehensiveShareableLink(options, password) {
+    // Create a payload object with only the selected data
+    const payload = {};
     
-    // Derive key from password and salt
-    const key = deriveKey(password, salt);
+    // Include API key if selected
+    if (options.includeApiKey && options.apiKey) {
+        payload.apiKey = options.apiKey;
+    }
     
-    // Encrypt the API key
-    const box = nacl.secretbox(nacl.util.decodeUTF8(apiKey), nonce, key);
+    // Include system prompt if selected
+    if (options.includeSystemPrompt && options.systemPrompt) {
+        payload.systemPrompt = options.systemPrompt;
+    }
     
-    // Combine salt, nonce and box
-    const fullMessage = new Uint8Array(salt.length + nonce.length + box.length);
-    fullMessage.set(salt);
-    fullMessage.set(nonce, salt.length);
-    fullMessage.set(box, salt.length + nonce.length);
+    // Include active model if selected
+    if (options.includeModel && options.model) {
+        payload.model = options.model;
+    }
     
-    // Convert to base64 for URL-friendly format
-    const base64FullMessage = nacl.util.encodeBase64(fullMessage);
+    // Include conversation data if selected
+    if (options.includeConversation && options.messages && options.messages.length > 0) {
+        // Include only the specified number of most recent messages
+        const messageCount = options.messageCount || 1;
+        const startIndex = Math.max(0, options.messages.length - messageCount);
+        payload.messages = options.messages.slice(startIndex);
+    }
+    
+    // Encrypt the payload using the password
+    const encryptedData = encryptData(payload, password);
     
     // Create URL with only the encrypted data (no key)
-    return `${window.location.href.split('#')[0]}#shared=${base64FullMessage}`;
+    return `${window.location.href.split('#')[0]}#shared=${encryptedData}`;
 }
 
-// For API key + system prompt
-function createInsecureShareableLink(apiKey, systemPrompt, password) {
-    // Encrypt the API key and system prompt together
-    const data = { apiKey, systemPrompt };
-    const dataStr = JSON.stringify(data);
+// Encrypt data with a password
+function encryptData(payloadObj, password) {
+    // Convert to JSON string
+    const jsonString = JSON.stringify(payloadObj);
+    const plain = nacl.util.decodeUTF8(jsonString);
     
-    // Generate a random salt and nonce
+    // Generate salt and derive key
     const salt = nacl.randomBytes(SALT_LENGTH);
+    const key = deriveSeed(password, salt);
+    
+    // Generate nonce for secretbox
     const nonce = nacl.randomBytes(nacl.secretbox.nonceLength);
     
-    // Derive key from password and salt
-    const key = deriveKey(password, salt);
+    // Encrypt with secretbox (symmetric encryption)
+    const cipher = nacl.secretbox(plain, nonce, key);
     
-    // Encrypt the data
-    const box = nacl.secretbox(nacl.util.decodeUTF8(dataStr), nonce, key);
+    // Combine salt, nonce, and cipher
+    const fullMessage = new Uint8Array(
+        salt.length + 
+        nonce.length + 
+        cipher.length
+    );
     
-    // Combine salt, nonce and box
-    const fullMessage = new Uint8Array(salt.length + nonce.length + box.length);
-    fullMessage.set(salt);
-    fullMessage.set(nonce, salt.length);
-    fullMessage.set(box, salt.length + nonce.length);
+    let offset = 0;
+    fullMessage.set(salt, offset);
+    offset += salt.length;
+    
+    fullMessage.set(nonce, offset);
+    offset += nonce.length;
+    
+    fullMessage.set(cipher, offset);
     
     // Convert to base64 for URL-friendly format
-    const base64FullMessage = nacl.util.encodeBase64(fullMessage);
-    
-    // Create URL with only the encrypted data (no key)
-    return `${window.location.href.split('#')[0]}#insecure=${base64FullMessage}`;
+    return nacl.util.encodeBase64(fullMessage);
+}
+
+// Extract and decrypt shared data from the URL
+function extractSharedData(password) {
+    try {
+        // Get the hash fragment
+        const hash = window.location.hash;
+        
+        // Check if it contains shared data
+        if (hash.includes('#shared=')) {
+            // Extract the encrypted data
+            const encryptedData = hash.split('#shared=')[1];
+            
+            if (!encryptedData) {
+                return null;
+            }
+            
+            // Decrypt the data
+            const data = decryptData(encryptedData, password);
+            
+            if (!data) {
+                return null;
+            }
+            
+            // Return all decrypted data
+            return {
+                apiKey: data.apiKey,
+                systemPrompt: data.systemPrompt || null,
+                model: data.model || null,
+                messages: data.messages || null
+            };
+        }
+        
+        return null;
+    } catch (error) {
+        console.error('Error extracting shared data:', error);
+        return null;
+    }
 }</pre>
                 </div>
                 
@@ -491,11 +544,13 @@ function createInsecureShareableLink(apiKey, systemPrompt, password) {
                 </ul>
                 
                 <p>
-                    <strong>When to use each type:</strong>
+                    <strong>When to use each sharing option:</strong>
                 </p>
                 <ul>
-                    <li><strong>API Key Only:</strong> When you want someone to use your GroqCloud account but with their own system prompt</li>
-                    <li><strong>API Key + System Prompt:</strong> When you want to share your complete configuration, including any custom instructions you've set up</li>
+                    <li><strong>API Key:</strong> Essential for giving someone access to your GroqCloud account</li>
+                    <li><strong>System Prompt:</strong> Share your custom instructions to ensure consistent AI behavior</li>
+                    <li><strong>Active Model:</strong> Share your preferred model selection for consistent results</li>
+                    <li><strong>Conversation Data:</strong> Share context from your current conversation to continue a discussion</li>
                 </ul>
                 
                 <p>
