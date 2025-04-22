@@ -1595,12 +1595,26 @@ window.AIHackareComponent = (function() {
     AIHackare.prototype.copyPassword = function() {
         if (this.sharePassword && this.sharePassword.value) {
             try {
-                // Select the password text
-                this.sharePassword.select();
-                this.sharePassword.focus();
+                // Get the current password value
+                const passwordValue = this.sharePassword.value;
+                
+                // Create a temporary input element
+                const tempInput = document.createElement('input');
+                tempInput.value = passwordValue;
+                tempInput.setAttribute('readonly', '');
+                tempInput.style.position = 'absolute';
+                tempInput.style.left = '-9999px';
+                document.body.appendChild(tempInput);
+                
+                // Select the text
+                tempInput.select();
+                tempInput.setSelectionRange(0, 99999); // For mobile devices
                 
                 // Copy to clipboard
                 document.execCommand('copy');
+                
+                // Remove the temporary element
+                document.body.removeChild(tempInput);
                 
                 // Show a success message
                 this.addSystemMessage('Password copied to clipboard.');

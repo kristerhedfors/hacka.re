@@ -13,11 +13,12 @@
 window.ShareService = (function() {
     /**
      * Generate a strong random password
-     * @param {number} length - Length of the password (default: 12)
+     * 12 characters long with alphanumeric characters (uppercase, lowercase, and numbers)
      * @returns {string} Random password
      */
-    function generateStrongPassword(length = 12) {
-        const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+";
+    function generateStrongPassword() {
+        const length = 12; // Fixed length of 12 characters
+        const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; // 62 characters (26+26+10)
         let password = "";
         
         // Get cryptographically strong random values
