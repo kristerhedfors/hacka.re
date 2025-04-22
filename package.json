@@ -1,0 +1,30 @@
+{
+  "name": "hacka.re",
+  "version": "1.0.0",
+  "description": "A simple chat interface for GroqCloud's OpenAI API",
+  "private": true,
+  "scripts": {
+    "test": "echo \"To run tests, open _tests/test-runner.html in a browser or set up Puppeteer (see _tests/README.md)\" && exit 0",
+    "test:setup": "npm install puppeteer",
+    "test:headless": "node _tests/run-tests.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/hacka.re.git"
+  },
+  "keywords": [
+    "chat",
+    "ai",
+    "groq",
+    "openai"
+  ],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/yourusername/hacka.re/issues"
+  },
+  "homepage": "https://hacka.re",
+  "dependencies": {
+    "puppeteer": "^24.7.0"
+  }
+}

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>hacka.re Unit Tests</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        .test-suite {
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .test-suite-header {
+            background-color: #f5f5f5;
+            padding: 10px;
+            font-weight: bold;
+            border-bottom: 1px solid #ddd;
+        }
+        .test-case {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .test-case:last-child {
+            border-bottom: none;
+        }
+        .pass {
+            color: green;
+        }
+        .fail {
+            color: red;
+        }
+        .summary {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>hacka.re Unit Tests</h1>
+    <div id="test-results"></div>
+    <div id="summary" class="summary"></div>
+
+    <!-- Load TweetNaCl libraries -->
+    <script src="../lib/tweetnacl/nacl-fast.min.js"></script>
+    <script src="../lib/tweetnacl/nacl-util.min.js"></script>
+    
+    <!-- Load the code under test -->
+    <script src="../js/utils/crypto-utils.js"></script>
+    <script src="../js/services/link-sharing-service.js"></script>
+    <script src="../js/services/share-service.js"></script>
+    
+    <!-- Load test framework -->
+    <script src="test-framework.js"></script>
+    
+    <!-- Load test files -->
+    <script src="crypto-utils.test.js"></script>
+    <script src="link-sharing-service.test.js"></script>
+    <script src="share-service.test.js"></script>
+    
+    <script>
+        // Run all tests when page loads
+        window.addEventListener('DOMContentLoaded', function() {
+            TestFramework.runAllTests();
+        });
+    </script>
+</body>
+</html>

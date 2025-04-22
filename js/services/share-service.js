@@ -1,148 +1,35 @@
 /**
  * Share Service
- * Handles encryption, decryption, and sharing of API keys and system prompts
+ * Handles encryption, decryption, and sharing of API keys, system prompts, and conversation data
  * 
- * This service provides two types of shareable links:
- * 1. API Key Only: Shares just the API key (createShareableLink)
- * 2. API Key + System Prompt: Shares both API key and system prompt (createInsecureShareableLink)
+ * This service provides shareable links for API keys, system prompts, and conversation data.
+ * It uses the CryptoUtils for encryption/decryption and LinkSharingService for link handling.
  * 
- * Both links use NaCl encryption with password-based key derivation for improved security.
- * The encryption key is derived from a user-provided password rather than being included in the URL.
+ * The encryption uses public/private key cryptography with password-based key derivation
+ * for improved security. The encryption key is derived from a user-provided password
+ * rather than being included in the URL.
  */
 
 window.ShareService = (function() {
-    // Constants
-    const NONCE_LENGTH = nacl.secretbox.nonceLength;
-    const KEY_LENGTH = nacl.secretbox.keyLength;
-    const SALT_LENGTH = 16; // 16 bytes for salt
-    const KEY_ITERATIONS = 10000; // Number of iterations for key derivation
-    
     /**
-     * Generate a random key for encryption
-     * @returns {Uint8Array} Random key
+     * Generate a strong random password
+     * @param {number} length - Length of the password (default: 12)
+     * @returns {string} Random password
      */
-    function generateKey() {
-        return nacl.randomBytes(KEY_LENGTH);
-    }
-    
-    /**
-     * Generate a random salt for key derivation
-     * @returns {Uint8Array} Random salt
-     */
-    function generateSalt() {
-        return nacl.randomBytes(SALT_LENGTH);
-    }
-    
-    /**
-     * Derive an encryption key from a password and salt
-     * This is a simple key derivation function using SHA-256 and multiple iterations
-     * @param {string} password - The password to derive the key from
-     * @param {Uint8Array} salt - The salt to use for key derivation
-     * @returns {Uint8Array} Derived key
-     */
-    function deriveKey(password, salt) {
-        // Convert password to Uint8Array
-        const passwordBytes = nacl.util.decodeUTF8(password);
+    function generateStrongPassword(length = 12) {
+        const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+";
+        let password = "";
         
-        // Combine password and salt
-        const combined = new Uint8Array(passwordBytes.length + salt.length);
-        combined.set(passwordBytes);
-        combined.set(salt, passwordBytes.length);
+        // Get cryptographically strong random values
+        const randomValues = new Uint8Array(length);
+        window.crypto.getRandomValues(randomValues);
         
-        // Perform multiple iterations of hashing to derive the key
-        let key = combined;
-        for (let i = 0; i < KEY_ITERATIONS; i++) {
-            // Use TweetNaCl's hash function (SHA-512)
-            key = nacl.hash(key);
-            // We only need the first 32 bytes for secretbox
-            key = key.slice(0, KEY_LENGTH);
+        // Convert to password characters
+        for (let i = 0; i < length; i++) {
+            password += charset[randomValues[i] % charset.length];
         }
         
-        return key;
-    }
-    
-    /**
-     * Encrypt data (string or object) with a password
-     * @param {string|Object} data - The data to encrypt
-     * @param {string} password - The password to use for encryption
-     * @returns {Object} Object containing the encrypted data and salt
-     */
-    function encryptData(data, password) {
-        // Generate a random salt and nonce
-        const salt = generateSalt();
-        const nonce = nacl.randomBytes(NONCE_LENGTH);
-        
-        // Derive key from password and salt
-        const key = deriveKey(password, salt);
-        
-        // Convert data to string if it's an object
-        const dataStr = typeof data === 'object' ? JSON.stringify(data) : data;
-        
-        // Convert data to Uint8Array
-        const messageUint8 = nacl.util.decodeUTF8(dataStr);
-        
-        // Encrypt the data
-        const box = nacl.secretbox(messageUint8, nonce, key);
-        
-        // Combine salt, nonce and box
-        const fullMessage = new Uint8Array(salt.length + nonce.length + box.length);
-        fullMessage.set(salt);
-        fullMessage.set(nonce, salt.length);
-        fullMessage.set(box, salt.length + nonce.length);
-        
-        // Convert to base64 for URL-friendly format
-        const base64FullMessage = nacl.util.encodeBase64(fullMessage);
-        
-        return {
-            encryptedData: base64FullMessage
-        };
-    }
-    
-    /**
-     * Decrypt encrypted data with a password
-     * @param {string} encryptedData - Base64-encoded encrypted data
-     * @param {string} password - The password to use for decryption
-     * @param {boolean} parseJson - Whether to parse the decrypted data as JSON
-     * @returns {string|Object|null} Decrypted data or null if decryption fails
-     */
-    function decryptData(encryptedData, password, parseJson = false) {
-        try {
-            // Convert from base64
-            const fullMessage = nacl.util.decodeBase64(encryptedData);
-            
-            // Extract salt, nonce and box
-            const salt = fullMessage.slice(0, SALT_LENGTH);
-            const nonce = fullMessage.slice(SALT_LENGTH, SALT_LENGTH + NONCE_LENGTH);
-            const box = fullMessage.slice(SALT_LENGTH + NONCE_LENGTH);
-            
-            // Derive key from password and salt
-            const key = deriveKey(password, salt);
-            
-            // Decrypt
-            const decrypted = nacl.secretbox.open(box, nonce, key);
-            
-            if (!decrypted) {
-                return null; // Decryption failed
-            }
-            
-            // Convert from Uint8Array to string
-            const decryptedStr = nacl.util.encodeUTF8(decrypted);
-            
-            // Parse as JSON if requested
-            if (parseJson) {
-                try {
-                    return JSON.parse(decryptedStr);
-                } catch (e) {
-                    console.error('Error parsing decrypted JSON:', e);
-                    return decryptedStr;
-                }
-            }
-            
-            return decryptedStr;
-        } catch (error) {
-            console.error('Decryption error:', error);
-            return null;
-        }
+        return password;
     }
     
     /**
@@ -152,12 +39,7 @@ window.ShareService = (function() {
      * @returns {string} Shareable URL
      */
     function createShareableLink(apiKey, password) {
-        // Encrypt the API key
-        const { encryptedData } = encryptData(apiKey, password);
-        
-        // Create URL with hash fragment
-        const baseUrl = window.location.href.split('#')[0];
-        return `${baseUrl}#shared=${encryptedData}`;
+        return LinkSharingService.createShareableLink(apiKey, password);
     }
     
     /**
@@ -168,16 +50,48 @@ window.ShareService = (function() {
      * @param {string} apiKey - The API key to share
      * @param {string} systemPrompt - The system prompt to share
      * @param {string} password - The password to use for encryption
-     * @returns {string} Shareable URL with #insecure= fragment
+     * @returns {string} Shareable URL
      */
     function createInsecureShareableLink(apiKey, systemPrompt, password) {
-        // Encrypt the API key and system prompt together
-        const data = { apiKey, systemPrompt };
-        const { encryptedData } = encryptData(data, password);
+        return LinkSharingService.createInsecureShareableLink(apiKey, systemPrompt, password);
+    }
+    
+    /**
+     * Create a comprehensive shareable link with selected data
+     * @param {Object} options - Options for what to include in the share
+     * @param {string} options.apiKey - The API key to share (if includeApiKey is true)
+     * @param {string} options.systemPrompt - The system prompt to share (if includeSystemPrompt is true)
+     * @param {Array} options.messages - The conversation messages to share (if includeConversation is true)
+     * @param {number} options.messageCount - Number of recent messages to include (if includeConversation is true)
+     * @param {boolean} options.includeApiKey - Whether to include the API key
+     * @param {boolean} options.includeSystemPrompt - Whether to include the system prompt
+     * @param {boolean} options.includeConversation - Whether to include conversation data
+     * @param {string} password - The password to use for encryption
+     * @returns {string} Shareable URL
+     */
+    function createComprehensiveShareableLink(options, password) {
+        const payload = {};
         
-        // Create URL with hash fragment
-        const baseUrl = window.location.href.split('#')[0];
-        return `${baseUrl}#insecure=${encryptedData}`;
+        if (options.includeApiKey && options.apiKey) {
+            payload.apiKey = options.apiKey;
+        }
+        
+        if (options.includeSystemPrompt && options.systemPrompt) {
+            payload.systemPrompt = options.systemPrompt;
+        }
+        
+        if (options.includeModel && options.model) {
+            payload.model = options.model;
+        }
+        
+        if (options.includeConversation && options.messages && options.messages.length > 0) {
+            // Include only the specified number of most recent messages
+            const messageCount = options.messageCount || 1;
+            const startIndex = Math.max(0, options.messages.length - messageCount);
+            payload.messages = options.messages.slice(startIndex);
+        }
+        
+        return LinkSharingService.createCustomShareableLink(payload, password);
     }
     
     /**
@@ -185,8 +99,7 @@ window.ShareService = (function() {
      * @returns {boolean} True if URL contains a shared API key
      */
     function hasSharedApiKey() {
-        const hash = window.location.hash;
-        return hash.includes('#shared=') || hash.includes('#insecure=');
+        return LinkSharingService.hasSharedApiKey();
     }
     
     /**
@@ -195,67 +108,22 @@ window.ShareService = (function() {
      * @returns {Object} Object containing apiKey and systemPrompt (if available)
      */
     function extractSharedApiKey(password) {
-        try {
-            // Get the hash fragment
-            const hash = window.location.hash;
-            
-            // Check if it contains a secure shared API key (API key only)
-            if (hash.includes('#shared=')) {
-                // Extract the encrypted data
-                const encryptedData = hash.split('#shared=')[1];
-                
-                if (!encryptedData) {
-                    return null;
-                }
-                
-                // Decrypt the API key
-                const apiKey = decryptData(encryptedData, password);
-                
-                if (!apiKey) {
-                    return null;
-                }
-                
-                return { apiKey, systemPrompt: null };
-            }
-            
-            // Check if it contains an insecure shared API key (API key + system prompt)
-            if (hash.includes('#insecure=')) {
-                // Extract the encrypted data
-                const encryptedData = hash.split('#insecure=')[1];
-                
-                if (!encryptedData) {
-                    return null;
-                }
-                
-                // Decrypt the data
-                const data = decryptData(encryptedData, password, true);
-                
-                if (!data || !data.apiKey) {
-                    return null;
-                }
-                
-                return { apiKey: data.apiKey, systemPrompt: data.systemPrompt || null };
-            }
-            
-            return null;
-        } catch (error) {
-            console.error('Error extracting shared API key:', error);
-            return null;
-        }
+        return LinkSharingService.extractSharedApiKey(password);
     }
     
     /**
      * Clear the shared API key from the URL
      */
     function clearSharedApiKeyFromUrl() {
-        // Remove the hash fragment
-        window.history.replaceState(null, null, window.location.pathname + window.location.search);
+        LinkSharingService.clearSharedApiKeyFromUrl();
     }
     
     // Public API
     return {
+        generateStrongPassword: generateStrongPassword,
         createShareableLink: createShareableLink,
         createInsecureShareableLink: createInsecureShareableLink,
+        createComprehensiveShareableLink: createComprehensiveShareableLink,
         hasSharedApiKey: hasSharedApiKey,
         extractSharedApiKey: extractSharedApiKey,
         clearSharedApiKeyFromUrl: clearSharedApiKeyFromUrl
