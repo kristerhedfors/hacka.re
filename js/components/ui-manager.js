@@ -75,8 +75,11 @@ window.UIManager = (function() {
          * Show the share modal
          * @param {string} apiKey - Current API key
          * @param {Function} updateLinkLengthBar - Function to update link length bar
+         * @param {string} sessionKey - Session key (if any)
+         * @param {boolean} isSessionKeyLocked - Whether the session key is locked
+         * @param {Function} loadShareOptions - Function to load share options from storage
          */
-        function showShareModal(apiKey, updateLinkLengthBar) {
+        function showShareModal(apiKey, updateLinkLengthBar, sessionKey, isSessionKeyLocked, loadShareOptions) {
             if (!apiKey) {
                 return false;
             }
@@ -86,33 +89,68 @@ window.UIManager = (function() {
                 elements.shareForm.reset();
             }
             
-            // Generate a random password
-            if (elements.sharePassword) {
-                elements.sharePassword.value = ShareService.generateStrongPassword();
-                elements.sharePassword.type = 'password'; // Ensure password is hidden
+            // Check if there's a locked session key
+            if (sessionKey && isSessionKeyLocked) {
+                // Set the session key value
+                if (elements.sharePassword) {
+                    elements.sharePassword.value = sessionKey;
+                    elements.sharePassword.readOnly = true;
+                }
+                
+                // Set the lock checkbox to checked
+                if (elements.lockSessionKeyCheckbox) {
+                    elements.lockSessionKeyCheckbox.checked = true;
+                }
+                
+                // Add the locked class to the password input container
+                if (elements.passwordInputContainer) {
+                    elements.passwordInputContainer.classList.add('locked');
+                }
+            } else {
+                // Generate a random password
+                if (elements.sharePassword) {
+                    elements.sharePassword.value = ShareService.generateStrongPassword();
+                    elements.sharePassword.type = 'password'; // Ensure password is hidden
+                    elements.sharePassword.readOnly = false;
+                }
+                
+                // Remove the locked class from the password input container
+                if (elements.passwordInputContainer) {
+                    elements.passwordInputContainer.classList.remove('locked');
+                }
+                
+                // Ensure the lock checkbox is unchecked
+                if (elements.lockSessionKeyCheckbox) {
+                    elements.lockSessionKeyCheckbox.checked = false;
+                }
             }
             
-            // Set default checkboxes
-            if (elements.shareApiKeyCheckbox) {
-                elements.shareApiKeyCheckbox.checked = true;
-            }
-            
-            if (elements.shareSystemPromptCheckbox) {
-                elements.shareSystemPromptCheckbox.checked = false;
-            }
-            
-            if (elements.shareConversationCheckbox) {
-                elements.shareConversationCheckbox.checked = false;
-            }
-            
-            // Disable message history input
-            if (elements.messageHistoryCount) {
-                elements.messageHistoryCount.disabled = true;
-                elements.messageHistoryCount.value = '1';
-            }
-            
-            if (elements.messageHistoryContainer) {
-                elements.messageHistoryContainer.classList.remove('active');
+            // Load share options from storage
+            if (loadShareOptions) {
+                loadShareOptions();
+            } else {
+                // Set default checkboxes if loadShareOptions is not provided
+                if (elements.shareApiKeyCheckbox) {
+                    elements.shareApiKeyCheckbox.checked = true;
+                }
+                
+                if (elements.shareSystemPromptCheckbox) {
+                    elements.shareSystemPromptCheckbox.checked = false;
+                }
+                
+                if (elements.shareConversationCheckbox) {
+                    elements.shareConversationCheckbox.checked = false;
+                }
+                
+                // Disable message history input
+                if (elements.messageHistoryCount) {
+                    elements.messageHistoryCount.disabled = true;
+                    elements.messageHistoryCount.value = '1';
+                }
+                
+                if (elements.messageHistoryContainer) {
+                    elements.messageHistoryContainer.classList.remove('active');
+                }
             }
             
             // Hide generated link container
