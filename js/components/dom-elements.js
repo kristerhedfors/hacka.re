@@ -56,6 +56,7 @@ window.DOMElements = (function() {
             modelSelect: document.getElementById('model-select'),
             apiKeyUpdate: document.getElementById('api-key-update'),
             systemPromptInput: document.getElementById('system-prompt'),
+            resetSystemPromptBtn: document.getElementById('reset-system-prompt'),
             closeSettings: document.getElementById('close-settings'),
             clearChat: document.getElementById('clear-chat'),
             
