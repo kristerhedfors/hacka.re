@@ -56,7 +56,7 @@ This document summarizes the features and achievements of hacka.re as of Release
 ### Link Sharing Functionality
 
 - **Dedicated Share Button**: Easily accessible share button in the header
-- **Encrypted API Key Sharing**: Password-protected sharing of API keys
+- **Encrypted API Key Sharing**: Session key-protected sharing of API keys
 - **System Prompt Sharing**: Option to include system prompts in shared links
 - **Model Sharing**: Option to include the active model in shared links
 - **Conversation Sharing**: Option to share recent conversation history
@@ -64,7 +64,7 @@ This document summarizes the features and achievements of hacka.re as of Release
 - **QR Code Generation**: QR codes for easy sharing of links with size warnings
 - **Session Key Management**: Generate strong session keys, toggle visibility, copy to clipboard, and lock for team sharing
 - **NaCl Encryption**: Strong encryption for shared data
-- **Password-Based Key Derivation**: Improved security through key derivation
+- **Session Key-Based Key Derivation**: Improved security through key derivation
 
 ## Technical Achievements
 
