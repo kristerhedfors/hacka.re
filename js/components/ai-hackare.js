@@ -26,6 +26,12 @@ window.AIHackareComponent = (function() {
         this.closeSettings = document.getElementById('close-settings');
         this.clearChat = document.getElementById('clear-chat');
         
+        // Token speed tracking
+        this.tokenSpeedText = document.querySelector('.token-speed-text');
+        this.tokenCount = 0;
+        this.generationStartTime = null;
+        this.lastUpdateTime = null;
+        
         // Share link elements
         this.createShareLinkBtn = document.getElementById('create-share-link');
         this.createInsecureShareLinkBtn = document.getElementById('create-insecure-share-link');
@@ -609,6 +615,14 @@ window.AIHackareComponent = (function() {
         
         this.isGenerating = true;
         
+        // Reset token speed tracking
+        this.generationStartTime = null;
+        this.lastUpdateTime = null;
+        this.tokenCount = 0;
+        if (this.tokenSpeedText) {
+            this.tokenSpeedText.textContent = '0 t/s';
+        }
+        
         // Change send button to stop button
         this.sendBtn.innerHTML = '<i class="fas fa-stop"></i>';
         this.sendBtn.title = 'Stop generation';
@@ -744,8 +758,52 @@ window.AIHackareComponent = (function() {
             contentElement.innerHTML = UIUtils.renderMarkdown(content);
             UIUtils.scrollToBottom(this.chatMessages);
             
+            // Calculate token speed
+            this.calculateTokenSpeed(content);
+            
             // Update context usage
             this.estimateContextUsage();
+        }
+    };
+    
+    /**
+     * Calculate and update token generation speed
+     * @param {string} content - Current content
+     */
+    AIHackare.prototype.calculateTokenSpeed = function(content) {
+        // Initialize timing on first token
+        if (!this.generationStartTime) {
+            this.generationStartTime = Date.now();
+            this.lastUpdateTime = this.generationStartTime;
+            this.tokenCount = 0;
+            
+            // Reset token speed display
+            if (this.tokenSpeedText) {
+                this.tokenSpeedText.textContent = '0 t/s';
+            }
+            return;
+        }
+        
+        // Estimate new tokens (rough approximation: 1 token per 4 characters)
+        const newContent = content;
+        const newTokenCount = Math.ceil(newContent.length / 4);
+        
+        // Calculate tokens added since last update
+        const tokenDelta = newTokenCount - this.tokenCount;
+        this.tokenCount = newTokenCount;
+        
+        // Only update speed calculation periodically to smooth out the display
+        const now = Date.now();
+        const timeSinceStart = (now - this.generationStartTime) / 1000; // in seconds
+        
+        if (timeSinceStart > 0 && this.tokenCount > 0) {
+            // Calculate tokens per second
+            const tokensPerSecond = Math.round(this.tokenCount / timeSinceStart);
+            
+            // Update the display
+            if (this.tokenSpeedText) {
+                this.tokenSpeedText.textContent = `${tokensPerSecond} t/s`;
+            }
         }
     };
     

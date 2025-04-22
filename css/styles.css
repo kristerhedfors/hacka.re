@@ -146,6 +146,23 @@ header {
     gap: 0.5rem;
 }
 
+.token-speed {
+    margin-left: 1rem;
+    display: flex;
+    align-items: center;
+}
+
+.token-speed::before {
+    content: '\f017'; /* clock icon */
+    font-family: 'Font Awesome 5 Free';
+    margin-right: 0.3rem;
+}
+
+.token-speed-text {
+    font-size: 0.8rem;
+    min-width: 50px;
+}
+
 .usage-bar {
     width: 60px;
     height: 8px;
