@@ -67,6 +67,23 @@ ul {
     flex-direction: column;
     height: 100vh;
     width: 100%;
+    position: relative;
+}
+
+/* ===== Beta Tag ===== */
+.beta-tag {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: rgba(234, 88, 12, 0.8); /* Warm orange with transparency */
+    color: white;
+    padding: 3px 8px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    transform: rotate(5deg);
 }
 
 /* ===== Header ===== */
@@ -111,6 +128,16 @@ header {
 .active-model {
     font-weight: 600;
     margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+}
+
+.model-developer {
+    font-size: 0.765rem; /* 10% smaller than 0.85rem */
+    opacity: 0.9;
+    margin-right: 0.5rem;
+    vertical-align: top; /* Align text up */
+    display: inline-block;
 }
 
 .model-name {
@@ -124,15 +151,9 @@ header {
     opacity: 0.9;
 }
 
-.model-developer, .model-context, .context-usage {
+.model-context, .context-usage {
     display: flex;
     align-items: center;
-}
-
-.model-developer::before {
-    content: '\f007'; /* user icon */
-    font-family: 'Font Awesome 5 Free';
-    margin-right: 0.3rem;
 }
 
 .model-context::before {
