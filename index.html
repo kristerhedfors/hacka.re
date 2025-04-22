@@ -176,8 +176,11 @@
                     </div>
                     <div class="form-group">
                         <label for="system-prompt">System Prompt (max 7000 tokens)</label>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <div class="form-help">This prompt will be sent as a system message at the beginning of each conversation.</div>
+                            <button type="button" id="reset-system-prompt" class="btn secondary-btn" style="font-size: 0.8rem; padding: 5px 10px;">Reset to Default</button>
+                        </div>
                         <textarea id="system-prompt" placeholder="Enter a system prompt to customize AI behavior" rows="6"></textarea>
-                        <div class="form-help">This prompt will be sent as a system message at the beginning of each conversation.</div>
                     </div>
                     <div class="form-actions">
                         <button type="submit" class="btn primary-btn">Save Settings</button>
