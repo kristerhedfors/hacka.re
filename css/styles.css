@@ -465,6 +465,9 @@ footer a:hover {
     max-width: 500px;
     width: 90%;
     box-shadow: var(--box-shadow);
+    max-height: 85vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch; /* For smooth scrolling on iOS */
 }
 
 .modal-content h2 {
@@ -590,12 +593,29 @@ footer a:hover {
     .modal-content {
         width: 95%;
         padding: 1.5rem;
+        max-height: 80vh; /* Slightly smaller on mobile to ensure buttons are visible */
     }
     
     .model-dropdown {
         width: 90%;
         max-width: none;
         left: 5% !important;
+    }
+    
+    /* Improve modal positioning on mobile */
+    .modal {
+        align-items: flex-start;
+        padding-top: 2rem;
+    }
+    
+    /* Make share buttons more mobile-friendly */
+    .share-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .share-actions .btn {
+        width: 100%;
     }
 }
 
@@ -607,6 +627,27 @@ footer a:hover {
     
     .btn {
         width: 100%;
+    }
+    
+    /* Additional adjustments for very small screens */
+    .modal-content {
+        max-height: 75vh;
+        padding: 1rem;
+    }
+    
+    /* Ensure modal starts higher on the screen to make buttons accessible */
+    .modal {
+        padding-top: 1rem;
+    }
+    
+    /* Reduce padding to maximize usable space */
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    
+    /* Make system prompt textarea smaller on mobile */
+    #system-prompt {
+        max-height: 150px;
     }
 }
 
