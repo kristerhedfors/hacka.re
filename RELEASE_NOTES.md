@@ -55,9 +55,14 @@ This document summarizes the features and achievements of hacka.re as of Release
 
 ### Link Sharing Functionality
 
+- **Dedicated Share Button**: Easily accessible share button in the header
 - **Encrypted API Key Sharing**: Password-protected sharing of API keys
 - **System Prompt Sharing**: Option to include system prompts in shared links
-- **QR Code Generation**: QR codes for easy sharing of links
+- **Model Sharing**: Option to include the active model in shared links
+- **Conversation Sharing**: Option to share recent conversation history
+- **Customizable Sharing**: Checkboxes to select exactly what to include in the shared link
+- **QR Code Generation**: QR codes for easy sharing of links with size warnings
+- **Password Management**: Generate strong passwords, toggle visibility, and copy to clipboard
 - **NaCl Encryption**: Strong encryption for shared data
 - **Password-Based Key Derivation**: Improved security through key derivation
 
@@ -71,12 +76,11 @@ This document summarizes the features and achievements of hacka.re as of Release
 
 ## Known Issues
 
-- **Link Sharing Functionality**: The link sharing feature is currently shaky and needs extensive unit testing. Specific concerns include:
-  - Edge cases in encryption/decryption process
-  - Handling of very long system prompts in QR codes
-  - Browser compatibility issues with the clipboard API
-  - Potential security vulnerabilities in the key derivation process
-  - Lack of comprehensive error handling for decryption failures
+- **Link Sharing Functionality**: While the link sharing feature has been improved, some areas still need attention:
+  - QR code generation for very long links (improved with size warnings)
+  - Browser compatibility with the clipboard API on some platforms
+  - Additional unit testing for edge cases in encryption/decryption
+  - Model mismatch handling when shared model isn't available (implemented with fallback)
 
 ## Next Steps
 

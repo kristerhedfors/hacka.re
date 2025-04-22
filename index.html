@@ -46,6 +46,9 @@
                 </div>
             </div>
             <div class="settings">
+                <button id="share-btn" class="icon-btn" title="Share">
+                    <i class="fas fa-share-alt"></i>
+                </button>
                 <button id="settings-btn" class="icon-btn" title="Settings">
                     <i class="fas fa-cog"></i>
                 </button>
@@ -70,6 +73,85 @@
 
         <!-- Model dropdown will be created dynamically by JavaScript -->
 
+        <div id="share-modal" class="modal">
+            <div class="modal-content">
+                <h2>Share Link</h2>
+                <form id="share-form">
+                    <div class="form-group">
+                        <label for="share-password">Password</label>
+                        <div class="password-input-container">
+                            <input type="password" id="share-password" placeholder="Password for encryption">
+                            <button type="button" class="icon-btn" id="regenerate-password" title="Generate strong password">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button type="button" class="icon-btn" id="toggle-password-visibility" title="Show/hide password">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button type="button" class="icon-btn" id="copy-password" title="Copy password">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>What to share</label>
+                        <div class="link-length-container">
+                            <div class="link-length-label">
+                                Estimated link length: <span id="link-length-text">0</span> bytes
+                                <span id="link-length-warning" class="link-length-warning">Exceeds recommended limit</span>
+                            </div>
+                            <div class="link-length-bar">
+                                <div class="link-length-fill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="share-options">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="share-api-key" checked>
+                                <label for="share-api-key">API key</label>
+                            </div>
+                            
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="share-system-prompt">
+                                <label for="share-system-prompt">System prompt</label>
+                            </div>
+                            
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="share-model">
+                                <label for="share-model">Active model</label>
+                            </div>
+                            
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="share-conversation">
+                                <label for="share-conversation">Conversation data</label>
+                            </div>
+                            
+                            <div class="message-history-container">
+                                <label for="message-history-count">Messages to include:</label>
+                                <input type="number" id="message-history-count" value="1" min="1" disabled>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn primary-btn" id="generate-share-link">Generate Link</button>
+                        <button type="button" class="btn secondary-btn" id="close-share-modal">Cancel</button>
+                    </div>
+                </form>
+                
+                <div id="generated-link-container" style="display: none;">
+                    <h3>Your Shareable Link</h3>
+                    <div class="link-display">
+                        <input type="text" id="generated-link" readonly>
+                        <button type="button" class="btn icon-btn" id="copy-generated-link" title="Copy to clipboard">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <div id="share-qr-code-container" style="margin-top: 15px; text-align: center;"></div>
+                    <div id="qr-code-warning" style="display: none; margin-top: 10px; color: #856404; background-color: #fff3cd; padding: 10px; border-radius: 5px;"></div>
+                </div>
+            </div>
+        </div>
+        
         <div id="settings-modal" class="modal">
             <div class="modal-content">
                 <h2>Settings</h2>
@@ -86,20 +168,6 @@
                         <label for="system-prompt">System Prompt (max 7000 tokens)</label>
                         <textarea id="system-prompt" placeholder="Enter a system prompt to customize AI behavior" rows="6"></textarea>
                         <div class="form-help">This prompt will be sent as a system message at the beginning of each conversation.</div>
-                    </div>
-                    <div class="form-group">
-                        <label>Share API Key</label>
-                        <div class="share-actions">
-                            <button type="button" class="btn secondary-btn" id="create-share-link">Create password-protected link with API key</button>
-                            <button type="button" class="btn secondary-btn" id="create-insecure-share-link">Create password-protected link with API key and system prompt</button>
-                        </div>
-                        <div id="share-link-container" style="display: none;">
-                            <input type="text" id="share-link" readonly>
-                            <button type="button" class="btn icon-btn" id="copy-share-link" title="Copy to clipboard">
-                                <i class="fas fa-copy"></i>
-                            </button>
-                        </div>
-                        <div id="qr-code-container" style="display: none; margin-top: 15px; text-align: center;"></div>
                     </div>
                     <div class="form-actions">
                         <button type="submit" class="btn primary-btn">Save Settings</button>
@@ -140,6 +208,8 @@
     <script src="js/services/model-info.js"></script>
     <script src="js/services/storage-service.js"></script>
     <script src="js/services/api-service.js"></script>
+    <script src="js/utils/crypto-utils.js"></script>
+    <script src="js/services/link-sharing-service.js"></script>
     <script src="js/services/share-service.js"></script>
     <script src="js/utils/ui-utils.js"></script>
     <script src="js/components/ai-hackare.js"></script>
