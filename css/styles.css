@@ -502,6 +502,69 @@ footer a:hover {
     background-color: var(--primary-dark);
 }
 
+/* Info icon styles */
+.info-icon {
+    display: inline-block;
+    margin-left: 5px;
+    color: var(--primary-color);
+    cursor: help;
+    position: relative;
+}
+
+.info-icon i {
+    font-size: 0.9rem;
+}
+
+.info-icon .tooltip {
+    visibility: hidden;
+    width: 300px;
+    background-color: var(--dark-color);
+    color: var(--light-text);
+    text-align: center;
+    border-radius: 6px;
+    padding: 10px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -150px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 0.85rem;
+    font-weight: normal;
+    box-shadow: var(--box-shadow);
+    pointer-events: none;
+}
+
+.info-icon .tooltip::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: var(--dark-color) transparent transparent transparent;
+}
+
+.info-icon:hover .tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Locked session key styles */
+.password-input-container.locked input {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: rgba(0, 0, 0, 0.5);
+    cursor: not-allowed;
+}
+
+.password-input-container.locked .icon-btn {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 .share-options {
     display: flex;
     flex-direction: column;

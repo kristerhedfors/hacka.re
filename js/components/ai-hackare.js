@@ -41,9 +41,14 @@ window.AIHackareComponent = (function() {
         this.linkLengthText = document.getElementById('link-length-text');
         this.linkLengthWarning = document.getElementById('link-length-warning');
         this.linkLengthFill = document.querySelector('.link-length-fill');
+        this.lockSessionKeyCheckbox = document.getElementById('lock-session-key');
+        this.passwordInputContainer = document.querySelector('.password-input-container');
         
         // Constants for link length calculation
         this.MAX_RECOMMENDED_LINK_LENGTH = 2000; // Most browsers accept URLs up to 2000 bytes
+        
+        // Session key storage
+        this.sessionKey = null;
         this.settingsModal = document.getElementById('settings-modal');
         this.settingsForm = document.getElementById('settings-form');
         this.modelSelect = document.getElementById('model-select');
@@ -209,6 +214,13 @@ window.AIHackareComponent = (function() {
             if (this.regeneratePasswordBtn) {
                 this.regeneratePasswordBtn.addEventListener('click', () => {
                     this.regeneratePassword();
+                });
+            }
+            
+            // Lock session key checkbox
+            if (this.lockSessionKeyCheckbox) {
+                this.lockSessionKeyCheckbox.addEventListener('change', () => {
+                    this.toggleSessionKeyLock();
                 });
             }
             
@@ -1037,6 +1049,53 @@ window.AIHackareComponent = (function() {
      * Prompt for password to decrypt shared data from URL
      */
     AIHackare.prototype.promptForDecryptionPassword = function() {
+        // Try the current session key first if available
+        if (this.sessionKey) {
+            try {
+                const sharedData = ShareService.extractSharedApiKey(this.sessionKey);
+                
+                if (sharedData && sharedData.apiKey) {
+                    // Session key worked, apply the shared data
+                    StorageService.saveApiKey(sharedData.apiKey);
+                    this.apiKey = sharedData.apiKey;
+                    
+                    // Mask the API key to show only first and last 4 bytes
+                    const maskedApiKey = this.maskApiKey(sharedData.apiKey);
+                    
+                    // Build a message about what was applied
+                    let appliedMessage = `API key (${maskedApiKey})`;
+                    
+                    // If there's a system prompt, save it too
+                    if (sharedData.systemPrompt) {
+                        StorageService.saveSystemPrompt(sharedData.systemPrompt);
+                        this.systemPrompt = sharedData.systemPrompt;
+                        appliedMessage += " and system prompt";
+                    }
+                    
+                    // If there's a model, check if it's available and apply it
+                    if (sharedData.model) {
+                        // We'll fetch models first and then check if the model is available
+                        this.pendingSharedModel = sharedData.model;
+                        appliedMessage += " and model preference";
+                    }
+                    
+                    this.addSystemMessage(`${appliedMessage} from shared link have been applied using the current session key.`);
+                    
+                    // Clear the shared data from the URL
+                    ShareService.clearSharedApiKeyFromUrl();
+                    
+                    // Fetch available models with the new API key
+                    this.fetchAvailableModels();
+                    
+                    // No need to show the password modal
+                    return;
+                }
+            } catch (error) {
+                console.log('Current session key did not work for this shared link, prompting for password');
+                // Continue to password prompt if session key didn't work
+            }
+        }
+        
         // Create a modal for password input
         const passwordModal = document.createElement('div');
         passwordModal.className = 'modal active';
@@ -1621,6 +1680,29 @@ window.AIHackareComponent = (function() {
             } catch (error) {
                 console.error('Error copying password to clipboard:', error);
                 this.addSystemMessage('Error copying password. Please select and copy manually.');
+            }
+        }
+    };
+    
+    /**
+     * Toggle session key lock
+     */
+    AIHackare.prototype.toggleSessionKeyLock = function() {
+        if (this.lockSessionKeyCheckbox && this.passwordInputContainer) {
+            if (this.lockSessionKeyCheckbox.checked) {
+                // Lock the session key
+                this.passwordInputContainer.classList.add('locked');
+                this.sharePassword.readOnly = true;
+                
+                // Save the session key for future use
+                this.sessionKey = this.sharePassword.value;
+                
+                // Show a message
+                this.addSystemMessage('Session key locked. It will be remembered for this session.');
+            } else {
+                // Unlock the session key
+                this.passwordInputContainer.classList.remove('locked');
+                this.sharePassword.readOnly = false;
             }
         }
     };
