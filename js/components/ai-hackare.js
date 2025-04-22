@@ -14,10 +14,36 @@ window.AIHackareComponent = (function() {
         this.chatForm = document.getElementById('chat-form');
         this.messageInput = document.getElementById('message-input');
         this.sendBtn = document.getElementById('send-btn');
+        this.shareBtn = document.getElementById('share-btn');
         this.settingsBtn = document.getElementById('settings-btn');
         this.apiKeyModal = document.getElementById('api-key-modal');
         this.apiKeyForm = document.getElementById('api-key-form');
         this.apiKeyInput = document.getElementById('api-key');
+        this.shareModal = document.getElementById('share-modal');
+        this.shareForm = document.getElementById('share-form');
+        this.sharePassword = document.getElementById('share-password');
+        this.regeneratePasswordBtn = document.getElementById('regenerate-password');
+        this.togglePasswordVisibilityBtn = document.getElementById('toggle-password-visibility');
+        this.copyPasswordBtn = document.getElementById('copy-password');
+        this.shareApiKeyCheckbox = document.getElementById('share-api-key');
+        this.shareSystemPromptCheckbox = document.getElementById('share-system-prompt');
+        this.shareModelCheckbox = document.getElementById('share-model');
+        this.shareConversationCheckbox = document.getElementById('share-conversation');
+        this.messageHistoryCount = document.getElementById('message-history-count');
+        this.messageHistoryContainer = document.querySelector('.message-history-container');
+        this.generateShareLinkBtn = document.getElementById('generate-share-link');
+        this.closeShareModalBtn = document.getElementById('close-share-modal');
+        this.generatedLinkContainer = document.getElementById('generated-link-container');
+        this.generatedLink = document.getElementById('generated-link');
+        this.copyGeneratedLinkBtn = document.getElementById('copy-generated-link');
+        this.shareQrCodeContainer = document.getElementById('share-qr-code-container');
+        this.qrCodeWarning = document.getElementById('qr-code-warning');
+        this.linkLengthText = document.getElementById('link-length-text');
+        this.linkLengthWarning = document.getElementById('link-length-warning');
+        this.linkLengthFill = document.querySelector('.link-length-fill');
+        
+        // Constants for link length calculation
+        this.MAX_RECOMMENDED_LINK_LENGTH = 2000; // Most browsers accept URLs up to 2000 bytes
         this.settingsModal = document.getElementById('settings-modal');
         this.settingsForm = document.getElementById('settings-form');
         this.modelSelect = document.getElementById('model-select');
@@ -32,14 +58,8 @@ window.AIHackareComponent = (function() {
         this.generationStartTime = null;
         this.lastUpdateTime = null;
         
-        // Share link elements
-        this.createShareLinkBtn = document.getElementById('create-share-link');
-        this.createInsecureShareLinkBtn = document.getElementById('create-insecure-share-link');
-        this.shareLinkContainer = document.getElementById('share-link-container');
-        this.shareLink = document.getElementById('share-link');
-        this.copyShareLinkBtn = document.getElementById('copy-share-link');
-        this.qrShareLinkBtn = document.getElementById('qr-share-link');
-        this.qrCodeContainer = document.getElementById('qr-code-container');
+        // QR code container for the share modal
+        this.qrCodeContainer = document.getElementById('share-qr-code-container');
         
         // Model info elements
         this.modelNameElement = document.querySelector('.model-name');
@@ -171,10 +191,107 @@ window.AIHackareComponent = (function() {
             this.saveApiKey();
         });
         
+        // Share button click
+        if (this.shareBtn) {
+            this.shareBtn.addEventListener('click', () => {
+                this.showShareModal();
+            });
+        }
+        
         // Settings button click
         this.settingsBtn.addEventListener('click', () => {
             this.showSettingsModal();
         });
+        
+        // Share modal event listeners
+        if (this.shareModal) {
+            // Regenerate password button
+            if (this.regeneratePasswordBtn) {
+                this.regeneratePasswordBtn.addEventListener('click', () => {
+                    this.regeneratePassword();
+                });
+            }
+            
+            // Add event listeners for link length calculation
+            if (this.shareApiKeyCheckbox) {
+                this.shareApiKeyCheckbox.addEventListener('change', () => {
+                    this.updateLinkLengthBar();
+                });
+            }
+            
+            if (this.shareSystemPromptCheckbox) {
+                this.shareSystemPromptCheckbox.addEventListener('change', () => {
+                    this.updateLinkLengthBar();
+                });
+            }
+            
+            if (this.shareModelCheckbox) {
+                this.shareModelCheckbox.addEventListener('change', () => {
+                    this.updateLinkLengthBar();
+                });
+            }
+            
+            if (this.shareConversationCheckbox) {
+                this.shareConversationCheckbox.addEventListener('change', () => {
+                    this.updateLinkLengthBar();
+                });
+            }
+            
+            if (this.messageHistoryCount) {
+                this.messageHistoryCount.addEventListener('input', () => {
+                    this.updateLinkLengthBar();
+                });
+            }
+            
+            // Toggle password visibility button
+            if (this.togglePasswordVisibilityBtn) {
+                this.togglePasswordVisibilityBtn.addEventListener('click', () => {
+                    this.togglePasswordVisibility();
+                });
+            }
+            
+            // Copy password button
+            if (this.copyPasswordBtn) {
+                this.copyPasswordBtn.addEventListener('click', () => {
+                    this.copyPassword();
+                });
+            }
+            
+            // Share conversation checkbox
+            if (this.shareConversationCheckbox) {
+                this.shareConversationCheckbox.addEventListener('change', () => {
+                    this.toggleMessageHistoryInput();
+                });
+            }
+            
+            // Generate share link button
+            if (this.generateShareLinkBtn) {
+                this.generateShareLinkBtn.addEventListener('click', () => {
+                    this.generateComprehensiveShareLink();
+                });
+            }
+            
+            // Close share modal button
+            if (this.closeShareModalBtn) {
+                this.closeShareModalBtn.addEventListener('click', () => {
+                    this.hideShareModal();
+                });
+            }
+            
+            // Copy generated link button
+            if (this.copyGeneratedLinkBtn) {
+                this.copyGeneratedLinkBtn.addEventListener('click', () => {
+                    this.copyGeneratedLink();
+                });
+            }
+            
+            // Close modal when clicking outside
+            window.addEventListener('click', (e) => {
+                if (e.target === this.shareModal) {
+                    this.hideShareModal();
+                }
+            });
+        }
         
         // Settings form submission
         this.settingsForm.addEventListener('submit', (e) => {
@@ -386,6 +503,29 @@ window.AIHackareComponent = (function() {
             
             // Update model info display
             this.updateModelInfoDisplay();
+            
+            // Check if we have a pending shared model to apply
+            if (this.pendingSharedModel) {
+                const sharedModel = this.pendingSharedModel;
+                this.pendingSharedModel = null; // Clear it to avoid reapplying
+                
+                // Check if the model is available
+                if (fetchedModelIds.includes(sharedModel)) {
+                    // Apply the model
+                    this.currentModel = sharedModel;
+                    StorageService.saveModel(sharedModel);
+                    this.modelSelect.value = sharedModel;
+                    this.updateModelInfoDisplay();
+                    
+                    // Show success message
+                    const displayName = ModelInfoService.getDisplayName(sharedModel);
+                    this.addSystemMessage(`Shared model "${displayName}" has been applied.`);
+                } else {
+                    // Show error message
+                    const displayName = ModelInfoService.getDisplayName(sharedModel);
+                    this.addSystemMessage(`Warning: Shared model "${displayName}" is not available with your API key. Using default model instead.`);
+                }
+            }
             
         } catch (error) {
             console.error('Error fetching models:', error);
@@ -971,17 +1111,27 @@ window.AIHackareComponent = (function() {
                 StorageService.saveApiKey(sharedData.apiKey);
                 this.apiKey = sharedData.apiKey;
                 
-                // If there's a system prompt, save it too
                 // Mask the API key to show only first and last 4 bytes
                 const maskedApiKey = this.maskApiKey(sharedData.apiKey);
                 
+                // Build a message about what was applied
+                let appliedMessage = `API key (${maskedApiKey})`;
+                
+                // If there's a system prompt, save it too
                 if (sharedData.systemPrompt) {
                     StorageService.saveSystemPrompt(sharedData.systemPrompt);
                     this.systemPrompt = sharedData.systemPrompt;
-                    this.addSystemMessage(`API key (${maskedApiKey}) and system prompt from shared link have been applied.`);
-                } else {
-                    this.addSystemMessage(`API key (${maskedApiKey}) from shared link has been applied.`);
+                    appliedMessage += " and system prompt";
                 }
+                
+                // If there's a model, check if it's available and apply it
+                if (sharedData.model) {
+                    // We'll fetch models first and then check if the model is available
+                    this.pendingSharedModel = sharedData.model;
+                    appliedMessage += " and model preference";
+                }
+                
+                this.addSystemMessage(`${appliedMessage} from shared link have been applied.`);
                 
                 // Clear the shared data from the URL
                 ShareService.clearSharedApiKeyFromUrl();
@@ -1258,6 +1408,340 @@ window.AIHackareComponent = (function() {
             } catch (error) {
                 console.error('Error copying link to clipboard:', error);
                 this.addSystemMessage('Error copying link. Please select and copy manually.');
+            }
+        }
+    };
+    
+    /**
+     * Calculate and update the link length bar
+     */
+    AIHackare.prototype.updateLinkLengthBar = function() {
+        // Base URL length (including hash and shared= prefix)
+        const baseUrlLength = window.location.href.split('#')[0].length + 8; // 8 for "#shared="
+        
+        // Estimate the length of the encrypted data
+        let estimatedLength = baseUrlLength;
+        
+        // Create a payload object similar to what would be encrypted
+        const payload = {};
+        
+        // Add API key if selected
+        if (this.shareApiKeyCheckbox && this.shareApiKeyCheckbox.checked && this.apiKey) {
+            payload.apiKey = this.apiKey;
+            estimatedLength += this.apiKey.length;
+        }
+        
+        // Add system prompt if selected
+        if (this.shareSystemPromptCheckbox && this.shareSystemPromptCheckbox.checked && this.systemPrompt) {
+            payload.systemPrompt = this.systemPrompt;
+            estimatedLength += this.systemPrompt.length;
+        }
+        
+        // Add model if selected
+        if (this.shareModelCheckbox && this.shareModelCheckbox.checked && this.currentModel) {
+            payload.model = this.currentModel;
+            estimatedLength += this.currentModel.length;
+        }
+        
+        // Add conversation data if selected
+        if (this.shareConversationCheckbox && this.shareConversationCheckbox.checked && this.messages.length > 0) {
+            const messageCount = parseInt(this.messageHistoryCount.value, 10) || 1;
+            const startIndex = Math.max(0, this.messages.length - messageCount);
+            const messagesToInclude = this.messages.slice(startIndex);
+            
+            // Estimate the length of the messages
+            messagesToInclude.forEach(msg => {
+                estimatedLength += msg.content.length + 10; // 10 for role and JSON overhead
+            });
+        }
+        
+        // Account for base64 encoding (which increases size by ~33%)
+        estimatedLength = Math.ceil(estimatedLength * 1.33);
+        
+        // Add overhead for encryption (salt, nonce, etc.)
+        estimatedLength += 100; // Approximate overhead
+        
+        // Update the link length text
+        if (this.linkLengthText) {
+            this.linkLengthText.textContent = estimatedLength;
+        }
+        
+        // Calculate percentage of max recommended length
+        const percentage = Math.min(100, Math.round((estimatedLength / this.MAX_RECOMMENDED_LINK_LENGTH) * 100));
+        
+        // Update the link length bar
+        if (this.linkLengthFill) {
+            this.linkLengthFill.style.width = `${percentage}%`;
+            
+            // Update color based on length
+            if (estimatedLength > this.MAX_RECOMMENDED_LINK_LENGTH) {
+                this.linkLengthFill.classList.add('danger');
+                if (this.linkLengthWarning) {
+                    this.linkLengthWarning.style.display = 'block';
+                }
+            } else {
+                this.linkLengthFill.classList.remove('danger');
+                if (this.linkLengthWarning) {
+                    this.linkLengthWarning.style.display = 'none';
+                }
+            }
+        }
+    };
+    
+    /**
+     * Show the share modal
+     */
+    AIHackare.prototype.showShareModal = function() {
+        if (!this.apiKey) {
+            this.addSystemMessage('Error: No API key available to share.');
+            return;
+        }
+        
+        // Reset form
+        if (this.shareForm) {
+            this.shareForm.reset();
+        }
+        
+        // Generate a random password
+        if (this.sharePassword) {
+            this.sharePassword.value = ShareService.generateStrongPassword();
+            this.sharePassword.type = 'password'; // Ensure password is hidden
+        }
+        
+        // Set default checkboxes
+        if (this.shareApiKeyCheckbox) {
+            this.shareApiKeyCheckbox.checked = true;
+        }
+        
+        if (this.shareSystemPromptCheckbox) {
+            this.shareSystemPromptCheckbox.checked = false;
+        }
+        
+        if (this.shareConversationCheckbox) {
+            this.shareConversationCheckbox.checked = false;
+        }
+        
+        // Disable message history input
+        if (this.messageHistoryCount) {
+            this.messageHistoryCount.disabled = true;
+            this.messageHistoryCount.value = '1';
+        }
+        
+        if (this.messageHistoryContainer) {
+            this.messageHistoryContainer.classList.remove('active');
+        }
+        
+        // Hide generated link container
+        if (this.generatedLinkContainer) {
+            this.generatedLinkContainer.style.display = 'none';
+        }
+        
+        // Clear QR code container
+        if (this.shareQrCodeContainer) {
+            this.shareQrCodeContainer.innerHTML = '';
+        }
+        
+        // Hide QR code warning
+        if (this.qrCodeWarning) {
+            this.qrCodeWarning.style.display = 'none';
+        }
+        
+        // Initialize link length bar
+        this.updateLinkLengthBar();
+        
+        // Show modal
+        this.shareModal.classList.add('active');
+    };
+    
+    /**
+     * Hide the share modal
+     */
+    AIHackare.prototype.hideShareModal = function() {
+        this.shareModal.classList.remove('active');
+    };
+    
+    /**
+     * Regenerate a strong password
+     */
+    AIHackare.prototype.regeneratePassword = function() {
+        if (this.sharePassword) {
+            this.sharePassword.value = ShareService.generateStrongPassword();
+            
+            // If password is visible, keep it visible
+            if (this.sharePassword.type === 'text') {
+                this.sharePassword.type = 'text';
+            }
+        }
+    };
+    
+    /**
+     * Toggle password visibility
+     */
+    AIHackare.prototype.togglePasswordVisibility = function() {
+        if (this.sharePassword && this.togglePasswordVisibilityBtn) {
+            if (this.sharePassword.type === 'password') {
+                this.sharePassword.type = 'text';
+                this.togglePasswordVisibilityBtn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+            } else {
+                this.sharePassword.type = 'password';
+                this.togglePasswordVisibilityBtn.innerHTML = '<i class="fas fa-eye"></i>';
+            }
+        }
+    };
+    
+    /**
+     * Copy password to clipboard
+     */
+    AIHackare.prototype.copyPassword = function() {
+        if (this.sharePassword && this.sharePassword.value) {
+            try {
+                // Select the password text
+                this.sharePassword.select();
+                this.sharePassword.focus();
+                
+                // Copy to clipboard
+                document.execCommand('copy');
+                
+                // Show a success message
+                this.addSystemMessage('Password copied to clipboard.');
+            } catch (error) {
+                console.error('Error copying password to clipboard:', error);
+                this.addSystemMessage('Error copying password. Please select and copy manually.');
+            }
+        }
+    };
+    
+    /**
+     * Toggle message history input based on conversation checkbox
+     */
+    AIHackare.prototype.toggleMessageHistoryInput = function() {
+        if (this.shareConversationCheckbox && this.messageHistoryCount && this.messageHistoryContainer) {
+            if (this.shareConversationCheckbox.checked) {
+                this.messageHistoryCount.disabled = false;
+                this.messageHistoryContainer.classList.add('active');
+            } else {
+                this.messageHistoryCount.disabled = true;
+                this.messageHistoryContainer.classList.remove('active');
+            }
+        }
+    };
+    
+    /**
+     * Generate a comprehensive share link
+     */
+    AIHackare.prototype.generateComprehensiveShareLink = function() {
+        if (!this.apiKey) {
+            this.addSystemMessage('Error: No API key available to share.');
+            return;
+        }
+        
+        // Get password
+        const password = this.sharePassword.value.trim();
+        if (!password) {
+            this.addSystemMessage('Error: Password is required.');
+            return;
+        }
+        
+        // Get options
+        const options = {
+            apiKey: this.apiKey,
+            systemPrompt: this.systemPrompt,
+            model: this.currentModel,
+            messages: this.messages,
+            includeApiKey: this.shareApiKeyCheckbox.checked,
+            includeSystemPrompt: this.shareSystemPromptCheckbox.checked,
+            includeModel: this.shareModelCheckbox.checked,
+            includeConversation: this.shareConversationCheckbox.checked,
+            messageCount: parseInt(this.messageHistoryCount.value, 10) || 1
+        };
+        
+        // Validate options
+        if (!options.includeApiKey && !options.includeSystemPrompt && !options.includeModel && !options.includeConversation) {
+            this.addSystemMessage('Error: Please select at least one item to share.');
+            return;
+        }
+        
+        try {
+            // Create shareable link
+            const shareableLink = ShareService.createComprehensiveShareableLink(options, password);
+            
+            // Display the link
+            if (this.generatedLink && this.generatedLinkContainer) {
+                this.generatedLink.value = shareableLink;
+                this.generatedLinkContainer.style.display = 'block';
+                
+                // Select the link text for easy copying
+                this.generatedLink.select();
+                this.generatedLink.focus();
+                
+                // Generate QR code
+                this.generateShareQRCode(shareableLink);
+            }
+        } catch (error) {
+            console.error('Error creating shareable link:', error);
+            this.addSystemMessage('Error creating shareable link. Please try again.');
+        }
+    };
+    
+    /**
+     * Copy generated link to clipboard
+     */
+    AIHackare.prototype.copyGeneratedLink = function() {
+        if (this.generatedLink && this.generatedLink.value) {
+            try {
+                // Select the link text
+                this.generatedLink.select();
+                this.generatedLink.focus();
+                
+                // Copy to clipboard
+                document.execCommand('copy');
+                
+                // Show a success message
+                this.addSystemMessage('Shareable link copied to clipboard.');
+            } catch (error) {
+                console.error('Error copying link to clipboard:', error);
+                this.addSystemMessage('Error copying link. Please select and copy manually.');
+            }
+        }
+    };
+    
+    /**
+     * Generate a QR code for the share link
+     * @param {string} link - The link to encode in the QR code
+     */
+    AIHackare.prototype.generateShareQRCode = function(link) {
+        if (this.shareQrCodeContainer && link) {
+            try {
+                // Clear any existing QR code
+                this.shareQrCodeContainer.innerHTML = '';
+                
+                // Check if the link is too long for QR code generation
+                if (link.length > 1500) {
+                    // Show warning
+                    if (this.qrCodeWarning) {
+                        this.qrCodeWarning.textContent = `The link is too long (${link.length} bytes) to generate a QR code. QR codes can typically handle up to 1500 bytes.`;
+                        this.qrCodeWarning.style.display = 'block';
+                    }
+                    return;
+                }
+                
+                // Create a new QR code
+                new QRCode(this.shareQrCodeContainer, {
+                    text: link,
+                    width: 250,
+                    height: 250,
+                    colorDark: '#000000',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.L // Low error correction level for longer data
+                });
+            } catch (error) {
+                console.error('Error generating QR code:', error);
+                
+                // Show warning
+                if (this.qrCodeWarning) {
+                    this.qrCodeWarning.textContent = 'Error generating QR code. The link may be too long.';
+                    this.qrCodeWarning.style.display = 'block';
+                }
             }
         }
     };
