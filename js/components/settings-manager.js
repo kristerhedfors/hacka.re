@@ -147,13 +147,7 @@ Unlike many commercial chat interfaces, hacka.re prioritizes user privacy by sto
 
 hacka.re provides access to all models available through your configured API provider, including models from Meta, Google, Mistral, and more. The interface automatically fetches the latest available models from your account.
 
-Notable models include:
-- Llama 3.3 70B Versatile (Meta) - Context: 128K tokens
-- Llama 3.1 8B Instant (Meta) - Context: 128K tokens
-- Gemma2 9B IT (Google) - Context: 8,192 tokens
-- Llama 4 Models (Meta) - Context: 131,072 tokens
-
-The interface also supports preview models and systems as they become available, including specialized models from Mistral, DeepSeek, Alibaba Cloud, and more. All models are organized into categories for easy selection.
+The interface automatically fetches and displays all models available through your API key, organizing them into categories for easy selection. The available models will depend on your API access level and the provider's current offerings.
 
 ## Technical Implementation
 
@@ -484,88 +478,29 @@ For more information about the technologies used in hacka.re:
         }
         
         /**
-         * Populate the model select with default models
+         * Handle the case when models can't be fetched
          */
         function populateDefaultModels() {
             // Clear existing options
             elements.modelSelect.innerHTML = '';
             
-            // Create optgroups for different model types
-            const standardGroup = document.createElement('optgroup');
-            standardGroup.label = 'Production Models';
+            // Create a single option indicating that models couldn't be fetched
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'Failed to fetch models - check API key and connection';
+            option.disabled = true;
+            option.selected = true;
             
-            const previewGroup = document.createElement('optgroup');
-            previewGroup.label = 'Preview Models';
+            // Add the option to the select element
+            elements.modelSelect.appendChild(option);
             
-            const systemGroup = document.createElement('optgroup');
-            systemGroup.label = 'Preview Systems';
+            // Add a hint option
+            const hintOption = document.createElement('option');
+            hintOption.value = '';
+            hintOption.textContent = 'Try reloading models after checking settings';
+            hintOption.disabled = true;
             
-            // Add production models
-            ModelInfoService.productionModels.forEach(modelId => {
-                if (ModelInfoService.modelInfo[modelId]) {
-                    const option = document.createElement('option');
-                    option.value = modelId;
-                    
-                    // Get simplified display name
-                    option.textContent = ModelInfoService.getDisplayName(modelId);
-                    
-                    // Set selected if it matches current model
-                    if (modelId === currentModel) {
-                        option.selected = true;
-                    }
-                    
-                    standardGroup.appendChild(option);
-                }
-            });
-            
-            // Add preview models
-            ModelInfoService.previewModels.forEach(modelId => {
-                if (ModelInfoService.modelInfo[modelId]) {
-                    const option = document.createElement('option');
-                    option.value = modelId;
-                    
-                    // Get simplified display name
-                    option.textContent = ModelInfoService.getDisplayName(modelId);
-                    
-                    // Set selected if it matches current model
-                    if (modelId === currentModel) {
-                        option.selected = true;
-                    }
-                    
-                    previewGroup.appendChild(option);
-                }
-            });
-            
-            // Add system models
-            ModelInfoService.systemModels.forEach(modelId => {
-                if (ModelInfoService.modelInfo[modelId]) {
-                    const option = document.createElement('option');
-                    option.value = modelId;
-                    
-                    // Get simplified display name
-                    option.textContent = ModelInfoService.getDisplayName(modelId);
-                    
-                    // Set selected if it matches current model
-                    if (modelId === currentModel) {
-                        option.selected = true;
-                    }
-                    
-                    systemGroup.appendChild(option);
-                }
-            });
-            
-            // Add groups to select element if they have options
-            if (standardGroup.children.length > 0) {
-                elements.modelSelect.appendChild(standardGroup);
-            }
-            
-            if (previewGroup.children.length > 0) {
-                elements.modelSelect.appendChild(previewGroup);
-            }
-            
-            if (systemGroup.children.length > 0) {
-                elements.modelSelect.appendChild(systemGroup);
-            }
+            elements.modelSelect.appendChild(hintOption);
         }
         
         /**
