@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en" class="theme-modern">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>hacka.re - Architecture</title>
+    <meta name="description" content="Technical architecture of hacka.re, a streamlined chat interface for OpenAI-compatible AI models">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="css/themes.css">
+    <!-- Font Awesome for icons (local) -->
+    <link rel="stylesheet" href="../lib/font-awesome/all.min.css">
+    <!-- Markdown parser (local) -->
+    <script src="../lib/marked/marked.min.js"></script>
+    <script src="../lib/dompurify/purify.min.js"></script>
+    <style>
+        .feature-section {
+            margin: 40px 0;
+        }
+
+        .feature-section h3 {
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        @media (max-width: 768px) {
+            .feature-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .feature-card {
+            background-color: var(--ai-msg-bg);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: var(--box-shadow);
+        }
+
+        .feature-card h4 {
+            margin-bottom: 10px;
+            color: var(--dark-color);
+        }
+
+        .emoji-icon {
+            font-size: 1.2em;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        
+        .model-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        @media (max-width: 768px) {
+            .model-grid {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .model-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .model-card {
+            background-color: var(--ai-msg-bg);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            box-shadow: var(--box-shadow);
+        }
+        
+        .model-card h4 {
+            margin-bottom: 8px;
+            color: var(--primary-color);
+        }
+        
+        .model-card p {
+            margin: 5px 0;
+            font-size: 0.9em;
+        }
+        
+        .model-card .developer {
+            font-weight: bold;
+        }
+        
+        .model-card .context {
+            color: var(--text-color);
+            opacity: 0.7;
+        }
+        
+        .code-block {
+            background-color: rgba(0, 0, 0, 0.05);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+
+        .code-block pre {
+            margin: 0;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        
+        .important-notice {
+            background-color: var(--system-msg-bg);
+            border-left: 4px solid var(--accent-color);
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: var(--border-radius);
+        }
+        
+        ul, ol {
+            margin-bottom: 1rem;
+            padding-left: 2rem;
+        }
+        
+        ul {
+            list-style-type: disc;
+        }
+        
+        ol {
+            list-style-type: decimal;
+        }
+        
+        li {
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Additional mobile-specific styles */
+        @media (max-width: 480px) {
+            main {
+                padding: 1rem !important;
+            }
+            
+            .container {
+                padding: 0 10px;
+            }
+            
+            .feature-section {
+                margin: 25px 0;
+            }
+            
+            .feature-card, .model-card {
+                padding: 15px;
+            }
+            
+            .code-block {
+                padding: 10px;
+                margin: 15px 0;
+            }
+            
+            /* Ensure proper text wrapping on small screens */
+            p, li, a, h1, h2, h3, h4, h5, h6 {
+                word-break: break-word;
+                max-width: 100%;
+            }
+            
+            /* Adjust font sizes for better readability on small screens */
+            p, li {
+                font-size: 0.95rem;
+            }
+            
+            h2 {
+                font-size: 1.4rem;
+            }
+            
+            h3 {
+                font-size: 1.2rem;
+            }
+            
+            h4 {
+                font-size: 1.1rem;
+            }
+        }
+
+        .page-nav {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .page-nav a {
+            padding: 8px 15px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+
+        .page-nav a:hover {
+            background-color: var(--primary-dark);
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="beta-tag">BETA</div>
+        <header>
+            <div class="logo">
+                <h1><a href="../index.html" style="text-decoration: none; color: inherit;">hacka.re</a></h1>
+                <p class="tagline">För hackare, av hackare.</p>
+            </div>
+            <div class="settings">
+                <a href="../index.html" class="btn secondary-btn" style="margin-right: 10px;">Back to Chat</a>
+            </div>
+        </header>
+
+        <main style="overflow-y: auto; overflow-x: auto; padding: 2rem;">
+            <div class="container" style="max-width: 1000px; margin: 0 auto; word-wrap: break-word; overflow-wrap: break-word; width: 100%;">
+            <h2>Architecture</h2>
+            
+            <div class="page-nav">
+                <a href="index.html">About</a>
+                <a href="architecture.html">Architecture</a>
+                <a href="use-cases.html">Use Cases</a>
+            </div>
+
+            <div class="feature-section">
+                <h3>Technical Implementation</h3>
+                <p>
+                    <a href="https://hacka.re/" target="_blank">hacka.re</a> is built as a pure client-side application using vanilla JavaScript, HTML, and CSS. 
+                    This approach eliminates the need for a backend server, ensuring that your data remains on your device.
+                </p>
+                <br />
+                
+                <p>
+                    The application communicates directly with your configured API provider using your personal API key, which is stored 
+                    in your browser's localStorage. All message processing, including markdown rendering and 
+                    syntax highlighting, happens locally in your browser.
+                </p>
+                <br />
+                
+                <p>
+                    The interface uses server-sent events (SSE) to stream AI responses in real-time, providing a smooth 
+                    and responsive experience even with longer generations. Context window usage is estimated and displayed 
+                    visually to help you optimize your conversations.
+                </p>
+                
+                <div class="code-block">
+                    <pre>// Example of the streaming implementation
+const response = await fetch(this.chatEndpoint, {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.apiKey}`
+    },
+    body: JSON.stringify({
+        model: this.currentModel,
+        messages: apiMessages,
+        stream: true
+    })
+});
+
+// Process the stream
+const reader = response.body.getReader();
+const decoder = new TextDecoder('utf-8');
+let aiResponse = '';
+
+while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    
+    // Decode chunk and update UI in real-time
+    const chunk = decoder.decode(value);
+    // Process SSE format...
+}</pre>
+                </div>
+            </div>
+
+            <div class="feature-section">
+                <h3>Comprehensive Secure Sharing - Technical Details</h3>
+                <p>
+                    <a href="https://hacka.re/" target="_blank">hacka.re</a> includes a sophisticated feature to securely share various aspects of your configuration with others through session key-protected URL-based sharing. 
+                    This feature provides enhanced security through cryptographically sound session key-based key derivation, ensuring that only those with the correct session key can access your shared data.
+                </p>
+                <br />
+                
+                <p>
+                    <strong>Comprehensive sharing options:</strong>
+                </p>
+                <ol>
+                    <li><strong>API Key:</strong> Share your API key for access to models</li>
+                    <li><strong>System Prompt:</strong> Share your custom system prompt for consistent AI behavior</li>
+                    <li><strong>Active Model:</strong> Share your selected model preference with automatic fallback if unavailable</li>
+                    <li><strong>Conversation Data:</strong> Share recent conversation history with configurable message count</li>
+                </ol>
+                
+                <p>
+                    <strong>How it works:</strong>
+                </p>
+                <ol>
+                    <li>When you create a shareable link, you select what to include (API key, system prompt, model, conversation data)</li>
+                    <li>A real-time link length indicator shows the estimated size of the generated link</li>
+                    <li>You can generate a strong random session key or provide your own</li>
+                    <li>Your selected data is encrypted using a key derived from your session key with cryptographically sound methods</li>
+                    <li>Only the encrypted data is included in the URL after the # symbol (the encryption key is NOT included)</li>
+                    <li>When someone opens the link, they're prompted to enter the session key</li>
+                    <li>The application derives the decryption key from the entered session key and attempts to decrypt the data</li>
+                    <li>If successful, the data is applied to their session and the URL is cleared from the browser history</li>
+                    <li>For model preferences, the system verifies availability with the recipient's API key and falls back gracefully if needed</li>
+                    <li>If unsuccessful (wrong session key), they're prompted to try again</li>
+                </ol>
+                
+                <p>
+                    <strong>Team collaboration with session keys:</strong>
+                </p>
+                <ol>
+                    <li>Teams can agree on a common session key to use for sharing links</li>
+                    <li>Each team member can enter and lock this session key in their sharing settings</li>
+                    <li>When a team member receives a link created with the team's session key, the system automatically tries the locked session key first</li>
+                    <li>If the session key works, the shared data is applied without prompting for the session key</li>
+                    <li>This allows seamless sharing among team members without repeatedly entering the same session key</li>
+                    <li>The session key should be shared through a secure channel separate from the links themselves</li>
+                </ol>
+                
+                <p>
+                    <strong>Technical implementation:</strong> The feature uses TweetNaCl.js (a JavaScript port of the NaCl crypto library) 
+                    for the encryption, combined with session key-based key derivation:
+                </p>
+                
+                <div class="code-block">
+                    <pre>// Simplified version of the comprehensive sharing implementation
+
+// Generate a strong random alphanumeric session key
+function generateStrongSessionKey() {
+    const length = 12; // Fixed length of 12 characters
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let password = "";
+    
+    // Get cryptographically strong random values
+    const randomValues = new Uint8Array(length);
+    window.crypto.getRandomValues(randomValues);
+    
+    // Convert to session key characters
+    for (let i = 0; i < length; i++) {
+        password += charset[randomValues[i] % charset.length];
+    }
+    
+    return password;
+}
+
+// Create a comprehensive shareable link with selected data
+function createComprehensiveShareableLink(options, sessionKey) {
+    // Create a payload object with only the selected data
+    const payload = {};
+    
+    // Include API key if selected
+    if (options.includeApiKey && options.apiKey) {
+        payload.apiKey = options.apiKey;
+    }
+    
+    // Include system prompt if selected
+    if (options.includeSystemPrompt && options.systemPrompt) {
+        payload.systemPrompt = options.systemPrompt;
+    }
+    
+    // Include active model if selected
+    if (options.includeModel && options.model) {
+        payload.model = options.model;
+    }
+    
+    // Include conversation data if selected
+    if (options.includeConversation && options.messages && options.messages.length > 0) {
+        // Include only the specified number of most recent messages
+        const messageCount = options.messageCount || 1;
+        const startIndex = Math.max(0, options.messages.length - messageCount);
+        payload.messages = options.messages.slice(startIndex);
+    }
+    
+    // Encrypt the payload using the session key
+    const encryptedData = encryptData(payload, sessionKey);
+    
+    // Create URL with only the encrypted data (no key)
+    return `${window.location.href.split('#')[0]}#shared=${encryptedData}`;
+}
+
+// Encrypt data with a session key
+function encryptData(payloadObj, sessionKey) {
+    // Convert to JSON string
+    const jsonString = JSON.stringify(payloadObj);
+    const plain = nacl.util.decodeUTF8(jsonString);
+    
+    // Generate salt and derive key
+    const salt = nacl.randomBytes(SALT_LENGTH);
+    const key = deriveSeed(sessionKey, salt);
+    
+    // Generate nonce for secretbox
+    const nonce = nacl.randomBytes(nacl.secretbox.nonceLength);
+    
+    // Encrypt with secretbox (symmetric encryption)
+    const cipher = nacl.secretbox(plain, nonce, key);
+    
+    // Combine salt, nonce, and cipher
+    const fullMessage = new Uint8Array(
+        salt.length + 
+        nonce.length + 
+        cipher.length
+    );
+    
+    let offset = 0;
+    fullMessage.set(salt, offset);
+    offset += salt.length;
+    
+    fullMessage.set(nonce, offset);
+    offset += nonce.length;
+    
+    fullMessage.set(cipher, offset);
+    
+    // Convert to base64 for URL-friendly format
+    return nacl.util.encodeBase64(fullMessage);
+}
+
+// Extract and decrypt shared data from the URL
+function extractSharedData(sessionKey) {
+    try {
+        // Get the hash fragment
+        const hash = window.location.hash;
+        
+        // Check if it contains shared data
+        if (hash.includes('#shared=')) {
+            // Extract the encrypted data
+            const encryptedData = hash.split('#shared=')[1];
+            
+            if (!encryptedData) {
+                return null;
+            }
+            
+            // Decrypt the data
+            const data = decryptData(encryptedData, sessionKey);
+            
+            if (!data) {
+                return null;
+            }
+            
+            // Return all decrypted data
+            return {
+                apiKey: data.apiKey,
+                systemPrompt: data.systemPrompt || null,
+                model: data.model || null,
+                messages: data.messages || null
+            };
+        }
+        
+        return null;
+    } catch (error) {
+        console.error('Error extracting shared data:', error);
+        return null;
+    }
+}</pre>
+                </div>
+                
+                <p>
+                    <strong>Security considerations:</strong>
+                </p>
+                <ul>
+                    <li><strong>True session key-based encryption:</strong> The encryption key is derived from the session key and is never included in the URL</li>
+                    <li><strong>Salt-based key derivation:</strong> A unique salt is generated for each link, protecting against rainbow table attacks</li>
+                    <li><strong>Multiple hashing iterations:</strong> The key derivation process uses multiple iterations to increase security</li>
+                    <li><strong>URL fragment (#) usage:</strong> The data after # is not sent to servers when requesting a page, providing protection against server logging</li>
+                    <li><strong>Session key confirmation:</strong> When creating a link, you must confirm your session key to prevent typos</li>
+                    <li><strong>Intended for trusted sharing:</strong> Still only share these links with people you trust, as they will have full access to your API provider account once they enter the correct session key</li>
+                    <li><strong>Temporary usage:</strong> Consider revoking your API key after sharing if you're concerned about unauthorized access</li>
+                </ul>
+                
+                <p>
+                    <strong>When to use each sharing option:</strong>
+                </p>
+                <ul>
+                    <li><strong>API Key:</strong> Essential for giving someone access to your API provider account</li>
+                    <li><strong>System Prompt:</strong> Share your custom instructions to ensure consistent AI behavior</li>
+                    <li><strong>Active Model:</strong> Share your preferred model selection for consistent results</li>
+                    <li><strong>Conversation Data:</strong> Share context from your current conversation to continue a discussion</li>
+                </ul>
+                
+                <p>
+                    <strong>QR code generation:</strong>
+                </p>
+                <ol>
+                    <li>After generating a shareable link, a QR code is automatically created for easy mobile sharing</li>
+                    <li>The QR code encodes the complete shareable link including the encrypted data</li>
+                    <li>The system monitors the link length and provides warnings when approaching QR code capacity limits</li>
+                    <li>Standard QR codes can typically handle up to 1,500-2,000 bytes of data</li>
+                    <li>When links exceed this limit (common with large system prompts or conversation history), a warning is displayed</li>
+                    <li>The QR code uses error correction level L (low) to maximize data capacity</li>
+                    <li>Recipients can scan the QR code with any standard QR code scanner to open the link</li>
+                    <li>They will still need the session key to decrypt the data</li>
+                </ol>
+                
+                <p>
+                    <strong>Session key sharing:</strong> You'll need to share the session key with the recipient through a separate, secure channel (e.g., encrypted messaging, phone call, in-person). 
+                    Never include the session key in the same communication as the link or QR code itself.
+                </p>
+                
+                <p>
+                    This feature provides a secure method for sharing your API key with trusted individuals. The session key-based encryption ensures that 
+                    even if the link is intercepted, the attacker cannot access your API key without knowing the session key. Always be cautious about who you share your API key with, 
+                    as they will have the same level of access to your API provider account as you do once they have the session key.
+                </p>
+            </div>
+
+            <div class="page-nav">
+                <a href="index.html">About</a>
+                <a href="architecture.html">Architecture</a>
+                <a href="use-cases.html">Use Cases</a>
+            </div>
+            </div>
+        </main>
+
+        <footer>
+            <p><a href="https://hacka.re/" target="_blank">hacka.re</a> | <a href="../index.html">Back to Chat</a></p>
+        </footer>
+    </div>
+
+    <script src="js/themes.js"></script>
+</body>
+</html>
