@@ -321,6 +321,21 @@ window.UIManager = (function() {
          * @param {string} currentModel - Current model ID
          */
         function updateModelInfoDisplay(currentModel) {
+            if (!currentModel) {
+                // Clear all fields if no model is selected
+                if (elements.modelNameElement) {
+                    elements.modelNameElement.textContent = 'No model selected';
+                }
+                if (elements.modelDeveloperElement) {
+                    elements.modelDeveloperElement.textContent = '';
+                }
+                if (elements.modelContextElement) {
+                    elements.modelContextElement.textContent = '';
+                }
+                updateContextUsage(0);
+                return;
+            }
+            
             // Get a simplified display name for the model
             const displayName = ModelInfoService.getDisplayName(currentModel);
             
@@ -329,29 +344,14 @@ window.UIManager = (function() {
                 elements.modelNameElement.textContent = displayName;
             }
             
-            // Get model info
-            const modelData = ModelInfoService.modelInfo[currentModel];
+            // Since we no longer have hardcoded model info, we clear these fields
+            // They could be populated from API data in the future if available
+            if (elements.modelDeveloperElement) {
+                elements.modelDeveloperElement.textContent = '';
+            }
             
-            // Update developer and context window if info exists
-            if (modelData) {
-                if (elements.modelDeveloperElement) {
-                    elements.modelDeveloperElement.textContent = modelData.developer;
-                }
-                
-                if (elements.modelContextElement) {
-                    elements.modelContextElement.textContent = 
-                        modelData.contextWindow !== '-' ? 
-                        `${modelData.contextWindow} context` : '';
-                }
-            } else {
-                // Clear stats if no info available
-                if (elements.modelDeveloperElement) {
-                    elements.modelDeveloperElement.textContent = '';
-                }
-                
-                if (elements.modelContextElement) {
-                    elements.modelContextElement.textContent = '';
-                }
+            if (elements.modelContextElement) {
+                elements.modelContextElement.textContent = '';
             }
             
             // Initialize context usage display
