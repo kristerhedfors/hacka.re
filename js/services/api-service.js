@@ -26,14 +26,26 @@ window.ApiService = (function() {
     /**
      * Fetch available models from the API
      * @param {string} apiKey - The API key for authentication
+     * @param {string} customBaseUrl - Optional custom base URL to use for this request
      * @returns {Promise<Array>} - Promise resolving to array of available models
      */
-    async function fetchAvailableModels(apiKey) {
+    async function fetchAvailableModels(apiKey, customBaseUrl = null) {
         if (!apiKey) {
             throw new Error('API key is required');
         }
         
-        const response = await fetch(getEndpointUrl('MODELS'), {
+        // Determine which base URL to use
+        let endpointUrl;
+        if (customBaseUrl) {
+            // Use the custom base URL if provided
+            const normalizedBaseUrl = customBaseUrl.endsWith('/') ? customBaseUrl : `${customBaseUrl}/`;
+            endpointUrl = `${normalizedBaseUrl}${ENDPOINT_PATHS.MODELS}`;
+        } else {
+            // Otherwise use the default endpoint URL
+            endpointUrl = getEndpointUrl('MODELS');
+        }
+        
+        const response = await fetch(endpointUrl, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${apiKey}`,

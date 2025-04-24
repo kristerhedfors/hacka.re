@@ -47,7 +47,8 @@ window.SettingsManager = (function() {
                     showApiKeyModal();
                 } else {
                     // Fetch available models if API key exists
-                    fetchAvailableModels();
+                    // Use updateStorage=true to ensure the values are properly loaded
+                    fetchAvailableModels(apiKey, baseUrl, true);
                 }
             }
             
@@ -95,8 +96,12 @@ window.SettingsManager = (function() {
                     this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
                     this.disabled = true;
                     
-                    // Fetch models from API
-                    fetchAvailableModels().then(() => {
+                    // Get the current values from the UI instead of using stored values
+                    const currentApiKey = elements.apiKeyUpdate.value.trim() || apiKey;
+                    const currentBaseUrl = elements.baseUrl.value.trim() || baseUrl;
+                    
+                    // Fetch models from API using the current UI values
+                    fetchAvailableModels(currentApiKey, currentBaseUrl).then(() => {
                         // Re-enable the button and restore icon
                         this.innerHTML = originalIcon;
                         this.disabled = false;
@@ -244,8 +249,8 @@ For more information about the technologies used in hacka.re:
                     hideApiKeyModal();
                 }
                 
-                // Fetch available models with the new API key
-                fetchAvailableModels();
+                // Fetch available models with the new API key and update storage
+                fetchAvailableModels(newApiKey, baseUrl, true);
                 
                 // Add welcome message
                 if (addSystemMessage) {
@@ -270,24 +275,23 @@ For more information about the technologies used in hacka.re:
             StorageService.saveModel(selectedModel);
             currentModel = selectedModel;
             
-            // Update API key if provided
+            // Get values from UI
             const newApiKey = elements.apiKeyUpdate.value.trim();
-            if (newApiKey) {
-                StorageService.saveApiKey(newApiKey);
-                apiKey = newApiKey;
-            }
-            
-            // Save base URL
             const newBaseUrl = elements.baseUrl.value.trim();
-            if (newBaseUrl) {
-                StorageService.saveBaseUrl(newBaseUrl);
-                baseUrl = newBaseUrl;
-            }
+            
+            // We'll use these values to fetch models with updateStorage=true
+            // This ensures the values are saved and used for future API calls
+            const apiKeyToUse = newApiKey || apiKey;
+            const baseUrlToUse = newBaseUrl || baseUrl;
             
             // Save system prompt
             const newSystemPrompt = elements.systemPromptInput.value.trim();
             StorageService.saveSystemPrompt(newSystemPrompt);
             systemPrompt = newSystemPrompt;
+            
+            // Fetch models with the new values and update storage
+            // This ensures the values are saved and used for future API calls
+            fetchAvailableModels(apiKeyToUse, baseUrlToUse, true);
             
             // Update model info in header
             if (updateModelInfoDisplay) {
@@ -312,12 +316,26 @@ For more information about the technologies used in hacka.re:
         
         /**
          * Fetch available models from the API
+         * @param {string} currentApiKey - The API key to use (from UI or storage)
+         * @param {string} currentBaseUrl - The base URL to use (from UI or storage)
+         * @param {boolean} updateStorage - Whether to update storage with the provided values
          */
-        async function fetchAvailableModels() {
-            if (!apiKey) return;
+        async function fetchAvailableModels(currentApiKey = apiKey, currentBaseUrl = baseUrl, updateStorage = false) {
+            if (!currentApiKey) return;
             
             try {
-                const models = await ApiService.fetchAvailableModels(apiKey);
+                // Use the provided values for this API call only
+                const models = await ApiService.fetchAvailableModels(currentApiKey, currentBaseUrl);
+                
+                // Only update storage and internal variables if explicitly requested
+                // This ensures values from UI are not saved unless the user clicks "Save"
+                if (updateStorage) {
+                    StorageService.saveApiKey(currentApiKey);
+                    apiKey = currentApiKey;
+                    
+                    StorageService.saveBaseUrl(currentBaseUrl);
+                    baseUrl = currentBaseUrl;
+                }
                 
                 // Clear existing options
                 elements.modelSelect.innerHTML = '';
@@ -604,8 +622,8 @@ For more information about the technologies used in hacka.re:
                         // Clear the shared data from the URL
                         ShareService.clearSharedApiKeyFromUrl();
                         
-                        // Fetch available models with the new API key
-                        fetchAvailableModels();
+                        // Fetch available models with the new API key and update storage
+                        fetchAvailableModels(apiKey, baseUrl, true);
                         
                         // No need to show the password modal
                         return;
@@ -731,8 +749,8 @@ For more information about the technologies used in hacka.re:
                     // Remove the password modal
                     passwordModal.remove();
                     
-                    // Fetch available models with the new API key
-                    fetchAvailableModels().then(result => {
+                    // Fetch available models with the new API key and update storage
+                    fetchAvailableModels(apiKey, baseUrl, true).then(result => {
                         if (result.success && result.model) {
                             // If a shared model was applied successfully
                             const displayName = ModelInfoService.getDisplayName(result.model);
@@ -773,7 +791,7 @@ For more information about the technologies used in hacka.re:
                         showApiKeyModal();
                     } else {
                         // Fetch available models if API key exists
-                        fetchAvailableModels();
+                        fetchAvailableModels(apiKey, baseUrl, true);
                     }
                 }
             });
@@ -790,7 +808,7 @@ For more information about the technologies used in hacka.re:
                         showApiKeyModal();
                     } else {
                         // Fetch available models if API key exists
-                        fetchAvailableModels();
+                        fetchAvailableModels(apiKey, baseUrl, true);
                     }
                 }
             });

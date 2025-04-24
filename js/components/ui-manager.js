@@ -66,8 +66,30 @@ window.UIManager = (function() {
         
         /**
          * Hide the settings modal
+         * @param {string} apiKey - Saved API key
+         * @param {string} baseUrl - Saved base URL
+         * @param {string} currentModel - Saved model ID
+         * @param {string} systemPrompt - Saved system prompt
          */
-        function hideSettingsModal() {
+        function hideSettingsModal(apiKey, baseUrl, currentModel, systemPrompt) {
+            // Reset UI values to saved values when closing without saving
+            if (apiKey) {
+                elements.apiKeyUpdate.value = '';
+                elements.apiKeyUpdate.placeholder = '••••••••••••••••••••••••••';
+            }
+            
+            if (baseUrl) {
+                elements.baseUrl.value = baseUrl;
+            }
+            
+            if (currentModel) {
+                elements.modelSelect.value = currentModel;
+            }
+            
+            if (systemPrompt) {
+                elements.systemPromptInput.value = systemPrompt;
+            }
+            
             elements.settingsModal.classList.remove('active');
         }
         
