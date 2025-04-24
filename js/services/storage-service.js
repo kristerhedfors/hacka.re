@@ -10,7 +10,8 @@ window.StorageService = (function() {
         MODEL: 'aihackare_model',
         HISTORY: 'aihackare_history',
         SYSTEM_PROMPT: 'aihackare_system_prompt',
-        SHARE_OPTIONS: 'aihackare_share_options'
+        SHARE_OPTIONS: 'aihackare_share_options',
+        API_BASE_URL: 'aihackare_api_base_url'
     };
 
     /**
@@ -108,6 +109,22 @@ window.StorageService = (function() {
         };
     }
 
+    /**
+     * Save API base URL to local storage
+     * @param {string} baseUrl - The API base URL to save
+     */
+    function saveApiBaseUrl(baseUrl) {
+        localStorage.setItem(STORAGE_KEYS.API_BASE_URL, baseUrl);
+    }
+
+    /**
+     * Get API base URL from local storage
+     * @returns {string|null} The stored API base URL or null if not found
+     */
+    function getApiBaseUrl() {
+        return localStorage.getItem(STORAGE_KEYS.API_BASE_URL);
+    }
+
     // Public API
     return {
         saveApiKey: saveApiKey,
@@ -120,6 +137,8 @@ window.StorageService = (function() {
         saveSystemPrompt: saveSystemPrompt,
         getSystemPrompt: getSystemPrompt,
         saveShareOptions: saveShareOptions,
-        getShareOptions: getShareOptions
+        getShareOptions: getShareOptions,
+        saveApiBaseUrl: saveApiBaseUrl,
+        getApiBaseUrl: getApiBaseUrl
     };
 })();
