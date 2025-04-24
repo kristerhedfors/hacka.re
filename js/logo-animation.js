@@ -15,17 +15,17 @@ document.addEventListener('DOMContentLoaded', function() {
     typingDots.innerHTML = '';
     
     // Position the heart to ensure proper stacking
-    heartLogo.style.position = 'relative';
+    heartLogo.style.position = 'absolute';
     heartLogo.style.display = 'inline-block';
     heartLogo.style.zIndex = '1';
     
     // Position the typing dots container inside the heart
     typingDots.style.position = 'absolute';
-    typingDots.style.top = '40%'; // Position vertically centered in the heart
+    typingDots.style.top = '50%'; // Position vertically centered in the heart
     typingDots.style.left = '50%';
     typingDots.style.transform = 'translate(-50%, -50%)';
-    typingDots.style.width = '8px'; // Very narrow to keep dots close together
-    typingDots.style.height = '3px';
+    typingDots.style.width = '16px'; // Doubled width to accommodate larger dots
+    typingDots.style.height = '6px'; // Doubled height to accommodate larger dots
     typingDots.style.display = 'flex';
     typingDots.style.justifyContent = 'space-between';
     typingDots.style.alignItems = 'center';
@@ -38,9 +38,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Set dot appearance
         dot.style.position = 'relative';
-        dot.style.width = '2px';
-        dot.style.height = '2px';
-        dot.style.backgroundColor = 'rgba(120, 120, 120, 0.95)';
+        dot.style.width = '3px';
+        dot.style.height = '3px';
+        dot.style.backgroundColor = 'rgba(200, 200, 200, 0.95)';
         dot.style.borderRadius = '50%';
         dot.style.display = 'inline-block';
         dot.style.boxShadow = '0 1px 1px rgba(0, 0, 0, 0.2)';
@@ -57,13 +57,13 @@ document.addEventListener('DOMContentLoaded', function() {
     styleSheet.textContent = `
         @keyframes heartDotWave {
             0%, 100% { transform: translateY(0); opacity: 1; }
-            12.5% { transform: translateY(-2px); opacity: 0.8; }
+            12.5% { transform: translateY(-4px); opacity: 0.8; }
             25% { transform: translateY(0); opacity: 1; }
-            37.5% { transform: translateY(2px); opacity: 0.8; }
+            37.5% { transform: translateY(4px); opacity: 0.8; }
             50% { transform: translateY(0); opacity: 1; }
-            62.5% { transform: translateY(-2px); opacity: 0.8; }
+            62.5% { transform: translateY(-4px); opacity: 0.8; }
             75% { transform: translateY(0); opacity: 1; }
-            87.5% { transform: translateY(2px); opacity: 0.8; }
+            87.5% { transform: translateY(4px); opacity: 0.8; }
         }
     `;
     document.head.appendChild(styleSheet);
