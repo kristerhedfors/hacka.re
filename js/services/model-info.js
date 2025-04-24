@@ -8,6 +8,13 @@ window.ModelInfoService = (function() {
     // Empty model information data - will be populated from API
     const modelInfo = {};
 
+    // Default models for different providers
+    const defaultModels = {
+        'openai': 'gpt-4.1',
+        'groq': 'meta-llama/llama-4-scout-17b-16e-instruct'
+        // For Ollama, we'll select the first model in the list
+    };
+
     // Empty model lists - will be populated from API
     const productionModels = [];
     const previewModels = [];
@@ -67,6 +74,7 @@ window.ModelInfoService = (function() {
         productionModels: productionModels,
         previewModels: previewModels,
         systemModels: systemModels,
+        defaultModels: defaultModels,
         getDisplayName: getDisplayName
     };
 })();

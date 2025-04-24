@@ -6,7 +6,12 @@
 window.ApiService = (function() {
     // Get base URL from settings
     function getBaseUrl() {
-        return StorageService.getBaseUrl();
+        const baseUrl = StorageService.getBaseUrl();
+        // Ensure we never return null or undefined
+        if (!baseUrl || baseUrl === 'null' || baseUrl === 'undefined') {
+            return StorageService.getDefaultBaseUrlForProvider('groq'); // Default to Groq if no base URL is set
+        }
+        return baseUrl;
     }
     
     // API endpoint paths (relative to the base URL)
@@ -36,8 +41,8 @@ window.ApiService = (function() {
         
         // Determine which base URL to use
         let endpointUrl;
-        if (customBaseUrl) {
-            // Use the custom base URL if provided
+        if (customBaseUrl && customBaseUrl !== 'null' && customBaseUrl !== 'undefined') {
+            // Use the custom base URL if provided and valid
             const normalizedBaseUrl = customBaseUrl.endsWith('/') ? customBaseUrl : `${customBaseUrl}/`;
             endpointUrl = `${normalizedBaseUrl}${ENDPOINT_PATHS.MODELS}`;
         } else {
