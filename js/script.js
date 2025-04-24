@@ -1,6 +1,6 @@
 /**
  * Main JavaScript for AIHackare
- * A simple chat interface for GroqCloud's OpenAI API
+ * A simple chat interface for OpenAI-compatible APIs
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -42,9 +42,12 @@ class AIHackare {
         // Default model
         this.currentModel = 'meta-llama/llama-4-scout-17b-16e-instruct';
         
-        // API endpoints
-        this.chatEndpoint = 'https://api.groq.com/openai/v1/chat/completions';
-        this.modelsEndpoint = 'https://api.groq.com/openai/v1/models';
+        // Get base URL from localStorage or use default
+        this.baseUrl = localStorage.getItem('aihackare_base_url') || 'https://api.groq.com/openai/v1';
+        
+        // API endpoints (constructed from base URL)
+        this.chatEndpoint = `${this.baseUrl}/chat/completions`;
+        this.modelsEndpoint = `${this.baseUrl}/models`;
         
         // Model information
         this.modelInfo = {
@@ -617,7 +620,7 @@ class AIHackare {
             this.fetchAvailableModels();
             
             // Add welcome message
-            this.addSystemMessage('API key saved. You can now start chatting with GroqCloud AI models.');
+            this.addSystemMessage('API key saved. You can now start chatting with AI models.');
         }
     }
     
@@ -632,6 +635,18 @@ class AIHackare {
         if (newApiKey) {
             localStorage.setItem('aihackare_api_key', newApiKey);
             this.apiKey = newApiKey;
+        }
+        
+        // Update base URL if provided
+        const baseUrlInput = document.getElementById('base-url');
+        if (baseUrlInput && baseUrlInput.value.trim()) {
+            const newBaseUrl = baseUrlInput.value.trim();
+            localStorage.setItem('aihackare_base_url', newBaseUrl);
+            this.baseUrl = newBaseUrl;
+            
+            // Update API endpoints with new base URL
+            this.chatEndpoint = `${this.baseUrl}/chat/completions`;
+            this.modelsEndpoint = `${this.baseUrl}/models`;
         }
         
         // Update model info in header
@@ -724,7 +739,7 @@ class AIHackare {
             
             if (!response.ok) {
                 const error = await response.json();
-                throw new Error(error.error?.message || 'Error connecting to GroqCloud API');
+                throw new Error(error.error?.message || 'Error connecting to API');
             }
             
             // Remove typing indicator
