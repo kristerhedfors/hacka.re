@@ -61,6 +61,7 @@ window.DOMElements = (function() {
             systemPromptInput: document.getElementById('system-prompt'),
             resetSystemPromptBtn: document.getElementById('reset-system-prompt'),
             closeSettings: document.getElementById('close-settings'),
+            clearAllSettings: document.getElementById('clear-all-settings'),
             clearChat: document.getElementById('clear-chat'),
             
             // Model info elements

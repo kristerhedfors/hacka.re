@@ -192,6 +192,19 @@ window.AIHackareComponent = (function() {
             );
         });
         
+        // Clear all settings link
+        if (this.elements.clearAllSettings) {
+            this.elements.clearAllSettings.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (confirm('Are you sure you want to clear all settings? This will remove your API key and reset all preferences.')) {
+                    this.settingsManager.clearAllSettings(
+                        this.uiManager.hideSettingsModal.bind(this.uiManager),
+                        this.chatManager.addSystemMessage.bind(this.chatManager)
+                    );
+                }
+            });
+        }
+        
         // Clear chat button
         this.elements.clearChat.addEventListener('click', (e) => {
             e.preventDefault();
