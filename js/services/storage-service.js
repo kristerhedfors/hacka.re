@@ -128,6 +128,7 @@ window.StorageService = (function() {
 
     // Public API
     return {
+        STORAGE_KEYS: STORAGE_KEYS,
         saveApiKey: saveApiKey,
         getApiKey: getApiKey,
         saveModel: saveModel,

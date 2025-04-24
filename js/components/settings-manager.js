@@ -819,6 +819,49 @@ For more information about the technologies used in hacka.re:
             return baseUrl;
         }
         
+        /**
+         * Clear all settings from localStorage or reset to default values
+         * @param {Function} hideSettingsModal - Function to hide settings modal
+         * @param {Function} addSystemMessage - Function to add system message
+         */
+        function clearAllSettings(hideSettingsModal, addSystemMessage) {
+            // Remove all settings from localStorage
+            localStorage.removeItem(StorageService.STORAGE_KEYS.API_KEY);
+            localStorage.removeItem(StorageService.STORAGE_KEYS.MODEL);
+            localStorage.removeItem(StorageService.STORAGE_KEYS.SYSTEM_PROMPT);
+            localStorage.removeItem(StorageService.STORAGE_KEYS.SHARE_OPTIONS);
+            localStorage.removeItem(StorageService.STORAGE_KEYS.BASE_URL);
+            
+            // Update UI elements
+            if (elements.baseUrl) {
+                elements.baseUrl.value = '';
+            }
+            if (elements.apiKeyUpdate) {
+                elements.apiKeyUpdate.value = '';
+            }
+            if (elements.systemPromptInput) {
+                elements.systemPromptInput.value = '';
+            }
+            
+            // Reset internal state
+            apiKey = null;
+            currentModel = '';
+            systemPrompt = null;
+            baseUrl = null;
+            
+            // Hide modal if provided
+            if (hideSettingsModal) {
+                hideSettingsModal();
+            }
+            
+            // Add confirmation message
+            if (addSystemMessage) {
+                addSystemMessage('All settings have been cleared.');
+            }
+            
+            return true;
+        }
+        
         // Public API
         return {
             init,
@@ -831,7 +874,8 @@ For more information about the technologies used in hacka.re:
             getApiKey,
             getCurrentModel,
             getSystemPrompt,
-            getBaseUrl
+            getBaseUrl,
+            clearAllSettings
         };
     }
 
