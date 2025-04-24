@@ -55,6 +55,7 @@ window.DOMElements = (function() {
             settingsForm: document.getElementById('settings-form'),
             modelSelect: document.getElementById('model-select'),
             apiKeyUpdate: document.getElementById('api-key-update'),
+            baseUrl: document.getElementById('base-url'),
             systemPromptInput: document.getElementById('system-prompt'),
             resetSystemPromptBtn: document.getElementById('reset-system-prompt'),
             closeSettings: document.getElementById('close-settings'),

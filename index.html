@@ -167,12 +167,16 @@
                 <h2>Settings</h2>
                 <form id="settings-form">
                     <div class="form-group">
-                        <label for="model-select">Model</label>
-                        <select id="model-select"></select>
+                        <label for="base-url">OpenAI-compatible Base URL</label>
+                        <input type="text" id="base-url" placeholder="https://api.groq.com">
                     </div>
                     <div class="form-group">
                         <label for="api-key-update">API Key</label>
                         <input type="password" id="api-key-update" placeholder="Update your GroqCloud API key">
+                    </div>
+                    <div class="form-group">
+                        <label for="model-select">Model</label>
+                        <select id="model-select"></select>
                     </div>
                     <div class="form-group">
                         <label for="system-prompt">System Prompt (max 7000 tokens)</label>
