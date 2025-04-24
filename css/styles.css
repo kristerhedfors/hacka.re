@@ -120,6 +120,51 @@ header {
     margin-left: 5px;
     -webkit-text-fill-color: #444444; /* For WebKit browsers */
     text-fill-color: #444444; /* Future CSS standard */
+    cursor: help;
+}
+
+.heart-logo .tooltip {
+    visibility: hidden;
+    width: 400px;
+    max-width: 80vw;
+    background-color: white;
+    color: var(--text-color);
+    text-align: left;
+    border-radius: 6px;
+    padding: 15px;
+    position: absolute;
+    z-index: 1000;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 10px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 0.85rem;
+    font-weight: normal;
+    box-shadow: var(--box-shadow);
+    pointer-events: auto;
+    line-height: 1.4;
+    overflow-y: auto;
+    max-height: 80vh;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.heart-logo .tooltip::after {
+    content: "";
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent transparent white transparent;
+}
+
+/* Remove hover-only behavior since we're handling it with JavaScript */
+.heart-logo .tooltip.active {
+    visibility: visible;
+    opacity: 1;
 }
 
 /* Typing Dots Styling */
@@ -709,6 +754,66 @@ footer a:hover {
 #generated-link-container h3 {
     margin-top: 1.5rem;
     margin-bottom: 0.5rem;
+}
+
+/* ===== Settings Header ===== */
+.settings-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.settings-header h2 {
+    margin-bottom: 0;
+}
+
+.settings-header .info-icon {
+    font-size: 1.2rem;
+    margin-left: 10px;
+    position: relative;
+}
+
+/* Settings info icon styling */
+.settings-header .info-icon {
+    font-size: 1.2rem;
+    margin-left: 10px;
+    position: relative;
+    cursor: pointer;
+    color: var(--primary-color);
+}
+
+.settings-header .info-icon:hover {
+    color: var(--primary-dark);
+}
+
+/* Settings info modal styling */
+#settings-info-modal .modal-content {
+    max-width: 600px;
+}
+
+/* Style for each notice in the modal */
+.tooltip-content .important-notice {
+    background-color: var(--system-msg-bg);
+    border-left: 4px solid var(--accent-color);
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    white-space: normal;
+    word-wrap: break-word;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.tooltip-content .important-notice:last-child {
+    margin-bottom: 0;
+}
+
+.tooltip-content .important-notice p {
+    margin: 0;
+    white-space: normal;
+    word-wrap: break-word;
+    line-height: 1.5;
 }
 
 /* ===== Modal ===== */
