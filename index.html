@@ -172,8 +172,17 @@
                 <h2>Settings</h2>
                 <form id="settings-form">
                     <div class="form-group">
-                        <label for="base-url">OpenAI-compatible Base URL</label>
-                        <input type="text" id="base-url" placeholder="https://api.groq.com/openai/v1">
+                        <label for="base-url-select">API Provider</label>
+                        <select id="base-url-select">
+                            <option value="groq">Groq Cloud (api.groq.com/openai/v1)</option>
+                            <option value="openai">OpenAI (api.openai.com/v1)</option>
+                            <option value="ollama">Ollama (localhost:11434/v1)</option>
+                            <option value="custom">User-defined</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="custom-base-url-group" style="display: none;">
+                        <label for="base-url">Custom Base URL</label>
+                        <input type="text" id="base-url" placeholder="Enter custom API base URL">
                     </div>
                     <div class="form-group">
                         <label for="api-key-update">API Key</label>

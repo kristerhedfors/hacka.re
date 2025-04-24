@@ -11,7 +11,8 @@ window.StorageService = (function() {
         HISTORY: 'aihackare_history',
         SYSTEM_PROMPT: 'aihackare_system_prompt',
         SHARE_OPTIONS: 'aihackare_share_options',
-        BASE_URL: 'aihackare_base_url'
+        BASE_URL: 'aihackare_base_url',
+        BASE_URL_PROVIDER: 'aihackare_base_url_provider'
     };
 
     /**
@@ -125,6 +126,40 @@ window.StorageService = (function() {
     function getBaseUrl() {
         return localStorage.getItem(STORAGE_KEYS.BASE_URL) || 'https://api.groq.com/openai/v1';
     }
+    
+    /**
+     * Save base URL provider to local storage
+     * @param {string} provider - The provider identifier (groq, openai, ollama, custom)
+     */
+    function saveBaseUrlProvider(provider) {
+        localStorage.setItem(STORAGE_KEYS.BASE_URL_PROVIDER, provider);
+    }
+    
+    /**
+     * Get base URL provider from local storage
+     * @returns {string} The stored provider or 'groq' if not found
+     */
+    function getBaseUrlProvider() {
+        return localStorage.getItem(STORAGE_KEYS.BASE_URL_PROVIDER) || 'groq';
+    }
+    
+    /**
+     * Get the default base URL for a provider
+     * @param {string} provider - The provider identifier
+     * @returns {string} The default base URL for the provider
+     */
+    function getDefaultBaseUrlForProvider(provider) {
+        switch (provider) {
+            case 'groq':
+                return 'https://api.groq.com/openai/v1';
+            case 'openai':
+                return 'https://api.openai.com/v1';
+            case 'ollama':
+                return 'http://localhost:11434/v1';
+            default:
+                return '';
+        }
+    }
 
     // Public API
     return {
@@ -141,6 +176,9 @@ window.StorageService = (function() {
         saveShareOptions: saveShareOptions,
         getShareOptions: getShareOptions,
         saveBaseUrl: saveBaseUrl,
-        getBaseUrl: getBaseUrl
+        getBaseUrl: getBaseUrl,
+        saveBaseUrlProvider: saveBaseUrlProvider,
+        getBaseUrlProvider: getBaseUrlProvider,
+        getDefaultBaseUrlForProvider: getDefaultBaseUrlForProvider
     };
 })();
