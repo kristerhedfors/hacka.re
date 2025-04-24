@@ -4,11 +4,22 @@
  */
 
 window.ApiService = (function() {
-    // API endpoints
-    const ENDPOINTS = {
-        CHAT: 'https://api.groq.com/openai/v1/chat/completions',
-        MODELS: 'https://api.groq.com/openai/v1/models'
+    // Get base URL from settings
+    function getBaseUrl() {
+        return StorageService.getBaseUrl();
+    }
+    
+    // API endpoint paths
+    const ENDPOINT_PATHS = {
+        CHAT: '/openai/v1/chat/completions',
+        MODELS: '/openai/v1/models'
     };
+    
+    // Get full endpoint URL
+    function getEndpointUrl(endpoint) {
+        const baseUrl = getBaseUrl();
+        return `${baseUrl}${ENDPOINT_PATHS[endpoint]}`;
+    }
 
     /**
      * Fetch available models from the API
@@ -20,7 +31,7 @@ window.ApiService = (function() {
             throw new Error('API key is required');
         }
         
-        const response = await fetch(ENDPOINTS.MODELS, {
+        const response = await fetch(getEndpointUrl('MODELS'), {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
@@ -62,7 +73,7 @@ window.ApiService = (function() {
             });
         }
         
-        const response = await fetch(ENDPOINTS.CHAT, {
+        const response = await fetch(getEndpointUrl('CHAT'), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -78,7 +89,7 @@ window.ApiService = (function() {
         
         if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.error?.message || 'Error connecting to GroqCloud API');
+            throw new Error(error.error?.message || 'Error connecting to API');
         }
         
         // Process the stream

@@ -15,6 +15,7 @@ window.SettingsManager = (function() {
         let currentModel = 'meta-llama/llama-4-scout-17b-16e-instruct'; // Default model
         let systemPrompt = null;
         let pendingSharedModel = null;
+        let baseUrl = null;
         
         // Session key getter function
         let getSessionKey = null;
@@ -57,6 +58,12 @@ window.SettingsManager = (function() {
                 if (elements.modelSelect) {
                     elements.modelSelect.value = savedModel;
                 }
+            }
+            
+            // Load saved base URL
+            baseUrl = StorageService.getBaseUrl();
+            if (elements.baseUrl) {
+                elements.baseUrl.value = baseUrl;
             }
             
             // Load saved system prompt or use default
@@ -243,6 +250,13 @@ For more information about the technologies used in hacka.re:
             if (newApiKey) {
                 StorageService.saveApiKey(newApiKey);
                 apiKey = newApiKey;
+            }
+            
+            // Save base URL
+            const newBaseUrl = elements.baseUrl.value.trim();
+            if (newBaseUrl) {
+                StorageService.saveBaseUrl(newBaseUrl);
+                baseUrl = newBaseUrl;
             }
             
             // Save system prompt
@@ -799,6 +813,14 @@ For more information about the technologies used in hacka.re:
             return systemPrompt;
         }
         
+        /**
+         * Get the current base URL
+         * @returns {string} Current base URL
+         */
+        function getBaseUrl() {
+            return baseUrl;
+        }
+        
         // Public API
         return {
             init,
@@ -810,7 +832,8 @@ For more information about the technologies used in hacka.re:
             maskApiKey,
             getApiKey,
             getCurrentModel,
-            getSystemPrompt
+            getSystemPrompt,
+            getBaseUrl
         };
     }
 
