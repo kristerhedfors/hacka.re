@@ -29,6 +29,7 @@ window.DOMElements = (function() {
             regeneratePasswordBtn: document.getElementById('regenerate-password'),
             togglePasswordVisibilityBtn: document.getElementById('toggle-password-visibility'),
             copyPasswordBtn: document.getElementById('copy-password'),
+            shareBaseUrlCheckbox: document.getElementById('share-base-url'),
             shareApiKeyCheckbox: document.getElementById('share-api-key'),
             shareSystemPromptCheckbox: document.getElementById('share-system-prompt'),
             shareModelCheckbox: document.getElementById('share-model'),

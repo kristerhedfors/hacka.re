@@ -253,6 +253,13 @@ window.UIManager = (function() {
             // Create a payload object similar to what would be encrypted
             const payload = {};
             
+            // Add base URL if selected
+            const baseUrl = StorageService.getBaseUrl();
+            if (elements.shareBaseUrlCheckbox && elements.shareBaseUrlCheckbox.checked && baseUrl) {
+                payload.baseUrl = baseUrl;
+                estimatedLength += baseUrl.length;
+            }
+            
             // Add API key if selected
             if (elements.shareApiKeyCheckbox && elements.shareApiKeyCheckbox.checked && apiKey) {
                 payload.apiKey = apiKey;

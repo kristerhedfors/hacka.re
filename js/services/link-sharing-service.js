@@ -125,6 +125,7 @@ window.LinkSharingService = (function() {
                 
                 // Return all decrypted data
                 return {
+                    baseUrl: data.baseUrl || null,
                     apiKey: data.apiKey,
                     systemPrompt: data.systemPrompt || null,
                     model: data.model || null,

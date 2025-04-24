@@ -60,10 +60,12 @@ window.ShareService = (function() {
     /**
      * Create a comprehensive shareable link with selected data
      * @param {Object} options - Options for what to include in the share
+     * @param {string} options.baseUrl - The base URL to share (if includeBaseUrl is true)
      * @param {string} options.apiKey - The API key to share (if includeApiKey is true)
      * @param {string} options.systemPrompt - The system prompt to share (if includeSystemPrompt is true)
      * @param {Array} options.messages - The conversation messages to share (if includeConversation is true)
      * @param {number} options.messageCount - Number of recent messages to include (if includeConversation is true)
+     * @param {boolean} options.includeBaseUrl - Whether to include the base URL
      * @param {boolean} options.includeApiKey - Whether to include the API key
      * @param {boolean} options.includeSystemPrompt - Whether to include the system prompt
      * @param {boolean} options.includeConversation - Whether to include conversation data
@@ -72,6 +74,10 @@ window.ShareService = (function() {
      */
     function createComprehensiveShareableLink(options, password) {
         const payload = {};
+        
+        if (options.includeBaseUrl && options.baseUrl) {
+            payload.baseUrl = options.baseUrl;
+        }
         
         if (options.includeApiKey && options.apiKey) {
             payload.apiKey = options.apiKey;
