@@ -1,6 +1,6 @@
 /**
  * Main JavaScript for AIHackare
- * A simple chat interface for GroqCloud's OpenAI API
+ * A simple chat interface for OpenAI-compatible APIs
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -42,37 +42,15 @@ class AIHackare {
         // Default model
         this.currentModel = 'meta-llama/llama-4-scout-17b-16e-instruct';
         
-        // API endpoints
-        this.chatEndpoint = 'https://api.groq.com/openai/v1/chat/completions';
-        this.modelsEndpoint = 'https://api.groq.com/openai/v1/models';
+        // Get base URL from localStorage or use default
+        this.baseUrl = localStorage.getItem('aihackare_base_url') || 'https://api.groq.com/openai/v1';
         
-        // Model information
-        this.modelInfo = {
-            // Standard Models
-            'gemma2-9b-it': { developer: 'Google', contextWindow: '8,192', maxCompletionTokens: '-', maxFileSize: '-' },
-            'llama-3.3-70b-versatile': { developer: 'Meta', contextWindow: '128K', maxCompletionTokens: '32,768', maxFileSize: '-' },
-            'llama-3.1-8b-instant': { developer: 'Meta', contextWindow: '128K', maxCompletionTokens: '8,192', maxFileSize: '-' },
-            'llama-guard-3-8b': { developer: 'Meta', contextWindow: '8,192', maxCompletionTokens: '-', maxFileSize: '-' },
-            'llama3-70b-8192': { developer: 'Meta', contextWindow: '8,192', maxCompletionTokens: '-', maxFileSize: '-' },
-            'llama3-8b-8192': { developer: 'Meta', contextWindow: '8,192', maxCompletionTokens: '-', maxFileSize: '-' },
-            'whisper-large-v3': { developer: 'OpenAI', contextWindow: '-', maxCompletionTokens: '-', maxFileSize: '25 MB' },
-            'whisper-large-v3-turbo': { developer: 'OpenAI', contextWindow: '-', maxCompletionTokens: '-', maxFileSize: '25 MB' },
-            'distil-whisper-large-v3-en': { developer: 'HuggingFace', contextWindow: '-', maxCompletionTokens: '-', maxFileSize: '25 MB' },
-            
-            // Preview Models
-            'allam-2-7b': { developer: 'Saudi Data and AI Authority (SDAIA)', contextWindow: '4,096', maxCompletionTokens: '-', maxFileSize: '-', preview: true },
-            'deepseek-r1-distill-llama-70b': { developer: 'DeepSeek', contextWindow: '128K', maxCompletionTokens: '-', maxFileSize: '-', preview: true },
-            'meta-llama/llama-4-maverick-17b-128e-instruct': { developer: 'Meta', contextWindow: '131,072', maxCompletionTokens: '8192', maxFileSize: '-', preview: true },
-            'meta-llama/llama-4-scout-17b-16e-instruct': { developer: 'Meta', contextWindow: '131,072', maxCompletionTokens: '8192', maxFileSize: '-', preview: true },
-            'mistral-saba-24b': { developer: 'Mistral', contextWindow: '32K', maxCompletionTokens: '-', maxFileSize: '-', preview: true },
-            'playai-tts': { developer: 'Playht, Inc', contextWindow: '10K', maxCompletionTokens: '-', maxFileSize: '-', preview: true },
-            'playai-tts-arabic': { developer: 'Playht, Inc', contextWindow: '10K', maxCompletionTokens: '-', maxFileSize: '-', preview: true },
-            'qwen-qwq-32b': { developer: 'Alibaba Cloud', contextWindow: '128K', maxCompletionTokens: '-', maxFileSize: '-', preview: true },
-            
-            // Preview Systems
-            'compound-beta': { developer: 'Groq', contextWindow: '128K', maxCompletionTokens: '8192', maxFileSize: '-', system: true },
-            'compound-beta-mini': { developer: 'Groq', contextWindow: '128K', maxCompletionTokens: '8192', maxFileSize: '-', system: true }
-        };
+        // API endpoints (constructed from base URL)
+        this.chatEndpoint = `${this.baseUrl}/chat/completions`;
+        this.modelsEndpoint = `${this.baseUrl}/models`;
+        
+        // Empty model information - will be populated from API
+        this.modelInfo = {};
     }
     
     init() {
@@ -285,36 +263,10 @@ class AIHackare {
             // Get list of fetched model IDs
             const fetchedModelIds = data.data.map(model => model.id);
             
-            // Production Models
-            const productionModels = [
-                'gemma2-9b-it',
-                'llama-3.3-70b-versatile',
-                'llama-3.1-8b-instant',
-                'llama-guard-3-8b',
-                'llama3-70b-8192',
-                'llama3-8b-8192',
-                'whisper-large-v3',
-                'whisper-large-v3-turbo',
-                'distil-whisper-large-v3-en'
-            ];
-            
-            // Preview Models
-            const previewModels = [
-                'meta-llama/llama-4-maverick-17b-128e-instruct',
-                'meta-llama/llama-4-scout-17b-16e-instruct',
-                'allam-2-7b',
-                'deepseek-r1-distill-llama-70b',
-                'mistral-saba-24b',
-                'playai-tts',
-                'playai-tts-arabic',
-                'qwen-qwq-32b'
-            ];
-            
-            // Preview Systems
-            const systemModels = [
-                'compound-beta',
-                'compound-beta-mini'
-            ];
+            // Empty model lists - will be populated from API
+            const productionModels = [];
+            const previewModels = [];
+            const systemModels = [];
             
             // Add production models if they exist in fetched models
             productionModels.forEach(modelId => {
@@ -421,113 +373,23 @@ class AIHackare {
         // Clear existing options
         this.modelSelect.innerHTML = '';
         
-        // Create optgroups for different model types
-        const standardGroup = document.createElement('optgroup');
-        standardGroup.label = 'Production Models';
+        // Create a single option indicating that models couldn't be fetched
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'Failed to fetch models - check API key and connection';
+        option.disabled = true;
+        option.selected = true;
         
-        const previewGroup = document.createElement('optgroup');
-        previewGroup.label = 'Preview Models';
+        // Add the option to the select element
+        this.modelSelect.appendChild(option);
         
-        const systemGroup = document.createElement('optgroup');
-        systemGroup.label = 'Preview Systems';
+        // Add a hint option
+        const hintOption = document.createElement('option');
+        hintOption.value = '';
+        hintOption.textContent = 'Try reloading models after checking settings';
+        hintOption.disabled = true;
         
-        // Production Models
-        const productionModels = [
-            'gemma2-9b-it',
-            'llama-3.3-70b-versatile',
-            'llama-3.1-8b-instant',
-            'llama-guard-3-8b',
-            'llama3-70b-8192',
-            'llama3-8b-8192',
-            'whisper-large-v3',
-            'whisper-large-v3-turbo',
-            'distil-whisper-large-v3-en'
-        ];
-        
-        // Preview Models
-        const previewModels = [
-            'meta-llama/llama-4-maverick-17b-128e-instruct',
-            'meta-llama/llama-4-scout-17b-16e-instruct',
-            'allam-2-7b',
-            'deepseek-r1-distill-llama-70b',
-            'mistral-saba-24b',
-            'playai-tts',
-            'playai-tts-arabic',
-            'qwen-qwq-32b'
-        ];
-        
-        // Preview Systems
-        const systemModels = [
-            'compound-beta',
-            'compound-beta-mini'
-        ];
-        
-        // Add production models
-        productionModels.forEach(modelId => {
-            if (this.modelInfo[modelId]) {
-                const option = document.createElement('option');
-                option.value = modelId;
-                
-                // Get simplified display name
-                option.textContent = this.getDisplayName(modelId);
-                
-                // Set selected if it matches current model
-                if (modelId === this.currentModel) {
-                    option.selected = true;
-                }
-                
-                standardGroup.appendChild(option);
-            }
-        });
-        
-        // Add preview models
-        previewModels.forEach(modelId => {
-            if (this.modelInfo[modelId]) {
-                const option = document.createElement('option');
-                option.value = modelId;
-                
-                // Get simplified display name
-                option.textContent = this.getDisplayName(modelId);
-                
-                // Set selected if it matches current model
-                if (modelId === this.currentModel) {
-                    option.selected = true;
-                }
-                
-                previewGroup.appendChild(option);
-            }
-        });
-        
-        // Add system models
-        systemModels.forEach(modelId => {
-            if (this.modelInfo[modelId]) {
-                const option = document.createElement('option');
-                option.value = modelId;
-                
-                // Get simplified display name
-                option.textContent = this.getDisplayName(modelId);
-                
-                // Set selected if it matches current model
-                if (modelId === this.currentModel) {
-                    option.selected = true;
-                }
-                
-                systemGroup.appendChild(option);
-            }
-        });
-        
-        // Add groups to select element if they have options
-        if (standardGroup.children.length > 0) {
-            this.modelSelect.appendChild(standardGroup);
-        }
-        
-        if (previewGroup.children.length > 0) {
-            this.modelSelect.appendChild(previewGroup);
-        }
-        
-        if (systemGroup.children.length > 0) {
-            this.modelSelect.appendChild(systemGroup);
-        }
+        this.modelSelect.appendChild(hintOption);
         
         // Update model info display
         this.updateModelInfoDisplay();
@@ -535,48 +397,46 @@ class AIHackare {
     
     // Helper method to get a simplified display name for a model
     getDisplayName(modelId) {
+        if (!modelId) return 'No model selected';
+        
         let displayName = modelId;
         
-        // Simplify model names for better readability
-        if (modelId === 'meta-llama/llama-4-maverick-17b-128e-instruct') {
-            displayName = 'Llama 4 Maverick 17B';
-        } else if (modelId === 'meta-llama/llama-4-scout-17b-16e-instruct') {
-            displayName = 'Llama 4 Scout 17B';
-        } else if (modelId.includes('llama-3.1')) {
-            displayName = modelId.replace('llama-3.1-', 'Llama 3.1 ').replace('-versatile', ' Versatile').replace('-instant', ' Instant');
-        } else if (modelId.includes('llama-3.3')) {
-            displayName = modelId.replace('llama-3.3-', 'Llama 3.3 ').replace('-versatile', ' Versatile');
-        } else if (modelId.includes('llama3-')) {
-            displayName = modelId.replace('llama3-', 'Llama 3 ');
-        } else if (modelId === 'llama-guard-3-8b') {
-            displayName = 'Llama Guard 3 8B';
-        } else if (modelId === 'gemma2-9b-it') {
-            displayName = 'Gemma 2 9B IT';
-        } else if (modelId === 'mixtral-8x7b-32768') {
-            displayName = 'Mixtral 8x7B 32K';
-        } else if (modelId === 'whisper-large-v3') {
-            displayName = 'Whisper Large v3';
-        } else if (modelId === 'whisper-large-v3-turbo') {
-            displayName = 'Whisper Large v3 Turbo';
-        } else if (modelId === 'distil-whisper-large-v3-en') {
-            displayName = 'Distil Whisper Large v3 (EN)';
-        } else if (modelId === 'allam-2-7b') {
-            displayName = 'Allam 2 7B';
-        } else if (modelId === 'deepseek-r1-distill-llama-70b') {
-            displayName = 'DeepSeek R1 Distill Llama 70B';
-        } else if (modelId === 'mistral-saba-24b') {
-            displayName = 'Mistral Saba 24B';
-        } else if (modelId === 'playai-tts') {
-            displayName = 'PlayAI TTS';
-        } else if (modelId === 'playai-tts-arabic') {
-            displayName = 'PlayAI TTS Arabic';
-        } else if (modelId === 'qwen-qwq-32b') {
-            displayName = 'Qwen QWQ 32B';
-        } else if (modelId === 'compound-beta') {
-            displayName = 'Compound Beta';
-        } else if (modelId === 'compound-beta-mini') {
-            displayName = 'Compound Beta Mini';
+        // Common model name patterns
+        if (modelId && modelId.includes('/')) {
+            // Extract the model name from paths like 'meta-llama/llama-4-...'
+            const parts = modelId.split('/');
+            displayName = parts[parts.length - 1];
         }
+        
+        // Format model names based on common patterns
+        if (displayName.includes('llama-')) {
+            displayName = displayName
+                .replace('llama-3.1-', 'Llama 3.1 ')
+                .replace('llama-3.3-', 'Llama 3.3 ')
+                .replace('llama-guard-', 'Llama Guard ')
+                .replace('-versatile', ' Versatile')
+                .replace('-instant', ' Instant');
+        } else if (displayName.includes('llama3-')) {
+            displayName = displayName.replace('llama3-', 'Llama 3 ');
+        } else if (displayName.includes('gemma')) {
+            displayName = displayName.replace('gemma', 'Gemma ').replace('-it', ' IT');
+        } else if (displayName.includes('whisper')) {
+            displayName = displayName
+                .replace('whisper-', 'Whisper ')
+                .replace('large-v', 'Large v')
+                .replace('-turbo', ' Turbo')
+                .replace('-en', ' (EN)');
+        } else if (displayName.includes('distil-whisper')) {
+            displayName = displayName
+                .replace('distil-whisper-', 'Distil Whisper ')
+                .replace('large-v', 'Large v')
+                .replace('-en', ' (EN)');
+        }
+        
+        // Capitalize first letter of each word
+        displayName = displayName.split('-').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1)
+        ).join(' ');
         
         return displayName;
     }
@@ -617,7 +477,7 @@ class AIHackare {
             this.fetchAvailableModels();
             
             // Add welcome message
-            this.addSystemMessage('API key saved. You can now start chatting with GroqCloud AI models.');
+            this.addSystemMessage('API key saved. You can now start chatting with AI models.');
         }
     }
     
@@ -632,6 +492,18 @@ class AIHackare {
         if (newApiKey) {
             localStorage.setItem('aihackare_api_key', newApiKey);
             this.apiKey = newApiKey;
+        }
+        
+        // Update base URL if provided
+        const baseUrlInput = document.getElementById('base-url');
+        if (baseUrlInput && baseUrlInput.value.trim()) {
+            const newBaseUrl = baseUrlInput.value.trim();
+            localStorage.setItem('aihackare_base_url', newBaseUrl);
+            this.baseUrl = newBaseUrl;
+            
+            // Update API endpoints with new base URL
+            this.chatEndpoint = `${this.baseUrl}/chat/completions`;
+            this.modelsEndpoint = `${this.baseUrl}/models`;
         }
         
         // Update model info in header
@@ -724,7 +596,7 @@ class AIHackare {
             
             if (!response.ok) {
                 const error = await response.json();
-                throw new Error(error.error?.message || 'Error connecting to GroqCloud API');
+                throw new Error(error.error?.message || 'Error connecting to API');
             }
             
             // Remove typing indicator

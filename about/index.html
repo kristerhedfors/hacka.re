@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>hacka.re - A Modern Interface for GroqCloud AI Models</title>
-    <meta name="description" content="Information about hacka.re, a streamlined chat interface for GroqCloud's AI models">
+    <title>hacka.re - A Modern Interface for AI Models</title>
+    <meta name="description" content="Information about hacka.re, a streamlined chat interface for OpenAI-compatible AI models">
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="css/themes.css">
     <!-- Font Awesome for icons (local) -->
@@ -205,21 +205,21 @@
 
         <main style="overflow-y: auto; overflow-x: auto; padding: 2rem;">
             <div class="container" style="max-width: 1000px; margin: 0 auto; word-wrap: break-word; overflow-wrap: break-word; width: 100%;">
-            <h2><a href="https://hacka.re/" target="_blank">hacka.re</a>: A Modern Interface for GroqCloud AI Models</h2>
+            <h2><a href="https://hacka.re/" target="_blank">hacka.re</a>: A Modern Interface for AI Models</h2>
             <p class="tagline" style="font-style: italic; font-size: 1.2em; margin-bottom: 30px;">
                 <em>För hackare, av hackare.</em>
             </p>
             <p class="important-notice">
-                <strong>Privacy Notice:</strong> This is a GitHub Pages site. All conversational data is sent directly to <a href="https://groq.com/privacy" target="_blank">Groq's API servers</a>. 
-                While your data is stored locally in your browser, all chat interactions are processed through Groq's cloud services.
+                <strong>Privacy Notice:</strong> This is a GitHub Pages site. All conversational data is sent directly to your configured API provider's servers. 
+                While your data is stored locally in your browser, all chat interactions are processed through your API provider's cloud services.
             </p>
             
             <div class="feature-section">
                 <h3>The Concept</h3>
                 <p>
                     <a href="https://hacka.re/" target="_blank">hacka.re</a> was created in early 2025 as a streamlined, browser-based interface for interacting with 
-                    GroqCloud's powerful AI models. The project was born out of a desire to create a simple yet powerful 
-                    chat interface that leverages GroqCloud's impressive speed and model variety while maintaining a focus 
+                    powerful AI models. The project was born out of a desire to create a simple yet powerful 
+                    chat interface that leverages the impressive speed and model variety of modern AI providers while maintaining a focus 
                     on privacy and user control.
                 </p>
                 <br />
@@ -234,7 +234,7 @@
                 <p>
                     Unlike many commercial chat interfaces, <a href="https://hacka.re/" target="_blank">hacka.re</a> prioritizes user privacy by storing all data locally 
                     in your browser. Your API key and conversation history never leave your device except when making direct 
-                    requests to GroqCloud's API. This approach gives users complete control over their data while still 
+                    requests to your configured API provider. This approach gives users complete control over their data while still 
                     providing access to state-of-the-art AI models.
                 </p>
             </div>
@@ -244,7 +244,7 @@
                 <div class="feature-grid">
                     <div class="feature-card">
                         <h4><span class="emoji-icon">🚀</span>High-Performance Models</h4>
-                        <p>Access to GroqCloud's ultra-fast inference for models like Llama 3.1, Mixtral, and more.</p>
+                        <p>Access to ultra-fast inference for models like Llama 3.1, Mixtral, and more.</p>
                     </div>
                     <div class="feature-card">
                         <h4><span class="emoji-icon">🔒</span>Privacy-Focused</h4>
@@ -272,9 +272,9 @@
             <div class="feature-section">
                 <h3>Supported Models</h3>
                 <p>
-                    <a href="https://hacka.re/" target="_blank">hacka.re</a> provides access to all models available through GroqCloud's API, 
+                    <a href="https://hacka.re/" target="_blank">hacka.re</a> provides access to all models available through your configured API provider, 
                     including models from Meta, Google, Mistral, and more. The interface automatically fetches 
-                    the latest available models from your GroqCloud account.
+                    the latest available models from your account.
                 </p>
                 
                 <div class="model-grid">
@@ -301,7 +301,7 @@
                 </div>
                 
                 <p>
-                    The interface also supports preview models and systems as they become available on GroqCloud, 
+                    The interface also supports preview models and systems as they become available, 
                     including specialized models from Mistral, DeepSeek, Alibaba Cloud, and more. All models are 
                     organized into categories for easy selection.
                 </p>
@@ -317,7 +317,7 @@
                 <br />
                 
                 <p>
-                    The application communicates directly with GroqCloud's API using your personal API key, which is stored 
+                    The application communicates directly with your configured API provider using your personal API key, which is stored 
                     securely in your browser's localStorage. All message processing, including markdown rendering and 
                     syntax highlighting, happens locally in your browser.
                 </p>
@@ -372,7 +372,7 @@ while (true) {
                     <strong>Comprehensive sharing options:</strong>
                 </p>
                 <ol>
-                    <li><strong>API Key:</strong> Share your GroqCloud API key for access to models</li>
+                    <li><strong>API Key:</strong> Share your API key for access to models</li>
                     <li><strong>System Prompt:</strong> Share your custom system prompt for consistent AI behavior</li>
                     <li><strong>Active Model:</strong> Share your selected model preference with automatic fallback if unavailable</li>
                     <li><strong>Conversation Data:</strong> Share recent conversation history with configurable message count</li>
@@ -551,7 +551,7 @@ function extractSharedData(sessionKey) {
                     <li><strong>Multiple hashing iterations:</strong> The key derivation process uses multiple iterations to increase security</li>
                     <li><strong>URL fragment (#) usage:</strong> The data after # is not sent to servers when requesting a page, providing protection against server logging</li>
                     <li><strong>Session key confirmation:</strong> When creating a link, you must confirm your session key to prevent typos</li>
-                    <li><strong>Intended for trusted sharing:</strong> Still only share these links with people you trust, as they will have full access to your GroqCloud account once they enter the correct session key</li>
+                    <li><strong>Intended for trusted sharing:</strong> Still only share these links with people you trust, as they will have full access to your API provider account once they enter the correct session key</li>
                     <li><strong>Temporary usage:</strong> Consider revoking your API key after sharing if you're concerned about unauthorized access</li>
                 </ul>
                 
@@ -559,7 +559,7 @@ function extractSharedData(sessionKey) {
                     <strong>When to use each sharing option:</strong>
                 </p>
                 <ul>
-                    <li><strong>API Key:</strong> Essential for giving someone access to your GroqCloud account</li>
+                    <li><strong>API Key:</strong> Essential for giving someone access to your API provider account</li>
                     <li><strong>System Prompt:</strong> Share your custom instructions to ensure consistent AI behavior</li>
                     <li><strong>Active Model:</strong> Share your preferred model selection for consistent results</li>
                     <li><strong>Conversation Data:</strong> Share context from your current conversation to continue a discussion</li>
@@ -587,7 +587,7 @@ function extractSharedData(sessionKey) {
                 <p>
                     This feature provides a secure method for sharing your API key with trusted individuals. The session key-based encryption ensures that 
                     even if the link is intercepted, the attacker cannot access your API key without knowing the session key. Always be cautious about who you share your API key with, 
-                    as they will have the same level of access to your GroqCloud account as you do once they have the session key.
+                    as they will have the same level of access to your API provider account as you do once they have the session key.
                 </p>
             </div>
 
@@ -600,15 +600,15 @@ function extractSharedData(sessionKey) {
                     <li>This is a <strong>GitHub Pages site</strong> - the application is hosted on GitHub's servers</li>
                     <li>Stores your API key only in your browser's localStorage</li>
                     <li>Keeps conversation history locally on your device</li>
-                    <li><strong>All chat content is sent to Groq's API servers</strong> for processing</li>
-                    <li>Your conversations are subject to <a href="https://groq.com/privacy" target="_blank">Groq's privacy policy</a></li>
+                    <li><strong>All chat content is sent to your configured API provider's servers</strong> for processing</li>
+                    <li>Your conversations are subject to your API provider's privacy policy</li>
                     <li>Does not use analytics, tracking, or telemetry</li>
                     <li>Has no custom backend server that could potentially log your data</li>
                     <li>All external libraries are now hosted locally to prevent third-party CDN connections</li>
                 </ul>
                 <p>
                     While this approach gives you more control over your data than many commercial alternatives, 
-                    please be aware that your conversation content is processed by Groq's cloud services. Never share 
+                    please be aware that your conversation content is processed by your API provider's cloud services. Never share 
                     sensitive personal information, credentials, or confidential data in your conversations.
                 </p>
             </div>
@@ -616,8 +616,7 @@ function extractSharedData(sessionKey) {
             <div class="feature-section">
                 <h3>Getting Started</h3>
                 <p>
-                    To use <a href="https://hacka.re/" target="_blank">hacka.re</a>, you'll need a GroqCloud API key, which you can obtain from 
-                    <a href="https://console.groq.com/" target="_blank">GroqCloud's console</a>.
+                    To use <a href="https://hacka.re/" target="_blank">hacka.re</a>, you'll need an API key from a compatible provider.
                 </p>
                 <p>
                     Once you have your API key, simply:
@@ -639,7 +638,6 @@ function extractSharedData(sessionKey) {
                     For more information about the technologies used in <a href="https://hacka.re/" target="_blank">hacka.re</a>:
                 </p>
                 <ul>
-                    <li><a href="https://groq.com/" target="_blank">GroqCloud</a> - The API provider for AI models</li>
                     <li><a href="https://ai.meta.com/llama/" target="_blank">Llama Models</a> - Meta's open language models</li>
                     <li><a href="https://mistral.ai/" target="_blank">Mistral AI</a> - Creators of the Mixtral model</li>
                 </ul>

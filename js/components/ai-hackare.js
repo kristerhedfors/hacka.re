@@ -177,7 +177,12 @@ window.AIHackareComponent = (function() {
         
         // Close settings button
         this.elements.closeSettings.addEventListener('click', () => {
-            this.uiManager.hideSettingsModal();
+            this.uiManager.hideSettingsModal(
+                this.settingsManager.getApiKey(),
+                this.settingsManager.getBaseUrl(),
+                this.settingsManager.getCurrentModel(),
+                this.settingsManager.getSystemPrompt()
+            );
         });
         
         // Clear chat button
@@ -192,7 +197,12 @@ window.AIHackareComponent = (function() {
                 this.uiManager.hideApiKeyModal();
             }
             if (e.target === this.elements.settingsModal) {
-                this.uiManager.hideSettingsModal();
+                this.uiManager.hideSettingsModal(
+                    this.settingsManager.getApiKey(),
+                    this.settingsManager.getBaseUrl(),
+                    this.settingsManager.getCurrentModel(),
+                    this.settingsManager.getSystemPrompt()
+                );
             }
         });
         
@@ -201,7 +211,12 @@ window.AIHackareComponent = (function() {
             // Escape key to close modals
             if (e.key === 'Escape') {
                 this.uiManager.hideApiKeyModal();
-                this.uiManager.hideSettingsModal();
+                this.uiManager.hideSettingsModal(
+                    this.settingsManager.getApiKey(),
+                    this.settingsManager.getBaseUrl(),
+                    this.settingsManager.getCurrentModel(),
+                    this.settingsManager.getSystemPrompt()
+                );
             }
             
             // Ctrl/Cmd + Enter to send message

@@ -19,15 +19,7 @@ Unlike many commercial chat interfaces, hacka.re prioritizes user privacy by sto
 
 ## Supported Models
 
-hacka.re provides access to all models available through GroqCloud's API, including models from Meta, Google, Mistral, and more. The interface automatically fetches the latest available models from your GroqCloud account.
-
-Notable models include:
-- Llama 3.3 70B Versatile (Meta) - Context: 128K tokens
-- Llama 3.1 8B Instant (Meta) - Context: 128K tokens
-- Gemma2 9B IT (Google) - Context: 8,192 tokens
-- Llama 4 Models (Meta) - Context: 131,072 tokens
-
-The interface also supports preview models and systems as they become available on GroqCloud, including specialized models from Mistral, DeepSeek, Alibaba Cloud, and more. All models are organized into categories for easy selection.
+hacka.re provides access to all models available through your configured API provider. The interface automatically fetches and displays all models available through your API key, organizing them into categories for easy selection. The available models will depend on your API access level and the provider's current offerings.
 
 ## Technical Implementation
 

@@ -12,9 +12,10 @@ window.SettingsManager = (function() {
     function createSettingsManager(elements) {
         // Settings state
         let apiKey = null;
-        let currentModel = 'meta-llama/llama-4-scout-17b-16e-instruct'; // Default model
+        let currentModel = ''; // Empty initially, will be populated from API
         let systemPrompt = null;
         let pendingSharedModel = null;
+        let baseUrl = null;
         
         // Session key getter function
         let getSessionKey = null;
@@ -46,7 +47,8 @@ window.SettingsManager = (function() {
                     showApiKeyModal();
                 } else {
                     // Fetch available models if API key exists
-                    fetchAvailableModels();
+                    // Use updateStorage=true to ensure the values are properly loaded
+                    fetchAvailableModels(apiKey, baseUrl, true);
                 }
             }
             
@@ -57,6 +59,12 @@ window.SettingsManager = (function() {
                 if (elements.modelSelect) {
                     elements.modelSelect.value = savedModel;
                 }
+            }
+            
+            // Load saved base URL
+            baseUrl = StorageService.getBaseUrl();
+            if (elements.baseUrl) {
+                elements.baseUrl.value = baseUrl;
             }
             
             // Load saved system prompt or use default
@@ -75,6 +83,36 @@ window.SettingsManager = (function() {
                 });
             }
             
+            // Set up event listener for model reload button
+            if (elements.modelReloadBtn) {
+                elements.modelReloadBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Clear the model select and show loading state
+                    elements.modelSelect.innerHTML = '<option disabled selected>Loading models...</option>';
+                    
+                    // Disable the button and show loading state
+                    const originalIcon = this.innerHTML;
+                    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                    this.disabled = true;
+                    
+                    // Get the current values from the UI instead of using stored values
+                    const currentApiKey = elements.apiKeyUpdate.value.trim() || apiKey;
+                    const currentBaseUrl = elements.baseUrl.value.trim() || baseUrl;
+                    
+                    // Fetch models from API using the current UI values
+                    fetchAvailableModels(currentApiKey, currentBaseUrl).then(() => {
+                        // Re-enable the button and restore icon
+                        this.innerHTML = originalIcon;
+                        this.disabled = false;
+                    }).catch(() => {
+                        // Re-enable the button and restore icon even if there's an error
+                        this.innerHTML = originalIcon;
+                        this.disabled = false;
+                    });
+                });
+            }
+            
             // Update model info in header
             if (updateModelInfoDisplay) {
                 updateModelInfoDisplay(currentModel);
@@ -90,15 +128,15 @@ window.SettingsManager = (function() {
 
 ## About hacka.re
 
-hacka.re is a modern, privacy-focused web client for GroqCloud AI models created in early 2025. It provides a streamlined, browser-based interface for interacting with GroqCloud's powerful AI models while maintaining a focus on privacy and user control.
+hacka.re is a modern, privacy-focused web client for AI models created in early 2025. It provides a streamlined, browser-based interface for interacting with powerful AI models while maintaining a focus on privacy and user control.
 
 The name "hacka.re" comes from "hackare" (the Swedish word for "hacker"), reflecting the project's ethos: a tool built by hackers for hackers. The tagline "För hackare, av hackare" translates to "for hackers, by hackers."
 
-Unlike many commercial chat interfaces, hacka.re prioritizes user privacy by storing all data locally in the browser. Your API key and conversation history never leave your device except when making direct requests to GroqCloud's API. This approach gives users complete control over their data while still providing access to state-of-the-art AI models.
+Unlike many commercial chat interfaces, hacka.re prioritizes user privacy by storing all data locally in the browser. Your API key and conversation history never leave your device except when making direct requests to the AI provider's API. This approach gives users complete control over their data while still providing access to state-of-the-art AI models.
 
 ## Key Features
 
-- **High-Performance Models**: Access to GroqCloud's ultra-fast inference for models like Llama 3.1, Mixtral, and more.
+- **High-Performance Models**: Access to ultra-fast inference for models like Llama 3.1, Mixtral, and more.
 - **Privacy-Focused**: Your API key and conversations stay in your browser, never stored on external servers.
 - **Context Window Visualization**: Real-time display of token usage within model's context limit to optimize your conversations.
 - **Markdown Support**: Rich formatting for AI responses including code blocks with syntax highlighting.
@@ -107,21 +145,15 @@ Unlike many commercial chat interfaces, hacka.re prioritizes user privacy by sto
 
 ## Supported Models
 
-hacka.re provides access to all models available through GroqCloud's API, including models from Meta, Google, Mistral, and more. The interface automatically fetches the latest available models from your GroqCloud account.
+hacka.re provides access to all models available through your configured API provider, including models from Meta, Google, Mistral, and more. The interface automatically fetches the latest available models from your account.
 
-Notable models include:
-- Llama 3.3 70B Versatile (Meta) - Context: 128K tokens
-- Llama 3.1 8B Instant (Meta) - Context: 128K tokens
-- Gemma2 9B IT (Google) - Context: 8,192 tokens
-- Llama 4 Models (Meta) - Context: 131,072 tokens
-
-The interface also supports preview models and systems as they become available on GroqCloud, including specialized models from Mistral, DeepSeek, Alibaba Cloud, and more. All models are organized into categories for easy selection.
+The interface automatically fetches and displays all models available through your API key, organizing them into categories for easy selection. The available models will depend on your API access level and the provider's current offerings.
 
 ## Technical Implementation
 
 hacka.re is built as a pure client-side application using vanilla JavaScript, HTML, and CSS. This approach eliminates the need for a backend server, ensuring that your data remains on your device.
 
-The application communicates directly with GroqCloud's API using your personal API key, which is stored securely in your browser's localStorage. All message processing, including markdown rendering and syntax highlighting, happens locally in your browser.
+The application communicates directly with your configured AI provider's API using your personal API key, which is stored securely in your browser's localStorage. All message processing, including markdown rendering and syntax highlighting, happens locally in your browser.
 
 The interface uses server-sent events (SSE) to stream AI responses in real-time, providing a smooth and responsive experience even with longer generations. Context window usage is estimated and displayed visually to help you optimize your conversations.
 
@@ -130,7 +162,7 @@ The interface uses server-sent events (SSE) to stream AI responses in real-time,
 hacka.re includes a sophisticated feature to securely share various aspects of your configuration with others through session key-protected URL-based sharing. This feature provides enhanced security through cryptographically sound session key-based key derivation, ensuring that only those with the correct session key can access your shared data.
 
 ### Sharing Options:
-1. **API Key**: Share your GroqCloud API key for access to models
+1. **API Key**: Share your API key for access to models
 2. **System Prompt**: Share your custom system prompt for consistent AI behavior
 3. **Active Model**: Share your selected model preference with automatic fallback if unavailable
 4. **Conversation Data**: Share recent conversation history with configurable message count
@@ -155,17 +187,17 @@ Privacy is a core principle of hacka.re. However, it's important to understand t
 - This is a GitHub Pages site - the application is hosted on GitHub's servers
 - Stores your API key only in your browser's localStorage
 - Keeps conversation history locally on your device
-- All chat content is sent to Groq's API servers for processing
-- Your conversations are subject to Groq's privacy policy
+- All chat content is sent to your configured AI provider's API servers for processing
+- Your conversations are subject to your AI provider's privacy policy
 - Does not use analytics, tracking, or telemetry
 - Has no custom backend server that could potentially log your data
 - All external libraries are hosted locally to prevent third-party CDN connections
 
-While this approach gives you more control over your data than many commercial alternatives, please be aware that your conversation content is processed by Groq's cloud services. Never share sensitive personal information, credentials, or confidential data in your conversations.
+While this approach gives you more control over your data than many commercial alternatives, please be aware that your conversation content is processed by your AI provider's cloud services. Never share sensitive personal information, credentials, or confidential data in your conversations.
 
 ## Getting Started
 
-You're already using hacka.re with your GroqCloud API key. Your key and conversations are saved locally in your browser for future sessions.
+You're already using hacka.re with your API key. Your key and conversations are saved locally in your browser for future sessions.
 
 To get the most out of hacka.re:
 1. Select your preferred model from the dropdown menu
@@ -176,7 +208,6 @@ To get the most out of hacka.re:
 ## Resources
 
 For more information about the technologies used in hacka.re:
-- GroqCloud - The API provider for AI models
 - Llama Models - Meta's open language models
 - Mistral AI - Creators of the Mixtral model`;
 
@@ -212,12 +243,12 @@ For more information about the technologies used in hacka.re:
                     hideApiKeyModal();
                 }
                 
-                // Fetch available models with the new API key
-                fetchAvailableModels();
+                // Fetch available models with the new API key and update storage
+                fetchAvailableModels(newApiKey, baseUrl, true);
                 
                 // Add welcome message
                 if (addSystemMessage) {
-                    addSystemMessage('API key saved. You can now start chatting with GroqCloud AI models.');
+                    addSystemMessage('API key saved. You can now start chatting with AI models.');
                 }
                 
                 return true;
@@ -238,17 +269,23 @@ For more information about the technologies used in hacka.re:
             StorageService.saveModel(selectedModel);
             currentModel = selectedModel;
             
-            // Update API key if provided
+            // Get values from UI
             const newApiKey = elements.apiKeyUpdate.value.trim();
-            if (newApiKey) {
-                StorageService.saveApiKey(newApiKey);
-                apiKey = newApiKey;
-            }
+            const newBaseUrl = elements.baseUrl.value.trim();
+            
+            // We'll use these values to fetch models with updateStorage=true
+            // This ensures the values are saved and used for future API calls
+            const apiKeyToUse = newApiKey || apiKey;
+            const baseUrlToUse = newBaseUrl || baseUrl;
             
             // Save system prompt
             const newSystemPrompt = elements.systemPromptInput.value.trim();
             StorageService.saveSystemPrompt(newSystemPrompt);
             systemPrompt = newSystemPrompt;
+            
+            // Fetch models with the new values and update storage
+            // This ensures the values are saved and used for future API calls
+            fetchAvailableModels(apiKeyToUse, baseUrlToUse, true);
             
             // Update model info in header
             if (updateModelInfoDisplay) {
@@ -273,12 +310,26 @@ For more information about the technologies used in hacka.re:
         
         /**
          * Fetch available models from the API
+         * @param {string} currentApiKey - The API key to use (from UI or storage)
+         * @param {string} currentBaseUrl - The base URL to use (from UI or storage)
+         * @param {boolean} updateStorage - Whether to update storage with the provided values
          */
-        async function fetchAvailableModels() {
-            if (!apiKey) return;
+        async function fetchAvailableModels(currentApiKey = apiKey, currentBaseUrl = baseUrl, updateStorage = false) {
+            if (!currentApiKey) return;
             
             try {
-                const models = await ApiService.fetchAvailableModels(apiKey);
+                // Use the provided values for this API call only
+                const models = await ApiService.fetchAvailableModels(currentApiKey, currentBaseUrl);
+                
+                // Only update storage and internal variables if explicitly requested
+                // This ensures values from UI are not saved unless the user clicks "Save"
+                if (updateStorage) {
+                    StorageService.saveApiKey(currentApiKey);
+                    apiKey = currentApiKey;
+                    
+                    StorageService.saveBaseUrl(currentBaseUrl);
+                    baseUrl = currentBaseUrl;
+                }
                 
                 // Clear existing options
                 elements.modelSelect.innerHTML = '';
@@ -427,88 +478,29 @@ For more information about the technologies used in hacka.re:
         }
         
         /**
-         * Populate the model select with default models
+         * Handle the case when models can't be fetched
          */
         function populateDefaultModels() {
             // Clear existing options
             elements.modelSelect.innerHTML = '';
             
-            // Create optgroups for different model types
-            const standardGroup = document.createElement('optgroup');
-            standardGroup.label = 'Production Models';
+            // Create a single option indicating that models couldn't be fetched
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'Failed to fetch models - check API key and connection';
+            option.disabled = true;
+            option.selected = true;
             
-            const previewGroup = document.createElement('optgroup');
-            previewGroup.label = 'Preview Models';
+            // Add the option to the select element
+            elements.modelSelect.appendChild(option);
             
-            const systemGroup = document.createElement('optgroup');
-            systemGroup.label = 'Preview Systems';
+            // Add a hint option
+            const hintOption = document.createElement('option');
+            hintOption.value = '';
+            hintOption.textContent = 'Try reloading models after checking settings';
+            hintOption.disabled = true;
             
-            // Add production models
-            ModelInfoService.productionModels.forEach(modelId => {
-                if (ModelInfoService.modelInfo[modelId]) {
-                    const option = document.createElement('option');
-                    option.value = modelId;
-                    
-                    // Get simplified display name
-                    option.textContent = ModelInfoService.getDisplayName(modelId);
-                    
-                    // Set selected if it matches current model
-                    if (modelId === currentModel) {
-                        option.selected = true;
-                    }
-                    
-                    standardGroup.appendChild(option);
-                }
-            });
-            
-            // Add preview models
-            ModelInfoService.previewModels.forEach(modelId => {
-                if (ModelInfoService.modelInfo[modelId]) {
-                    const option = document.createElement('option');
-                    option.value = modelId;
-                    
-                    // Get simplified display name
-                    option.textContent = ModelInfoService.getDisplayName(modelId);
-                    
-                    // Set selected if it matches current model
-                    if (modelId === currentModel) {
-                        option.selected = true;
-                    }
-                    
-                    previewGroup.appendChild(option);
-                }
-            });
-            
-            // Add system models
-            ModelInfoService.systemModels.forEach(modelId => {
-                if (ModelInfoService.modelInfo[modelId]) {
-                    const option = document.createElement('option');
-                    option.value = modelId;
-                    
-                    // Get simplified display name
-                    option.textContent = ModelInfoService.getDisplayName(modelId);
-                    
-                    // Set selected if it matches current model
-                    if (modelId === currentModel) {
-                        option.selected = true;
-                    }
-                    
-                    systemGroup.appendChild(option);
-                }
-            });
-            
-            // Add groups to select element if they have options
-            if (standardGroup.children.length > 0) {
-                elements.modelSelect.appendChild(standardGroup);
-            }
-            
-            if (previewGroup.children.length > 0) {
-                elements.modelSelect.appendChild(previewGroup);
-            }
-            
-            if (systemGroup.children.length > 0) {
-                elements.modelSelect.appendChild(systemGroup);
-            }
+            elements.modelSelect.appendChild(hintOption);
         }
         
         /**
@@ -565,8 +557,8 @@ For more information about the technologies used in hacka.re:
                         // Clear the shared data from the URL
                         ShareService.clearSharedApiKeyFromUrl();
                         
-                        // Fetch available models with the new API key
-                        fetchAvailableModels();
+                        // Fetch available models with the new API key and update storage
+                        fetchAvailableModels(apiKey, baseUrl, true);
                         
                         // No need to show the password modal
                         return;
@@ -692,8 +684,8 @@ For more information about the technologies used in hacka.re:
                     // Remove the password modal
                     passwordModal.remove();
                     
-                    // Fetch available models with the new API key
-                    fetchAvailableModels().then(result => {
+                    // Fetch available models with the new API key and update storage
+                    fetchAvailableModels(apiKey, baseUrl, true).then(result => {
                         if (result.success && result.model) {
                             // If a shared model was applied successfully
                             const displayName = ModelInfoService.getDisplayName(result.model);
@@ -734,7 +726,7 @@ For more information about the technologies used in hacka.re:
                         showApiKeyModal();
                     } else {
                         // Fetch available models if API key exists
-                        fetchAvailableModels();
+                        fetchAvailableModels(apiKey, baseUrl, true);
                     }
                 }
             });
@@ -751,7 +743,7 @@ For more information about the technologies used in hacka.re:
                         showApiKeyModal();
                     } else {
                         // Fetch available models if API key exists
-                        fetchAvailableModels();
+                        fetchAvailableModels(apiKey, baseUrl, true);
                     }
                 }
             });
@@ -799,6 +791,14 @@ For more information about the technologies used in hacka.re:
             return systemPrompt;
         }
         
+        /**
+         * Get the current base URL
+         * @returns {string} Current base URL
+         */
+        function getBaseUrl() {
+            return baseUrl;
+        }
+        
         // Public API
         return {
             init,
@@ -810,7 +810,8 @@ For more information about the technologies used in hacka.re:
             maskApiKey,
             getApiKey,
             getCurrentModel,
-            getSystemPrompt
+            getSystemPrompt,
+            getBaseUrl
         };
     }
 

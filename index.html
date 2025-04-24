@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>hacka.re - Chat with GroqCloud AI Models</title>
-    <meta name="description" content="A simple chat interface for GroqCloud's OpenAI API">
+    <title>hacka.re - Chat with AI Models</title>
+    <meta name="description" content="A simple chat interface for OpenAI-compatible APIs">
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/themes.css">
     <link rel="stylesheet" href="css/copy-code.css">
@@ -57,12 +57,12 @@
 
         <div id="api-key-modal" class="modal">
             <div class="modal-content">
-                <h2>Enter your GroqCloud API Key</h2>
-                <p>Your API key is stored locally in your browser and never sent to any server other than GroqCloud.</p>
+                <h2>Enter your API Key</h2>
+                <p>Your API key is stored locally in your browser and never sent to any server other than your configured API provider.</p>
                 <form id="api-key-form">
                     <div class="form-group">
                         <label for="api-key">API Key</label>
-                        <input type="password" id="api-key" placeholder="Enter your GroqCloud API key" required>
+                        <input type="password" id="api-key" placeholder="Enter your API key" required>
                     </div>
                     <div class="form-actions">
                         <button type="submit" class="btn primary-btn">Save API Key</button>
@@ -167,12 +167,21 @@
                 <h2>Settings</h2>
                 <form id="settings-form">
                     <div class="form-group">
-                        <label for="model-select">Model</label>
-                        <select id="model-select"></select>
+                        <label for="base-url">OpenAI-compatible Base URL</label>
+                        <input type="text" id="base-url" placeholder="https://api.groq.com/openai/v1">
                     </div>
                     <div class="form-group">
                         <label for="api-key-update">API Key</label>
-                        <input type="password" id="api-key-update" placeholder="Update your GroqCloud API key">
+                        <input type="password" id="api-key-update" placeholder="Update your API key">
+                    </div>
+                    <div class="form-group">
+                        <label for="model-select">Model</label>
+                        <div style="display: flex; align-items: center;">
+                            <select id="model-select" style="flex-grow: 1;"></select>
+                            <button type="button" id="model-reload-btn" class="icon-btn" title="Reload models from API" style="margin-left: 8px;">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="system-prompt">System Prompt (max 7000 tokens)</label>
@@ -195,7 +204,7 @@
                 <div id="chat-messages">
                     <div class="message system">
                         <div class="message-content">
-                            <p>Welcome to hacka.re! Start a conversation with GroqCloud AI models.</p>
+                            <p>Welcome to hacka.re! Start a conversation with AI models.</p>
                         </div>
                     </div>
                 </div>

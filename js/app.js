@@ -1,6 +1,6 @@
 /**
  * Main JavaScript for AIHackare
- * A simple chat interface for GroqCloud's OpenAI API
+ * A simple chat interface for OpenAI-compatible APIs
  */
 
 document.addEventListener('DOMContentLoaded', function() {
