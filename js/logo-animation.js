@@ -1,7 +1,7 @@
 /**
  * Logo Animation for hacka.re
  * Creates a heartbeat animation through three dots inside the heart logo
- * Animation runs exactly twice (two heartbeats) and then stops
+ * Animation runs exactly three times (three heartbeats) and then stops
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', function() {
         dot.style.position = 'relative';
         dot.style.width = '3px';
         dot.style.height = '3px';
-        dot.style.backgroundColor = 'rgba(200, 200, 200, 0.95)';
+        dot.style.backgroundColor = '#33FF33'; // Terminal green color
         dot.style.borderRadius = '50%';
         dot.style.display = 'inline-block';
         dot.style.boxShadow = '0 1px 1px rgba(0, 0, 0, 0.2)';
@@ -115,10 +115,16 @@ document.addEventListener('DOMContentLoaded', function() {
         // First heartbeat
         await runSingleHeartbeat();
         
-        // Pause between heartbeats
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Shorter pause between heartbeats (reduced from 1000ms to 600ms)
+        await new Promise(resolve => setTimeout(resolve, 600));
         
-        // Second heartbeat (identical to first)
+        // Second heartbeat
+        await runSingleHeartbeat();
+        
+        // Shorter pause between heartbeats
+        await new Promise(resolve => setTimeout(resolve, 600));
+        
+        // Third heartbeat
         await runSingleHeartbeat();
     }
     
