@@ -61,10 +61,40 @@ window.SettingsManager = (function() {
                 }
             }
             
-            // Load saved base URL
+            // Load saved base URL and provider
             baseUrl = StorageService.getBaseUrl();
-            if (elements.baseUrl) {
-                elements.baseUrl.value = baseUrl;
+            const baseUrlProvider = StorageService.getBaseUrlProvider();
+            
+            // Set the provider dropdown
+            if (elements.baseUrlSelect) {
+                elements.baseUrlSelect.value = baseUrlProvider;
+                
+                // Show/hide custom URL field based on selection
+                if (baseUrlProvider === 'custom') {
+                    elements.customBaseUrlGroup.style.display = 'block';
+                    if (elements.baseUrl) {
+                        elements.baseUrl.value = baseUrl;
+                    }
+                } else {
+                    elements.customBaseUrlGroup.style.display = 'none';
+                }
+                
+                // Add event listener for provider change
+                elements.baseUrlSelect.addEventListener('change', function() {
+                    const selectedProvider = this.value;
+                    
+                    if (selectedProvider === 'custom') {
+                        // Show custom URL field
+                        elements.customBaseUrlGroup.style.display = 'block';
+                    } else {
+                        // Hide custom URL field and set to default URL for the provider
+                        elements.customBaseUrlGroup.style.display = 'none';
+                        const defaultUrl = StorageService.getDefaultBaseUrlForProvider(selectedProvider);
+                        if (elements.baseUrl) {
+                            elements.baseUrl.value = defaultUrl;
+                        }
+                    }
+                });
             }
             
             // Load saved system prompt or use default
@@ -271,7 +301,18 @@ For more information about the technologies used in hacka.re:
             
             // Get values from UI
             const newApiKey = elements.apiKeyUpdate.value.trim();
-            const newBaseUrl = elements.baseUrl.value.trim();
+            const selectedProvider = elements.baseUrlSelect.value;
+            
+            // Determine the base URL based on the selected provider
+            let newBaseUrl;
+            if (selectedProvider === 'custom') {
+                newBaseUrl = elements.baseUrl.value.trim();
+            } else {
+                newBaseUrl = StorageService.getDefaultBaseUrlForProvider(selectedProvider);
+            }
+            
+            // Save the provider selection
+            StorageService.saveBaseUrlProvider(selectedProvider);
             
             // We'll use these values to fetch models with updateStorage=true
             // This ensures the values are saved and used for future API calls
@@ -831,6 +872,7 @@ For more information about the technologies used in hacka.re:
             localStorage.removeItem(StorageService.STORAGE_KEYS.SYSTEM_PROMPT);
             localStorage.removeItem(StorageService.STORAGE_KEYS.SHARE_OPTIONS);
             localStorage.removeItem(StorageService.STORAGE_KEYS.BASE_URL);
+            localStorage.removeItem(StorageService.STORAGE_KEYS.BASE_URL_PROVIDER);
             
             // Update UI elements
             if (elements.baseUrl) {
