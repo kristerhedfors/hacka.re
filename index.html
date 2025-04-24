@@ -24,7 +24,22 @@
         <div class="beta-tag">BETA</div>
         <header>
             <div class="logo">
-                <h1 class="logo-text">hacka.re<span class="heart-logo">♥<div class="typing-dots"></div></span></h1>
+                <h1 class="logo-text">hacka.re<span class="heart-logo">♥<div class="typing-dots"></div>
+                    <div class="tooltip">
+                        <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 15px; margin-bottom: 20px; border-radius: 8px;">
+                            <p>Welcome to hacka.re! To get started, you'll need to configure LLM access by specifying a base URL (OpenAI-compatible) and API key. hacka.re is a privacy-focused web-based LLM chat client that stores your API key, conversations, and settings locally, in your browser.</p>
+                        </div>
+                        <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 15px; margin-bottom: 20px; border-radius: 8px;">
+                            <p>hacka.re is serverless and thus you can download the entire web page and run it offline, plus modify/extend it as you wish. hacka.re is published under the MIT No Attibution license, meant to be as free as freeware can be.</p>
+                        </div>
+                        <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 15px; margin-bottom: 20px; border-radius: 8px;">
+                            <p>hacka.re supports creation of self-contained, strongly encrypted, password/session key-protected GPTs with individual system prompts and conversation data, which thus allows for sharing and collaboration over less secure channels.</p>
+                        </div>
+                        <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 15px; margin-bottom: 0; border-radius: 8px;">
+                            <p>For more information about hacka.re, check out our <a href="about/index.html">About</a>, <a href="about/architecture.html">Architecture</a>, and <a href="about/use-cases.html">Use Cases</a> documentation.</p>
+                        </div>
+                    </div>
+                </span></h1>
                 <p class="tagline">För hackare, av hackare.</p>
             </div>
             <div class="model-info" id="model-info-btn">
@@ -169,7 +184,28 @@
         
         <div id="settings-modal" class="modal">
             <div class="modal-content">
-                <h2>Settings</h2>
+                <div class="settings-header">
+                    <h2>Settings</h2>
+                    <span class="info-icon" id="settings-info-icon">
+                        <i class="fas fa-info-circle"></i>
+                        <div class="tooltip">
+                            <div class="tooltip-content">
+                                <div class="important-notice">
+                                    <p>Welcome to hacka.re! To get started, you'll need to configure LLM access by specifying a base URL (OpenAI-compatible) and API key. hacka.re is a privacy-focused web-based LLM chat client that stores your API key, conversations, and settings locally, in your browser.</p>
+                                </div>
+                                <div class="important-notice">
+                                    <p>hacka.re is serverless and thus you can download the entire web page and run it offline, plus modify/extend it as you wish. hacka.re is published under the MIT No Attibution license, meant to be as free as freeware can be.</p>
+                                </div>
+                                <div class="important-notice">
+                                    <p>hacka.re supports creation of self-contained, strongly encrypted, password/session key-protected GPTs with individual system prompts and conversation data, which thus allows for sharing and collaboration over less secure channels.</p>
+                                </div>
+                                <div class="important-notice">
+                                    <p>For more information about hacka.re, check out our <a href="about/index.html">About</a>, <a href="about/architecture.html">Architecture</a>, and <a href="about/use-cases.html">Use Cases</a> documentation.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </span>
+                </div>
                 <form id="settings-form">
                     <div class="form-group">
                         <label for="base-url-select">API Provider</label>
@@ -260,5 +296,6 @@
     <script src="js/themes.js"></script>
     <script src="js/copy-code.js"></script>
     <script src="js/logo-animation.js"></script>
+    <script src="js/settings-tooltip.js"></script>
 </body>
 </html>

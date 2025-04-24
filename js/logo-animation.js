@@ -9,6 +9,7 @@ window.LogoAnimation = (function() {
     let animationRunning = false;
     let animationLoop = null;
     let dots = [];
+    let tooltipActive = false;
     
     // Initialize the animation
     function init() {
@@ -92,6 +93,63 @@ window.LogoAnimation = (function() {
             // Listen for custom events to start/stop the animation
             document.addEventListener('ai-response-start', startAnimation);
             document.addEventListener('ai-response-end', stopAnimation);
+            
+            // Add tooltip functionality
+            const tooltip = heartLogo.querySelector('.tooltip');
+            if (tooltip) {
+                // Make tooltip stay open when clicked or hovered
+                heartLogo.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Prevent document click from immediately closing it
+                    
+                    if (tooltip.classList.contains('active')) {
+                        tooltip.classList.remove('active');
+                        tooltipActive = false;
+                    } else {
+                        tooltip.classList.add('active');
+                        tooltipActive = true;
+                    }
+                });
+                
+                // Make tooltip stay open when hovered
+                heartLogo.addEventListener('mouseenter', function() {
+                    tooltip.classList.add('active');
+                    tooltipActive = true;
+                });
+                
+                // Allow clicking inside the tooltip without closing it
+                tooltip.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+                
+                // Close tooltip when clicking elsewhere on the document
+                document.addEventListener('click', function() {
+                    if (tooltipActive) {
+                        tooltip.classList.remove('active');
+                        tooltipActive = false;
+                    }
+                });
+                
+                // Add close button to tooltip
+                const closeButton = document.createElement('button');
+                closeButton.innerHTML = '&times;';
+                closeButton.style.position = 'absolute';
+                closeButton.style.top = '5px';
+                closeButton.style.right = '5px';
+                closeButton.style.background = 'none';
+                closeButton.style.border = 'none';
+                closeButton.style.fontSize = '1.2rem';
+                closeButton.style.cursor = 'pointer';
+                closeButton.style.color = 'var(--text-color)';
+                closeButton.title = 'Close';
+                
+                closeButton.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    tooltip.classList.remove('active');
+                    tooltipActive = false;
+                });
+                
+                tooltip.appendChild(closeButton);
+            }
         });
     }
     
