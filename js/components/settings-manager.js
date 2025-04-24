@@ -527,6 +527,16 @@ For more information about the technologies used in hacka.re:
                             addSystemMessage(`Shared API key (${maskedApiKey}) has been applied using the current session key.`);
                         }
                         
+                        // If there's a base URL, save it too
+                        if (sharedData.baseUrl) {
+                            StorageService.saveBaseUrl(sharedData.baseUrl);
+                            baseUrl = sharedData.baseUrl;
+                            
+                            if (addSystemMessage) {
+                                addSystemMessage(`Shared base URL has been applied.`);
+                            }
+                        }
+                        
                         // If there's a system prompt, save it too
                         if (sharedData.systemPrompt) {
                             StorageService.saveSystemPrompt(sharedData.systemPrompt);
@@ -649,6 +659,16 @@ For more information about the technologies used in hacka.re:
                     // Report each setting separately
                     if (addSystemMessage) {
                         addSystemMessage(`Shared API key (${maskedApiKey}) has been applied.`);
+                    }
+                    
+                    // If there's a base URL, save it too
+                    if (sharedData.baseUrl) {
+                        StorageService.saveBaseUrl(sharedData.baseUrl);
+                        baseUrl = sharedData.baseUrl;
+                        
+                        if (addSystemMessage) {
+                            addSystemMessage(`Shared base URL has been applied.`);
+                        }
                     }
                     
                     // If there's a system prompt, save it too

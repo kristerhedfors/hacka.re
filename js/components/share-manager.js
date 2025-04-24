@@ -24,11 +24,12 @@ window.ShareManager = (function() {
          * Save share options to local storage
          */
         function saveShareOptions() {
-            if (elements.shareApiKeyCheckbox && elements.shareSystemPromptCheckbox && 
-                elements.shareModelCheckbox && elements.shareConversationCheckbox && 
-                elements.messageHistoryCount) {
+            if (elements.shareBaseUrlCheckbox && elements.shareApiKeyCheckbox && 
+                elements.shareSystemPromptCheckbox && elements.shareModelCheckbox && 
+                elements.shareConversationCheckbox && elements.messageHistoryCount) {
                 
                 const options = {
+                    includeBaseUrl: elements.shareBaseUrlCheckbox.checked,
                     includeApiKey: elements.shareApiKeyCheckbox.checked,
                     includeSystemPrompt: elements.shareSystemPromptCheckbox.checked,
                     includeModel: elements.shareModelCheckbox.checked,
@@ -46,10 +47,11 @@ window.ShareManager = (function() {
         function loadShareOptions() {
             const options = StorageService.getShareOptions();
             
-            if (options && elements.shareApiKeyCheckbox && elements.shareSystemPromptCheckbox && 
-                elements.shareModelCheckbox && elements.shareConversationCheckbox && 
-                elements.messageHistoryCount) {
+            if (options && elements.shareBaseUrlCheckbox && elements.shareApiKeyCheckbox && 
+                elements.shareSystemPromptCheckbox && elements.shareModelCheckbox && 
+                elements.shareConversationCheckbox && elements.messageHistoryCount) {
                 
+                elements.shareBaseUrlCheckbox.checked = options.includeBaseUrl;
                 elements.shareApiKeyCheckbox.checked = options.includeApiKey;
                 elements.shareSystemPromptCheckbox.checked = options.includeSystemPrompt;
                 elements.shareModelCheckbox.checked = options.includeModel;
@@ -285,12 +287,17 @@ window.ShareManager = (function() {
                 return false;
             }
             
+            // Get base URL
+            const baseUrl = StorageService.getBaseUrl();
+            
             // Get options
             const options = {
+                baseUrl: baseUrl,
                 apiKey: apiKey,
                 systemPrompt: systemPrompt,
                 model: currentModel,
                 messages: messages,
+                includeBaseUrl: elements.shareBaseUrlCheckbox.checked,
                 includeApiKey: elements.shareApiKeyCheckbox.checked,
                 includeSystemPrompt: elements.shareSystemPromptCheckbox.checked,
                 includeModel: elements.shareModelCheckbox.checked,
@@ -299,7 +306,7 @@ window.ShareManager = (function() {
             };
             
             // Validate options
-            if (!options.includeApiKey && !options.includeSystemPrompt && !options.includeModel && !options.includeConversation) {
+            if (!options.includeBaseUrl && !options.includeApiKey && !options.includeSystemPrompt && !options.includeModel && !options.includeConversation) {
                 if (addSystemMessage) {
                     addSystemMessage('Error: Please select at least one item to share.');
                 }

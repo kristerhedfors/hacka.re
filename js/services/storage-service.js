@@ -101,6 +101,7 @@ window.StorageService = (function() {
     function getShareOptions() {
         const savedOptions = localStorage.getItem(STORAGE_KEYS.SHARE_OPTIONS);
         return savedOptions ? JSON.parse(savedOptions) : {
+            includeBaseUrl: false,
             includeApiKey: true,
             includeSystemPrompt: false,
             includeModel: false,

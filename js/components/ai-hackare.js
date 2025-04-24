@@ -89,6 +89,13 @@ window.AIHackareComponent = (function() {
             }
             
             // Add event listeners for link length calculation and save options
+            if (this.elements.shareBaseUrlCheckbox) {
+                this.elements.shareBaseUrlCheckbox.addEventListener('change', () => {
+                    this.updateLinkLengthBar();
+                    this.shareManager.saveShareOptions();
+                });
+            }
+            
             if (this.elements.shareApiKeyCheckbox) {
                 this.elements.shareApiKeyCheckbox.addEventListener('change', () => {
                     this.updateLinkLengthBar();
