@@ -1,26 +1,51 @@
 /**
  * API Service
- * Handles API interactions with GroqCloud
+ * Handles API interactions with AI model providers
  */
 
 window.ApiService = (function() {
-    // API endpoints
-    const ENDPOINTS = {
-        CHAT: 'https://api.groq.com/openai/v1/chat/completions',
-        MODELS: 'https://api.groq.com/openai/v1/models'
+    // Get base URL from settings
+    function getBaseUrl() {
+        return StorageService.getBaseUrl();
+    }
+    
+    // API endpoint paths (relative to the base URL)
+    const ENDPOINT_PATHS = {
+        CHAT: 'chat/completions',
+        MODELS: 'models'
     };
+    
+    // Get full endpoint URL
+    function getEndpointUrl(endpoint) {
+        const baseUrl = getBaseUrl();
+        // Ensure the base URL ends with a slash and the endpoint path doesn't start with a slash
+        const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+        return `${normalizedBaseUrl}${ENDPOINT_PATHS[endpoint]}`;
+    }
 
     /**
      * Fetch available models from the API
      * @param {string} apiKey - The API key for authentication
+     * @param {string} customBaseUrl - Optional custom base URL to use for this request
      * @returns {Promise<Array>} - Promise resolving to array of available models
      */
-    async function fetchAvailableModels(apiKey) {
+    async function fetchAvailableModels(apiKey, customBaseUrl = null) {
         if (!apiKey) {
             throw new Error('API key is required');
         }
         
-        const response = await fetch(ENDPOINTS.MODELS, {
+        // Determine which base URL to use
+        let endpointUrl;
+        if (customBaseUrl) {
+            // Use the custom base URL if provided
+            const normalizedBaseUrl = customBaseUrl.endsWith('/') ? customBaseUrl : `${customBaseUrl}/`;
+            endpointUrl = `${normalizedBaseUrl}${ENDPOINT_PATHS.MODELS}`;
+        } else {
+            // Otherwise use the default endpoint URL
+            endpointUrl = getEndpointUrl('MODELS');
+        }
+        
+        const response = await fetch(endpointUrl, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
@@ -62,7 +87,7 @@ window.ApiService = (function() {
             });
         }
         
-        const response = await fetch(ENDPOINTS.CHAT, {
+        const response = await fetch(getEndpointUrl('CHAT'), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -78,7 +103,7 @@ window.ApiService = (function() {
         
         if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.error?.message || 'Error connecting to GroqCloud API');
+            throw new Error(error.error?.message || 'Error connecting to API');
         }
         
         // Process the stream

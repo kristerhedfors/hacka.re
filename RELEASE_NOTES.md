@@ -8,7 +8,7 @@ This document summarizes the features and achievements of hacka.re as of Release
 
 ### Core Functionality
 
-- **GroqCloud API Integration**: Seamless integration with GroqCloud's OpenAI-compatible API for AI model access
+- **OpenAI-Compatible API Integration**: Seamless integration with OpenAI-compatible APIs for AI model access
 - **Streaming Responses**: Real-time streaming of AI responses with token speed display
 - **Context Window Visualization**: Real-time display of token usage within model's context limit with progress bar
 - **Chat History**: Persistent chat history stored locally in the browser
@@ -18,7 +18,7 @@ This document summarizes the features and achievements of hacka.re as of Release
 
 ### Model Support
 
-- **Production Models**: Support for all GroqCloud production models including:
+- **Production Models**: Support for production models including:
   - Llama 3.3 70B Versatile
   - Llama 3.1 8B Instant
   - Llama Guard 3 8B
@@ -34,7 +34,7 @@ This document summarizes the features and achievements of hacka.re as of Release
   - PlayAI TTS (including Arabic variant)
   - Allam 2 7B
 
-- **Preview Systems**: Support for Groq's compound systems:
+- **Preview Systems**: Support for compound systems:
   - Compound Beta
   - Compound Beta Mini
 

@@ -10,7 +10,8 @@ window.StorageService = (function() {
         MODEL: 'aihackare_model',
         HISTORY: 'aihackare_history',
         SYSTEM_PROMPT: 'aihackare_system_prompt',
-        SHARE_OPTIONS: 'aihackare_share_options'
+        SHARE_OPTIONS: 'aihackare_share_options',
+        BASE_URL: 'aihackare_base_url'
     };
 
     /**
@@ -108,6 +109,22 @@ window.StorageService = (function() {
         };
     }
 
+    /**
+     * Save base URL to local storage
+     * @param {string} baseUrl - The base URL to save
+     */
+    function saveBaseUrl(baseUrl) {
+        localStorage.setItem(STORAGE_KEYS.BASE_URL, baseUrl);
+    }
+
+    /**
+     * Get base URL from local storage
+     * @returns {string} The stored base URL or default URL if not found
+     */
+    function getBaseUrl() {
+        return localStorage.getItem(STORAGE_KEYS.BASE_URL) || 'https://api.groq.com/openai/v1';
+    }
+
     // Public API
     return {
         saveApiKey: saveApiKey,
@@ -120,6 +137,8 @@ window.StorageService = (function() {
         saveSystemPrompt: saveSystemPrompt,
         getSystemPrompt: getSystemPrompt,
         saveShareOptions: saveShareOptions,
-        getShareOptions: getShareOptions
+        getShareOptions: getShareOptions,
+        saveBaseUrl: saveBaseUrl,
+        getBaseUrl: getBaseUrl
     };
 })();
