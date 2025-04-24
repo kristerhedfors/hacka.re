@@ -54,6 +54,7 @@ window.DOMElements = (function() {
             settingsModal: document.getElementById('settings-modal'),
             settingsForm: document.getElementById('settings-form'),
             modelSelect: document.getElementById('model-select'),
+            modelReloadBtn: document.getElementById('model-reload-btn'),
             apiKeyUpdate: document.getElementById('api-key-update'),
             baseUrl: document.getElementById('base-url'),
             systemPromptInput: document.getElementById('system-prompt'),

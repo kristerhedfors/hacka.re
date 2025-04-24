@@ -1,10 +1,10 @@
 # hacka.re
 
-A simple chat interface for GroqCloud's OpenAI API.
+A simple chat interface for OpenAI-compatible APIs.
 
 ## Features
 
-- Access to GroqCloud's ultra-fast inference for models like Llama 3.1, Mixtral, and more
+- Access to ultra-fast inference for models like Llama 3.1, Mixtral, and more
 - Privacy-focused: Your API key and conversations stay in your browser
 - Context window visualization: Real-time display of token usage within model's context limit
 - Markdown support: Rich formatting for AI responses
@@ -13,7 +13,7 @@ A simple chat interface for GroqCloud's OpenAI API.
 
 ## Getting Started
 
-To use hacka.re, you'll need a GroqCloud API key, which you can obtain from [GroqCloud's console](https://console.groq.com/).
+To use hacka.re, you'll need an API key from a compatible provider.
 
 1. Visit [hacka.re](https://hacka.re/)
 2. Enter your API key when prompted
@@ -62,7 +62,7 @@ Privacy is a core principle of hacka.re:
 
 - Your API key is stored only in your browser's localStorage
 - Conversation history is kept locally on your device
-- All chat content is sent to Groq's API servers for processing
+- All chat content is sent to your configured API provider's servers for processing
 - No analytics, tracking, or telemetry
 - No custom backend server that could log your data
 

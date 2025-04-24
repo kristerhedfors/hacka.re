@@ -12,7 +12,7 @@ window.SettingsManager = (function() {
     function createSettingsManager(elements) {
         // Settings state
         let apiKey = null;
-        let currentModel = 'meta-llama/llama-4-scout-17b-16e-instruct'; // Default model
+        let currentModel = ''; // Empty initially, will be populated from API
         let systemPrompt = null;
         let pendingSharedModel = null;
         let baseUrl = null;
@@ -82,6 +82,32 @@ window.SettingsManager = (function() {
                 });
             }
             
+            // Set up event listener for model reload button
+            if (elements.modelReloadBtn) {
+                elements.modelReloadBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Clear the model select and show loading state
+                    elements.modelSelect.innerHTML = '<option disabled selected>Loading models...</option>';
+                    
+                    // Disable the button and show loading state
+                    const originalIcon = this.innerHTML;
+                    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                    this.disabled = true;
+                    
+                    // Fetch models from API
+                    fetchAvailableModels().then(() => {
+                        // Re-enable the button and restore icon
+                        this.innerHTML = originalIcon;
+                        this.disabled = false;
+                    }).catch(() => {
+                        // Re-enable the button and restore icon even if there's an error
+                        this.innerHTML = originalIcon;
+                        this.disabled = false;
+                    });
+                });
+            }
+            
             // Update model info in header
             if (updateModelInfoDisplay) {
                 updateModelInfoDisplay(currentModel);
@@ -97,15 +123,15 @@ window.SettingsManager = (function() {
 
 ## About hacka.re
 
-hacka.re is a modern, privacy-focused web client for GroqCloud AI models created in early 2025. It provides a streamlined, browser-based interface for interacting with GroqCloud's powerful AI models while maintaining a focus on privacy and user control.
+hacka.re is a modern, privacy-focused web client for AI models created in early 2025. It provides a streamlined, browser-based interface for interacting with powerful AI models while maintaining a focus on privacy and user control.
 
 The name "hacka.re" comes from "hackare" (the Swedish word for "hacker"), reflecting the project's ethos: a tool built by hackers for hackers. The tagline "För hackare, av hackare" translates to "for hackers, by hackers."
 
-Unlike many commercial chat interfaces, hacka.re prioritizes user privacy by storing all data locally in the browser. Your API key and conversation history never leave your device except when making direct requests to GroqCloud's API. This approach gives users complete control over their data while still providing access to state-of-the-art AI models.
+Unlike many commercial chat interfaces, hacka.re prioritizes user privacy by storing all data locally in the browser. Your API key and conversation history never leave your device except when making direct requests to the AI provider's API. This approach gives users complete control over their data while still providing access to state-of-the-art AI models.
 
 ## Key Features
 
-- **High-Performance Models**: Access to GroqCloud's ultra-fast inference for models like Llama 3.1, Mixtral, and more.
+- **High-Performance Models**: Access to ultra-fast inference for models like Llama 3.1, Mixtral, and more.
 - **Privacy-Focused**: Your API key and conversations stay in your browser, never stored on external servers.
 - **Context Window Visualization**: Real-time display of token usage within model's context limit to optimize your conversations.
 - **Markdown Support**: Rich formatting for AI responses including code blocks with syntax highlighting.
@@ -114,7 +140,7 @@ Unlike many commercial chat interfaces, hacka.re prioritizes user privacy by sto
 
 ## Supported Models
 
-hacka.re provides access to all models available through GroqCloud's API, including models from Meta, Google, Mistral, and more. The interface automatically fetches the latest available models from your GroqCloud account.
+hacka.re provides access to all models available through your configured API provider, including models from Meta, Google, Mistral, and more. The interface automatically fetches the latest available models from your account.
 
 Notable models include:
 - Llama 3.3 70B Versatile (Meta) - Context: 128K tokens
@@ -122,13 +148,13 @@ Notable models include:
 - Gemma2 9B IT (Google) - Context: 8,192 tokens
 - Llama 4 Models (Meta) - Context: 131,072 tokens
 
-The interface also supports preview models and systems as they become available on GroqCloud, including specialized models from Mistral, DeepSeek, Alibaba Cloud, and more. All models are organized into categories for easy selection.
+The interface also supports preview models and systems as they become available, including specialized models from Mistral, DeepSeek, Alibaba Cloud, and more. All models are organized into categories for easy selection.
 
 ## Technical Implementation
 
 hacka.re is built as a pure client-side application using vanilla JavaScript, HTML, and CSS. This approach eliminates the need for a backend server, ensuring that your data remains on your device.
 
-The application communicates directly with GroqCloud's API using your personal API key, which is stored securely in your browser's localStorage. All message processing, including markdown rendering and syntax highlighting, happens locally in your browser.
+The application communicates directly with your configured AI provider's API using your personal API key, which is stored securely in your browser's localStorage. All message processing, including markdown rendering and syntax highlighting, happens locally in your browser.
 
 The interface uses server-sent events (SSE) to stream AI responses in real-time, providing a smooth and responsive experience even with longer generations. Context window usage is estimated and displayed visually to help you optimize your conversations.
 
@@ -137,7 +163,7 @@ The interface uses server-sent events (SSE) to stream AI responses in real-time,
 hacka.re includes a sophisticated feature to securely share various aspects of your configuration with others through session key-protected URL-based sharing. This feature provides enhanced security through cryptographically sound session key-based key derivation, ensuring that only those with the correct session key can access your shared data.
 
 ### Sharing Options:
-1. **API Key**: Share your GroqCloud API key for access to models
+1. **API Key**: Share your API key for access to models
 2. **System Prompt**: Share your custom system prompt for consistent AI behavior
 3. **Active Model**: Share your selected model preference with automatic fallback if unavailable
 4. **Conversation Data**: Share recent conversation history with configurable message count
@@ -162,17 +188,17 @@ Privacy is a core principle of hacka.re. However, it's important to understand t
 - This is a GitHub Pages site - the application is hosted on GitHub's servers
 - Stores your API key only in your browser's localStorage
 - Keeps conversation history locally on your device
-- All chat content is sent to Groq's API servers for processing
-- Your conversations are subject to Groq's privacy policy
+- All chat content is sent to your configured AI provider's API servers for processing
+- Your conversations are subject to your AI provider's privacy policy
 - Does not use analytics, tracking, or telemetry
 - Has no custom backend server that could potentially log your data
 - All external libraries are hosted locally to prevent third-party CDN connections
 
-While this approach gives you more control over your data than many commercial alternatives, please be aware that your conversation content is processed by Groq's cloud services. Never share sensitive personal information, credentials, or confidential data in your conversations.
+While this approach gives you more control over your data than many commercial alternatives, please be aware that your conversation content is processed by your AI provider's cloud services. Never share sensitive personal information, credentials, or confidential data in your conversations.
 
 ## Getting Started
 
-You're already using hacka.re with your GroqCloud API key. Your key and conversations are saved locally in your browser for future sessions.
+You're already using hacka.re with your API key. Your key and conversations are saved locally in your browser for future sessions.
 
 To get the most out of hacka.re:
 1. Select your preferred model from the dropdown menu
@@ -183,7 +209,6 @@ To get the most out of hacka.re:
 ## Resources
 
 For more information about the technologies used in hacka.re:
-- GroqCloud - The API provider for AI models
 - Llama Models - Meta's open language models
 - Mistral AI - Creators of the Mixtral model`;
 
@@ -224,7 +249,7 @@ For more information about the technologies used in hacka.re:
                 
                 // Add welcome message
                 if (addSystemMessage) {
-                    addSystemMessage('API key saved. You can now start chatting with GroqCloud AI models.');
+                    addSystemMessage('API key saved. You can now start chatting with AI models.');
                 }
                 
                 return true;

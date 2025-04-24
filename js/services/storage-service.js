@@ -119,10 +119,10 @@ window.StorageService = (function() {
 
     /**
      * Get base URL from local storage
-     * @returns {string} The stored base URL or default Groq URL if not found
+     * @returns {string} The stored base URL or default URL if not found
      */
     function getBaseUrl() {
-        return localStorage.getItem(STORAGE_KEYS.BASE_URL) || 'https://api.groq.com';
+        return localStorage.getItem(STORAGE_KEYS.BASE_URL) || 'https://api.groq.com/openai/v1';
     }
 
     // Public API

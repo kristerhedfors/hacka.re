@@ -1,6 +1,6 @@
 /**
  * API Service
- * Handles API interactions with GroqCloud
+ * Handles API interactions with AI model providers
  */
 
 window.ApiService = (function() {
@@ -9,16 +9,18 @@ window.ApiService = (function() {
         return StorageService.getBaseUrl();
     }
     
-    // API endpoint paths
+    // API endpoint paths (relative to the base URL)
     const ENDPOINT_PATHS = {
-        CHAT: '/openai/v1/chat/completions',
-        MODELS: '/openai/v1/models'
+        CHAT: 'chat/completions',
+        MODELS: 'models'
     };
     
     // Get full endpoint URL
     function getEndpointUrl(endpoint) {
         const baseUrl = getBaseUrl();
-        return `${baseUrl}${ENDPOINT_PATHS[endpoint]}`;
+        // Ensure the base URL ends with a slash and the endpoint path doesn't start with a slash
+        const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+        return `${normalizedBaseUrl}${ENDPOINT_PATHS[endpoint]}`;
     }
 
     /**
