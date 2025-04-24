@@ -113,11 +113,13 @@ header {
 
 .heart-logo {
     font-size: 1.5rem;
-    color: #444444;
+    color: #444444 !important; /* Force color override with !important */
     position: relative;
     line-height: 0.8;
     display: inline-block;
     margin-left: 5px;
+    -webkit-text-fill-color: #444444; /* For WebKit browsers */
+    text-fill-color: #444444; /* Future CSS standard */
 }
 
 /* Typing Dots Styling */
