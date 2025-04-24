@@ -86,6 +86,9 @@ window.ChatManager = (function() {
             elements.sendBtn.innerHTML = '<i class="fas fa-stop"></i>';
             elements.sendBtn.title = 'Stop generation';
             
+            // Dispatch event to start heart animation
+            document.dispatchEvent(new CustomEvent('ai-response-start'));
+            
             // Add typing indicator
             const typingIndicator = UIUtils.createTypingIndicator();
             elements.chatMessages.appendChild(typingIndicator);
@@ -144,6 +147,9 @@ window.ChatManager = (function() {
                 // Reset send button
                 elements.sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
                 elements.sendBtn.title = 'Send message';
+                
+                // Dispatch event to stop heart animation
+                document.dispatchEvent(new CustomEvent('ai-response-end'));
             }
         }
         
@@ -153,6 +159,9 @@ window.ChatManager = (function() {
         function stopGeneration() {
             if (controller) {
                 controller.abort();
+                
+                // Dispatch event to stop heart animation when manually stopped
+                document.dispatchEvent(new CustomEvent('ai-response-end'));
             }
         }
         
