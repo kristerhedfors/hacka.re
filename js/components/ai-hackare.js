@@ -534,6 +534,54 @@ window.AIHackareComponent = (function() {
                             modelMenuSelect.appendChild(optionEl);
                         }
                         
+                        // If no model is currently selected, select a default model based on the provider
+                        if (!modelId || modelId === '') {
+                            // Determine the provider from the base URL
+                            let provider = 'groq'; // Default provider
+                            if (currentBaseUrl) {
+                                if (currentBaseUrl.includes('openai.com')) {
+                                    provider = 'openai';
+                                } else if (currentBaseUrl.includes('localhost:11434')) {
+                                    provider = 'ollama';
+                                }
+                            }
+                            
+                            let modelToSelect = null;
+                            
+                            // For Ollama, select the first model in the list
+                            if (provider === 'ollama') {
+                                if (modelMenuSelect.options.length > 0) {
+                                    modelToSelect = modelMenuSelect.options[0].value;
+                                }
+                            } else {
+                                // For other providers, try to use the default model
+                                const defaultModel = ModelInfoService.defaultModels[provider];
+                                
+                                // Check if the default model is available in the select options
+                                let defaultModelAvailable = false;
+                                for (let i = 0; i < modelMenuSelect.options.length; i++) {
+                                    if (modelMenuSelect.options[i].value === defaultModel) {
+                                        defaultModelAvailable = true;
+                                        modelToSelect = defaultModel;
+                                        break;
+                                    }
+                                }
+                                
+                                // If default model is not available, pick the first available model
+                                if (!defaultModelAvailable && modelMenuSelect.options.length > 0) {
+                                    modelToSelect = modelMenuSelect.options[0].value;
+                                }
+                            }
+                            
+                            // Apply the selected model if one was found
+                            if (modelToSelect) {
+                                modelMenuSelect.value = modelToSelect;
+                                StorageService.saveModel(modelToSelect);
+                                this.uiManager.updateModelInfoDisplay(modelToSelect);
+                                console.log(`Selected model for ${provider}: ${modelToSelect}`);
+                            }
+                        }
+                        
                         // Add event listener to the model select
                         modelMenuSelect.addEventListener('change', (e) => {
                             const selectedModel = e.target.value;

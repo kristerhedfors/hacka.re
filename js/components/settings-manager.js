@@ -108,6 +108,9 @@ window.SettingsManager = (function() {
                         }
                     }
                 } else {
+                    // Load saved base URL before fetching models
+                    baseUrl = StorageService.getBaseUrl();
+                    
                     // Fetch available models if API key exists
                     // Use updateStorage=true to ensure the values are properly loaded
                     fetchAvailableModels(apiKey, baseUrl, true);
@@ -334,6 +337,9 @@ For more information about the technologies used in hacka.re:
                 if (hideApiKeyModal) {
                     hideApiKeyModal();
                 }
+                
+                // Make sure base URL is loaded before fetching models
+                baseUrl = StorageService.getBaseUrl();
                 
                 // Fetch available models with the new API key and update storage
                 fetchAvailableModels(newApiKey, baseUrl, true);
@@ -570,6 +576,47 @@ For more information about the technologies used in hacka.re:
                     }
                 }
                 
+                // If no model is currently selected, select a default model based on the provider
+                if (!currentModel || currentModel === '') {
+                    // Determine the provider from the base URL
+                    let provider = 'groq'; // Default provider
+                    if (currentBaseUrl) {
+                        if (currentBaseUrl.includes('openai.com')) {
+                            provider = 'openai';
+                        } else if (currentBaseUrl.includes('localhost:11434')) {
+                            provider = 'ollama';
+                        }
+                    }
+                    
+                    let modelToSelect = null;
+                    
+                    // For Ollama, select the first model in the list
+                    if (provider === 'ollama') {
+                        if (fetchedModelIds.length > 0) {
+                            modelToSelect = fetchedModelIds[0];
+                        }
+                    } else {
+                        // For other providers, try to use the default model
+                        const defaultModel = ModelInfoService.defaultModels[provider];
+                        
+                        // Check if the default model is available
+                        if (defaultModel && fetchedModelIds.includes(defaultModel)) {
+                            modelToSelect = defaultModel;
+                        } else if (fetchedModelIds.length > 0) {
+                            // If default model is not available, pick the first available model
+                            modelToSelect = fetchedModelIds[0];
+                        }
+                    }
+                    
+                    // Apply the selected model if one was found
+                    if (modelToSelect) {
+                        currentModel = modelToSelect;
+                        StorageService.saveModel(modelToSelect);
+                        elements.modelSelect.value = modelToSelect;
+                        console.log(`Selected model for ${provider}: ${modelToSelect}`);
+                    }
+                }
+                
                 return { success: true };
                 
             } catch (error) {
@@ -669,6 +716,9 @@ For more information about the technologies used in hacka.re:
                         
                         // Clear the shared data from the URL
                         ShareService.clearSharedApiKeyFromUrl();
+                        
+                        // Make sure base URL is loaded before fetching models
+                        baseUrl = StorageService.getBaseUrl();
                         
                         // Fetch available models with the new API key and update storage
                         fetchAvailableModels(apiKey, baseUrl, true);
