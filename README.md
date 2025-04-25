@@ -1,11 +1,11 @@
 # hacka.re
 
-A simple chat interface for OpenAI-compatible APIs.
+A simple, serverless chat interface for OpenAI-compatible APIs.
 
 ## Features
 
 - Access to ultra-fast inference for models like Llama 3.1, Mixtral, and more
-- Privacy-focused: Your API key and conversations stay in your browser
+- Privacy-focused & Serverless: Your API key and conversations stay in your browser; no backend server involved.
 - Context window visualization: Real-time display of token usage within model's context limit
 - Markdown support: Rich formatting for AI responses
 - Persistent history: Conversation history is saved locally
@@ -62,9 +62,9 @@ Privacy is a core principle of hacka.re:
 
 - Your API key is stored only in your browser's localStorage
 - Conversation history is kept locally on your device
-- All chat content is sent to your configured API provider's servers for processing
+- All chat content is sent directly from your browser to your configured API provider's servers for processing
 - No analytics, tracking, or telemetry
-- No custom backend server that could log your data
+- Serverless: No custom backend server that could log your data
 
 ## License
 
