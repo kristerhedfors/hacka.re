@@ -851,15 +851,26 @@ For more information about the technologies used in hacka.re:
                         }
                     }
                     
-                    // If there's a title and subtitle, save them and update the UI
+                    // If there's a title, save it and update the UI
                     if (sharedData.title) {
                         StorageService.saveTitle(sharedData.title);
-                        updateTitleAndSubtitle();
+                        // Call the global function to update title and subtitle
+                        window.updateTitleAndSubtitle();
+                        
+                        if (addSystemMessage) {
+                            addSystemMessage(`Shared title "${sharedData.title}" has been applied.`);
+                        }
                     }
                     
+                    // If there's a subtitle, save it and update the UI
                     if (sharedData.subtitle) {
                         StorageService.saveSubtitle(sharedData.subtitle);
-                        updateTitleAndSubtitle();
+                        // Call the global function to update title and subtitle
+                        window.updateTitleAndSubtitle();
+                        
+                        if (addSystemMessage) {
+                            addSystemMessage(`Shared subtitle "${sharedData.subtitle}" has been applied.`);
+                        }
                     }
                     
                     // Clear the shared data from the URL

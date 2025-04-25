@@ -17,8 +17,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 /**
  * Update the title and subtitle on all index pages
+ * This function is exposed globally so it can be called from other modules
  */
-function updateTitleAndSubtitle() {
+window.updateTitleAndSubtitle = function() {
     const title = StorageService.getTitle();
     const subtitle = StorageService.getSubtitle();
     
@@ -42,4 +43,6 @@ function updateTitleAndSubtitle() {
     
     // Update document title
     document.title = title + ' - ' + subtitle;
+    
+    console.log(`Title and subtitle updated to: ${title} - ${subtitle}`);
 }
