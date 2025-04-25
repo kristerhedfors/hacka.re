@@ -123,16 +123,25 @@ window.LinkSharingService = (function() {
                     return null;
                 }
                 
-                // Return all decrypted data
-                return {
+                // Create the result object with required fields
+                const result = {
                     baseUrl: data.baseUrl || null,
                     apiKey: data.apiKey,
                     systemPrompt: data.systemPrompt || null,
                     model: data.model || null,
-                    messages: data.messages || null,
-                    title: data.title || "hacka.re",
-                    subtitle: data.subtitle || "För hackare, av hackare"
+                    messages: data.messages || null
                 };
+                
+                // Only include title and subtitle if they are actually present in the data
+                if (data.title) {
+                    result.title = data.title;
+                }
+                
+                if (data.subtitle) {
+                    result.subtitle = data.subtitle;
+                }
+                
+                return result;
             }
             
             return null;
