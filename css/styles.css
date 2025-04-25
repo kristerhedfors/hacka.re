@@ -73,28 +73,51 @@ ul {
 /* ===== Beta Tag ===== */
 .beta-tag {
     position: absolute;
-    top: 10px;
-    right: 10px;
-    background-color: rgba(234, 88, 12, 0.8); /* Warm orange with transparency */
-    color: white;
-    padding: 3px 8px;
-    font-size: 0.7rem;
+    top: 8px; /* Lowered slightly */
+    right: auto;
+    left: 330px; /* Moved twice as much further to the right */
+    background-color: #fef3c7; /* System message background color */
+    color: #333; /* Dark text for better contrast */
+    padding: 2px 6px;
+    font-size: 0.6rem;
     font-weight: bold;
     border-radius: 4px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     z-index: 100;
-    transform: rotate(5deg);
+    transform: rotate(10deg); /* Reduced lean to 10% */
 }
 
 /* ===== Header ===== */
 header {
     background-color: var(--primary-color);
-    color: var(--light-text);
     padding: 1rem 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
     box-shadow: var(--box-shadow);
+    color: var(--light-text);
+}
+
+/* Apply sweeping effect to all text in header except hacka.re logo */
+header .model-info,
+header .settings,
+header .tagline,
+header .serverless-gpts,
+header .model-developer,
+header .model-name,
+header .model-stats,
+header .model-context,
+header .context-usage,
+header .token-speed,
+header .usage-text,
+header .token-speed-text {
+    animation: textSweep 3s infinite alternate;
+    background: linear-gradient(90deg, #c2c2c2, #ffffff, #c2c2c2); /* 25% less gray (#aaaaaa → #c2c2c2) */
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-fill-color: transparent;
 }
 
 .logo h1 {
@@ -121,6 +144,34 @@ header {
     -webkit-text-fill-color: #444444; /* For WebKit browsers */
     text-fill-color: #444444; /* Future CSS standard */
     cursor: help;
+}
+
+.serverless-gpts {
+    color: #aaaaaa; /* Darker color than the off-white for hacka.re */
+    font-size: inherit; /* Same size as hacka.re */
+    font-weight: 400; /* Normal weight to contrast with bold hacka.re */
+    position: relative;
+    margin-left: 5px; /* Same margin as between hacka.re and heart */
+    animation: textSweep 3s infinite alternate;
+    background: linear-gradient(90deg, #c2c2c2, #ffffff, #c2c2c2); /* 25% less gray (#aaaaaa → #c2c2c2) */
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-fill-color: transparent;
+}
+
+.gpts {
+    font-weight: 700; /* Bold weight for "GPTs" */
+}
+
+@keyframes textSweep {
+    0% {
+        background-position: 0% center;
+    }
+    100% {
+        background-position: 100% center;
+    }
 }
 
 .heart-logo .tooltip {
