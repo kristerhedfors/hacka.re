@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>hacka.re - A Modern Interface for AI Models</title>
-    <meta name="description" content="Information about hacka.re, a streamlined chat interface for OpenAI-compatible AI models">
+    <meta name="description" content="Information about hacka.re, a serverless, streamlined chat interface for OpenAI-compatible AI models">
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="css/themes.css">
     <!-- Font Awesome for icons (local) -->
@@ -99,149 +99,46 @@
             font-weight: bold;
         }
         
-        .model-card .context {
-            color: var(--text-color);
-            opacity: 0.7;
-        }
-        
-        .code-block {
-            background-color: rgba(0, 0, 0, 0.05);
-            border-radius: var(--border-radius);
-            padding: 15px;
-            margin: 20px 0;
-            overflow-x: auto;
-        }
-
-        .code-block pre {
-            margin: 0;
-            font-family: 'Courier New', Courier, monospace;
-        }
-        
         .important-notice {
             background-color: var(--system-msg-bg);
             border-left: 4px solid var(--accent-color);
             padding: 15px;
             margin-bottom: 20px;
-            border-radius: var(--border-radius);
-        }
-        
-        ul, ol {
-            margin-bottom: 1rem;
-            padding-left: 2rem;
-        }
-        
-        ul {
-            list-style-type: disc;
-        }
-        
-        ol {
-            list-style-type: decimal;
-        }
-        
-        li {
-            margin-bottom: 0.5rem;
-        }
-        
-        /* Additional mobile-specific styles */
-        @media (max-width: 480px) {
-            main {
-                padding: 1rem !important;
-            }
-            
-            .container {
-                padding: 0 10px;
-            }
-            
-            .feature-section {
-                margin: 25px 0;
-            }
-            
-            .feature-card, .model-card {
-                padding: 15px;
-            }
-            
-            .code-block {
-                padding: 10px;
-                margin: 15px 0;
-            }
-            
-            /* Ensure proper text wrapping on small screens */
-            p, li, a, h1, h2, h3, h4, h5, h6 {
-                word-break: break-word;
-                max-width: 100%;
-            }
-            
-            /* Adjust font sizes for better readability on small screens */
-            p, li {
-                font-size: 0.95rem;
-            }
-            
-            h2 {
-                font-size: 1.4rem;
-            }
-            
-            h3 {
-                font-size: 1.2rem;
-            }
-            
-            h4 {
-                font-size: 1.1rem;
-            }
-        }
-        .page-nav {
-            display: flex;
-            justify-content: space-between;
-            margin: 20px 0;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .page-nav a {
-            padding: 8px 15px;
-            background-color: var(--primary-color);
-            color: white;
-            border-radius: var(--border-radius);
-            text-decoration: none;
-            transition: background-color 0.3s;
-        }
-
-        .page-nav a:hover {
-            background-color: var(--primary-dark);
-            text-decoration: none;
+            border-radius: 8px;
         }
     </style>
 </head>
 <body>
     <div class="app-container">
-        <div class="beta-tag">BETA</div>
         <header>
             <div class="logo">
-                <h1><a href="../index.html" style="text-decoration: none; color: inherit;">hacka.re</a></h1>
+                <h1 class="logo-text">hacka.re<span class="heart-logo">♥&#xFE0E;</span></h1>
                 <p class="tagline">För hackare, av hackare.</p>
             </div>
-            <div class="settings">
-                <a href="../index.html" class="btn secondary-btn" style="margin-right: 10px;">Back to Chat</a>
-            </div>
-        </header>
-
-        <main style="overflow-y: auto; overflow-x: auto; padding: 2rem;">
-            <div class="container" style="max-width: 1000px; margin: 0 auto; word-wrap: break-word; overflow-wrap: break-word; width: 100%;">
-            <h2><a href="https://hacka.re/" target="_blank">hacka.re</a>: A Modern Interface for AI Models</h2>
-            <p class="tagline" style="font-style: italic; font-size: 1.2em; margin-bottom: 30px;">
-                <em>För hackare, av hackare.</em>
-            </p>
-            
-            <div class="page-nav">
-                <a href="index.html">About</a>
+            <nav>
+                <a href="../index.html">Chat</a>
+                <a href="index.html" class="active">About</a>
                 <a href="architecture.html">Architecture</a>
                 <a href="use-cases.html">Use Cases</a>
-            </div>
-            
-            <p class="important-notice">
-                <strong>Privacy Notice:</strong> This is a GitHub Pages site. All conversational data is sent directly to your configured API provider's servers. 
-                While your data is stored locally in your browser, all chat interactions are processed through your API provider's cloud services.
-            </p>
-            
+            </nav>
+        </header>
+
+        <main>
+            <section class="content-section">
+                <h2>About hacka.re</h2>
+                <div class="important-notice">
+                    <p>hacka.re is a privacy-focused, serverless web-based LLM chat client that stores your API key, conversations, and settings locally in your browser.</p>
+                </div>
+                <div class="important-notice">
+                    <p>hacka.re is serverless, meaning you can download the entire web page and run it offline, plus modify/extend it as you wish. hacka.re is published under the MIT No Attibution license, meant to be as free as freeware can be.</p>
+                </div>
+                <div class="important-notice">
+                    <p>hacka.re supports creation of self-contained, strongly encrypted, password/session key-protected GPTs with individual system prompts and conversation data, which allows for sharing and collaboration over less secure channels.</p>
+                </div>
+                <div class="important-notice">
+                    <p>To get started, you'll need to configure LLM access by specifying a base URL (OpenAI-compatible) and API key.</p>
+                </div>
+            </section>
             <div class="feature-section">
                 <h3>Overview</h3>
                 <p>
