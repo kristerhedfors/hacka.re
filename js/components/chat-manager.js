@@ -109,14 +109,19 @@ window.ChatManager = (function() {
                 controller = new AbortController();
                 const signal = controller.signal;
                 
-                // Generate response
+                // Check if API tools are available
+                const enableToolCalling = window.ApiToolsService && 
+                                         ApiToolsService.getApiTools().length > 0;
+                
+                // Generate response with tool calling if tools are available
                 const aiResponse = await ApiService.generateChatCompletion(
                     apiKey,
                     currentModel,
                     apiMessages,
                     signal,
                     (content) => updateAIMessage(content, aiMessageId, updateContextUsage),
-                    systemPrompt
+                    systemPrompt,
+                    enableToolCalling
                 );
                 
                 // Remove typing indicator

@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hacka.re Debug Tools Test</title>
+    <style>
+        :root {
+            --primary-color: #0066cc;
+            --secondary-color: #4CAF50;
+            --accent-color: #ff5722;
+            --bg-color: #f8f8f8;
+            --card-bg: #ffffff;
+            --border-color: #ddd;
+            --text-color: #333;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 28px;
+            color: var(--primary-color);
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+        }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+        }
+        
+        .card-title i {
+            margin-right: 8px;
+            font-size: 20px;
+        }
+        
+        .card-description {
+            margin-bottom: 20px;
+            color: #666;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        
+        button:hover {
+            opacity: 0.9;
+        }
+        
+        button.secondary {
+            background-color: var(--secondary-color);
+        }
+        
+        button.accent {
+            background-color: var(--accent-color);
+        }
+        
+        .output-container {
+            margin-top: 15px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 150px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        
+        .output-container:empty {
+            display: none;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .status-indicator.active {
+            background-color: #4CAF50;
+        }
+        
+        .status-indicator.inactive {
+            background-color: #f44336;
+        }
+        
+        .status-text {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 768px) {
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <!-- Load Font Awesome for icons -->
+    <link rel="stylesheet" href="../lib/font-awesome/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Hacka.re Debug Tools Test</h1>
+            <p class="subtitle">Test and debug API tools, console logging, and tool calling functionality</p>
+        </header>
+        
+        <div class="card-grid">
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-bug"></i>Debug Scripts</h2>
+                <p class="card-description">Load and manage debugging scripts to enhance console logging and tool inspection.</p>
+                <div class="button-group">
+                    <button id="load-debug-script" class="secondary">Load Debug Script</button>
+                    <button id="load-tool-debug" class="secondary">Load Tool Debug</button>
+                </div>
+                <div class="output-container" id="debug-scripts-output"></div>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-tools"></i>Sample Tools</h2>
+                <p class="card-description">Add sample API tools for testing tool calling functionality.</p>
+                <div class="button-group">
+                    <button id="add-weather-tool">Add Weather Tool</button>
+                    <button id="add-calc-tool">Add Calculator Tool</button>
+                    <button id="add-search-tool">Add Search Tool</button>
+                    <button id="add-all-tools" class="secondary">Add All Tools</button>
+                    <button id="clear-all-tools" class="accent">Clear All Tools</button>
+                </div>
+                <div class="output-container" id="sample-tools-output"></div>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-vial"></i>Test Tool Calls</h2>
+                <p class="card-description">Test API tool calls with mock data to verify functionality.</p>
+                <div class="button-group">
+                    <button id="test-weather-tool">Test Weather</button>
+                    <button id="test-calc-tool">Test Calculator</button>
+                    <button id="test-search-tool">Test Search</button>
+                    <button id="test-all-tools" class="secondary">Test All Tools</button>
+                </div>
+                <div class="output-container" id="test-tools-output"></div>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-terminal"></i>Console Viewer</h2>
+                <p class="card-description">Open the console viewer to monitor and filter console output.</p>
+                <div class="button-group">
+                    <button id="open-console-viewer">Open Console Viewer</button>
+                    <button id="test-console-log" class="secondary">Test Console Log</button>
+                </div>
+                <div class="output-container" id="console-viewer-output"></div>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-comment-alt"></i>Tool Messages</h2>
+                <p class="card-description">Copy sample messages that should trigger tool calling in the chat.</p>
+                <div class="button-group">
+                    <button id="copy-weather-msg">Weather Message</button>
+                    <button id="copy-calc-msg">Calculator Message</button>
+                    <button id="copy-search-msg">Search Message</button>
+                </div>
+                <div class="output-container" id="tool-messages-output"></div>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-cogs"></i>Debug Status</h2>
+                <p class="card-description">Check the status of debugging components and tools.</p>
+                <div>
+                    <p>
+                        <span class="status-indicator inactive" id="debug-script-status"></span>
+                        <span class="status-text">Debug Script: <span id="debug-script-status-text">Not Loaded</span></span>
+                    </p>
+                    <p>
+                        <span class="status-indicator inactive" id="tool-debug-status"></span>
+                        <span class="status-text">Tool Debug: <span id="tool-debug-status-text">Not Loaded</span></span>
+                    </p>
+                    <p>
+                        <span class="status-indicator inactive" id="api-tools-status"></span>
+                        <span class="status-text">API Tools: <span id="api-tools-status-text">Not Available</span></span>
+                    </p>
+                    <p>
+                        <span class="status-indicator inactive" id="console-viewer-status"></span>
+                        <span class="status-text">Console Viewer: <span id="console-viewer-status-text">Not Opened</span></span>
+                    </p>
+                </div>
+                <div class="button-group" style="margin-top: 15px;">
+                    <button id="check-status" class="secondary">Check Status</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Hacka.re Debug Tools Test | Privacy-focused web client for Groq Cloud</p>
+        </div>
+    </div>
+    
+    <script>
+        // DOM elements
+        const debugScriptsOutput = document.getElementById('debug-scripts-output');
+        const sampleToolsOutput = document.getElementById('sample-tools-output');
+        const testToolsOutput = document.getElementById('test-tools-output');
+        const consoleViewerOutput = document.getElementById('console-viewer-output');
+        const toolMessagesOutput = document.getElementById('tool-messages-output');
+        
+        // Status indicators
+        const debugScriptStatus = document.getElementById('debug-script-status');
+        const debugScriptStatusText = document.getElementById('debug-script-status-text');
+        const toolDebugStatus = document.getElementById('tool-debug-status');
+        const toolDebugStatusText = document.getElementById('tool-debug-status-text');
+        const apiToolsStatus = document.getElementById('api-tools-status');
+        const apiToolsStatusText = document.getElementById('api-tools-status-text');
+        const consoleViewerStatus = document.getElementById('console-viewer-status');
+        const consoleViewerStatusText = document.getElementById('console-viewer-status-text');
+        
+        // Helper function to update output
+        function updateOutput(outputElement, message) {
+            outputElement.textContent = message;
+            outputElement.scrollTop = outputElement.scrollHeight;
+        }
+        
+        // Helper function to update status
+        function updateStatus(statusElement, statusTextElement, isActive, statusText) {
+            statusElement.className = isActive ? 'status-indicator active' : 'status-indicator inactive';
+            statusTextElement.textContent = statusText;
+        }
+        
+        // Helper function to load a script
+        function loadScript(url, callback) {
+            const script = document.createElement('script');
+            script.src = url;
+            script.onload = callback;
+            script.onerror = (error) => {
+                console.error(`Error loading script ${url}:`, error);
+                callback(error);
+            };
+            document.head.appendChild(script);
+        }
+        
+        // Check if a script is loaded
+        function isScriptLoaded(scriptName) {
+            return document.querySelector(`script[src*="${scriptName}"]`) !== null;
+        }
+        
+        // Check if a window object exists
+        function windowObjectExists(objectName) {
+            return typeof window[objectName] !== 'undefined';
+        }
+        
+        // Check status of all components
+        function checkStatus() {
+            // Check debug script
+            const debugScriptLoaded = isScriptLoaded('debug-tool-calling.js');
+            updateStatus(
+                debugScriptStatus, 
+                debugScriptStatusText, 
+                debugScriptLoaded, 
+                debugScriptLoaded ? 'Loaded' : 'Not Loaded'
+            );
+            
+            // Check tool debug script
+            const toolDebugLoaded = isScriptLoaded('test-tool-debug.js');
+            updateStatus(
+                toolDebugStatus, 
+                toolDebugStatusText, 
+                toolDebugLoaded, 
+                toolDebugLoaded ? 'Loaded' : 'Not Loaded'
+            );
+            
+            // Check API tools service
+            const apiToolsAvailable = windowObjectExists('ApiToolsService');
+            updateStatus(
+                apiToolsStatus, 
+                apiToolsStatusText, 
+                apiToolsAvailable, 
+                apiToolsAvailable ? 'Available' : 'Not Available'
+            );
+            
+            // Check console viewer
+            const consoleViewerOpened = windowObjectExists('consoleViewerWindow') && 
+                                       window.consoleViewerWindow && 
+                                       !window.consoleViewerWindow.closed;
+            updateStatus(
+                consoleViewerStatus, 
+                consoleViewerStatusText, 
+                consoleViewerOpened, 
+                consoleViewerOpened ? 'Opened' : 'Not Opened'
+            );
+            
+            return {
+                debugScriptLoaded,
+                toolDebugLoaded,
+                apiToolsAvailable,
+                consoleViewerOpened
+            };
+        }
+        
+        // Load debug script
+        document.getElementById('load-debug-script').addEventListener('click', function() {
+            if (isScriptLoaded('debug-tool-calling.js')) {
+                updateOutput(debugScriptsOutput, 'Debug script already loaded.');
+                return;
+            }
+            
+            updateOutput(debugScriptsOutput, 'Loading debug script...');
+            
+            loadScript('debug-tool-calling.js', (error) => {
+                if (error) {
+                    updateOutput(debugScriptsOutput, 'Error loading debug script. Check console for details.');
+                } else {
+                    updateOutput(debugScriptsOutput, 'Debug script loaded successfully!');
+                    checkStatus();
+                }
+            });
+        });
+        
+        // Load tool debug script
+        document.getElementById('load-tool-debug').addEventListener('click', function() {
+            if (isScriptLoaded('test-tool-debug.js')) {
+                updateOutput(debugScriptsOutput, 'Tool debug script already loaded.');
+                return;
+            }
+            
+            updateOutput(debugScriptsOutput, 'Loading tool debug script...');
+            
+            loadScript('test-tool-debug.js', (error) => {
+                if (error) {
+                    updateOutput(debugScriptsOutput, 'Error loading tool debug script. Check console for details.');
+                } else {
+                    updateOutput(debugScriptsOutput, 'Tool debug script loaded successfully!');
+                    checkStatus();
+                }
+            });
+        });
+        
+        // Add weather tool
+        document.getElementById('add-weather-tool').addEventListener('click', function() {
+            if (!windowObjectExists('ToolDebugger')) {
+                updateOutput(sampleToolsOutput, 'Tool Debugger not loaded. Please load the tool debug script first.');
+                return;
+            }
+            
+            try {
+                const tool = ToolDebugger.addSampleTool('weather');
+                updateOutput(sampleToolsOutput, `Added weather tool: ${tool.name}`);
+                checkStatus();
+            } catch (error) {
+                updateOutput(sampleToolsOutput, `Error adding weather tool: ${error.message}`);
+            }
+        });
+        
+        // Add calculator tool
+        document.getElementById('add-calc-tool').addEventListener('click', function() {
+            if (!windowObjectExists('ToolDebugger')) {
+                updateOutput(sampleToolsOutput, 'Tool Debugger not loaded. Please load the tool debug script first.');
+                return;
+            }
+            
+            try {
+                const tool = ToolDebugger.addSampleTool('calculator');
+                updateOutput(sampleToolsOutput, `Added calculator tool: ${tool.name}`);
+                checkStatus();
+            } catch (error) {
+                updateOutput(sampleToolsOutput, `Error adding calculator tool: ${error.message}`);
+            }
+        });
+        
+        // Add search tool
+        document.getElementById('add-search-tool').addEventListener('click', function() {
+            if (!windowObjectExists('ToolDebugger')) {
+                updateOutput(sampleToolsOutput, 'Tool Debugger not loaded. Please load the tool debug script first.');
+                return;
+            }
+            
+            try {
+                const tool = ToolDebugger.addSampleTool('search');
+                updateOutput(sampleToolsOutput, `Added search tool: ${tool.name}`);
+                checkStatus();
+            } catch (error) {
+                updateOutput(sampleToolsOutput, `Error adding search tool: ${error.message}`);
+            }
+        });
+        
+        // Add all tools
+        document.getElementById('add-all-tools').addEventListener('click', function() {
+            if (!windowObjectExists('ToolDebugger')) {
+                updateOutput(sampleToolsOutput, 'Tool Debugger not loaded. Please load the tool debug script first.');
+                return;
+            }
+            
+            try {
+                const tools = ToolDebugger.addAllSampleTools();
+                updateOutput(sampleToolsOutput, `Added ${tools.length} tools: ${tools.map(t => t.name).join(', ')}`);
+                checkStatus();
+            } catch (error) {
+                updateOutput(sampleToolsOutput, `Error adding all tools: ${error.message}`);
+            }
+        });
+        
+        // Clear all tools
+        document.getElementById('clear-all-tools').addEventListener('click', function() {
+            if (!windowObjectExists('ToolDebugger')) {
+                updateOutput(sampleToolsOutput, 'Tool Debugger not loaded. Please load the tool debug script first.');
+                return;
+            }
+            
+            try {
+                ToolDebugger.clearAllTools();
+                updateOutput(sampleToolsOutput, 'All tools cleared from localStorage.');
+                checkStatus();
+            } catch (error) {
+                updateOutput(sampleToolsOutput, `Error clearing tools: ${error.message}`);
+            }
+        });
+        
+        // Test weather tool
+        document.getElementById('test-weather-tool').addEventListener('click', function() {
+            if (!windowObjectExists('ToolDebugger')) {
+                updateOutput(testToolsOutput, 'Tool Debugger not loaded. Please load the tool debug script first.');
+                return;
+            }
+            
+            updateOutput(testToolsOutput, 'Testing weather tool...');
+            
+            ToolDebugger.executeMockToolCall('weather_lookup', { location: 'New York', units: 'metric' })
+                .then(result => {
+                    if (result) {
+                        updateOutput(testToolsOutput, `Weather tool test successful!\nResult: ${JSON.stringify(result, null, 2)}`);
+                    } else {
+                        updateOutput(testToolsOutput, 'Weather tool test failed. Check console for details.');
+                    }
+                })
+                .catch(error => {
+                    updateOutput(testToolsOutput, `Error testing weather tool: ${error.message}`);
+                });
+        });
+        
+        // Test calculator tool
+        document.getElementById('test-calc-tool').addEventListener('click', function() {
+            if (!windowObjectExists('ToolDebugger')) {
+                updateOutput(testToolsOutput, 'Tool Debugger not loaded. Please load the tool debug script first.');
+                return;
+            }
+            
+            updateOutput(testToolsOutput, 'Testing calculator tool...');
+            
+            ToolDebugger.executeMockToolCall('calculate', { expression: '2 + 2', precision: 2 })
+                .then(result => {
+                    if (result) {
+                        updateOutput(testToolsOutput, `Calculator tool test successful!\nResult: ${JSON.stringify(result, null, 2)}`);
+                    } else {
+                        updateOutput(testToolsOutput, 'Calculator tool test failed. Check console for details.');
+                    }
+                })
+                .catch(error => {
+                    updateOutput(testToolsOutput, `Error testing calculator tool: ${error.message}`);
+                });
+        });
+        
+        // Test search tool
+        document.getElementById('test-search-tool').addEventListener('click', function() {
+            if (!windowObjectExists('ToolDebugger')) {
+                updateOutput(testToolsOutput, 'Tool Debugger not loaded. Please load the tool debug script first.');
+                return;
+            }
+            
+            updateOutput(testToolsOutput, 'Testing search tool...');
+            
+            ToolDebugger.executeMockToolCall('web_search', { query: 'test query', limit: 3 })
+                .then(result => {
+                    if (result) {
+                        updateOutput(testToolsOutput, `Search tool test successful!\nResult: ${JSON.stringify(result, null, 2)}`);
+                    } else {
+                        updateOutput(testToolsOutput, 'Search tool test failed. Check console for details.');
+                    }
+                })
+                .catch(error => {
+                    updateOutput(testToolsOutput, `Error testing search tool: ${error.message}`);
+                });
+        });
+        
+        // Test all tools
+        document.getElementById('test-all-tools').addEventListener('click', function() {
+            if (!windowObjectExists('ToolDebugger')) {
+                updateOutput(testToolsOutput, 'Tool Debugger not loaded. Please load the tool debug script first.');
+                return;
+            }
+            
+            updateOutput(testToolsOutput, 'Testing all tools...');
+            
+            ToolDebugger.testAllTools()
+                .then(results => {
+                    const successCount = results.filter(r => r.success).length;
+                    const failCount = results.length - successCount;
+                    
+                    updateOutput(testToolsOutput, `Tested ${results.length} tools: ${successCount} succeeded, ${failCount} failed. Check console for details.`);
+                })
+                .catch(error => {
+                    updateOutput(testToolsOutput, `Error testing tools: ${error.message}`);
+                });
+        });
+        
+        // Store reference to console viewer window
+        window.consoleViewerWindow = null;
+        
+        // Open console viewer
+        document.getElementById('open-console-viewer').addEventListener('click', function() {
+            if (window.consoleViewerWindow && !window.consoleViewerWindow.closed) {
+                window.consoleViewerWindow.focus();
+                updateOutput(consoleViewerOutput, 'Console viewer already open. Focused existing window.');
+                return;
+            }
+            
+            updateOutput(consoleViewerOutput, 'Opening console viewer...');
+            
+            window.consoleViewerWindow = window.open('debug-console-viewer.html', 'consoleViewer', 'width=1000,height=800');
+            
+            if (window.consoleViewerWindow) {
+                updateOutput(consoleViewerOutput, 'Console viewer opened successfully!');
+                checkStatus();
+                
+                // Update status when the window is closed
+                const checkWindowClosed = setInterval(() => {
+                    if (window.consoleViewerWindow.closed) {
+                        clearInterval(checkWindowClosed);
+                        updateOutput(consoleViewerOutput, 'Console viewer window was closed.');
+                        checkStatus();
+                    }
+                }, 1000);
+            } else {
+                updateOutput(consoleViewerOutput, 'Failed to open console viewer. Check if pop-ups are blocked.');
+            }
+        });
+        
+        // Test console log
+        document.getElementById('test-console-log').addEventListener('click', function() {
+            updateOutput(consoleViewerOutput, 'Sending test logs to console...');
+            
+            // Regular console logs
+            console.log('Test log message');
+            console.error('Test error message');
+            console.warn('Test warning message');
+            
+            // If HackaReDebug is available, use it for formatted logs
+            if (windowObjectExists('HackaReDebug')) {
+                HackaReDebug.log('Test', 'Test debug log message', { detail: 'This is a test log' });
+                HackaReDebug.error('Test', 'Test debug error message', new Error('This is a test error'));
+                HackaReDebug.warn('Test', 'Test debug warning message', { warning: 'This is a test warning' });
+            }
+            
+            updateOutput(consoleViewerOutput, 'Test logs sent to console. Check console viewer to see them.');
+        });
+        
+        // Copy weather message
+        document.getElementById('copy-weather-msg').addEventListener('click', function() {
+            if (!windowObjectExists('ToolDebugger')) {
+                updateOutput(toolMessagesOutput, 'Tool Debugger not loaded. Please load the tool debug script first.');
+                return;
+            }
+            
+            const message = ToolDebugger.createToolTriggerMessage('weather_lookup');
+            if (message) {
+                navigator.clipboard.writeText(message)
+                    .then(() => {
+                        updateOutput(toolMessagesOutput, `Copied to clipboard: "${message}"`);
+                    })
+                    .catch(err => {
+                        updateOutput(toolMessagesOutput, `Failed to copy message: ${err.message}`);
+                    });
+            } else {
+                updateOutput(toolMessagesOutput, 'Failed to create weather message. Make sure the weather tool is added.');
+            }
+        });
+        
+        // Copy calculator message
+        document.getElementById('copy-calc-msg').addEventListener('click', function() {
+            if (!windowObjectExists('ToolDebugger')) {
+                updateOutput(toolMessagesOutput, 'Tool Debugger not loaded. Please load the tool debug script first.');
+                return;
+            }
+            
+            const message = ToolDebugger.createToolTriggerMessage('calculate');
+            if (message) {
+                navigator.clipboard.writeText(message)
+                    .then(() => {
+                        updateOutput(toolMessagesOutput, `Copied to clipboard: "${message}"`);
+                    })
+                    .catch(err => {
+                        updateOutput(toolMessagesOutput, `Failed to copy message: ${err.message}`);
+                    });
+            } else {
+                updateOutput(toolMessagesOutput, 'Failed to create calculator message. Make sure the calculator tool is added.');
+            }
+        });
+        
+        // Copy search message
+        document.getElementById('copy-search-msg').addEventListener('click', function() {
+            if (!windowObjectExists('ToolDebugger')) {
+                updateOutput(toolMessagesOutput, 'Tool Debugger not loaded. Please load the tool debug script first.');
+                return;
+            }
+            
+            const message = ToolDebugger.createToolTriggerMessage('web_search');
+            if (message) {
+                navigator.clipboard.writeText(message)
+                    .then(() => {
+                        updateOutput(toolMessagesOutput, `Copied to clipboard: "${message}"`);
+                    })
+                    .catch(err => {
+                        updateOutput(toolMessagesOutput, `Failed to copy message: ${err.message}`);
+                    });
+            } else {
+                updateOutput(toolMessagesOutput, 'Failed to create search message. Make sure the search tool is added.');
+            }
+        });
+        
+        // Check status button
+        document.getElementById('check-status').addEventListener('click', function() {
+            const status = checkStatus();
+            console.log('Current debug status:', status);
+        });
+        
+        // Initialize status on page load
+        window.addEventListener('load', function() {
+            checkStatus();
+            console.log('Debug Tools Test page loaded');
+        });
+    </script>
+</body>
+</html>

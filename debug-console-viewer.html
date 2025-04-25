@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hacka.re Debug Console Viewer</title>
+    <style>
+        :root {
+            --primary-color: #0066cc;
+            --error-color: #cc0000;
+            --warning-color: #cc6600;
+            --info-color: #006600;
+            --bg-color: #f8f8f8;
+            --border-color: #ddd;
+            --text-color: #333;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            opacity: 0.9;
+        }
+        
+        .filter-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .filter-controls label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+        
+        .console-container {
+            background-color: #1e1e1e;
+            color: #f0f0f0;
+            border-radius: 6px;
+            overflow: hidden;
+            height: calc(100vh - 180px);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .console-header {
+            background-color: #333;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .console-title {
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .console-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .console-actions button {
+            background-color: #555;
+            font-size: 12px;
+            padding: 4px 8px;
+        }
+        
+        .console-output {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .log-entry {
+            margin-bottom: 8px;
+            padding: 6px;
+            border-radius: 4px;
+            border-left: 3px solid transparent;
+        }
+        
+        .log-entry:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        .log-entry.log {
+            border-left-color: var(--primary-color);
+        }
+        
+        .log-entry.error {
+            border-left-color: var(--error-color);
+        }
+        
+        .log-entry.warn {
+            border-left-color: var(--warning-color);
+        }
+        
+        .log-entry.info {
+            border-left-color: var(--info-color);
+        }
+        
+        .timestamp {
+            color: #888;
+            font-size: 12px;
+            margin-right: 8px;
+        }
+        
+        .category {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-right: 8px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .category.api {
+            background-color: rgba(0, 102, 204, 0.2);
+            color: #66b3ff;
+        }
+        
+        .category.tools {
+            background-color: rgba(102, 0, 204, 0.2);
+            color: #cc99ff;
+        }
+        
+        .category.execution {
+            background-color: rgba(204, 102, 0, 0.2);
+            color: #ffcc99;
+        }
+        
+        .category.init {
+            background-color: rgba(0, 153, 0, 0.2);
+            color: #99ff99;
+        }
+        
+        .category.debug {
+            background-color: rgba(153, 153, 153, 0.2);
+            color: #cccccc;
+        }
+        
+        .message {
+            color: #f0f0f0;
+            margin-right: 8px;
+        }
+        
+        .details {
+            color: #aaa;
+            font-style: italic;
+            margin-top: 4px;
+            padding-left: 20px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        
+        .error-message {
+            color: #ff9999;
+        }
+        
+        .warning-message {
+            color: #ffcc99;
+        }
+        
+        .no-logs {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+            font-style: italic;
+        }
+        
+        .status-bar {
+            background-color: #333;
+            padding: 8px 10px;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            color: #aaa;
+        }
+        
+        /* Dark mode toggle */
+        .theme-toggle {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+        
+        .theme-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 20px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: var(--primary-color);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 768px) {
+            .controls, .filter-controls {
+                flex-wrap: wrap;
+            }
+            
+            .console-container {
+                height: calc(100vh - 220px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Hacka.re Debug Console Viewer</h1>
+            <div class="theme-controls">
+                <label class="theme-toggle">
+                    <input type="checkbox" id="theme-toggle">
+                    <span class="slider"></span>
+                </label>
+                <span id="theme-label">Dark Mode</span>
+            </div>
+        </header>
+        
+        <div class="controls">
+            <button id="start-capture">Start Capture</button>
+            <button id="stop-capture" disabled>Stop Capture</button>
+            <button id="clear-logs">Clear Logs</button>
+            <button id="export-logs">Export Logs</button>
+            <button id="test-api-call">Test API Call</button>
+            <button id="test-tool-call">Test Tool Call</button>
+        </div>
+        
+        <div class="filter-controls">
+            <label><input type="checkbox" class="log-filter" data-type="log" checked> Logs</label>
+            <label><input type="checkbox" class="log-filter" data-type="error" checked> Errors</label>
+            <label><input type="checkbox" class="log-filter" data-type="warn" checked> Warnings</label>
+            <label><input type="checkbox" class="log-filter" data-type="info" checked> Info</label>
+            
+            <span style="margin-left: 20px;">Categories:</span>
+            <label><input type="checkbox" class="category-filter" data-category="api" checked> API</label>
+            <label><input type="checkbox" class="category-filter" data-category="tools" checked> Tools</label>
+            <label><input type="checkbox" class="category-filter" data-category="execution" checked> Execution</label>
+            <label><input type="checkbox" class="category-filter" data-category="init" checked> Initialization</label>
+            <label><input type="checkbox" class="category-filter" data-category="debug" checked> Debug</label>
+        </div>
+        
+        <div class="console-container">
+            <div class="console-header">
+                <div class="console-title">Console Output</div>
+                <div class="console-actions">
+                    <button id="auto-scroll-toggle">Auto-scroll: ON</button>
+                    <button id="expand-all">Expand All</button>
+                    <button id="collapse-all">Collapse All</button>
+                </div>
+            </div>
+            <div class="console-output" id="console-output">
+                <div class="no-logs">No logs captured yet. Click "Start Capture" to begin.</div>
+            </div>
+            <div class="status-bar">
+                <div id="log-count">Logs: 0 | Errors: 0 | Warnings: 0</div>
+                <div id="capture-status">Capture: Inactive</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Log storage
+        const logs = [];
+        let isCapturing = false;
+        let autoScroll = true;
+        let expandedDetails = true;
+        
+        // DOM elements
+        const consoleOutput = document.getElementById('console-output');
+        const startCaptureBtn = document.getElementById('start-capture');
+        const stopCaptureBtn = document.getElementById('stop-capture');
+        const clearLogsBtn = document.getElementById('clear-logs');
+        const exportLogsBtn = document.getElementById('export-logs');
+        const testApiCallBtn = document.getElementById('test-api-call');
+        const testToolCallBtn = document.getElementById('test-tool-call');
+        const autoScrollToggleBtn = document.getElementById('auto-scroll-toggle');
+        const expandAllBtn = document.getElementById('expand-all');
+        const collapseAllBtn = document.getElementById('collapse-all');
+        const logCountEl = document.getElementById('log-count');
+        const captureStatusEl = document.getElementById('capture-status');
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeLabel = document.getElementById('theme-label');
+        
+        // Original console methods
+        const originalConsole = {
+            log: console.log,
+            error: console.error,
+            warn: console.warn,
+            info: console.info
+        };
+        
+        // Function to format log entry
+        function formatLogEntry(type, args) {
+            const timestamp = new Date().toISOString().split('T')[1].replace('Z', '');
+            let category = 'debug';
+            let message = '';
+            let details = null;
+            
+            // Parse the log message format from HackaReDebug
+            if (args[0] && typeof args[0] === 'string' && args[0].includes('%c[')) {
+                // This is a styled log from HackaReDebug
+                const styleIndex = args[0].indexOf('%c');
+                const rawMessage = args[0].substring(styleIndex + 2);
+                
+                // Extract timestamp and category
+                const matches = rawMessage.match(/\[(.*?)\] \[(.*?)\]/);
+                if (matches && matches.length >= 3) {
+                    // Use the timestamp from the log
+                    const logTimestamp = matches[1];
+                    category = matches[2].toLowerCase();
+                    
+                    // Determine message content
+                    if (args[2]) {
+                        message = args[2];
+                        if (args[3] !== undefined) {
+                            details = JSON.stringify(args[3], null, 2);
+                        }
+                    } else {
+                        message = rawMessage.substring(rawMessage.lastIndexOf(']') + 2);
+                    }
+                } else {
+                    // Fallback if format doesn't match
+                    message = args.slice(1).join(' ');
+                }
+            } else {
+                // Standard console log
+                message = Array.from(args).map(arg => 
+                    typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+                ).join(' ');
+            }
+            
+            // Map category to a known category
+            if (category.includes('api') || category.includes('request') || category.includes('response')) {
+                category = 'api';
+            } else if (category.includes('tool')) {
+                category = 'tools';
+            } else if (category.includes('execution') || category.includes('generation')) {
+                category = 'execution';
+            } else if (category.includes('init') || category.includes('environment')) {
+                category = 'init';
+            } else {
+                category = 'debug';
+            }
+            
+            return {
+                timestamp,
+                type,
+                category,
+                message,
+                details,
+                time: Date.now()
+            };
+        }
+        
+        // Function to render logs
+        function renderLogs() {
+            // Get active filters
+            const activeTypes = Array.from(document.querySelectorAll('.log-filter:checked'))
+                .map(checkbox => checkbox.dataset.type);
+            
+            const activeCategories = Array.from(document.querySelectorAll('.category-filter:checked'))
+                .map(checkbox => checkbox.dataset.category);
+            
+            // Filter logs
+            const filteredLogs = logs.filter(log => 
+                activeTypes.includes(log.type) && 
+                activeCategories.includes(log.category)
+            );
+            
+            // Clear console
+            consoleOutput.innerHTML = '';
+            
+            if (filteredLogs.length === 0) {
+                consoleOutput.innerHTML = '<div class="no-logs">No logs matching current filters.</div>';
+                return;
+            }
+            
+            // Render each log
+            filteredLogs.forEach(log => {
+                const logEntry = document.createElement('div');
+                logEntry.className = `log-entry ${log.type}`;
+                
+                let detailsHtml = '';
+                if (log.details) {
+                    detailsHtml = `<div class="details" style="display: ${expandedDetails ? 'block' : 'none'}">${log.details}</div>`;
+                }
+                
+                let messageClass = '';
+                if (log.type === 'error') {
+                    messageClass = 'error-message';
+                } else if (log.type === 'warn') {
+                    messageClass = 'warning-message';
+                }
+                
+                logEntry.innerHTML = `
+                    <span class="timestamp">${log.timestamp}</span>
+                    <span class="category ${log.category}">${log.category}</span>
+                    <span class="message ${messageClass}">${log.message}</span>
+                    ${detailsHtml}
+                `;
+                
+                consoleOutput.appendChild(logEntry);
+            });
+            
+            // Auto-scroll to bottom
+            if (autoScroll) {
+                consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            }
+            
+            // Update log count
+            const errorCount = logs.filter(log => log.type === 'error').length;
+            const warnCount = logs.filter(log => log.type === 'warn').length;
+            const logCount = logs.length - errorCount - warnCount;
+            
+            logCountEl.textContent = `Logs: ${logCount} | Errors: ${errorCount} | Warnings: ${warnCount}`;
+        }
+        
+        // Override console methods
+        function overrideConsole() {
+            console.log = function() {
+                // Call original method
+                originalConsole.log.apply(console, arguments);
+                
+                // Capture log if active
+                if (isCapturing) {
+                    logs.push(formatLogEntry('log', arguments));
+                    renderLogs();
+                }
+            };
+            
+            console.error = function() {
+                // Call original method
+                originalConsole.error.apply(console, arguments);
+                
+                // Capture log if active
+                if (isCapturing) {
+                    logs.push(formatLogEntry('error', arguments));
+                    renderLogs();
+                }
+            };
+            
+            console.warn = function() {
+                // Call original method
+                originalConsole.warn.apply(console, arguments);
+                
+                // Capture log if active
+                if (isCapturing) {
+                    logs.push(formatLogEntry('warn', arguments));
+                    renderLogs();
+                }
+            };
+            
+            console.info = function() {
+                // Call original method
+                originalConsole.info.apply(console, arguments);
+                
+                // Capture log if active
+                if (isCapturing) {
+                    logs.push(formatLogEntry('info', arguments));
+                    renderLogs();
+                }
+            };
+        }
+        
+        // Restore original console methods
+        function restoreConsole() {
+            console.log = originalConsole.log;
+            console.error = originalConsole.error;
+            console.warn = originalConsole.warn;
+            console.info = originalConsole.info;
+        }
+        
+        // Start capturing logs
+        function startCapture() {
+            if (!isCapturing) {
+                isCapturing = true;
+                overrideConsole();
+                startCaptureBtn.disabled = true;
+                stopCaptureBtn.disabled = false;
+                captureStatusEl.textContent = 'Capture: Active';
+                captureStatusEl.style.color = '#99ff99';
+            }
+        }
+        
+        // Stop capturing logs
+        function stopCapture() {
+            if (isCapturing) {
+                isCapturing = false;
+                restoreConsole();
+                startCaptureBtn.disabled = false;
+                stopCaptureBtn.disabled = true;
+                captureStatusEl.textContent = 'Capture: Inactive';
+                captureStatusEl.style.color = '#aaa';
+            }
+        }
+        
+        // Clear logs
+        function clearLogs() {
+            logs.length = 0;
+            renderLogs();
+        }
+        
+        // Export logs
+        function exportLogs() {
+            const exportData = {
+                timestamp: new Date().toISOString(),
+                logs: logs
+            };
+            
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `hacka-re-debug-logs-${new Date().toISOString().replace(/:/g, '-')}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        // Toggle auto-scroll
+        function toggleAutoScroll() {
+            autoScroll = !autoScroll;
+            autoScrollToggleBtn.textContent = `Auto-scroll: ${autoScroll ? 'ON' : 'OFF'}`;
+        }
+        
+        // Toggle details expansion
+        function toggleAllDetails(expand) {
+            expandedDetails = expand;
+            document.querySelectorAll('.details').forEach(el => {
+                el.style.display = expand ? 'block' : 'none';
+            });
+        }
+        
+        // Test API call
+        function testApiCall() {
+            if (!isCapturing) {
+                alert('Please start capture first');
+                return;
+            }
+            
+            console.log('Making a test API call...');
+            
+            // Simulate HackaReDebug logging
+            const timestamp = new Date().toISOString().split('T')[1].replace('Z', '');
+            console.log(`%c[${timestamp}] [API Request]`, 'color: #0066cc; font-weight: bold', 'Fetch to https://api.example.com/chat/completions [ID: test123]', { 
+                url: 'https://api.example.com/chat/completions', 
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer sk-***' }
+            });
+            
+            console.log(`%c[${timestamp}] [API Request Body]`, 'color: #0066cc; font-weight: bold', 'Complete request body [ID: test123]', {
+                model: 'gpt-4',
+                messages: [
+                    { role: 'system', content: 'You are a helpful assistant.' },
+                    { role: 'user', content: 'Hello, world!' }
+                ],
+                stream: true,
+                tools: [
+                    {
+                        type: "function",
+                        function: {
+                            name: "weather_lookup",
+                            description: "Get current weather information for a location",
+                            parameters: {
+                                type: "object",
+                                properties: {
+                                    location: {
+                                        type: "string",
+                                        description: "City name or zip code"
+                                    },
+                                    units: {
+                                        type: "string",
+                                        enum: ["metric", "imperial"],
+                                        description: "Temperature units"
+                                    }
+                                },
+                                required: ["location"]
+                            }
+                        }
+                    }
+                ],
+                tool_choice: "auto"
+            });
+            
+            console.log(`%c[${timestamp}] [Tools]`, 'color: #0066cc; font-weight: bold', 'Tools included in request [ID: test123]', [
+                {
+                    type: "function",
+                    function: {
+                        name: "weather_lookup",
+                        description: "Get current weather information for a location",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                location: {
+                                    type: "string",
+                                    description: "City name or zip code"
+                                },
+                                units: {
+                                    type: "string",
+                                    enum: ["metric", "imperial"],
+                                    description: "Temperature units"
+                                }
+                            },
+                            required: ["location"]
+                        }
+                    }
+                }
+            ]);
+            
+            // Simulate response after a delay
+            setTimeout(() => {
+                console.log(`%c[${timestamp}] [API Response]`, 'color: #0066cc; font-weight: bold', 'Received response [ID: test123]', {
+                    status: 200,
+                    statusText: 'OK',
+                    headers: [['content-type', 'text/event-stream']]
+                });
+                
+                console.log(`%c[${timestamp}] [API Response]`, 'color: #0066cc; font-weight: bold', 'Streaming response started [ID: test123]');
+                
+                // Simulate streaming chunks
+                let chunkCount = 0;
+                const interval = setInterval(() => {
+                    chunkCount++;
+                    console.log(`%c[${timestamp}] [Streaming]`, 'color: #0066cc; font-weight: bold', `Chunk #${chunkCount} [ID: test123]`, {
+                        contentLength: chunkCount * 50,
+                        estimatedTokens: chunkCount * 10,
+                        tokensPerSecond: 20,
+                        timeSinceLastChunk: 500
+                    });
+                    
+                    if (chunkCount >= 5) {
+                        clearInterval(interval);
+                        console.log(`%c[${timestamp}] [Chat Generation]`, 'color: #0066cc; font-weight: bold', 'Completed chat generation [ID: test123]', {
+                            duration: '2.50s',
+                            estimatedTokens: 50,
+                            tokensPerSecond: 20
+                        });
+                    }
+                }, 500);
+            }, 1000);
+        }
+        
+        // Test tool call
+        function testToolCall() {
+            if (!isCapturing) {
+                alert('Please start capture first');
+                return;
+            }
+            
+            console.log('Making a test tool call...');
+            
+            // Simulate HackaReDebug logging
+            const timestamp = new Date().toISOString().split('T')[1].replace('Z', '');
+            
+            console.log(`%c[${timestamp}] [Tool Execution]`, 'color: #cc6600; font-weight: bold', 'Processing 1 tool calls', [
+                {
+                    id: "call_123456789",
+                    type: "function",
+                    function: {
+                        name: "weather_lookup",
+                        arguments: '{"location":"New York","units":"metric"}'
+                    }
+                }
+            ]);
+            
+            console.log(`%c[${timestamp}] [Tool Execution]`, 'color: #cc6600; font-weight: bold', 'Executing tool: weather_lookup', {
+                toolCallId: "call_123456789",
+                arguments: {
+                    location: "New York",
+                    units: "metric"
+                }
+            });
+            
+            // Simulate API call for tool execution
+            console.log(`%c[${timestamp}] [API Request]`, 'color: #0066cc; font-weight: bold', 'Fetch to https://api.openweathermap.org/data/2.5/weather [ID: tool123]', { 
+                url: 'https://api.openweathermap.org/data/2.5/weather?location=New%20York&units=metric', 
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            // Simulate response after a delay
+            setTimeout(() => {
+                console.log(`%c[${timestamp}] [API Response]`, 'color: #0066cc; font-weight: bold', 'Received response [ID: tool123]', {
+                    status: 200,
+                    statusText: 'OK',
+                    headers: [['content-type', 'application/json']]
+                });
+                
+                console.log(`%c[${timestamp}] [Tool Execution]`, 'color: #cc6600; font-weight: bold', 'Tool "weather_lookup" execution result', {
+                    temp: 22.5,
+                    humidity: 65,
+                    conditions: "Partly Cloudy",
+                    location: "New York, NY",
+                    units: "metric"
+                });
+                
+                console.log(`%c[${timestamp}] [Tool Execution]`, 'color: #cc6600; font-weight: bold', 'Tool call results', [
+                    {
+                        tool_call_id: "call_123456789",
+                        role: "tool",
+                        name: "weather_lookup",
+                        content: '{"temp":22.5,"humidity":65,"conditions":"Partly Cloudy","location":"New York, NY","units":"metric"}'
+                    }
+                ]);
+            }, 1000);
+        }
+        
+        // Toggle dark/light theme
+        function toggleTheme() {
+            const isDarkMode = themeToggle.checked;
+            document.body.classList.toggle('light-mode', !isDarkMode);
+            themeLabel.textContent = isDarkMode ? 'Dark Mode' : 'Light Mode';
+            
+            if (!isDarkMode) {
+                document.documentElement.style.setProperty('--bg-color', '#ffffff');
+                document.documentElement.style.setProperty('--text-color', '#333333');
+                document.documentElement.style.setProperty('--border-color', '#cccccc');
+            } else {
+                document.documentElement.style.setProperty('--bg-color', '#f8f8f8');
+                document.documentElement.style.setProperty('--text-color', '#333333');
+                document.documentElement.style.setProperty('--border-color', '#dddddd');
+            }
+        }
+        
+        // Event listeners
+        startCaptureBtn.addEventListener('click', startCapture);
+        stopCaptureBtn.addEventListener('click', stopCapture);
+        clearLogsBtn.addEventListener('click', clearLogs);
+        exportLogsBtn.addEventListener('click', exportLogs);
+        testApiCallBtn.addEventListener('click', testApiCall);
+        testToolCallBtn.addEventListener('click', testToolCall);
+        autoScrollToggleBtn.addEventListener('click', toggleAutoScroll);
+        expandAllBtn.addEventListener('click', () => toggleAllDetails(true));
+        collapseAllBtn.addEventListener('click', () => toggleAllDetails(false));
+        themeToggle.addEventListener('change', toggleTheme);
+        
+        // Filter change event
+        document.querySelectorAll('.log-filter, .category-filter').forEach(checkbox => {
+            checkbox.addEventListener('change', renderLogs);
+        });
+        
+        // Initialize
+        renderLogs();
+        
+        // Log initial message
+        console.log('Debug Console Viewer loaded and ready to capture logs.');
+        console.log('Click "Start Capture" to begin monitoring console output.');
+    </script>
+</body>
+</html>

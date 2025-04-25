@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Tool Calling</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .output {
+            margin-top: 10px;
+            min-height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Tool Calling</h1>
+    
+    <div class="container">
+        <div class="card">
+            <h2>Add Sample Tool</h2>
+            <p>Add a sample weather API tool to localStorage for testing.</p>
+            <button id="add-tool-btn">Add Sample Tool</button>
+            <div class="output" id="add-tool-output"></div>
+        </div>
+        
+        <div class="card">
+            <h2>View Tools</h2>
+            <p>View all API tools currently defined in localStorage.</p>
+            <button id="view-tools-btn">View Tools</button>
+            <div class="output" id="view-tools-output"></div>
+        </div>
+        
+        <div class="card">
+            <h2>Clear Tools</h2>
+            <p>Remove all API tools from localStorage.</p>
+            <button id="clear-tools-btn">Clear Tools</button>
+            <div class="output" id="clear-tools-output"></div>
+        </div>
+    </div>
+    
+    <script>
+        // Sample API tool for testing
+        const sampleTool = {
+            name: "weather_lookup",
+            description: "Get current weather information for a location",
+            endpoint: "https://api.openweathermap.org/data/2.5/weather",
+            method: "GET",
+            authType: "none",
+            parameters: {
+                type: "object",
+                properties: {
+                    location: {
+                        type: "string",
+                        description: "City name or zip code"
+                    },
+                    units: {
+                        type: "string",
+                        enum: ["metric", "imperial"],
+                        description: "Temperature units (metric or imperial)"
+                    }
+                },
+                required: ["location"]
+            }
+        };
+
+        // Storage key for API tools
+        const STORAGE_KEY = 'hacka_re_api_tools';
+        
+        // Add sample tool button
+        document.getElementById('add-tool-btn').addEventListener('click', function() {
+            const existingTools = localStorage.getItem(STORAGE_KEY);
+            let tools = [];
+            
+            if (existingTools) {
+                try {
+                    tools = JSON.parse(existingTools);
+                } catch (error) {
+                    console.error('Error parsing existing tools:', error);
+                }
+            }
+            
+            // Add the sample tool if it doesn't exist
+            const existingToolIndex = tools.findIndex(tool => tool.name === sampleTool.name);
+            if (existingToolIndex >= 0) {
+                tools[existingToolIndex] = sampleTool;
+            } else {
+                tools.push(sampleTool);
+            }
+            
+            // Save to localStorage
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(tools));
+            
+            // Update output
+            const output = document.getElementById('add-tool-output');
+            output.innerHTML = `<pre>Sample API tool added successfully!\nTool count: ${tools.length}</pre>`;
+        });
+        
+        // View tools button
+        document.getElementById('view-tools-btn').addEventListener('click', function() {
+            const existingTools = localStorage.getItem(STORAGE_KEY);
+            const output = document.getElementById('view-tools-output');
+            
+            if (existingTools) {
+                try {
+                    const tools = JSON.parse(existingTools);
+                    output.innerHTML = `<pre>${JSON.stringify(tools, null, 2)}</pre>`;
+                } catch (error) {
+                    output.innerHTML = `<pre>Error parsing tools: ${error.message}</pre>`;
+                }
+            } else {
+                output.innerHTML = `<pre>No tools found in localStorage.</pre>`;
+            }
+        });
+        
+        // Clear tools button
+        document.getElementById('clear-tools-btn').addEventListener('click', function() {
+            localStorage.removeItem(STORAGE_KEY);
+            const output = document.getElementById('clear-tools-output');
+            output.innerHTML = `<pre>All API tools cleared from localStorage.</pre>`;
+        });
+    </script>
+</body>
+</html>

@@ -17,6 +17,11 @@ window.AIHackareComponent = (function() {
         this.chatManager = ChatManager.createChatManager(this.elements);
         this.settingsManager = SettingsManager.createSettingsManager(this.elements);
         this.shareManager = ShareManager.createShareManager(this.elements);
+        
+        // Create API tools manager if available
+        if (window.ApiToolsManager) {
+            this.apiToolsManager = ApiToolsManager.createApiToolsManager(this.elements);
+        }
     }
     
     /**
@@ -36,6 +41,11 @@ window.AIHackareComponent = (function() {
         );
         
         this.chatManager.init();
+        
+        // Initialize API tools manager if available
+        if (this.apiToolsManager) {
+            this.apiToolsManager.init();
+        }
         
         // Set up event listeners
         this.setupEventListeners();
