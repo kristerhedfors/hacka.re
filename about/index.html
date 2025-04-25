@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>hacka.re - A Modern Interface for AI Models</title>
-    <meta name="description" content="Information about hacka.re, a serverless, streamlined chat interface for OpenAI-compatible AI models">
+    <meta name="description" content="Information about hacka.re, a streamlined chat interface for OpenAI-compatible AI models">
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="css/themes.css">
     <!-- Font Awesome for icons (local) -->
@@ -28,13 +28,13 @@
             gap: 20px;
             margin: 30px 0;
         }
-        
+
         @media (max-width: 768px) {
             .feature-grid {
                 grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
             }
         }
-        
+
         @media (max-width: 480px) {
             .feature-grid {
                 grid-template-columns: 1fr;
@@ -58,111 +58,214 @@
             margin-right: 8px;
             vertical-align: middle;
         }
-        
+
         .model-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
             gap: 15px;
             margin: 20px 0;
         }
-        
+
         @media (max-width: 768px) {
             .model-grid {
                 grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             }
         }
-        
+
         @media (max-width: 480px) {
             .model-grid {
                 grid-template-columns: 1fr;
             }
         }
-        
+
         .model-card {
             background-color: var(--ai-msg-bg);
             border-radius: var(--border-radius);
             padding: 15px;
             box-shadow: var(--box-shadow);
         }
-        
+
         .model-card h4 {
             margin-bottom: 8px;
             color: var(--primary-color);
         }
-        
+
         .model-card p {
             margin: 5px 0;
             font-size: 0.9em;
         }
-        
+
         .model-card .developer {
             font-weight: bold;
         }
-        
+
+        .model-card .context {
+            color: var(--text-color);
+            opacity: 0.7;
+        }
+
+        .code-block {
+            background-color: rgba(0, 0, 0, 0.05);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+
+        .code-block pre {
+            margin: 0;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
         .important-notice {
             background-color: var(--system-msg-bg);
             border-left: 4px solid var(--accent-color);
             padding: 15px;
             margin-bottom: 20px;
-            border-radius: 8px;
+            border-radius: var(--border-radius);
+        }
+
+        ul, ol {
+            margin-bottom: 1rem;
+            padding-left: 2rem;
+        }
+
+        ul {
+            list-style-type: disc;
+        }
+
+        ol {
+            list-style-type: decimal;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Additional mobile-specific styles */
+        @media (max-width: 480px) {
+            main {
+                padding: 1rem !important;
+            }
+
+            .container {
+                padding: 0 10px;
+            }
+
+            .feature-section {
+                margin: 25px 0;
+            }
+
+            .feature-card, .model-card {
+                padding: 15px;
+            }
+
+            .code-block {
+                padding: 10px;
+                margin: 15px 0;
+            }
+
+            /* Ensure proper text wrapping on small screens */
+            p, li, a, h1, h2, h3, h4, h5, h6 {
+                word-break: break-word;
+                max-width: 100%;
+            }
+
+            /* Adjust font sizes for better readability on small screens */
+            p, li {
+                font-size: 0.95rem;
+            }
+
+            h2 {
+                font-size: 1.4rem;
+            }
+
+            h3 {
+                font-size: 1.2rem;
+            }
+
+            h4 {
+                font-size: 1.1rem;
+            }
+        }
+        .page-nav {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .page-nav a {
+            padding: 8px 15px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+
+        .page-nav a:hover {
+            background-color: var(--primary-dark);
+            text-decoration: none;
         }
     </style>
 </head>
 <body>
     <div class="app-container">
+        <div class="beta-tag">BETA</div>
         <header>
             <div class="logo">
-                <h1 class="logo-text">hacka.re<span class="heart-logo">♥&#xFE0E;</span></h1>
-                <p class="tagline">För hackare, av hackare.</p>
+                <h1><a href="../index.html" style="text-decoration: none; color: inherit;">hacka.re</a></h1>
+                <p class="tagline">För hackare av hackare.</p>
             </div>
-            <nav>
-                <a href="../index.html">Chat</a>
-                <a href="index.html" class="active">About</a>
-                <a href="architecture.html">Architecture</a>
-                <a href="use-cases.html">Use Cases</a>
-            </nav>
+            <div class="settings">
+                <a href="../index.html" class="btn secondary-btn" style="margin-right: 10px;">Back to Chat</a>
+            </div>
         </header>
 
-        <main>
-            <section class="content-section">
-                <h2>About hacka.re</h2>
-                <div class="important-notice">
-                    <p>hacka.re is a privacy-focused, serverless web-based LLM chat client that stores your API key, conversations, and settings locally in your browser.</p>
-                </div>
-                <div class="important-notice">
-                    <p>hacka.re is serverless, meaning you can download the entire web page and run it offline, plus modify/extend it as you wish. hacka.re is published under the MIT No Attibution license, meant to be as free as freeware can be.</p>
-                </div>
-                <div class="important-notice">
-                    <p>hacka.re supports creation of self-contained, strongly encrypted, password/session key-protected GPTs with individual system prompts and conversation data, which allows for sharing and collaboration over less secure channels.</p>
-                </div>
-                <div class="important-notice">
-                    <p>To get started, you'll need to configure LLM access by specifying a base URL (OpenAI-compatible) and API key.</p>
-                </div>
-            </section>
+        <main style="overflow-y: auto; overflow-x: auto; padding: 2rem;">
+            <div class="container" style="max-width: 1000px; margin: 0 auto; word-wrap: break-word; overflow-wrap: break-word; width: 100%;">
+            <h2><a href="https://hacka.re/" target="_blank">hacka.re</a>: A Modern Interface for AI Models</h2>
+            <p class="tagline" style="font-style: italic; font-size: 1.2em; margin-bottom: 30px;">
+                <em>För hackare av hackare.</em>
+            </p>
+
+            <div class="page-nav">
+                <a href="index.html">About</a>
+                <a href="architecture.html">Architecture</a>
+                <a href="use-cases.html">Use Cases</a>
+            </div>
+
+            <p class="important-notice">
+                <strong>Privacy Notice:</strong> This is a GitHub Pages site. All conversational data is sent directly to your configured API provider's servers.
+                While your data is stored locally in your browser, all chat interactions are processed through your API provider's cloud services.
+            </p>
+
             <div class="feature-section">
                 <h3>Overview</h3>
                 <p>
                     <a href="https://hacka.re/" target="_blank">hacka.re</a> is a lightweight serverless web UI which only requires an OpenAI-compatible API for inference. It allows for serverless sharing of strongly encrypted GenAI provider credentials, system prompts, model choice, and conversation history over less secure communication channels.
                 </p>
                 <br />
-                
+
                 <p>
-                    This architecture allows for serverless GPT's to be shared securely over otherwise insecure channels, without touching servers aside from the LLM API endpoint(s) involved for inference. The entire hacka.re site can simply be downloaded and run from disk, or extended and re-published freely, as it is licensed under the MIT No Attribution license.
+                    This architecture allows for serverless GPT's to be shared securely over otherwise insecure channels without touching servers aside from the LLM API endpoint(s) involved  for inference. The entire hacka.re site can simply be downloaded and run from disk, or extended and re-published freely as it is licensed under the MIT No Attribution license.
                 </p>
                 <br />
-                
+
                 <p>
-                    The name "<a href="https://hacka.re/" target="_blank">hacka.re</a>" comes from "hackare" (the Swedish word for "hacker"), reflecting the 
-                    project's ethos: a tool built by hackers for hackers. The tagline "För hackare, av hackare" 
+                    The name "<a href="https://hacka.re/" target="_blank">hacka.re</a>" comes from "hackare" (the Swedish word for "hacker"), reflecting the
+                    project's ethos: a tool built by hackers, for hackers. The tagline "För hackare, av hackare"
                     translates to "for hackers, by hackers."
                 </p>
                 <br />
-                
+
                 <p>
-                    Unlike many commercial chat interfaces, <a href="https://hacka.re/" target="_blank">hacka.re</a> prioritizes user privacy by storing all data locally 
-                    in your browser. Your API key and conversation history never leave your device except when making direct 
+                    Unlike many commercial chat interfaces, <a href="https://hacka.re/" target="_blank">hacka.re</a> prioritizes user privacy by storing all data locally
+                    in your browser. Your API key and conversation history never leave your device except when making direct
                     requests to your configured API provider. This approach gives users more control over their data while still providing access to state-of-the-art AI models.
-                    Note that ALL conversational data is still exposed to your configured API provider's servers, and is therefore subject to their privacy policy.
+                    Note that ALL conversational data is still exposed to your configured API provider's servers and is therefore subject to their privacy policy.
                 </p>
             </div>
 
@@ -191,7 +294,7 @@
                     </div>
                     <div class="feature-card">
                         <h4><span class="emoji-icon">🔗</span>Comprehensive Secure Sharing</h4>
-                        <p>Create session key-protected shareable links to securely share your API key, system prompt, active model, and conversation data with trusted individuals, with real-time link length monitoring.</p>
+                        <p>Create session key-protected shareable links to securely share your API key, system prompt, active model, and conversation data with trusted individuals with real-time link length monitoring.</p>
                     </div>
                 </div>
             </div>
@@ -199,17 +302,17 @@
             <div class="feature-section">
                 <h3>Supported Models</h3>
                 <p>
-                    <a href="https://hacka.re/" target="_blank">hacka.re</a> provides access to all models available through your configured OpenAI-compatible API provider. 
+                    <a href="https://hacka.re/" target="_blank">hacka.re</a> provides access to all models available through your configured OpenAI-compatible API provider.
                     The interface automatically fetches the latest available models from your provider.
                 </p>
-                
+
                 <p>
-                    Different API providers offer various models with different capabilities, context window sizes, and performance characteristics. 
+                    Different API providers offer various models with different capabilities, context window sizes, and performance characteristics.
                     The specific models available to you will depend entirely on which API provider you choose to connect with.
                 </p>
-                
+
                 <p>
-                    The application's model selector displays all available models from your chosen provider, allowing you to 
+                    The application's model selector displays all available models from your chosen provider, allowing you to
                     select the one that best fits your current needs.
                 </p>
             </div>
@@ -218,17 +321,17 @@
             <div class="feature-section">
                 <h3>Technical Architecture</h3>
                 <p>
-                    <a href="https://hacka.re/" target="_blank">hacka.re</a> is built as a pure client-side application using vanilla JavaScript, HTML, and CSS. 
+                    <a href="https://hacka.re/" target="_blank">hacka.re</a> is built as a pure client-side application using vanilla JavaScript, HTML, and CSS.
                     This approach eliminates the need for a backend server, ensuring that your data remains on your device.
                 </p>
                 <br />
-                
+
                 <p>
-                    The application communicates directly with the configured OpenAI-compatible API, using your corresponding API key stored in your browser's localStorage.
+                    The application communicates directly with the configured OpenAI-compatible API using your corresponding API key stored in your browser's localStorage.
                     All message processing, including markdown rendering and syntax highlighting, happens locally in your browser.
                 </p>
                 <br />
-                
+
                 <p>
                     For detailed information about the technical implementation and architecture, including code examples and security considerations, visit the <a href="architecture.html">Architecture</a> page.
                 </p>
@@ -237,10 +340,10 @@
             <div class="feature-section">
                 <h3>Secure Sharing</h3>
                 <p>
-                    <a href="https://hacka.re/" target="_blank">hacka.re</a> includes a feature to securely share various aspects of your configuration with others through session key-protected URL-based sharing. 
+                    <a href="https://hacka.re/" target="_blank">hacka.re</a> includes a feature to securely share various aspects of your configuration with others through session key-protected URL-based sharing.
                 </p>
                 <br />
-                
+
                 <p>
                     <strong>Sharing options:</strong>
                 </p>
@@ -251,7 +354,7 @@
                     <li><strong>System Prompt:</strong> Share your custom system prompt for consistent AI behavior</li>
                     <li><strong>Conversation Data:</strong> Share recent conversation history with configurable message count</li>
                 </ul>
-                
+
                 <p>
                     For detailed information about the secure sharing implementation, including code examples, security considerations, and team collaboration features, visit the <a href="architecture.html">Architecture</a> page.
                 </p>
@@ -273,8 +376,8 @@
                     <li>All external js libraries are now hosted locally to prevent third-party CDN connections</li>
                 </ul>
                 <p>
-                    While this approach gives you more control over your data than many commercial alternatives, 
-                    please be aware that your conversation content is processed by your API provider's cloud services. Never share 
+                    While this approach gives you more control over your data than many commercial alternatives,
+                    please be aware that your conversation content is processed by your API provider's cloud services. Never share
                     sensitive personal information, credentials, or confidential data in your conversations with not fully trusted API endpoints.
                 </p>
             </div>
@@ -322,7 +425,7 @@
                     <a href="https://hacka.re/" target="_blank">hacka.re</a> is released under the MIT No Attribution license, allowing you to freely use, modify, and distribute the software without attribution requirements.
                 </p>
             </div>
-            
+
             <div class="page-nav">
                 <a href="index.html">About</a>
                 <a href="architecture.html">Architecture</a>

@@ -28,13 +28,13 @@
             gap: 20px;
             margin: 30px 0;
         }
-        
+
         @media (max-width: 768px) {
             .feature-grid {
                 grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
             }
         }
-        
+
         @media (max-width: 480px) {
             .feature-grid {
                 grid-template-columns: 1fr;
@@ -58,52 +58,52 @@
             margin-right: 8px;
             vertical-align: middle;
         }
-        
+
         .model-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
             gap: 15px;
             margin: 20px 0;
         }
-        
+
         @media (max-width: 768px) {
             .model-grid {
                 grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             }
         }
-        
+
         @media (max-width: 480px) {
             .model-grid {
                 grid-template-columns: 1fr;
             }
         }
-        
+
         .model-card {
             background-color: var(--ai-msg-bg);
             border-radius: var(--border-radius);
             padding: 15px;
             box-shadow: var(--box-shadow);
         }
-        
+
         .model-card h4 {
             margin-bottom: 8px;
             color: var(--primary-color);
         }
-        
+
         .model-card p {
             margin: 5px 0;
             font-size: 0.9em;
         }
-        
+
         .model-card .developer {
             font-weight: bold;
         }
-        
+
         .model-card .context {
             color: var(--text-color);
             opacity: 0.7;
         }
-        
+
         .code-block {
             background-color: rgba(0, 0, 0, 0.05);
             border-radius: var(--border-radius);
@@ -116,7 +116,7 @@
             margin: 0;
             font-family: 'Courier New', Courier, monospace;
         }
-        
+
         .important-notice {
             background-color: var(--system-msg-bg);
             border-left: 4px solid var(--accent-color);
@@ -124,66 +124,66 @@
             margin-bottom: 20px;
             border-radius: var(--border-radius);
         }
-        
+
         ul, ol {
             margin-bottom: 1rem;
             padding-left: 2rem;
         }
-        
+
         ul {
             list-style-type: disc;
         }
-        
+
         ol {
             list-style-type: decimal;
         }
-        
+
         li {
             margin-bottom: 0.5rem;
         }
-        
+
         /* Additional mobile-specific styles */
         @media (max-width: 480px) {
             main {
                 padding: 1rem !important;
             }
-            
+
             .container {
                 padding: 0 10px;
             }
-            
+
             .feature-section {
                 margin: 25px 0;
             }
-            
+
             .feature-card, .model-card {
                 padding: 15px;
             }
-            
+
             .code-block {
                 padding: 10px;
                 margin: 15px 0;
             }
-            
+
             /* Ensure proper text wrapping on small screens */
             p, li, a, h1, h2, h3, h4, h5, h6 {
                 word-break: break-word;
                 max-width: 100%;
             }
-            
+
             /* Adjust font sizes for better readability on small screens */
             p, li {
                 font-size: 0.95rem;
             }
-            
+
             h2 {
                 font-size: 1.4rem;
             }
-            
+
             h3 {
                 font-size: 1.2rem;
             }
-            
+
             h4 {
                 font-size: 1.1rem;
             }
@@ -246,7 +246,7 @@
         <header>
             <div class="logo">
                 <h1><a href="../index.html" style="text-decoration: none; color: inherit;">hacka.re</a></h1>
-                <p class="tagline">För hackare, av hackare.</p>
+                <p class="tagline">För hackare av hackare.</p>
             </div>
             <div class="settings">
                 <a href="../index.html" class="btn secondary-btn" style="margin-right: 10px;">Back to Chat</a>
@@ -256,7 +256,7 @@
         <main style="overflow-y: auto; overflow-x: auto; padding: 2rem;">
             <div class="container" style="max-width: 1000px; margin: 0 auto; word-wrap: break-word; overflow-wrap: break-word; width: 100%;">
             <h2>Use Cases</h2>
-            
+
             <div class="page-nav">
                 <a href="index.html">About</a>
                 <a href="architecture.html">Architecture</a>
@@ -268,11 +268,11 @@
                 <p>
                     <a href="https://hacka.re/" target="_blank">hacka.re</a> is designed to be simple to use while providing powerful features. Here's how to get started:
                 </p>
-                
+
                 <div class="use-case">
                     <h4>Running hacka.re Locally</h4>
                     <p>You can download and run hacka.re directly from your local machine without any server setup:</p>
-                    
+
                     <div class="use-case-steps">
                         <ol>
                             <li>Download the site using curl:
@@ -325,16 +325,16 @@ npx serve</pre>
                             <li>Start chatting!</li>
                         </ol>
                     </div>
-                    
+
                     <div class="image-placeholder">
                         [Screenshot of hacka.re running locally will be added here]
                     </div>
                 </div>
-                
+
                 <div class="use-case">
                     <h4>Using Different API Providers</h4>
                     <p>hacka.re supports multiple OpenAI-compatible API providers:</p>
-                    
+
                     <div class="use-case-steps">
                         <ol>
                             <li>Click on the settings icon in the top right corner</li>
@@ -343,7 +343,7 @@ npx serve</pre>
                             <li>The available models will automatically update based on your provider</li>
                         </ol>
                     </div>
-                    
+
                     <div class="image-placeholder">
                         [Screenshot of API provider selection will be added here]
                     </div>
@@ -355,11 +355,11 @@ npx serve</pre>
                 <p>
                     One of the most powerful features of hacka.re is its ability to securely share sessions with others. Here are some common collaboration scenarios:
                 </p>
-                
+
                 <div class="use-case">
                     <h4>Sharing Your API Key with a Team Member</h4>
                     <p>Securely share your API key with a colleague without exposing it in plain text:</p>
-                    
+
                     <div class="use-case-steps">
                         <ol>
                             <li>Click on the "Share" button in the interface</li>
@@ -367,21 +367,21 @@ npx serve</pre>
                             <li>Generate a session key or enter your own</li>
                             <li>Copy the generated link</li>
                             <li>Share the link with your team member through your preferred channel</li>
-                            <li>Share the session key through a separate, secure channel</li>
+                            <li>Share the session key through a separate secure channel</li>
                             <li>When they open the link, they'll be prompted to enter the session key</li>
                             <li>Once entered correctly, your API key will be loaded into their session</li>
                         </ol>
                     </div>
-                    
+
                     <div class="image-placeholder">
                         [Screenshot of sharing API key will be added here]
                     </div>
                 </div>
-                
+
                 <div class="use-case">
                     <h4>Continuing a Conversation Across Devices</h4>
                     <p>Start a conversation on one device and continue it on another:</p>
-                    
+
                     <div class="use-case-steps">
                         <ol>
                             <li>Begin a conversation on your first device</li>
@@ -394,16 +394,16 @@ npx serve</pre>
                             <li>The conversation will be loaded, allowing you to continue where you left off</li>
                         </ol>
                     </div>
-                    
+
                     <div class="image-placeholder">
                         [Screenshot of conversation sharing with QR code will be added here]
                     </div>
                 </div>
-                
+
                 <div class="use-case">
                     <h4>Collaborative Problem Solving</h4>
                     <p>Work together with colleagues on a complex problem using a shared AI session:</p>
-                    
+
                     <div class="use-case-steps">
                         <ol>
                             <li>Set up a custom system prompt tailored to your specific problem</li>
@@ -421,7 +421,7 @@ npx serve</pre>
                             <li>Generate new shareable links as the conversation evolves</li>
                         </ol>
                     </div>
-                    
+
                     <div class="image-placeholder">
                         [Screenshot of collaborative problem solving will be added here]
                     </div>
@@ -430,11 +430,11 @@ npx serve</pre>
 
             <div class="feature-section">
                 <h3>Advanced Use Cases</h3>
-                
+
                 <div class="use-case">
                     <h4>Using Different API Providers</h4>
                     <p>Connect to your preferred OpenAI-compatible API provider:</p>
-                    
+
                     <div class="use-case-steps">
                         <ol>
                             <li>Sign up for an account with your chosen OpenAI-compatible API provider</li>
@@ -445,16 +445,16 @@ npx serve</pre>
                             <li>Start chatting with your selected model</li>
                         </ol>
                     </div>
-                    
+
                     <div class="image-placeholder">
                         [Screenshot of API provider selection will be added here]
                     </div>
                 </div>
-                
+
                 <div class="use-case">
                     <h4>Creating a Team-Specific Session Key</h4>
                     <p>Set up a persistent session key for seamless sharing within your team:</p>
-                    
+
                     <div class="use-case-steps">
                         <ol>
                             <li>Click on the "Share" button</li>
@@ -466,16 +466,16 @@ npx serve</pre>
                             <li>This creates a seamless sharing experience within your trusted team</li>
                         </ol>
                     </div>
-                    
+
                     <div class="image-placeholder">
                         [Screenshot of team session key setup will be added here]
                     </div>
                 </div>
-                
+
                 <div class="use-case">
                     <h4>Customizing hacka.re</h4>
                     <p>As a project released under the MIT No Attribution license, hacka.re can be extended and customized for your needs:</p>
-                    
+
                     <div class="use-case-steps">
                         <ol>
                             <li>Download the site using the curl or wget commands above</li>
@@ -522,7 +522,7 @@ echo "Created clean hacka.re.zip with only HTML, JS, CSS, and font files"</pre>
                             <li>Keep your improvements private for your organization or share them as you wish</li>
                         </ol>
                     </div>
-                    
+
                     <div class="image-placeholder">
                         [Screenshot of customized hacka.re instance will be added here]
                     </div>
