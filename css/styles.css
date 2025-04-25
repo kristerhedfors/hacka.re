@@ -72,19 +72,18 @@ ul {
 
 /* ===== Beta Tag ===== */
 .beta-tag {
-    position: absolute;
-    top: 8px; /* Lowered slightly */
-    right: auto;
-    left: 330px; /* Moved twice as much further to the right */
+    display: inline-block;
     background-color: #fef3c7; /* System message background color */
-    color: #333; /* Dark text for better contrast */
-    padding: 2px 6px;
-    font-size: 0.6rem;
+    color: #333; /* Dark grey text for better contrast */
+    padding: 3px 8px;
+    font-size: 0.7rem;
     font-weight: bold;
     border-radius: 4px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    z-index: 100;
-    transform: rotate(10deg); /* Reduced lean to 10% */
+    position: absolute; /* Position relative to header */
+    right: 10px; /* Position in the right corner */
+    top: 10px; /* Position at the top */
+    z-index: 100; /* Ensure it appears above other elements */
 }
 
 /* ===== Header ===== */
