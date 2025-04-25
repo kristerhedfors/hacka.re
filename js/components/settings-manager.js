@@ -1178,6 +1178,8 @@ Remember that all API calls are made directly from the browser, maintaining hack
             localStorage.removeItem(StorageService.STORAGE_KEYS.SHARE_OPTIONS);
             localStorage.removeItem(StorageService.STORAGE_KEYS.BASE_URL);
             localStorage.removeItem(StorageService.STORAGE_KEYS.BASE_URL_PROVIDER);
+            localStorage.removeItem(StorageService.STORAGE_KEYS.TITLE);
+            localStorage.removeItem(StorageService.STORAGE_KEYS.SUBTITLE);
             
             // Update UI elements
             if (elements.baseUrl) {
@@ -1199,6 +1201,11 @@ Remember that all API calls are made directly from the browser, maintaining hack
             // Hide modal if provided
             if (hideSettingsModal) {
                 hideSettingsModal();
+            }
+            
+            // Update title and subtitle in the UI to reflect defaults
+            if (window.updateTitleAndSubtitle) {
+                window.updateTitleAndSubtitle();
             }
             
             // Add confirmation message
