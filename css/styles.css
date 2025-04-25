@@ -136,14 +136,18 @@ header .token-speed-text {
 
 .heart-logo {
     font-size: 1.5rem;
-    color: #444444 !important; /* Force color override with !important */
     position: relative;
     line-height: 0.8;
     display: inline-block;
     margin-left: 5px;
-    -webkit-text-fill-color: #444444; /* For WebKit browsers */
-    text-fill-color: #444444; /* Future CSS standard */
     cursor: help;
+    /* Apply sweeping gradient animation based on base color */
+    animation: heartSweep 3s infinite alternate;
+    background: linear-gradient(90deg, #505050, #444444, #383838);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 .serverless-gpts {
@@ -1269,4 +1273,10 @@ footer a:hover {
     border: none;
     border-top: 1px solid rgba(0, 0, 0, 0.1);
     margin: 1.5rem 0;
+}
+
+/* Keyframes for heart sweep animation */
+@keyframes heartSweep {
+    0% { background-position: 0% center; }
+    100% { background-position: 100% center; }
 }
