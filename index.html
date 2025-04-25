@@ -24,7 +24,14 @@
         <div class="beta-tag">BETA</div>
         <header>
             <div class="logo">
-                <h1 class="logo-text">hacka.re<span class="heart-logo">♥&#xFE0E;<div class="typing-dots"></div>
+                <h1 class="logo-text">hacka.re<span class="heart-logo">♥&#xFE0E;
+                    <!-- SVG fallback for Firefox Focus -->
+                    <svg class="firefox-focus-fallback" width="16" height="6" viewBox="0 0 16 6" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 3; display: none;">
+                        <circle cx="3" cy="3" r="1.5" fill="#22CC22" />
+                        <circle cx="8" cy="3" r="1.5" fill="#22CC22" />
+                        <circle cx="13" cy="3" r="1.5" fill="#22CC22" />
+                    </svg>
+                    <div class="typing-dots"></div>
                     <div class="tooltip">
                         <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 15px; margin-bottom: 20px; border-radius: 8px;">
                             <p>Welcome to hacka.re! hacka.re is a privacy-focused web-based LLM chat client that stores your API key, conversations, and settings locally in your browser.</p>

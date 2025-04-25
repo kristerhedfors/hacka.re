@@ -11,9 +11,26 @@ window.LogoAnimation = (function() {
     let dots = [];
     let tooltipActive = false;
     
+    // Check if browser is Firefox Focus
+    function isFirefoxFocus() {
+        return navigator.userAgent.includes('Focus') || 
+               (navigator.userAgent.includes('Firefox') && navigator.userAgent.includes('Mobile'));
+    }
+    
     // Initialize the animation
     function init() {
         document.addEventListener('DOMContentLoaded', function() {
+            // Add a special class to the body for Firefox Focus
+            if (isFirefoxFocus()) {
+                document.body.classList.add('firefox-focus');
+                
+                // Show the SVG fallback for Firefox Focus
+                const svgFallback = document.querySelector('.firefox-focus-fallback');
+                if (svgFallback) {
+                    svgFallback.style.display = 'block';
+                }
+            }
+            
             // Get the heart logo element
             const heartLogo = document.querySelector('.heart-logo');
             const typingDots = document.querySelector('.typing-dots');
@@ -41,18 +58,31 @@ window.LogoAnimation = (function() {
                 const dot = document.createElement('span');
                 dot.className = 'dot';
                 
-                // Set dot appearance
-                dot.style.position = 'relative';
-                dot.style.width = '3px';
-                dot.style.height = '3px';
-                dot.style.backgroundColor = '#22CC22'; // Slightly darker terminal green color
-                dot.style.borderRadius = '50%';
-                dot.style.display = 'inline-block';
-                dot.style.boxShadow = '0 1px 1px rgba(0, 0, 0, 0.2)';
+                // Use CSS class instead of inline styles for better compatibility
+                // The .dot class is defined in styles.css
                 dot.style.opacity = '0'; // Initially invisible
                 
-                // No margin initially
-                dot.style.margin = '0';
+                // Set a specific style for Firefox Focus
+                if (isFirefoxFocus()) {
+                    // Force hardware acceleration and visibility
+                    dot.style.transform = 'translateZ(0)';
+                    dot.style.willChange = 'opacity, transform';
+                    
+                    // Explicitly set all styles for Firefox Focus
+                    dot.style.backgroundColor = '#22CC22';
+                    dot.style.width = '3px';
+                    dot.style.height = '3px';
+                    dot.style.borderRadius = '50%';
+                    dot.style.display = 'inline-block';
+                    dot.style.boxShadow = '0 1px 1px rgba(0, 0, 0, 0.2)';
+                    dot.style.opacity = '1'; // Always visible in Firefox Focus
+                    
+                    // Add !important to critical styles for Firefox Focus
+                    dot.style.setProperty('background-color', '#22CC22', 'important');
+                    dot.style.setProperty('opacity', '1', 'important');
+                    dot.style.setProperty('width', '3px', 'important');
+                    dot.style.setProperty('height', '3px', 'important');
+                }
                 
                 typingDots.appendChild(dot);
                 dots.push(dot);
@@ -70,22 +100,23 @@ window.LogoAnimation = (function() {
             dots[2].style.marginLeft = '-1px';
             
             // Create the keyframe animations for heartbeat with rapid opacity changes
+            // Enhanced for better compatibility with Firefox Focus
             const styleSheet = document.createElement('style');
             styleSheet.textContent = `
                 @keyframes heartbeatLub {
-                    0% { transform: translateY(0); opacity: 0; }
-                    10% { transform: translateY(-1px); opacity: 1; }
-                    50% { transform: translateY(-4px); opacity: 1; }
-                    90% { transform: translateY(-1px); opacity: 1; }
-                    100% { transform: translateY(0); opacity: 0; }
+                    0% { transform: translateY(0) translateZ(0); opacity: 0; background-color: #22CC22; }
+                    10% { transform: translateY(-1px) translateZ(0); opacity: 1; background-color: #22CC22; }
+                    50% { transform: translateY(-4px) translateZ(0); opacity: 1; background-color: #22CC22; }
+                    90% { transform: translateY(-1px) translateZ(0); opacity: 1; background-color: #22CC22; }
+                    100% { transform: translateY(0) translateZ(0); opacity: 0; background-color: #22CC22; }
                 }
                 
                 @keyframes heartbeatDub {
-                    0% { transform: translateY(0); opacity: 0; }
-                    10% { transform: translateY(-1px); opacity: 1; }
-                    50% { transform: translateY(-2px); opacity: 1; }
-                    90% { transform: translateY(-1px); opacity: 1; }
-                    100% { transform: translateY(0); opacity: 0; }
+                    0% { transform: translateY(0) translateZ(0); opacity: 0; background-color: #22CC22; }
+                    10% { transform: translateY(-1px) translateZ(0); opacity: 1; background-color: #22CC22; }
+                    50% { transform: translateY(-2px) translateZ(0); opacity: 1; background-color: #22CC22; }
+                    90% { transform: translateY(-1px) translateZ(0); opacity: 1; background-color: #22CC22; }
+                    100% { transform: translateY(0) translateZ(0); opacity: 0; background-color: #22CC22; }
                 }
             `;
             document.head.appendChild(styleSheet);
@@ -164,14 +195,35 @@ window.LogoAnimation = (function() {
             // Reset any existing animations and make dots visible
             dots.forEach(dot => {
                 dot.style.animation = 'none';
-                dot.style.transform = 'translateY(0)';
+                dot.style.transform = 'translateY(0) translateZ(0)';
                 dot.style.opacity = '1'; // Make dots visible during heartbeat
+                
+                // Explicitly set styles for Firefox Focus compatibility
+                dot.style.backgroundColor = '#22CC22';
+                dot.style.width = '3px';
+                dot.style.height = '3px';
+                dot.style.borderRadius = '50%';
+                dot.style.display = 'inline-block';
+                dot.style.boxShadow = '0 1px 1px rgba(0, 0, 0, 0.2)';
+                
+                // Force hardware acceleration
+                dot.style.willChange = 'opacity, transform';
             });
             
             // First beat (lub) - stronger
             dots.forEach((dot, index) => {
                 setTimeout(() => {
-                    dot.style.animation = 'heartbeatLub 200ms ease-in-out';
+                    // Apply animation with !important to override any browser restrictions
+                    dot.style.setProperty('animation', 'heartbeatLub 200ms ease-in-out', 'important');
+                    
+                    // For Firefox Focus, also set these properties directly
+                    if (isFirefoxFocus()) {
+                        setTimeout(() => {
+                            dot.style.opacity = '1';
+                            dot.style.backgroundColor = '#22CC22';
+                            dot.style.transform = 'translateY(-4px) translateZ(0)';
+                        }, 100); // At 50% of animation
+                    }
                 }, index * 30);
             });
             
@@ -179,15 +231,32 @@ window.LogoAnimation = (function() {
             setTimeout(() => {
                 dots.forEach((dot, index) => {
                     setTimeout(() => {
-                        dot.style.animation = 'heartbeatDub 200ms ease-in-out';
+                        // Apply animation with !important
+                        dot.style.setProperty('animation', 'heartbeatDub 200ms ease-in-out', 'important');
+                        
+                        // For Firefox Focus, also set these properties directly
+                        if (isFirefoxFocus()) {
+                            setTimeout(() => {
+                                dot.style.opacity = '1';
+                                dot.style.backgroundColor = '#22CC22';
+                                dot.style.transform = 'translateY(-2px) translateZ(0)';
+                            }, 100); // At 50% of animation
+                        }
                     }, index * 30);
                 });
                 
-                // Hide dots after the second beat completes (unless animation is running)
+                // Handle dots after the second beat completes
                 setTimeout(() => {
                     if (!animationRunning) {
                         dots.forEach(dot => {
-                            dot.style.opacity = '0'; // Hide dots after animation
+                            // In Firefox Focus, keep dots visible even when not animating
+                            if (isFirefoxFocus()) {
+                                dot.style.opacity = '1';
+                                dot.style.backgroundColor = '#22CC22';
+                                dot.style.transform = 'translateY(0) translateZ(0)';
+                            } else {
+                                dot.style.opacity = '0'; // Hide dots after animation in other browsers
+                            }
                         });
                     }
                     resolve();
@@ -231,12 +300,19 @@ window.LogoAnimation = (function() {
             animationLoop = null;
         }
         
-        // Reset dots to their initial state (invisible)
+        // Reset dots to their initial state
         if (dots.length > 0) {
             dots.forEach(dot => {
                 dot.style.animation = 'none';
                 dot.style.transform = 'translateY(0)';
-                dot.style.opacity = '0'; // Hide dots when not animating
+                
+                // In Firefox Focus, keep dots visible even when not animating
+                if (isFirefoxFocus()) {
+                    dot.style.opacity = '1';
+                    dot.style.backgroundColor = '#22CC22';
+                } else {
+                    dot.style.opacity = '0'; // Hide dots when not animating in other browsers
+                }
             });
         }
     }
