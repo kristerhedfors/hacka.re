@@ -130,8 +130,8 @@ window.LinkSharingService = (function() {
                     systemPrompt: data.systemPrompt || null,
                     model: data.model || null,
                     messages: data.messages || null,
-                    title: data.title || null,
-                    subtitle: data.subtitle || null
+                    title: data.title || "hacka.re",
+                    subtitle: data.subtitle || "För hackare, av hackare"
                 };
             }
             

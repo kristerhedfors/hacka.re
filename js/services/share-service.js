@@ -98,9 +98,14 @@ window.ShareService = (function() {
             payload.messages = options.messages.slice(startIndex);
         }
         
-        // Always include title and subtitle with default values
-        payload.title = options.title || "hacka.re";
-        payload.subtitle = options.subtitle || "För hackare, av hackare";
+        // Only include title and subtitle if they are explicitly provided
+        if (options.title && options.title.trim() !== "") {
+            payload.title = options.title;
+        }
+        
+        if (options.subtitle && options.subtitle.trim() !== "") {
+            payload.subtitle = options.subtitle;
+        }
         
         return LinkSharingService.createCustomShareableLink(payload, password);
     }
