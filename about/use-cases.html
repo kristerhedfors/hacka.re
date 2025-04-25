@@ -275,10 +275,28 @@
                     
                     <div class="use-case-steps">
                         <ol>
-                            <li>Clone or download the repository from GitHub:
+                            <li>Download the site using curl:
                                 <div class="code-block">
-                                    <pre>git clone https://github.com/username/hacka.re.git
-cd hacka.re</pre>
+                                    <pre>
+# Download the site with curl
+curl -L -o hacka.re.zip "https://hacka.re/hacka.re.zip"
+
+# Unzip the downloaded file
+unzip hacka.re.zip
+
+</pre>
+                                </div>
+                            </li>
+                            <li>Or download using wget:
+                                <div class="code-block">
+                                    <pre>
+# Download the site with wget
+wget -O hacka.re.zip "https://hacka.re/hacka.re.zip"
+
+# Unzip the downloaded file
+unzip hacka.re.zip
+
+</pre>
                                 </div>
                             </li>
                             <li>Open the index.html file in your browser:
@@ -455,12 +473,12 @@ npx serve</pre>
                 </div>
                 
                 <div class="use-case">
-                    <h4>Extending hacka.re</h4>
-                    <p>As an open-source project, hacka.re can be extended and customized:</p>
+                    <h4>Customizing hacka.re</h4>
+                    <p>As a project released under the MIT No Attribution license, hacka.re can be extended and customized for your needs:</p>
                     
                     <div class="use-case-steps">
                         <ol>
-                            <li>Fork the repository on GitHub</li>
+                            <li>Download the site using the curl or wget commands above</li>
                             <li>Make your desired modifications:
                                 <ul>
                                     <li>Add support for additional API providers</li>
@@ -469,8 +487,39 @@ npx serve</pre>
                                 </ul>
                             </li>
                             <li>Test your changes locally</li>
-                            <li>Deploy your customized version to GitHub Pages or your preferred hosting</li>
-                            <li>Share your improvements with the community or keep them private for your organization</li>
+                            <li>If you want to create your own distribution zip, you can use this pre-commit hook to ensure only the correct files are included:
+                                <div class="code-block">
+                                    <pre>#!/bin/bash
+# pre-commit hook to create a clean zip file with only HTML, JS, CSS, and fonts
+
+# Create a temporary directory
+TEMP_DIR=$(mktemp -d)
+
+# Copy only the necessary files
+cp -r *.html $TEMP_DIR/
+cp -r css/ $TEMP_DIR/
+cp -r js/ $TEMP_DIR/
+cp -r lib/ $TEMP_DIR/
+cp -r about/ $TEMP_DIR/
+
+# Remove any unnecessary files (like .git, .DS_Store, etc.)
+find $TEMP_DIR -name ".git*" -delete
+find $TEMP_DIR -name ".DS_Store" -delete
+find $TEMP_DIR -name "*.map" -delete
+
+# Create the zip file
+cd $TEMP_DIR
+zip -r ../hacka.re.zip ./*
+
+# Clean up
+cd ..
+rm -rf $TEMP_DIR
+
+echo "Created clean hacka.re.zip with only HTML, JS, CSS, and font files"</pre>
+                                </div>
+                            </li>
+                            <li>Deploy your customized version to your preferred hosting</li>
+                            <li>Keep your improvements private for your organization or share them as you wish</li>
                         </ol>
                     </div>
                     
