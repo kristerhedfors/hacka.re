@@ -22,6 +22,12 @@ document.addEventListener('DOMContentLoaded', function() {
 window.updateTitleAndSubtitle = function() {
     const title = StorageService.getTitle();
     const subtitle = StorageService.getSubtitle();
+    const defaultTitle = "hacka.re";
+    const defaultSubtitle = "För hackare, av hackare";
+    
+    // Check if title and subtitle are unchanged (blank or default)
+    const isTitleDefault = !title || title === defaultTitle;
+    const isSubtitleDefault = !subtitle || subtitle === defaultSubtitle;
     
     // Update main page
     const logoTextElements = document.querySelectorAll('.logo-text');
@@ -31,7 +37,12 @@ window.updateTitleAndSubtitle = function() {
         // Preserve the heart logo and typing dots
         const heartLogo = element.querySelector('.heart-logo');
         if (heartLogo) {
-            element.innerHTML = title + '<span class="heart-logo">' + heartLogo.innerHTML + '</span>';
+            if (isTitleDefault && isSubtitleDefault) {
+                // Add "serverless GPTs" after the heart with a darker color
+                element.innerHTML = title + '<span class="heart-logo">' + heartLogo.innerHTML + '</span><span class="serverless-gpts"> serverless <span class="gpts">GPTs</span></span>';
+            } else {
+                element.innerHTML = title + '<span class="heart-logo">' + heartLogo.innerHTML + '</span>';
+            }
         } else {
             element.textContent = title;
         }
