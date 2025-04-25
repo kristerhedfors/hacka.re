@@ -245,12 +245,12 @@
             <div class="feature-section">
                 <h3>Overview</h3>
                 <p>
-                    <a href="https://hacka.re/" target="_blank">hacka.re</a> is a lightweight serverless web UI which only requires an OpenAI-compatible API for inference. It allows for strong encrypted sharing of credentials for various OpenAI-compatible API's together with custom system prompts, conversation history and (soon) function calling / tool calling for API invocation.
+                    <a href="https://hacka.re/" target="_blank">hacka.re</a> is a lightweight serverless web UI which only requires an OpenAI-compatible API for inference. It allows for serverless sharing of strongly encrypted GenAI provider credentials, system prompts, model choice, and conversation history over less secure communication channels.
                 </p>
                 <br />
                 
                 <p>
-                    This architecture allows for serverless GPT's to be shared securely over otherwise insecure channels, without touching servers aside from the LLM API endpoint(s) involved. The entire site (hacka.re) can be downloaded and run from disk, extended and re-published freely as it is licensed under the MIT No Attribution license.
+                    This architecture allows for serverless GPT's to be shared securely over otherwise insecure channels, without touching servers aside from the LLM API endpoint(s) involved for inference. The entire hacka.re site can simply be downloaded and run from disk, or extended and re-published freely, as it is licensed under the MIT No Attribution license.
                 </p>
                 <br />
                 
@@ -264,8 +264,8 @@
                 <p>
                     Unlike many commercial chat interfaces, <a href="https://hacka.re/" target="_blank">hacka.re</a> prioritizes user privacy by storing all data locally 
                     in your browser. Your API key and conversation history never leave your device except when making direct 
-                    requests to your configured API provider. This approach gives users complete control over their data while still 
-                    providing access to state-of-the-art AI models.
+                    requests to your configured API provider. This approach gives users more control over their data while still providing access to state-of-the-art AI models.
+                    Note that ALL conversational data is still exposed to your configured API provider's servers, and is therefore subject to their privacy policy.
                 </p>
             </div>
 
@@ -303,7 +303,7 @@
                 <h3>Supported Models</h3>
                 <p>
                     <a href="https://hacka.re/" target="_blank">hacka.re</a> provides access to all models available through your configured OpenAI-compatible API provider. 
-                    The interface automatically fetches the latest available models from your provider and organizes them into categories for easy selection.
+                    The interface automatically fetches the latest available models from your provider.
                 </p>
                 
                 <p>
@@ -327,9 +327,8 @@
                 <br />
                 
                 <p>
-                    The application communicates directly with your configured API provider using your personal API key, which is stored 
-                    in your browser's localStorage. All message processing, including markdown rendering and 
-                    syntax highlighting, happens locally in your browser.
+                    The application communicates directly with the configured OpenAI-compatible API, using your corresponding API key stored in your browser's localStorage.
+                    All message processing, including markdown rendering and syntax highlighting, happens locally in your browser.
                 </p>
                 <br />
                 
@@ -341,18 +340,18 @@
             <div class="feature-section">
                 <h3>Secure Sharing</h3>
                 <p>
-                    <a href="https://hacka.re/" target="_blank">hacka.re</a> includes a sophisticated feature to securely share various aspects of your configuration with others through session key-protected URL-based sharing. 
-                    This feature provides enhanced security through cryptographically sound session key-based key derivation, ensuring that only those with the correct session key can access your shared data.
+                    <a href="https://hacka.re/" target="_blank">hacka.re</a> includes a feature to securely share various aspects of your configuration with others through session key-protected URL-based sharing. 
                 </p>
                 <br />
                 
                 <p>
-                    <strong>Comprehensive sharing options:</strong>
+                    <strong>Sharing options:</strong>
                 </p>
                 <ul>
+                    <li><strong>API Provider:</strong> Any OpenAI-compatible API works</li>
                     <li><strong>API Key:</strong> Share your API key for access to models</li>
-                    <li><strong>System Prompt:</strong> Share your custom system prompt for consistent AI behavior</li>
                     <li><strong>Active Model:</strong> Share your selected model preference with automatic fallback if unavailable</li>
+                    <li><strong>System Prompt:</strong> Share your custom system prompt for consistent AI behavior</li>
                     <li><strong>Conversation Data:</strong> Share recent conversation history with configurable message count</li>
                 </ul>
                 
@@ -374,12 +373,12 @@
                     <li>Your conversations are subject to your API provider's privacy policy</li>
                     <li>Does not use analytics, tracking, or telemetry</li>
                     <li>Has no custom backend server that could potentially log your data</li>
-                    <li>All external libraries are now hosted locally to prevent third-party CDN connections</li>
+                    <li>All external js libraries are now hosted locally to prevent third-party CDN connections</li>
                 </ul>
                 <p>
                     While this approach gives you more control over your data than many commercial alternatives, 
                     please be aware that your conversation content is processed by your API provider's cloud services. Never share 
-                    sensitive personal information, credentials, or confidential data in your conversations.
+                    sensitive personal information, credentials, or confidential data in your conversations with not fully trusted API endpoints.
                 </p>
             </div>
 
@@ -409,12 +408,14 @@
                 </p>
                 <ol>
                     <li>Visit <a href="https://hacka.re/" target="_blank">hacka.re</a></li>
-                    <li>Enter your API key when prompted</li>
+                    <li>Open settings</li>
+                    <li>Select your API provider</li>
+                    <li>Paste your API key</li>
                     <li>Select your preferred model</li>
-                    <li>Start chatting with state-of-the-art AI models</li>
+                    <li>Start chatting with LLMs</li>
                 </ol>
                 <p>
-                    Your API key and conversations will be saved locally for future sessions. For more detailed instructions and examples, visit the <a href="use-cases.html">Use Cases</a> page.
+                    Your API key and conversations will be saved locally in your browser for future sessions. For more detailed instructions and examples, visit the <a href="use-cases.html">Use Cases</a> page.
                 </p>
             </div>
 
