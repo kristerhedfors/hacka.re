@@ -851,6 +851,17 @@ For more information about the technologies used in hacka.re:
                         }
                     }
                     
+                    // If there's a title and subtitle, save them and update the UI
+                    if (sharedData.title) {
+                        StorageService.saveTitle(sharedData.title);
+                        updateTitleAndSubtitle();
+                    }
+                    
+                    if (sharedData.subtitle) {
+                        StorageService.saveSubtitle(sharedData.subtitle);
+                        updateTitleAndSubtitle();
+                    }
+                    
                     // Clear the shared data from the URL
                     ShareService.clearSharedApiKeyFromUrl();
                     
@@ -920,6 +931,35 @@ For more information about the technologies used in hacka.re:
                     }
                 }
             });
+        }
+        
+        /**
+         * Update the title and subtitle on all index pages
+         */
+        function updateTitleAndSubtitle() {
+            const title = StorageService.getTitle();
+            const subtitle = StorageService.getSubtitle();
+            
+            // Update main page
+            const logoTextElements = document.querySelectorAll('.logo-text');
+            const taglineElements = document.querySelectorAll('.tagline');
+            
+            logoTextElements.forEach(element => {
+                // Preserve the heart logo and typing dots
+                const heartLogo = element.querySelector('.heart-logo');
+                if (heartLogo) {
+                    element.innerHTML = title + '<span class="heart-logo">' + heartLogo.innerHTML + '</span>';
+                } else {
+                    element.textContent = title;
+                }
+            });
+            
+            taglineElements.forEach(element => {
+                element.textContent = subtitle;
+            });
+            
+            // Update document title
+            document.title = title + ' - ' + subtitle;
         }
         
         /**
