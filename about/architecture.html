@@ -509,17 +509,6 @@ function extractSharedData(sessionKey) {
                     <li>They will still need the session key to decrypt the data</li>
                 </ol>
                 
-                <p>
-                    <strong>Session key sharing:</strong> You'll need to share the session key with the recipient through a separate, secure channel (e.g., encrypted messaging, phone call, in-person). 
-                    Never include the session key in the same communication as the link or QR code itself.
-                </p>
-                
-                <p>
-                    This feature provides a secure method for sharing not only your API key with trusted individuals, but model, system prompt, and selected amounts of conversation history as well.
-                    This is accomplished through strongly encrypted self-contained links, where the encrypted state is invisible to the web page that the link points to. The session key-based encryption ensures that 
-                    even if the link is intercepted, the attacker cannot extract information without knowing the session key. Always be cautious about who you share these links with,
-                    especially if they contain your API keys. Attackers able to decrypt shared link contents will have access to all of their contents, including API keys.
-                </p>
             </div>
 
             <div class="page-nav">
