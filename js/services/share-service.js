@@ -98,6 +98,15 @@ window.ShareService = (function() {
             payload.messages = options.messages.slice(startIndex);
         }
         
+        // Only include title and subtitle if they are explicitly provided
+        if (options.title && options.title.trim() !== "") {
+            payload.title = options.title;
+        }
+        
+        if (options.subtitle && options.subtitle.trim() !== "") {
+            payload.subtitle = options.subtitle;
+        }
+        
         return LinkSharingService.createCustomShareableLink(payload, password);
     }
     

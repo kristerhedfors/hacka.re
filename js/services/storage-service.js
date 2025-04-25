@@ -12,7 +12,9 @@ window.StorageService = (function() {
         SYSTEM_PROMPT: 'aihackare_system_prompt',
         SHARE_OPTIONS: 'aihackare_share_options',
         BASE_URL: 'aihackare_base_url',
-        BASE_URL_PROVIDER: 'aihackare_base_url_provider'
+        BASE_URL_PROVIDER: 'aihackare_base_url_provider',
+        TITLE: 'aihackare_title',
+        SUBTITLE: 'aihackare_subtitle'
     };
 
     /**
@@ -161,6 +163,38 @@ window.StorageService = (function() {
         }
     }
 
+    /**
+     * Save title to local storage
+     * @param {string} title - The title to save
+     */
+    function saveTitle(title) {
+        localStorage.setItem(STORAGE_KEYS.TITLE, title);
+    }
+
+    /**
+     * Get title from local storage
+     * @returns {string} The stored title or "hacka.re" if not found
+     */
+    function getTitle() {
+        return localStorage.getItem(STORAGE_KEYS.TITLE) || "hacka.re";
+    }
+
+    /**
+     * Save subtitle to local storage
+     * @param {string} subtitle - The subtitle to save
+     */
+    function saveSubtitle(subtitle) {
+        localStorage.setItem(STORAGE_KEYS.SUBTITLE, subtitle);
+    }
+
+    /**
+     * Get subtitle from local storage
+     * @returns {string} The stored subtitle or "För hackare, av hackare" if not found
+     */
+    function getSubtitle() {
+        return localStorage.getItem(STORAGE_KEYS.SUBTITLE) || "För hackare, av hackare";
+    }
+
     // Public API
     return {
         STORAGE_KEYS: STORAGE_KEYS,
@@ -179,6 +213,10 @@ window.StorageService = (function() {
         getBaseUrl: getBaseUrl,
         saveBaseUrlProvider: saveBaseUrlProvider,
         getBaseUrlProvider: getBaseUrlProvider,
-        getDefaultBaseUrlForProvider: getDefaultBaseUrlForProvider
+        getDefaultBaseUrlForProvider: getDefaultBaseUrlForProvider,
+        saveTitle: saveTitle,
+        getTitle: getTitle,
+        saveSubtitle: saveSubtitle,
+        getSubtitle: getSubtitle
     };
 })();

@@ -36,6 +36,8 @@ window.DOMElements = (function() {
             shareConversationCheckbox: document.getElementById('share-conversation'),
             messageHistoryCount: document.getElementById('message-history-count'),
             messageHistoryContainer: document.querySelector('.message-history-container'),
+            shareTitleInput: document.getElementById('share-title'),
+            shareSubtitleInput: document.getElementById('share-subtitle'),
             generateShareLinkBtn: document.getElementById('generate-share-link'),
             closeShareModalBtn: document.getElementById('close-share-modal'),
             generatedLinkContainer: document.getElementById('generated-link-container'),
