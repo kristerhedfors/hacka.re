@@ -45,10 +45,11 @@ window.LogoAnimation = (function() {
                 dot.style.position = 'relative';
                 dot.style.width = '3px';
                 dot.style.height = '3px';
-                dot.style.backgroundColor = '#33FF33'; // Terminal green color
+                dot.style.backgroundColor = '#22CC22'; // Slightly darker terminal green color
                 dot.style.borderRadius = '50%';
                 dot.style.display = 'inline-block';
                 dot.style.boxShadow = '0 1px 1px rgba(0, 0, 0, 0.2)';
+                dot.style.opacity = '0'; // Initially invisible
                 
                 // No margin initially
                 dot.style.margin = '0';
@@ -68,19 +69,23 @@ window.LogoAnimation = (function() {
             dots[1].style.marginLeft = '-1px';
             dots[2].style.marginLeft = '-1px';
             
-            // Create the keyframe animations for heartbeat
+            // Create the keyframe animations for heartbeat with rapid opacity changes
             const styleSheet = document.createElement('style');
             styleSheet.textContent = `
                 @keyframes heartbeatLub {
-                    0% { transform: translateY(0); opacity: 1; }
-                    50% { transform: translateY(-4px); opacity: 0.8; }
-                    100% { transform: translateY(0); opacity: 1; }
+                    0% { transform: translateY(0); opacity: 0; }
+                    10% { transform: translateY(-1px); opacity: 1; }
+                    50% { transform: translateY(-4px); opacity: 1; }
+                    90% { transform: translateY(-1px); opacity: 1; }
+                    100% { transform: translateY(0); opacity: 0; }
                 }
                 
                 @keyframes heartbeatDub {
-                    0% { transform: translateY(0); opacity: 1; }
-                    50% { transform: translateY(-2px); opacity: 0.9; }
-                    100% { transform: translateY(0); opacity: 1; }
+                    0% { transform: translateY(0); opacity: 0; }
+                    10% { transform: translateY(-1px); opacity: 1; }
+                    50% { transform: translateY(-2px); opacity: 1; }
+                    90% { transform: translateY(-1px); opacity: 1; }
+                    100% { transform: translateY(0); opacity: 0; }
                 }
             `;
             document.head.appendChild(styleSheet);
@@ -156,11 +161,11 @@ window.LogoAnimation = (function() {
     // Function to run a single heartbeat (lub-dub)
     function runSingleHeartbeat() {
         return new Promise(resolve => {
-            // Reset any existing animations
+            // Reset any existing animations and make dots visible
             dots.forEach(dot => {
                 dot.style.animation = 'none';
                 dot.style.transform = 'translateY(0)';
-                dot.style.opacity = '1';
+                dot.style.opacity = '1'; // Make dots visible during heartbeat
             });
             
             // First beat (lub) - stronger
@@ -178,8 +183,15 @@ window.LogoAnimation = (function() {
                     }, index * 30);
                 });
                 
-                // Resolve after the second beat completes
-                setTimeout(resolve, 300);
+                // Hide dots after the second beat completes (unless animation is running)
+                setTimeout(() => {
+                    if (!animationRunning) {
+                        dots.forEach(dot => {
+                            dot.style.opacity = '0'; // Hide dots after animation
+                        });
+                    }
+                    resolve();
+                }, 300);
             }, 300);
         });
     }
@@ -219,12 +231,12 @@ window.LogoAnimation = (function() {
             animationLoop = null;
         }
         
-        // Reset dots to their initial state
+        // Reset dots to their initial state (invisible)
         if (dots.length > 0) {
             dots.forEach(dot => {
                 dot.style.animation = 'none';
                 dot.style.transform = 'translateY(0)';
-                dot.style.opacity = '1';
+                dot.style.opacity = '0'; // Hide dots when not animating
             });
         }
     }

@@ -184,12 +184,14 @@ header {
 .dot {
     width: 3px;
     height: 3px;
-    background-color: rgba(200, 200, 200, 0.95);
+    background-color: #22CC22; /* Slightly darker terminal green color */
     border-radius: 50%;
     position: relative;
     display: inline-block;
     box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
     margin: 0 1px;
+    opacity: 0; /* Initially invisible, only shown during animations */
+    transition: opacity 0.15s ease-in-out; /* Fast fade transition */
 }
 
 .tagline {
