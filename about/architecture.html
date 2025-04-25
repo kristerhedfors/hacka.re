@@ -312,16 +312,16 @@ while (true) {
                     <strong>How it works:</strong>
                 </p>
                 <ol>
-                    <li>When you create a shareable link, you select what to include (API key, system prompt, model, conversation data)</li>
+                    <li>When you create a shareable link, you select what to include (base URL, API key, model, system prompt, conversation data)</li>
                     <li>A real-time link length indicator shows the estimated size of the generated link</li>
                     <li>You can generate a strong random session key or provide your own</li>
                     <li>Your selected data is encrypted using a key derived from your session key with cryptographically sound methods</li>
                     <li>Only the encrypted data is included in the URL after the # symbol (the encryption key is NOT included)</li>
-                    <li>When someone opens the link, they're prompted to enter the session key</li>
-                    <li>The application derives the decryption key from the entered session key and attempts to decrypt the data</li>
+                    <li>When someone opens the link, they're prompted to enter the session key/password</li>
+                    <li>The application derives the decryption key from the entered session key/password and attempts to decrypt the data</li>
                     <li>If successful, the data is applied to their session and the URL is cleared from the browser history</li>
                     <li>For model preferences, the system verifies availability with the recipient's API key and falls back gracefully if needed</li>
-                    <li>If unsuccessful (wrong session key), they're prompted to try again</li>
+                    <li>If unsuccessful (wrong session key/password), they're prompted to try again</li>
                 </ol>
                 
                 <p>
@@ -515,9 +515,10 @@ function extractSharedData(sessionKey) {
                 </p>
                 
                 <p>
-                    This feature provides a secure method for sharing your API key with trusted individuals. The session key-based encryption ensures that 
-                    even if the link is intercepted, the attacker cannot access your API key without knowing the session key. Always be cautious about who you share your API key with, 
-                    as they will have the same level of access to your API provider account as you do once they have the session key.
+                    This feature provides a secure method for sharing not only your API key with trusted individuals, but model, system prompt, and selected amounts of conversation history as well.
+                    This is accomplished through strongly encrypted self-contained links, where the encrypted state is invisible to the web page that the link points to. The session key-based encryption ensures that 
+                    even if the link is intercepted, the attacker cannot extract information without knowing the session key. Always be cautious about who you share these links with,
+                    especially if they contain your API keys. Attackers able to decrypt shared link contents will have access to all of their contents, including API keys.
                 </p>
             </div>
 
