@@ -239,7 +239,7 @@ header .token-speed-text {
 .dot {
     width: 3px;
     height: 3px;
-    background-color: #22CC22; /* Slightly darker terminal green color */
+    background-color: #22CC22 !important; /* Slightly darker terminal green color with !important */
     border-radius: 50%;
     position: relative;
     display: inline-block;
@@ -247,6 +247,144 @@ header .token-speed-text {
     margin: 0 1px;
     opacity: 0; /* Initially invisible, only shown during animations */
     transition: opacity 0.15s ease-in-out; /* Fast fade transition */
+    /* Force hardware acceleration for better compatibility */
+    transform: translateZ(0);
+    will-change: opacity, transform;
+    /* Ensure visibility in Firefox Focus */
+    -webkit-backface-visibility: visible !important;
+    backface-visibility: visible !important;
+}
+
+/* Firefox Focus specific styles */
+@supports (-moz-appearance:none) {
+    .dot {
+        background-color: #22CC22 !important;
+        width: 3px !important;
+        height: 3px !important;
+        opacity: 1 !important;
+    }
+}
+
+/* Additional Firefox Focus styles using the class we added to the body */
+body.firefox-focus .dot {
+    background-color: #22CC22 !important;
+    width: 3px !important;
+    height: 3px !important;
+    opacity: 1 !important;
+    /* Force hardware acceleration */
+    transform: translateZ(0) !important;
+    will-change: opacity, transform !important;
+    /* Ensure visibility */
+    -webkit-backface-visibility: visible !important;
+    backface-visibility: visible !important;
+}
+
+/* Alternative rendering for Firefox Focus */
+body.firefox-focus .typing-dots {
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 16px !important;
+    height: 6px !important;
+    z-index: 10 !important; /* Higher z-index */
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    background-color: transparent !important;
+}
+
+/* Special fallback for Firefox Focus - static dots */
+body.firefox-focus .heart-logo::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 16px;
+    height: 6px;
+    z-index: 5;
+    background-image: radial-gradient(circle, #22CC22 1.5px, transparent 1.5px),
+                      radial-gradient(circle, #22CC22 1.5px, transparent 1.5px),
+                      radial-gradient(circle, #22CC22 1.5px, transparent 1.5px);
+    background-position: 0 50%, 50% 50%, 100% 50%;
+    background-size: 3px 3px;
+    background-repeat: no-repeat;
+}
+
+/* SVG fallback animation for Firefox Focus */
+body.firefox-focus .firefox-focus-fallback {
+    display: block !important;
+    z-index: 15 !important;
+}
+
+/* Combined animation for SVG circles */
+body.firefox-focus .firefox-focus-fallback circle {
+    animation-name: svgPulseBeat;
+    animation-duration: 1.5s;
+    animation-iteration-count: infinite;
+    transform-origin: center;
+    transform-box: fill-box;
+}
+
+body.firefox-focus .firefox-focus-fallback circle:nth-child(1) {
+    animation-delay: 0s;
+}
+
+body.firefox-focus .firefox-focus-fallback circle:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+body.firefox-focus .firefox-focus-fallback circle:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+@keyframes svgPulseBeat {
+    0%, 100% { 
+        r: 1.5; 
+        fill: #22CC22; 
+        transform: translateY(0);
+    }
+    15% { 
+        r: 1.7; 
+        fill: #22CC22; 
+        transform: translateY(-0.5px);
+    }
+    30% { 
+        r: 2; 
+        fill: #22CC22; 
+        transform: translateY(-1.5px);
+    }
+    45% { 
+        r: 1.7; 
+        fill: #22CC22; 
+        transform: translateY(-0.5px);
+    }
+    60% { 
+        r: 1.5; 
+        fill: #22CC22; 
+        transform: translateY(0);
+    }
+}
+
+@keyframes svgHeartbeat {
+    0%, 100% { transform: translateY(0); }
+    15% { transform: translateY(-1px); }
+    30% { transform: translateY(-2px); }
+    45% { transform: translateY(-1px); }
+    60% { transform: translateY(0); }
+}
+
+/* Firefox Focus specific animation for the heart logo */
+body.firefox-focus .heart-logo {
+    position: relative;
+}
+
+/* Add a special animation for Firefox Focus */
+@media screen and (max-width: 767px) {
+    body.firefox-focus .firefox-focus-fallback {
+        transform: scale(1.2);
+    }
 }
 
 .tagline {
