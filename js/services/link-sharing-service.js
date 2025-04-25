@@ -129,7 +129,9 @@ window.LinkSharingService = (function() {
                     apiKey: data.apiKey,
                     systemPrompt: data.systemPrompt || null,
                     model: data.model || null,
-                    messages: data.messages || null
+                    messages: data.messages || null,
+                    title: data.title || null,
+                    subtitle: data.subtitle || null
                 };
             }
             

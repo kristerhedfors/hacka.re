@@ -290,6 +290,18 @@ window.ShareManager = (function() {
             // Get base URL
             const baseUrl = StorageService.getBaseUrl();
             
+            // Get title and subtitle values from inputs if they exist, otherwise use defaults
+            let title = StorageService.getTitle();
+            let subtitle = StorageService.getSubtitle();
+            
+            if (elements.shareTitleInput && elements.shareTitleInput.value.trim()) {
+                title = elements.shareTitleInput.value.trim();
+            }
+            
+            if (elements.shareSubtitleInput && elements.shareSubtitleInput.value.trim()) {
+                subtitle = elements.shareSubtitleInput.value.trim();
+            }
+            
             // Get options
             const options = {
                 baseUrl: baseUrl,
@@ -302,7 +314,9 @@ window.ShareManager = (function() {
                 includeSystemPrompt: elements.shareSystemPromptCheckbox.checked,
                 includeModel: elements.shareModelCheckbox.checked,
                 includeConversation: elements.shareConversationCheckbox.checked,
-                messageCount: parseInt(elements.messageHistoryCount.value, 10) || 1
+                messageCount: parseInt(elements.messageHistoryCount.value, 10) || 1,
+                title: title,
+                subtitle: subtitle
             };
             
             // Validate options

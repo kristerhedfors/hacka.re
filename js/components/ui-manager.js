@@ -111,6 +111,15 @@ window.UIManager = (function() {
                 elements.shareForm.reset();
             }
             
+            // Set title and subtitle input values to current values
+            if (elements.shareTitleInput) {
+                elements.shareTitleInput.value = StorageService.getTitle();
+            }
+            
+            if (elements.shareSubtitleInput) {
+                elements.shareSubtitleInput.value = StorageService.getSubtitle();
+            }
+            
             // Check if there's a locked session key
             if (sessionKey && isSessionKeyLocked) {
                 // Set the session key value
