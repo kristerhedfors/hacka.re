@@ -182,7 +182,7 @@ header .token-speed-text {
     width: 400px;
     max-width: 80vw;
     background-color: white;
-    color: var(--text-color);
+    color: #000000 !important; /* Black text color with !important */
     text-align: left;
     border-radius: 6px;
     padding: 15px;
@@ -202,6 +202,27 @@ header .token-speed-text {
     overflow-y: auto;
     max-height: 80vh;
     border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Ensure text inside the heart logo tooltip is visible with maximum specificity */
+.heart-logo .tooltip p,
+.heart-logo .tooltip a,
+.heart-logo .tooltip div,
+.heart-logo .tooltip .important-notice,
+.heart-logo .tooltip .important-notice p {
+    color: #000000 !important; /* Force black text color */
+    -webkit-text-fill-color: #000000 !important; /* For webkit browsers */
+    text-fill-color: #000000 !important;
+    background: none !important; /* Remove any background that might affect text */
+    background-image: none !important;
+    background-clip: initial !important;
+    -webkit-background-clip: initial !important;
+}
+
+/* Target the specific important-notice elements */
+.heart-logo .tooltip .important-notice {
+    background-color: var(--system-msg-bg) !important;
+    border-left: 4px solid var(--accent-color) !important;
 }
 
 .heart-logo .tooltip::after {
