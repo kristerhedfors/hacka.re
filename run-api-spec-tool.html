@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Run API Specification Tool Example</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f8f8;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #0066cc;
+            margin-top: 0;
+        }
+        
+        .description {
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        
+        .console {
+            background-color: #1e1e1e;
+            color: #ddd;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        
+        .console-line {
+            margin: 0;
+            padding: 2px 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        
+        .console-line.log {
+            color: #ddd;
+        }
+        
+        .console-line.info {
+            color: #6bf;
+        }
+        
+        .console-line.warn {
+            color: #fd6;
+        }
+        
+        .console-line.error {
+            color: #f66;
+        }
+        
+        .console-line .timestamp {
+            color: #888;
+            margin-right: 8px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        button {
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background-color: #0055aa;
+        }
+        
+        button.secondary {
+            background-color: #4CAF50;
+        }
+        
+        button.secondary:hover {
+            background-color: #3d8b40;
+        }
+        
+        button.danger {
+            background-color: #f44336;
+        }
+        
+        button.danger:hover {
+            background-color: #d32f2f;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Run API Specification Tool Example</h1>
+        <div class="description">
+            <p>This page demonstrates how to create an API specification and save it as a tool for AI models. Open the browser console to see the full output.</p>
+            <p>The example script creates a weather API specification, converts it to a tool definition, and saves it to localStorage.</p>
+        </div>
+        
+        <div class="console" id="console">
+            <div class="console-line log"><span class="timestamp">[00:00:00]</span>Console initialized. Click "Run Example" to start.</div>
+        </div>
+        
+        <div class="button-group">
+            <button id="run-btn">Run Example</button>
+            <button id="view-btn" class="secondary">View Saved Tools</button>
+            <button id="clear-btn" class="danger">Clear All Tools</button>
+        </div>
+    </div>
+    
+    <!-- Load required core API service files -->
+    <script src="lib/marked/marked.min.js"></script>
+    <script src="lib/dompurify/purify.min.js"></script>
+    <script src="js/services/model-info.js"></script>
+    <script src="js/services/storage-service.js"></script>
+    <script src="js/services/api-service.js"></script>
+    <script src="js/services/api-tools-service.js"></script>
+    <script src="js/services/api-spec-service.js"></script>
+    
+    <script>
+        // Initialize the console
+        const consoleElement = document.getElementById('console');
+        
+        // Override console methods to display in our custom console
+        const originalConsole = {
+            log: console.log,
+            info: console.info,
+            warn: console.warn,
+            error: console.error
+        };
+        
+        // Helper function to get timestamp
+        function getTimestamp() {
+            const now = new Date();
+            return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+        }
+        
+        // Helper function to add a line to the console
+        function addConsoleLog(type, ...args) {
+            const line = document.createElement('div');
+            line.className = `console-line ${type}`;
+            
+            const timestamp = document.createElement('span');
+            timestamp.className = 'timestamp';
+            timestamp.textContent = `[${getTimestamp()}]`;
+            
+            line.appendChild(timestamp);
+            
+            // Convert arguments to string
+            const message = args.map(arg => {
+                if (typeof arg === 'object') {
+                    return JSON.stringify(arg, null, 2);
+                }
+                return String(arg);
+            }).join(' ');
+            
+            line.appendChild(document.createTextNode(message));
+            consoleElement.appendChild(line);
+            
+            // Scroll to bottom
+            consoleElement.scrollTop = consoleElement.scrollHeight;
+            
+            // Also log to the original console
+            originalConsole[type](...args);
+        }
+        
+        // Override console methods
+        console.log = function(...args) {
+            addConsoleLog('log', ...args);
+        };
+        
+        console.info = function(...args) {
+            addConsoleLog('info', ...args);
+        };
+        
+        console.warn = function(...args) {
+            addConsoleLog('warn', ...args);
+        };
+        
+        console.error = function(...args) {
+            addConsoleLog('error', ...args);
+        };
+        
+        // Initialize services
+        if (window.ApiToolsService) {
+            ApiToolsService.init();
+            console.log('ApiToolsService initialized');
+        } else {
+            console.error('ApiToolsService not found. Make sure api-tools-service.js is loaded.');
+        }
+        
+        if (window.ApiSpecService) {
+            ApiSpecService.init();
+            console.log('ApiSpecService initialized');
+        } else {
+            console.error('ApiSpecService not found. Make sure api-spec-service.js is loaded.');
+        }
+        
+        // Run button click handler
+        document.getElementById('run-btn').addEventListener('click', function() {
+            console.log('Running API specification tool example...');
+            
+            // Clear the console
+            consoleElement.innerHTML = '';
+            console.log('Console cleared');
+            
+            // Load and execute the script
+            const script = document.createElement('script');
+            script.src = 'add-api-spec-tool.js';
+            script.onload = function() {
+                console.log('Example script loaded and executed');
+            };
+            script.onerror = function() {
+                console.error('Error loading example script');
+            };
+            document.head.appendChild(script);
+        });
+        
+        // View saved tools button click handler
+        document.getElementById('view-btn').addEventListener('click', function() {
+            console.log('Viewing saved API tools...');
+            
+            if (window.ApiToolsService) {
+                const tools = ApiToolsService.getApiTools();
+                
+                if (tools.length === 0) {
+                    console.log('No API tools found.');
+                } else {
+                    console.log(`Found ${tools.length} API tools:`);
+                    tools.forEach((tool, index) => {
+                        console.log(`Tool ${index + 1}: ${tool.name}`);
+                        console.log(tool);
+                    });
+                }
+            } else {
+                console.error('ApiToolsService not found');
+            }
+        });
+        
+        // Clear all tools button click handler
+        document.getElementById('clear-btn').addEventListener('click', function() {
+            if (confirm('Are you sure you want to clear all API tools?')) {
+                console.log('Clearing all API tools...');
+                
+                if (window.ApiToolsService) {
+                    const tools = ApiToolsService.getApiTools();
+                    const count = tools.length;
+                    
+                    // Clear all tools
+                    tools.forEach(tool => {
+                        ApiToolsService.removeApiTool(tool.name);
+                    });
+                    
+                    console.log(`Cleared ${count} API tools.`);
+                } else {
+                    console.error('ApiToolsService not found');
+                }
+            }
+        });
+    </script>
+</body>
+</html>

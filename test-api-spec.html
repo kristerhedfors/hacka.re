@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hacka.re API Specification Test</title>
+    <style>
+        :root {
+            --primary-color: #0066cc;
+            --secondary-color: #4CAF50;
+            --accent-color: #ff5722;
+            --bg-color: #f8f8f8;
+            --card-bg: #ffffff;
+            --border-color: #ddd;
+            --text-color: #333;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 28px;
+            color: var(--primary-color);
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+        }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+        }
+        
+        .card-title i {
+            margin-right: 8px;
+            font-size: 20px;
+        }
+        
+        .card-description {
+            margin-bottom: 20px;
+            color: #666;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        
+        button:hover {
+            opacity: 0.9;
+        }
+        
+        button.secondary {
+            background-color: var(--secondary-color);
+        }
+        
+        button.accent {
+            background-color: var(--accent-color);
+        }
+        
+        .output-container {
+            margin-top: 15px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        
+        .output-container:empty {
+            display: none;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 14px;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 768px) {
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <!-- Load Font Awesome for icons -->
+    <link rel="stylesheet" href="lib/font-awesome/all.min.css">
+    
+    <!-- Load required core API service files -->
+    <script src="lib/marked/marked.min.js"></script>
+    <script src="lib/dompurify/purify.min.js"></script>
+    <script src="js/services/model-info.js"></script>
+    <script src="js/services/storage-service.js"></script>
+    <script src="js/services/api-service.js"></script>
+    <script src="js/services/api-tools-service.js"></script>
+    <script src="js/services/api-spec-service.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Hacka.re API Specification Test</h1>
+            <p class="subtitle">Test and debug API specification generation and tool creation</p>
+        </header>
+        
+        <div class="card-grid">
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-file-code"></i>Create API Specification</h2>
+                <p class="card-description">Create an OpenAPI specification from scratch and convert it to a tool definition.</p>
+                <div class="form-group">
+                    <label for="spec-title">API Title</label>
+                    <input type="text" id="spec-title" placeholder="Weather API" value="Weather API">
+                </div>
+                <div class="form-group">
+                    <label for="spec-description">Description</label>
+                    <textarea id="spec-description" placeholder="API for retrieving weather information">Get current weather information for a location</textarea>
+                </div>
+                <div class="form-group">
+                    <label for="endpoint-path">Endpoint Path</label>
+                    <input type="text" id="endpoint-path" placeholder="/weather" value="/weather">
+                </div>
+                <div class="form-group">
+                    <label for="endpoint-method">HTTP Method</label>
+                    <select id="endpoint-method">
+                        <option value="get" selected>GET</option>
+                        <option value="post">POST</option>
+                        <option value="put">PUT</option>
+                        <option value="delete">DELETE</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="parameters">Parameters (JSON)</label>
+                    <textarea id="parameters" placeholder='[{"name": "location", "in": "query", "description": "City name or zip code", "required": true, "schema": {"type": "string"}}]'>[
+  {
+    "name": "location",
+    "in": "query",
+    "description": "City name or zip code",
+    "required": true,
+    "schema": {
+      "type": "string"
+    }
+  },
+  {
+    "name": "units",
+    "in": "query",
+    "description": "Temperature units (metric or imperial)",
+    "required": false,
+    "schema": {
+      "type": "string",
+      "enum": ["metric", "imperial"]
+    }
+  }
+]</textarea>
+                </div>
+                <div class="button-group">
+                    <button id="create-spec-btn">Create Specification</button>
+                    <button id="convert-to-tool-btn" class="secondary">Convert to Tool</button>
+                </div>
+                <div class="output-container" id="spec-output"></div>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-tools"></i>Save API Tool</h2>
+                <p class="card-description">Save the API specification as a tool that can be used by AI models.</p>
+                <div class="form-group">
+                    <label for="tool-name">Tool Name</label>
+                    <input type="text" id="tool-name" placeholder="weather_lookup" value="weather_lookup">
+                </div>
+                <div class="form-group">
+                    <label for="tool-description">Tool Description</label>
+                    <textarea id="tool-description" placeholder="Get current weather information for a location">Get current weather information for a location</textarea>
+                </div>
+                <div class="form-group">
+                    <label for="tool-endpoint">API Endpoint URL</label>
+                    <input type="url" id="tool-endpoint" placeholder="https://api.example.com/weather" value="https://api.openweathermap.org/data/2.5/weather">
+                </div>
+                <div class="form-group">
+                    <label for="tool-auth-type">Authentication</label>
+                    <select id="tool-auth-type">
+                        <option value="none" selected>None</option>
+                        <option value="bearer">Bearer Token (uses API key)</option>
+                        <option value="custom">Custom Header</option>
+                    </select>
+                </div>
+                <div class="form-group" id="custom-auth-header-group" style="display: none;">
+                    <label for="tool-auth-header">Auth Header Name</label>
+                    <input type="text" id="tool-auth-header" placeholder="X-API-Key">
+                </div>
+                <div class="button-group">
+                    <button id="save-tool-btn">Save Tool</button>
+                    <button id="create-and-save-btn" class="secondary">Create and Save</button>
+                </div>
+                <div class="output-container" id="tool-output"></div>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-magic"></i>Generate from Description</h2>
+                <p class="card-description">Generate an API specification from a natural language description.</p>
+                <div class="form-group">
+                    <label for="ai-description">API Description</label>
+                    <textarea id="ai-description" placeholder="An API that provides current weather information for a given location...">An API that provides current weather information for a given location. It should accept a city name or zip code and return the current temperature, conditions, humidity, and wind speed. It should also allow specifying temperature units as metric or imperial.</textarea>
+                </div>
+                <div class="button-group">
+                    <button id="generate-from-description-btn">Generate Specification</button>
+                </div>
+                <div class="output-container" id="generate-output"></div>
+            </div>
+            
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-list"></i>View Saved Tools</h2>
+                <p class="card-description">View and manage API tools saved in localStorage.</p>
+                <div class="button-group">
+                    <button id="view-tools-btn">View Tools</button>
+                    <button id="clear-tools-btn" class="accent">Clear All Tools</button>
+                </div>
+                <div class="output-container" id="view-output"></div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Hacka.re API Specification Test | Privacy-focused web client for Groq Cloud</p>
+        </div>
+    </div>
+    
+    <script>
+        // Initialize services
+        if (window.ApiToolsService) {
+            ApiToolsService.init();
+            console.log('ApiToolsService initialized');
+        }
+        
+        if (window.ApiSpecService) {
+            ApiSpecService.init();
+            console.log('ApiSpecService initialized');
+        }
+        
+        // DOM elements
+        const specOutput = document.getElementById('spec-output');
+        const toolOutput = document.getElementById('tool-output');
+        const generateOutput = document.getElementById('generate-output');
+        const viewOutput = document.getElementById('view-output');
+        
+        // Helper function to update output
+        function updateOutput(outputElement, message, isJson = true) {
+            if (isJson && typeof message === 'object') {
+                outputElement.textContent = JSON.stringify(message, null, 2);
+            } else {
+                outputElement.textContent = message;
+            }
+            outputElement.scrollTop = outputElement.scrollHeight;
+        }
+        
+        // Create API specification
+        document.getElementById('create-spec-btn').addEventListener('click', function() {
+            try {
+                // Get form values
+                const title = document.getElementById('spec-title').value.trim();
+                const description = document.getElementById('spec-description').value.trim();
+                const path = document.getElementById('endpoint-path').value.trim();
+                const method = document.getElementById('endpoint-method').value;
+                const parametersStr = document.getElementById('parameters').value.trim();
+                
+                // Parse parameters
+                let parameters = [];
+                if (parametersStr) {
+                    try {
+                        parameters = JSON.parse(parametersStr);
+                    } catch (error) {
+                        throw new Error(`Invalid JSON in parameters field: ${error.message}`);
+                    }
+                }
+                
+                // Create spec info object
+                const specInfo = {
+                    title: title,
+                    description: description,
+                    version: '1.0.0',
+                    endpoints: [
+                        {
+                            path: path,
+                            method: method,
+                            summary: `${method.toUpperCase()} ${path}`,
+                            description: description,
+                            parameters: parameters
+                        }
+                    ]
+                };
+                
+                // Create API specification
+                const apiSpec = ApiSpecService.createApiSpec(specInfo);
+                
+                // Store the spec info in a global variable for later use
+                window.currentSpecInfo = specInfo;
+                
+                // Update output
+                updateOutput(specOutput, apiSpec);
+                
+                console.log('API specification created:', apiSpec);
+            } catch (error) {
+                updateOutput(specOutput, `Error creating API specification: ${error.message}`, false);
+                console.error('Error creating API specification:', error);
+            }
+        });
+        
+        // Convert to tool
+        document.getElementById('convert-to-tool-btn').addEventListener('click', function() {
+            try {
+                // Check if we have a spec info
+                if (!window.currentSpecInfo) {
+                    throw new Error('No API specification created. Please create a specification first.');
+                }
+                
+                // Get form values
+                const name = document.getElementById('tool-name').value.trim();
+                const description = document.getElementById('tool-description').value.trim();
+                const endpoint = document.getElementById('tool-endpoint').value.trim();
+                const authType = document.getElementById('tool-auth-type').value;
+                const authHeader = document.getElementById('tool-auth-header').value.trim();
+                
+                // Create tool info object
+                const toolInfo = {
+                    name: name,
+                    description: description,
+                    endpoint: endpoint,
+                    authType: authType
+                };
+                
+                // Add auth header if using custom auth
+                if (authType === 'custom' && authHeader) {
+                    toolInfo.authHeader = authHeader;
+                }
+                
+                // Create API specification
+                const apiSpec = ApiSpecService.createApiSpec(window.currentSpecInfo);
+                
+                // Convert to tool definition
+                const toolDefinition = ApiSpecService.convertSpecToTool(apiSpec, toolInfo);
+                
+                // Store the tool definition in a global variable for later use
+                window.currentToolDefinition = toolDefinition;
+                
+                // Update output
+                updateOutput(toolOutput, toolDefinition);
+                
+                console.log('Tool definition created:', toolDefinition);
+            } catch (error) {
+                updateOutput(toolOutput, `Error converting to tool: ${error.message}`, false);
+                console.error('Error converting to tool:', error);
+            }
+        });
+        
+        // Save tool
+        document.getElementById('save-tool-btn').addEventListener('click', function() {
+            try {
+                // Check if we have a tool definition
+                if (!window.currentToolDefinition) {
+                    throw new Error('No tool definition created. Please convert to tool first.');
+                }
+                
+                // Save the tool
+                const success = ApiSpecService.saveApiTool(window.currentToolDefinition);
+                
+                if (success) {
+                    updateOutput(toolOutput, `Tool "${window.currentToolDefinition.name}" saved successfully!`, false);
+                } else {
+                    throw new Error('Failed to save tool. Please check your inputs.');
+                }
+                
+                console.log('Tool saved:', window.currentToolDefinition);
+            } catch (error) {
+                updateOutput(toolOutput, `Error saving tool: ${error.message}`, false);
+                console.error('Error saving tool:', error);
+            }
+        });
+        
+        // Create and save
+        document.getElementById('create-and-save-btn').addEventListener('click', function() {
+            try {
+                // Check if we have a spec info
+                if (!window.currentSpecInfo) {
+                    throw new Error('No API specification created. Please create a specification first.');
+                }
+                
+                // Get form values
+                const name = document.getElementById('tool-name').value.trim();
+                const description = document.getElementById('tool-description').value.trim();
+                const endpoint = document.getElementById('tool-endpoint').value.trim();
+                const authType = document.getElementById('tool-auth-type').value;
+                const authHeader = document.getElementById('tool-auth-header').value.trim();
+                
+                // Create tool info object
+                const toolInfo = {
+                    name: name,
+                    description: description,
+                    endpoint: endpoint,
+                    authType: authType
+                };
+                
+                // Add auth header if using custom auth
+                if (authType === 'custom' && authHeader) {
+                    toolInfo.authHeader = authHeader;
+                }
+                
+                // Create and save the tool
+                const result = ApiSpecService.createAndSaveTool(window.currentSpecInfo, toolInfo);
+                
+                // Update output
+                updateOutput(toolOutput, `Tool "${result.toolDefinition.name}" created and saved successfully!\n\nTool Definition:\n${JSON.stringify(result.toolDefinition, null, 2)}`, false);
+                
+                console.log('Tool created and saved:', result);
+            } catch (error) {
+                updateOutput(toolOutput, `Error creating and saving tool: ${error.message}`, false);
+                console.error('Error creating and saving tool:', error);
+            }
+        });
+        
+        // Generate from description
+        document.getElementById('generate-from-description-btn').addEventListener('click', function() {
+            try {
+                // Get form values
+                const description = document.getElementById('ai-description').value.trim();
+                
+                if (!description) {
+                    throw new Error('Please provide a description of the API.');
+                }
+                
+                // Generate tool definition from description
+                const toolDefinition = ApiSpecService.generateToolFromDescription(description);
+                
+                // Update output
+                updateOutput(generateOutput, toolDefinition);
+                
+                // Fill the form with generated data
+                document.getElementById('spec-title').value = toolDefinition.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                document.getElementById('spec-description').value = toolDefinition.description;
+                document.getElementById('endpoint-path').value = '/api/' + toolDefinition.name.replace(/_/g, '/');
+                document.getElementById('endpoint-method').value = toolDefinition.method.toLowerCase();
+                document.getElementById('tool-name').value = toolDefinition.name;
+                document.getElementById('tool-description').value = toolDefinition.description;
+                document.getElementById('tool-endpoint').value = toolDefinition.endpoint;
+                document.getElementById('tool-auth-type').value = toolDefinition.authType;
+                
+                if (toolDefinition.authType === 'custom' && toolDefinition.authHeader) {
+                    document.getElementById('tool-auth-header').value = toolDefinition.authHeader;
+                    document.getElementById('custom-auth-header-group').style.display = 'block';
+                }
+                
+                // Generate parameters JSON
+                if (toolDefinition.parameters && toolDefinition.parameters.properties) {
+                    const properties = toolDefinition.parameters.properties;
+                    const required = toolDefinition.parameters.required || [];
+                    
+                    const parameters = [];
+                    
+                    Object.keys(properties).forEach(propName => {
+                        const prop = properties[propName];
+                        
+                        parameters.push({
+                            name: propName,
+                            in: 'query',
+                            description: prop.description || '',
+                            required: required.includes(propName),
+                            schema: {
+                                type: prop.type || 'string'
+                            }
+                        });
+                    });
+                    
+                    document.getElementById('parameters').value = JSON.stringify(parameters, null, 2);
+                }
+                
+                console.log('Generated tool definition from description:', toolDefinition);
+            } catch (error) {
+                updateOutput(generateOutput, `Error generating from description: ${error.message}`, false);
+                console.error('Error generating from description:', error);
+            }
+        });
+        
+        // View tools
+        document.getElementById('view-tools-btn').addEventListener('click', function() {
+            try {
+                // Get all tools
+                const tools = ApiToolsService.getApiTools();
+                
+                if (tools.length === 0) {
+                    updateOutput(viewOutput, 'No API tools found.', false);
+                } else {
+                    updateOutput(viewOutput, tools);
+                }
+                
+                console.log('API tools:', tools);
+            } catch (error) {
+                updateOutput(viewOutput, `Error viewing tools: ${error.message}`, false);
+                console.error('Error viewing tools:', error);
+            }
+        });
+        
+        // Clear tools
+        document.getElementById('clear-tools-btn').addEventListener('click', function() {
+            try {
+                if (confirm('Are you sure you want to clear all API tools?')) {
+                    // Get all tools
+                    const tools = ApiToolsService.getApiTools();
+                    const count = tools.length;
+                    
+                    // Clear all tools
+                    tools.forEach(tool => {
+                        ApiToolsService.removeApiTool(tool.name);
+                    });
+                    
+                    updateOutput(viewOutput, `Cleared ${count} API tools.`, false);
+                    
+                    console.log('Cleared API tools');
+                }
+            } catch (error) {
+                updateOutput(viewOutput, `Error clearing tools: ${error.message}`, false);
+                console.error('Error clearing tools:', error);
+            }
+        });
+        
+        // Auth type change
+        document.getElementById('tool-auth-type').addEventListener('change', function() {
+            const customAuthHeaderGroup = document.getElementById('custom-auth-header-group');
+            if (this.value === 'custom') {
+                customAuthHeaderGroup.style.display = 'block';
+            } else {
+                customAuthHeaderGroup.style.display = 'none';
+            }
+        });
+        
+        // Initialize the page
+        window.addEventListener('load', function() {
+            console.log('API Specification Test page loaded');
+            
+            // View tools on page load
+            document.getElementById('view-tools-btn').click();
+        });
+    </script>
+</body>
+</html>

@@ -22,6 +22,11 @@ window.AIHackareComponent = (function() {
         if (window.ApiToolsManager) {
             this.apiToolsManager = ApiToolsManager.createApiToolsManager(this.elements);
         }
+        
+        // Create API spec manager if available
+        if (window.ApiSpecManager) {
+            this.apiSpecManager = ApiSpecManager.createApiSpecManager(this.elements);
+        }
     }
     
     /**
@@ -45,6 +50,11 @@ window.AIHackareComponent = (function() {
         // Initialize API tools manager if available
         if (this.apiToolsManager) {
             this.apiToolsManager.init();
+        }
+        
+        // Initialize API spec manager if available
+        if (this.apiSpecManager) {
+            this.apiSpecManager.init();
         }
         
         // Set up event listeners

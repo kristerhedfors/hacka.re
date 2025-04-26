@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test CORS-Friendly APIs</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .api-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .api-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .api-card h3 {
+            margin-top: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button.secondary {
+            background-color: #2196F3;
+        }
+        button.secondary:hover {
+            background-color: #0b7dda;
+        }
+        button.danger {
+            background-color: #f44336;
+        }
+        button.danger:hover {
+            background-color: #d32f2f;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 13px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .output {
+            margin-top: 10px;
+            min-height: 50px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .test-form {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px dashed #ddd;
+        }
+        .description {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .cors-status {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+        .cors-enabled {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test CORS-Friendly APIs</h1>
+    <p>This page demonstrates APIs that work with browser-based requests without CORS issues.</p>
+    
+    <div class="container">
+        <div class="card">
+            <h2>API Tools Management</h2>
+            <p>Manage the CORS-friendly API tools in your hacka.re application.</p>
+            
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button id="add-all-apis-btn">Add All CORS-Friendly APIs</button>
+                <button id="view-tools-btn" class="secondary">View Current Tools</button>
+                <button id="clear-tools-btn" class="danger">Clear All Tools</button>
+            </div>
+            
+            <div class="output" id="tools-output"></div>
+        </div>
+        
+        <div class="card">
+            <h2>Test Individual APIs</h2>
+            <p>Select an API to test below. Each API is CORS-enabled and can be used directly from the browser.</p>
+            
+            <div class="api-grid" id="api-grid">
+                <!-- API cards will be generated here -->
+            </div>
+        </div>
+    </div>
+    
+    <script src="cors-friendly-apis.js"></script>
+    <script>
+        // Function to display JSON in a pretty format
+        function prettyPrintJson(json) {
+            if (typeof json === 'string') {
+                try {
+                    json = JSON.parse(json);
+                } catch (e) {
+                    return json;
+                }
+            }
+            return JSON.stringify(json, null, 2);
+        }
+        
+        // Function to test an API
+        async function testApi(apiDef, params) {
+            const output = document.getElementById(`output-${apiDef.name}`);
+            output.innerHTML = '<div style="text-align: center;">Loading...</div>';
+            
+            try {
+                // Build URL with parameters for GET requests
+                let url = apiDef.endpoint;
+                
+                // Handle URL templates like {name} in the endpoint
+                if (url.includes('{') && url.includes('}')) {
+                    for (const [key, value] of Object.entries(params)) {
+                        url = url.replace(`{${key}}`, encodeURIComponent(value));
+                    }
+                }
+                
+                // For GET requests, add query parameters
+                if (apiDef.method === 'GET') {
+                    const queryParams = new URLSearchParams();
+                    
+                    for (const [key, value] of Object.entries(params)) {
+                        // Skip parameters that were used in URL template
+                        if (!url.includes(`{${key}}`)) {
+                            queryParams.append(key, value);
+                        }
+                    }
+                    
+                    const queryString = queryParams.toString();
+                    if (queryString) {
+                        url += (url.includes('?') ? '&' : '?') + queryString;
+                    }
+                }
+                
+                // Prepare headers
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                
+                // Add authentication if needed
+                if (apiDef.authType === 'custom' && apiDef.authHeader) {
+                    const apiKey = document.getElementById(`${apiDef.name}-api-key`).value;
+                    if (apiKey) {
+                        headers[apiDef.authHeader] = apiKey;
+                    }
+                }
+                
+                // Prepare request options
+                const requestOptions = {
+                    method: apiDef.method,
+                    headers: headers
+                };
+                
+                // For non-GET requests, add body
+                if (apiDef.method !== 'GET') {
+                    requestOptions.body = JSON.stringify(params);
+                }
+                
+                // Make the request
+                console.log(`Testing API: ${apiDef.name}`, { url, requestOptions });
+                const response = await fetch(url, requestOptions);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorText}`);
+                }
+                
+                const data = await response.json();
+                output.innerHTML = `<pre>${prettyPrintJson(data)}</pre>`;
+                
+                // Log success
+                console.log(`API ${apiDef.name} test successful:`, data);
+                
+                return data;
+            } catch (error) {
+                output.innerHTML = `<pre style="color: red;">Error: ${error.message}</pre>`;
+                console.error(`API ${apiDef.name} test failed:`, error);
+                return null;
+            }
+        }
+        
+        // Function to create a form for API parameters
+        function createApiForm(apiDef) {
+            const form = document.createElement('form');
+            form.className = 'test-form';
+            form.id = `form-${apiDef.name}`;
+            
+            // Add API key field for APIs that require authentication
+            if (apiDef.authType === 'custom' && apiDef.authHeader) {
+                const apiKeyGroup = document.createElement('div');
+                apiKeyGroup.className = 'form-group';
+                
+                const apiKeyLabel = document.createElement('label');
+                apiKeyLabel.textContent = `API Key (${apiDef.authHeader})`;
+                apiKeyGroup.appendChild(apiKeyLabel);
+                
+                const apiKeyInput = document.createElement('input');
+                apiKeyInput.type = 'text';
+                apiKeyInput.id = `${apiDef.name}-api-key`;
+                apiKeyInput.placeholder = 'Enter your API key';
+                apiKeyGroup.appendChild(apiKeyInput);
+                
+                form.appendChild(apiKeyGroup);
+            }
+            
+            // Add parameter fields based on the API definition
+            if (apiDef.parameters && apiDef.parameters.properties) {
+                for (const [paramName, paramDef] of Object.entries(apiDef.parameters.properties)) {
+                    const formGroup = document.createElement('div');
+                    formGroup.className = 'form-group';
+                    
+                    const label = document.createElement('label');
+                    label.textContent = paramName;
+                    if (paramDef.description) {
+                        label.title = paramDef.description;
+                    }
+                    formGroup.appendChild(label);
+                    
+                    // Create appropriate input based on parameter type
+                    if (paramDef.enum) {
+                        // Create select for enum values
+                        const select = document.createElement('select');
+                        select.id = `${apiDef.name}-${paramName}`;
+                        
+                        // Add empty option
+                        const emptyOption = document.createElement('option');
+                        emptyOption.value = '';
+                        emptyOption.textContent = `-- Select ${paramName} --`;
+                        select.appendChild(emptyOption);
+                        
+                        // Add enum options
+                        for (const value of paramDef.enum) {
+                            const option = document.createElement('option');
+                            option.value = value;
+                            option.textContent = value;
+                            select.appendChild(option);
+                        }
+                        
+                        formGroup.appendChild(select);
+                    } else {
+                        // Create text input for other types
+                        const input = document.createElement('input');
+                        input.type = paramDef.type === 'integer' ? 'number' : 'text';
+                        input.id = `${apiDef.name}-${paramName}`;
+                        input.placeholder = paramDef.description || paramName;
+                        
+                        // Set required attribute if parameter is required
+                        if (apiDef.parameters.required && apiDef.parameters.required.includes(paramName)) {
+                            input.required = true;
+                        }
+                        
+                        formGroup.appendChild(input);
+                    }
+                    
+                    form.appendChild(formGroup);
+                }
+            }
+            
+            // Add test button
+            const button = document.createElement('button');
+            button.type = 'submit';
+            button.textContent = 'Test API';
+            form.appendChild(button);
+            
+            // Add output container
+            const output = document.createElement('div');
+            output.className = 'output';
+            output.id = `output-${apiDef.name}`;
+            
+            // Add form submission handler
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                // Collect parameter values
+                const params = {};
+                
+                if (apiDef.parameters && apiDef.parameters.properties) {
+                    for (const paramName of Object.keys(apiDef.parameters.properties)) {
+                        const value = document.getElementById(`${apiDef.name}-${paramName}`).value;
+                        if (value) {
+                            params[paramName] = value;
+                        }
+                    }
+                }
+                
+                // Test the API
+                await testApi(apiDef, params);
+            });
+            
+            return { form, output };
+        }
+        
+        // Function to render API cards
+        function renderApiCards() {
+            const apiGrid = document.getElementById('api-grid');
+            apiGrid.innerHTML = '';
+            
+            corsFriendlyApis.forEach(api => {
+                const card = document.createElement('div');
+                card.className = 'api-card';
+                
+                // Create card header
+                const header = document.createElement('h3');
+                header.textContent = api.name;
+                
+                // Add CORS status badge
+                const corsStatus = document.createElement('span');
+                corsStatus.className = 'cors-status cors-enabled';
+                corsStatus.textContent = 'CORS-enabled';
+                header.appendChild(corsStatus);
+                
+                card.appendChild(header);
+                
+                // Add description
+                const description = document.createElement('div');
+                description.className = 'description';
+                description.textContent = api.description;
+                card.appendChild(description);
+                
+                // Add endpoint info
+                const endpoint = document.createElement('div');
+                endpoint.style.fontSize = '12px';
+                endpoint.style.marginBottom = '10px';
+                endpoint.style.wordBreak = 'break-all';
+                endpoint.innerHTML = `<strong>Endpoint:</strong> ${api.endpoint}<br><strong>Method:</strong> ${api.method}`;
+                card.appendChild(endpoint);
+                
+                // Create form and output elements
+                const { form, output } = createApiForm(api);
+                card.appendChild(form);
+                card.appendChild(output);
+                
+                apiGrid.appendChild(card);
+            });
+        }
+        
+        // Add event listeners for tool management buttons
+        document.getElementById('add-all-apis-btn').addEventListener('click', function() {
+            const output = document.getElementById('tools-output');
+            
+            try {
+                addAllCorsFriendlyApis();
+                output.innerHTML = `<pre>Added ${corsFriendlyApis.length} CORS-friendly API tools to localStorage.</pre>`;
+            } catch (error) {
+                output.innerHTML = `<pre style="color: red;">Error: ${error.message}</pre>`;
+            }
+        });
+        
+        document.getElementById('view-tools-btn').addEventListener('click', function() {
+            const output = document.getElementById('tools-output');
+            const STORAGE_KEY = 'hacka_re_api_tools';
+            
+            const existingTools = localStorage.getItem(STORAGE_KEY);
+            if (existingTools) {
+                try {
+                    const tools = JSON.parse(existingTools);
+                    output.innerHTML = `<pre>${prettyPrintJson(tools)}</pre>`;
+                } catch (error) {
+                    output.innerHTML = `<pre style="color: red;">Error parsing tools: ${error.message}</pre>`;
+                }
+            } else {
+                output.innerHTML = `<pre>No tools found in localStorage.</pre>`;
+            }
+        });
+        
+        document.getElementById('clear-tools-btn').addEventListener('click', function() {
+            const output = document.getElementById('tools-output');
+            const STORAGE_KEY = 'hacka_re_api_tools';
+            
+            localStorage.removeItem(STORAGE_KEY);
+            output.innerHTML = `<pre>All API tools cleared from localStorage.</pre>`;
+        });
+        
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            renderApiCards();
+        });
+    </script>
+</body>
+</html>
