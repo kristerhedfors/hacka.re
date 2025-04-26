@@ -11,6 +11,36 @@ window.CryptoUtils = (function() {
     const KEY_ITERATIONS = 10000; // Number of iterations for key derivation
     
     /**
+     * Generate a SHA-256 hash of a string
+     * @param {string} input - The string to hash
+     * @returns {string} Hex string of the hash
+     */
+    function sha256(input) {
+        // Convert input string to Uint8Array
+        const inputBytes = nacl.util.decodeUTF8(input);
+        
+        // Use TweetNaCl's hash function (SHA-512) and take first 32 bytes (256 bits)
+        const hashBytes = nacl.hash(inputBytes).slice(0, 32);
+        
+        // Convert to hex string
+        return Array.from(hashBytes)
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
+    }
+    
+    /**
+     * Generate a namespace prefix from title and subtitle
+     * @param {string} title - The title
+     * @param {string} subtitle - The subtitle
+     * @returns {string} First 8 characters of SHA-256 hash
+     */
+    function generateNamespace(title, subtitle) {
+        const combined = `${title}${subtitle}`;
+        const hash = sha256(combined);
+        return hash.substring(0, 8);
+    }
+    
+    /**
      * Derive a 32-byte seed from password + salt
      * @param {string} password - The password to derive the key from
      * @param {Uint8Array} salt - The salt to use for key derivation
@@ -142,6 +172,8 @@ window.CryptoUtils = (function() {
         deriveSeed: deriveSeed,
         getKeyPair: getKeyPair,
         encryptData: encryptData,
-        decryptData: decryptData
+        decryptData: decryptData,
+        sha256: sha256,
+        generateNamespace: generateNamespace
     };
 })();

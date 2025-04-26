@@ -996,7 +996,9 @@ For more information about the technologies used in hacka.re:
          * @returns {string} Current API key
          */
         function getApiKey() {
-            return apiKey;
+            // Always get the API key from storage to ensure we have the latest value
+            // This is especially important when the namespace changes due to title/subtitle changes
+            return StorageService.getApiKey();
         }
         
         /**
@@ -1004,7 +1006,9 @@ For more information about the technologies used in hacka.re:
          * @returns {string} Current model ID
          */
         function getCurrentModel() {
-            return currentModel;
+            // Always get the current model from storage to ensure we have the latest value
+            // This is especially important when the namespace changes due to title/subtitle changes
+            return StorageService.getModel();
         }
         
         /**
@@ -1012,7 +1016,9 @@ For more information about the technologies used in hacka.re:
          * @returns {string} Current system prompt
          */
         function getSystemPrompt() {
-            return systemPrompt;
+            // Always get the system prompt from storage to ensure we have the latest value
+            // This is especially important when the namespace changes due to title/subtitle changes
+            return StorageService.getSystemPrompt();
         }
         
         /**
@@ -1020,7 +1026,9 @@ For more information about the technologies used in hacka.re:
          * @returns {string} Current base URL
          */
         function getBaseUrl() {
-            return baseUrl;
+            // Always get the base URL from storage to ensure we have the latest value
+            // This is especially important when the namespace changes due to title/subtitle changes
+            return StorageService.getBaseUrl();
         }
         
         /**
