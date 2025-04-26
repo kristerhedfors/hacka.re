@@ -694,6 +694,8 @@ For more information about the technologies used in hacka.re:
                         StorageService.saveApiKey(sharedData.apiKey);
                         apiKey = sharedData.apiKey;
                         
+                        // Use the current session key (no need to set it again since it's already set)
+                        
                         // Mask the API key to show only first and last 4 bytes
                         const maskedApiKey = maskApiKey(sharedData.apiKey);
                         
@@ -779,7 +781,7 @@ For more information about the technologies used in hacka.re:
             
             const label = document.createElement('label');
             label.htmlFor = 'decrypt-password';
-            label.textContent = 'Password';
+            label.textContent = 'Password / session key';
             
             const input = document.createElement('input');
             input.type = 'password';
@@ -856,6 +858,14 @@ For more information about the technologies used in hacka.re:
                     // Save the shared API key
                     StorageService.saveApiKey(sharedData.apiKey);
                     apiKey = sharedData.apiKey;
+                    
+                    // Use the decryption password as the session key
+                    if (window.ShareManager && window.ShareManager.setSessionKey) {
+                        window.ShareManager.setSessionKey(password);
+                        if (addSystemMessage) {
+                            addSystemMessage(`Using decryption password as session key for future sharing.`);
+                        }
+                    }
                     
                     // Mask the API key to show only first and last 4 bytes
                     const maskedApiKey = maskApiKey(sharedData.apiKey);
@@ -1075,6 +1085,16 @@ For more information about the technologies used in hacka.re:
             localStorage.removeItem(StorageService.STORAGE_KEYS.SHARE_OPTIONS);
             localStorage.removeItem(StorageService.STORAGE_KEYS.BASE_URL);
             localStorage.removeItem(StorageService.STORAGE_KEYS.BASE_URL_PROVIDER);
+            localStorage.removeItem(StorageService.STORAGE_KEYS.TITLE);
+            localStorage.removeItem(StorageService.STORAGE_KEYS.SUBTITLE);
+            
+            // Reset the session key if ShareManager is available
+            if (window.ShareManager && window.ShareManager.setSessionKey) {
+                window.ShareManager.setSessionKey(null);
+            }
+            
+            // Update the title and subtitle in the UI
+            updateTitleAndSubtitle();
             
             // Update UI elements
             if (elements.baseUrl) {
