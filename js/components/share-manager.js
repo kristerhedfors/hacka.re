@@ -294,12 +294,18 @@ window.ShareManager = (function() {
             let title = StorageService.getTitle();
             let subtitle = StorageService.getSubtitle();
             
+            // Check if title input exists and has a value
             if (elements.shareTitleInput && elements.shareTitleInput.value.trim()) {
                 title = elements.shareTitleInput.value.trim();
+                // Save the title to storage when generating a link
+                StorageService.saveTitle(title);
             }
             
+            // Check if subtitle input exists and has a value
             if (elements.shareSubtitleInput && elements.shareSubtitleInput.value.trim()) {
                 subtitle = elements.shareSubtitleInput.value.trim();
+                // Save the subtitle to storage when generating a link
+                StorageService.saveSubtitle(subtitle);
             }
             
             // Get options
