@@ -665,6 +665,31 @@ For more information about the technologies used in hacka.re:
                     const sharedData = ShareService.extractSharedApiKey(getSessionKey());
                     
                     if (sharedData && sharedData.apiKey) {
+                        // If there's a title, save it and update the UI FIRST
+                        // This is important to do before saving other data to ensure proper namespacing
+                        if (sharedData.title) {
+                            StorageService.saveTitle(sharedData.title);
+                            
+                            if (addSystemMessage) {
+                                addSystemMessage(`Shared title "${sharedData.title}" has been applied.`);
+                            }
+                        }
+                        
+                        // If there's a subtitle, save it and update the UI FIRST
+                        // This is important to do before saving other data to ensure proper namespacing
+                        if (sharedData.subtitle) {
+                            StorageService.saveSubtitle(sharedData.subtitle);
+                            
+                            if (addSystemMessage) {
+                                addSystemMessage(`Shared subtitle "${sharedData.subtitle}" has been applied.`);
+                            }
+                        }
+                        
+                        // Update title and subtitle in the UI if either was changed
+                        if (sharedData.title || sharedData.subtitle) {
+                            window.updateTitleAndSubtitle();
+                        }
+                        
                         // Session key worked, apply the shared data
                         StorageService.saveApiKey(sharedData.apiKey);
                         apiKey = sharedData.apiKey;
@@ -802,6 +827,32 @@ For more information about the technologies used in hacka.re:
                 const sharedData = ShareService.extractSharedApiKey(password);
                 
                 if (sharedData && sharedData.apiKey) {
+                    
+                    // If there's a title, save it and update the UI FIRST
+                    // This is important to do before saving other data to ensure proper namespacing
+                    if (sharedData.title) {
+                        StorageService.saveTitle(sharedData.title);
+                        
+                        if (addSystemMessage) {
+                            addSystemMessage(`Shared title "${sharedData.title}" has been applied.`);
+                        }
+                    }
+                    
+                    // If there's a subtitle, save it and update the UI FIRST
+                    // This is important to do before saving other data to ensure proper namespacing
+                    if (sharedData.subtitle) {
+                        StorageService.saveSubtitle(sharedData.subtitle);
+                        
+                        if (addSystemMessage) {
+                            addSystemMessage(`Shared subtitle "${sharedData.subtitle}" has been applied.`);
+                        }
+                    }
+                    
+                    // Update title and subtitle in the UI if either was changed
+                    if (sharedData.title || sharedData.subtitle) {
+                        window.updateTitleAndSubtitle();
+                    }
+                    
                     // Save the shared API key
                     StorageService.saveApiKey(sharedData.apiKey);
                     apiKey = sharedData.apiKey;
@@ -813,6 +864,7 @@ For more information about the technologies used in hacka.re:
                     if (addSystemMessage) {
                         addSystemMessage(`Shared API key (${maskedApiKey}) has been applied.`);
                     }
+                    
                     
                     // If there's a base URL, save it too
                     if (sharedData.baseUrl) {
@@ -851,27 +903,6 @@ For more information about the technologies used in hacka.re:
                         }
                     }
                     
-                    // If there's a title, save it and update the UI
-                    if (sharedData.title) {
-                        StorageService.saveTitle(sharedData.title);
-                        // Call the global function to update title and subtitle
-                        window.updateTitleAndSubtitle();
-                        
-                        if (addSystemMessage) {
-                            addSystemMessage(`Shared title "${sharedData.title}" has been applied.`);
-                        }
-                    }
-                    
-                    // If there's a subtitle, save it and update the UI
-                    if (sharedData.subtitle) {
-                        StorageService.saveSubtitle(sharedData.subtitle);
-                        // Call the global function to update title and subtitle
-                        window.updateTitleAndSubtitle();
-                        
-                        if (addSystemMessage) {
-                            addSystemMessage(`Shared subtitle "${sharedData.subtitle}" has been applied.`);
-                        }
-                    }
                     
                     // Clear the shared data from the URL
                     ShareService.clearSharedApiKeyFromUrl();
