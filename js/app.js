@@ -34,14 +34,36 @@ window.updateTitleAndSubtitle = function() {
     const taglineElements = document.querySelectorAll('.tagline');
     
     logoTextElements.forEach(element => {
-        // Preserve the heart logo and typing dots
+        // Get the heart logo element
         const heartLogo = element.querySelector('.heart-logo');
         if (heartLogo) {
-            if (isTitleDefault && isSubtitleDefault) {
-                // Add "serverless GPTs" after the heart with a darker color
-                element.innerHTML = title + '<span class="heart-logo">' + heartLogo.innerHTML + '</span><span class="serverless-gpts"> serverless <span class="gpts">GPTs</span></span>';
-            } else {
-                element.innerHTML = title + '<span class="heart-logo">' + heartLogo.innerHTML + '</span>';
+            // Clear the element's content except for the heart logo
+            // This preserves the heart logo DOM element and all its event listeners
+            while (element.firstChild) {
+                if (element.firstChild !== heartLogo) {
+                    element.removeChild(element.firstChild);
+                } else {
+                    // Move the heart logo to a temporary variable to preserve it
+                    const tempHeartLogo = heartLogo;
+                    element.removeChild(heartLogo);
+                    
+                    // Create a text node for the title
+                    const titleNode = document.createTextNode(title);
+                    element.appendChild(titleNode);
+                    
+                    // Add the heart logo back
+                    element.appendChild(tempHeartLogo);
+                    
+                    // If using default title/subtitle, add the "serverless GPTs" text
+                    if (isTitleDefault && isSubtitleDefault) {
+                        const serverlessSpan = document.createElement('span');
+                        serverlessSpan.className = 'serverless-gpts';
+                        serverlessSpan.innerHTML = ' serverless <span class="gpts">GPTs</span>';
+                        element.appendChild(serverlessSpan);
+                    }
+                    
+                    break;
+                }
             }
         } else {
             element.textContent = title;
