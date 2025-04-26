@@ -122,46 +122,40 @@ window.AIHackareComponent = (function() {
                 });
             }
             
-            // Add event listeners for link length calculation and save options
+            // Add event listeners for link length calculation only (not saving options)
             if (this.elements.shareBaseUrlCheckbox) {
                 this.elements.shareBaseUrlCheckbox.addEventListener('change', () => {
                     this.updateLinkLengthBar();
-                    this.shareManager.saveShareOptions();
                 });
             }
             
             if (this.elements.shareApiKeyCheckbox) {
                 this.elements.shareApiKeyCheckbox.addEventListener('change', () => {
                     this.updateLinkLengthBar();
-                    this.shareManager.saveShareOptions();
                 });
             }
             
             if (this.elements.shareSystemPromptCheckbox) {
                 this.elements.shareSystemPromptCheckbox.addEventListener('change', () => {
                     this.updateLinkLengthBar();
-                    this.shareManager.saveShareOptions();
                 });
             }
             
             if (this.elements.shareModelCheckbox) {
                 this.elements.shareModelCheckbox.addEventListener('change', () => {
                     this.updateLinkLengthBar();
-                    this.shareManager.saveShareOptions();
                 });
             }
             
             if (this.elements.shareConversationCheckbox) {
                 this.elements.shareConversationCheckbox.addEventListener('change', () => {
                     this.toggleMessageHistoryInput();
-                    this.shareManager.saveShareOptions();
                 });
             }
             
             if (this.elements.messageHistoryCount) {
                 this.elements.messageHistoryCount.addEventListener('input', () => {
                     this.updateLinkLengthBar();
-                    this.shareManager.saveShareOptions();
                 });
             }
             
@@ -375,7 +369,11 @@ window.AIHackareComponent = (function() {
      * Generate a comprehensive share link
      */
     AIHackare.prototype.generateComprehensiveShareLink = function() {
-        this.shareManager.generateComprehensiveShareLink(
+        // Save share options before generating the link
+        this.shareManager.saveShareOptions();
+        
+        // Generate the share link
+        const success = this.shareManager.generateComprehensiveShareLink(
             this.settingsManager.getApiKey(),
             this.settingsManager.getSystemPrompt(),
             this.settingsManager.getCurrentModel(),

@@ -111,13 +111,30 @@ window.UIManager = (function() {
                 elements.shareForm.reset();
             }
             
-            // Set title and subtitle input values to current values
+            // Get current title and subtitle
+            const currentTitle = StorageService.getTitle();
+            const currentSubtitle = StorageService.getSubtitle();
+            const defaultTitle = "hacka.re";
+            const defaultSubtitle = "För hackare av hackare";
+            
+            // Set title input - use placeholder for default values, actual value for custom values
             if (elements.shareTitleInput) {
-                elements.shareTitleInput.value = StorageService.getTitle();
+                if (currentTitle === defaultTitle) {
+                    elements.shareTitleInput.value = '';
+                    elements.shareTitleInput.placeholder = defaultTitle;
+                } else {
+                    elements.shareTitleInput.value = currentTitle;
+                }
             }
             
+            // Set subtitle input - use placeholder for default values, actual value for custom values
             if (elements.shareSubtitleInput) {
-                elements.shareSubtitleInput.value = StorageService.getSubtitle();
+                if (currentSubtitle === defaultSubtitle) {
+                    elements.shareSubtitleInput.value = '';
+                    elements.shareSubtitleInput.placeholder = defaultSubtitle;
+                } else {
+                    elements.shareSubtitleInput.value = currentSubtitle;
+                }
             }
             
             // Check if there's a locked session key

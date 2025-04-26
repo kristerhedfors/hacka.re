@@ -358,11 +358,11 @@ window.StorageService = (function() {
 
     /**
      * Get subtitle from local storage
-     * @returns {string} The stored subtitle or "För hackare, av hackare" if not found
+     * @returns {string} The stored subtitle or "För hackare av hackare" if not found
      */
     function getSubtitle() {
         // Subtitle is not namespaced to avoid circular dependency
-        return localStorage.getItem(STORAGE_KEYS.SUBTITLE) || "För hackare, av hackare";
+        return localStorage.getItem(STORAGE_KEYS.SUBTITLE) || "För hackare av hackare";
     }
 
     // Public API
