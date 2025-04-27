@@ -74,12 +74,12 @@ window.ShareManager = (function() {
         }
         
         /**
-         * Regenerate a strong password
+         * Regenerate a strong password/session key
          */
         function regeneratePassword() {
             if (elements.sharePassword) {
-                // Generate a new password
-                const newPassword = ShareService.generateStrongPassword();
+                // Use the stored session key if it exists, otherwise generate a new one
+                const newPassword = sessionKey || ShareService.generateStrongPassword();
                 
                 // If the password is masked (type="password"), show a sweeping animation
                 if (elements.sharePassword.type === 'password') {
@@ -173,7 +173,7 @@ window.ShareManager = (function() {
         }
         
         /**
-         * Copy password to clipboard
+         * Copy password/session key to clipboard
          * @param {Function} addSystemMessage - Function to add system message
          */
         function copyPassword(addSystemMessage) {
@@ -202,7 +202,7 @@ window.ShareManager = (function() {
                     
                     // Show a success message
                     if (addSystemMessage) {
-                        addSystemMessage('Password copied to clipboard.');
+                        addSystemMessage('Password/session key copied to clipboard.');
                     }
                     
                     // Show a visual notification
@@ -221,13 +221,13 @@ window.ShareManager = (function() {
         }
         
         /**
-         * Show a visual notification that the password was copied
+         * Show a visual notification that the password/session key was copied
          */
         function showCopyNotification() {
             // Create a notification element
             const notification = document.createElement('div');
             notification.className = 'copy-notification';
-            notification.textContent = 'Session key copied!';
+            notification.textContent = 'Password/session key copied!';
             notification.style.position = 'absolute';
             notification.style.top = '50%';
             notification.style.left = '50%';
@@ -278,11 +278,11 @@ window.ShareManager = (function() {
                 return false;
             }
             
-            // Get password
+            // Get password/session key
             const password = elements.sharePassword.value.trim();
             if (!password) {
                 if (addSystemMessage) {
-                    addSystemMessage('Error: Password is required.');
+                    addSystemMessage('Error: Password/session key is required.');
                 }
                 return false;
             }
