@@ -349,8 +349,11 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
             // Add welcome message
             addSystemMessage('Chat history cleared.');
             
-            // Clear local storage
+            // Clear local storage - this uses the current namespace
             StorageService.clearChatHistory();
+            
+            // Also clear any legacy non-namespaced history that might exist
+            localStorage.removeItem(StorageService.BASE_STORAGE_KEYS.HISTORY);
             
             // Reset context usage
             if (updateContextUsage) {

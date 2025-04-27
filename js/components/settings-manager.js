@@ -1078,13 +1078,21 @@ For more information about the technologies used in hacka.re:
          * @param {Function} addSystemMessage - Function to add system message
          */
         function clearAllSettings(hideSettingsModal, addSystemMessage) {
+            // Save the current namespace before clearing title/subtitle
+            const currentNamespace = StorageService.getNamespace();
+            
             // Remove all settings from localStorage
-            localStorage.removeItem(StorageService.STORAGE_KEYS.API_KEY);
-            localStorage.removeItem(StorageService.STORAGE_KEYS.MODEL);
-            localStorage.removeItem(StorageService.STORAGE_KEYS.SYSTEM_PROMPT);
-            localStorage.removeItem(StorageService.STORAGE_KEYS.SHARE_OPTIONS);
-            localStorage.removeItem(StorageService.STORAGE_KEYS.BASE_URL);
-            localStorage.removeItem(StorageService.STORAGE_KEYS.BASE_URL_PROVIDER);
+            localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.API_KEY));
+            localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.MODEL));
+            localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.SYSTEM_PROMPT));
+            localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.SHARE_OPTIONS));
+            localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.BASE_URL));
+            localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.BASE_URL_PROVIDER));
+            
+            // Clear chat history from current namespace
+            localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.HISTORY));
+            
+            // Now clear the title and subtitle (which will change the namespace)
             localStorage.removeItem(StorageService.STORAGE_KEYS.TITLE);
             localStorage.removeItem(StorageService.STORAGE_KEYS.SUBTITLE);
             
