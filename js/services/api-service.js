@@ -66,85 +66,215 @@ window.ApiService = (function() {
         return data.data;
     }
 
-    /**
-     * Generate a chat completion from the API
-     * @param {string} apiKey - The API key for authentication
-     * @param {string} model - The model ID to use
-     * @param {Array} messages - Array of chat messages
-     * @param {AbortSignal} signal - AbortController signal for cancellation
-     * @param {Function} onChunk - Callback function for handling streaming chunks
-     * @param {string} systemPrompt - Optional system prompt to prepend to messages
-     * @returns {Promise<string>} - Promise resolving to the complete AI response
-     */
-    async function generateChatCompletion(apiKey, model, messages, signal, onChunk, systemPrompt) {
-        if (!apiKey) {
-            throw new Error('API key is required');
-        }
-        
-        // Create a copy of the messages array to avoid modifying the original
-        let apiMessages = [...messages];
-        
-        // Add system prompt if provided
-        if (systemPrompt && systemPrompt.trim()) {
-            apiMessages.unshift({
-                role: 'system',
-                content: systemPrompt
-            });
-        }
-        
-        const response = await fetch(getEndpointUrl('CHAT'), {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
-            },
-            body: JSON.stringify({
-                model: model,
-                messages: apiMessages,
-                stream: true
-            }),
-            signal: signal
+/**
+ * Generate a chat completion from the API
+ * @param {string} apiKey - The API key for authentication
+ * @param {string} model - The model ID to use
+ * @param {Array} messages - Array of chat messages
+ * @param {AbortSignal} signal - AbortController signal for cancellation
+ * @param {Function} onChunk - Callback function for handling streaming chunks
+ * @param {string} systemPrompt - Optional system prompt to prepend to messages
+ * @param {Object} apiToolsManager - Optional API tools manager for tool calling
+ * @returns {Promise<string>} - Promise resolving to the complete AI response
+ */
+async function generateChatCompletion(apiKey, model, messages, signal, onChunk, systemPrompt, apiToolsManager) {
+    if (!apiKey) {
+        throw new Error('API key is required');
+    }
+    
+    // Create a copy of the messages array to avoid modifying the original
+    let apiMessages = [...messages];
+    
+    // Add system prompt if provided
+    if (systemPrompt && systemPrompt.trim()) {
+        apiMessages.unshift({
+            role: 'system',
+            content: systemPrompt
         });
-        
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error?.message || 'Error connecting to API');
+    }
+    
+    // Prepare request body
+    const requestBody = {
+        model: model,
+        messages: apiMessages,
+        stream: true
+    };
+    
+    // Add tools if tool calling is enabled and apiToolsManager is provided
+    if (apiToolsManager) {
+        const toolDefinitions = apiToolsManager.getToolDefinitions();
+        if (toolDefinitions && toolDefinitions.length > 0) {
+            requestBody.tools = toolDefinitions;
+            requestBody.tool_choice = "auto";
         }
+    }
+    
+    const response = await fetch(getEndpointUrl('CHAT'), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify(requestBody),
+        signal: signal
+    });
+    
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error?.message || 'Error connecting to API');
+    }
+    
+    // Process the stream
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let completeResponse = '';
+    let toolCalls = [];
+    
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
         
-        // Process the stream
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder('utf-8');
-        let completeResponse = '';
+        // Decode chunk
+        const chunk = decoder.decode(value);
         
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            
-            // Decode chunk
-            const chunk = decoder.decode(value);
-            
-            // Process SSE format
-            const lines = chunk.split('\n');
-            for (const line of lines) {
-                if (line.startsWith('data: ') && line !== 'data: [DONE]') {
-                    try {
-                        const data = JSON.parse(line.substring(6));
-                        const content = data.choices[0]?.delta?.content || '';
-                        if (content) {
-                            completeResponse += content;
-                            if (onChunk) {
-                                onChunk(completeResponse);
+        // Process SSE format
+        const lines = chunk.split('\n');
+        for (const line of lines) {
+            if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+                try {
+                    const data = JSON.parse(line.substring(6));
+                    const delta = data.choices[0]?.delta || {};
+                    
+                    // Handle content updates
+                    if (delta.content) {
+                        completeResponse += delta.content;
+                        if (onChunk) {
+                            onChunk(completeResponse);
+                        }
+                    }
+                    
+                    // Handle tool calls
+                    if (delta.tool_calls) {
+                        // Process each tool call delta
+                        for (const toolCallDelta of delta.tool_calls) {
+                            const { index, id, function: funcDelta } = toolCallDelta;
+                            
+                            // Initialize tool call if it doesn't exist
+                            if (!toolCalls[index]) {
+                                toolCalls[index] = {
+                                    id: id || '',
+                                    type: 'function',
+                                    function: {
+                                        name: '',
+                                        arguments: ''
+                                    }
+                                };
+                            }
+                            
+                            // Update tool call with delta information
+                            if (id) toolCalls[index].id = id;
+                            
+                            if (funcDelta) {
+                                if (funcDelta.name) {
+                                    toolCalls[index].function.name = 
+                                        (toolCalls[index].function.name || '') + funcDelta.name;
+                                }
+                                
+                                if (funcDelta.arguments) {
+                                    toolCalls[index].function.arguments = 
+                                        (toolCalls[index].function.arguments || '') + funcDelta.arguments;
+                                }
                             }
                         }
-                    } catch (e) {
-                        console.error('Error parsing SSE:', e);
                     }
+                } catch (e) {
+                    console.error('Error parsing SSE:', e);
                 }
             }
         }
-        
-        return completeResponse;
     }
+    
+    // Process tool calls if any were received and apiToolsManager is provided
+    if (toolCalls.length > 0 && apiToolsManager) {
+        try {
+            // Process the tool calls
+            const toolResults = await apiToolsManager.processToolCalls(toolCalls);
+            
+            if (toolResults && toolResults.length > 0) {
+                // Add tool results to messages
+                apiMessages.push({
+                    role: 'assistant',
+                    content: completeResponse,
+                    tool_calls: toolCalls
+                });
+                
+                // Add each tool result as a separate message
+                for (const result of toolResults) {
+                    apiMessages.push(result);
+                }
+                
+                // Make a follow-up request to get the final response
+                const followUpResponse = await fetch(getEndpointUrl('CHAT'), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: model,
+                        messages: apiMessages,
+                        stream: true
+                    }),
+                    signal: signal
+                });
+                
+                if (!followUpResponse.ok) {
+                    const error = await followUpResponse.json();
+                    throw new Error(error.error?.message || 'Error connecting to API for follow-up');
+                }
+                
+                // Process the follow-up stream
+                const followUpReader = followUpResponse.body.getReader();
+                let followUpCompleteResponse = '';
+                
+                while (true) {
+                    const { done, value } = await followUpReader.read();
+                    if (done) break;
+                    
+                    // Decode chunk
+                    const chunk = decoder.decode(value);
+                    
+                    // Process SSE format
+                    const lines = chunk.split('\n');
+                    for (const line of lines) {
+                        if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+                            try {
+                                const data = JSON.parse(line.substring(6));
+                                const content = data.choices[0]?.delta?.content || '';
+                                if (content) {
+                                    followUpCompleteResponse += content;
+                                    if (onChunk) {
+                                        // Append to the original response with a separator
+                                        onChunk(completeResponse + "\n\n" + followUpCompleteResponse);
+                                    }
+                                }
+                            } catch (e) {
+                                console.error('Error parsing follow-up SSE:', e);
+                            }
+                        }
+                    }
+                }
+                
+                // Return the combined response
+                return completeResponse + "\n\n" + followUpCompleteResponse;
+            }
+        } catch (error) {
+            console.error('Error processing tool calls:', error);
+        }
+    }
+    
+    return completeResponse;
+}
 
     // Public API
     return {

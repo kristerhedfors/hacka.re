@@ -26,132 +26,135 @@ window.ChatManager = (function() {
             loadChatHistory();
         }
         
-        /**
-         * Send a message
-         * @param {string} message - Message content
-         * @param {string} apiKey - API key
-         * @param {string} currentModel - Current model ID
-         * @param {string} systemPrompt - System prompt
-         * @param {Function} showApiKeyModal - Function to show API key modal
-         * @param {Function} updateContextUsage - Function to update context usage
-         */
-        function sendMessage(message, apiKey, currentModel, systemPrompt, showApiKeyModal, updateContextUsage) {
-            if (!message) return;
-            
-            if (!apiKey) {
-                showApiKeyModal();
-                return;
-            }
-            
-            if (isGenerating) {
-                stopGeneration();
-                return;
-            }
-            
-            // Add user message to chat
-            addUserMessage(message);
-            
-            // Clear input
-            elements.messageInput.value = '';
-            elements.messageInput.style.height = 'auto';
-            
-            // Focus input
-            elements.messageInput.focus();
-            
-            // Send to API
-            generateResponse(apiKey, currentModel, systemPrompt, updateContextUsage);
-        }
+/**
+ * Send a message
+ * @param {string} message - Message content
+ * @param {string} apiKey - API key
+ * @param {string} currentModel - Current model ID
+ * @param {string} systemPrompt - System prompt
+ * @param {Function} showApiKeyModal - Function to show API key modal
+ * @param {Function} updateContextUsage - Function to update context usage
+ * @param {Object} apiToolsManager - API tools manager for tool calling
+ */
+function sendMessage(message, apiKey, currentModel, systemPrompt, showApiKeyModal, updateContextUsage, apiToolsManager) {
+    if (!message) return;
+    
+    if (!apiKey) {
+        showApiKeyModal();
+        return;
+    }
+    
+    if (isGenerating) {
+        stopGeneration();
+        return;
+    }
+    
+    // Add user message to chat
+    addUserMessage(message);
+    
+    // Clear input
+    elements.messageInput.value = '';
+    elements.messageInput.style.height = 'auto';
+    
+    // Focus input
+    elements.messageInput.focus();
+    
+    // Send to API
+    generateResponse(apiKey, currentModel, systemPrompt, updateContextUsage, apiToolsManager);
+}
+
+/**
+ * Generate a response from the API
+ * @param {string} apiKey - API key
+ * @param {string} currentModel - Current model ID
+ * @param {string} systemPrompt - System prompt
+ * @param {Function} updateContextUsage - Function to update context usage
+ * @param {Object} apiToolsManager - API tools manager for tool calling
+ */
+async function generateResponse(apiKey, currentModel, systemPrompt, updateContextUsage, apiToolsManager) {
+    if (!apiKey) return;
+    
+    isGenerating = true;
+    
+    // Reset token speed tracking
+    generationStartTime = null;
+    lastUpdateTime = null;
+    tokenCount = 0;
+    if (elements.tokenSpeedText) {
+        elements.tokenSpeedText.textContent = '0 t/s';
+    }
+    
+    // Change send button to stop button
+    elements.sendBtn.innerHTML = '<i class="fas fa-stop"></i>';
+    elements.sendBtn.title = 'Stop generation';
+    
+    // Dispatch event to start heart animation
+    document.dispatchEvent(new CustomEvent('ai-response-start'));
+    
+    // Add typing indicator
+    const typingIndicator = UIUtils.createTypingIndicator();
+    elements.chatMessages.appendChild(typingIndicator);
+    UIUtils.scrollToBottom(elements.chatMessages);
+    
+    // Prepare messages for API
+    const apiMessages = messages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+    }));
+    
+    // Create AI message placeholder
+    const aiMessageId = Date.now().toString();
+    addAIMessage('', aiMessageId);
+    
+    try {
+        // Create AbortController for fetch
+        controller = new AbortController();
+        const signal = controller.signal;
         
-        /**
-         * Generate a response from the API
-         * @param {string} apiKey - API key
-         * @param {string} currentModel - Current model ID
-         * @param {string} systemPrompt - System prompt
-         * @param {Function} updateContextUsage - Function to update context usage
-         */
-        async function generateResponse(apiKey, currentModel, systemPrompt, updateContextUsage) {
-            if (!apiKey) return;
-            
-            isGenerating = true;
-            
-            // Reset token speed tracking
-            generationStartTime = null;
-            lastUpdateTime = null;
-            tokenCount = 0;
-            if (elements.tokenSpeedText) {
-                elements.tokenSpeedText.textContent = '0 t/s';
-            }
-            
-            // Change send button to stop button
-            elements.sendBtn.innerHTML = '<i class="fas fa-stop"></i>';
-            elements.sendBtn.title = 'Stop generation';
-            
-            // Dispatch event to start heart animation
-            document.dispatchEvent(new CustomEvent('ai-response-start'));
-            
-            // Add typing indicator
-            const typingIndicator = UIUtils.createTypingIndicator();
-            elements.chatMessages.appendChild(typingIndicator);
-            UIUtils.scrollToBottom(elements.chatMessages);
-            
-            // Prepare messages for API
-            const apiMessages = messages.map(msg => ({
-                role: msg.role,
-                content: msg.content
-            }));
-            
-            // Create AI message placeholder
-            const aiMessageId = Date.now().toString();
-            addAIMessage('', aiMessageId);
-            
-            try {
-                // Create AbortController for fetch
-                controller = new AbortController();
-                const signal = controller.signal;
-                
-                // Generate response
-                const aiResponse = await ApiService.generateChatCompletion(
-                    apiKey,
-                    currentModel,
-                    apiMessages,
-                    signal,
-                    (content) => updateAIMessage(content, aiMessageId, updateContextUsage),
-                    systemPrompt
-                );
-                
-                // Remove typing indicator
-                typingIndicator.remove();
-                
-                // Update messages array with complete AI response
-                messages[messages.length - 1].content = aiResponse;
-                
-                // Save chat history
-                StorageService.saveChatHistory(messages);
-                
-            } catch (error) {
-                // Remove typing indicator
-                typingIndicator.remove();
-                
-                // Show error message
-                if (error.name === 'AbortError') {
-                    addSystemMessage('Response generation stopped.');
-                } else {
-                    console.error('API Error:', error);
-                    addSystemMessage(`Error: ${error.message}`);
-                }
-            } finally {
-                // Reset state
-                isGenerating = false;
-                controller = null;
-                
-                // Reset send button
-                elements.sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
-                elements.sendBtn.title = 'Send message';
-                
-                // Dispatch event to stop heart animation
-                document.dispatchEvent(new CustomEvent('ai-response-end'));
-            }
+        // Generate response
+        const aiResponse = await ApiService.generateChatCompletion(
+            apiKey,
+            currentModel,
+            apiMessages,
+            signal,
+            (content) => updateAIMessage(content, aiMessageId, updateContextUsage),
+            systemPrompt,
+            apiToolsManager
+        );
+        
+        // Remove typing indicator
+        typingIndicator.remove();
+        
+        // Update messages array with complete AI response
+        messages[messages.length - 1].content = aiResponse;
+        
+        // Save chat history
+        StorageService.saveChatHistory(messages);
+        
+    } catch (error) {
+        // Remove typing indicator
+        typingIndicator.remove();
+        
+        // Show error message
+        if (error.name === 'AbortError') {
+            addSystemMessage('Response generation stopped.');
+        } else {
+            console.error('API Error:', error);
+            addSystemMessage(`Error: ${error.message}`);
         }
+    } finally {
+        // Reset state
+        isGenerating = false;
+        controller = null;
+        
+        // Reset send button
+        elements.sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+        elements.sendBtn.title = 'Send message';
+        
+        // Dispatch event to stop heart animation
+        document.dispatchEvent(new CustomEvent('ai-response-end'));
+    }
+}
         
         /**
          * Stop response generation

@@ -17,6 +17,7 @@ window.AIHackareComponent = (function() {
         this.chatManager = ChatManager.createChatManager(this.elements);
         this.settingsManager = SettingsManager.createSettingsManager(this.elements);
         this.shareManager = ShareManager.createShareManager(this.elements);
+        this.apiToolsManager = ApiToolsManager.createApiToolsManager(this.elements);
         
         // Make chatManager accessible globally for the close GPT button
         window.aiHackare = this;
@@ -39,6 +40,10 @@ window.AIHackareComponent = (function() {
         );
         
         this.chatManager.init();
+        this.apiToolsManager.init();
+        
+        // Add tool calling setting to settings form
+        this.apiToolsManager.addToolCallingSetting(this.elements.settingsForm);
         
         // Set up event listeners
         this.setupEventListeners();
@@ -293,7 +298,8 @@ window.AIHackareComponent = (function() {
             this.settingsManager.getCurrentModel(),
             this.settingsManager.getSystemPrompt(),
             this.uiManager.showApiKeyModal.bind(this.uiManager),
-            this.uiManager.updateContextUsage.bind(this.uiManager)
+            this.uiManager.updateContextUsage.bind(this.uiManager),
+            this.apiToolsManager
         );
     };
     
