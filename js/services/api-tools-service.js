@@ -22,10 +22,27 @@ window.ApiToolsService = (function() {
     /**
      * Set tool calling enabled state
      * @param {boolean} enabled - Whether tool calling should be enabled
+     * @param {Function} addSystemMessage - Optional callback to add a system message
      */
-    function setToolCallingEnabled(enabled) {
+    function setToolCallingEnabled(enabled, addSystemMessage) {
         const namespaced = StorageService.getNamespacedKey(TOOL_CALLING_ENABLED_KEY);
+        const previousState = localStorage.getItem(namespaced) === 'true';
         localStorage.setItem(namespaced, enabled ? 'true' : 'false');
+        
+        // Display status message if the state has changed and a callback is provided
+        if (addSystemMessage && previousState !== enabled) {
+            if (enabled) {
+                // Get list of available tools
+                const tools = Object.keys(toolRegistry);
+                const toolsMessage = tools.length > 0 
+                    ? `Available tools: ${tools.join(', ')}`
+                    : 'No tools currently registered';
+                
+                addSystemMessage(`Tool calling activated. ${toolsMessage}`);
+            } else {
+                addSystemMessage('Tool calling deactivated. No tools are available.');
+            }
+        }
     }
     
     /**

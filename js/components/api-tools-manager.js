@@ -21,8 +21,9 @@ window.ApiToolsManager = (function() {
         /**
          * Add tool calling setting to the settings form
          * @param {HTMLElement} settingsForm - The settings form element
+         * @param {Function} addSystemMessage - Optional callback to add a system message
          */
-        function addToolCallingSetting(settingsForm) {
+        function addToolCallingSetting(settingsForm, addSystemMessage) {
             // Create a new form group for the tool calling setting
             const formGroup = document.createElement('div');
             formGroup.className = 'form-group';
@@ -72,7 +73,27 @@ window.ApiToolsManager = (function() {
             
             // Add event listener to save the setting when the form is submitted
             settingsForm.addEventListener('submit', function() {
-                ApiToolsService.setToolCallingEnabled(checkbox.checked);
+                ApiToolsService.setToolCallingEnabled(checkbox.checked, addSystemMessage);
+            });
+            
+            // Also add a change event listener to show status message immediately when toggled
+            checkbox.addEventListener('change', function() {
+                // We don't save the setting here, just show the status message
+                // The actual saving happens when the form is submitted
+                if (addSystemMessage) {
+                    if (checkbox.checked !== ApiToolsService.isToolCallingEnabled()) {
+                        if (checkbox.checked) {
+                            const tools = Object.keys(ApiToolsService.getRegisteredTools());
+                            const toolsMessage = tools.length > 0 
+                                ? `Available tools: ${tools.join(', ')}`
+                                : 'No tools currently registered';
+                            
+                            addSystemMessage(`Tool calling will be activated when settings are saved. ${toolsMessage}`);
+                        } else {
+                            addSystemMessage('Tool calling will be deactivated when settings are saved.');
+                        }
+                    }
+                }
             });
         }
         

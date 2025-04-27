@@ -42,8 +42,11 @@ window.AIHackareComponent = (function() {
         this.chatManager.init();
         this.apiToolsManager.init();
         
-        // Add tool calling setting to settings form
-        this.apiToolsManager.addToolCallingSetting(this.elements.settingsForm);
+        // Add tool calling setting to settings form with system message callback
+        this.apiToolsManager.addToolCallingSetting(
+            this.elements.settingsForm,
+            this.chatManager.addSystemMessage.bind(this.chatManager)
+        );
         
         // Set up event listeners
         this.setupEventListeners();
