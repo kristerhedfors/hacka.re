@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" class="theme-modern">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>hacka.re - Development</title>
+    <meta name="description" content="How hacka.re is developed and how it can be extended">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="css/themes.css">
+    <!-- Font Awesome for icons (local) -->
+    <link rel="stylesheet" href="../lib/font-awesome/all.min.css">
+    <!-- Markdown parser (local) -->
+    <script src="../lib/marked/marked.min.js"></script>
+    <script src="../lib/dompurify/purify.min.js"></script>
+    <style>
+        .feature-section {
+            margin: 40px 0;
+        }
+
+        .feature-section h3 {
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+
+        .video-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 30px auto;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+        }
+
+        .video-container video {
+            width: 100%;
+            display: block;
+        }
+
+        .placeholder-section {
+            background-color: var(--ai-msg-bg);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: var(--box-shadow);
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .page-nav {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .page-nav a {
+            padding: 8px 15px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+
+        .page-nav a:hover {
+            background-color: var(--primary-dark);
+            text-decoration: none;
+        }
+
+        /* Mobile-specific styles */
+        @media (max-width: 480px) {
+            main {
+                padding: 1rem !important;
+            }
+
+            .container {
+                padding: 0 10px;
+            }
+
+            .video-container {
+                margin: 20px auto;
+            }
+
+            /* Ensure proper text wrapping on small screens */
+            p, li, a, h1, h2, h3, h4, h5, h6 {
+                word-break: break-word;
+                max-width: 100%;
+            }
+
+            /* Adjust font sizes for better readability on small screens */
+            p, li {
+                font-size: 0.95rem;
+            }
+
+            h2 {
+                font-size: 1.4rem;
+            }
+
+            h3 {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="beta-tag">BETA</div>
+        <header>
+            <div class="logo">
+                <h1><a href="../index.html" style="text-decoration: none; color: inherit;">hacka.re</a></h1>
+                <p class="tagline">För hackare av hackare.</p>
+            </div>
+            <div class="settings">
+                <a href="../index.html" class="btn secondary-btn" style="margin-right: 10px;">Back to Chat</a>
+            </div>
+        </header>
+
+        <main style="overflow-y: auto; overflow-x: auto; padding: 2rem;">
+            <div class="container" style="max-width: 1000px; margin: 0 auto; word-wrap: break-word; overflow-wrap: break-word; width: 100%;">
+            <h2>Development & Extension</h2>
+
+            <div class="page-nav">
+                <a href="index.html">About</a>
+                <a href="architecture.html">Architecture</a>
+                <a href="development.html">Development</a>
+                <a href="use-cases.html">Use Cases</a>
+            </div>
+
+            <div class="video-container">
+                <video controls autoplay loop>
+                    <source src="../videos/development-screen-recording.webm" type="video/webm">
+                    Your browser does not support the video tag.
+                </video>
+                <p style="text-align: center; margin-top: 10px; font-size: 0.9em; color: var(--text-color-secondary);">Screen capture showing first prompt in a series to vibe code tool-calling capabilities into hacka.re, using vscode extension Cline and the Claude-3.7-Sonnet model for software engineering</p>
+            </div>
+
+            <div class="placeholder-section">
+                <h3><i class="fas fa-code"></i> Development Tools</h3>
+                <p>hacka.re is developed using the following tools:</p>
+                <ul>
+                    <li><strong>Core Technologies:</strong> Vanilla JavaScript, HTML, and CSS</li>
+                    <li><strong>LLM-Assisted Development:</strong> Claude 3.7 Sonnet via VSCode extension Cline</li>
+                    <li><strong>Dependencies:</strong>
+                        <ul>
+                            <li>marked - For markdown rendering</li>
+                            <li>dompurify - To prevent cross-site scripting (XSS)</li>
+                            <li>tweetnacl - For minimal-complexity strong in-browser encryption</li>
+                            <li>qrcode - For generating QR codes for shareable links</li>
+                        </ul>
+                    </li>
+                    <li><strong>Hosting:</strong> GitHub Pages</li>
+                </ul>
+            </div>
+
+            <div class="placeholder-section">
+                <h3><i class="fas fa-puzzle-piece"></i> Vibe Coding Approach</h3>
+                <p>99%+ of hacka.re's code was created through LLM-assisted development (vibe coding) using Claude 3.7 Sonnet</p>
+            </div>
+
+            <div class="placeholder-section">
+                <h3><i class="fas fa-tools"></i> Implementation Philosophy</h3>
+                <p>hacka.re follows these implementation principles:</p>
+                <ul>
+                    <li><strong>Privacy-First:</strong> No tracking, analytics, or external calls aside from LLM API calls</li>
+                    <li><strong>Serverless:</strong> No server-side components (aside from LLM API)</li>
+                    <li><strong>Minimal Dependencies:</strong> Limited external libraries to reduce attack surface</li>
+                    <li><strong>Self-Contained:</strong> All resources hosted locally with the application</li>
+                    <li><strong>Extensible:</strong> Designed to be easily extended with new features</li>
+                </ul>
+            </div>
+
+            <div class="page-nav">
+                <a href="index.html">About</a>
+                <a href="architecture.html">Architecture</a>
+                <a href="development.html">Development</a>
+                <a href="use-cases.html">Use Cases</a>
+            </div>
+            </div>
+        </main>
+
+        <footer>
+            <p><a href="https://hacka.re/" target="_blank">hacka.re</a> | <a href="../index.html">Back to Chat</a></p>
+        </footer>
+    </div>
+
+    <script src="js/themes.js"></script>
+</body>
+</html>
