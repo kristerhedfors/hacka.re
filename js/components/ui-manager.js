@@ -137,25 +137,30 @@ window.UIManager = (function() {
                 }
             }
             
-            // Check if there's a locked session key
-            if (sessionKey && isSessionKeyLocked) {
+            // Check if there's a session key
+            if (sessionKey) {
                 // Set the session key value
                 if (elements.sharePassword) {
                     elements.sharePassword.value = sessionKey;
-                    elements.sharePassword.readOnly = true;
+                    // Only set readOnly if the session key is locked
+                    elements.sharePassword.readOnly = isSessionKeyLocked;
                 }
                 
-                // Set the lock checkbox to checked
+                // Set the lock checkbox based on isSessionKeyLocked
                 if (elements.lockSessionKeyCheckbox) {
-                    elements.lockSessionKeyCheckbox.checked = true;
+                    elements.lockSessionKeyCheckbox.checked = isSessionKeyLocked;
                 }
                 
-                // Add the locked class to the password input container
+                // Add or remove the locked class based on isSessionKeyLocked
                 if (elements.passwordInputContainer) {
-                    elements.passwordInputContainer.classList.add('locked');
+                    if (isSessionKeyLocked) {
+                        elements.passwordInputContainer.classList.add('locked');
+                    } else {
+                        elements.passwordInputContainer.classList.remove('locked');
+                    }
                 }
             } else {
-                // Generate a random password
+                // Generate a random password only if there's no session key
                 if (elements.sharePassword) {
                     elements.sharePassword.value = ShareService.generateStrongPassword();
                     elements.sharePassword.type = 'password'; // Ensure password is hidden
