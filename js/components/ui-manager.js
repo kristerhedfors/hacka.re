@@ -429,8 +429,8 @@ window.UIManager = (function() {
                     elements.modelStats.insertBefore(providerElement, elements.modelStats.firstChild);
                 }
                 
-                // Update the provider text
-                providerElement.textContent = provider;
+                // Update the provider text with "by" prefix
+                providerElement.textContent = 'by ' + provider;
             }
             
             if (elements.modelContextElement) {
