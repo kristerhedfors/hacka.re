@@ -133,6 +133,35 @@ header .token-speed-text {
     line-height: 1;
 }
 
+/* Named GPT styling */
+.named-gpt-container {
+    position: relative;
+    padding: 10px 15px 20px 15px; /* Increased bottom padding for the Close link */
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    border-radius: 0; /* 90-degree angles */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    margin-right: 0; /* No need for extra margin now */
+    display: inline-block;
+}
+
+.named-gpt-container .close-gpt {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    color: #003366; /* Darker blue color but not too bold */
+    font-size: 0.8rem;
+    font-weight: normal;
+    cursor: pointer;
+    text-decoration: underline;
+    background: none;
+    border: none;
+    padding: 2px 5px;
+}
+
+.named-gpt-container .close-gpt:hover {
+    color: #00008B; /* Even darker blue on hover (Dark Blue) */
+}
+
 .heart-logo {
     font-size: 1.5rem;
     position: relative;

@@ -17,6 +17,9 @@ window.AIHackareComponent = (function() {
         this.chatManager = ChatManager.createChatManager(this.elements);
         this.settingsManager = SettingsManager.createSettingsManager(this.elements);
         this.shareManager = ShareManager.createShareManager(this.elements);
+        
+        // Make chatManager accessible globally for the close GPT button
+        window.aiHackare = this;
     }
     
     /**

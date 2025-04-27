@@ -54,13 +54,75 @@ window.updateTitleAndSubtitle = function() {
                     // Add the heart logo back
                     element.appendChild(tempHeartLogo);
                     
-                    // If using default title/subtitle, add the "serverless GPTs" text
-                    if (isTitleDefault && isSubtitleDefault) {
-                        const serverlessSpan = document.createElement('span');
-                        serverlessSpan.className = 'serverless-gpts';
-                        serverlessSpan.innerHTML = ' serverless <span class="gpts">GPTs</span>';
-                        element.appendChild(serverlessSpan);
-                    }
+                            // Remove any existing serverless-gpts span
+                            const existingServerlessSpan = element.querySelector('.serverless-gpts');
+                            if (existingServerlessSpan) {
+                                element.removeChild(existingServerlessSpan);
+                            }
+                            
+                            // If using default title/subtitle, add the "serverless GPTs" text
+                            if (isTitleDefault && isSubtitleDefault) {
+                                const serverlessSpan = document.createElement('span');
+                                serverlessSpan.className = 'serverless-gpts';
+                                serverlessSpan.innerHTML = ' serverless <span class="gpts">GPTs</span>';
+                                element.appendChild(serverlessSpan);
+                                
+                                // Remove named-gpt-container wrapper if it exists
+                                const parentElement = element.parentElement;
+                                if (parentElement && parentElement.classList.contains('named-gpt-container')) {
+                                    // Move the logo-text element out of the container
+                                    const grandParent = parentElement.parentElement;
+                                    grandParent.insertBefore(element, parentElement);
+                                    grandParent.removeChild(parentElement);
+                                }
+                            } else {
+                                // Check if we need to create a named-gpt-container
+                                let container = element.parentElement;
+                                if (!container || !container.classList.contains('named-gpt-container')) {
+                                    // Create container
+                                    container = document.createElement('div');
+                                    container.className = 'named-gpt-container';
+                                    
+                                    // Get the parent element (logo)
+                                    const parentElement = element.parentElement;
+                                    
+                                    // Replace the element with the container
+                                    parentElement.insertBefore(container, element);
+                                    container.appendChild(element);
+                                    
+                                    // Find the tagline element (subtitle)
+                                    const tagline = parentElement.querySelector('.tagline');
+                                    if (tagline) {
+                                        // Move the tagline into the container
+                                        container.appendChild(tagline);
+                                    }
+                                }
+                                
+                                // Add close button if it doesn't exist
+                                if (!container.querySelector('.close-gpt')) {
+                                    const closeBtn = document.createElement('span');
+                                    closeBtn.className = 'close-gpt';
+                                    closeBtn.textContent = 'Close';
+                                    closeBtn.title = 'Clear GPT name and return to default';
+                                    closeBtn.addEventListener('click', function(e) {
+                                        e.stopPropagation(); // Prevent event bubbling
+                                        
+                                        // Reset title and subtitle to defaults
+                                        StorageService.saveTitle(defaultTitle);
+                                        StorageService.saveSubtitle(defaultSubtitle);
+                                        
+                                        // Update UI
+                                        updateTitleAndSubtitle();
+                                        
+                                        // Show a message
+                                        const chatManager = window.aiHackare ? window.aiHackare.chatManager : null;
+                                        if (chatManager && chatManager.addSystemMessage) {
+                                            chatManager.addSystemMessage('GPT name cleared. Returned to default namespace.');
+                                        }
+                                    });
+                                    container.appendChild(closeBtn);
+                                }
+                            }
                     
                     break;
                 }
