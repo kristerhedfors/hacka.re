@@ -73,6 +73,7 @@ window.DOMElements = (function() {
             modelNameElement: document.querySelector('.model-name'),
             modelDeveloperElement: document.querySelector('.model-developer'),
             modelContextElement: document.querySelector('.model-context'),
+            modelStats: document.querySelector('.model-stats'),
             usageFill: document.querySelector('.usage-fill'),
             usageText: document.querySelector('.usage-text'),
             tokenSpeedText: document.querySelector('.token-speed-text')

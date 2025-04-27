@@ -109,7 +109,8 @@ header .model-context,
 header .context-usage,
 header .token-speed,
 header .usage-text,
-header .token-speed-text {
+header .token-speed-text,
+header .model-provider {
     animation: textSweep 3s infinite alternate;
     background: linear-gradient(90deg, #c2c2c2, #ffffff, #c2c2c2); /* 25% less gray (#aaaaaa → #c2c2c2) */
     background-size: 200% auto;
@@ -482,6 +483,12 @@ body.firefox-focus .heart-logo {
     gap: 1rem;
     font-size: 0.85rem;
     opacity: 0.9;
+}
+
+.model-provider {
+    font-size: 0.765rem; /* Same size as model-developer */
+    opacity: 0.9;
+    margin-right: 0.5rem;
 }
 
 .model-context, .context-usage {

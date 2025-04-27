@@ -382,10 +382,55 @@ window.UIManager = (function() {
                 elements.modelNameElement.textContent = displayName;
             }
             
-            // Since we no longer have hardcoded model info, we clear these fields
-            // They could be populated from API data in the future if available
+            // Determine the provider based on the base URL and model ID
+            let provider = '';
+            const baseUrl = StorageService.getBaseUrl();
+            
+            if (baseUrl) {
+                if (baseUrl.includes('groq.com')) {
+                    provider = 'Groq';
+                } else if (baseUrl.includes('openai.com')) {
+                    provider = 'OpenAI';
+                } else if (baseUrl.includes('localhost:11434')) {
+                    provider = 'Ollama';
+                } else {
+                    provider = 'Custom';
+                }
+            }
+            
+            // Determine model developer based on model ID
+            if (currentModel.includes('llama')) {
+                provider = 'Meta';
+            } else if (currentModel.includes('gemma')) {
+                provider = 'Google';
+            } else if (currentModel.includes('mistral') || currentModel.includes('mixtral')) {
+                provider = 'Mistral AI';
+            } else if (currentModel.includes('claude')) {
+                provider = 'Anthropic';
+            }
+            
+            // Move model developer to the model stats section
             if (elements.modelDeveloperElement) {
+                // Remove from active-model section
                 elements.modelDeveloperElement.textContent = '';
+            }
+            
+            // Create or update provider element in model stats
+            if (elements.modelStats) {
+                // Check if provider element already exists
+                let providerElement = elements.modelStats.querySelector('.model-provider');
+                
+                // If not, create it
+                if (!providerElement) {
+                    providerElement = document.createElement('span');
+                    providerElement.className = 'model-provider';
+                    
+                    // Insert at the beginning of model stats
+                    elements.modelStats.insertBefore(providerElement, elements.modelStats.firstChild);
+                }
+                
+                // Update the provider text
+                providerElement.textContent = provider;
             }
             
             if (elements.modelContextElement) {
