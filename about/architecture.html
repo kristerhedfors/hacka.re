@@ -232,6 +232,7 @@
             <div class="page-nav">
                 <a href="index.html">About</a>
                 <a href="architecture.html">Architecture</a>
+                <a href="development.html">Development</a>
                 <a href="use-cases.html">Use Cases</a>
             </div>
 
@@ -241,6 +242,29 @@
                     <a href="https://hacka.re/" target="_blank">hacka.re</a> is built as a pure client-side application using vanilla JavaScript, HTML, and CSS.
                     This approach eliminates the need for a backend server aside from the necessary OpenAI-compatible API endpoint for GenAI model access.
                 </p>
+                
+                <div style="margin: 20px 0;">
+                    <h4>Tool Calling Implementation Demo</h4>
+                    <p>Below is a demonstration of the tool calling implementation in action (2x speed):</p>
+                    <video width="100%" controls preload="metadata" playsinline>
+                        <source src="../videos/tool-calling-demo-optimized.webm" type="video/webm">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+                
+                <div class="vibe-coded-notice" style="background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)); border-radius: 12px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.18); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1); padding: 20px; margin: 30px 0; position: relative; overflow: hidden;">
+                    <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--primary-color), var(--accent-color), var(--primary-color)); background-size: 200% 100%; animation: gradient-shift 3s ease infinite;"></div>
+                    <h3 style="margin-top: 5px; font-weight: 600; color: var(--primary-color);"><i class="fas fa-magic"></i> hacka.re is Vibe-Coded</h3>
+                    <p style="margin: 10px 0 5px; line-height: 1.6;">99%+ of hacka.re's code was created through LLM-assisted development using Claude 3.7 Sonnet. <a href="development.html">Learn more about how hacka.re is developed and how it can be extended</a>.</p>
+                </div>
+                
+                <style>
+                @keyframes gradient-shift {
+                    0% {background-position: 0% 50%;}
+                    50% {background-position: 100% 50%;}
+                    100% {background-position: 0% 50%;}
+                }
+                </style>
                 <br />
 
                 <p>
@@ -514,6 +538,7 @@ function extractSharedData(sessionKey) {
             <div class="page-nav">
                 <a href="index.html">About</a>
                 <a href="architecture.html">Architecture</a>
+                <a href="development.html">Development</a>
                 <a href="use-cases.html">Use Cases</a>
             </div>
             </div>
