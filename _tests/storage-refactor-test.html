@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Storage Refactor Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-section h2 {
+            margin-top: 0;
+        }
+        button {
+            padding: 8px 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        #results {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Storage Refactor Test</h1>
+    <p>This page tests the refactored storage service components.</p>
+
+    <div class="test-section">
+        <h2>Basic Storage Operations</h2>
+        <button id="test-set-get">Test Set/Get</button>
+        <button id="test-remove">Test Remove</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Encryption</h2>
+        <button id="test-encryption">Test Encryption/Decryption</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Namespace</h2>
+        <button id="test-namespace">Test Namespace</button>
+        <button id="test-namespaced-key">Test Namespaced Key</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Data Operations</h2>
+        <button id="test-api-key">Test API Key</button>
+        <button id="test-model">Test Model</button>
+        <button id="test-chat-history">Test Chat History</button>
+        <button id="test-system-prompt">Test System Prompt</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Title/Subtitle Changes</h2>
+        <button id="test-title-change">Test Title Change</button>
+        <button id="test-subtitle-change">Test Subtitle Change</button>
+    </div>
+
+    <div id="results">
+        <h2>Test Results</h2>
+        <pre id="output"></pre>
+    </div>
+
+    <!-- Include the required libraries -->
+    <script src="../lib/tweetnacl/nacl-fast.min.js"></script>
+    <script src="../lib/tweetnacl/nacl-util.min.js"></script>
+    
+    <!-- Include the storage service components in the correct order -->
+    <script src="../js/utils/crypto-utils.js"></script>
+    <script src="../js/services/encryption-service.js"></script>
+    <script src="../js/services/namespace-service.js"></script>
+    <script src="../js/services/core-storage-service.js"></script>
+    <script src="../js/services/data-service.js"></script>
+    <script src="../js/services/storage-service.js"></script>
+
+    <script>
+        // Helper function to log results
+        function log(message, isError = false) {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = isError ? 'error' : 'success';
+            output.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        // Helper function to clear localStorage for testing
+        function clearTestData() {
+            // Only clear test-related items
+            const testPrefix = 'test_';
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith(testPrefix)) {
+                    localStorage.removeItem(key);
+                }
+            });
+        }
+
+        // Test basic set/get operations
+        document.getElementById('test-set-get').addEventListener('click', function() {
+            clearTestData();
+            log('Testing basic set/get operations...');
+            
+            try {
+                // Test setValue
+                const testKey = 'test_key';
+                const testValue = 'test_value';
+                const result = CoreStorageService.setValue(testKey, testValue);
+                
+                if (result) {
+                    log('setValue successful');
+                } else {
+                    log('setValue failed', true);
+                    return;
+                }
+                
+                // Test getValue
+                const retrievedValue = CoreStorageService.getValue(testKey);
+                
+                if (retrievedValue === testValue) {
+                    log(`getValue successful: ${retrievedValue}`);
+                } else {
+                    log(`getValue failed. Expected: ${testValue}, Got: ${retrievedValue}`, true);
+                    return;
+                }
+                
+                log('Basic set/get operations test passed!');
+            } catch (error) {
+                log(`Error in set/get test: ${error.message}`, true);
+            }
+        });
+
+        // Test remove operation
+        document.getElementById('test-remove').addEventListener('click', function() {
+            clearTestData();
+            log('Testing remove operation...');
+            
+            try {
+                // First set a value
+                const testKey = 'test_key_to_remove';
+                const testValue = 'test_value';
+                CoreStorageService.setValue(testKey, testValue);
+                
+                // Verify it was set
+                const valueBeforeRemove = CoreStorageService.getValue(testKey);
+                if (valueBeforeRemove !== testValue) {
+                    log(`Failed to set value before remove test. Expected: ${testValue}, Got: ${valueBeforeRemove}`, true);
+                    return;
+                }
+                
+                // Remove the value
+                const removeResult = CoreStorageService.removeValue(testKey);
+                if (!removeResult) {
+                    log('removeValue returned false', true);
+                    return;
+                }
+                
+                // Verify it was removed
+                const valueAfterRemove = CoreStorageService.getValue(testKey);
+                if (valueAfterRemove !== null) {
+                    log(`Value not removed properly. Expected: null, Got: ${valueAfterRemove}`, true);
+                    return;
+                }
+                
+                log('Remove operation test passed!');
+            } catch (error) {
+                log(`Error in remove test: ${error.message}`, true);
+            }
+        });
+
+        // Test encryption/decryption
+        document.getElementById('test-encryption').addEventListener('click', function() {
+            log('Testing encryption/decryption...');
+            
+            try {
+                const testData = { name: 'Test User', id: 12345, isActive: true };
+                const passphrase = 'test-passphrase';
+                
+                // Encrypt the data
+                const encrypted = EncryptionService.encrypt(testData, passphrase);
+                if (!encrypted) {
+                    log('Encryption failed', true);
+                    return;
+                }
+                log('Data encrypted successfully');
+                
+                // Decrypt the data
+                const decrypted = EncryptionService.decrypt(encrypted, passphrase);
+                if (!decrypted) {
+                    log('Decryption failed', true);
+                    return;
+                }
+                
+                // Verify the decrypted data matches the original
+                if (JSON.stringify(decrypted) !== JSON.stringify(testData)) {
+                    log(`Decrypted data doesn't match original. Expected: ${JSON.stringify(testData)}, Got: ${JSON.stringify(decrypted)}`, true);
+                    return;
+                }
+                
+                log('Encryption/decryption test passed!');
+                
+                // Test with wrong passphrase
+                const wrongPassphrase = 'wrong-passphrase';
+                const decryptedWithWrongPassphrase = EncryptionService.decrypt(encrypted, wrongPassphrase);
+                
+                if (decryptedWithWrongPassphrase !== null) {
+                    log('Decryption with wrong passphrase should fail but succeeded', true);
+                    return;
+                }
+                
+                log('Decryption with wrong passphrase correctly failed');
+            } catch (error) {
+                log(`Error in encryption test: ${error.message}`, true);
+            }
+        });
+
+        // Test namespace
+        document.getElementById('test-namespace').addEventListener('click', function() {
+            log('Testing namespace...');
+            
+            try {
+                // Get the current namespace
+                const namespace = NamespaceService.getNamespace();
+                log(`Current namespace: ${namespace}`);
+                
+                // Verify it's not empty
+                if (!namespace) {
+                    log('Namespace is empty', true);
+                    return;
+                }
+                
+                log('Namespace test passed!');
+            } catch (error) {
+                log(`Error in namespace test: ${error.message}`, true);
+            }
+        });
+
+        // Test namespaced key
+        document.getElementById('test-namespaced-key').addEventListener('click', function() {
+            log('Testing namespaced key...');
+            
+            try {
+                const baseKey = 'test_base_key';
+                const namespacedKey = NamespaceService.getNamespacedKey(baseKey);
+                
+                log(`Base key: ${baseKey}`);
+                log(`Namespaced key: ${namespacedKey}`);
+                
+                // Verify the namespaced key contains the namespace and the base key
+                const namespace = NamespaceService.getNamespace();
+                if (!namespacedKey.includes(namespace) || !namespacedKey.includes(baseKey)) {
+                    log(`Namespaced key doesn't contain namespace or base key. Namespace: ${namespace}, Base key: ${baseKey}, Namespaced key: ${namespacedKey}`, true);
+                    return;
+                }
+                
+                log('Namespaced key test passed!');
+            } catch (error) {
+                log(`Error in namespaced key test: ${error.message}`, true);
+            }
+        });
+
+        // Test API key operations
+        document.getElementById('test-api-key').addEventListener('click', function() {
+            clearTestData();
+            log('Testing API key operations...');
+            
+            try {
+                const testApiKey = 'test-api-key-12345';
+                
+                // Save API key
+                DataService.saveApiKey(testApiKey);
+                log('API key saved');
+                
+                // Get API key
+                const retrievedApiKey = DataService.getApiKey();
+                
+                if (retrievedApiKey !== testApiKey) {
+                    log(`Retrieved API key doesn't match original. Expected: ${testApiKey}, Got: ${retrievedApiKey}`, true);
+                    return;
+                }
+                
+                log('API key operations test passed!');
+            } catch (error) {
+                log(`Error in API key test: ${error.message}`, true);
+            }
+        });
+
+        // Test model operations
+        document.getElementById('test-model').addEventListener('click', function() {
+            clearTestData();
+            log('Testing model operations...');
+            
+            try {
+                const testModel = 'llama-3-70b-instruct';
+                
+                // Save model
+                DataService.saveModel(testModel);
+                log('Model saved');
+                
+                // Get model
+                const retrievedModel = DataService.getModel();
+                
+                if (retrievedModel !== testModel) {
+                    log(`Retrieved model doesn't match original. Expected: ${testModel}, Got: ${retrievedModel}`, true);
+                    return;
+                }
+                
+                log('Model operations test passed!');
+            } catch (error) {
+                log(`Error in model test: ${error.message}`, true);
+            }
+        });
+
+        // Test chat history operations
+        document.getElementById('test-chat-history').addEventListener('click', function() {
+            clearTestData();
+            log('Testing chat history operations...');
+            
+            try {
+                const testHistory = [
+                    { role: 'user', content: 'Hello' },
+                    { role: 'assistant', content: 'Hi there! How can I help you?' },
+                    { role: 'user', content: 'What is the weather like?' }
+                ];
+                
+                // Save chat history
+                DataService.saveChatHistory(testHistory);
+                log('Chat history saved');
+                
+                // Load chat history
+                const retrievedHistory = DataService.loadChatHistory();
+                
+                if (JSON.stringify(retrievedHistory) !== JSON.stringify(testHistory)) {
+                    log(`Retrieved chat history doesn't match original. Expected: ${JSON.stringify(testHistory)}, Got: ${JSON.stringify(retrievedHistory)}`, true);
+                    return;
+                }
+                
+                log('Chat history operations test passed!');
+                
+                // Test clear chat history
+                DataService.clearChatHistory();
+                const clearedHistory = DataService.loadChatHistory();
+                
+                if (clearedHistory !== null) {
+                    log(`Chat history not cleared properly. Expected: null, Got: ${JSON.stringify(clearedHistory)}`, true);
+                    return;
+                }
+                
+                log('Clear chat history test passed!');
+            } catch (error) {
+                log(`Error in chat history test: ${error.message}`, true);
+            }
+        });
+
+        // Test system prompt operations
+        document.getElementById('test-system-prompt').addEventListener('click', function() {
+            clearTestData();
+            log('Testing system prompt operations...');
+            
+            try {
+                const testPrompt = 'You are a helpful assistant that provides concise and accurate information.';
+                
+                // Save system prompt
+                DataService.saveSystemPrompt(testPrompt);
+                log('System prompt saved');
+                
+                // Get system prompt
+                const retrievedPrompt = DataService.getSystemPrompt();
+                
+                if (retrievedPrompt !== testPrompt) {
+                    log(`Retrieved system prompt doesn't match original. Expected: ${testPrompt}, Got: ${retrievedPrompt}`, true);
+                    return;
+                }
+                
+                log('System prompt operations test passed!');
+            } catch (error) {
+                log(`Error in system prompt test: ${error.message}`, true);
+            }
+        });
+
+        // Test title change
+        document.getElementById('test-title-change').addEventListener('click', function() {
+            log('Testing title change...');
+            
+            try {
+                // Save some test data first
+                const testApiKey = 'test-api-key-for-title-change';
+                DataService.saveApiKey(testApiKey);
+                
+                // Get the current namespace
+                const oldNamespace = NamespaceService.getNamespace();
+                log(`Current namespace before title change: ${oldNamespace}`);
+                
+                // Change the title
+                const newTitle = 'Test Title ' + Date.now();
+                DataService.saveTitle(newTitle);
+                log(`Title changed to: ${newTitle}`);
+                
+                // Get the new namespace
+                const newNamespace = NamespaceService.getNamespace();
+                log(`Namespace after title change: ${newNamespace}`);
+                
+                // Get the previous namespace
+                const previousNamespace = NamespaceService.getPreviousNamespace();
+                log(`Previous namespace: ${previousNamespace}`);
+                
+                // Verify the namespace changed
+                if (newNamespace === oldNamespace) {
+                    log('Namespace did not change after title change', true);
+                    return;
+                }
+                
+                // Verify the previous namespace matches the old namespace
+                if (previousNamespace !== oldNamespace) {
+                    log(`Previous namespace doesn't match old namespace. Expected: ${oldNamespace}, Got: ${previousNamespace}`, true);
+                    return;
+                }
+                
+                // Verify the data was re-encrypted with the new namespace
+                const retrievedApiKey = DataService.getApiKey();
+                
+                if (retrievedApiKey !== testApiKey) {
+                    log(`Data not properly re-encrypted. Expected API key: ${testApiKey}, Got: ${retrievedApiKey}`, true);
+                    return;
+                }
+                
+                log('Title change test passed!');
+                
+                // Reset the title
+                DataService.saveTitle('hacka.re');
+            } catch (error) {
+                log(`Error in title change test: ${error.message}`, true);
+                // Reset the title
+                DataService.saveTitle('hacka.re');
+            }
+        });
+
+        // Test subtitle change
+        document.getElementById('test-subtitle-change').addEventListener('click', function() {
+            log('Testing subtitle change...');
+            
+            try {
+                // Save some test data first
+                const testApiKey = 'test-api-key-for-subtitle-change';
+                DataService.saveApiKey(testApiKey);
+                
+                // Get the current namespace
+                const oldNamespace = NamespaceService.getNamespace();
+                log(`Current namespace before subtitle change: ${oldNamespace}`);
+                
+                // Change the subtitle
+                const newSubtitle = 'Test Subtitle ' + Date.now();
+                DataService.saveSubtitle(newSubtitle);
+                log(`Subtitle changed to: ${newSubtitle}`);
+                
+                // Get the new namespace
+                const newNamespace = NamespaceService.getNamespace();
+                log(`Namespace after subtitle change: ${newNamespace}`);
+                
+                // Get the previous namespace
+                const previousNamespace = NamespaceService.getPreviousNamespace();
+                log(`Previous namespace: ${previousNamespace}`);
+                
+                // Verify the namespace changed
+                if (newNamespace === oldNamespace) {
+                    log('Namespace did not change after subtitle change', true);
+                    return;
+                }
+                
+                // Verify the previous namespace matches the old namespace
+                if (previousNamespace !== oldNamespace) {
+                    log(`Previous namespace doesn't match old namespace. Expected: ${oldNamespace}, Got: ${previousNamespace}`, true);
+                    return;
+                }
+                
+                // Verify the data was re-encrypted with the new namespace
+                const retrievedApiKey = DataService.getApiKey();
+                
+                if (retrievedApiKey !== testApiKey) {
+                    log(`Data not properly re-encrypted. Expected API key: ${testApiKey}, Got: ${retrievedApiKey}`, true);
+                    return;
+                }
+                
+                log('Subtitle change test passed!');
+                
+                // Reset the subtitle
+                DataService.saveSubtitle('För hackare av hackare');
+            } catch (error) {
+                log(`Error in subtitle change test: ${error.message}`, true);
+                // Reset the subtitle
+                DataService.saveSubtitle('För hackare av hackare');
+            }
+        });
+    </script>
+</body>
+</html>
