@@ -18,8 +18,15 @@ document.addEventListener('DOMContentLoaded', function() {
 /**
  * Update the title and subtitle on all index pages
  * This function is exposed globally so it can be called from other modules
+ * @param {boolean} forceUpdate - Force update even if there's a shared link
  */
-window.updateTitleAndSubtitle = function() {
+window.updateTitleAndSubtitle = function(forceUpdate = false) {
+    // If there's a shared link in the URL and we're not forcing an update,
+    // don't update the title and subtitle until the shared data is decrypted
+    if (!forceUpdate && LinkSharingService.hasSharedApiKey()) {
+        return;
+    }
+    
     const title = StorageService.getTitle();
     const subtitle = StorageService.getSubtitle();
     const defaultTitle = "hacka.re";

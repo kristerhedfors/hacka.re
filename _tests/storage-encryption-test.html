@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Storage Encryption Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-result {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 3px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        button {
+            padding: 8px 12px;
+            margin-right: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        h2 {
+            margin-top: 0;
+        }
+        .success {
+            color: green;
+        }
+        .failure {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>Storage Encryption Test</h1>
+    
+    <div class="test-section">
+        <h2>1. Basic Encryption Test</h2>
+        <p>Tests basic encryption and decryption of a string value.</p>
+        <button id="runBasicTest">Run Test</button>
+        <div id="basicTestResult" class="test-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. Object Encryption Test</h2>
+        <p>Tests encryption and decryption of a complex object.</p>
+        <button id="runObjectTest">Run Test</button>
+        <div id="objectTestResult" class="test-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. Passphrase Change Test</h2>
+        <p>Tests re-encryption when title/subtitle (passphrase) changes.</p>
+        <button id="runPassphraseTest">Run Test</button>
+        <div id="passphraseTestResult" class="test-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. Inspect Storage</h2>
+        <p>View the current localStorage contents to verify encryption.</p>
+        <button id="inspectStorage">Inspect Storage</button>
+        <div id="storageInspection" class="test-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>5. Clear Test Data</h2>
+        <p>Remove all test data from localStorage.</p>
+        <button id="clearTestData">Clear Test Data</button>
+        <div id="clearResult" class="test-result"></div>
+    </div>
+
+    <!-- Load dependencies -->
+    <script src="../lib/tweetnacl/nacl-util.min.js"></script>
+    <script src="../lib/tweetnacl/nacl-fast.min.js"></script>
+    
+    <!-- Load application scripts in the correct order -->
+    <script src="../js/utils/crypto-utils.js"></script>
+    <script src="../js/services/encryption-service.js"></script>
+    <script src="../js/services/namespace-service.js"></script>
+    <script src="../js/services/core-storage-service.js"></script>
+    <script src="../js/services/data-service.js"></script>
+    <script src="../js/services/storage-service.js"></script>
+    
+    <!-- Test script -->
+    <script>
+        // Helper function to log results
+        function logResult(elementId, message, isSuccess = true) {
+            const element = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            const className = isSuccess ? 'success' : 'failure';
+            element.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+        }
+        
+        // Helper function to clear results
+        function clearResult(elementId) {
+            document.getElementById(elementId).innerHTML = '';
+        }
+        
+        // Test 1: Basic Encryption Test
+        document.getElementById('runBasicTest').addEventListener('click', function() {
+            clearResult('basicTestResult');
+            
+            try {
+                const testKey = 'test_encryption_key';
+                const testValue = 'This is a test value for encryption!';
+                
+                // Save the value
+                StorageService.saveApiKey(testValue);
+                logResult('basicTestResult', 'Saved test value to localStorage');
+                
+                // Check if the raw value in localStorage is encrypted
+                const rawValue = localStorage.getItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.API_KEY));
+                const isEncrypted = rawValue !== testValue;
+                
+                if (isEncrypted) {
+                    logResult('basicTestResult', 'Value is encrypted in localStorage');
+                } else {
+                    logResult('basicTestResult', 'Value is NOT encrypted in localStorage!', false);
+                }
+                
+                // Retrieve the value
+                const retrievedValue = StorageService.getApiKey();
+                
+                if (retrievedValue === testValue) {
+                    logResult('basicTestResult', 'Successfully retrieved and decrypted the value');
+                } else {
+                    logResult('basicTestResult', `Retrieved value doesn't match! Got: ${retrievedValue}`, false);
+                }
+                
+                logResult('basicTestResult', 'Basic encryption test completed');
+            } catch (error) {
+                logResult('basicTestResult', `Error: ${error.message}`, false);
+                console.error(error);
+            }
+        });
+        
+        // Test 2: Object Encryption Test
+        document.getElementById('runObjectTest').addEventListener('click', function() {
+            clearResult('objectTestResult');
+            
+            try {
+                const testObject = {
+                    name: 'Test User',
+                    age: 30,
+                    preferences: {
+                        theme: 'dark',
+                        notifications: true
+                    },
+                    tags: ['test', 'encryption', 'object']
+                };
+                
+                // Save the object
+                StorageService.saveShareOptions(testObject);
+                logResult('objectTestResult', 'Saved test object to localStorage');
+                
+                // Check if the raw value in localStorage is encrypted
+                const rawValue = localStorage.getItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.SHARE_OPTIONS));
+                const isEncrypted = !rawValue.includes('Test User');
+                
+                if (isEncrypted) {
+                    logResult('objectTestResult', 'Object is encrypted in localStorage');
+                } else {
+                    logResult('objectTestResult', 'Object is NOT encrypted in localStorage!', false);
+                }
+                
+                // Retrieve the object
+                const retrievedObject = StorageService.getShareOptions();
+                
+                if (JSON.stringify(retrievedObject) === JSON.stringify(testObject)) {
+                    logResult('objectTestResult', 'Successfully retrieved and decrypted the object');
+                } else {
+                    logResult('objectTestResult', `Retrieved object doesn't match! Got: ${JSON.stringify(retrievedObject)}`, false);
+                }
+                
+                logResult('objectTestResult', 'Object encryption test completed');
+            } catch (error) {
+                logResult('objectTestResult', `Error: ${error.message}`, false);
+                console.error(error);
+            }
+        });
+        
+        // Test 3: Passphrase Change Test
+        document.getElementById('runPassphraseTest').addEventListener('click', function() {
+            clearResult('passphraseTestResult');
+            
+            try {
+                // Save some test data
+                const testValue = 'Data that should survive a passphrase change';
+                StorageService.saveSystemPrompt(testValue);
+                logResult('passphraseTestResult', 'Saved test data with current passphrase');
+                
+                // Get the current title and subtitle
+                const originalTitle = StorageService.getTitle();
+                const originalSubtitle = StorageService.getSubtitle();
+                const originalNamespace = StorageService.getNamespace();
+                logResult('passphraseTestResult', `Original title: "${originalTitle}", subtitle: "${originalSubtitle}", namespace: "${originalNamespace}"`);
+                
+                // Log the key used to store the data
+                const originalKey = StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.SYSTEM_PROMPT);
+                logResult('passphraseTestResult', `Original storage key: "${originalKey}"`);
+                
+                // Verify the data is stored and can be retrieved
+                const originalValue = StorageService.getSystemPrompt();
+                logResult('passphraseTestResult', `Original value retrieved: "${originalValue}"`);
+                
+                // Change the title (which changes the passphrase)
+                const newTitle = originalTitle + ' (Test)';
+                StorageService.saveTitle(newTitle);
+                const newNamespace = StorageService.getNamespace();
+                logResult('passphraseTestResult', `Changed title to: "${newTitle}", new namespace: "${newNamespace}"`);
+                
+                // Log the previous namespace
+                const previousNamespace = NamespaceService.getPreviousNamespace();
+                logResult('passphraseTestResult', `Previous namespace: "${previousNamespace}"`);
+                
+                // Log the new key
+                const newKey = StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.SYSTEM_PROMPT);
+                logResult('passphraseTestResult', `New storage key: "${newKey}"`);
+                
+                // Check if the data exists in localStorage under either key
+                const oldKeyValue = localStorage.getItem(originalKey);
+                const newKeyValue = localStorage.getItem(newKey);
+                logResult('passphraseTestResult', `Raw localStorage value under old key: ${oldKeyValue ? 'exists' : 'null'}`);
+                logResult('passphraseTestResult', `Raw localStorage value under new key: ${newKeyValue ? 'exists' : 'null'}`);
+                
+                // Try to retrieve the data with the new passphrase
+                const retrievedValue = StorageService.getSystemPrompt();
+                
+                if (retrievedValue === testValue) {
+                    logResult('passphraseTestResult', 'Successfully retrieved data after passphrase change');
+                } else {
+                    logResult('passphraseTestResult', `Failed to retrieve data after passphrase change! Got: ${retrievedValue}`, false);
+                }
+                
+                // Restore the original title
+                StorageService.saveTitle(originalTitle);
+                logResult('passphraseTestResult', 'Restored original title');
+                
+                // Verify we can still access the data
+                const finalValue = StorageService.getSystemPrompt();
+                
+                if (finalValue === testValue) {
+                    logResult('passphraseTestResult', 'Successfully retrieved data after restoring original passphrase');
+                } else {
+                    logResult('passphraseTestResult', `Failed to retrieve data after restoring original passphrase! Got: ${finalValue}`, false);
+                }
+                
+                logResult('passphraseTestResult', 'Passphrase change test completed');
+            } catch (error) {
+                logResult('passphraseTestResult', `Error: ${error.message}`, false);
+                console.error(error);
+            }
+        });
+        
+        // Test 4: Inspect Storage
+        document.getElementById('inspectStorage').addEventListener('click', function() {
+            const storageInspection = document.getElementById('storageInspection');
+            storageInspection.innerHTML = '';
+            
+            try {
+                let output = 'localStorage contents:\n\n';
+                
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    const value = localStorage.getItem(key);
+                    output += `${key}: ${value.length > 100 ? value.substring(0, 100) + '...' : value}\n\n`;
+                }
+                
+                storageInspection.textContent = output;
+            } catch (error) {
+                logResult('storageInspection', `Error: ${error.message}`, false);
+                console.error(error);
+            }
+        });
+        
+        // Test 5: Clear Test Data
+        document.getElementById('clearTestData').addEventListener('click', function() {
+            clearResult('clearResult');
+            
+            try {
+                // Clear specific test data
+                localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.API_KEY));
+                localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.SHARE_OPTIONS));
+                localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.SYSTEM_PROMPT));
+                
+                logResult('clearResult', 'Test data cleared from localStorage');
+            } catch (error) {
+                logResult('clearResult', `Error: ${error.message}`, false);
+                console.error(error);
+            }
+        });
+    </script>
+</body>
+</html>
