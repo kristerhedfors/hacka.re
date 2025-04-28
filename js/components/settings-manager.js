@@ -687,7 +687,7 @@ For more information about the technologies used in hacka.re:
                         
                         // Update title and subtitle in the UI if either was changed
                         if (sharedData.title || sharedData.subtitle) {
-                            window.updateTitleAndSubtitle();
+                            window.updateTitleAndSubtitle(true); // Force update even if there's a shared link
                         }
                         
                         // Session key worked, apply the shared data
@@ -852,7 +852,7 @@ For more information about the technologies used in hacka.re:
                     
                     // Update title and subtitle in the UI if either was changed
                     if (sharedData.title || sharedData.subtitle) {
-                        window.updateTitleAndSubtitle();
+                        window.updateTitleAndSubtitle(true); // Force update even if there's a shared link
                     }
                     
                     // Save the shared API key

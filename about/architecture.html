@@ -313,6 +313,134 @@ while (true) {
             </div>
 
             <div class="feature-section">
+                <h3>Modular Storage Architecture</h3>
+                <p>
+                    <a href="https://hacka.re/" target="_blank">hacka.re</a> implements a modular storage architecture that separates concerns and improves maintainability. The storage system is divided into several specialized components:
+                </p>
+                
+                <ol>
+                    <li><strong>EncryptionService:</strong> Handles all encryption and decryption operations</li>
+                    <li><strong>NamespaceService:</strong> Manages namespaces for storage isolation based on title/subtitle</li>
+                    <li><strong>CoreStorageService:</strong> Provides the core storage operations with encryption support</li>
+                    <li><strong>DataService:</strong> Implements specific data type operations (API keys, models, chat history, etc.)</li>
+                    <li><strong>StorageService:</strong> Main entry point that coordinates all storage operations</li>
+                </ol>
+                
+                <p>
+                    This modular approach offers several benefits:
+                </p>
+                
+                <ul>
+                    <li>Improved code organization with clear separation of concerns</li>
+                    <li>Better testability of individual components</li>
+                    <li>Easier maintenance and future enhancements</li>
+                    <li>More flexible encryption and namespace management</li>
+                </ul>
+                
+                <div class="code-block">
+                    <pre>// Example of the modular storage architecture
+
+// EncryptionService handles encryption/decryption
+window.EncryptionService = (function() {
+    // Encryption-related functions
+    function encrypt(data, passphrase) {
+        // Implementation of encryption
+    }
+    
+    function decrypt(encryptedData, passphrase) {
+        // Implementation of decryption
+    }
+    
+    // Public API
+    return {
+        encrypt: encrypt,
+        decrypt: decrypt,
+        // Other encryption-related methods
+    };
+})();
+
+// NamespaceService manages storage namespaces
+window.NamespaceService = (function() {
+    // Namespace management functions
+    function getNamespace() {
+        // Get current namespace based on title/subtitle
+    }
+    
+    function getNamespacedKey(baseKey) {
+        // Get namespaced key for storage
+    }
+    
+    // Public API
+    return {
+        getNamespace: getNamespace,
+        getNamespacedKey: getNamespacedKey,
+        // Other namespace-related methods
+    };
+})();
+
+// CoreStorageService provides basic storage operations
+window.CoreStorageService = (function() {
+    // Core storage functions
+    function setValue(baseKey, value) {
+        // Set value with optional encryption
+    }
+    
+    function getValue(baseKey, legacyKey, migrateFn) {
+        // Get value with optional decryption
+    }
+    
+    // Public API
+    return {
+        setValue: setValue,
+        getValue: getValue,
+        // Other storage-related methods
+    };
+})();
+
+// DataService implements specific data operations
+window.DataService = (function() {
+    // Data-specific functions
+    function saveApiKey(apiKey) {
+        CoreStorageService.setValue(STORAGE_KEYS.API_KEY, apiKey);
+    }
+    
+    function getApiKey() {
+        return CoreStorageService.getValue(
+            STORAGE_KEYS.API_KEY, 
+            STORAGE_KEYS.API_KEY, 
+            saveApiKey
+        );
+    }
+    
+    // Public API
+    return {
+        saveApiKey: saveApiKey,
+        getApiKey: getApiKey,
+        // Other data-specific methods
+    };
+})();
+
+// StorageService is the main entry point
+window.StorageService = (function() {
+    // Initialize the core storage service
+    CoreStorageService.init();
+    
+    // Public API - expose all data service methods
+    return {
+        // Namespace methods
+        getNamespace: NamespaceService.getNamespace,
+        getNamespacedKey: NamespaceService.getNamespacedKey,
+        
+        // Data methods
+        saveApiKey: DataService.saveApiKey,
+        getApiKey: DataService.getApiKey,
+        // Other methods
+    };
+})();</pre>
+                </div>
+            </div>
+
+            <div class="feature-section">
                 <h3>Comprehensive Secure Sharing - Technical Details</h3>
                 <p>
                     <a href="https://hacka.re/" target="_blank">hacka.re</a> includes a feature to securely share various aspects of your configuration with others through session key-protected URL-based sharing.
