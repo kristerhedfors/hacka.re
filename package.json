@@ -25,6 +25,10 @@
   },
   "homepage": "https://hacka.re",
   "dependencies": {
+    "@huggingface/inference": "^3.10.0",
     "puppeteer": "^24.7.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.3"
   }
 }

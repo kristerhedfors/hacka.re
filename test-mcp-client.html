@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en" class="theme-modern">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>hacka.re - MCP Client Test</title>
+    <meta name="description" content="Test page for Model Context Protocol (MCP) client">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/themes.css">
+    <link rel="stylesheet" href="css/copy-code.css">
+    <!-- Font Awesome for icons (local) -->
+    <link rel="stylesheet" href="lib/font-awesome/all.min.css">
+    <!-- Markdown parser (local) -->
+    <script src="lib/marked/marked.min.js"></script>
+    <script src="lib/dompurify/purify.min.js"></script>
+    <!-- Hugging Face library -->
+    <script src="lib/huggingface/huggingface.min.js"></script>
+    <!-- Core services -->
+    <script src="js/services/core-storage-service.js"></script>
+    <script src="js/services/namespace-service.js"></script>
+    <script src="js/services/api-tools-service.js"></script>
+    <!-- MCP client -->
+    <script src="js/mcp-client.js"></script>
+    <script src="js/mcp-huggingface-server.js"></script>
+    <style>
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: var(--card-bg);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .test-section h2 {
+            margin-top: 0;
+            color: var(--accent-color);
+        }
+        
+        .test-section p {
+            margin-bottom: 15px;
+        }
+        
+        .code-block {
+            background-color: var(--code-bg);
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: monospace;
+            margin-bottom: 15px;
+            position: relative;
+        }
+        
+        .code-block pre {
+            margin: 0;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        
+        .copy-button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .copy-button:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .button-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .result-container {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: var(--system-msg-bg);
+            border-left: 4px solid var(--accent-color);
+            border-radius: 5px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .tool-card {
+            background-color: var(--ai-msg-bg);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tool-card h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+            font-size: 1.2em;
+        }
+        
+        .tool-card p {
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+        
+        .tool-card .parameters {
+            font-size: 0.85em;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>hacka.re MCP Client Test</h1>
+            <p>This page demonstrates the Model Context Protocol (MCP) client implementation for hacka.re.</p>
+        </header>
+        
+        <div class="test-section">
+            <h2>What is MCP?</h2>
+            <p>
+                The Model Context Protocol (MCP) enables communication between the system and locally running MCP servers 
+                that provide additional tools and resources to extend the capabilities of AI models.
+            </p>
+            <p>
+                In this implementation, we've created a "static" MCP server that runs entirely in the browser,
+                providing tools that simulate interaction with Hugging Face models and APIs.
+            </p>
+        </div>
+        
+        <div class="test-section">
+            <h2>Available MCP Servers</h2>
+            <p>The following MCP servers are available:</p>
+            
+            <div class="tool-card">
+                <h3>huggingface</h3>
+                <p>Hugging Face MCP server providing access to Hugging Face models and APIs</p>
+                <p><strong>Tools:</strong> hf_text_generation, hf_text_to_image, hf_translation</p>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>How to Use MCP Tools</h2>
+            <p>To use MCP tools in your chat, you need to:</p>
+            <ol>
+                <li>Enable tool calling in the settings (Settings > Experimental Features > Enable tool calling)</li>
+                <li>Initialize the MCP client and connect to a server using the <code>mcp_init</code> tool</li>
+                <li>Use the tools provided by the connected server</li>
+            </ol>
+            
+            <div class="code-block">
+                <button class="copy-button" onclick="copyToClipboard(this)">Copy</button>
+                <pre>// Example of initializing the MCP client
+{
+  "role": "user",
+  "content": "Please initialize the MCP client and connect to the huggingface server."
+}
+
+// The AI will use the mcp_init tool
+{
+  "role": "assistant",
+  "content": "I'll initialize the MCP client and connect to the Hugging Face server for you.",
+  "tool_calls": [
+    {
+      "id": "call_abc123",
+      "type": "function",
+      "function": {
+        "name": "mcp_init",
+        "arguments": "{\"server\":\"huggingface\"}"
+      }
+    }
+  ]
+}
+
+// Example of using an MCP tool
+{
+  "role": "user",
+  "content": "Translate 'Hello, how are you?' to French using the Hugging Face translation tool."
+}
+
+// The AI will use the hf_translation tool
+{
+  "role": "assistant",
+  "content": "I'll translate that for you using the Hugging Face translation tool.",
+  "tool_calls": [
+    {
+      "id": "call_def456",
+      "type": "function",
+      "function": {
+        "name": "hf_translation",
+        "arguments": "{\"text\":\"Hello, how are you?\",\"target_lang\":\"fr\"}"
+      }
+    }
+  ]
+}</pre>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Available MCP Tools</h2>
+            <p>The following MCP tools are available from the Hugging Face server:</p>
+            
+            <div class="tool-card">
+                <h3>hf_text_generation</h3>
+                <p>Generate text using a Hugging Face text generation model</p>
+                <p class="parameters"><strong>Parameters:</strong></p>
+                <ul>
+                    <li><code>model</code> (required): The model ID to use (e.g., "meta-llama/Llama-3.1-8B-Instruct")</li>
+                    <li><code>prompt</code> (required): The prompt to generate text from</li>
+                    <li><code>max_tokens</code>: Maximum number of tokens to generate</li>
+                    <li><code>temperature</code>: Sampling temperature (0.0 to 2.0)</li>
+                </ul>
+            </div>
+            
+            <div class="tool-card">
+                <h3>hf_text_to_image</h3>
+                <p>Generate an image from text using a Hugging Face diffusion model</p>
+                <p class="parameters"><strong>Parameters:</strong></p>
+                <ul>
+                    <li><code>model</code> (required): The model ID to use (e.g., "stabilityai/stable-diffusion-xl-base-1.0")</li>
+                    <li><code>prompt</code> (required): The text prompt describing the image to generate</li>
+                    <li><code>negative_prompt</code>: Text describing what should not be in the image</li>
+                    <li><code>width</code>: Width of the generated image</li>
+                    <li><code>height</code>: Height of the generated image</li>
+                </ul>
+            </div>
+            
+            <div class="tool-card">
+                <h3>hf_translation</h3>
+                <p>Translate text from one language to another using a Hugging Face translation model</p>
+                <p class="parameters"><strong>Parameters:</strong></p>
+                <ul>
+                    <li><code>model</code>: The model ID to use (e.g., "Helsinki-NLP/opus-mt-en-fr")</li>
+                    <li><code>text</code> (required): The text to translate</li>
+                    <li><code>source_lang</code>: The source language code (e.g., "en" for English)</li>
+                    <li><code>target_lang</code> (required): The target language code (e.g., "fr" for French)</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Example Prompts</h2>
+            <p>Here are some example prompts you can use to test the MCP tools:</p>
+            <ul>
+                <li>"Please initialize the MCP client and connect to the huggingface server."</li>
+                <li>"Generate a short story about a space explorer using the Llama 3.1 model."</li>
+                <li>"Create an image of a cat wearing a top hat using Stable Diffusion."</li>
+                <li>"Translate 'Hello, how are you?' to French."</li>
+            </ul>
+        </div>
+        
+        <div class="button-container">
+            <a href="index.html" class="btn primary-btn">Go to Chat</a>
+        </div>
+        
+        <footer>
+            <p><a href="index.html">Back to hacka.re</a></p>
+        </footer>
+    </div>
+    
+    <script>
+        // Function to copy code to clipboard
+        function copyToClipboard(button) {
+            const codeBlock = button.nextElementSibling;
+            const textArea = document.createElement('textarea');
+            textArea.value = codeBlock.textContent;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            
+            // Change button text temporarily
+            const originalText = button.textContent;
+            button.textContent = 'Copied!';
+            setTimeout(() => {
+                button.textContent = originalText;
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
