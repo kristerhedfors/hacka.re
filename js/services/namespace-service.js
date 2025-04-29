@@ -6,15 +6,15 @@
 window.NamespaceService = (function() {
     // Base storage keys without namespace
     const BASE_STORAGE_KEYS = {
-        API_KEY: 'aihackare_api_key',
-        MODEL: 'aihackare_model',
-        HISTORY: 'aihackare_history',
-        SYSTEM_PROMPT: 'aihackare_system_prompt',
-        SHARE_OPTIONS: 'aihackare_share_options',
-        BASE_URL: 'aihackare_base_url',
-        BASE_URL_PROVIDER: 'aihackare_base_url_provider',
-        TITLE: 'aihackare_title',
-        SUBTITLE: 'aihackare_subtitle'
+        API_KEY: 'api_key',
+        MODEL: 'model',
+        HISTORY: 'history',
+        SYSTEM_PROMPT: 'system_prompt',
+        SHARE_OPTIONS: 'share_options',
+        BASE_URL: 'base_url',
+        BASE_URL_PROVIDER: 'base_url_provider',
+        TITLE: 'hackare_title',
+        SUBTITLE: 'hackare_subtitle'
     };
     
     // Special keys that don't get namespaced (to avoid circular dependency)
@@ -72,7 +72,8 @@ window.NamespaceService = (function() {
             // Store the encrypted hash in the namespace entry
             // We use the session key (if available) or the hash itself as the encryption key
             const encryptedData = EncryptionService.encrypt(namespaceHash, encryptionKey);
-            localStorage.setItem(namespaceId, encryptedData);
+            const namespaceStorageKey = `hackare_${namespaceId}_namespace`;
+            localStorage.setItem(namespaceStorageKey, encryptedData);
             
             // Store the master key in a separate entry
             const masterKeyStorageKey = CryptoUtils.getMasterKeyStorageKey(namespaceId);
@@ -235,13 +236,18 @@ window.NamespaceService = (function() {
             window.ChatManager.addSystemMessage(`[CRYPTO] Searching for namespace with hash: ${targetHash.substring(0, 8)}...`);
         }
         
-        // Find all keys that are 8 characters long (our namespace IDs)
+        // Find all namespace entries with the format "hackare_namespaceid_namespace"
         const namespaceKeys = [];
+        const namespacePattern = /^hackare_([A-Za-z0-9]{8})_namespace$/;
+        
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
-            // Only consider keys that are 8 characters long and not part of other storage keys
-            if (key && key.length === 8 && /^[A-Za-z0-9]{8}$/.test(key)) {
-                namespaceKeys.push(key);
+            const match = key && key.match(namespacePattern);
+            
+            if (match) {
+                // Extract the namespace ID from the key
+                const namespaceId = match[1];
+                namespaceKeys.push(namespaceId);
             }
         }
         
@@ -254,7 +260,8 @@ window.NamespaceService = (function() {
         // Try to decrypt each namespace entry
         for (const namespaceId of namespaceKeys) {
             try {
-                const encryptedData = localStorage.getItem(namespaceId);
+                const namespaceStorageKey = `hackare_${namespaceId}_namespace`;
+                const encryptedData = localStorage.getItem(namespaceStorageKey);
                 if (!encryptedData) {
                     console.log(`[CRYPTO DEBUG] No encrypted data for ${namespaceId}`);
                     continue;
@@ -542,8 +549,8 @@ window.NamespaceService = (function() {
         // Get the namespace ID (which is now just the 8 random characters)
         const namespaceId = getNamespaceId();
         
-        // Add namespace suffix to all other keys
-        return `${baseKey}_${namespaceId}`;
+        // Format: hackare_namespaceid_variablename
+        return `hackare_${namespaceId}_${baseKey}`;
     }
     
     /**
@@ -562,8 +569,8 @@ window.NamespaceService = (function() {
                 continue;
             }
             
-            // Include keys with the old namespace as suffix
-            if (oldNamespaceId && key.endsWith(oldNamespaceId)) {
+            // Include keys with the old namespace in the new format: hackare_namespaceid_variablename
+            if (oldNamespaceId && key.startsWith(`hackare_${oldNamespaceId}_`)) {
                 keysToReEncrypt.push(key);
                 continue;
             }

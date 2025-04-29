@@ -5,8 +5,8 @@
 
 window.EncryptionService = (function() {
     // Encryption-related constants
-    const SALT_KEY = 'aihackare_encryption_salt';
-    const ENCRYPTION_VERSION_KEY = 'aihackare_encryption_version';
+    const SALT_KEY = 'hackare_salt_encryption';
+    const ENCRYPTION_VERSION_KEY = 'hackare_version_encryption';
     
     /**
      * Generate or retrieve salt for encryption
