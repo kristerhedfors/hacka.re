@@ -444,7 +444,8 @@ window.NamespaceService = (function() {
      * @returns {string} The namespace key
      */
     function getNamespaceKey() {
-        return getOrCreateNamespace().namespaceKey;
+        const namespace = getOrCreateNamespace();
+        return namespace ? namespace.masterKey : null;
     }
     
     /**

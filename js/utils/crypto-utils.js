@@ -158,6 +158,9 @@ window.CryptoUtils = (function() {
     function encryptData(payloadObj, password) {
         // Convert to JSON string
         const jsonString = JSON.stringify(payloadObj);
+        if (!jsonString) {
+            throw new Error('Failed to stringify payload object');
+        }
         const plain = nacl.util.decodeUTF8(jsonString);
         
         // Generate salt and derive key
