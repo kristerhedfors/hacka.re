@@ -5,7 +5,7 @@
 
 window.ApiToolsService = (function() {
     // Storage key for tool calling setting
-    const TOOL_CALLING_ENABLED_KEY = 'aihackare_tool_calling_enabled';
+    const TOOL_CALLING_ENABLED_KEY = 'tool_calling_enabled';
     
     // Registry of available tools
     const toolRegistry = {};
@@ -15,8 +15,7 @@ window.ApiToolsService = (function() {
      * @returns {boolean} Whether tool calling is enabled
      */
     function isToolCallingEnabled() {
-        const namespaced = StorageService.getNamespacedKey(TOOL_CALLING_ENABLED_KEY);
-        return localStorage.getItem(namespaced) === 'true';
+        return CoreStorageService.getValue(TOOL_CALLING_ENABLED_KEY) === true;
     }
     
     /**
@@ -25,9 +24,8 @@ window.ApiToolsService = (function() {
      * @param {Function} addSystemMessage - Optional callback to add a system message
      */
     function setToolCallingEnabled(enabled, addSystemMessage) {
-        const namespaced = StorageService.getNamespacedKey(TOOL_CALLING_ENABLED_KEY);
-        const previousState = localStorage.getItem(namespaced) === 'true';
-        localStorage.setItem(namespaced, enabled ? 'true' : 'false');
+        const previousState = isToolCallingEnabled();
+        CoreStorageService.setValue(TOOL_CALLING_ENABLED_KEY, enabled);
         
         // Display status message if the state has changed and a callback is provided
         if (addSystemMessage && previousState !== enabled) {
