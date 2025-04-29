@@ -43,17 +43,34 @@ window.CoreStorageService = (function() {
             localStorage.setItem(key, encryptedValue);
             return true;
         } catch (error) {
-            console.error('Encryption failed for key:', {
+            // Create error object with safe properties
+            const errorInfo = {
                 key: key,
                 error: error.message,
                 stack: error.stack,
                 valueType: typeof value,
-                valueIsArray: Array.isArray(value),
-                valueLength: value ? (typeof value === 'string' ? value.length : JSON.stringify(value).length) : 0,
-                passphraseLength: getPassphrase().length,
-                namespace: NamespaceService.getNamespace(),
-                salt: EncryptionService.getOrCreateSalt().substring(0, 5) + '...'
-            });
+                valueIsArray: Array.isArray(value)
+            };
+            
+            // Safely add length properties
+            try {
+                errorInfo.valueLength = value ? (typeof value === 'string' ? value.length : 0) : 0;
+                if (typeof value === 'object' && value !== null) {
+                    try {
+                        const jsonStr = JSON.stringify(value);
+                        errorInfo.jsonLength = jsonStr ? jsonStr.length : 0;
+                    } catch (e) {
+                        errorInfo.jsonError = e.message;
+                    }
+                }
+                errorInfo.passphraseLength = getPassphrase() ? getPassphrase().length : 0;
+                errorInfo.namespace = NamespaceService.getNamespace();
+                errorInfo.salt = EncryptionService.getOrCreateSalt().substring(0, 5) + '...';
+            } catch (e) {
+                errorInfo.metadataError = e.message;
+            }
+            
+            console.error('Encryption failed for key:', errorInfo);
             return false;
         }
     }
@@ -71,18 +88,33 @@ window.CoreStorageService = (function() {
             const passphrase = getPassphrase();
             return EncryptionService.decrypt(encryptedValue, passphrase);
         } catch (error) {
-            console.error('Exception during decryption:', {
+            // Create error object with safe properties
+            const errorInfo = {
                 error: error.message,
                 stack: error.stack,
-                key: key,
-                keyLength: key.length,
-                encryptedValueLength: encryptedValue.length,
-                passphraseLength: getPassphrase().length,
-                namespace: NamespaceService.getNamespace(),
-                salt: EncryptionService.getOrCreateSalt().substring(0, 5) + '...',
-                storageItemCount: localStorage.length,
-                encryptionVersion: localStorage.getItem(EncryptionService.ENCRYPTION_VERSION_KEY) || 'unknown'
-            });
+                key: key
+            };
+            
+            // Safely add length properties
+            try {
+                errorInfo.keyLength = key ? key.length : 0;
+                errorInfo.encryptedValueLength = encryptedValue ? encryptedValue.length : 0;
+                
+                const passphrase = getPassphrase();
+                errorInfo.passphraseLength = passphrase ? passphrase.length : 0;
+                
+                errorInfo.namespace = NamespaceService.getNamespace();
+                
+                const salt = EncryptionService.getOrCreateSalt();
+                errorInfo.salt = salt ? salt.substring(0, 5) + '...' : 'undefined';
+                
+                errorInfo.storageItemCount = localStorage.length;
+                errorInfo.encryptionVersion = localStorage.getItem(EncryptionService.ENCRYPTION_VERSION_KEY) || 'unknown';
+            } catch (e) {
+                errorInfo.metadataError = e.message;
+            }
+            
+            console.error('Exception during decryption:', errorInfo);
             return null;
         }
     }

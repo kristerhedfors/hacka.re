@@ -35,15 +35,34 @@ window.EncryptionService = (function() {
         try {
             return CryptoUtils.encryptData(data, passphrase);
         } catch (error) {
-            console.error('Encryption failed:', {
+            // Create error object with safe properties
+            const errorInfo = {
                 error: error.message,
                 stack: error.stack,
                 dataType: typeof data,
-                dataIsArray: Array.isArray(data),
-                dataLength: data ? (typeof data === 'string' ? data.length : JSON.stringify(data).length) : 0,
-                passphraseLength: passphrase.length,
-                salt: getOrCreateSalt().substring(0, 5) + '...'
-            });
+                dataIsArray: Array.isArray(data)
+            };
+            
+            // Safely add length properties
+            try {
+                errorInfo.dataLength = data ? (typeof data === 'string' ? data.length : 0) : 0;
+                if (typeof data === 'object' && data !== null) {
+                    try {
+                        const jsonStr = JSON.stringify(data);
+                        errorInfo.jsonLength = jsonStr ? jsonStr.length : 0;
+                    } catch (e) {
+                        errorInfo.jsonError = e.message;
+                    }
+                }
+                errorInfo.passphraseLength = passphrase ? passphrase.length : 0;
+                
+                const salt = getOrCreateSalt();
+                errorInfo.salt = salt ? salt.substring(0, 5) + '...' : 'undefined';
+            } catch (e) {
+                errorInfo.metadataError = e.message;
+            }
+            
+            console.error('Encryption failed:', errorInfo);
             throw error;
         }
     }
@@ -59,26 +78,54 @@ window.EncryptionService = (function() {
             const decryptedValue = CryptoUtils.decryptData(encryptedData, passphrase);
             
             if (decryptedValue === null) {
-                console.error('Decryption failed:', {
-                    encryptedDataLength: encryptedData.length,
-                    passphraseLength: passphrase.length,
-                    passphraseFirstChar: passphrase.charAt(0),
-                    passphraseLastChar: passphrase.charAt(passphrase.length - 1),
-                    salt: getOrCreateSalt().substring(0, 5) + '...',
-                    encryptionVersion: localStorage.getItem(ENCRYPTION_VERSION_KEY) || 'unknown'
-                });
+                // Create error object with safe properties
+                const errorInfo = {
+                    status: 'Decryption returned null'
+                };
+                
+                // Safely add length properties
+                try {
+                    errorInfo.encryptedDataLength = encryptedData ? encryptedData.length : 0;
+                    errorInfo.passphraseLength = passphrase ? passphrase.length : 0;
+                    
+                    if (passphrase) {
+                        errorInfo.passphraseFirstChar = passphrase.charAt(0);
+                        errorInfo.passphraseLastChar = passphrase.charAt(passphrase.length - 1);
+                    }
+                    
+                    const salt = getOrCreateSalt();
+                    errorInfo.salt = salt ? salt.substring(0, 5) + '...' : 'undefined';
+                    
+                    errorInfo.encryptionVersion = localStorage.getItem(ENCRYPTION_VERSION_KEY) || 'unknown';
+                } catch (e) {
+                    errorInfo.metadataError = e.message;
+                }
+                
+                console.error('Decryption failed:', errorInfo);
             }
             
             return decryptedValue;
         } catch (error) {
-            console.error('Exception during decryption:', {
+            // Create error object with safe properties
+            const errorInfo = {
                 error: error.message,
-                stack: error.stack,
-                encryptedDataLength: encryptedData.length,
-                passphraseLength: passphrase.length,
-                salt: getOrCreateSalt().substring(0, 5) + '...',
-                encryptionVersion: localStorage.getItem(ENCRYPTION_VERSION_KEY) || 'unknown'
-            });
+                stack: error.stack
+            };
+            
+            // Safely add length properties
+            try {
+                errorInfo.encryptedDataLength = encryptedData ? encryptedData.length : 0;
+                errorInfo.passphraseLength = passphrase ? passphrase.length : 0;
+                
+                const salt = getOrCreateSalt();
+                errorInfo.salt = salt ? salt.substring(0, 5) + '...' : 'undefined';
+                
+                errorInfo.encryptionVersion = localStorage.getItem(ENCRYPTION_VERSION_KEY) || 'unknown';
+            } catch (e) {
+                errorInfo.metadataError = e.message;
+            }
+            
+            console.error('Exception during decryption:', errorInfo);
             return null;
         }
     }
