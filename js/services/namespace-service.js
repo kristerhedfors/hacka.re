@@ -235,11 +235,12 @@ window.NamespaceService = (function() {
             window.ChatManager.addSystemMessage(`[CRYPTO] Searching for namespace with hash: ${targetHash.substring(0, 8)}...`);
         }
         
-        // Find all keys that start with the namespace prefix
+        // Find all keys that are 8 characters long (our namespace IDs)
         const namespaceKeys = [];
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
-            if (key && key.startsWith(CryptoUtils.NAMESPACE_PREFIX)) {
+            // Only consider keys that are 8 characters long and not part of other storage keys
+            if (key && key.length === 8 && /^[A-Za-z0-9]{8}$/.test(key)) {
                 namespaceKeys.push(key);
             }
         }
@@ -538,8 +539,11 @@ window.NamespaceService = (function() {
             return baseKey;
         }
         
+        // Get the namespace ID (which is now just the 8 random characters)
+        const namespaceId = getNamespaceId();
+        
         // Add namespace suffix to all other keys
-        return `${baseKey}_${getNamespaceId()}`;
+        return `${baseKey}_${namespaceId}`;
     }
     
     /**

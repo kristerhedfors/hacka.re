@@ -85,8 +85,7 @@ window.CryptoUtils = (function() {
         const namespaceHash = generateNamespaceHash(title, subtitle);
         
         // Generate a random 8-character alphanumeric string for the namespace ID
-        const randomId = generateRandomAlphaNum(8);
-        const namespaceId = NAMESPACE_PREFIX + randomId;
+        const namespaceId = generateRandomAlphaNum(8);
         
         // Generate a strong master key for encryption
         const masterKey = generateMasterKey();
@@ -104,7 +103,7 @@ window.CryptoUtils = (function() {
      * @returns {string} The master key storage key
      */
     function getMasterKeyStorageKey(namespaceId) {
-        return MASTER_KEY_PREFIX + namespaceId.substring(NAMESPACE_PREFIX.length);
+        return MASTER_KEY_PREFIX + namespaceId;
     }
     
     /**
