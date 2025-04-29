@@ -52,6 +52,12 @@ window.DOMElements = (function() {
             passwordInputContainer: document.querySelector('.password-input-container'),
             qrCodeContainer: document.getElementById('share-qr-code-container'),
             
+            // Prompt configurator modal elements
+            promptsBtn: document.getElementById('prompts-btn'),
+            promptsModal: document.getElementById('prompts-modal'),
+            promptsList: document.getElementById('prompts-list'),
+            closePromptsModal: document.getElementById('close-prompts-modal'),
+            
             // Settings modal elements
             settingsBtn: document.getElementById('settings-btn'),
             settingsModal: document.getElementById('settings-modal'),
