@@ -197,22 +197,23 @@ window.PromptsManager = (function() {
             const buttonContainer = document.createElement('div');
             buttonContainer.className = 'new-prompt-buttons';
             
-            // Add clear button
-            const clearButton = document.createElement('button');
-            clearButton.className = 'btn secondary-btn new-prompt-clear';
-            clearButton.textContent = 'Clear';
-            clearButton.addEventListener('click', () => {
-                labelField.value = '';
-                contentField.value = '';
-                
-                // Remove active class from all items
-                const promptItems = elements.promptsList.querySelectorAll('.prompt-item');
-                promptItems.forEach(item => {
-                    item.classList.remove('active');
+                // Add clear button
+                const clearButton = document.createElement('button');
+                clearButton.className = 'btn secondary-btn new-prompt-clear';
+                clearButton.textContent = 'Clear';
+                clearButton.addEventListener('click', () => {
+                    // Clear without confirmation
+                    labelField.value = '';
+                    contentField.value = '';
+                    
+                    // Remove active class from all items
+                    const promptItems = elements.promptsList.querySelectorAll('.prompt-item');
+                    promptItems.forEach(item => {
+                        item.classList.remove('active');
+                    });
+                    
+                    currentPrompt = null;
                 });
-                
-                currentPrompt = null;
-            });
             
             // Add save button
             const saveButton = document.createElement('button');
@@ -258,9 +259,6 @@ window.PromptsManager = (function() {
                 
                 // Apply selected prompts as system prompt
                 PromptsService.applySelectedPromptsAsSystem();
-                
-                // Show success message
-                alert('Prompt saved successfully!');
             });
             
             // Add elements to the section
