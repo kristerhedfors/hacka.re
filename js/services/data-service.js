@@ -186,7 +186,7 @@ window.DataService = (function() {
      */
     function saveTitle(title) {
         // Title is not namespaced to avoid circular dependency
-        localStorage.setItem(STORAGE_KEYS.TITLE, title);
+        sessionStorage.setItem(STORAGE_KEYS.TITLE, title);
         
         // Reset namespace cache since title changed
         NamespaceService.resetNamespaceCache();
@@ -196,21 +196,21 @@ window.DataService = (function() {
     }
 
     /**
-     * Get title from local storage
+     * Get title from session storage
      * @returns {string} The stored title or "hacka.re" if not found
      */
     function getTitle() {
         // Title is not namespaced to avoid circular dependency
-        return localStorage.getItem(STORAGE_KEYS.TITLE) || "hacka.re";
+        return sessionStorage.getItem(STORAGE_KEYS.TITLE) || "hacka.re";
     }
 
     /**
-     * Save subtitle to local storage
+     * Save subtitle to session storage
      * @param {string} subtitle - The subtitle to save
      */
     function saveSubtitle(subtitle) {
         // Subtitle is not namespaced to avoid circular dependency
-        localStorage.setItem(STORAGE_KEYS.SUBTITLE, subtitle);
+        sessionStorage.setItem(STORAGE_KEYS.SUBTITLE, subtitle);
         
         // Reset namespace cache since subtitle changed
         NamespaceService.resetNamespaceCache();
@@ -220,12 +220,12 @@ window.DataService = (function() {
     }
 
     /**
-     * Get subtitle from local storage
+     * Get subtitle from session storage
      * @returns {string} The stored subtitle or "För hackare av hackare" if not found
      */
     function getSubtitle() {
         // Subtitle is not namespaced to avoid circular dependency
-        return localStorage.getItem(STORAGE_KEYS.SUBTITLE) || "För hackare av hackare";
+        return sessionStorage.getItem(STORAGE_KEYS.SUBTITLE) || "För hackare av hackare";
     }
     
     // Public API

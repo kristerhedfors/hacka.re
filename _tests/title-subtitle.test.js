@@ -7,6 +7,10 @@
     function runTests() {
         console.log('Running title and subtitle tests...');
         
+        // Clear any existing values in sessionStorage
+        sessionStorage.removeItem('hackare_title');
+        sessionStorage.removeItem('hackare_subtitle');
+        
         // Test storage functions
         testStorageFunctions();
         
