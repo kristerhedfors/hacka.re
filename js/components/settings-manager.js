@@ -695,6 +695,17 @@ For more information about the technologies used in hacka.re:
                         apiKey = sharedData.apiKey;
                         
                         // Use the current session key (no need to set it again since it's already set)
+                        // But make sure it's locked for future use
+                        if (window.aiHackare && window.aiHackare.shareManager) {
+                            // The session key is already set, but we need to make sure it's locked
+                            if (elements.lockSessionKeyCheckbox) {
+                                elements.lockSessionKeyCheckbox.checked = true;
+                            }
+                            
+                            if (elements.passwordInputContainer) {
+                                elements.passwordInputContainer.classList.add('locked');
+                            }
+                        }
                         
                         // Mask the API key to show only first and last 4 bytes
                         const maskedApiKey = maskApiKey(sharedData.apiKey);
@@ -859,9 +870,20 @@ For more information about the technologies used in hacka.re:
                     StorageService.saveApiKey(sharedData.apiKey);
                     apiKey = sharedData.apiKey;
                     
-                    // Use the decryption password as the session key
-                    if (window.ShareManager && window.ShareManager.setSessionKey) {
-                        window.ShareManager.setSessionKey(password);
+                    // Use the decryption password as the session key and lock it
+                    if (window.aiHackare && window.aiHackare.shareManager) {
+                        // Set the session key on the instance, not the module
+                        window.aiHackare.shareManager.setSessionKey(password);
+                        
+                        // Also lock the session key for future use
+                        if (elements.lockSessionKeyCheckbox) {
+                            elements.lockSessionKeyCheckbox.checked = true;
+                        }
+                        
+                        if (elements.passwordInputContainer) {
+                            elements.passwordInputContainer.classList.add('locked');
+                        }
+                        
                         if (addSystemMessage) {
                             addSystemMessage(`Using decryption password as session key for future sharing.`);
                         }
@@ -1097,8 +1119,8 @@ For more information about the technologies used in hacka.re:
             localStorage.removeItem(StorageService.STORAGE_KEYS.SUBTITLE);
             
             // Reset the session key if ShareManager is available
-            if (window.ShareManager && window.ShareManager.setSessionKey) {
-                window.ShareManager.setSessionKey(null);
+            if (window.aiHackare && window.aiHackare.shareManager) {
+                window.aiHackare.shareManager.setSessionKey(null);
             }
             
             // Update the title and subtitle in the UI

@@ -137,7 +137,7 @@ window.UIManager = (function() {
                 }
             }
             
-            // Check if there's a session key
+            // Always check if there's a session key
             if (sessionKey) {
                 // Set the session key value
                 if (elements.sharePassword) {
