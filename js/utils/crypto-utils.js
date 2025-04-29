@@ -9,6 +9,8 @@ window.CryptoUtils = (function() {
     const NONCE_LENGTH = nacl.box.nonceLength;
     const KEY_LENGTH = 32; // seed and secretKey length
     const KEY_ITERATIONS = 10000; // Number of iterations for key derivation
+    const NAMESPACE_PREFIX = 'aihackare_namespace_';
+    const MASTER_KEY_PREFIX = 'aihackare_master_key_';
     
     /**
      * Generate a SHA-256 hash of a string
@@ -29,15 +31,80 @@ window.CryptoUtils = (function() {
     }
     
     /**
-     * Generate a namespace prefix from title and subtitle
+     * Generate a random alphanumeric string of specified length
+     * @param {number} length - The length of the string to generate
+     * @returns {string} Random alphanumeric string
+     */
+    function generateRandomAlphaNum(length) {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let result = '';
+        const randomValues = nacl.randomBytes(length);
+        
+        for (let i = 0; i < length; i++) {
+            // Use modulo to ensure we get a valid index for the chars string
+            const randomIndex = randomValues[i] % chars.length;
+            result += chars.charAt(randomIndex);
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Generate a namespace hash from title and subtitle
      * @param {string} title - The title
      * @param {string} subtitle - The subtitle
-     * @returns {string} First 8 characters of SHA-256 hash
+     * @returns {string} SHA-256 hash of combined title and subtitle
      */
-    function generateNamespace(title, subtitle) {
+    function generateNamespaceHash(title, subtitle) {
         const combined = `${title}${subtitle}`;
-        const hash = sha256(combined);
-        return hash.substring(0, 8);
+        return sha256(combined);
+    }
+    
+    /**
+     * Generate a strong master key
+     * @returns {string} A strong random key as hex string
+     */
+    function generateMasterKey() {
+        // Generate a strong random key (32 bytes = 256 bits)
+        const keyBytes = nacl.randomBytes(KEY_LENGTH);
+        
+        // Convert to hex string
+        return Array.from(keyBytes)
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
+    }
+    
+    /**
+     * Create a new namespace entry with encrypted hash
+     * @param {string} title - The title
+     * @param {string} subtitle - The subtitle
+     * @returns {Object} Object containing namespaceId, namespaceHash, and masterKey
+     */
+    function createNamespaceEntry(title, subtitle) {
+        // Generate the hash from title and subtitle
+        const namespaceHash = generateNamespaceHash(title, subtitle);
+        
+        // Generate a random 8-character alphanumeric string for the namespace ID
+        const randomId = generateRandomAlphaNum(8);
+        const namespaceId = NAMESPACE_PREFIX + randomId;
+        
+        // Generate a strong master key for encryption
+        const masterKey = generateMasterKey();
+        
+        return {
+            namespaceId: namespaceId,
+            namespaceHash: namespaceHash,
+            masterKey: masterKey
+        };
+    }
+    
+    /**
+     * Get the master key storage key for a namespace ID
+     * @param {string} namespaceId - The namespace ID
+     * @returns {string} The master key storage key
+     */
+    function getMasterKeyStorageKey(namespaceId) {
+        return MASTER_KEY_PREFIX + namespaceId.substring(NAMESPACE_PREFIX.length);
     }
     
     /**
@@ -174,6 +241,12 @@ window.CryptoUtils = (function() {
         encryptData: encryptData,
         decryptData: decryptData,
         sha256: sha256,
-        generateNamespace: generateNamespace
+        generateRandomAlphaNum: generateRandomAlphaNum,
+        generateNamespaceHash: generateNamespaceHash,
+        generateMasterKey: generateMasterKey,
+        createNamespaceEntry: createNamespaceEntry,
+        getMasterKeyStorageKey: getMasterKeyStorageKey,
+        NAMESPACE_PREFIX: NAMESPACE_PREFIX,
+        MASTER_KEY_PREFIX: MASTER_KEY_PREFIX
     };
 })();
