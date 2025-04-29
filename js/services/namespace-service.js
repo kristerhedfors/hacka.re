@@ -369,9 +369,9 @@ window.NamespaceService = (function() {
             };
         }
         
-        // Get title and subtitle directly from localStorage to avoid circular dependency
-        const title = localStorage.getItem(BASE_STORAGE_KEYS.TITLE) || "hacka.re";
-        const subtitle = localStorage.getItem(BASE_STORAGE_KEYS.SUBTITLE) || "För hackare av hackare";
+        // Get title and subtitle directly from sessionStorage to avoid circular dependency
+        const title = sessionStorage.getItem(BASE_STORAGE_KEYS.TITLE) || "hacka.re";
+        const subtitle = sessionStorage.getItem(BASE_STORAGE_KEYS.SUBTITLE) || "För hackare av hackare";
         
         console.log('[CRYPTO DEBUG] Looking up namespace for:', {
             title: title,
