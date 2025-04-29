@@ -4,26 +4,6 @@
  */
 
 window.EncryptionService = (function() {
-    // Encryption-related constants
-    const SALT_KEY = 'hackare_salt_encryption';
-    const ENCRYPTION_VERSION_KEY = 'hackare_version_encryption';
-    
-    /**
-     * Generate or retrieve salt for encryption
-     * @returns {string} Base64-encoded salt
-     */
-    function getOrCreateSalt() {
-        let salt = localStorage.getItem(SALT_KEY);
-        if (!salt) {
-            // Generate new salt using TweetNaCl
-            const saltBytes = nacl.randomBytes(16);
-            salt = nacl.util.encodeBase64(saltBytes);
-            localStorage.setItem(SALT_KEY, salt);
-            // Set initial encryption version
-            localStorage.setItem(ENCRYPTION_VERSION_KEY, '1');
-        }
-        return salt;
-    }
     
     /**
      * Encrypt data with the given passphrase
@@ -55,9 +35,6 @@ window.EncryptionService = (function() {
                     }
                 }
                 errorInfo.passphraseLength = passphrase ? passphrase.length : 0;
-                
-                const salt = getOrCreateSalt();
-                errorInfo.salt = salt ? salt.substring(0, 5) + '...' : 'undefined';
             } catch (e) {
                 errorInfo.metadataError = e.message;
             }
@@ -92,11 +69,6 @@ window.EncryptionService = (function() {
                         errorInfo.passphraseFirstChar = passphrase.charAt(0);
                         errorInfo.passphraseLastChar = passphrase.charAt(passphrase.length - 1);
                     }
-                    
-                    const salt = getOrCreateSalt();
-                    errorInfo.salt = salt ? salt.substring(0, 5) + '...' : 'undefined';
-                    
-                    errorInfo.encryptionVersion = localStorage.getItem(ENCRYPTION_VERSION_KEY) || 'unknown';
                 } catch (e) {
                     errorInfo.metadataError = e.message;
                 }
@@ -116,11 +88,6 @@ window.EncryptionService = (function() {
             try {
                 errorInfo.encryptedDataLength = encryptedData ? encryptedData.length : 0;
                 errorInfo.passphraseLength = passphrase ? passphrase.length : 0;
-                
-                const salt = getOrCreateSalt();
-                errorInfo.salt = salt ? salt.substring(0, 5) + '...' : 'undefined';
-                
-                errorInfo.encryptionVersion = localStorage.getItem(ENCRYPTION_VERSION_KEY) || 'unknown';
             } catch (e) {
                 errorInfo.metadataError = e.message;
             }
@@ -134,15 +101,11 @@ window.EncryptionService = (function() {
      * Initialize encryption system
      */
     function initEncryption() {
-        // Just ensure salt is created
-        getOrCreateSalt();
+        // No initialization needed
     }
     
     // Public API
     return {
-        SALT_KEY: SALT_KEY,
-        ENCRYPTION_VERSION_KEY: ENCRYPTION_VERSION_KEY,
-        getOrCreateSalt: getOrCreateSalt,
         encrypt: encrypt,
         decrypt: decrypt,
         initEncryption: initEncryption

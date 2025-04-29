@@ -20,9 +20,7 @@ window.NamespaceService = (function() {
     // Special keys that don't get namespaced (to avoid circular dependency)
     const NON_NAMESPACED_KEYS = [
         BASE_STORAGE_KEYS.TITLE,
-        BASE_STORAGE_KEYS.SUBTITLE,
-        EncryptionService.SALT_KEY,
-        EncryptionService.ENCRYPTION_VERSION_KEY
+        BASE_STORAGE_KEYS.SUBTITLE
     ];
     
     // Store the previous namespace when it changes
