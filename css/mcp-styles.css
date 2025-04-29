@@ -1,0 +1,102 @@
+/* 
+ * MCP Configuration Styles for hacka.re
+ */
+
+/* MCP Servers List */
+.mcp-servers-list {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: var(--border-radius);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.mcp-server-item {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.mcp-server-item:last-child {
+    border-bottom: none;
+}
+
+.mcp-server-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.mcp-server-name {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 0.25rem;
+}
+
+.mcp-server-description {
+    font-size: 0.9rem;
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.mcp-server-tools {
+    display: flex;
+    align-items: center;
+}
+
+.mcp-tools-count {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 1rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+/* MCP Server Details */
+.mcp-server-details {
+    margin-top: 1rem;
+    display: none;
+}
+
+.mcp-server-details.active {
+    display: block;
+}
+
+.mcp-tools-list {
+    margin-top: 0.5rem;
+}
+
+.mcp-tool-item {
+    padding: 0.75rem;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: var(--border-radius);
+    margin-bottom: 0.5rem;
+}
+
+.mcp-tool-name {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.mcp-tool-description {
+    font-size: 0.9rem;
+    color: rgba(0, 0, 0, 0.6);
+    margin-bottom: 0.5rem;
+}
+
+.mcp-tool-params {
+    font-size: 0.85rem;
+    background-color: rgba(0, 0, 0, 0.05);
+    padding: 0.5rem;
+    border-radius: 4px;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+/* MCP Button in Header */
+#mcp-btn img {
+    transition: transform 0.3s ease;
+}
+
+#mcp-btn:hover img {
+    transform: scale(1.1);
+}

@@ -68,6 +68,13 @@ window.DOMElements = (function() {
             clearAllSettings: document.getElementById('clear-all-settings'),
             clearChat: document.getElementById('clear-chat'),
             
+            // MCP modal elements
+            mcpBtn: document.getElementById('mcp-btn'),
+            mcpModal: document.getElementById('mcp-modal'),
+            mcpServersList: document.getElementById('mcp-servers-list'),
+            mcpEnableToolCalling: document.getElementById('mcp-enable-tool-calling'),
+            closeMcpModal: document.getElementById('close-mcp-modal'),
+            
             // Model info elements
             modelInfoBtn: document.getElementById('model-info-btn'),
             modelNameElement: document.querySelector('.model-name'),

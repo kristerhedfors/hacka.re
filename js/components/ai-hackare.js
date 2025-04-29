@@ -18,6 +18,7 @@ window.AIHackareComponent = (function() {
         this.settingsManager = SettingsManager.createSettingsManager(this.elements);
         this.shareManager = ShareManager.createShareManager(this.elements);
         this.apiToolsManager = ApiToolsManager.createApiToolsManager(this.elements);
+        this.mcpManager = McpManager.createMcpManager(this.elements);
         
         // Make chatManager accessible globally for the close GPT button
         window.aiHackare = this;
@@ -41,6 +42,7 @@ window.AIHackareComponent = (function() {
         
         this.chatManager.init();
         this.apiToolsManager.init();
+        this.mcpManager.init(this.chatManager.addSystemMessage.bind(this.chatManager));
         
         // Add tool calling setting to settings form with system message callback
         this.apiToolsManager.addToolCallingSetting(
@@ -82,6 +84,20 @@ window.AIHackareComponent = (function() {
         this.elements.settingsBtn.addEventListener('click', () => {
             this.showSettingsModal();
         });
+        
+        // MCP button click
+        if (this.elements.mcpBtn) {
+            this.elements.mcpBtn.addEventListener('click', () => {
+                this.mcpManager.showMcpModal();
+            });
+        }
+        
+        // Close MCP modal button click
+        if (this.elements.closeMcpModal) {
+            this.elements.closeMcpModal.addEventListener('click', () => {
+                this.mcpManager.hideMcpModal();
+            });
+        }
         
         // Model info button click
         if (this.elements.modelInfoBtn) {
@@ -263,6 +279,9 @@ window.AIHackareComponent = (function() {
                     this.settingsManager.getSystemPrompt()
                 );
             }
+            if (e.target === this.elements.mcpModal) {
+                this.mcpManager.hideMcpModal();
+            }
         });
         
         // Handle keyboard shortcuts
@@ -276,6 +295,7 @@ window.AIHackareComponent = (function() {
                     this.settingsManager.getCurrentModel(),
                     this.settingsManager.getSystemPrompt()
                 );
+                this.mcpManager.hideMcpModal();
                 this.hideModelSelectionMenu();
             }
             

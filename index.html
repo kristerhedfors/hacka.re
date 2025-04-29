@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/themes.css">
     <link rel="stylesheet" href="css/copy-code.css">
+    <link rel="stylesheet" href="css/mcp-styles.css">
     <!-- Font Awesome for icons (local) -->
     <link rel="stylesheet" href="lib/font-awesome/all.min.css">
     <!-- Markdown parser (local) -->
@@ -76,6 +77,9 @@
                 </div>
             </div>
             <div class="settings">
+                <button id="mcp-btn" class="icon-btn" title="MCP Configuration">
+                    <img src="images/mcp-icon.png" alt="MCP" style="width: 19px; height: 19px; background-color: white; border-radius: 4px;">
+                </button>
                 <button id="share-btn" class="icon-btn" title="Share">
                     <i class="fas fa-share-alt"></i>
                 </button>
@@ -220,6 +224,57 @@
             </div>
         </div>
         
+        <div id="mcp-modal" class="modal">
+            <div class="modal-content">
+                <div class="settings-header">
+                    <h2>MCP Configuration</h2>
+                    <span class="info-icon" id="mcp-info-icon">
+                        <i class="fas fa-info-circle"></i>
+                        <div class="tooltip">
+                            <div class="tooltip-content">
+                                <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 15px; margin-bottom: 20px; border-radius: 8px;">
+                                    <p>The Model Context Protocol (MCP) enables communication between AI systems and servers that provide additional tools and resources.</p>
+                                </div>
+                                <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 15px; margin-bottom: 0; border-radius: 8px;">
+                                    <p>For more information about MCP, check out the <a href="about/development.html">Development</a> documentation.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </span>
+                </div>
+                <div id="mcp-content">
+                    <div class="form-group">
+                        <label>Available MCP Servers</label>
+                        <div id="mcp-servers-list" class="mcp-servers-list">
+                            <div class="mcp-server-item">
+                                <div class="mcp-server-info">
+                                    <span class="mcp-server-name">huggingface</span>
+                                    <span class="mcp-server-description">Hugging Face MCP server providing access to Hugging Face models and APIs</span>
+                                </div>
+                                <div class="mcp-server-tools">
+                                    <span class="mcp-tools-count">4 tools</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Tool Calling</label>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="mcp-enable-tool-calling">
+                            <label for="mcp-enable-tool-calling">Enable tool calling</label>
+                            <span class="info-icon">
+                                <i class="fas fa-info-circle"></i>
+                                <span class="tooltip">Enables the API to call tools. Required for MCP functionality.</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn secondary-btn" id="close-mcp-modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <div id="settings-modal" class="modal">
             <div class="modal-content">
                 <div class="settings-header">
@@ -341,6 +396,7 @@
     <script src="js/components/settings-manager.js"></script>
     <script src="js/components/share-manager.js"></script>
     <script src="js/components/api-tools-manager.js"></script>
+    <script src="js/components/mcp-manager.js"></script>
     <script src="js/components/ai-hackare.js"></script>
     <!-- MCP client and server -->
     <script src="js/mcp-client.js"></script>
