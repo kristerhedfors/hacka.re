@@ -9,8 +9,8 @@ window.CryptoUtils = (function() {
     const NONCE_LENGTH = nacl.box.nonceLength;
     const KEY_LENGTH = 32; // seed and secretKey length
     const KEY_ITERATIONS = 10000; // Number of iterations for key derivation
-    const NAMESPACE_PREFIX = 'aihackare_namespace_';
-    const MASTER_KEY_PREFIX = 'aihackare_master_key_';
+    const NAMESPACE_PREFIX = 'hackare_namespace_';
+    const MASTER_KEY_PREFIX = 'hackare_master_key_';
     
     /**
      * Generate a SHA-256 hash of a string
@@ -103,7 +103,7 @@ window.CryptoUtils = (function() {
      * @returns {string} The master key storage key
      */
     function getMasterKeyStorageKey(namespaceId) {
-        return MASTER_KEY_PREFIX + namespaceId;
+        return `hackare_${namespaceId}_master_key`;
     }
     
     /**
