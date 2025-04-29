@@ -7,9 +7,7 @@ window.CoreStorageService = (function() {
     // Keys that should not be encrypted
     const NON_ENCRYPTED_KEYS = [
         NamespaceService.BASE_STORAGE_KEYS.TITLE,
-        NamespaceService.BASE_STORAGE_KEYS.SUBTITLE,
-        EncryptionService.SALT_KEY,
-        EncryptionService.ENCRYPTION_VERSION_KEY
+        NamespaceService.BASE_STORAGE_KEYS.SUBTITLE
     ];
     
     /**
@@ -65,7 +63,7 @@ window.CoreStorageService = (function() {
                 }
                 errorInfo.passphraseLength = getPassphrase() ? getPassphrase().length : 0;
                 errorInfo.namespace = NamespaceService.getNamespace();
-                errorInfo.salt = EncryptionService.getOrCreateSalt().substring(0, 5) + '...';
+                // No salt information needed
             } catch (e) {
                 errorInfo.metadataError = e.message;
             }
@@ -105,11 +103,7 @@ window.CoreStorageService = (function() {
                 
                 errorInfo.namespace = NamespaceService.getNamespace();
                 
-                const salt = EncryptionService.getOrCreateSalt();
-                errorInfo.salt = salt ? salt.substring(0, 5) + '...' : 'undefined';
-                
                 errorInfo.storageItemCount = localStorage.length;
-                errorInfo.encryptionVersion = localStorage.getItem(EncryptionService.ENCRYPTION_VERSION_KEY) || 'unknown';
             } catch (e) {
                 errorInfo.metadataError = e.message;
             }
