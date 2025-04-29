@@ -26,8 +26,8 @@ window.CoreStorageService = (function() {
      * @returns {string} The passphrase
      */
     function getPassphrase() {
-        // Use the namespace as the passphrase
-        return NamespaceService.getNamespace();
+        // Use the master key as the passphrase
+        return NamespaceService.getNamespaceKey();
     }
     
     /**
