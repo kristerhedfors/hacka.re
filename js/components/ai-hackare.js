@@ -18,6 +18,7 @@ window.AIHackareComponent = (function() {
         this.settingsManager = SettingsManager.createSettingsManager(this.elements);
         this.shareManager = ShareManager.createShareManager(this.elements);
         this.apiToolsManager = ApiToolsManager.createApiToolsManager(this.elements);
+        this.promptsManager = PromptsManager.createPromptsManager(this.elements);
         
         // Make chatManager accessible globally for the close GPT button
         window.aiHackare = this;
@@ -41,6 +42,7 @@ window.AIHackareComponent = (function() {
         
         this.chatManager.init();
         this.apiToolsManager.init();
+        this.promptsManager.init();
         
         // Add tool calling setting to settings form with system message callback
         this.apiToolsManager.addToolCallingSetting(
@@ -82,6 +84,13 @@ window.AIHackareComponent = (function() {
         this.elements.settingsBtn.addEventListener('click', () => {
             this.showSettingsModal();
         });
+        
+        // Prompts button click
+        if (this.elements.promptsBtn) {
+            this.elements.promptsBtn.addEventListener('click', () => {
+                this.promptsManager.showPromptsModal();
+            });
+        }
         
         // Model info button click
         if (this.elements.modelInfoBtn) {
@@ -263,6 +272,9 @@ window.AIHackareComponent = (function() {
                     this.settingsManager.getSystemPrompt()
                 );
             }
+            if (e.target === this.elements.promptsModal) {
+                this.promptsManager.hidePromptsModal();
+            }
         });
         
         // Handle keyboard shortcuts
@@ -277,6 +289,7 @@ window.AIHackareComponent = (function() {
                     this.settingsManager.getSystemPrompt()
                 );
                 this.hideModelSelectionMenu();
+                this.promptsManager.hidePromptsModal();
             }
             
             // Ctrl/Cmd + Enter to send message
