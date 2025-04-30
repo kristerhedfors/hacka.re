@@ -52,10 +52,10 @@ describe('LinkSharingService', function(it, beforeEach, afterEach) {
         assert(typeof link === 'string', 'Link should be a string');
         
         // Verify the link starts with the correct base URL
-        assert(link.startsWith('https://hacka.re/index.html#shared='), 'Link should have the correct format');
+        assert(link.startsWith('https://hacka.re/index.html#gpt='), 'Link should have the correct format');
         
         // Extract the encrypted data
-        const encryptedData = link.split('#shared=')[1];
+        const encryptedData = link.split('#gpt=')[1];
         
         // Verify the encrypted data is not empty
         assert(encryptedData && encryptedData.length > 0, 'Encrypted data should not be empty');
@@ -73,10 +73,10 @@ describe('LinkSharingService', function(it, beforeEach, afterEach) {
         assert(typeof link === 'string', 'Link should be a string');
         
         // Verify the link starts with the correct base URL
-        assert(link.startsWith('https://hacka.re/index.html#shared='), 'Link should have the correct format');
+        assert(link.startsWith('https://hacka.re/index.html#gpt='), 'Link should have the correct format');
         
         // Extract the encrypted data
-        const encryptedData = link.split('#shared=')[1];
+        const encryptedData = link.split('#gpt=')[1];
         
         // Verify the encrypted data is not empty
         assert(encryptedData && encryptedData.length > 0, 'Encrypted data should not be empty');
@@ -96,16 +96,20 @@ describe('LinkSharingService', function(it, beforeEach, afterEach) {
         mockLocation.hash = '';
         assert(!LinkSharingService.hasSharedApiKey(), 'Should return false when no shared API key is present');
         
-        // Test with a shared API key
+        // Test with a shared API key (old format)
         mockLocation.hash = '#shared=abc123';
-        assert(LinkSharingService.hasSharedApiKey(), 'Should return true when a shared API key is present');
+        assert(LinkSharingService.hasSharedApiKey(), 'Should return true when a shared API key is present (old format)');
+        
+        // Test with a shared API key (new format)
+        mockLocation.hash = '#gpt=abc123';
+        assert(LinkSharingService.hasSharedApiKey(), 'Should return true when a shared API key is present (new format)');
         
         // Test with other hash fragments
         mockLocation.hash = '#other=abc123';
         assert(!LinkSharingService.hasSharedApiKey(), 'Should return false when hash does not contain shared API key');
     });
     
-    it('should extract and decrypt a shared API key from the URL', function(assert, assertEqual, assertDeepEqual) {
+    it('should extract and decrypt a shared API key from the URL (new format)', function(assert, assertEqual, assertDeepEqual) {
         // Create mock location with base URL
         const mockLocation = {
             href: 'https://hacka.re/index.html',
@@ -119,7 +123,7 @@ describe('LinkSharingService', function(it, beforeEach, afterEach) {
         const link = LinkSharingService.createShareableLink(testApiKey, testPassword);
         
         // Set the hash fragment
-        mockLocation.hash = '#shared=' + link.split('#shared=')[1];
+        mockLocation.hash = '#gpt=' + link.split('#gpt=')[1];
         
         // Extract the shared API key
         const extractedData = LinkSharingService.extractSharedApiKey(testPassword);
@@ -133,7 +137,7 @@ describe('LinkSharingService', function(it, beforeEach, afterEach) {
         const linkWithPrompt = LinkSharingService.createInsecureShareableLink(testApiKey, testSystemPrompt, testPassword);
         
         // Set the hash fragment
-        mockLocation.hash = '#shared=' + linkWithPrompt.split('#shared=')[1];
+        mockLocation.hash = '#gpt=' + linkWithPrompt.split('#gpt=')[1];
         
         // Extract the shared API key and system prompt
         const extractedDataWithPrompt = LinkSharingService.extractSharedApiKey(testPassword);
@@ -142,6 +146,29 @@ describe('LinkSharingService', function(it, beforeEach, afterEach) {
         assert(extractedDataWithPrompt !== null, 'Extracted data should not be null');
         assertEqual(extractedDataWithPrompt.apiKey, testApiKey, 'Extracted API key should match the original');
         assertEqual(extractedDataWithPrompt.systemPrompt, testSystemPrompt, 'Extracted system prompt should match the original');
+    });
+    
+    it('should extract and decrypt a shared API key from the URL (old format)', function(assert, assertEqual) {
+        // Create mock location with base URL
+        const mockLocation = {
+            href: 'https://hacka.re/index.html',
+            hash: '',
+            pathname: '/index.html',
+            search: ''
+        };
+        LinkSharingService._setTestingObjects(mockLocation);
+        
+        // Manually create an old format URL (with #shared=)
+        const payload = { apiKey: testApiKey };
+        const encryptedData = CryptoUtils.encryptData(payload, testPassword);
+        mockLocation.hash = '#shared=' + encryptedData;
+        
+        // Extract the shared API key
+        const extractedData = LinkSharingService.extractSharedApiKey(testPassword);
+        
+        // Verify the extracted data
+        assert(extractedData !== null, 'Extracted data should not be null');
+        assertEqual(extractedData.apiKey, testApiKey, 'Extracted API key should match the original');
     });
     
     it('should return null when extracting with wrong password', function(assert) {
@@ -158,7 +185,7 @@ describe('LinkSharingService', function(it, beforeEach, afterEach) {
         const link = LinkSharingService.createShareableLink(testApiKey, testPassword);
         
         // Set the hash fragment
-        mockLocation.hash = '#shared=' + link.split('#shared=')[1];
+        mockLocation.hash = '#gpt=' + link.split('#gpt=')[1];
         
         // Try to extract with wrong password
         const extractedData = LinkSharingService.extractSharedApiKey('wrong-password');
@@ -181,9 +208,13 @@ describe('LinkSharingService', function(it, beforeEach, afterEach) {
         mockLocation.hash = '';
         assert(LinkSharingService.extractSharedApiKey(testPassword) === null, 'Should return null for empty hash');
         
-        // Test with invalid hash format
+        // Test with invalid hash format (old format)
         mockLocation.hash = '#shared=';
-        assert(LinkSharingService.extractSharedApiKey(testPassword) === null, 'Should return null for invalid hash format');
+        assert(LinkSharingService.extractSharedApiKey(testPassword) === null, 'Should return null for invalid hash format (old format)');
+        
+        // Test with invalid hash format (new format)
+        mockLocation.hash = '#gpt=';
+        assert(LinkSharingService.extractSharedApiKey(testPassword) === null, 'Should return null for invalid hash format (new format)');
         
         // Test with non-shared hash
         mockLocation.hash = '#other=abc123';

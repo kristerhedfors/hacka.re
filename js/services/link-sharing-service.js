@@ -40,7 +40,7 @@ window.LinkSharingService = (function() {
         
         // Create URL with hash fragment
         const baseUrl = _location.href.split('#')[0];
-        return `${baseUrl}#shared=${encryptedData}`;
+        return `${baseUrl}#gpt=${encryptedData}`;
     }
     
     /**
@@ -62,7 +62,7 @@ window.LinkSharingService = (function() {
         
         // Create URL with hash fragment
         const baseUrl = _location.href.split('#')[0];
-        return `${baseUrl}#shared=${encryptedData}`;
+        return `${baseUrl}#gpt=${encryptedData}`;
     }
     
     /**
@@ -79,7 +79,7 @@ window.LinkSharingService = (function() {
         
         // Create URL with hash fragment
         const baseUrl = _location.href.split('#')[0];
-        return `${baseUrl}#shared=${encryptedData}`;
+        return `${baseUrl}#gpt=${encryptedData}`;
     }
     
     /**
@@ -88,7 +88,7 @@ window.LinkSharingService = (function() {
      */
     function hasSharedApiKey() {
         const hash = _location.hash;
-        return hash.includes('#shared=');
+        return hash.includes('#shared=') || hash.includes('#gpt=');
     }
     
     /**
@@ -102,9 +102,14 @@ window.LinkSharingService = (function() {
             const hash = _location.hash;
             
             // Check if it contains a shared data
-            if (hash.includes('#shared=')) {
+            if (hash.includes('#shared=') || hash.includes('#gpt=')) {
                 // Extract the encrypted data
-                const encryptedData = hash.split('#shared=')[1];
+                let encryptedData;
+                if (hash.includes('#gpt=')) {
+                    encryptedData = hash.split('#gpt=')[1];
+                } else {
+                    encryptedData = hash.split('#shared=')[1];
+                }
                 
                 if (!encryptedData) {
                     return null;
