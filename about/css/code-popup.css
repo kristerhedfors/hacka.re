@@ -1,0 +1,146 @@
+/* 
+ * Code Popup Styles for hacka.re Architecture Documentation
+ */
+
+/* Code module reference styling */
+.code-module-reference {
+    color: var(--primary-color);
+    cursor: pointer;
+    border-bottom: 1px dashed var(--primary-color);
+    padding-bottom: 1px;
+    transition: color 0.2s ease;
+}
+
+.code-module-reference:hover {
+    color: var(--primary-dark);
+    text-decoration: none;
+}
+
+/* Code popup container */
+.code-popup {
+    background-color: var(--light-color);
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    max-width: 90vw;
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+}
+
+/* Code popup header */
+.code-popup-header {
+    background-color: var(--primary-color);
+    color: var(--light-text);
+    padding: 10px 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top-left-radius: var(--border-radius);
+    border-top-right-radius: var(--border-radius);
+}
+
+.code-popup-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    flex: 1;
+}
+
+.code-popup-filepath {
+    margin: 0 15px;
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.code-popup-filepath a {
+    color: var(--light-text);
+    text-decoration: underline;
+    transition: opacity 0.2s ease;
+}
+
+.code-popup-filepath a:hover {
+    opacity: 0.8;
+}
+
+.code-popup-close {
+    background: none;
+    border: none;
+    color: var(--light-text);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 5px;
+    transition: opacity 0.2s ease;
+}
+
+.code-popup-close:hover {
+    opacity: 0.8;
+}
+
+/* Code popup content */
+.code-popup-content {
+    padding: 0;
+    overflow-y: auto;
+    max-height: calc(80vh - 50px);
+}
+
+/* Style for code blocks inside popup */
+.code-popup-content pre {
+    margin: 0;
+    border-radius: 0;
+    border-bottom-left-radius: var(--border-radius);
+    border-bottom-right-radius: var(--border-radius);
+    max-height: none;
+}
+
+.code-popup-content code {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    padding: 15px;
+    display: block;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .code-popup {
+        max-width: 95vw;
+        max-height: 70vh;
+    }
+    
+    .code-popup-content {
+        max-height: calc(70vh - 50px);
+    }
+    
+    .code-popup-header {
+        flex-wrap: wrap;
+    }
+    
+    .code-popup-filepath {
+        width: 100%;
+        margin: 5px 0 0 0;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .code-popup {
+        max-width: 98vw;
+        max-height: 60vh;
+    }
+    
+    .code-popup-content {
+        max-height: calc(60vh - 50px);
+    }
+    
+    .code-popup-header h3 {
+        font-size: 1rem;
+    }
+    
+    .code-popup-content code {
+        font-size: 0.8rem;
+        padding: 10px;
+    }
+}

@@ -7,11 +7,14 @@
     <meta name="description" content="Technical architecture of hacka.re, a streamlined chat interface for OpenAI-compatible AI models">
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="css/themes.css">
+    <link rel="stylesheet" href="css/code-popup.css">
     <!-- Font Awesome for icons (local) -->
     <link rel="stylesheet" href="../lib/font-awesome/all.min.css">
     <!-- Markdown parser (local) -->
     <script src="../lib/marked/marked.min.js"></script>
     <script src="../lib/dompurify/purify.min.js"></script>
+    <!-- Code popup script -->
+    <script src="js/code-popup.js"></script>
     <style>
         .feature-section {
             margin: 40px 0;
@@ -243,19 +246,10 @@
                     All code is interpreted and executed entirely in your browser. This static approach eliminates the need for a backend server aside from the necessary OpenAI-compatible API endpoint for GenAI model access.
                 </p>
                 
-                <div style="margin: 20px 0;">
-                    <h4>Tool Calling Implementation Demo</h4>
-                    <p>Below is a demonstration of the tool calling implementation in action (2x speed):</p>
-                    <video width="100%" controls preload="metadata" playsinline>
-                        <source src="../videos/tool-calling-demo-optimized.webm" type="video/webm">
-                        Your browser does not support the video tag.
-                    </video>
-                </div>
-                
                 <div class="vibe-coded-notice" style="background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)); border-radius: 12px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.18); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1); padding: 20px; margin: 30px 0; position: relative; overflow: hidden;">
                     <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--primary-color), var(--accent-color), var(--primary-color)); background-size: 200% 100%; animation: gradient-shift 3s ease infinite;"></div>
                     <h3 style="margin-top: 5px; font-weight: 600; color: var(--primary-color);"><i class="fas fa-magic"></i> hacka.re is Vibe-Coded</h3>
-                    <p style="margin: 10px 0 5px; line-height: 1.6;">99%+ of hacka.re's code was created through LLM-assisted development using Claude 3.7 Sonnet. <a href="development.html">Learn more about how hacka.re is developed and how it can be extended</a>.</p>
+                    <p style="margin: 10px 0 5px; line-height: 1.6;">99%+ of hacka.re's code was created through LLM-assisted development using Claude 3.7 Sonnet. <a href="development.html">Check out the Development page</a> to see a screen recording of the vibe-coding process in action.</p>
                 </div>
                 
                 <style>
