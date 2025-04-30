@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en" class="theme-modern">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>hacka.re - Research Report</title>
+    <meta name="description" content="Research report evaluating hacka.re's 'Serverless GPTs' offering">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="css/themes.css">
+    <!-- Font Awesome for icons (local) -->
+    <link rel="stylesheet" href="../lib/font-awesome/all.min.css">
+    <!-- Markdown parser (local) -->
+    <script src="../lib/marked/marked.min.js"></script>
+    <script src="../lib/dompurify/purify.min.js"></script>
+    <style>
+        .feature-section {
+            margin: 40px 0;
+        }
+
+        .feature-section h3 {
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+
+        .report-header {
+            background-color: var(--ai-msg-bg);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: var(--box-shadow);
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .report-section {
+            margin: 30px 0;
+        }
+
+        .report-section h3 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .report-section h4 {
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.9em;
+            overflow-x: auto;
+            display: block;
+        }
+
+        .report-table th, .report-table td {
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+        }
+
+        .report-table th {
+            background-color: var(--primary-color);
+            color: white;
+            text-align: left;
+        }
+
+        .report-table tr:nth-child(even) {
+            background-color: var(--ai-msg-bg);
+        }
+
+        .page-nav {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .page-nav a {
+            padding: 8px 15px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+
+        .page-nav a:hover {
+            background-color: var(--primary-dark);
+            text-decoration: none;
+        }
+
+        /* Mobile-specific styles */
+        @media (max-width: 480px) {
+            main {
+                padding: 1rem !important;
+            }
+
+            .container {
+                padding: 0 10px;
+            }
+
+            /* Ensure proper text wrapping on small screens */
+            p, li, a, h1, h2, h3, h4, h5, h6 {
+                word-break: break-word;
+                max-width: 100%;
+            }
+
+            /* Adjust font sizes for better readability on small screens */
+            p, li {
+                font-size: 0.95rem;
+            }
+
+            h2 {
+                font-size: 1.4rem;
+            }
+
+            h3 {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="beta-tag">BETA</div>
+        <header>
+            <div class="logo">
+                <h1><a href="../index.html" style="text-decoration: none; color: inherit;">hacka.re</a></h1>
+                <p class="tagline">För hackare av hackare.</p>
+            </div>
+            <div class="settings">
+                <a href="../index.html" class="btn secondary-btn" style="margin-right: 10px; color: #ffffff; background-color: rgba(0, 0, 0, 0.2); border: 1px solid #ffffff;">Back to Chat</a>
+            </div>
+        </header>
+
+        <main style="overflow-y: auto; overflow-x: auto; padding: 2rem;">
+            <div class="container" style="max-width: 1000px; margin: 0 auto; word-wrap: break-word; overflow-wrap: break-word; width: 100%;">
+            <h2>Research Report</h2>
+
+            <div class="page-nav">
+                <a href="index.html">About</a>
+                <a href="architecture.html">Architecture</a>
+                <a href="development.html">Development</a>
+                <a href="use-cases.html">Use Cases</a>
+                <a href="research-report.html">Research Report</a>
+            </div>
+            <div class="report-header">
+                <p><em>The following is an OpenAI DeepResearch report, provided as a 3rd-party perspective, evaluating hacka.re and its claimed serverless nature.</em></p>
+            </div>
+
+            <div class="report-section">
+                <h3>Evaluation of hacka.re's "Serverless GPTs" Offering</h3>
+                
+                <h4>Introduction</h4>
+                <p>
+                    hacka.re is a web-based AI chat client that brands itself as a "serverless GPT" platform. It provides a front-end interface for GPT models, focusing on privacy and ease of sharing. Unlike typical AI deployment platforms, hacka.re does not host or run the GPT model on its own servers – instead, it relies entirely on client-side execution and external API calls to Large Language Model (LLM) providers (e.g. OpenAI). This report evaluates hacka.re against key criteria: technical innovation, adherence to "serverless" principles, unique features, and comparison with other GPT deployment platforms.
+                </p>
+            </div>
+
+            <div class="report-section">
+                <h3>Technical Innovation and Novelty</h3>
+                
+                <h4>Client-Side Execution</h4>
+                <p>
+                    The core novelty of hacka.re is its purely client-side architecture. All application logic runs in the user's web browser using static HTML/JS, with no custom backend servers. hacka.re essentially acts as a lightweight chat UI that connects directly to an LLM API endpoint for inference. This means the entire app can be downloaded as a single HTML file and run offline or self-hosted without modification. By eliminating a middle-tier server, hacka.re's approach contrasts with typical AI chat applications that include a hosted backend to mediate API calls or manage state.
+                </p>
+                
+                <h4>Privacy Focus</h4>
+                <p>
+                    Because of the client-only design, user data (API keys, conversation history) never touches hacka.re's servers – in fact, hacka.re doesn't have any servers beyond static page hosting. All sensitive data stays in local browser storage, and only the LLM API (e.g. OpenAI's cloud) receives the chat prompts for processing. This is a different trust model compared to standard cloud-hosted chatbots. For example, using OpenAI's own ChatGPT or a hosted solution means your prompts and history are stored or visible on those providers' servers. Hacka.re gives users direct control: you bring your own API key and the browser sends requests straight to the model provider, with no intermediate data logging. Many open-source ChatGPT-like UIs (such as Chatbot UI by M. Wrigley) also adopt client-side storage for privacy, but hacka.re takes it further by being usable entirely offline (with a local model backend) and emphasizing encryption for sharing data.
+                </p>
+                
+                <h4>"Serverless GPTs" via Encrypted Sharing</h4>
+                <p>
+                    Perhaps the most novel feature is hacka.re's concept of shareable, self-contained GPT sessions. Users can package up a chat configuration – including the system prompt, conversation history, chosen model, and even API credentials – into an encrypted shareable link. This link, protected by a user-specified password/key, can be sent to a colleague who can open it in their browser to load the exact same "GPT" session state in hacka.re. Crucially, this sharing happens without any server-side database or storage: all the session data is encoded client-side (likely in the URL or a QR code) and decrypted in the recipient's browser. Hacka.re's documentation highlights that these "serverless GPTs" can be shared securely over insecure channels without touching any servers aside from the LLM API used for inference. This is an innovative twist – effectively treating a GPT session as a portable object that can be passed around like a file, rather than something stored on a central server. It enables collaboration or hand-off of a chat session/state in a peer-to-peer manner. This capability is not common in other platforms: most commercial or open-source chat interfaces do not offer one-click encrypted session sharing. For example, OpenAI's ChatGPT interface now allows sharing conversation links, but those are hosted by OpenAI (data lives on their servers), not a fully client-side export. Hacka.re's approach is closer to sending someone an encrypted chat transcript and config that they can run locally.
+                </p>
+                
+                <h4>Minimalistic and Extensible Design</h4>
+                <p>
+                    From a technical standpoint, hacka.re is intentionally lightweight. It uses no front-end framework – just vanilla JavaScript, with a few small libraries for Markdown rendering, encryption, and UI enhancements. This minimalism reduces complexity and may improve performance or security (smaller attack surface). The project's philosophy (it's even "vibe-coded" mostly by an AI co-pilot tool) makes it easy to modify or extend. This is novel in the sense that it demonstrates how far a purely static app can go in implementing features (like streaming API responses, token counters, etc.) that one might assume need backend support. Hacka.re proves that even tool integrations (it has some demonstration of calling tools) can be handled on the client side if the LLM provider supports it. The entire application being open-source (MIT No Attribution) and hackable encourages experimentation.
+                </p>
+                
+                <p>
+                    In summary, hacka.re's innovation lies in combining known ideas – static web apps, client-side storage, API calls – in a focused way for LLM interactions. It's not inventing new ML techniques, but rather a new deployment paradigm for GPT-powered chat: deploy nothing (except a static file) and let the user's browser + existing cloud APIs do the work. This is a novel contrast to industry-standard deployments where some form of server (cloud function, container, etc.) is usually in the loop.
+                </p>
+            </div>
+
+            <div class="report-section">
+                <h3>"Serverless" Architecture Analysis</h3>
+                
+                <p>
+                    Hacka.re markets itself as "serverless", but it's important to clarify this term in context:
+                </p>
+                
+                <p>
+                    In cloud computing norms, "serverless" typically refers to Function-as-a-Service or managed services like AWS Lambda, Azure Functions, or platforms like Vercel, where server management and scaling are abstracted away. Developers just provide code, and the platform automatically provisions resources on-demand, scaling up or down and billing per usage. The key aspects of serverless are: no need to manage server instances, automatic scalability, and fine-grained pay-per-use billing.
+                </p>
+                
+                <h4>Hacka.re's Interpretation</h4>
+                <p>
+                    hacka.re uses "serverless" to mean no application server is needed at all for the chat interface. The hosting of hacka.re is reduced to a static webpage (which can be served from GitHub Pages or even opened from a local file system). In other words, the hacka.re client is serverless in deployment – you don't run a persistent service for it, and you don't even deploy cloud functions for its logic. The only server involved is the LLM API endpoint that provides the GPT model inference. As the docs put it, "aside from the LLM API endpoint(s) involved for inference," no servers are touched. This is a somewhat unconventional use of the term serverless, but it aligns with the idea that users do not have to manage any servers for the chat interface or state sharing; those concerns are handled by the client and the LLM provider.
+                </p>
+                
+                <h4>Server Management</h4>
+                <p>
+                    With hacka.re, server management is effectively nil for the end-user or developer integrating it. You don't provision any backend infrastructure to use hacka.re – the app runs in the browser, and the model serving aspect is offloaded to whichever API you configure (OpenAI, etc.). If you download index.html and open it, it works. In comparison, a traditional deployment on, say, AWS would involve spinning up a server or function to handle requests. Hacka.re eliminates that layer entirely by pushing the interaction to the client side.
+                </p>
+                
+                <h4>Scaling</h4>
+                <p>
+                    In a typical serverless cloud function scenario (AWS Lambda, etc.), scaling is automatic based on incoming requests – if 100 users call your API, the provider might spin up multiple instances to handle the load. In hacka.re's model, scaling is handled by the client and the LLM provider. Each end-user's browser is effectively a separate runtime environment for the hacka.re app. If hacka.re suddenly has 10,000 users, GitHub Pages (or whichever static host) just needs to serve the static files (which is trivial and can be CDN-distributed), and the heavy work – the AI inference – is distributed to each user's chosen API backend (OpenAI would handle 10,000 users' requests on their servers, scaling as they do). There is no central bottleneck or state in hacka.re that needs scaling. This is a strong point of the architecture: stateless horizontal scaling by design. The downside is that each user must have their own API key and possibly their own infrastructure if using a self-hosted model; hacka.re itself doesn't provide a multi-tenant service.
+                </p>
+                
+                <h4>Billing</h4>
+                <p>
+                    Hacka.re itself is free and open-source; there is no billing related to hacka.re usage. However, because it requires an API key for an LLM, the cost model is effectively pay-as-you-go to the chosen LLM provider. This aligns with serverless principles (pay for what you use) but the billing is external – e.g., if using OpenAI's API, the user is billed per token by OpenAI. If using a local backend (like Ollama for local models), then there's no cost per se, aside from running that local service. Hacka.re doesn't introduce any additional billing layer or subscription (unlike some platforms or even ChatGPT Plus subscription). It merely passes your requests to wherever you've pointed it.
+                </p>
+                
+                <p>
+                    In cloud terms, hacka.re abstracts the compute by delegating it: compute happens either in the browser (for UI, token counting, etc.) or on the LLM cloud provider's side for the actual AI reasoning. The compute abstraction is simple: from the user perspective, you ask a question in hacka.re and get an answer, not worrying whether the response came from OpenAI's datacenter, a local server, or another provider – hacka.re treats them all as a generic "OpenAI-compatible" endpoint.
+                </p>
+                
+                <p>
+                    It's worth noting that hacka.re's approach aligns with an emerging pattern of front-end-heavy, server-light applications. By leveraging the end-user's device and third-party APIs, it minimizes developer ops overhead. However, is it "truly serverless" in the cloud computing sense? Yes and no: Hacka.re does not run any persistent servers or allocate cloud functions that the user manages – so from the perspective of hosting the chat interface, it is serverless. But the GPT inference still happens on a server somewhere (OpenAI, etc.), so it's not eliminating servers altogether; rather, it's outsourcing server responsibility to an API provider. In cloud norms, one might call hacka.re a serverless front-end to a cloud API service.
+                </p>
+                
+                <p>
+                    The major cloud "serverless" platforms (Lambda, Azure Functions, etc.) are not used here because hacka.re found a way not to need them at all for its logic – the web browser is the execution environment. One caveat is that hacka.re does not manage multi-user state or heavy processing that typical serverless backends might handle. For example, if you needed to orchestrate a multi-step workflow or integrate with a database, hacka.re's no-backend approach might fall short. But for the specific use case of chatting with an LLM, hacka.re proves that a backend is unnecessary overhead.
+                </p>
+                
+                <p>
+                    In summary, hacka.re qualifies as "serverless" in the sense of zero server-side code and no infrastructure management for the app itself. It diverges from "serverless computing" of the AWS Lambda variety by not even using a Function-as-a-Service – the only compute you pay for is the LLM API usage. This is an extreme interpretation of serverless: everything is either pushed to the client or to third-party API services. It achieves compute abstraction by hiding all server details from the user (the user doesn't see or manage any servers for hacka.re; they only interact with the provider's endpoint which itself is abstracted behind an OpenAI-compatible API). There is no built-in autoscaling required for hacka.re, since each client stands alone. Essentially, hacka.re's scaling and execution model is "each user is their own instance" – much like a desktop application.
+                </p>
+            </div>
+
+            <div class="report-section">
+                <h3>Unique Features and Differentiators</h3>
+                
+                <p>
+                    Hacka.re's offering stands out in several ways when compared to other GPT deployment and hosting platforms:
+                </p>
+                
+                <h4>1. Pure Front-End (No-Code Deployment) vs. Hosted Backends</h4>
+                <p>
+                    Most GPT deployment platforms require deploying code or models on a server or at least writing some integration logic. For example:
+                </p>
+                <p>
+                    <strong>OpenAI's own deployment options:</strong> If you use OpenAI's GPT via their API, you typically write a backend service or script to call the API and serve a frontend. OpenAI also offers products like ChatGPT and ChatGPT Enterprise, which are fully hosted by OpenAI. In those cases, all computation and data storage happen on OpenAI's servers (users have no control over infrastructure or data location). Hacka.re flips this model: the user runs the interface, and only the minimal data necessary (prompts) goes to OpenAI. Unlike OpenAI's hosted ChatGPT, hacka.re does not log your conversations on its side – although your prompts/responses still transit to OpenAI's servers for processing, they are not stored by hacka.re itself. This can alleviate some privacy concerns when using the OpenAI API, since you can opt not to send certain data, or even point hacka.re at an OpenAI-compatible self-hosted model. (Notably, hacka.re lists Ollama – a local LLM runner – as a provider option, meaning you could run a GPT model on your own machine and have hacka.re talk to it on localhost with no internet at all.)
+                </p>
+                <p>
+                    <strong>Modal (Modal.com):</strong> Modal is a serverless cloud platform where developers can deploy code (in Python, etc.) that runs on demand, including the ability to run GPU-intensive tasks for ML. Using Modal to deploy a GPT model might involve writing a function that calls an API or loads a model and then exposing it as an endpoint. Modal manages scaling of those functions and charges per second of execution. In contrast, hacka.re requires zero cloud deployment effort – you don't write any code or container, you simply open the app and use an existing API. Modal's strength is flexibility (you can host custom models or processes), but hacka.re's strength is simplicity: if your goal is just "make GPT available to users," hacka.re achieves that by a static app. Modal would be more powerful for custom pipelines or if you needed to run the model itself on Modal's infrastructure. Hacka.re can't serve a custom model unless you host that model behind an OpenAI-compatible API elsewhere. So, hacka.re is not a direct alternative for deploying a model you trained – rather, it's a way to interact with models deployed by others (OpenAI, etc.).
+                </p>
+                
+                <h4>2. "Serverless" vs. Managed Serverless (Scaling and Compute)</h4>
+                <p>
+                    Platforms like Replicate, Hugging Face Inference Endpoints, and Anyscale provide managed inference servers for AI models – effectively serverless GPU endpoints where you as a user deploy a model and the platform auto-scales it. For example, Replicate offers an extensive library of pre-trained models and lets you deploy custom models behind a private API endpoint; they handle provisioning GPUs on demand and you pay only for usage. These platforms truly embody serverless principles on the model-serving side: you don't see the server, and you pay per second or per invocation of the model. As one Hacker News commenter summarized, "Serverless AI is popular because it's hard and expensive to host your own GPU stack… Providers like HuggingFace or Replicate do the infra for you… you pay a slight premium on usage".
+                </p>
+                <p>
+                    <strong>How hacka.re differs:</strong> Hacka.re does not itself provide any model or GPU hosting – it could actually complement those services. If Replicate or Anyscale offer an OpenAI-compatible REST API for a model, you could plug that URL and API key into hacka.re's settings and use hacka.re as the UI. The key differentiator is that hacka.re focuses on the client-side experience, whereas platforms like Replicate, Hugging Face, Anyscale focus on the server-side deployment. Hacka.re is not mutually exclusive with them; rather, it's orthogonal. For instance, Hugging Face Inference Endpoint users typically call the endpoint from their own application or use HF's hosted widget. With hacka.re, one could take an HF Inference Endpoint (if it mimics OpenAI's API or if hacka.re is adapted) and immediately have a shareable chat UI for it.
+                </p>
+                <p>
+                    In terms of being "truly serverless", hacka.re achieves a different slice of it: serverless UI, whereas Replicate/HF/Anyscale achieve serverless backend for models. If we compare directly:
+                </p>
+                <ul>
+                    <li><strong>Scaling:</strong> In Replicate/HF, scaling is automatic on the cloud side for serving many requests; hacka.re leverages the scaling of whichever backend is used (e.g., OpenAI's capacity to handle many API calls). Hacka.re itself doesn't need scaling for UI beyond what a static web host or browser can handle.</li>
+                    <li><strong>Abstraction:</strong> Both hacka.re and the likes of Replicate abstract away infrastructure. Hacka.re abstracts away the need for any application server, while Replicate abstracts away the need to manage a GPU server.</li>
+                    <li><strong>Ease of Use:</strong> Hacka.re is extremely easy for end-users with an API key – just open and go. Replicate/HF require some setup: selecting a model, perhaps writing minimal glue code or at least using a provided API client.</li>
+                </ul>
+                
+                <h4>3. Multi-Provider Flexibility</h4>
+                <p>
+                    Hacka.re is designed to be provider-agnostic as long as the provider speaks OpenAI's API format. Right in the UI it supports switching between OpenAI, Groq Cloud, Ollama (local), or a custom base URL. This is a differentiator from some hosted solutions which might be tied to one provider or model:
+                </p>
+                <ul>
+                    <li>OpenAI's platforms obviously only use OpenAI models.</li>
+                    <li>Hugging Face Endpoints typically target one specific model at a time (though HF's Inference API supports multiple models via different URLs, it's not a single UI for all).</li>
+                    <li>Anyscale Endpoints (now a product from the Ray team) provide an OpenAI-compatible API for open-source models – hacka.re could leverage that with a simple config change, instantly giving a UI for those models.</li>
+                </ul>
+                <p>
+                    This flexibility means hacka.re can be a unified chat interface for various backends without code changes. Many other platforms require commitment to their ecosystem (e.g., if you build with Vercel's AI SDK, you'll likely use Vercel's hosting for the integration, and switch logic in code for different providers).
+                </p>
+                <p>
+                    It's worth noting, however, that hacka.re currently assumes the API is OpenAI-like (chat completion API). It may not natively support other paradigms (for example, a REST endpoint that returns a slightly different format would require modifying hacka.re's code). But given it's open source, one could extend it to new protocols. This stands in contrast to closed platforms where you cannot easily adapt the integration beyond what's supported.
+                </p>
+                
+                <h4>4. Data Control and Privacy</h4>
+                <p>
+                    Data residency and privacy are major differentiators for hacka.re:
+                </p>
+                <ul>
+                    <li><strong>Local Storage of Conversations:</strong> Hacka.re stores conversation history in the browser's local storage, ensuring persistence across sessions without a server. If you close and reopen hacka.re, your chats remain (unless cleared). Competing UIs like ChatGPT's official interface store data in the cloud (accessible from any device but also on their servers). Some open-source UIs store data in the browser or on a user's disk as well, but hacka.re making this the only mode ensures no inadvertent cloud sync.</li>
+                    <li><strong>No Telemetry:</strong> The documentation explicitly notes there is no tracking or analytics in hacka.re. Many commercial platforms at least gather usage stats.</li>
+                    <li><strong>API Key Handling:</strong> Hacka.re never sends your API key anywhere except to the configured model provider (in the Authorization header of requests). There's no proxy server that could log it. For enterprise or team scenarios, this avoids sharing sensitive keys with a third-party service. Even the sharing feature is designed to encrypt API keys and prompts so that if you do share a session link, the key isn't exposed in plaintext – the recipient needs the password to decrypt it locally. This is a unique approach; other platforms typically advise "never share your API key". Hacka.re enables sharing but safely (for example, a team could coordinate via a shared password to exchange sessions without risk of the key leaking in transit).</li>
+                </ul>
+                <p>
+                    <strong>Contrast with Others:</strong> If we consider Vercel's AI SDK or similar developer-focused tools – those often involve storing the API key in serverless function environment variables (for example, Next.js app using Vercel AI SDK would keep the OpenAI key on the server side for security). That means the deployment (and by extension Vercel as host) has access to the keys and could log conversations unless carefully handled. Hacka.re shifts that responsibility entirely to the user's side, which is more privacy-preserving (with the trade-off that each user must manage their own key). This model might not be suitable for scenarios where a service provider wants to offer AI to end-users without exposing the key – in those cases, a server-side proxy (like Vercel function or a custom backend) is usually used to keep the key secret. So hacka.re's privacy model is great for individuals or internal teams with their own keys, but less so for offering a multi-user public service.
+                </p>
+                
+                <h4>5. Feature Set (UI and Collaboration)</h4>
+                <p>
+                    Aside from the major architectural points, hacka.re includes several quality-of-life features that differentiate it:
+                </p>
+                <ul>
+                    <li><strong>Context window visualization:</strong> It can display token usage in real time against the model's context limit, helping users see how much of the conversation history will be considered. Not all competitor UIs show this.</li>
+                    <li><strong>Markdown and Code rendering:</strong> It supports rich markdown in responses (with syntax highlighting for code), which is now common in chat UIs (OpenAI's ChatGPT does, as do many open-source UIs).</li>
+                    <li><strong>Persistent history & multi-device sharing:</strong> We discussed the sharing via link – this also doubles as a way to move a conversation from one device to another, which is a nice touch (start on desktop, generate link, open on laptop or phone, continue the chat).</li>
+                    <li><strong>Branding/Customization:</strong> When generating a shareable GPT link, hacka.re even allows setting a Title and Subtitle (presumably to label the chatbot for whoever opens the link). This suggests one could create a custom chatbot persona and give it a name and description that will show up in the UI when someone uses the link. In effect, hacka.re lets you "clone" a configured chatbot and distribute it, which could be useful for shareable Q&A bots or demos, without needing a web server or separate accounts.</li>
+                </ul>
+                <p>
+                    Other platforms each have their own differentiators:
+                </p>
+                <ul>
+                    <li><strong>OpenAI ChatGPT / Azure OpenAI:</strong> Offer reliability and convenience with no setup, and in Azure's case, enterprise data governance. But they don't allow the user to customize the system prompt or model freely in a UI for every chat (hacka.re does let you set a system prompt for each session, acting like a persona).</li>
+                    <li><strong>Vercel AI SDK:</strong> Targets developers building custom apps; it provides streaming and integrations but requires coding. It also provides features like built-in caching of responses, edge execution for low latency, etc., which hacka.re does not have (hacka.re doesn't cache results – every query hits the provider). If one needed to minimize API calls or add custom logic (say filtering responses, logging usage), a platform like Vercel or a custom backend is necessary.</li>
+                    <li><strong>Replicate/HuggingFace:</strong> Offer access to models beyond just OpenAI's – e.g., Stable Diffusion, custom models, etc. Hacka.re on its own has no library of models; it's as good as the endpoints you give it. So for image generation or non-chat tasks, hacka.re is not directly applicable (unless those endpoints speak a chat-like interface or you modify hacka.re).</li>
+                    <li><strong>Anyscale:</strong> Focuses on cost efficiency and performance for serving open-source models (they claim significantly lower cost than OpenAI for similar performance). Anyscale's service is more about backend robustness (high rate limits, fine-tuning support, etc.), which is outside hacka.re's scope. However, since Anyscale's endpoints are OpenAI-API compatible, hacka.re could act as the user interface for an Anyscale-served model, thereby combining Anyscale's cheaper model serving with hacka.re's front-end. This composability is a hidden strength of hacka.re – it's not tied to any single vendor.</li>
+                </ul>
+                
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th>Platform</th>
+                            <th>Deployment Model</th>
+                            <th>Serverless Characteristics</th>
+                            <th>Data & Privacy</th>
+                            <th>Notable Unique Features</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>hacka.re (Serverless GPTs)</strong></td>
+                            <td>Pure client-side web app; no backend server. Uses external LLM APIs (OpenAI, etc.). Download and run entirely offline if needed.</td>
+                            <td><strong>No server to deploy</strong> – scaling handled by client + API provider. Essentially a static site + browser runtime. No backend infra, aside from the LLM's own servers.</td>
+                            <td>API keys & chats stored locally (browser storage). No data sent to any hacka.re server (only to chosen LLM API). Shareable links are end-to-end encrypted.</td>
+                            <td>Encrypted <strong>shareable GPT sessions</strong> (links). Multi-provider support out of the box. Token usage visualization. Entire app is hackable (MIT licensed) and modifiable.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>OpenAI ChatGPT (web UI)</strong></td>
+                            <td>Fully hosted by OpenAI (closed source). No user deployment – just use OpenAI's servers.</td>
+                            <td><strong>Managed service</strong> (not "serverless" for user, since no code to deploy). OpenAI handles all scaling transparently.</td>
+                            <td>Conversations and data stored on OpenAI servers (subject to OpenAI's data policies). API keys not applicable (user login instead).</td>
+                            <td>Zero setup for end-user. ChatGPT Plus offers plugins, browsing etc. Polished UI.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>OpenAI API (DIY deployment)</strong></td>
+                            <td>N/A (you create your own app to use the API). Typically involves writing a backend or calling from client with precautions.</td>
+                            <td>OpenAI's API itself is a <strong>serverless endpoint</strong> for the model (calls billed per request). Your deployment can be serverless (e.g., using a Cloud Function) or not, depending on your design.</td>
+                            <td>If called directly from a client, API key could be exposed; usually a proxy server is used to keep it secret. Data handling depends on implementation (OpenAI retains API data for 30 days by default, for instance).</td>
+                            <td>The API gives flexibility to integrate GPT into any product. Not a full UI by itself – you must build the interface or logic.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Modal</strong> (for AI apps)</td>
+                            <td>Serverless container/functions platform. Write code (Python, etc.) and deploy to Modal; they manage execution on demand.</td>
+                            <td><strong>Serverless containers</strong> – Modal auto-scales instances for your code, including GPU support. Pay per second of usage, similar to AWS Lambda model.</td>
+                            <td>You control what data is sent to Modal. If using OpenAI within Modal, you'd still send data to OpenAI as well. Modal could see logs or data if not configured carefully (though they aim for privacy).</td>
+                            <td>Can run arbitrary code and custom models, not limited to chat. Good for <strong>custom model hosting</strong> or complex pipelines. Integrates with Python ML ecosystem easily.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Vercel AI SDK</strong> + Vercel Cloud</td>
+                            <td>Developer library (AI SDK) to build chat UIs in Next.js, deployed on Vercel's Edge Functions.</td>
+                            <td><strong>Serverless</strong> – your application runs on Vercel's globally distributed infrastructure. Scaling is automatic per request. You use Vercel's serverless functions for secure API calls and streaming.</td>
+                            <td>API keys typically stored in serverless function env (secure from client). Conversation data you'd have to store in a database or memory if needed (Vercel doesn't store chats by default). Data could be logged if you implement it so.</td>
+                            <td><strong>Developer-centric</strong>: offers streaming, built-in support for OpenAI, HuggingFace, etc. Provides caching and integrations (e.g. with Next.js routing). Essentially a toolkit to quickly build custom chat apps with minimal boilerplate.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Replicate</strong></td>
+                            <td>Managed model hosting. Select a pre-built model or upload your own via their API; they host it as an on-demand endpoint.</td>
+                            <td><strong>Serverless model endpoint</strong> – no persistent server; replicate runs the model on a GPU when called, scales down when idle (scale-to-zero). You pay per inference.</td>
+                            <td>Data sent to Replicate's API (and possibly the model's authors if it's a community model). They handle execution – user does not see underlying system. Likely no long-term storage of inputs beyond logging.</td>
+                            <td><strong>Huge model library</strong> ready-to-use. Great for trying out many models (text, image, etc.) without setup. Custom model deployment is also possible with minimal configuration. No UI given by default (just an API and a basic web demo per model).</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Hugging Face Endpoints</strong></td>
+                            <td>Managed model deployment for any model on HF Hub. One-click deploy a model to a dedicated API.</td>
+                            <td>Similar to Replicate: <strong>serverless inference</strong> with auto-scaling. You pay per usage or through a subscription tier.</td>
+                            <td>Data goes to Hugging Face's servers and possibly stored (depending on settings). The service is managed by HF with enterprise options for isolation.</td>
+                            <td><strong>One-click deploy</strong> of popular models. Comes with automatic scaling, monitoring. Can serve as a private model API for enterprise. No built-in multi-model UI; you get an endpoint URL.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Anyscale Endpoints</strong> (Ray)</td>
+                            <td>OpenAI-compatible API for open-source models, hosted on Anyscale's cloud (Ray platform).</td>
+                            <td><strong>Serverless GPU</strong> for LLMs – provides a simple API interface to run models on GPUs, billed by the second. Emphasizes cost-efficiency and high throughput.</td>
+                            <td>Data is processed by Anyscale's infrastructure. A user would send prompts to Anyscale instead of OpenAI, but the interface is the same. Meant for developers – privacy and data handling would depend on enterprise agreements (Anyscale markets to businesses).</td>
+                            <td><strong>Cost-effective</strong>: claims up to 10× cheaper than OpenAI for similar tasks. OpenAI API compatible (drop-in replacement). Supports custom model deployment and fine-tuning on their platform.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <p>
+                    <strong>Key Differentiator Summary:</strong> Hacka.re's niche is providing a ready-to-use, privacy-first chat interface that does not tie you to any single model provider. It's essentially an open-source alternative to ChatGPT's interface that you control end-to-end. Unlike most platforms listed, hacka.re is not offering to host models or perform inference on your behalf – instead, it assumes you have access to an inference service and focuses on making the interaction and sharing of that interaction seamless and secure. Its unique features like encrypted session sharing set it apart from other open-source UIs, and its lack of a backend sets it apart from typical SaaS offerings.
+                </p>
+            </div>
+
+            <div class="report-section">
+                <h3>Community and Documentation Insights</h3>
+                
+                <p>
+                    Hacka.re is a relatively new project (it labels itself BETA). Its official documentation (embedded in the site) highlights the motivations and architecture, but community adoption appears limited so far. There isn't much in the way of extensive third-party reviews yet. However, the concepts it embodies align with trends the AI community has discussed:
+                </p>
+                <ul>
+                    <li>The idea of reducing reliance on proprietary UIs by using your own API key and interface (many developers started doing this when ChatGPT API became available, to avoid data limits or to customize the experience).</li>
+                    <li>The push for "bring your own key" solutions for privacy – hacka.re is exactly that: bring your API key to the client, rather than giving it to someone else's service.</li>
+                    <li>The term "serverless GPT" might conjure thoughts of serverless GPU providers (as on Hacker News), but hacka.re gives it a new meaning by applying serverless principles to the client side sharing of AI chats. It showcases a different dimension of innovation: not in model architecture, but in how we host and share AI experiences.</li>
+                </ul>
+                
+                <p>
+                    One potential limitation noted implicitly: because hacka.re is essentially running in each user's browser, collaborative real-time chat (multiple people chatting with one bot instance simultaneously) is not a built-in feature (you'd have to share a link back and forth, rather than truly concurrent interaction). Platforms that centralize the conversation (like a web app with accounts) might handle multi-user dialogues or enterprise logging better. Hacka.re chooses decentralization and client-side control over those features.
+                </p>
+            </div>
+
+            <div class="report-section">
+                <h3>Conclusion</h3>
+                
+                <p>
+                    Hacka.re's "serverless GPTs" offering is a technically inventive approach that diverges from the industry's typical client-server model for GPT deployments. In terms of innovation, it offers a novel combination of full client-side operation, strong user privacy, and a unique encrypted sharing mechanism. It challenges the notion that to deploy a GPT-based app you must involve cloud servers or complex infrastructure – in many cases, you might just need a static HTML and an API key.
+                </p>
+                
+                <p>
+                    When judged against cloud "serverless" norms, hacka.re partially fits the paradigm: it frees the user from managing any servers for the app, though it relies on external services for the heavy lifting. It underscores an important point in cloud computing philosophy: serverless can also mean using fully managed third-party services (like OpenAI's API) directly from a client, which is a different flavor than running your own code on Lambda. Hacka.re demonstrates that even interactive, stateful applications can be delivered in a serverless fashion by moving state to the client and leveraging web technologies (like URL fragment encryption for sharing state).
+                </p>
+                
+                <p>
+                    Compared to other GPT deployment platforms, hacka.re is complementary rather than directly competitive. It doesn't replace OpenAI's API, it rides on top of it; it doesn't compete with Replicate's model hosting, it could interface with it. Its differentiators lie in user experience, security, and openness. Organizations or individuals who want a highly controllable, shareable chat interface – and who are comfortable using their own API keys – will find hacka.re appealing. Meanwhile, those who need a fully managed, one-stop solution (where even the model and interface are provided as a service) might lean towards the likes of ChatGPT, Hugging Face, or Anyscale.
+                </p>
+                
+                <p>
+                    In conclusion, hacka.re's "serverless GPTs" is a fresh take on deploying AI assistants. It embraces the ethos "for hackers, by hackers" – giving power users a toolkit to run and share GPT instances freely, with minimal overhead. Its success will likely depend on how the community adopts it and possibly extends it (since it's open source) to support more models and features. But it undeniably pushes forward the idea that serverless in AI can mean not just serverless inference, but also serverless interfaces and collaboration.
+                </p>
+                
+                <p>
+                    <strong>Sources:</strong> The above evaluation integrates information from hacka.re's official documentation and reputable discussions: hacka.re's About page detailing its architecture and features, its privacy and sharing design, and comparisons with other platforms drawn from public articles and community insights.
+                </p>
+            </div>
+
+            <div class="page-nav">
+                <a href="index.html">About</a>
+                <a href="architecture.html">Architecture</a>
+                <a href="development.html">Development</a>
+                <a href="use-cases.html">Use Cases</a>
+                <a href="research-report.html">Research Report</a>
+            </div>
+            
+            </div>
+        </main>
+
+        <footer>
+            <p><a href="https://hacka.re/" target="_blank">hacka.re</a> | <a href="../index.html">Back to Chat</a></p>
+        </footer>
+    </div>
+
+    <script src="js/themes.js"></script>
+</body>
+</html>
