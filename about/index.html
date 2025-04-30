@@ -285,7 +285,7 @@
                     </div>
                     <div class="feature-card">
                         <h4><span class="emoji-icon">🔒</span>Privacy-Focused</h4>
-                        <p>Your API key and conversations are stored in your browser's localStorage, never on external servers.</p>
+                        <p>Your API key and conversations are encrypted and stored in your browser's localStorage.</p>
                     </div>
                     <div class="feature-card">
                         <h4><span class="emoji-icon">📊</span>Context Window Visualization</h4>
@@ -301,7 +301,7 @@
                     </div>
                     <div class="feature-card">
                         <h4><span class="emoji-icon">🔗</span>Comprehensive Secure Sharing</h4>
-                        <p>Create session key-protected shareable links to securely share your API key, system prompt, active model, and conversation data with trusted individuals with real-time link length monitoring.</p>
+                        <p>Create encrypted password-protected shareable links to securely share your API key, system prompt, active model, and conversation data with trusted individuals.</p>
                     </div>
                 </div>
             </div>
@@ -310,17 +310,14 @@
                 <h3>Supported Models</h3>
                 <p>
                     <a href="https://hacka.re/" target="_blank">hacka.re</a> provides access to all models available through your configured OpenAI-compatible API provider.
-                    The interface automatically fetches the latest available models from your provider.
+                    It's a design choice to ONLY support text, not even images, from ONLY OpenAI-compatible providers, since this is the de-facto standard. 
+                    Support for additional features - such as image rendering and additional LLM provider API interfaces - can easily be added with a few prompts using the tools and method shown on the <a href="development.html">Development page</a>.
                 </p>
+                <br />
 
                 <p>
                     Different API providers offer various models with different capabilities, context window sizes, and performance characteristics.
                     The specific models available to you will depend entirely on which API provider you choose to connect with.
-                </p>
-
-                <p>
-                    The application's model selector displays all available models from your chosen provider, allowing you to
-                    select the one that best fits your current needs.
                 </p>
             </div>
 
@@ -374,8 +371,8 @@
                 </p>
                 <ul>
                     <li>This is a <strong>GitHub Pages site</strong> - the application is hosted on GitHub's servers</li>
-                    <li>Stores your API key only in your browser's localStorage</li>
-                    <li>Keeps conversation history locally on your device</li>
+                    <li>Stores your API key encrypted in your browser's localStorage</li>
+                    <li>Keeps conversation history encrypted locally on your device</li>
                     <li><strong>All chat content is sent to your configured API provider's servers</strong> for processing</li>
                     <li>Your conversations are subject to your API provider's privacy policy</li>
                     <li>Does not use analytics, tracking, or telemetry</li>
