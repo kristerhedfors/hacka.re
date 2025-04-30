@@ -58,6 +58,13 @@ window.updateTitleAndSubtitle = function(forceUpdate = false) {
                     const titleNode = document.createTextNode(title);
                     element.appendChild(titleNode);
                     
+                    // Apply Courier New font specifically when the title is "hacka.re"
+                    if (title === "hacka.re") {
+                        element.style.fontFamily = "'Courier New', monospace";
+                    } else {
+                        element.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+                    }
+                    
                     // Add the heart logo back
                     element.appendChild(tempHeartLogo);
                     
