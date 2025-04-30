@@ -61,6 +61,20 @@
             border-left: 4px solid var(--accent-color);
         }
 
+        /* Ensure bullet lists display properly */
+        .placeholder-section ul,
+        .license-section ul {
+            list-style-type: disc;
+            padding-left: 2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .placeholder-section li,
+        .license-section li {
+            margin-bottom: 0.5rem;
+            display: list-item;
+        }
+        
         /* Mobile-specific styles */
         @media (max-width: 480px) {
             main {
