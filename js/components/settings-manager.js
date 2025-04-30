@@ -752,6 +752,30 @@ For more information about the technologies used in hacka.re:
                             }
                         }
                         
+                        // If there are shared prompts, save them
+                        if (sharedData.prompts && Array.isArray(sharedData.prompts)) {
+                            // Save each prompt
+                            sharedData.prompts.forEach(prompt => {
+                                PromptsService.savePrompt(prompt);
+                            });
+                            
+                            if (addSystemMessage) {
+                                addSystemMessage(`Shared prompt library with ${sharedData.prompts.length} prompts has been loaded.`);
+                            }
+                        }
+                        
+                        // If there are shared selected prompt IDs, save them
+                        if (sharedData.selectedPromptIds && Array.isArray(sharedData.selectedPromptIds)) {
+                            PromptsService.setSelectedPromptIds(sharedData.selectedPromptIds);
+                            
+                            if (addSystemMessage) {
+                                addSystemMessage(`Shared prompt selections have been applied.`);
+                            }
+                            
+                            // Apply the selected prompts as system prompt
+                            PromptsService.applySelectedPromptsAsSystem();
+                        }
+                        
                         // Clear the shared data from the URL
                         ShareService.clearSharedApiKeyFromUrl();
                         
@@ -935,6 +959,29 @@ For more information about the technologies used in hacka.re:
                         }
                     }
                     
+                    // If there are shared prompts, save them
+                    if (sharedData.prompts && Array.isArray(sharedData.prompts)) {
+                        // Save each prompt
+                        sharedData.prompts.forEach(prompt => {
+                            PromptsService.savePrompt(prompt);
+                        });
+                        
+                        if (addSystemMessage) {
+                            addSystemMessage(`Shared prompt library with ${sharedData.prompts.length} prompts has been loaded.`);
+                        }
+                    }
+                    
+                    // If there are shared selected prompt IDs, save them
+                    if (sharedData.selectedPromptIds && Array.isArray(sharedData.selectedPromptIds)) {
+                        PromptsService.setSelectedPromptIds(sharedData.selectedPromptIds);
+                        
+                        if (addSystemMessage) {
+                            addSystemMessage(`Shared prompt selections have been applied.`);
+                        }
+                        
+                        // Apply the selected prompts as system prompt
+                        PromptsService.applySelectedPromptsAsSystem();
+                    }
                     
                     // Clear the shared data from the URL
                     ShareService.clearSharedApiKeyFromUrl();

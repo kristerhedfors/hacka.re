@@ -69,6 +69,7 @@ window.ShareService = (function() {
      * @param {boolean} options.includeApiKey - Whether to include the API key
      * @param {boolean} options.includeSystemPrompt - Whether to include the system prompt
      * @param {boolean} options.includeConversation - Whether to include conversation data
+     * @param {boolean} options.includePromptLibrary - Whether to include the prompt library
      * @param {string} password - The password to use for encryption
      * @returns {string} Shareable URL
      */
@@ -107,7 +108,10 @@ window.ShareService = (function() {
             payload.subtitle = options.subtitle;
         }
         
-        return LinkSharingService.createCustomShareableLink(payload, password);
+        // Create link with prompt library option if requested
+        return LinkSharingService.createCustomShareableLink(payload, password, {
+            includePromptLibrary: options.includePromptLibrary
+        });
     }
     
     /**

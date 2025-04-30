@@ -1,6 +1,6 @@
 /**
  * Prompts Service
- * Handles storage and management of labeled prompts
+ * Handles storage and management of labeled prompts with encryption
  */
 
 window.PromptsService = (function() {
@@ -11,7 +11,7 @@ window.PromptsService = (function() {
     const SELECTED_PROMPT_IDS_KEY = 'selected_prompt_ids';
     
     /**
-     * Save a prompt to local storage
+     * Save a prompt to local storage with encryption
      * @param {Object} prompt - The prompt object to save
      * @param {string} prompt.id - Unique ID for the prompt
      * @param {string} prompt.name - Name of the prompt
@@ -38,19 +38,19 @@ window.PromptsService = (function() {
             prompts.push(prompt);
         }
         
-        // Save to storage
-        localStorage.setItem(PROMPTS_STORAGE_KEY, JSON.stringify(prompts));
+        // Save to storage with encryption
+        CoreStorageService.setValue(PROMPTS_STORAGE_KEY, prompts);
         
         return prompt;
     }
     
     /**
-     * Get all prompts from local storage
+     * Get all prompts from local storage with decryption
      * @returns {Array} Array of prompt objects
      */
     function getPrompts() {
-        const promptsJson = localStorage.getItem(PROMPTS_STORAGE_KEY);
-        return promptsJson ? JSON.parse(promptsJson) : [];
+        const prompts = CoreStorageService.getValue(PROMPTS_STORAGE_KEY);
+        return prompts || [];
     }
     
     /**
@@ -77,8 +77,8 @@ window.PromptsService = (function() {
         
         // Check if a prompt was removed
         if (filteredPrompts.length < initialLength) {
-            // Save filtered prompts
-            localStorage.setItem(PROMPTS_STORAGE_KEY, JSON.stringify(filteredPrompts));
+            // Save filtered prompts with encryption
+            CoreStorageService.setValue(PROMPTS_STORAGE_KEY, filteredPrompts);
             
             // Remove from selected prompts if it was selected
             if (isPromptSelected(id)) {
@@ -94,23 +94,23 @@ window.PromptsService = (function() {
     }
     
     /**
-     * Get the selected prompt IDs
+     * Get the selected prompt IDs with decryption
      * @returns {Array} Array of selected prompt IDs
      */
     function getSelectedPromptIds() {
-        const idsJson = localStorage.getItem(SELECTED_PROMPT_IDS_KEY);
-        return idsJson ? JSON.parse(idsJson) : [];
+        const selectedIds = CoreStorageService.getValue(SELECTED_PROMPT_IDS_KEY);
+        return selectedIds || [];
     }
     
     /**
-     * Set the selected prompt IDs
+     * Set the selected prompt IDs with encryption
      * @param {Array} ids - Array of prompt IDs to set as selected
      */
     function setSelectedPromptIds(ids) {
         if (Array.isArray(ids) && ids.length > 0) {
-            localStorage.setItem(SELECTED_PROMPT_IDS_KEY, JSON.stringify(ids));
+            CoreStorageService.setValue(SELECTED_PROMPT_IDS_KEY, ids);
         } else {
-            localStorage.removeItem(SELECTED_PROMPT_IDS_KEY);
+            CoreStorageService.removeValue(SELECTED_PROMPT_IDS_KEY);
         }
     }
     
