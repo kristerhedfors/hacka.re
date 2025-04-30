@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Library Sharing Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-result {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 3px;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .failure {
+            color: red;
+            font-weight: bold;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        pre {
+            background-color: #f8f8f8;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Prompt Library Sharing Test</h1>
+    <p>This test verifies that prompts and selected prompt IDs are properly encrypted in localStorage and can be included in shared links.</p>
+
+    <!-- Load required scripts -->
+    <script src="../lib/tweetnacl/nacl-fast.min.js"></script>
+    <script src="../lib/tweetnacl/nacl-util.min.js"></script>
+    <script src="../js/utils/crypto-utils.js"></script>
+    <script src="../js/services/model-info.js"></script>
+    <script src="../js/services/encryption-service.js"></script>
+    <script src="../js/services/namespace-service.js"></script>
+    <script src="../js/services/core-storage-service.js"></script>
+    <script src="../js/services/data-service.js"></script>
+    <script src="../js/services/storage-service.js"></script>
+    <script src="../js/services/link-sharing-service.js"></script>
+    <script src="../js/services/share-service.js"></script>
+    <script src="../js/services/prompts-service.js"></script>
+
+    <div class="test-section">
+        <h2>Test 1: Encrypted Storage for Prompts</h2>
+        <button id="test-encrypted-storage">Run Test</button>
+        <div id="encrypted-storage-result" class="test-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Encrypted Storage for Selected Prompt IDs</h2>
+        <button id="test-selected-prompt-ids">Run Test</button>
+        <div id="selected-prompt-ids-result" class="test-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Including Prompts in Shared Links</h2>
+        <button id="test-shared-links">Run Test</button>
+        <div id="shared-links-result" class="test-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 4: Extracting Prompts from Shared Links</h2>
+        <button id="test-extract-prompts">Run Test</button>
+        <div id="extract-prompts-result" class="test-result"></div>
+    </div>
+
+    <script>
+        // Helper function to display test results
+        function displayResult(elementId, success, message) {
+            const resultElement = document.getElementById(elementId);
+            resultElement.innerHTML = `
+                <div class="${success ? 'success' : 'failure'}">
+                    ${success ? 'PASSED' : 'FAILED'}: ${message}
+                </div>
+            `;
+        }
+
+        // Helper function to display detailed test results
+        function displayDetailedResult(elementId, success, message, details) {
+            const resultElement = document.getElementById(elementId);
+            resultElement.innerHTML = `
+                <div class="${success ? 'success' : 'failure'}">
+                    ${success ? 'PASSED' : 'FAILED'}: ${message}
+                </div>
+                <pre>${details}</pre>
+            `;
+        }
+
+        // Test 1: Verify that prompts are stored encrypted in localStorage
+        document.getElementById('test-encrypted-storage').addEventListener('click', function() {
+            try {
+                // Clear any existing prompts
+                localStorage.removeItem(NamespaceService.getNamespacedKey('prompts'));
+                
+                // Create a test prompt
+                const testPrompt = {
+                    id: 'test-prompt-1',
+                    name: 'Test Prompt',
+                    content: 'This is a test prompt for encryption testing'
+                };
+                
+                // Save the prompt using PromptsService
+                PromptsService.savePrompt(testPrompt);
+                
+                // Get the raw encrypted value from localStorage
+                const encryptedValue = localStorage.getItem(NamespaceService.getNamespacedKey('prompts'));
+                
+                // Verify it's encrypted (should be a base64 string)
+                const isEncrypted = encryptedValue && 
+                                   encryptedValue.length > 0 && 
+                                   encryptedValue !== JSON.stringify([testPrompt]);
+                
+                // Retrieve the prompt using PromptsService
+                const retrievedPrompts = PromptsService.getPrompts();
+                const retrievedPrompt = retrievedPrompts.find(p => p.id === testPrompt.id);
+                
+                // Verify the retrieved prompt matches the original
+                const isRetrieved = retrievedPrompt && 
+                                   retrievedPrompt.id === testPrompt.id &&
+                                   retrievedPrompt.name === testPrompt.name &&
+                                   retrievedPrompt.content === testPrompt.content;
+                
+                // Display results
+                const success = isEncrypted && isRetrieved;
+                const details = `
+Original prompt: ${JSON.stringify(testPrompt, null, 2)}
+Encrypted value: ${encryptedValue ? encryptedValue.substring(0, 100) + '...' : 'null'}
+Retrieved prompt: ${JSON.stringify(retrievedPrompt, null, 2)}
+Is encrypted: ${isEncrypted}
+Is correctly retrieved: ${isRetrieved}
+                `;
+                
+                displayDetailedResult('encrypted-storage-result', success, 
+                    success ? 'Prompts are properly encrypted in localStorage and can be retrieved' 
+                            : 'Prompts encryption or retrieval failed',
+                    details);
+            } catch (error) {
+                displayDetailedResult('encrypted-storage-result', false, 
+                    'Test failed with an error', 
+                    error.toString());
+            }
+        });
+
+        // Test 2: Verify that selected prompt IDs are stored encrypted in localStorage
+        document.getElementById('test-selected-prompt-ids').addEventListener('click', function() {
+            try {
+                // Clear any existing selected prompt IDs
+                localStorage.removeItem(NamespaceService.getNamespacedKey('selected_prompt_ids'));
+                
+                // Create test prompt IDs
+                const testPromptIds = ['test-id-1', 'test-id-2', 'test-id-3'];
+                
+                // Save the selected prompt IDs
+                PromptsService.setSelectedPromptIds(testPromptIds);
+                
+                // Get the raw encrypted value from localStorage
+                const encryptedValue = localStorage.getItem(NamespaceService.getNamespacedKey('selected_prompt_ids'));
+                
+                // Verify it's encrypted (should be a base64 string)
+                const isEncrypted = encryptedValue && 
+                                   encryptedValue.length > 0 && 
+                                   encryptedValue !== JSON.stringify(testPromptIds);
+                
+                // Retrieve the selected prompt IDs
+                const retrievedIds = PromptsService.getSelectedPromptIds();
+                
+                // Verify the retrieved IDs match the original
+                const isRetrieved = retrievedIds && 
+                                   retrievedIds.length === testPromptIds.length &&
+                                   retrievedIds.every((id, index) => id === testPromptIds[index]);
+                
+                // Display results
+                const success = isEncrypted && isRetrieved;
+                const details = `
+Original IDs: ${JSON.stringify(testPromptIds, null, 2)}
+Encrypted value: ${encryptedValue ? encryptedValue.substring(0, 100) + '...' : 'null'}
+Retrieved IDs: ${JSON.stringify(retrievedIds, null, 2)}
+Is encrypted: ${isEncrypted}
+Is correctly retrieved: ${isRetrieved}
+                `;
+                
+                displayDetailedResult('selected-prompt-ids-result', success, 
+                    success ? 'Selected prompt IDs are properly encrypted in localStorage and can be retrieved' 
+                            : 'Selected prompt IDs encryption or retrieval failed',
+                    details);
+            } catch (error) {
+                displayDetailedResult('selected-prompt-ids-result', false, 
+                    'Test failed with an error', 
+                    error.toString());
+            }
+        });
+
+        // Test 3: Verify that prompts can be included in shared links
+        document.getElementById('test-shared-links').addEventListener('click', function() {
+            try {
+                // Clear any existing prompts and selected prompt IDs
+                localStorage.removeItem(NamespaceService.getNamespacedKey('prompts'));
+                localStorage.removeItem(NamespaceService.getNamespacedKey('selected_prompt_ids'));
+                
+                // Create test prompts
+                const testPrompts = [
+                    {
+                        id: 'shared-prompt-1',
+                        name: 'Shared Prompt 1',
+                        content: 'This is the first shared prompt'
+                    },
+                    {
+                        id: 'shared-prompt-2',
+                        name: 'Shared Prompt 2',
+                        content: 'This is the second shared prompt'
+                    }
+                ];
+                
+                // Save the prompts
+                testPrompts.forEach(prompt => PromptsService.savePrompt(prompt));
+                
+                // Verify prompts were saved
+                const savedPrompts = PromptsService.getPrompts();
+                console.log('Saved prompts:', savedPrompts);
+                
+                // Set selected prompt IDs
+                const selectedIds = ['shared-prompt-1'];
+                PromptsService.setSelectedPromptIds(selectedIds);
+                
+                // Verify selected prompt IDs were saved
+                const savedSelectedIds = PromptsService.getSelectedPromptIds();
+                console.log('Saved selected prompt IDs:', savedSelectedIds);
+                
+                // Create a test password
+                const testPassword = 'test-password-123';
+                
+                // Create a payload with API key (required) and include prompt library
+                const payload = { apiKey: 'test-api-key-456' };
+                
+                // Create a shared link with prompt library
+                const sharedLink = LinkSharingService.createCustomShareableLink(
+                    payload, 
+                    testPassword,
+                    { includePromptLibrary: true }
+                );
+                
+                // Extract the encrypted data from the link
+                const encryptedData = sharedLink.split('#gpt=')[1];
+                
+                // Decrypt the data
+                const decryptedData = CryptoUtils.decryptData(encryptedData, testPassword);
+                
+                // Verify prompts and selected prompt IDs are included
+                const hasPrompts = decryptedData && 
+                                  Array.isArray(decryptedData.prompts) && 
+                                  decryptedData.prompts.length === testPrompts.length;
+                
+                const hasSelectedIds = decryptedData && 
+                                      Array.isArray(decryptedData.selectedPromptIds) && 
+                                      decryptedData.selectedPromptIds.length === selectedIds.length;
+                
+                // Display results
+                const success = hasPrompts && hasSelectedIds;
+                const details = `
+Shared link: ${sharedLink.substring(0, 50)}...
+Decrypted data: ${JSON.stringify(decryptedData, null, 2)}
+Has prompts: ${hasPrompts}
+Has selected IDs: ${hasSelectedIds}
+                `;
+                
+                displayDetailedResult('shared-links-result', success, 
+                    success ? 'Prompts and selected prompt IDs are properly included in shared links' 
+                            : 'Including prompts and selected prompt IDs in shared links failed',
+                    details);
+            } catch (error) {
+                displayDetailedResult('shared-links-result', false, 
+                    'Test failed with an error', 
+                    error.toString());
+            }
+        });
+
+        // Test 4: Verify that prompts can be extracted from shared links
+        document.getElementById('test-extract-prompts').addEventListener('click', function() {
+            try {
+                // Create test prompts
+                const testPrompts = [
+                    {
+                        id: 'extract-prompt-1',
+                        name: 'Extract Prompt 1',
+                        content: 'This is the first prompt to extract'
+                    },
+                    {
+                        id: 'extract-prompt-2',
+                        name: 'Extract Prompt 2',
+                        content: 'This is the second prompt to extract'
+                    }
+                ];
+                
+                // Create selected prompt IDs
+                const selectedIds = ['extract-prompt-1'];
+                
+                // Create a test password
+                const testPassword = 'test-password-456';
+                
+                // Create a payload with API key (required), prompts, and selected prompt IDs
+                const payload = {
+                    apiKey: 'test-api-key-789',
+                    prompts: testPrompts,
+                    selectedPromptIds: selectedIds
+                };
+                
+                // Encrypt the payload
+                const encryptedData = CryptoUtils.encryptData(payload, testPassword);
+                
+                // Create a mock location object for testing
+                const mockLocation = {
+                    href: 'https://hacka.re/index.html',
+                    hash: '#gpt=' + encryptedData,
+                    pathname: '/index.html',
+                    search: ''
+                };
+                
+                // Set the mock location for testing
+                LinkSharingService._setTestingObjects(mockLocation);
+                
+                // Extract the shared data
+                const extractedData = LinkSharingService.extractSharedApiKey(testPassword);
+                
+                // Verify prompts and selected prompt IDs are extracted correctly
+                const hasPrompts = extractedData && 
+                                  Array.isArray(extractedData.prompts) && 
+                                  extractedData.prompts.length === testPrompts.length;
+                
+                const hasSelectedIds = extractedData && 
+                                      Array.isArray(extractedData.selectedPromptIds) && 
+                                      extractedData.selectedPromptIds.length === selectedIds.length;
+                
+                // Verify the content matches
+                const promptsMatch = hasPrompts && 
+                                    extractedData.prompts.every((prompt, index) => 
+                                        prompt.id === testPrompts[index].id &&
+                                        prompt.name === testPrompts[index].name &&
+                                        prompt.content === testPrompts[index].content
+                                    );
+                
+                const selectedIdsMatch = hasSelectedIds && 
+                                        extractedData.selectedPromptIds.every((id, index) => 
+                                            id === selectedIds[index]
+                                        );
+                
+                // Reset the mock location
+                LinkSharingService._resetTestingObjects();
+                
+                // Display results
+                const success = hasPrompts && hasSelectedIds && promptsMatch && selectedIdsMatch;
+                const details = `
+Original prompts: ${JSON.stringify(testPrompts, null, 2)}
+Original selected IDs: ${JSON.stringify(selectedIds, null, 2)}
+Extracted prompts: ${JSON.stringify(extractedData.prompts, null, 2)}
+Extracted selected IDs: ${JSON.stringify(extractedData.selectedPromptIds, null, 2)}
+Has prompts: ${hasPrompts}
+Has selected IDs: ${hasSelectedIds}
+Prompts match: ${promptsMatch}
+Selected IDs match: ${selectedIdsMatch}
+                `;
+                
+                displayDetailedResult('extract-prompts-result', success, 
+                    success ? 'Prompts and selected prompt IDs are properly extracted from shared links' 
+                            : 'Extracting prompts and selected prompt IDs from shared links failed',
+                    details);
+            } catch (error) {
+                displayDetailedResult('extract-prompts-result', false, 
+                    'Test failed with an error', 
+                    error.toString());
+            }
+        });
+    </script>
+</body>
+</html>

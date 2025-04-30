@@ -118,7 +118,8 @@ window.DataService = (function() {
             includeSystemPrompt: false,
             includeModel: false,
             includeConversation: false,
-            messageCount: 1
+            messageCount: 1,
+            includePromptLibrary: false
         };
     }
 

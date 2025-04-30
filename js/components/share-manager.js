@@ -34,7 +34,8 @@ window.ShareManager = (function() {
                     includeSystemPrompt: elements.shareSystemPromptCheckbox.checked,
                     includeModel: elements.shareModelCheckbox.checked,
                     includeConversation: elements.shareConversationCheckbox.checked,
-                    messageCount: parseInt(elements.messageHistoryCount.value, 10) || 1
+                    messageCount: parseInt(elements.messageHistoryCount.value, 10) || 1,
+                    includePromptLibrary: elements.sharePromptLibraryCheckbox ? elements.sharePromptLibraryCheckbox.checked : false
                 };
                 
                 StorageService.saveShareOptions(options);
@@ -57,6 +58,11 @@ window.ShareManager = (function() {
                 elements.shareModelCheckbox.checked = options.includeModel;
                 elements.shareConversationCheckbox.checked = options.includeConversation;
                 elements.messageHistoryCount.value = options.messageCount;
+                
+                // Set prompt library checkbox if it exists
+                if (elements.sharePromptLibraryCheckbox) {
+                    elements.sharePromptLibraryCheckbox.checked = options.includePromptLibrary || false;
+                }
                 
                 // Update message history input state
                 if (options.includeConversation) {
@@ -321,6 +327,7 @@ window.ShareManager = (function() {
                 includeModel: elements.shareModelCheckbox.checked,
                 includeConversation: elements.shareConversationCheckbox.checked,
                 messageCount: parseInt(elements.messageHistoryCount.value, 10) || 1,
+                includePromptLibrary: elements.sharePromptLibraryCheckbox ? elements.sharePromptLibraryCheckbox.checked : false,
                 title: title,
                 subtitle: subtitle
             };

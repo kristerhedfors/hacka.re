@@ -71,11 +71,27 @@ window.LinkSharingService = (function() {
      * 
      * @param {Object} payload - The data to encrypt and share
      * @param {string} password - The password to use for encryption
-     * @returns {string} Shareable URL with #shared= fragment
+     * @param {Object} options - Additional options for sharing
+     * @param {boolean} options.includePromptLibrary - Whether to include the prompt library in the link
+     * @returns {string} Shareable URL with #gpt= fragment
      */
-    function createCustomShareableLink(payload, password) {
+    function createCustomShareableLink(payload, password, options = {}) {
+        // Clone the payload to avoid modifying the original
+        const finalPayload = { ...payload };
+        
+        // Add prompt library if requested
+        if (options.includePromptLibrary) {
+            // Get prompts and ensure they're included in the payload
+            const prompts = PromptsService.getPrompts();
+            finalPayload.prompts = prompts;
+            
+            // Get selected prompt IDs
+            const selectedPromptIds = PromptsService.getSelectedPromptIds();
+            finalPayload.selectedPromptIds = selectedPromptIds;
+        }
+        
         // Encrypt the payload
-        const encryptedData = CryptoUtils.encryptData(payload, password);
+        const encryptedData = CryptoUtils.encryptData(finalPayload, password);
         
         // Create URL with hash fragment
         const baseUrl = _location.href.split('#')[0];
@@ -94,7 +110,7 @@ window.LinkSharingService = (function() {
     /**
      * Extract and decrypt shared data from the URL
      * @param {string} password - The password to use for decryption
-     * @returns {Object} Object containing the decrypted data (apiKey, systemPrompt, messages, etc.)
+     * @returns {Object} Object containing the decrypted data (apiKey, systemPrompt, messages, prompts, selectedPromptIds, etc.)
      */
     function extractSharedApiKey(password) {
         try {
@@ -136,6 +152,19 @@ window.LinkSharingService = (function() {
                     model: data.model || null,
                     messages: data.messages || null
                 };
+                
+                // Include prompt library if present
+                if (data.prompts) {
+                    result.prompts = data.prompts;
+                    console.log('Extracted prompts from shared link:', data.prompts);
+                } else {
+                    console.log('No prompts found in shared link data:', data);
+                }
+                
+                if (data.selectedPromptIds) {
+                    result.selectedPromptIds = data.selectedPromptIds;
+                    console.log('Extracted selected prompt IDs from shared link:', data.selectedPromptIds);
+                }
                 
                 // Only include title and subtitle if they are actually present in the data
                 if (data.title) {
