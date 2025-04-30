@@ -283,7 +283,7 @@
             <div class="feature-section">
                 <h3>Modular Storage Architecture</h3>
                 <p>
-                    <a href="https://hacka.re/" target="_blank">hacka.re</a> implements a modular storage architecture that separates concerns and improves maintainability. The storage system is divided into several specialized components:
+                    <a href="https://hacka.re/" target="_blank">hacka.re</a> implements a modular storage architecture divided into the following components:
                 </p>
                 
                 <ol>
@@ -293,17 +293,6 @@
                     <li><strong>DataService:</strong> Implements data-type-specific storage operations</li>
                     <li><strong>StorageService:</strong> High-level facade exposing storage APIs</li>
                 </ol>
-                
-                <p>
-                    This modular approach offers several benefits:
-                </p>
-                
-                <ul>
-                    <li>Improved code organization with clear separation of concerns</li>
-                    <li>Better testability of individual components</li>
-                    <li>Easier maintenance and future enhancements</li>
-                    <li>More flexible encryption and namespace management</li>
-                </ul>
                 
             </div>
 
@@ -333,7 +322,7 @@
                 <ol>
                     <li>When you create a shareable link, you select what to include (base URL, API key, model, system prompt, conversation data)</li>
                     <li>A real-time link length indicator shows the estimated size of the generated link</li>
-                    <li>You can generate a strong random session key or provide your own</li>
+                    <li>You can generate a strong random session key or provide your own. A weak secret will produce insecure links.</li>
                     <li>Your selected data is encrypted using a key derived from your session key with cryptographically sound methods</li>
                     <li>Only the encrypted data is included in the URL after the # symbol (the encryption key is NOT included)</li>
                     <li>When someone opens the link, they're prompted to enter the session key/password</li>
@@ -370,11 +359,9 @@
                 </p>
                 <ul>
                     <li><strong>True session key-based encryption:</strong> The encryption key is derived from the session key and is never included in the URL</li>
-                    <li><strong>Salt-based key derivation:</strong> A unique salt is generated for each link, protecting against rainbow table attacks</li>
                     <li><strong>Multiple hashing iterations:</strong> The key derivation process uses multiple iterations to increase security</li>
                     <li><strong>URL fragment (#) usage:</strong> The data after # is not sent to servers when requesting a page, providing protection against server logging</li>
-                    <li><strong>Session key confirmation:</strong> When creating a link, you must confirm your session key to prevent typos</li>
-                    <li><strong>Intended for trusted sharing:</strong> Still only share these links with people you trust, as they will have full access to your API provider account once they enter the correct session key</li>
+                    <li><strong>Intended for trusted sharing:</strong> Still only share these links with people you trust, as <b><u>they will have access to your API provider account if you share the API key</u></b></li>
                     <li><strong>Temporary usage:</strong> Consider revoking your API key after sharing if you're concerned about unauthorized access</li>
                 </ul>
 
@@ -382,10 +369,11 @@
                     <strong>When to use each sharing option:</strong>
                 </p>
                 <ul>
-                    <li><strong>API Key:</strong> Essential for giving someone access to your API provider account</li>
+                    <li><strong>OpenAI-compatible API provider:</strong> Share to have them use the same API provider endpoint URL</li>
+                    <li><strong>API Key:</strong> Only share the API key if you want them to use your configured API provider account</li>
                     <li><strong>System Prompt:</strong> Share your custom instructions to ensure consistent AI behavior</li>
                     <li><strong>Active Model:</strong> Share your preferred model selection for consistent results</li>
-                    <li><strong>Conversation Data:</strong> Share context from your current conversation to continue a discussion</li>
+                    <li><strong>Conversation Data:</strong> Share messages and replies from your current conversation to continue a discussion</li>
                 </ul>
 
                 <p>
