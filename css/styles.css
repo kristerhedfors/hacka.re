@@ -1116,6 +1116,35 @@ footer a:hover {
     margin-bottom: 1rem;
 }
 
+/* Prompts token usage styles */
+.prompts-token-usage-container {
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.prompts-token-usage-label {
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.prompts-usage-bar {
+    width: 100%;
+    height: 8px;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.prompts-usage-fill {
+    height: 100%;
+    background-color: #6366f1; /* Default color */
+    border-radius: 4px;
+    transition: width 0.3s ease, background-color 0.3s ease;
+}
+
 .prompt-item {
     padding: 0.75rem;
     border: 1px solid rgba(0, 0, 0, 0.1);

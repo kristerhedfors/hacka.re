@@ -13,6 +13,10 @@ window.PromptsManager = (function() {
         // Current prompt being edited
         let currentPrompt = null;
         
+        // Elements for prompt token usage bar
+        let promptsUsageFill;
+        let promptsUsageText;
+        
         /**
          * Initialize the prompts manager
          */
@@ -28,6 +32,56 @@ window.PromptsManager = (function() {
             
             // Apply selected prompts as system prompt on initialization
             PromptsService.applySelectedPromptsAsSystem();
+        }
+        
+        /**
+         * Estimate token usage for selected prompts
+         * @returns {number} - Percentage of context window used
+         */
+        function estimatePromptsTokenUsage() {
+            const selectedPrompts = PromptsService.getSelectedPrompts();
+            
+            // If no prompts selected, return 0
+            if (selectedPrompts.length === 0) {
+                return 0;
+            }
+            
+            // Combine all selected prompts content
+            const combinedContent = selectedPrompts
+                .map(prompt => prompt.content)
+                .join('\n\n---\n\n');
+            
+            // Estimate token count (4 chars per token is a rough approximation)
+            const totalChars = combinedContent.length;
+            const estimatedTokens = Math.ceil(totalChars / 4);
+            
+            // Get context window size for the current model
+            const currentModel = StorageService.getModel();
+            const modelInfo = window.ModelInfoService.modelInfo;
+            let contextSize = 8192; // Default to 8K if not specified
+            
+            if (modelInfo[currentModel] && modelInfo[currentModel].contextWindow !== '-') {
+                // Parse context window size (e.g., "128K" -> 131072)
+                const sizeStr = modelInfo[currentModel].contextWindow.toLowerCase();
+                if (sizeStr.endsWith('k')) {
+                    contextSize = parseInt(sizeStr) * 1024;
+                } else {
+                    contextSize = parseInt(sizeStr.replace(/,/g, ''));
+                }
+            }
+            
+            // Calculate percentage
+            return Math.min(Math.round((estimatedTokens / contextSize) * 100), 100);
+        }
+        
+        /**
+         * Update the prompts token usage bar
+         */
+        function updatePromptsTokenUsage() {
+            if (!promptsUsageFill || !promptsUsageText) return;
+            
+            const percentage = estimatePromptsTokenUsage();
+            UIUtils.updateContextUsage(promptsUsageFill, promptsUsageText, percentage);
         }
         
         /**
@@ -67,6 +121,23 @@ window.PromptsManager = (function() {
             // Clear the list
             elements.promptsList.innerHTML = '';
             
+            // Add token usage bar
+            const tokenUsageContainer = document.createElement('div');
+            tokenUsageContainer.className = 'prompts-token-usage-container';
+            tokenUsageContainer.innerHTML = `
+                <div class="prompts-token-usage-label">
+                    Context usage: <span class="prompts-usage-text">0%</span>
+                </div>
+                <div class="prompts-usage-bar">
+                    <div class="prompts-usage-fill" style="width: 0%"></div>
+                </div>
+            `;
+            elements.promptsList.appendChild(tokenUsageContainer);
+            
+            // Store references to the usage elements
+            promptsUsageFill = tokenUsageContainer.querySelector('.prompts-usage-fill');
+            promptsUsageText = tokenUsageContainer.querySelector('.prompts-usage-text');
+            
             // Get all prompts
             let prompts = PromptsService.getPrompts();
             
@@ -84,9 +155,9 @@ window.PromptsManager = (function() {
                 // Show a message if no prompts
                 const noPromptsMessage = document.createElement('div');
                 noPromptsMessage.className = 'no-prompts-message';
-                noPromptsMessage.textContent = 'No saved prompts. Click "Add New Prompt" to create one.';
+                noPromptsMessage.textContent = 'No saved prompts. Create one below.';
                 elements.promptsList.appendChild(noPromptsMessage);
-                return;
+                // Don't return early, continue to add the new prompt section
             }
             
             // Add each prompt to the list
@@ -109,7 +180,7 @@ window.PromptsManager = (function() {
                     e.stopPropagation(); // Prevent triggering the prompt item click
                     PromptsService.togglePromptSelection(prompt.id);
                     PromptsService.applySelectedPromptsAsSystem();
-                    loadPromptsList(); // Refresh the list
+                    updatePromptsTokenUsage(); // Update token usage bar
                 });
                 promptItem.appendChild(checkbox);
                 
@@ -276,6 +347,9 @@ window.PromptsManager = (function() {
             if (elements.systemPromptInput && systemPrompt) {
                 elements.systemPromptInput.value = systemPrompt;
             }
+            
+            // Update token usage bar
+            updatePromptsTokenUsage();
         }
         
         /**
