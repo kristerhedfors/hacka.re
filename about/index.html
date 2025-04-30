@@ -246,9 +246,15 @@
             <div class="feature-section">
                 <h3>Overview</h3>
                 <p>
-                    <a href="https://hacka.re/" target="_blank">hacka.re</a> is a lightweight, static web UI built with pure HTML, CSS, and JavaScript that runs entirely client-side with no server-side rendering. It only requires an OpenAI-compatible API for inference. It allows for secure sharing of strongly encrypted GenAI provider credentials, system prompts, model choice, and conversation history over less secure communication channels.
+                   A <a href="https://hacka.re/" target="_blank">hacka.re</a> is a lightweight, static web UI built with pure HTML, CSS, and JavaScript that runs entirely client-side with no server-side rendering. It only requires an OpenAI-compatible API for inference. Your API key never leaves your browser other than in calls to your configured OpenAI-compatible model provider, and none of the conversations or configurations ever touch hacka.re servers.
                 </p>
                 <br />
+
+                <p>
+                   Not even the encrypted blob in the link containing a complete GPT configuration touches any web servers. It allows for secure sharing of strongly encrypted GenAI provider credentials, system prompts, model choice, and conversation history over less secure communication channels. You can pack an entire self-contained GPT, with API endpoint, API key, system prompts, and conversation history - into a self-contained strongly encrypted link, and even print this link on paper as a QR code.
+                </p>
+                <br />
+
 
                 <p>
                     This static architecture allows for GPT's to be shared securely over otherwise insecure channels without touching servers aside from the LLM API endpoint(s) involved for inference. The entire hacka.re site can simply be downloaded and run from disk as static files interpreted entirely on the client-side, or extended and re-published freely as it is licensed under the MIT No Attribution license.
