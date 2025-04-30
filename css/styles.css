@@ -129,6 +129,26 @@ header .model-provider {
     position: relative;
 }
 
+/* Apply Courier New font to all instances of hacka.re */
+.logo-text,
+.logo h1 a,
+h1 a[href="../index.html"],
+h2 a[href="https://hacka.re/"],
+p a[href="https://hacka.re/"],
+a[href="https://hacka.re/"] {
+    font-family: 'Courier New', monospace !important;
+}
+
+/* Override for custom titles (which are wrapped in named-gpt-container) */
+.named-gpt-container .logo-text {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+}
+
+/* Add a class that can be applied to any element containing hacka.re */
+.hacka-re-font {
+    font-family: 'Courier New', monospace !important;
+}
+
 /* Logo Text and Heart Styling */
 .logo-text {
     line-height: 1;
