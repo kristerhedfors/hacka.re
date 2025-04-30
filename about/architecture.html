@@ -239,8 +239,8 @@
             <div class="feature-section">
                 <h3>Technical Implementation</h3>
                 <p>
-                    <a href="https://hacka.re/" target="_blank">hacka.re</a> is built as a pure client-side application using vanilla JavaScript, HTML, and CSS.
-                    This approach eliminates the need for a backend server aside from the necessary OpenAI-compatible API endpoint for GenAI model access.
+                    <a href="https://hacka.re/" target="_blank">hacka.re</a> is built as a pure client-side application using static HTML, CSS, and vanilla JavaScript with no server-side rendering or processing.
+                    All code is interpreted and executed entirely in your browser. This static approach eliminates the need for a backend server aside from the necessary OpenAI-compatible API endpoint for GenAI model access.
                 </p>
                 
                 <div style="margin: 20px 0;">
@@ -270,7 +270,7 @@
                 <p>
                     The application communicates directly with your configured provider using your API key, which is stored
                     in your browser's localStorage. All message processing, including markdown rendering and
-                    syntax highlighting, happens locally in your browser.
+                    syntax highlighting, happens locally in your browser. As a static web application, hacka.re never sends your data to any server except when making direct API calls to your chosen LLM provider.
                 </p>
                 <br />
 
