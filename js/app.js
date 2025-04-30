@@ -116,22 +116,47 @@ window.updateTitleAndSubtitle = function(forceUpdate = false) {
                                 if (!container.querySelector('.close-gpt')) {
                                     const closeBtn = document.createElement('span');
                                     closeBtn.className = 'close-gpt';
-                                    closeBtn.textContent = 'Close';
-                                    closeBtn.title = 'Clear GPT name and return to default';
+                                    closeBtn.textContent = 'Delete';
+                                    closeBtn.title = 'Delete this GPT and all its data';
                                     closeBtn.addEventListener('click', function(e) {
                                         e.stopPropagation(); // Prevent event bubbling
                                         
-                                        // Reset title and subtitle to defaults
-                                        StorageService.saveTitle(defaultTitle);
-                                        StorageService.saveSubtitle(defaultSubtitle);
-                                        
-                                        // Update UI
-                                        updateTitleAndSubtitle();
-                                        
-                                        // Show a message
-                                        const chatManager = window.aiHackare ? window.aiHackare.chatManager : null;
-                                        if (chatManager && chatManager.addSystemMessage) {
-                                            chatManager.addSystemMessage('GPT name cleared. Returned to default namespace.');
+                                        // Show confirmation dialog
+                                        if (confirm(`Are you sure you want to delete this GPT (${title})? This will clear all data related to this specific GPT including its chat history and settings.`)) {
+                                            // Get the current namespace ID before resetting
+                                            const currentNamespaceId = NamespaceService.getNamespaceId();
+                                            
+                                            // Clear chat history for this namespace
+                                            StorageService.clearChatHistory();
+                                            
+                                            // Delete all localStorage items for this namespace
+                                            for (let i = localStorage.length - 1; i >= 0; i--) {
+                                                const key = localStorage.key(i);
+                                                if (key && key.includes(currentNamespaceId)) {
+                                                    localStorage.removeItem(key);
+                                                }
+                                            }
+                                            
+                                            // Reset title and subtitle to defaults
+                                            StorageService.saveTitle(defaultTitle);
+                                            StorageService.saveSubtitle(defaultSubtitle);
+                                            
+                                            // Reset namespace cache
+                                            NamespaceService.resetNamespaceCache();
+                                            
+                                            // Update UI
+                                            updateTitleAndSubtitle();
+                                            
+                                            // Clear the chat UI
+                                            const chatManager = window.aiHackare ? window.aiHackare.chatManager : null;
+                                            if (chatManager) {
+                                                if (chatManager.clearChat) {
+                                                    chatManager.clearChat();
+                                                }
+                                                if (chatManager.addSystemMessage) {
+                                                    chatManager.addSystemMessage(`GPT "${title}" has been deleted. All related data has been cleared.`);
+                                                }
+                                            }
                                         }
                                     });
                                     container.appendChild(closeBtn);
