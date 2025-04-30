@@ -13,6 +13,9 @@
     <!-- Markdown parser (local) -->
     <script src="../lib/marked/marked.min.js"></script>
     <script src="../lib/dompurify/purify.min.js"></script>
+    <!-- Highlight.js for syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
     <!-- Code popup script -->
     <script src="js/code-popup.js"></script>
     <style>
@@ -275,35 +278,6 @@
                     the Claude 3.7 Sonnet model. hacka.re is by design pretty bare-bones but allows for arbitrary expansion of purpose-specific features through further
                     LLM-assisted development with limited time and effort investments.</p>
 
-                <div class="code-block">
-                    <pre>// Example of the streaming implementation
-const response = await fetch(this.chatEndpoint, {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.apiKey}`
-    },
-    body: JSON.stringify({
-        model: this.currentModel,
-        messages: apiMessages,
-        stream: true
-    })
-});
-
-// Process the stream
-const reader = response.body.getReader();
-const decoder = new TextDecoder('utf-8');
-let aiResponse = '';
-
-while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-
-    // Decode chunk and update UI in real-time
-    const chunk = decoder.decode(value);
-    // Process SSE format...
-}</pre>
-                </div>
             </div>
 
             <div class="feature-section">
@@ -315,9 +289,9 @@ while (true) {
                 <ol>
                     <li><strong>EncryptionService:</strong> Handles all encryption and decryption operations</li>
                     <li><strong>NamespaceService:</strong> Manages namespaces for storage isolation based on title/subtitle</li>
-                    <li><strong>CoreStorageService:</strong> Provides the core storage operations with encryption support</li>
-                    <li><strong>DataService:</strong> Implements specific data type operations (API keys, models, chat history, etc.)</li>
-                    <li><strong>StorageService:</strong> Main entry point that coordinates all storage operations</li>
+                    <li><strong>CoreStorageService:</strong> Provides basic storage operations with optional encryption</li>
+                    <li><strong>DataService:</strong> Implements data-type-specific storage operations</li>
+                    <li><strong>StorageService:</strong> High-level facade exposing storage APIs</li>
                 </ol>
                 
                 <p>
@@ -331,107 +305,6 @@ while (true) {
                     <li>More flexible encryption and namespace management</li>
                 </ul>
                 
-                <div class="code-block">
-                    <pre>// Example of the modular storage architecture
-
-// EncryptionService handles encryption/decryption
-window.EncryptionService = (function() {
-    // Encryption-related functions
-    function encrypt(data, passphrase) {
-        // Implementation of encryption
-    }
-    
-    function decrypt(encryptedData, passphrase) {
-        // Implementation of decryption
-    }
-    
-    // Public API
-    return {
-        encrypt: encrypt,
-        decrypt: decrypt,
-        // Other encryption-related methods
-    };
-})();
-
-// NamespaceService manages storage namespaces
-window.NamespaceService = (function() {
-    // Namespace management functions
-    function getNamespace() {
-        // Get current namespace based on title/subtitle
-    }
-    
-    function getNamespacedKey(baseKey) {
-        // Get namespaced key for storage
-    }
-    
-    // Public API
-    return {
-        getNamespace: getNamespace,
-        getNamespacedKey: getNamespacedKey,
-        // Other namespace-related methods
-    };
-})();
-
-// CoreStorageService provides basic storage operations
-window.CoreStorageService = (function() {
-    // Core storage functions
-    function setValue(baseKey, value) {
-        // Set value with optional encryption
-    }
-    
-    function getValue(baseKey, legacyKey, migrateFn) {
-        // Get value with optional decryption
-    }
-    
-    // Public API
-    return {
-        setValue: setValue,
-        getValue: getValue,
-        // Other storage-related methods
-    };
-})();
-
-// DataService implements specific data operations
-window.DataService = (function() {
-    // Data-specific functions
-    function saveApiKey(apiKey) {
-        CoreStorageService.setValue(STORAGE_KEYS.API_KEY, apiKey);
-    }
-    
-    function getApiKey() {
-        return CoreStorageService.getValue(
-            STORAGE_KEYS.API_KEY, 
-            STORAGE_KEYS.API_KEY, 
-            saveApiKey
-        );
-    }
-    
-    // Public API
-    return {
-        saveApiKey: saveApiKey,
-        getApiKey: getApiKey,
-        // Other data-specific methods
-    };
-})();
-
-// StorageService is the main entry point
-window.StorageService = (function() {
-    // Initialize the core storage service
-    CoreStorageService.init();
-    
-    // Public API - expose all data service methods
-    return {
-        // Namespace methods
-        getNamespace: NamespaceService.getNamespace,
-        getNamespacedKey: NamespaceService.getNamespacedKey,
-        
-        // Data methods
-        saveApiKey: DataService.saveApiKey,
-        getApiKey: DataService.getApiKey,
-        // Other methods
-    };
-})();</pre>
-                </div>
             </div>
 
             <div class="feature-section">
@@ -483,140 +356,14 @@ window.StorageService = (function() {
                 </ol>
 
                 <p>
-                    <strong>Technical implementation:</strong> The feature uses TweetNaCl.js (a JavaScript port of the NaCl crypto library)
-                    for the encryption, combined with session key-based key derivation:
+                    <strong>Technical implementation:</strong> The feature uses TweetNaCl.js for encryption, combined with session key-based key derivation. Explore the implementations below via the popups.
                 </p>
-
-                <div class="code-block">
-                    <pre>// Simplified version of the comprehensive sharing implementation
-
-// Generate a strong random alphanumeric session key
-function generateStrongSessionKey() {
-    const length = 12; // Fixed length of 12 characters
-    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    let password = "";
-
-    // Get cryptographically strong random values
-    const randomValues = new Uint8Array(length);
-    window.crypto.getRandomValues(randomValues);
-
-    // Convert to session key characters
-    for (let i = 0; i < length; i++) {
-        password += charset[randomValues[i] % charset.length];
-    }
-
-    return password;
-}
-
-// Create a comprehensive shareable link with selected data
-function createComprehensiveShareableLink(options, sessionKey) {
-    // Create a payload object with only the selected data
-    const payload = {};
-
-    // Include API key if selected
-    if (options.includeApiKey && options.apiKey) {
-        payload.apiKey = options.apiKey;
-    }
-
-    // Include system prompt if selected
-    if (options.includeSystemPrompt && options.systemPrompt) {
-        payload.systemPrompt = options.systemPrompt;
-    }
-
-    // Include active model if selected
-    if (options.includeModel && options.model) {
-        payload.model = options.model;
-    }
-
-    // Include conversation data if selected
-    if (options.includeConversation && options.messages && options.messages.length > 0) {
-        // Include only the specified number of most recent messages
-        const messageCount = options.messageCount || 1;
-        const startIndex = Math.max(0, options.messages.length - messageCount);
-        payload.messages = options.messages.slice(startIndex);
-    }
-
-    // Encrypt the payload using the session key
-    const encryptedData = encryptData(payload, sessionKey);
-
-    // Create URL with only the encrypted data (no key)
-    return `${window.location.href.split('#')[0]}#shared=${encryptedData}`;
-}
-
-// Encrypt data with a session key
-function encryptData(payloadObj, sessionKey) {
-    // Convert to JSON string
-    const jsonString = JSON.stringify(payloadObj);
-    const plain = nacl.util.decodeUTF8(jsonString);
-
-    // Generate salt and derive key
-    const salt = nacl.randomBytes(SALT_LENGTH);
-    const key = deriveSeed(sessionKey, salt);
-
-    // Generate nonce for secretbox
-    const nonce = nacl.randomBytes(nacl.secretbox.nonceLength);
-
-    // Encrypt with secretbox (symmetric encryption)
-    const cipher = nacl.secretbox(plain, nonce, key);
-
-    // Combine salt, nonce, and cipher
-    const fullMessage = new Uint8Array(
-        salt.length +
-        nonce.length +
-        cipher.length
-    );
-
-    let offset = 0;
-    fullMessage.set(salt, offset);
-    offset += salt.length;
-
-    fullMessage.set(nonce, offset);
-    offset += nonce.length;
-
-    fullMessage.set(cipher, offset);
-
-    // Convert to base64 for URL-friendly format
-    return nacl.util.encodeBase64(fullMessage);
-}
-
-// Extract and decrypt shared data from the URL
-function extractSharedData(sessionKey) {
-    try {
-        // Get the hash fragment
-        const hash = window.location.hash;
-
-        // Check if it contains shared data
-        if (hash.includes('#shared=')) {
-            // Extract the encrypted data
-            const encryptedData = hash.split('#shared=')[1];
-
-            if (!encryptedData) {
-                return null;
-            }
-
-            // Decrypt the data
-            const data = decryptData(encryptedData, sessionKey);
-
-            if (!data) {
-                return null;
-            }
-
-            // Return all decrypted data
-            return {
-                apiKey: data.apiKey,
-                systemPrompt: data.systemPrompt || null,
-                model: data.model || null,
-                messages: data.messages || null
-            };
-        }
-
-        return null;
-    } catch (error) {
-        console.error('Error extracting shared data:', error);
-        return null;
-    }
-}</pre>
-                </div>
+                <ul>
+                    <li><strong>LinkSharingService:</strong> Manages creation and parsing of shareable links</li>
+                    <li><strong>ShareService:</strong> High-level facade for share operations</li>
+                    <li><strong>PromptsService:</strong> Handles prompt template storage and retrieval</li>
+                    <li><strong>ApiToolsService:</strong> Provides utilities for API interactions</li>
+                </ul>
 
                 <p>
                     <strong>Security considerations:</strong>

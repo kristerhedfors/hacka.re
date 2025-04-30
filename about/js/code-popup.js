@@ -6,13 +6,24 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Code popup script loaded');
+    
     // Initialize marked for rendering code
     if (typeof marked !== 'undefined') {
+        console.log('Marked library loaded');
         // Set marked options for code highlighting
         marked.setOptions({
             highlight: function(code, lang) {
+                if (typeof hljs !== 'undefined') {
+                    if (lang && hljs.getLanguage(lang)) {
+                        return hljs.highlight(code, { language: lang }).value;
+                    } else {
+                        return hljs.highlightAuto(code).value;
+                    }
+                }
                 return code;
-            }
+            },
+            langPrefix: 'language-'
         });
     } else {
         console.error('Marked library not loaded');
@@ -23,49 +34,100 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('DOMPurify library not loaded');
     }
 
-    // Process the content to add popups for code modules
-    processCodeModuleReferences();
+    // Add a small delay to ensure all libraries are loaded
+    setTimeout(function() {
+        // Process the content to add popups for code modules
+        processCodeModuleReferences();
+    }, 500);
 });
 
 /**
- * Process all code module references in the documentation
+ * Process all code module references in the documentation using text-node wrapping
  */
 function processCodeModuleReferences() {
-    // Get all paragraphs and list items in the documentation
-    const contentElements = document.querySelectorAll('.feature-section p, .feature-section li');
-    
-    // Regular expressions to match different module patterns
-    const patterns = [
-        // Match module names like "EncryptionService", "NamespaceService", etc.
-        /(?<![<\/\w])\b(window\.)?(EncryptionService|NamespaceService|CoreStorageService|DataService|StorageService|ApiService|ChatManager|SettingsManager|UIManager|PromptsManager|ShareManager|ApiToolsManager)\b(?![>\w])/g,
+    // Map of module names to file paths
+    const moduleToFilePath = {
+        'EncryptionService': 'js/services/encryption-service.js',
+        'NamespaceService': 'js/services/namespace-service.js',
+        'CoreStorageService': 'js/services/core-storage-service.js',
+        'DataService': 'js/services/data-service.js',
+        'StorageService': 'js/services/storage-service.js',
+        'ApiService': 'js/services/api-service.js',
+        'ChatManager': 'js/components/chat-manager.js',
+        'SettingsManager': 'js/components/settings-manager.js',
+        'UIManager': 'js/components/ui-manager.js',
+        'PromptsManager': 'js/components/prompts-manager.js',
+        'ShareManager': 'js/components/share-manager.js',
+        'ApiToolsManager': 'js/components/api-tools-manager.js'
+    };
+
+    // Process each feature section separately
+    document.querySelectorAll('.feature-section').forEach(section => {
+        // First, process text nodes
+        const walker = document.createTreeWalker(section, NodeFilter.SHOW_TEXT, null, false);
+        let node;
+        while (node = walker.nextNode()) {
+            const text = node.nodeValue;
+            for (const moduleName in moduleToFilePath) {
+                if (!text.includes(moduleName)) continue;
+                const parts = text.split(moduleName);
+                const parent = node.parentNode;
+                parts.forEach((part, index) => {
+                    parent.insertBefore(document.createTextNode(part), node);
+                    if (index < parts.length - 1) {
+                        const span = document.createElement('span');
+                        span.className = 'code-module-reference';
+                        span.setAttribute('data-file-path', moduleToFilePath[moduleName]);
+                        span.setAttribute('data-module-name', moduleName);
+                        span.textContent = moduleName;
+                        parent.insertBefore(span, node);
+                    }
+                });
+                parent.removeChild(node);
+                break; // move to next text node after match
+            }
+        }
         
-        // Match file paths like "js/services/api-service.js", "js/components/chat-manager.js", etc.
-        /(?<![<\/\w])\b(js\/services\/[a-z-]+\.js|js\/components\/[a-z-]+\.js|js\/utils\/[a-z-]+\.js)\b(?![>\w])/g
-    ];
-    
-    // Process each content element
-    contentElements.forEach(element => {
-        let html = element.innerHTML;
-        
-        // Apply each pattern
-        patterns.forEach(pattern => {
-            html = html.replace(pattern, (match) => {
-                // Determine the file path based on the match
-                const filePath = getFilePathFromMatch(match);
-                if (!filePath) return match;
-                
-                // Create a span with data attributes for the popup
-                return `<span class="code-module-reference" 
-                             data-file-path="${filePath}" 
-                             data-module-name="${match}">${match}</span>`;
-            });
+        // Then, process list items that might contain module names in strong tags
+        section.querySelectorAll('li strong').forEach(strongElement => {
+            const text = strongElement.textContent;
+            for (const moduleName in moduleToFilePath) {
+                // Check if the strong tag contains exactly the module name (with optional colon)
+                if (text === moduleName || text === `${moduleName}:`) {
+                    // Extract the module name without the colon
+                    const cleanModuleName = text.replace(':', '');
+                    
+                    // Make the strong element clickable directly
+                    strongElement.className = 'code-module-reference';
+                    strongElement.setAttribute('data-file-path', moduleToFilePath[cleanModuleName]);
+                    strongElement.setAttribute('data-module-name', cleanModuleName);
+                    strongElement.style.cursor = 'pointer';
+                    strongElement.style.color = 'var(--primary-color)';
+                    
+                    // Add a subtle indicator that it's clickable without using underline
+                    strongElement.style.position = 'relative';
+                    
+                    // Create a pseudo-element for the hover effect using a custom attribute
+                    strongElement.setAttribute('data-hover', 'true');
+                    
+                    // Add a style tag if it doesn't exist yet
+                    if (!document.getElementById('code-popup-hover-style')) {
+                        const styleTag = document.createElement('style');
+                        styleTag.id = 'code-popup-hover-style';
+                        styleTag.textContent = `
+                            .code-module-reference[data-hover="true"]:hover {
+                                text-decoration: underline;
+                            }
+                        `;
+                        document.head.appendChild(styleTag);
+                    }
+                    
+                    break;
+                }
+            }
         });
-        
-        // Update the element's HTML
-        element.innerHTML = html;
     });
-    
-    // Add event listeners to the code module references
+    // Add click handlers after wrapping spans
     addCodeModuleEventListeners();
 }
 
@@ -294,6 +356,7 @@ window.EncryptionService = (function() {
     };
 })();`,
 
+        // Added popup for NamespaceService
         'js/services/namespace-service.js': `/**
  * Namespace Service
  * Manages namespaces for storage isolation based on title/subtitle
@@ -401,6 +464,7 @@ window.NamespaceService = (function() {
     };
 })();`,
 
+        // Added popup for CoreStorageService
         'js/services/core-storage-service.js': `/**
  * Core Storage Service
  * Provides the core storage operations with encryption support
@@ -534,6 +598,7 @@ window.CoreStorageService = (function() {
     };
 })();`,
 
+        // Added popup for DataService
         'js/services/data-service.js': `/**
  * Data Service
  * Implements specific data type operations
@@ -797,7 +862,7 @@ window.DataService = (function() {
         saveSubtitle: saveSubtitle,
         getSubtitle: getSubtitle
     };
-})();`
+})();`,
     };
     
     return sourceCodeSnippets[filePath] || null;
@@ -854,12 +919,27 @@ function showCodePopup(element, filePath, moduleName, sourceCode) {
     const content = document.createElement('div');
     content.className = 'code-popup-content';
     
-    // Format the source code with marked
-    const formattedCode = `\`\`\`javascript\n${sourceCode}\n\`\`\``;
-    const renderedCode = marked.parse(formattedCode);
+    // Format the source code with marked or fallback to basic formatting
+    let renderedCode;
+    if (typeof marked !== 'undefined') {
+        const formattedCode = `\`\`\`javascript\n${sourceCode}\n\`\`\``;
+        renderedCode = marked.parse(formattedCode);
+    } else {
+        // Fallback to basic formatting if marked is not available
+        renderedCode = `<pre><code class="language-javascript">${escapeHtml(sourceCode)}</code></pre>`;
+    }
     
-    // Sanitize the HTML
-    content.innerHTML = DOMPurify.sanitize(renderedCode);
+    // Sanitize the HTML if DOMPurify is available
+    if (typeof DOMPurify !== 'undefined') {
+        content.innerHTML = DOMPurify.sanitize(renderedCode);
+    } else {
+        content.innerHTML = renderedCode;
+    }
+    
+    // Apply highlight.js to rendered code blocks if available
+    if (typeof hljs !== 'undefined') {
+        content.querySelectorAll('pre code').forEach(block => hljs.highlightElement(block));
+    }
     
     popup.appendChild(content);
     
