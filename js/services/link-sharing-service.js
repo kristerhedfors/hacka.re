@@ -88,6 +88,14 @@ window.LinkSharingService = (function() {
             // Get selected prompt IDs
             const selectedPromptIds = PromptsService.getSelectedPromptIds();
             finalPayload.selectedPromptIds = selectedPromptIds;
+            
+            // Log for debugging
+            console.log('Including prompt library in shared link:', {
+                promptsCount: prompts.length,
+                selectedIdsCount: selectedPromptIds.length,
+                prompts: prompts,
+                selectedPromptIds: selectedPromptIds
+            });
         }
         
         // Encrypt the payload
@@ -128,6 +136,7 @@ window.LinkSharingService = (function() {
                 }
                 
                 if (!encryptedData) {
+                    console.error('No encrypted data found in URL hash');
                     return null;
                 }
                 
@@ -135,6 +144,7 @@ window.LinkSharingService = (function() {
                 const data = CryptoUtils.decryptData(encryptedData, password);
                 
                 if (!data) {
+                    console.error('Decryption failed or returned null');
                     return null;
                 }
                 

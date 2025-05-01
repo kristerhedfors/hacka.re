@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Link Sharing Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-result {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 3px;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .failure {
+            color: red;
+            font-weight: bold;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        pre {
+            background-color: #f8f8f8;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Link Sharing Fix Test</h1>
+    <p>This test verifies that the fix for decryption of shared links with prompt library data works correctly.</p>
+
+    <!-- Load required scripts -->
+    <script src="../lib/tweetnacl/nacl-fast.min.js"></script>
+    <script src="../lib/tweetnacl/nacl-util.min.js"></script>
+    <script src="../js/utils/crypto-utils.js"></script>
+    <script src="../js/services/model-info.js"></script>
+    <script src="../js/services/encryption-service.js"></script>
+    <script src="../js/services/namespace-service.js"></script>
+    <script src="../js/services/core-storage-service.js"></script>
+    <script src="../js/services/data-service.js"></script>
+    <script src="../js/services/storage-service.js"></script>
+    <script src="../js/services/link-sharing-service.js"></script>
+    <script src="../js/services/share-service.js"></script>
+    <script src="../js/services/prompts-service.js"></script>
+
+    <div class="test-section">
+        <h2>Test 1: Create and Decrypt Shared Link with Prompt Library</h2>
+        <button id="test-shared-link">Run Test</button>
+        <div id="shared-link-result" class="test-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Verify JSON Error Handling</h2>
+        <button id="test-json-error">Run Test</button>
+        <div id="json-error-result" class="test-result"></div>
+    </div>
+
+    <script>
+        // Helper function to display test results
+        function displayResult(elementId, success, message, details = '') {
+            const resultElement = document.getElementById(elementId);
+            resultElement.innerHTML = `
+                <div class="${success ? 'success' : 'failure'}">
+                    ${success ? 'PASSED' : 'FAILED'}: ${message}
+                </div>
+                ${details ? `<pre>${details}</pre>` : ''}
+            `;
+        }
+
+        // Test 1: Create and decrypt a shared link with prompt library
+        document.getElementById('test-shared-link').addEventListener('click', function() {
+            try {
+                // Mock the location and history for testing
+                const mockLocation = {
+                    href: 'https://hacka.re/index.html',
+                    hash: '',
+                    pathname: '/index.html',
+                    search: ''
+                };
+                
+                const mockHistory = {
+                    replaceState: function(state, title, url) {
+                        mockLocation.href = url;
+                        mockLocation.hash = url.includes('#') ? '#' + url.split('#')[1] : '';
+                    }
+                };
+                
+                // Set the mock objects for testing
+                LinkSharingService._setTestingObjects(mockLocation, mockHistory);
+                
+                // Mock the PromptsService for testing
+                const originalGetPrompts = PromptsService.getPrompts;
+                const originalGetSelectedPromptIds = PromptsService.getSelectedPromptIds;
+                
+                PromptsService.getPrompts = function() {
+                    return [
+                        {
+                            id: 'test-prompt-1',
+                            name: 'Test Prompt 1',
+                            content: 'This is test prompt 1 content'
+                        },
+                        {
+                            id: 'test-prompt-2',
+                            name: 'Test Prompt 2',
+                            content: 'This is test prompt 2 content'
+                        }
+                    ];
+                };
+                
+                PromptsService.getSelectedPromptIds = function() {
+                    return ['test-prompt-1'];
+                };
+                
+                // Test data
+                const testApiKey = 'test-api-key-12345';
+                const testPassword = 'test-password';
+                
+                // Create a shared link with prompt library
+                const payload = { apiKey: testApiKey };
+                const sharedLink = LinkSharingService.createCustomShareableLink(
+                    payload, 
+                    testPassword,
+                    { includePromptLibrary: true }
+                );
+                
+                // Extract the encrypted data from the link
+                const encryptedData = sharedLink.split('#gpt=')[1];
+                
+                // Set the hash fragment for extraction
+                mockLocation.hash = '#gpt=' + encryptedData;
+                
+                // Extract the shared data
+                const extractedData = LinkSharingService.extractSharedApiKey(testPassword);
+                
+                // Verify the extracted data
+                const success = extractedData !== null && 
+                               extractedData.apiKey === testApiKey &&
+                               Array.isArray(extractedData.prompts) &&
+                               extractedData.prompts.length === 2 &&
+                               Array.isArray(extractedData.selectedPromptIds) &&
+                               extractedData.selectedPromptIds.length === 1;
+                
+                // Restore original functions
+                PromptsService.getPrompts = originalGetPrompts;
+                PromptsService.getSelectedPromptIds = originalGetSelectedPromptIds;
+                LinkSharingService._resetTestingObjects();
+                
+                // Display results
+                const details = `
+Shared link: ${sharedLink.substring(0, 50)}...
+Extracted data: ${JSON.stringify(extractedData, null, 2)}
+                `;
+                
+                displayResult('shared-link-result', success, 
+                    success ? 'Successfully created and extracted shared link with prompt library' 
+                            : 'Failed to create or extract shared link with prompt library',
+                    details);
+            } catch (error) {
+                displayResult('shared-link-result', false, 
+                    'Test failed with an error', 
+                    error.toString());
+            }
+        });
+
+        // Test 2: Verify JSON error handling
+        document.getElementById('test-json-error').addEventListener('click', function() {
+            try {
+                // Create a valid payload
+                const payload = { test: 'value' };
+                
+                // Encrypt the payload
+                const password = 'test-password';
+                const encryptedData = CryptoUtils.encryptData(payload, password);
+                
+                // Manually corrupt the encrypted data to cause a JSON parsing error
+                // We'll do this by decoding the base64, modifying a few bytes, and re-encoding
+                const decoded = nacl.util.decodeBase64(encryptedData);
+                
+                // Modify bytes in the cipher part (after salt and nonce)
+                const saltAndNonceLength = 16 + nacl.secretbox.nonceLength;
+                for (let i = saltAndNonceLength + 10; i < saltAndNonceLength + 20; i++) {
+                    if (i < decoded.length) {
+                        decoded[i] = (decoded[i] + 50) % 256; // Corrupt some bytes
+                    }
+                }
+                
+                const corruptedData = nacl.util.encodeBase64(decoded);
+                
+                // Try to decrypt the corrupted data
+                const result = CryptoUtils.decryptData(corruptedData, password);
+                
+                // The decryption should either return null or throw an error that's caught internally
+                const success = result === null;
+                
+                // Display results
+                const details = `
+Original encrypted data: ${encryptedData.substring(0, 50)}...
+Corrupted encrypted data: ${corruptedData.substring(0, 50)}...
+Decryption result: ${result === null ? 'null (expected)' : JSON.stringify(result)}
+                `;
+                
+                displayResult('json-error-result', success, 
+                    success ? 'JSON error handling works correctly' 
+                            : 'JSON error handling failed',
+                    details);
+            } catch (error) {
+                // If we get here, it means the error wasn't properly caught in decryptData
+                displayResult('json-error-result', false, 
+                    'Test failed with an uncaught error', 
+                    error.toString());
+            }
+        });
+    </script>
+</body>
+</html>

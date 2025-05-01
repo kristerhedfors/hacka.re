@@ -155,9 +155,6 @@ window.CryptoUtils = (function() {
      * @returns {string} Base64-encoded encrypted data
      */
     function encryptData(payloadObj, password) {
-        // Log the payload for debugging
-        console.log('Encrypting payload:', payloadObj);
-        
         // Convert to JSON string
         const jsonString = JSON.stringify(payloadObj);
         if (!jsonString) {
@@ -236,11 +233,16 @@ window.CryptoUtils = (function() {
             // Convert from Uint8Array to string, then parse JSON
             const plainText = nacl.util.encodeUTF8(plain);
             
-            // Parse JSON
-            const result = JSON.parse(plainText);
-            console.log('Successfully decrypted data:', result);
-            
-            return result;
+            try {
+                // Parse JSON
+                const result = JSON.parse(plainText);
+                console.log('Successfully decrypted data:', result);
+                return result;
+            } catch (jsonError) {
+                console.error('JSON parsing error after successful decryption:', jsonError);
+                console.log('Raw decrypted text:', plainText);
+                return null;
+            }
         } catch (error) {
             console.error('Decryption error:', error);
             return null;
