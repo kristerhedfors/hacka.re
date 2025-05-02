@@ -130,7 +130,6 @@ header .model-provider {
 }
 
 /* Apply Courier New font to all instances of hacka.re */
-.logo-text,
 .logo h1 a,
 h1 a[href="../index.html"],
 h2 a[href="https://hacka.re/"],
@@ -138,6 +137,8 @@ p a[href="https://hacka.re/"],
 a[href="https://hacka.re/"] {
     font-family: 'Courier New', monospace !important;
 }
+
+/* Remove .logo-text from the above rule to prevent Courier New from affecting serverless GPTs */
 
 /* Override for custom titles (which are wrapped in named-gpt-container) */
 .named-gpt-container .logo-text {

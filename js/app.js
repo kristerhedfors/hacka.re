@@ -54,16 +54,21 @@ window.updateTitleAndSubtitle = function(forceUpdate = false) {
                     const tempHeartLogo = heartLogo;
                     element.removeChild(heartLogo);
                     
-                    // Create a text node for the title
-                    const titleNode = document.createTextNode(title);
-                    element.appendChild(titleNode);
+                    // Create a span for the title with appropriate font styling
+                    const titleSpan = document.createElement('span');
+                    titleSpan.textContent = title;
                     
                     // Apply Courier New font specifically when the title is "hacka.re"
                     if (title === "hacka.re") {
-                        element.style.fontFamily = "'Courier New', monospace";
+                        titleSpan.style.fontFamily = "'Courier New', monospace";
                     } else {
-                        element.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+                        titleSpan.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
                     }
+                    
+                    element.appendChild(titleSpan);
+                    
+                    // Reset the main element's font family to ensure it doesn't affect other elements
+                    element.style.fontFamily = "";
                     
                     // Add the heart logo back
                     element.appendChild(tempHeartLogo);

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Title and Subtitle Font Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+        }
+        
+        .test-container {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+        
+        h2 {
+            margin-top: 0;
+        }
+        
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+        
+        .serverless-gpts {
+            color: #aaaaaa;
+            font-size: inherit;
+            font-weight: 400;
+            position: relative;
+            margin-left: 5px;
+            animation: textSweep 3s infinite alternate;
+            background: linear-gradient(90deg, #c2c2c2, #ffffff, #c2c2c2);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-fill-color: transparent;
+        }
+        
+        .gpts {
+            font-weight: 700;
+        }
+        
+        @keyframes textSweep {
+            0% {
+                background-position: 0% center;
+            }
+            100% {
+                background-position: 100% center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Title and Subtitle Font Test</h1>
+    
+    <div class="test-container">
+        <h2>Before Fix: Courier New font applied to entire logo-text element</h2>
+        <div class="logo">
+            <h1 class="logo-text" style="font-family: 'Courier New', monospace;">
+                hacka.re<span class="serverless-gpts"> serverless <span class="gpts">GPTs</span></span>
+            </h1>
+        </div>
+        <p>In this example, the Courier New font is applied to the entire logo-text element, which includes both "hacka.re" and "serverless GPTs".</p>
+    </div>
+    
+    <div class="test-container">
+        <h2>After Fix: Courier New font applied only to hacka.re text</h2>
+        <div class="logo">
+            <h1 class="logo-text">
+                <span style="font-family: 'Courier New', monospace;">hacka.re</span><span class="serverless-gpts"> serverless <span class="gpts">GPTs</span></span>
+            </h1>
+        </div>
+        <p>In this example, the Courier New font is applied only to the "hacka.re" text, while "serverless GPTs" uses the default font.</p>
+    </div>
+    
+    <div class="test-container">
+        <h2>Implementation in app.js</h2>
+        <pre>
+// Create a span for the title with appropriate font styling
+const titleSpan = document.createElement('span');
+titleSpan.textContent = title;
+
+// Apply Courier New font specifically when the title is "hacka.re"
+if (title === "hacka.re") {
+    titleSpan.style.fontFamily = "'Courier New', monospace";
+} else {
+    titleSpan.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+}
+
+element.appendChild(titleSpan);
+
+// Reset the main element's font family to ensure it doesn't affect other elements
+element.style.fontFamily = "";
+        </pre>
+        <p>This implementation creates a separate span for the title text and applies the Courier New font only to that span, not to the entire logo-text element.</p>
+    </div>
+</body>
+</html>
