@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="en" class="theme-modern">
 <head>
     <meta charset="UTF-8">
@@ -207,8 +206,8 @@
                     </div>
                     
                     <div class="form-actions">
-                        <button type="button" class="btn primary-btn" id="generate-share-link">Generate Link</button>
-                        <button type="button" class="btn secondary-btn" id="close-share-modal">Done</button>
+                        <button type="button" class="btn primary-btn" id="generate-share-link-btn">Generate Link</button>
+                        <button type="button" class="btn secondary-btn" id="close-share-modal">Cancel</button>
                     </div>
                 </form>
                 
@@ -290,7 +289,7 @@
                     </div>
                     <div class="form-group">
                         <label for="api-key-update">API Key</label>
-                        <input type="password" id="api-key-update" placeholder="Update your API key">
+                        <input type="password" id="api-key-update" name="api-key-update" placeholder="Update your API key" aria-label="API Key Input">
                     </div>
                     <div class="form-group">
                         <label for="model-select">Model</label>
@@ -311,8 +310,8 @@
                     </div>
                     <div class="form-actions">
                         <a href="#" id="clear-all-settings" style="color: blue; margin-right: auto;">Clear all settings</a>
-                        <button type="submit" class="btn primary-btn">Save Settings</button>
-                        <button type="button" class="btn secondary-btn" id="close-settings">Cancel</button>
+                        <button type="submit" class="btn primary-btn" id="save-settings-btn" name="save-settings-btn" aria-label="Save Settings Button">Save Settings</button>
+                        <button type="button" class="btn secondary-btn" id="close-settings" name="close-settings" aria-label="Cancel Button">Cancel</button>
                     </div>
                 </form>
             </div>
@@ -330,7 +329,7 @@
                 <div id="chat-input-container">
                     <form id="chat-form">
                         <textarea id="message-input" placeholder="Type your message here..." rows="1"></textarea>
-                        <button type="submit" id="send-btn" class="icon-btn" title="Send message">
+                        <button type="submit" id="send-btn" class="icon-btn" title="Send message" name="send-message-button" aria-label="Send Message Button">
                             <i class="fas fa-paper-plane"></i>
                         </button>
                     </form>

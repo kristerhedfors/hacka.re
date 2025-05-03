@@ -39,7 +39,7 @@ window.DOMElements = (function() {
             sharePromptLibraryCheckbox: document.getElementById('share-prompt-library'),
             shareTitleInput: document.getElementById('share-title'),
             shareSubtitleInput: document.getElementById('share-subtitle'),
-            generateShareLinkBtn: document.getElementById('generate-share-link'),
+            generateShareLinkBtn: document.getElementById('generate-share-link-btn'),
             closeShareModalBtn: document.getElementById('close-share-modal'),
             generatedLinkContainer: document.getElementById('generated-link-container'),
             generatedLink: document.getElementById('generated-link'),
