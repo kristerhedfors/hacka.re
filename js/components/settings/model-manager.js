@@ -207,11 +207,8 @@ window.ModelManager = (function() {
                             model: sharedModel
                         };
                     } else {
-                        console.warn(`Shared model not available: ${sharedModel}`);
-                        return {
-                            success: false,
-                            model: sharedModel
-                        };
+                        console.warn(`Shared model not available: ${sharedModel}. Using default model instead.`);
+                        // Don't return here, continue to check SharedLinkManager and potentially select a default model
                     }
                 }
                 
@@ -240,11 +237,8 @@ window.ModelManager = (function() {
                                 model: sharedLinkModel
                             };
                         } else {
-                            console.warn(`Shared model from SharedLinkManager not available: ${sharedLinkModel}`);
-                            return {
-                                success: false,
-                                model: sharedLinkModel
-                            };
+                            console.warn(`Shared model from SharedLinkManager not available: ${sharedLinkModel}. Using default model instead.`);
+                            // Don't return here, continue to potentially select a default model
                         }
                     }
                 }
