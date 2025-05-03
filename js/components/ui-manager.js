@@ -299,6 +299,25 @@ window.UIManager = (function() {
                 estimatedLength += currentModel.length;
             }
             
+            // Add prompt library if selected
+            if (elements.sharePromptLibraryCheckbox && elements.sharePromptLibraryCheckbox.checked) {
+                // Get prompts from PromptsService
+                const prompts = PromptsService.getPrompts();
+                const selectedPromptIds = PromptsService.getSelectedPromptIds();
+                
+                if (prompts && prompts.length > 0) {
+                    // Estimate the length of the prompts
+                    prompts.forEach(prompt => {
+                        estimatedLength += prompt.name.length + prompt.content.length + 20; // 20 for id and JSON overhead
+                    });
+                }
+                
+                if (selectedPromptIds && selectedPromptIds.length > 0) {
+                    // Estimate the length of the selected prompt IDs
+                    estimatedLength += selectedPromptIds.join(',').length + 20; // 20 for JSON overhead
+                }
+            }
+            
             // Add conversation data if selected
             if (elements.shareConversationCheckbox && elements.shareConversationCheckbox.checked && messages.length > 0) {
                 const messageCount = parseInt(elements.messageHistoryCount.value, 10) || 1;
