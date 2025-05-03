@@ -901,6 +901,7 @@ footer a:hover {
     font-weight: normal;
     box-shadow: var(--box-shadow);
     pointer-events: none;
+    display: none; /* Hide all tooltips by default */
 }
 
 .info-icon .tooltip::after {
@@ -914,9 +915,11 @@ footer a:hover {
     border-color: var(--dark-color) transparent transparent transparent;
 }
 
-.info-icon:hover .tooltip {
+/* Only show tooltips for elements not in the share modal */
+.info-icon:not(#share-modal .info-icon):hover .tooltip {
     visibility: visible;
     opacity: 1;
+    display: block;
 }
 
 /* Locked session key styles */
@@ -1096,8 +1099,9 @@ footer a:hover {
     color: var(--primary-dark);
 }
 
-/* Settings info modal styling */
-#settings-info-modal .modal-content {
+/* Settings and Share info modal styling */
+#settings-info-modal .modal-content,
+[id^="share-info-modal-"] .modal-content {
     max-width: 600px;
 }
 
