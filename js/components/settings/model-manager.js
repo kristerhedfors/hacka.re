@@ -200,15 +200,52 @@ window.ModelManager = (function() {
                         StorageService.saveModel(sharedModel);
                         elements.modelSelect.value = sharedModel;
                         
+                        console.log(`Applied shared model: ${sharedModel}`);
+                        
                         return {
                             success: true,
                             model: sharedModel
                         };
                     } else {
+                        console.warn(`Shared model not available: ${sharedModel}`);
                         return {
                             success: false,
                             model: sharedModel
                         };
+                    }
+                }
+                
+                // Also check if there's a shared model in the SharedLinkManager
+                if (window.SharedLinkManager && typeof window.SharedLinkManager.getPendingSharedModel === 'function') {
+                    const sharedLinkModel = window.SharedLinkManager.getPendingSharedModel();
+                    if (sharedLinkModel) {
+                        console.log(`Found pending shared model in SharedLinkManager: ${sharedLinkModel}`);
+                        
+                        // Clear it to avoid reapplying
+                        if (typeof window.SharedLinkManager.clearPendingSharedModel === 'function') {
+                            window.SharedLinkManager.clearPendingSharedModel();
+                        }
+                        
+                        // Check if the model is available
+                        if (fetchedModelIds.includes(sharedLinkModel)) {
+                            // Apply the model
+                            currentModel = sharedLinkModel;
+                            StorageService.saveModel(sharedLinkModel);
+                            elements.modelSelect.value = sharedLinkModel;
+                            
+                            console.log(`Applied shared model from SharedLinkManager: ${sharedLinkModel}`);
+                            
+                            return {
+                                success: true,
+                                model: sharedLinkModel
+                            };
+                        } else {
+                            console.warn(`Shared model from SharedLinkManager not available: ${sharedLinkModel}`);
+                            return {
+                                success: false,
+                                model: sharedLinkModel
+                            };
+                        }
                     }
                 }
                 
