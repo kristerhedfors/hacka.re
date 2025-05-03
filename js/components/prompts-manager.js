@@ -1,6 +1,6 @@
 /**
  * Prompts Manager Module
- * Handles prompt configurator functionality for the AIHackare application
+ * Handles prompt configurator functionality and system prompt management for the AIHackare application
  */
 
 window.PromptsManager = (function() {

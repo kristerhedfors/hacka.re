@@ -1,8 +1,8 @@
 /**
  * Share Service
- * Handles encryption, decryption, and sharing of API keys, system prompts, and conversation data
+ * Handles encryption, decryption, and sharing of API keys, prompts, and conversation data
  * 
- * This service provides shareable links for API keys, system prompts, and conversation data.
+ * This service provides shareable links for API keys, prompts, and conversation data.
  * It uses the CryptoUtils for encryption/decryption and LinkSharingService for link handling.
  * 
  * The encryption uses public/private key cryptography with password-based key derivation
@@ -44,12 +44,12 @@ window.ShareService = (function() {
     }
     
     /**
-     * Create a shareable link with encrypted API key and system prompt
-     * This creates a link that contains both the API key and system prompt,
+     * Create a shareable link with encrypted API key and prompts
+     * This creates a link that contains both the API key and prompts,
      * allowing the recipient to use your exact configuration.
      * 
      * @param {string} apiKey - The API key to share
-     * @param {string} systemPrompt - The system prompt to share
+     * @param {string} systemPrompt - The system prompt generated from selected prompts to share
      * @param {string} password - The password to use for encryption
      * @returns {string} Shareable URL
      */
@@ -67,7 +67,7 @@ window.ShareService = (function() {
      * @param {number} options.messageCount - Number of recent messages to include (if includeConversation is true)
      * @param {boolean} options.includeBaseUrl - Whether to include the base URL
      * @param {boolean} options.includeApiKey - Whether to include the API key
-     * @param {boolean} options.includeSystemPrompt - Whether to include the system prompt
+     * @param {boolean} options.includeSystemPrompt - Whether to include the prompts
      * @param {boolean} options.includeConversation - Whether to include conversation data
      * @param {boolean} options.includePromptLibrary - Whether to include the prompt library
      * @param {string} password - The password to use for encryption
@@ -125,7 +125,7 @@ window.ShareService = (function() {
     /**
      * Extract and decrypt a shared API key from the URL
      * @param {string} password - The password to use for decryption
-     * @returns {Object} Object containing apiKey and systemPrompt (if available)
+     * @returns {Object} Object containing apiKey and prompts data (if available)
      */
     function extractSharedApiKey(password) {
         return LinkSharingService.extractSharedApiKey(password);
