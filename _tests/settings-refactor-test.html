@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings Manager Refactor Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .failure {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Settings Manager Refactor Test</h1>
+    <div id="test-results"></div>
+
+    <!-- Load all required scripts -->
+    <!-- TweetNaCl for encryption (local) -->
+    <script src="../lib/tweetnacl/nacl-fast.min.js"></script>
+    <script src="../lib/tweetnacl/nacl-util.min.js"></script>
+    <script src="../js/utils/crypto-utils.js"></script>
+    <script src="../js/services/model-info.js"></script>
+    <script src="../js/services/encryption-service.js"></script>
+    <script src="../js/services/namespace-service.js"></script>
+    <script src="../js/services/core-storage-service.js"></script>
+    <script src="../js/services/data-service.js"></script>
+    <script src="../js/services/storage-service.js"></script>
+    <script src="../js/services/api-service.js"></script>
+    <script src="../js/services/api-tools-service.js"></script>
+    <script src="../js/services/link-sharing-service.js"></script>
+    <script src="../js/services/share-service.js"></script>
+    <script src="../js/services/prompts-service.js"></script>
+    <script src="../js/utils/ui-utils.js"></script>
+    
+    <!-- Component modules -->
+    <script src="../js/components/dom-elements.js"></script>
+    
+    <!-- Settings Manager Components -->
+    <script src="../js/components/settings/api-key-manager.js"></script>
+    <script src="../js/components/settings/model-manager.js"></script>
+    <script src="../js/components/settings/system-prompt-manager.js"></script>
+    <script src="../js/components/settings/base-url-manager.js"></script>
+    <script src="../js/components/settings/title-subtitle-manager.js"></script>
+    <script src="../js/components/settings/welcome-manager.js"></script>
+    <script src="../js/components/settings/shared-link-manager.js"></script>
+    <script src="../js/components/settings/settings-manager.js"></script>
+
+    <script>
+        // Test runner
+        const testResults = document.getElementById('test-results');
+        
+        function logResult(message, success) {
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${success ? 'success' : 'failure'}`;
+            resultDiv.textContent = message;
+            testResults.appendChild(resultDiv);
+            console.log(`${success ? 'PASS' : 'FAIL'}: ${message}`);
+        }
+        
+        function runTests() {
+            try {
+                // Test 1: Check if all modules are loaded
+                if (typeof ApiKeyManager !== 'undefined' && 
+                    typeof ModelManager !== 'undefined' && 
+                    typeof SystemPromptManager !== 'undefined' && 
+                    typeof BaseUrlManager !== 'undefined' && 
+                    typeof TitleSubtitleManager !== 'undefined' && 
+                    typeof WelcomeManager !== 'undefined' && 
+                    typeof SharedLinkManager !== 'undefined') {
+                    logResult('All modular components loaded successfully', true);
+                } else {
+                    logResult('Some modular components failed to load', false);
+                }
+                
+                // Test 2: Check if the main SettingsManager is loaded
+                if (typeof SettingsManager !== 'undefined' && 
+                    typeof SettingsManager.createSettingsManager === 'function') {
+                    logResult('Main SettingsManager loaded successfully', true);
+                } else {
+                    logResult('Main SettingsManager failed to load', false);
+                }
+                
+                // Test 3: Create a mock elements object
+                const mockElements = {
+                    apiKeyInput: { value: '' },
+                    apiKeyUpdate: { value: '' },
+                    modelSelect: { value: '', innerHTML: '' },
+                    baseUrlSelect: { value: 'groq', addEventListener: function() {} },
+                    baseUrl: { value: '' },
+                    customBaseUrlGroup: { style: { display: 'none' } },
+                    systemPromptInput: { value: '' },
+                    resetSystemPromptBtn: { addEventListener: function() {} },
+                    modelReloadBtn: { addEventListener: function() {} },
+                    settingsModal: { classList: { add: function() {} } },
+                    lockSessionKeyCheckbox: { checked: false },
+                    passwordInputContainer: { classList: { add: function() {} } }
+                };
+                
+                // Test 4: Create instances of each manager
+                const apiKeyManager = ApiKeyManager.createApiKeyManager();
+                const modelManager = ModelManager.createModelManager(mockElements);
+                const systemPromptManager = SystemPromptManager.createSystemPromptManager(mockElements);
+                const baseUrlManager = BaseUrlManager.createBaseUrlManager(mockElements);
+                const titleSubtitleManager = TitleSubtitleManager.createTitleSubtitleManager();
+                const welcomeManager = WelcomeManager.createWelcomeManager(mockElements);
+                const sharedLinkManager = SharedLinkManager.createSharedLinkManager(mockElements);
+                
+                if (apiKeyManager && modelManager && systemPromptManager && 
+                    baseUrlManager && titleSubtitleManager && welcomeManager && 
+                    sharedLinkManager) {
+                    logResult('All manager instances created successfully', true);
+                } else {
+                    logResult('Failed to create some manager instances', false);
+                }
+                
+                // Test 5: Create the main settings manager
+                const settingsManager = window.SettingsManager.createSettingsManager(mockElements);
+                
+                if (settingsManager && 
+                    typeof settingsManager.init === 'function' && 
+                    typeof settingsManager.saveApiKey === 'function' && 
+                    typeof settingsManager.saveSettings === 'function' && 
+                    typeof settingsManager.getApiKey === 'function' && 
+                    typeof settingsManager.getCurrentModel === 'function' && 
+                    typeof settingsManager.getSystemPrompt === 'function' && 
+                    typeof settingsManager.getBaseUrl === 'function' && 
+                    typeof settingsManager.fetchAvailableModels === 'function' && 
+                    typeof settingsManager.populateDefaultModels === 'function' && 
+                    typeof settingsManager.clearAllSettings === 'function') {
+                    logResult('Main settings manager created successfully with all required methods', true);
+                } else {
+                    logResult('Main settings manager is missing some required methods', false);
+                }
+                
+                // Test 6: Check if the API methods work
+                try {
+                    // Test getApiKey
+                    const apiKey = settingsManager.getApiKey();
+                    logResult('getApiKey method works', true);
+                    
+                    // Test getCurrentModel
+                    const currentModel = settingsManager.getCurrentModel();
+                    logResult('getCurrentModel method works', true);
+                    
+                    // Test getSystemPrompt
+                    const systemPrompt = settingsManager.getSystemPrompt();
+                    logResult('getSystemPrompt method works', true);
+                    
+                    // Test getBaseUrl
+                    const baseUrl = settingsManager.getBaseUrl();
+                    logResult('getBaseUrl method works', true);
+                } catch (error) {
+                    logResult(`Error testing API methods: ${error.message}`, false);
+                }
+                
+                // Final success message
+                logResult('All tests completed', true);
+                
+            } catch (error) {
+                logResult(`Test runner error: ${error.message}`, false);
+                console.error(error);
+            }
+        }
+        
+        // Run tests when the page loads
+        window.addEventListener('load', runTests);
+    </script>
+</body>
+</html>
