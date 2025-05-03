@@ -1,6 +1,7 @@
 /**
  * System Prompt Manager Module
  * Handles system prompt-related functionality for the AIHackare application
+ * Works with the Prompts Manager to display and manage the system prompt
  */
 
 window.SystemPromptManager = (function() {
