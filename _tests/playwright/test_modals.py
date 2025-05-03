@@ -35,9 +35,13 @@ def test_settings_modal(page, serve_hacka_re):
     model_select = page.locator("#model-select")
     expect(model_select).to_be_visible()
     
-    # Check that the system prompt textarea is visible
-    system_prompt = page.locator("#system-prompt")
-    expect(system_prompt).to_be_visible()
+    # Check that the system prompt section is visible with the new UI
+    show_system_prompt_btn = page.locator("#show-system-prompt")
+    expect(show_system_prompt_btn).to_be_visible()
+    
+    # Check that the prompt configurator button is visible
+    open_prompts_config_btn = page.locator("#open-prompts-config")
+    expect(open_prompts_config_btn).to_be_visible()
     
     # Close the settings modal
     close_button = page.locator("#close-settings")
