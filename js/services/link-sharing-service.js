@@ -148,9 +148,10 @@ window.LinkSharingService = (function() {
                     return null;
                 }
                 
-                // For backward compatibility, require apiKey for now
-                // In the future, we might want to allow sharing just conversation data
-                if (!data.apiKey) {
+                // Check if the decrypted data contains at least one valid field
+                // We no longer require apiKey to be present, allowing sharing of just conversation or model
+                if (!data.apiKey && !data.messages && !data.model && !data.systemPrompt && !data.prompts) {
+                    console.error('Decrypted data does not contain any valid fields');
                     return null;
                 }
                 
