@@ -112,6 +112,10 @@ window.SharedLinkManager = (function() {
                                 addSystemMessage(`Shared model preference "${sharedData.model}" will be applied if available.`);
                             }
                             
+                            // Save the model to storage immediately to ensure it's available for API requests
+                            // This will be overwritten later if the model is not available
+                            StorageService.saveModel(sharedData.model);
+                            
                             // If we have a model manager, set the pending shared model there too
                             if (window.aiHackare && window.aiHackare.settingsManager && 
                                 typeof window.aiHackare.settingsManager.setPendingSharedModel === 'function') {
@@ -323,6 +327,10 @@ window.SharedLinkManager = (function() {
                                 if (addSystemMessage) {
                                     addSystemMessage(`Shared model preference "${sharedData.model}" will be applied if available.`);
                                 }
+                                
+                                // Save the model to storage immediately to ensure it's available for API requests
+                                // This will be overwritten later if the model is not available
+                                StorageService.saveModel(sharedData.model);
                                 
                                 // If we have a model manager, set the pending shared model there too
                                 if (window.aiHackare && window.aiHackare.settingsManager && 

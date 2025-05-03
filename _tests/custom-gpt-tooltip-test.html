@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en" class="theme-modern">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom GPT Tooltip Test</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/themes.css">
+    <!-- Font Awesome for icons (local) -->
+    <link rel="stylesheet" href="../lib/font-awesome/all.min.css">
+    <style>
+        body {
+            padding: 20px;
+        }
+        .test-container {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-title {
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        .test-button {
+            padding: 8px 15px;
+            background-color: #6366f1;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .test-button:hover {
+            background-color: #4f46e5;
+        }
+        header {
+            margin-bottom: 20px;
+        }
+        .tooltip-test-info {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-title">Custom GPT Tooltip Test</div>
+        <p>This page tests the tooltip functionality for custom GPTs.</p>
+        
+        <div class="test-actions">
+            <button id="set-custom-gpt" class="test-button">Set Custom GPT Name</button>
+            <button id="reset-default" class="test-button">Reset to Default</button>
+        </div>
+        
+        <div class="tooltip-test-info">
+            <p><strong>Test Instructions:</strong></p>
+            <ol>
+                <li>Click "Set Custom GPT Name" to create a custom GPT</li>
+                <li>Hover over the custom GPT container (the bordered box around the title)</li>
+                <li>You should see a tooltip saying "This is the Test GPT GPT"</li>
+                <li>Click "Reset to Default" to return to the default hacka.re title</li>
+            </ol>
+        </div>
+    </div>
+    
+    <header>
+        <div class="logo">
+            <h1 class="logo-text">hacka.re<span class="heart-logo">♥&#xFE0E;
+                <div class="typing-dots"></div>
+            </span></h1>
+            <p class="tagline">För hackare av hackare</p>
+        </div>
+    </header>
+    
+    <div class="test-container">
+        <div class="test-title">Current State:</div>
+        <div id="current-state"></div>
+    </div>
+
+    <!-- Required dependencies -->
+    <script src="../lib/tweetnacl/nacl-fast.min.js"></script>
+    <script src="../lib/tweetnacl/nacl-util.min.js"></script>
+    <script src="../js/utils/crypto-utils.js"></script>
+    <script src="../js/services/encryption-service.js"></script>
+    <script src="../js/services/namespace-service.js"></script>
+    <script src="../js/services/core-storage-service.js"></script>
+    <script src="../js/services/data-service.js"></script>
+    <script src="../js/services/storage-service.js"></script>
+    <script src="../js/services/link-sharing-service.js"></script>
+    <script>
+        // Mock LinkSharingService if it doesn't exist
+        if (!window.LinkSharingService) {
+            window.LinkSharingService = {
+                hasSharedApiKey: function() { return false; }
+            };
+        }
+        
+        // Mock NamespaceService if it doesn't exist
+        if (!window.NamespaceService) {
+            window.NamespaceService = {
+                getNamespaceId: function() { return 'test-namespace'; },
+                resetNamespaceCache: function() { console.log('Namespace cache reset'); }
+            };
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize
+            updateCurrentState();
+            
+            // Set up event listeners
+            document.getElementById('set-custom-gpt').addEventListener('click', function() {
+                StorageService.saveTitle('Test GPT');
+                StorageService.saveSubtitle('A custom GPT for testing');
+                updateTitleAndSubtitle(true);
+                updateCurrentState();
+            });
+            
+            document.getElementById('reset-default').addEventListener('click', function() {
+                StorageService.saveTitle('hacka.re');
+                StorageService.saveSubtitle('För hackare av hackare');
+                updateTitleAndSubtitle(true);
+                updateCurrentState();
+            });
+            
+            // Update title and subtitle
+            updateTitleAndSubtitle(true);
+        });
+        
+        function updateCurrentState() {
+            const title = StorageService.getTitle();
+            const subtitle = StorageService.getSubtitle();
+            const namespace = StorageService.getNamespace();
+            
+            document.getElementById('current-state').innerHTML = `
+                <p><strong>Title:</strong> ${title}</p>
+                <p><strong>Subtitle:</strong> ${subtitle}</p>
+                <p><strong>Namespace:</strong> ${namespace}</p>
+                <p><strong>Container Tooltip:</strong> <span id="tooltip-value">Checking...</span></p>
+            `;
+            
+            // Check if named-gpt-container exists and get its tooltip
+            setTimeout(() => {
+                const container = document.querySelector('.named-gpt-container');
+                const tooltipValue = document.getElementById('tooltip-value');
+                
+                if (container) {
+                    tooltipValue.textContent = container.title || 'None';
+                } else {
+                    tooltipValue.textContent = 'No container found (default title)';
+                }
+            }, 100);
+        }
+        
+        /**
+         * Update the title and subtitle on all index pages
+         * This function is copied from js/app.js
+         * @param {boolean} forceUpdate - Force update even if there's a shared link
+         */
+        function updateTitleAndSubtitle(forceUpdate = false) {
+            // If there's a shared link in the URL and we're not forcing an update,
+            // don't update the title and subtitle until the shared data is decrypted
+            if (!forceUpdate && LinkSharingService.hasSharedApiKey()) {
+                return;
+            }
+            
+            const title = StorageService.getTitle();
+            const subtitle = StorageService.getSubtitle();
+            const defaultTitle = "hacka.re";
+            const defaultSubtitle = "För hackare av hackare";
+            
+            // Check if title and subtitle are unchanged (blank or default)
+            const isTitleDefault = !title || title === defaultTitle;
+            const isSubtitleDefault = !subtitle || subtitle === defaultSubtitle;
+            
+            // Update main page
+            const logoTextElements = document.querySelectorAll('.logo-text');
+            const taglineElements = document.querySelectorAll('.tagline');
+            
+            logoTextElements.forEach(element => {
+                // Get the heart logo element
+                const heartLogo = element.querySelector('.heart-logo');
+                if (heartLogo) {
+                    // Clear the element's content except for the heart logo
+                    // This preserves the heart logo DOM element and all its event listeners
+                    while (element.firstChild) {
+                        if (element.firstChild !== heartLogo) {
+                            element.removeChild(element.firstChild);
+                        } else {
+                            // Move the heart logo to a temporary variable to preserve it
+                            const tempHeartLogo = heartLogo;
+                            element.removeChild(heartLogo);
+                            
+                            // Create a span for the title with appropriate font styling
+                            const titleSpan = document.createElement('span');
+                            titleSpan.textContent = title;
+                            
+                            // Apply Courier New font specifically when the title is "hacka.re"
+                            if (title === "hacka.re") {
+                                titleSpan.style.fontFamily = "'Courier New', monospace";
+                            } else {
+                                titleSpan.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+                            }
+                            
+                            element.appendChild(titleSpan);
+                            
+                            // Reset the main element's font family to ensure it doesn't affect other elements
+                            element.style.fontFamily = "";
+                            
+                            // Add the heart logo back
+                            element.appendChild(tempHeartLogo);
+                            
+                            // Remove any existing serverless-gpts span
+                            const existingServerlessSpan = element.querySelector('.serverless-gpts');
+                            if (existingServerlessSpan) {
+                                element.removeChild(existingServerlessSpan);
+                            }
+                            
+                            // If using default title/subtitle, add the "serverless GPTs" text
+                            if (isTitleDefault && isSubtitleDefault) {
+                                const serverlessSpan = document.createElement('span');
+                                serverlessSpan.className = 'serverless-gpts';
+                                serverlessSpan.innerHTML = ' serverless <span class="gpts">GPTs</span>';
+                                element.appendChild(serverlessSpan);
+                                
+                                // Remove named-gpt-container wrapper if it exists
+                                const parentElement = element.parentElement;
+                                if (parentElement && parentElement.classList.contains('named-gpt-container')) {
+                                    // Move the logo-text element out of the container
+                                    const grandParent = parentElement.parentElement;
+                                    grandParent.insertBefore(element, parentElement);
+                                    grandParent.removeChild(parentElement);
+                                }
+                            } else {
+                                // Check if we need to create a named-gpt-container
+                                let container = element.parentElement;
+                                if (!container || !container.classList.contains('named-gpt-container')) {
+                                    // Create container
+                                    container = document.createElement('div');
+                                    container.className = 'named-gpt-container';
+                                    
+                                    // Add tooltip to indicate this is a custom GPT
+                                    container.title = `This is the ${title} GPT`;
+                                    
+                                    // Get the parent element (logo)
+                                    const parentElement = element.parentElement;
+                                    
+                                    // Replace the element with the container
+                                    parentElement.insertBefore(container, element);
+                                    container.appendChild(element);
+                                    
+                                    // Find the tagline element (subtitle)
+                                    const tagline = parentElement.querySelector('.tagline');
+                                    if (tagline) {
+                                        // Move the tagline into the container
+                                        container.appendChild(tagline);
+                                    }
+                                } else {
+                                    // Update tooltip if container already exists
+                                    container.title = `This is the ${title} GPT`;
+                                }
+                                
+                                // Add close button if it doesn't exist
+                                if (!container.querySelector('.close-gpt')) {
+                                    const closeBtn = document.createElement('span');
+                                    closeBtn.className = 'close-gpt';
+                                    closeBtn.textContent = 'Delete';
+                                    closeBtn.title = 'Delete this GPT and all its data';
+                                    closeBtn.addEventListener('click', function(e) {
+                                        e.stopPropagation(); // Prevent event bubbling
+                                        
+                                        // Reset title and subtitle to defaults
+                                        StorageService.saveTitle(defaultTitle);
+                                        StorageService.saveSubtitle(defaultSubtitle);
+                                        
+                                        // Update UI
+                                        updateTitleAndSubtitle();
+                                        updateCurrentState();
+                                        
+                                        // Show a message
+                                        alert('GPT name cleared. Returned to default namespace.');
+                                    });
+                                    container.appendChild(closeBtn);
+                                }
+                            }
+                            
+                            break;
+                        }
+                    }
+                } else {
+                    element.textContent = title;
+                }
+            });
+            
+            taglineElements.forEach(element => {
+                element.textContent = subtitle;
+            });
+            
+            // Update document title
+            document.title = title + ' - ' + subtitle;
+            
+            console.log(`Title and subtitle updated to: ${title} - ${subtitle}`);
+            
+            // Update the current state display after a short delay to ensure DOM is updated
+            setTimeout(updateCurrentState, 100);
+        }
+    </script>
+</body>
+</html>

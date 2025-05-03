@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple GPT Tooltip Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-container {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-title {
+            margin-bottom: 15px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .test-button {
+            padding: 8px 15px;
+            background-color: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .test-button:hover {
+            background-color: #3730a3;
+        }
+        .named-gpt-container {
+            position: relative;
+            padding: 10px 15px 20px 15px;
+            border: 2px solid #4f46e5;
+            border-radius: 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            margin-right: 0;
+            display: inline-block;
+            margin-top: 20px;
+        }
+        
+        /* Custom GPT tooltip styling */
+        .custom-gpt-tooltip {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            white-space: nowrap;
+            z-index: 1000;
+            display: none;
+            pointer-events: none;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Arrow for the tooltip */
+        .custom-gpt-tooltip::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #333 transparent transparent transparent;
+        }
+        .logo-text {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .tagline {
+            font-size: 14px;
+            color: #666;
+        }
+        .close-gpt {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            color: #003366;
+            font-size: 12px;
+            font-weight: normal;
+            cursor: pointer;
+            text-decoration: underline;
+            background: none;
+            border: none;
+            padding: 2px 5px;
+        }
+        .result-container {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-title">Simple GPT Tooltip Test</div>
+        <p>This page tests the tooltip functionality for custom GPTs.</p>
+        
+        <div>
+            <button id="create-gpt" class="test-button">Create Custom GPT</button>
+            <button id="update-tooltip" class="test-button">Update Tooltip</button>
+        </div>
+        
+        <div id="gpt-container"></div>
+        
+        <div class="result-container">
+            <p><strong>Test Instructions:</strong></p>
+            <ol>
+                <li>Click "Create Custom GPT" to create a custom GPT container</li>
+                <li>Hover over the custom GPT container (the bordered box)</li>
+                <li>You should see a tooltip saying "This is the Test GPT GPT"</li>
+                <li>Click "Update Tooltip" to change the tooltip text</li>
+            </ol>
+            
+            <div id="tooltip-info"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const gptContainer = document.getElementById('gpt-container');
+            const tooltipInfo = document.getElementById('tooltip-info');
+            
+            // Create Custom GPT button
+            document.getElementById('create-gpt').addEventListener('click', function() {
+                // Create the named-gpt-container
+                const container = document.createElement('div');
+                container.className = 'named-gpt-container';
+                
+                // Create custom tooltip
+                const tooltip = document.createElement('div');
+                tooltip.className = 'custom-gpt-tooltip';
+                tooltip.textContent = 'This is the Test GPT GPT';
+                container.appendChild(tooltip);
+                
+                // Add hover event listeners to show/hide tooltip
+                container.addEventListener('mouseenter', function() {
+                    tooltip.style.display = 'block';
+                });
+                
+                container.addEventListener('mouseleave', function() {
+                    tooltip.style.display = 'none';
+                });
+                
+                // Create logo-text element
+                const logoText = document.createElement('h1');
+                logoText.className = 'logo-text';
+                logoText.textContent = 'Test GPT';
+                
+                // Create tagline element
+                const tagline = document.createElement('p');
+                tagline.className = 'tagline';
+                tagline.textContent = 'A custom GPT for testing';
+                
+                // Create close button
+                const closeBtn = document.createElement('span');
+                closeBtn.className = 'close-gpt';
+                closeBtn.textContent = 'Delete';
+                closeBtn.title = 'Delete this GPT and all its data';
+                
+                // Add elements to container
+                container.appendChild(logoText);
+                container.appendChild(tagline);
+                container.appendChild(closeBtn);
+                
+                // Clear previous content and add the new container
+                gptContainer.innerHTML = '';
+                gptContainer.appendChild(container);
+                
+                // Update tooltip info
+                updateTooltipInfo();
+            });
+            
+            // Update Tooltip button
+            document.getElementById('update-tooltip').addEventListener('click', function() {
+                const container = document.querySelector('.named-gpt-container');
+                if (container) {
+                    const tooltip = container.querySelector('.custom-gpt-tooltip');
+                    if (tooltip) {
+                        tooltip.textContent = 'This is the Updated Test GPT GPT';
+                        updateTooltipInfo();
+                    }
+                } else {
+                    alert('Please create a custom GPT first');
+                }
+            });
+            
+            // Function to update tooltip info
+            function updateTooltipInfo() {
+                const container = document.querySelector('.named-gpt-container');
+                if (container) {
+                    const tooltip = container.querySelector('.custom-gpt-tooltip');
+                    const tooltipText = tooltip ? tooltip.textContent : 'No tooltip found';
+                    
+                    tooltipInfo.innerHTML = `
+                        <p><strong>Current Tooltip:</strong> "${tooltipText}"</p>
+                        <p>Hover over the container above to see the tooltip.</p>
+                    `;
+                } else {
+                    tooltipInfo.innerHTML = '<p>No custom GPT container found. Click "Create Custom GPT" first.</p>';
+                }
+            }
+            
+            // Initial update
+            updateTooltipInfo();
+        });
+    </script>
+</body>
+</html>

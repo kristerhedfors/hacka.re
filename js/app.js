@@ -102,6 +102,21 @@ window.updateTitleAndSubtitle = function(forceUpdate = false) {
                                     container = document.createElement('div');
                                     container.className = 'named-gpt-container';
                                     
+                                    // Add custom tooltip to indicate this is a custom GPT
+                                    const tooltip = document.createElement('div');
+                                    tooltip.className = 'custom-gpt-tooltip';
+                                    tooltip.textContent = `This is the ${title} GPT`;
+                                    container.appendChild(tooltip);
+                                    
+                                    // Add hover event listeners to show/hide tooltip
+                                    container.addEventListener('mouseenter', function() {
+                                        tooltip.style.display = 'block';
+                                    });
+                                    
+                                    container.addEventListener('mouseleave', function() {
+                                        tooltip.style.display = 'none';
+                                    });
+                                    
                                     // Get the parent element (logo)
                                     const parentElement = element.parentElement;
                                     
@@ -115,6 +130,9 @@ window.updateTitleAndSubtitle = function(forceUpdate = false) {
                                         // Move the tagline into the container
                                         container.appendChild(tagline);
                                     }
+                                } else {
+                                    // Update tooltip if container already exists
+                                    container.title = `This is the ${title} GPT`;
                                 }
                                 
                                 // Add close button if it doesn't exist
