@@ -1,0 +1,344 @@
+/**
+ * Model Manager Module
+ * Handles model-related functionality for the AIHackare application
+ */
+
+window.ModelManager = (function() {
+    /**
+     * Create a Model Manager instance
+     * @param {Object} elements - DOM elements
+     * @returns {Object} Model Manager instance
+     */
+    function createModelManager(elements) {
+        // Current model state
+        let currentModel = '';
+        let pendingSharedModel = null;
+        
+        /**
+         * Initialize the model manager
+         */
+        function init() {
+            // Load saved model preference
+            const savedModel = StorageService.getModel();
+            if (savedModel) {
+                currentModel = savedModel;
+                if (elements.modelSelect) {
+                    elements.modelSelect.value = savedModel;
+                }
+            }
+        }
+        
+        /**
+         * Get the current model
+         * @returns {string} Current model ID
+         */
+        function getCurrentModel() {
+            // Always get the current model from storage to ensure we have the latest value
+            // This is especially important when the namespace changes due to title/subtitle changes
+            return StorageService.getModel();
+        }
+        
+        /**
+         * Save the current model
+         * @param {string} model - The model ID to save
+         */
+        function saveModel(model) {
+            StorageService.saveModel(model);
+            currentModel = model;
+        }
+        
+        /**
+         * Set a pending shared model to be applied after models are fetched
+         * @param {string} model - The model ID to set as pending
+         */
+        function setPendingSharedModel(model) {
+            pendingSharedModel = model;
+        }
+        
+        /**
+         * Fetch available models from the API
+         * @param {string} apiKey - The API key to use
+         * @param {string} baseUrl - The base URL to use
+         * @param {boolean} updateStorage - Whether to update storage with the provided values
+         * @returns {Promise<Object>} Promise resolving to result object
+         */
+        async function fetchAvailableModels(apiKey, baseUrl, updateStorage = false) {
+            if (!apiKey) return { success: false, error: 'API key is required' };
+            
+            try {
+                // Use the provided values for this API call only
+                const models = await ApiService.fetchAvailableModels(apiKey, baseUrl);
+                
+                // Only update storage and internal variables if explicitly requested
+                // This ensures values from UI are not saved unless the user clicks "Save"
+                if (updateStorage) {
+                    StorageService.saveApiKey(apiKey);
+                    StorageService.saveBaseUrl(baseUrl);
+                }
+                
+                // Clear existing options
+                elements.modelSelect.innerHTML = '';
+                
+                // Create optgroups for different model types
+                const standardGroup = document.createElement('optgroup');
+                standardGroup.label = 'Production Models';
+                
+                const previewGroup = document.createElement('optgroup');
+                previewGroup.label = 'Preview Models';
+                
+                const systemGroup = document.createElement('optgroup');
+                systemGroup.label = 'Preview Systems';
+                
+                // Get list of fetched model IDs
+                const fetchedModelIds = models.map(model => model.id);
+                
+                // Add production models if they exist in fetched models
+                ModelInfoService.productionModels.forEach(modelId => {
+                    if (fetchedModelIds.includes(modelId)) {
+                        const option = document.createElement('option');
+                        option.value = modelId;
+                        
+                        // Get simplified display name
+                        option.textContent = ModelInfoService.getDisplayName(modelId);
+                        
+                        // Set selected if it matches current model
+                        if (modelId === currentModel) {
+                            option.selected = true;
+                        }
+                        
+                        standardGroup.appendChild(option);
+                    }
+                });
+                
+                // Add preview models if they exist in fetched models
+                ModelInfoService.previewModels.forEach(modelId => {
+                    if (fetchedModelIds.includes(modelId)) {
+                        const option = document.createElement('option');
+                        option.value = modelId;
+                        
+                        // Get simplified display name
+                        option.textContent = ModelInfoService.getDisplayName(modelId);
+                        
+                        // Set selected if it matches current model
+                        if (modelId === currentModel) {
+                            option.selected = true;
+                        }
+                        
+                        previewGroup.appendChild(option);
+                    }
+                });
+                
+                // Add system models if they exist in fetched models
+                ModelInfoService.systemModels.forEach(modelId => {
+                    if (fetchedModelIds.includes(modelId)) {
+                        const option = document.createElement('option');
+                        option.value = modelId;
+                        
+                        // Get simplified display name
+                        option.textContent = ModelInfoService.getDisplayName(modelId);
+                        
+                        // Set selected if it matches current model
+                        if (modelId === currentModel) {
+                            option.selected = true;
+                        }
+                        
+                        systemGroup.appendChild(option);
+                    }
+                });
+                
+                // Add other available models that aren't in our predefined lists
+                const knownModelIds = [
+                    ...ModelInfoService.productionModels, 
+                    ...ModelInfoService.previewModels, 
+                    ...ModelInfoService.systemModels
+                ];
+                
+                models.forEach(model => {
+                    if (!knownModelIds.includes(model.id)) {
+                        const option = document.createElement('option');
+                        option.value = model.id;
+                        
+                        // Try to get a simplified name, or use the model ID
+                        option.textContent = ModelInfoService.getDisplayName(model.id);
+                        
+                        // Set selected if it matches current model
+                        if (model.id === currentModel) {
+                            option.selected = true;
+                        }
+                        
+                        // Add to appropriate group based on naming patterns
+                        if (model.id.includes('preview') || model.id.includes('beta')) {
+                            previewGroup.appendChild(option);
+                        } else {
+                            standardGroup.appendChild(option);
+                        }
+                    }
+                });
+                
+                // Add groups to select element if they have options
+                if (standardGroup.children.length > 0) {
+                    elements.modelSelect.appendChild(standardGroup);
+                }
+                
+                if (previewGroup.children.length > 0) {
+                    elements.modelSelect.appendChild(previewGroup);
+                }
+                
+                if (systemGroup.children.length > 0) {
+                    elements.modelSelect.appendChild(systemGroup);
+                }
+                
+                // Check if we have a pending shared model to apply
+                if (pendingSharedModel) {
+                    const sharedModel = pendingSharedModel;
+                    pendingSharedModel = null; // Clear it to avoid reapplying
+                    
+                    // Check if the model is available
+                    if (fetchedModelIds.includes(sharedModel)) {
+                        // Apply the model
+                        currentModel = sharedModel;
+                        StorageService.saveModel(sharedModel);
+                        elements.modelSelect.value = sharedModel;
+                        
+                        console.log(`Applied shared model: ${sharedModel}`);
+                        
+                        return {
+                            success: true,
+                            model: sharedModel
+                        };
+                    } else {
+                        console.warn(`Shared model not available: ${sharedModel}`);
+                        return {
+                            success: false,
+                            model: sharedModel
+                        };
+                    }
+                }
+                
+                // Also check if there's a shared model in the SharedLinkManager
+                if (window.SharedLinkManager && typeof window.SharedLinkManager.getPendingSharedModel === 'function') {
+                    const sharedLinkModel = window.SharedLinkManager.getPendingSharedModel();
+                    if (sharedLinkModel) {
+                        console.log(`Found pending shared model in SharedLinkManager: ${sharedLinkModel}`);
+                        
+                        // Clear it to avoid reapplying
+                        if (typeof window.SharedLinkManager.clearPendingSharedModel === 'function') {
+                            window.SharedLinkManager.clearPendingSharedModel();
+                        }
+                        
+                        // Check if the model is available
+                        if (fetchedModelIds.includes(sharedLinkModel)) {
+                            // Apply the model
+                            currentModel = sharedLinkModel;
+                            StorageService.saveModel(sharedLinkModel);
+                            elements.modelSelect.value = sharedLinkModel;
+                            
+                            console.log(`Applied shared model from SharedLinkManager: ${sharedLinkModel}`);
+                            
+                            return {
+                                success: true,
+                                model: sharedLinkModel
+                            };
+                        } else {
+                            console.warn(`Shared model from SharedLinkManager not available: ${sharedLinkModel}`);
+                            return {
+                                success: false,
+                                model: sharedLinkModel
+                            };
+                        }
+                    }
+                }
+                
+                // If no model is currently selected, select a default model based on the provider
+                if (!currentModel || currentModel === '') {
+                    // Determine the provider from the base URL
+                    let provider = 'groq'; // Default provider
+                    if (baseUrl) {
+                        if (baseUrl.includes('openai.com')) {
+                            provider = 'openai';
+                        } else if (baseUrl.includes('localhost:11434')) {
+                            provider = 'ollama';
+                        }
+                    }
+                    
+                    let modelToSelect = null;
+                    
+                    // For Ollama, select the first model in the list
+                    if (provider === 'ollama') {
+                        if (fetchedModelIds.length > 0) {
+                            modelToSelect = fetchedModelIds[0];
+                        }
+                    } else {
+                        // For other providers, try to use the default model
+                        const defaultModel = ModelInfoService.defaultModels[provider];
+                        
+                        // Check if the default model is available
+                        if (defaultModel && fetchedModelIds.includes(defaultModel)) {
+                            modelToSelect = defaultModel;
+                        } else if (fetchedModelIds.length > 0) {
+                            // If default model is not available, pick the first available model
+                            modelToSelect = fetchedModelIds[0];
+                        }
+                    }
+                    
+                    // Apply the selected model if one was found
+                    if (modelToSelect) {
+                        currentModel = modelToSelect;
+                        StorageService.saveModel(modelToSelect);
+                        elements.modelSelect.value = modelToSelect;
+                        console.log(`Selected model for ${provider}: ${modelToSelect}`);
+                    }
+                }
+                
+                return { success: true };
+                
+            } catch (error) {
+                console.error('Error fetching models:', error);
+                // Fallback to default models if fetch fails
+                populateDefaultModels();
+                return { success: false, error: error.message };
+            }
+        }
+        
+        /**
+         * Handle the case when models can't be fetched
+         */
+        function populateDefaultModels() {
+            // Clear existing options
+            elements.modelSelect.innerHTML = '';
+            
+            // Create a single option indicating that models couldn't be fetched
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'Failed to fetch models - check API key and connection';
+            option.disabled = true;
+            option.selected = true;
+            
+            // Add the option to the select element
+            elements.modelSelect.appendChild(option);
+            
+            // Add a hint option
+            const hintOption = document.createElement('option');
+            hintOption.value = '';
+            hintOption.textContent = 'Try reloading models after checking settings';
+            hintOption.disabled = true;
+            
+            elements.modelSelect.appendChild(hintOption);
+        }
+        
+        // Public API
+        return {
+            init,
+            getCurrentModel,
+            saveModel,
+            setPendingSharedModel,
+            fetchAvailableModels,
+            populateDefaultModels
+        };
+    }
+
+    // Public API
+    return {
+        createModelManager
+    };
+})();

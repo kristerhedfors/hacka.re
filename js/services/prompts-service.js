@@ -1,6 +1,7 @@
 /**
  * Prompts Service
  * Handles storage and management of labeled prompts with encryption
+ * Manages the system prompt by combining selected prompts
  */
 
 window.PromptsService = (function() {

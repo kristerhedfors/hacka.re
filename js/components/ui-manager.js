@@ -51,15 +51,8 @@ window.UIManager = (function() {
             // Set current model
             elements.modelSelect.value = currentModel;
             
-            // Set current system prompt
-            if (systemPrompt) {
-                elements.systemPromptInput.value = systemPrompt;
-            } else {
-                elements.systemPromptInput.value = '';
-            }
-            
-            // Apply auto-resize to system prompt textarea
-            UIUtils.setupTextareaAutoResize(elements.systemPromptInput);
+            // System prompt is now handled by the system-prompt-manager.js
+            // No need to set it here as it's displayed on demand when the user clicks "Show System Prompt"
             
             elements.settingsModal.classList.add('active');
         }
@@ -86,9 +79,8 @@ window.UIManager = (function() {
                 elements.modelSelect.value = currentModel;
             }
             
-            if (systemPrompt) {
-                elements.systemPromptInput.value = systemPrompt;
-            }
+            // System prompt is now handled by the system-prompt-manager.js
+            // No need to reset it here
             
             elements.settingsModal.classList.remove('active');
         }
@@ -102,9 +94,7 @@ window.UIManager = (function() {
          * @param {Function} loadShareOptions - Function to load share options from storage
          */
         function showShareModal(apiKey, updateLinkLengthBar, sessionKey, isSessionKeyLocked, loadShareOptions) {
-            if (!apiKey) {
-                return false;
-            }
+            // Always allow the share modal to open, even without an API key
             
             // Reset form
             if (elements.shareForm) {
