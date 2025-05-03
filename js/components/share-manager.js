@@ -25,13 +25,13 @@ window.ShareManager = (function() {
          */
         function saveShareOptions() {
             if (elements.shareBaseUrlCheckbox && elements.shareApiKeyCheckbox && 
-                elements.shareSystemPromptCheckbox && elements.shareModelCheckbox && 
-                elements.shareConversationCheckbox && elements.messageHistoryCount) {
+                elements.shareModelCheckbox && elements.shareConversationCheckbox && 
+                elements.messageHistoryCount) {
                 
                 const options = {
                     includeBaseUrl: elements.shareBaseUrlCheckbox.checked,
                     includeApiKey: elements.shareApiKeyCheckbox.checked,
-                    includeSystemPrompt: elements.shareSystemPromptCheckbox.checked,
+                    includeSystemPrompt: false, // System prompt is now handled by prompt library
                     includeModel: elements.shareModelCheckbox.checked,
                     includeConversation: elements.shareConversationCheckbox.checked,
                     messageCount: parseInt(elements.messageHistoryCount.value, 10) || 1,
@@ -49,12 +49,11 @@ window.ShareManager = (function() {
             const options = StorageService.getShareOptions();
             
             if (options && elements.shareBaseUrlCheckbox && elements.shareApiKeyCheckbox && 
-                elements.shareSystemPromptCheckbox && elements.shareModelCheckbox && 
-                elements.shareConversationCheckbox && elements.messageHistoryCount) {
+                elements.shareModelCheckbox && elements.shareConversationCheckbox && 
+                elements.messageHistoryCount) {
                 
                 elements.shareBaseUrlCheckbox.checked = options.includeBaseUrl;
                 elements.shareApiKeyCheckbox.checked = options.includeApiKey;
-                elements.shareSystemPromptCheckbox.checked = options.includeSystemPrompt;
                 elements.shareModelCheckbox.checked = options.includeModel;
                 elements.shareConversationCheckbox.checked = options.includeConversation;
                 elements.messageHistoryCount.value = options.messageCount;
@@ -323,7 +322,7 @@ window.ShareManager = (function() {
                 messages: messages,
                 includeBaseUrl: elements.shareBaseUrlCheckbox.checked,
                 includeApiKey: elements.shareApiKeyCheckbox.checked,
-                includeSystemPrompt: elements.shareSystemPromptCheckbox.checked,
+                includeSystemPrompt: false, // System prompt is now handled by prompt library
                 includeModel: elements.shareModelCheckbox.checked,
                 includeConversation: elements.shareConversationCheckbox.checked,
                 messageCount: parseInt(elements.messageHistoryCount.value, 10) || 1,
