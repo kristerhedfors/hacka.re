@@ -1,31 +1,54 @@
-# hacka.re Unit Tests
+# hacka.re Tests
 
-This directory contains unit tests for the hacka.re application, specifically focusing on the crypto and link sharing functionality.
+This directory contains tests for the hacka.re application, including both unit tests and browser-based tests.
 
-## Test Structure
+## Test Types
 
-The tests are organized into the following files:
+### Unit Tests
 
-- `test-runner.html`: HTML page that loads and runs all tests
+Unit tests focus on the crypto and link sharing functionality, testing individual components in isolation.
+
+#### Unit Test Structure
+
+The unit tests are organized into the following files:
+
+- `test-runner.html`: HTML page that loads and runs all unit tests
 - `test-framework.js`: Simple test framework for running tests in the browser
 - `crypto-utils.test.js`: Tests for the CryptoUtils module
 - `link-sharing-service.test.js`: Tests for the LinkSharingService module
 - `share-service.test.js`: Tests for the ShareService module
 
+### Browser-Based Tests (Playwright)
+
+Browser-based tests use Playwright to test the application in a real browser environment, focusing on UI interactions and end-to-end functionality. These tests are located in the `playwright` subdirectory.
+
+#### Playwright Test Structure
+
+The Playwright tests are organized into the following files:
+
+- `conftest.py`: Contains pytest fixtures and setup for the tests
+- `test_basic_ui.py`: Basic UI tests that verify the presence and visibility of UI elements
+- `test_functional.py`: Functional tests that verify the behavior of the application with mocked API responses
+- `pytest.ini`: Configuration for pytest
+- `requirements.txt`: Python dependencies for the tests
+- `run_tests.sh`: Script to run the tests
+
 ## Running the Tests
 
-### In a Browser
+### Running Unit Tests
 
-To run the tests in a browser:
+#### In a Browser
+
+To run the unit tests in a browser:
 
 1. Open `test-runner.html` in a web browser
 2. The tests will run automatically and display the results
 3. Green checkmarks (✓) indicate passing tests
 4. Red X marks (✗) indicate failing tests, with error messages
 
-### From the Command Line (Optional)
+#### From the Command Line (Optional)
 
-To run the tests from the command line (useful for CI/CD):
+To run the unit tests from the command line (useful for CI/CD):
 
 1. Install Puppeteer: `npm install puppeteer`
 2. Edit `run-tests.js` to uncomment the code
@@ -33,9 +56,30 @@ To run the tests from the command line (useful for CI/CD):
 
 The script will run the tests in a headless browser and output the results to the console.
 
+### Running Playwright Tests
+
+The Playwright tests require Python and the uv package manager. A virtual environment has been set up in the `playwright` directory.
+
+To run the Playwright tests:
+
+1. Navigate to the `playwright` directory: `cd _tests/playwright`
+2. Run the tests using the provided script: `./run_tests.sh`
+
+For more options, run `./run_tests.sh --help`
+
+Alternatively, you can run the tests manually:
+
+1. Activate the virtual environment: `source .venv/bin/activate`
+2. Run the tests: `pytest`
+3. Deactivate the virtual environment when done: `deactivate`
+
+For more information about the Playwright tests, see the [Playwright README](_tests/playwright/README.md).
+
 ## Test Coverage
 
-### CryptoUtils Tests
+### Unit Test Coverage
+
+#### CryptoUtils Tests
 
 Tests for the cryptographic utility functions:
 
@@ -45,7 +89,7 @@ Tests for the cryptographic utility functions:
 - Handling different data types
 - Error cases (wrong password, etc.)
 
-### LinkSharingService Tests
+#### LinkSharingService Tests
 
 Tests for the link sharing service:
 
@@ -57,7 +101,7 @@ Tests for the link sharing service:
 - Handling error cases and model mismatches
 - Clearing shared data from URLs
 
-### ShareService Tests
+#### ShareService Tests
 
 Tests for the ShareService wrapper:
 
@@ -66,8 +110,30 @@ Tests for the ShareService wrapper:
 - Testing comprehensive sharing options (API key, system prompt, model, conversation)
 - Ensuring backward compatibility is maintained
 
+### Playwright Test Coverage
+
+#### Basic UI Tests
+
+These tests verify that the UI elements of the application are present and visible:
+
+- Page loads correctly with proper title and logo
+- Chat interface elements are present
+- Settings modal opens and contains expected elements
+- Prompts modal opens and contains expected elements
+- Share modal opens and contains expected elements
+
+#### Functional Tests
+
+These tests verify the behavior of the application with mocked API responses:
+
+- API key configuration works correctly
+- Model selection works correctly
+- Sending a message and receiving a response works correctly
+
 ## Notes
 
 - These tests are not included in the GitHub Pages site since they're in a directory starting with an underscore (`_tests`).
-- The tests use a simple custom test framework rather than a full testing library to avoid adding dependencies.
-- The tests mock browser APIs like `window.location` and `window.history` to test URL manipulation without actually changing the page.
+- The unit tests use a simple custom test framework rather than a full testing library to avoid adding dependencies.
+- The unit tests mock browser APIs like `window.location` and `window.history` to test URL manipulation without actually changing the page.
+- The Playwright tests use a local HTTP server to serve the application.
+- API calls in Playwright tests are mocked to avoid making real API calls.

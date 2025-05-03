@@ -102,9 +102,7 @@ window.UIManager = (function() {
          * @param {Function} loadShareOptions - Function to load share options from storage
          */
         function showShareModal(apiKey, updateLinkLengthBar, sessionKey, isSessionKeyLocked, loadShareOptions) {
-            if (!apiKey) {
-                return false;
-            }
+            // Always allow the share modal to open, even without an API key
             
             // Reset form
             if (elements.shareForm) {

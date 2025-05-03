@@ -1,0 +1,45 @@
+import pytest
+from playwright.sync_api import Page, expect
+
+@pytest.fixture(scope="function")
+def page(browser):
+    """Create a new page for each test."""
+    page = browser.new_page()
+    yield page
+    page.close()
+
+@pytest.fixture(scope="function")
+def serve_hacka_re(page):
+    """
+    Serve the hacka.re application locally for testing.
+    
+    This fixture uses Python's built-in HTTP server to serve the application
+    from the current directory.
+    """
+    import subprocess
+    import time
+    import os
+    import signal
+    from urllib.parse import urljoin
+    
+    # Start a local HTTP server in the background from the project root directory
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+    process = subprocess.Popen(
+        ["python", "-m", "http.server", "8000"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        preexec_fn=os.setsid,
+        cwd=project_root
+    )
+    
+    # Give the server a minimal moment to start
+    time.sleep(0.2)
+    
+    # Set the base URL for tests
+    base_url = "http://localhost:8000"
+    
+    # Yield the base URL for tests to use
+    yield base_url
+    
+    # Clean up: kill the server process
+    os.killpg(os.getpgid(process.pid), signal.SIGTERM)

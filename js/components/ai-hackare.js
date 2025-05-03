@@ -357,7 +357,7 @@ window.AIHackareComponent = (function() {
      * Show the share modal
      */
     AIHackare.prototype.showShareModal = function() {
-        const success = this.uiManager.showShareModal(
+        this.uiManager.showShareModal(
             this.settingsManager.getApiKey(),
             this.updateLinkLengthBar.bind(this),
             this.shareManager.getSessionKey(),
@@ -365,8 +365,9 @@ window.AIHackareComponent = (function() {
             this.shareManager.loadShareOptions.bind(this.shareManager)
         );
         
-        if (!success) {
-            this.chatManager.addSystemMessage('Error: No API key available to share.');
+        // Add a warning message if no API key is configured
+        if (!this.settingsManager.getApiKey()) {
+            this.chatManager.addSystemMessage('Note: No API key configured. You can still share other settings, but the recipient will need to provide their own API key.');
         }
     };
     
