@@ -33,16 +33,37 @@ window.WelcomeManager = (function() {
                 const heading = document.createElement('h2');
                 heading.textContent = 'Welcome to hacka.re!';
                 
-                // Get the welcome text from the tooltip
-                const welcomeText = document.createElement('div');
-                welcomeText.className = 'important-notice';
-                welcomeText.style.cssText = 'background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 15px; margin-bottom: 20px; border-radius: 8px;';
-                welcomeText.innerHTML = `
-                    <p>Welcome to hacka.re! To get started, you'll need to configure LLM access by specifying a base URL (OpenAI-compatible) and API key. hacka.re is a privacy-focused web-based LLM chat client that stores your API key, conversations, and settings locally, in your browser.</p>
-                    <p>hacka.re is serverless and thus you can download the entire web page and run it offline, plus modify/extend it as you wish. hacka.re is published under the MIT No Attibution license, meant to be as free as freeware can be.</p>
-                    <p>hacka.re supports creation of self-contained, strongly encrypted, password/session key-protected GPTs with individual system prompts and conversation data, which thus allows for sharing and collaboration over less secure channels.</p>
-                    <p>For more information about hacka.re, check out our <a href="about/index.html">About</a>, <a href="about/architecture.html">Architecture</a>, and <a href="about/use-cases.html">Use Cases</a> documentation.</p>
+                // Create a more concise welcome message focused on getting started
+                const welcomeContainer = document.createElement('div');
+                
+                // First notice - Getting Started
+                const firstNotice = document.createElement('div');
+                firstNotice.className = 'important-notice';
+                firstNotice.style.cssText = 'background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 10px; border-radius: 8px;';
+                firstNotice.innerHTML = `
+                    <p><strong>Get Started:</strong> Configure with a base URL (OpenAI-compatible) and API key to begin using hacka.re.</p>
                 `;
+                
+                // Second notice - Privacy
+                const secondNotice = document.createElement('div');
+                secondNotice.className = 'important-notice';
+                secondNotice.style.cssText = 'background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 10px; border-radius: 8px;';
+                secondNotice.innerHTML = `
+                    <p><strong>Privacy-Focused:</strong> Your data stays in your browser. No accounts needed, no server-side storage.</p>
+                `;
+                
+                // Third notice - Documentation
+                const thirdNotice = document.createElement('div');
+                thirdNotice.className = 'important-notice';
+                thirdNotice.style.cssText = 'background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 0; border-radius: 8px;';
+                thirdNotice.innerHTML = `
+                    <p><a href="about/index.html">About</a> | <a href="about/development.html">Development</a> | <a href="about/disclaimer.html">Disclaimer</a></p>
+                `;
+                
+                // Add all notices to the container
+                welcomeContainer.appendChild(firstNotice);
+                welcomeContainer.appendChild(secondNotice);
+                welcomeContainer.appendChild(thirdNotice);
                 
                 const buttonContainer = document.createElement('div');
                 buttonContainer.className = 'form-actions';
@@ -56,7 +77,7 @@ window.WelcomeManager = (function() {
                 buttonContainer.appendChild(continueButton);
                 
                 modalContent.appendChild(heading);
-                modalContent.appendChild(welcomeText);
+                modalContent.appendChild(welcomeContainer);
                 modalContent.appendChild(buttonContainer);
                 
                 welcomeModal.appendChild(modalContent);

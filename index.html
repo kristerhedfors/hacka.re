@@ -32,23 +32,17 @@
                     </svg>
                     <div class="typing-dots"></div>
                     <div class="tooltip">
-                        <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 15px; margin-bottom: 20px; border-radius: 8px;">
-                            <p>Welcome to hacka.re! hacka.re is a privacy-focused, serverless web-based LLM chat client that stores your API key, conversations, and settings locally in your browser.</p>
+                        <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 10px; border-radius: 8px;">
+                            <p><strong>hacka.re</strong>: Privacy-focused chat client that stores API keys, conversations, and settings locally in your browser.</p>
                         </div>
-                        <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 15px; margin-bottom: 20px; border-radius: 8px;">
-                            <p>hacka.re is serverless, meaning you can download the entire web page and run it offline, plus modify/extend it as you wish. hacka.re is published under the MIT No Attibution license, meant to be as free as freeware can be.</p>
+                        <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 10px; border-radius: 8px;">
+                            <p><strong>Features</strong>: Serverless, offline-capable, MIT licensed. Create encrypted, password-protected GPTs with custom prompts.</p>
                         </div>
-                        <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 15px; margin-bottom: 20px; border-radius: 8px;">
-                            <p>hacka.re supports creation of self-contained, strongly encrypted, password/session key-protected GPTs with individual system prompts and conversation data, which allows for sharing and collaboration over less secure channels.</p>
+                        <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 10px; border-radius: 8px;">
+                            <p><strong>Get started</strong>: Configure with base URL (OpenAI-compatible) and API key.</p>
                         </div>
-                        <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 15px; margin-bottom: 20px; border-radius: 8px;">
-                            <p>To get started, you'll need to configure LLM access by specifying a base URL (OpenAI-compatible) and API key.</p>    
-                        </div>
-                        <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 15px; margin-bottom: 20px; border-radius: 8px;">
-                            <p><i class="fas fa-magic"></i> <strong>hacka.re is Vibe-Coded:</strong> 99%+ of hacka.re's code was created through LLM-assisted development using Claude 3.7 Sonnet. <a href="about/development.html">Learn more about how hacka.re is developed and how it can be extended</a>.</p>
-                        </div>
-                        <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 15px; margin-bottom: 0; border-radius: 8px;">
-                            <p>For more information about hacka.re, check out our <a href="about/index.html">About</a>, <a href="about/architecture.html">Architecture</a>, <a href="about/development.html">Development</a>, <a href="about/disclaimer.html">Disclaimer</a>, and <a href="about/use-cases.html">Use Cases</a> documentation.</p>
+                        <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 0; border-radius: 8px;">
+                            <p style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;"><i class="fas fa-magic"></i> <strong>Vibe-Coded</strong> with Claude 3.7 Sonnet | <a href="about/index.html">About</a> | <a href="about/development.html">Development</a> | <a href="about/disclaimer.html">Disclaimer</a></p>
                         </div>
                     </div>
                 </span></h1>
@@ -142,7 +136,22 @@
                     </div>
                     
                     <div class="form-group">
-                        <label>What to share</label>
+                        <label>What to share
+                            <span class="info-icon">
+                                <i class="fas fa-info-circle"></i>
+                                <span class="tooltip">
+                                    <p>Practical limits for shared links:</p>
+                                    <ul>
+                                        <li>Browser URL limit: ~2000 bytes (may vary by browser)</li>
+                                        <li>QR code limit: ~1500 bytes for reliable scanning</li>
+                                        <li>Mobile devices: Keep under 1000 bytes for best compatibility</li>
+                                        <li>Email sharing: Under 2000 bytes to avoid truncation</li>
+                                        <li>SMS/messaging: Under 500 bytes recommended</li>
+                                    </ul>
+                                    <p>The link length bar below shows the estimated size relative to browser limits.</p>
+                                </span>
+                            </span>
+                        </label>
                         <div class="link-length-container">
                             <div class="link-length-label">
                                 Estimated link length: <span id="link-length-text">0</span> bytes
@@ -246,23 +255,17 @@
                         <i class="fas fa-info-circle"></i>
                         <div class="tooltip">
                             <div class="tooltip-content">
-                                <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 15px; margin-bottom: 20px; border-radius: 8px;">
-                                    <p>Welcome to hacka.re! hacka.re is a privacy-focused, serverless web-based LLM chat client that stores your API key, conversations, and settings locally in your browser.</p>
+                                <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 10px; border-radius: 8px;">
+                                    <p><strong>hacka.re</strong>: Privacy-focused chat client that stores API keys, conversations, and settings locally in your browser.</p>
                                 </div>
-                                <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 15px; margin-bottom: 20px; border-radius: 8px;">
-                                    <p>hacka.re is serverless, meaning you can download the entire web page and run it offline, plus modify/extend it as you wish. hacka.re is published under the MIT No Attibution license, meant to be as free as freeware can be.</p>
+                                <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 10px; border-radius: 8px;">
+                                    <p><strong>Features</strong>: Serverless, offline-capable, MIT licensed. Create encrypted, password-protected GPTs with custom prompts.</p>
                                 </div>
-                                <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 15px; margin-bottom: 20px; border-radius: 8px;">
-                                    <p>hacka.re supports creation of self-contained, strongly encrypted, password/session key-protected GPTs with individual system prompts and conversation data, which allows for sharing and collaboration over less secure channels.</p>
+                                <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 10px; border-radius: 8px;">
+                                    <p><strong>Get started</strong>: Configure with base URL (OpenAI-compatible) and API key.</p>
                                 </div>
-                                <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 15px; margin-bottom: 20px; border-radius: 8px;">
-                                    <p>To get started, you'll need to configure LLM access by specifying a base URL (OpenAI-compatible) and API key.</p>
-                                </div>
-                                <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 15px; margin-bottom: 20px; border-radius: 8px;">
-                                    <p><i class="fas fa-magic"></i> <strong>hacka.re is Vibe-Coded:</strong> 99%+ of hacka.re's code was created through LLM-assisted development using Claude 3.7 Sonnet. <a href="about/development.html">Learn more about how hacka.re is developed and how it can be extended</a>.</p>
-                                </div>
-                                <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 15px; margin-bottom: 0; border-radius: 8px;">
-                                    <p>For more information about hacka.re, check out our <a href="about/index.html">About</a>, <a href="about/architecture.html">Architecture</a>, <a href="about/development.html">Development</a>, <a href="about/disclaimer.html">Disclaimer</a>, and <a href="about/use-cases.html">Use Cases</a> documentation.</p>
+                                <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 0; border-radius: 8px;">
+                                    <p style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;"><i class="fas fa-magic"></i> <strong>Vibe-Coded</strong> with Claude 3.7 Sonnet | <a href="about/index.html">About</a> | <a href="about/development.html">Development</a> | <a href="about/disclaimer.html">Disclaimer</a></p>
                                 </div>
                             </div>
                         </div>
@@ -376,5 +379,6 @@
     <script src="js/copy-code.js"></script>
     <script src="js/logo-animation.js"></script>
     <script src="js/settings-tooltip.js"></script>
+    <script src="js/link-sharing-tooltip.js"></script>
 </body>
 </html>
