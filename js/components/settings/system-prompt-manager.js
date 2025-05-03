@@ -26,15 +26,7 @@ window.SystemPromptManager = (function() {
                 loadDefaultSystemPrompt();
             }
             
-            // Set up event listener for show system prompt button
-            if (elements.showSystemPromptBtn) {
-                elements.showSystemPromptBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    toggleSystemPromptPreview();
-                });
-            }
-            
-            // Set up event listener for open prompts config button
+            // Set up event listener for open prompts config button (prompt library link)
             if (elements.openPromptsConfigBtn) {
                 elements.openPromptsConfigBtn.addEventListener('click', function(e) {
                     e.preventDefault();
@@ -43,26 +35,6 @@ window.SystemPromptManager = (function() {
             }
         }
         
-        /**
-         * Toggle the system prompt preview
-         */
-        function toggleSystemPromptPreview() {
-            if (elements.systemPromptPreview) {
-                const isVisible = elements.systemPromptPreview.style.display !== 'none';
-                
-                if (isVisible) {
-                    // Hide the preview
-                    elements.systemPromptPreview.style.display = 'none';
-                    elements.showSystemPromptBtn.textContent = 'Show System Prompt';
-                } else {
-                    // Show the preview with the current system prompt
-                    const currentPrompt = getSystemPrompt();
-                    elements.systemPromptPreview.innerHTML = `<pre style="margin: 0; white-space: pre-wrap; word-break: break-word;">${currentPrompt}</pre>`;
-                    elements.systemPromptPreview.style.display = 'block';
-                    elements.showSystemPromptBtn.textContent = 'Hide System Prompt';
-                }
-            }
-        }
         
         /**
          * Open the prompts configurator

@@ -69,8 +69,7 @@ window.DOMElements = (function() {
             baseUrlSelect: document.getElementById('base-url-select'),
             baseUrl: document.getElementById('base-url'),
             customBaseUrlGroup: document.getElementById('custom-base-url-group'),
-            // New system prompt elements
-            showSystemPromptBtn: document.getElementById('show-system-prompt'),
+            // System prompt elements
             openPromptsConfigBtn: document.getElementById('open-prompts-config'),
             systemPromptPreview: document.getElementById('system-prompt-preview'),
             closeSettings: document.getElementById('close-settings'),
