@@ -1468,7 +1468,8 @@ footer a:hover {
     .model-dropdown {
         width: 90%;
         max-width: none;
-        left: 5% !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
     }
     
     /* Improve modal positioning on mobile */
