@@ -107,7 +107,16 @@ window.SharedLinkManager = (function() {
                             // We'll fetch models first and then check if the model is available
                             pendingSharedModel = sharedData.model;
                             
-                            // No need to show a message about the model preference, as it will either load or fail with its own message
+                            // Show a message about the model preference
+                            if (addSystemMessage) {
+                                addSystemMessage(`Shared model preference "${sharedData.model}" will be applied if available.`);
+                            }
+                            
+                            // If we have a model manager, set the pending shared model there too
+                            if (window.aiHackare && window.aiHackare.settingsManager && 
+                                typeof window.aiHackare.settingsManager.setPendingSharedModel === 'function') {
+                                window.aiHackare.settingsManager.setPendingSharedModel(sharedData.model);
+                            }
                         }
                         
                         // If there are shared messages, update the chat
@@ -310,7 +319,16 @@ window.SharedLinkManager = (function() {
                                 // We'll fetch models first and then check if the model is available
                                 pendingSharedModel = sharedData.model;
                                 
-                                // No need to show a message about the model preference, as it will either load or fail with its own message
+                                // Show a message about the model preference
+                                if (addSystemMessage) {
+                                    addSystemMessage(`Shared model preference "${sharedData.model}" will be applied if available.`);
+                                }
+                                
+                                // If we have a model manager, set the pending shared model there too
+                                if (window.aiHackare && window.aiHackare.settingsManager && 
+                                    typeof window.aiHackare.settingsManager.setPendingSharedModel === 'function') {
+                                    window.aiHackare.settingsManager.setPendingSharedModel(sharedData.model);
+                                }
                             }
                             
                             // If there are shared messages, update the chat

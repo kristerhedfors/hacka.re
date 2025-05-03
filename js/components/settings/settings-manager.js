@@ -354,6 +354,16 @@ window.SettingsManager = (function() {
             return true;
         }
         
+        /**
+         * Set a pending shared model to be applied after models are fetched
+         * @param {string} model - The model ID to set as pending
+         */
+        function setPendingSharedModel(model) {
+            if (model && modelManager && typeof modelManager.setPendingSharedModel === 'function') {
+                modelManager.setPendingSharedModel(model);
+            }
+        }
+        
         // Public API
         return {
             init,
@@ -365,7 +375,8 @@ window.SettingsManager = (function() {
             getBaseUrl,
             fetchAvailableModels,
             populateDefaultModels,
-            clearAllSettings
+            clearAllSettings,
+            setPendingSharedModel
         };
     }
 
