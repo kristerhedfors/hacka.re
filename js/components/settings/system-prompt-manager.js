@@ -25,12 +25,56 @@ window.SystemPromptManager = (function() {
                 loadDefaultSystemPrompt();
             }
             
-            // Set up event listener for reset system prompt button
-            if (elements.resetSystemPromptBtn) {
-                elements.resetSystemPromptBtn.addEventListener('click', function(e) {
+            // Set up event listener for show system prompt button
+            if (elements.showSystemPromptBtn) {
+                elements.showSystemPromptBtn.addEventListener('click', function(e) {
                     e.preventDefault();
-                    loadDefaultSystemPrompt();
+                    toggleSystemPromptPreview();
                 });
+            }
+            
+            // Set up event listener for open prompts config button
+            if (elements.openPromptsConfigBtn) {
+                elements.openPromptsConfigBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    openPromptsConfigurator();
+                });
+            }
+        }
+        
+        /**
+         * Toggle the system prompt preview
+         */
+        function toggleSystemPromptPreview() {
+            if (elements.systemPromptPreview) {
+                const isVisible = elements.systemPromptPreview.style.display !== 'none';
+                
+                if (isVisible) {
+                    // Hide the preview
+                    elements.systemPromptPreview.style.display = 'none';
+                    elements.showSystemPromptBtn.textContent = 'Show System Prompt';
+                } else {
+                    // Show the preview with the current system prompt
+                    const currentPrompt = getSystemPrompt();
+                    elements.systemPromptPreview.innerHTML = `<pre style="margin: 0; white-space: pre-wrap; word-break: break-word;">${currentPrompt}</pre>`;
+                    elements.systemPromptPreview.style.display = 'block';
+                    elements.showSystemPromptBtn.textContent = 'Hide System Prompt';
+                }
+            }
+        }
+        
+        /**
+         * Open the prompts configurator
+         */
+        function openPromptsConfigurator() {
+            // Hide the settings modal
+            if (elements.settingsModal) {
+                elements.settingsModal.classList.remove('active');
+            }
+            
+            // Show the prompts modal
+            if (elements.promptsModal) {
+                elements.promptsModal.classList.add('active');
             }
         }
         

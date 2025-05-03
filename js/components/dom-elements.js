@@ -69,8 +69,10 @@ window.DOMElements = (function() {
             baseUrlSelect: document.getElementById('base-url-select'),
             baseUrl: document.getElementById('base-url'),
             customBaseUrlGroup: document.getElementById('custom-base-url-group'),
-            systemPromptInput: document.getElementById('system-prompt'),
-            resetSystemPromptBtn: document.getElementById('reset-system-prompt'),
+            // New system prompt elements
+            showSystemPromptBtn: document.getElementById('show-system-prompt'),
+            openPromptsConfigBtn: document.getElementById('open-prompts-config'),
+            systemPromptPreview: document.getElementById('system-prompt-preview'),
             closeSettings: document.getElementById('close-settings'),
             clearAllSettings: document.getElementById('clear-all-settings'),
             clearChat: document.getElementById('clear-chat'),

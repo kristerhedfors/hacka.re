@@ -259,6 +259,43 @@ window.AIHackareComponent = (function() {
             this.clearChatHistory();
         });
         
+        // Show system prompt button
+        if (this.elements.showSystemPromptBtn) {
+            this.elements.showSystemPromptBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                // Toggle system prompt preview
+                if (this.elements.systemPromptPreview) {
+                    const isVisible = this.elements.systemPromptPreview.style.display !== 'none';
+                    
+                    if (isVisible) {
+                        // Hide the preview
+                        this.elements.systemPromptPreview.style.display = 'none';
+                        this.elements.showSystemPromptBtn.textContent = 'Show System Prompt';
+                    } else {
+                        // Show the preview with the current system prompt
+                        const currentPrompt = this.settingsManager.getSystemPrompt();
+                        this.elements.systemPromptPreview.innerHTML = `<pre style="margin: 0; white-space: pre-wrap; word-break: break-word;">${currentPrompt}</pre>`;
+                        this.elements.systemPromptPreview.style.display = 'block';
+                        this.elements.showSystemPromptBtn.textContent = 'Hide System Prompt';
+                    }
+                }
+            });
+        }
+        
+        // Open prompts configurator button
+        if (this.elements.openPromptsConfigBtn) {
+            this.elements.openPromptsConfigBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                // Hide the settings modal
+                if (this.elements.settingsModal) {
+                    this.elements.settingsModal.classList.remove('active');
+                }
+                
+                // Show the prompts modal using the promptsManager
+                this.promptsManager.showPromptsModal();
+            });
+        }
+        
         // Close modals when clicking outside
         window.addEventListener('click', (e) => {
             if (e.target === this.elements.apiKeyModal) {

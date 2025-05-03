@@ -301,12 +301,17 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="system-prompt">System Prompt (max 7000 tokens)</label>
+                        <label>System Prompt</label>
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                            <div class="form-help">This prompt will be sent as a system message at the beginning of each conversation.</div>
-                            <button type="button" id="reset-system-prompt" class="btn secondary-btn" style="font-size: 0.8rem; padding: 5px 10px;">Reset to Default</button>
+                            <div class="form-help">The system prompt is built from selected prompts in the Prompt Configurator.</div>
+                            <div>
+                                <a href="#" id="show-system-prompt" class="btn secondary-btn" style="font-size: 0.8rem; padding: 5px 10px; margin-right: 5px;">Show System Prompt</a>
+                                <a href="#" id="open-prompts-config" class="btn secondary-btn" style="font-size: 0.8rem; padding: 5px 10px;">Prompt Configurator</a>
+                            </div>
                         </div>
-                        <textarea id="system-prompt" placeholder="Enter a system prompt to customize AI behavior" rows="6"></textarea>
+                        <div id="system-prompt-preview" style="background-color: var(--bg-color-secondary); padding: 10px; border-radius: 5px; max-height: 100px; overflow-y: auto; display: none;">
+                            <p style="margin: 0; font-style: italic; color: var(--text-color-secondary);">Click "Show System Prompt" to view the current system prompt.</p>
+                        </div>
                     </div>
                     <div class="form-actions">
                         <a href="#" id="clear-all-settings" style="color: blue; margin-right: auto;">Clear all settings</a>
