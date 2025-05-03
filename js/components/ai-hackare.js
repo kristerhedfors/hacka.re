@@ -167,6 +167,12 @@ window.AIHackareComponent = (function() {
                 });
             }
             
+            if (this.elements.sharePromptLibraryCheckbox) {
+                this.elements.sharePromptLibraryCheckbox.addEventListener('change', () => {
+                    this.updateLinkLengthBar();
+                });
+            }
+            
             if (this.elements.shareConversationCheckbox) {
                 this.elements.shareConversationCheckbox.addEventListener('change', () => {
                     this.toggleMessageHistoryInput();
