@@ -166,6 +166,36 @@ a[href="https://hacka.re/"] {
     display: inline-block;
 }
 
+/* Custom GPT tooltip styling */
+.custom-gpt-tooltip {
+    position: absolute;
+    top: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 14px;
+    white-space: nowrap;
+    z-index: 1000;
+    display: none;
+    pointer-events: none;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Arrow for the tooltip */
+.custom-gpt-tooltip::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #333 transparent transparent transparent;
+}
+
 .named-gpt-container .close-gpt {
     position: absolute;
     bottom: 5px;
