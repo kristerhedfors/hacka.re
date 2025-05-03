@@ -220,9 +220,8 @@ window.SettingsManager = (function() {
             // This ensures the values are saved and used for future API calls
             const apiKeyToUse = newApiKey || apiKeyManager.getApiKey();
             
-            // Save system prompt
-            const newSystemPrompt = elements.systemPromptInput.value.trim();
-            systemPromptManager.saveSystemPrompt(newSystemPrompt);
+            // System prompt is now managed by the PromptsService and SystemPromptManager
+            // No need to save it here as it's saved when prompts are selected
             
             // Fetch models with the new values and update storage
             // This ensures the values are saved and used for future API calls
