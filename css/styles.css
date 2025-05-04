@@ -237,12 +237,10 @@ a[href="https://hacka.re/"] {
     text-align: left;
     border-radius: 6px;
     padding: 15px;
-    position: absolute;
+    position: fixed; /* Use fixed position to stay at a fixed position on the screen */
     z-index: 1000;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    margin-top: 10px;
+    top: 70px; /* Position below the header */
+    left: 10px; /* Fixed distance from the left edge of the screen */
     opacity: 0;
     transition: opacity 0.3s;
     font-size: 0.85rem;
@@ -277,14 +275,7 @@ a[href="https://hacka.re/"] {
 }
 
 .heart-logo .tooltip::after {
-    content: "";
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    margin-left: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent transparent white transparent;
+    display: none; /* Hide the arrow since it doesn't make sense with fixed positioning */
 }
 
 /* Remove hover-only behavior since we're handling it with JavaScript */
