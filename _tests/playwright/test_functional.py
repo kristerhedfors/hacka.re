@@ -7,6 +7,7 @@ It imports and re-exports all the tests from the refactored modules.
 from test_api import test_api_key_configuration, test_model_selection
 from test_chat import test_chat_message_send_receive
 from test_sharing import test_model_sharing_link_creation, test_model_sharing_link_loading
+from test_model_context_window import test_model_context_window_display
 
 # Re-export all tests
 __all__ = [
@@ -14,5 +15,6 @@ __all__ = [
     'test_model_selection',
     'test_chat_message_send_receive',
     'test_model_sharing_link_creation',
-    'test_model_sharing_link_loading'
+    'test_model_sharing_link_loading',
+    'test_model_context_window_display'
 ]
