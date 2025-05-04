@@ -89,20 +89,78 @@ The interface uses server-sent events (SSE) to stream AI responses in real-time,
      * @returns {boolean} True if the prompt is now selected, false if unselected
      */
     function toggleDefaultPromptSelection(id) {
+        console.log("DefaultPromptsService.toggleDefaultPromptSelection called for id:", id);
         const selectedIds = getSelectedDefaultPromptIds();
         const index = selectedIds.indexOf(id);
+        let result;
         
         if (index >= 0) {
             // Remove from selected
             selectedIds.splice(index, 1);
             setSelectedDefaultPromptIds(selectedIds);
-            return false;
+            result = false;
         } else {
             // Add to selected
             selectedIds.push(id);
             setSelectedDefaultPromptIds(selectedIds);
-            return true;
+            result = true;
         }
+        
+        // Get all selected prompts
+        const selectedDefaultPrompts = getSelectedDefaultPrompts();
+        const selectedPrompts = window.PromptsService ? 
+            window.PromptsService.getSelectedPrompts() : [];
+        
+        const allSelectedPrompts = [...selectedDefaultPrompts, ...selectedPrompts];
+        console.log("Selected prompts count:", allSelectedPrompts.length);
+        
+        if (allSelectedPrompts.length > 0) {
+            // Combine all selected prompts
+            const combinedContent = allSelectedPrompts
+                .map(prompt => prompt.content)
+                .join('\n\n---\n\n');
+            
+            console.log("Combined content length:", combinedContent.length);
+            
+            // Save to system prompt in storage service
+            StorageService.saveSystemPrompt(combinedContent);
+            
+            // Update main context usage display directly
+            if (window.ModelInfoService) {
+                console.log("Updating main context usage directly from toggleDefaultPromptSelection");
+                
+                // Get the current messages
+                const messages = window.aiHackare && window.aiHackare.chatManager ? 
+                    window.aiHackare.chatManager.getMessages() || [] : [];
+                
+                // Get current model
+                const currentModel = window.aiHackare && window.aiHackare.settingsManager ? 
+                    window.aiHackare.settingsManager.getCurrentModel() : '';
+                
+                // Calculate percentage using the utility function directly
+                const percentage = UIUtils.estimateContextUsage(
+                    messages, 
+                    ModelInfoService.modelInfo, 
+                    currentModel,
+                    combinedContent
+                );
+                
+                console.log("Calculated percentage:", percentage);
+                
+                // Update the UI directly
+                const usageFill = document.querySelector('.usage-fill');
+                const usageText = document.querySelector('.usage-text');
+                
+                if (usageFill && usageText) {
+                    console.log("Directly updating UI elements");
+                    UIUtils.updateContextUsage(usageFill, usageText, percentage);
+                } else {
+                    console.log("Could not find UI elements");
+                }
+            }
+        }
+        
+        return result;
     }
     
     /**

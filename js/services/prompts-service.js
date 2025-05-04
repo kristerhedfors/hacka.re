@@ -115,27 +115,38 @@ window.PromptsService = (function() {
         }
     }
     
-    /**
-     * Toggle a prompt's selection status
-     * @param {string} id - The prompt ID to toggle
-     * @returns {boolean} True if the prompt is now selected, false if unselected
-     */
-    function togglePromptSelection(id) {
-        const selectedIds = getSelectedPromptIds();
-        const index = selectedIds.indexOf(id);
-        
-        if (index >= 0) {
-            // Remove from selected
-            selectedIds.splice(index, 1);
-            setSelectedPromptIds(selectedIds);
-            return false;
-        } else {
-            // Add to selected
-            selectedIds.push(id);
-            setSelectedPromptIds(selectedIds);
-            return true;
-        }
+/**
+ * Toggle a prompt's selection status
+ * @param {string} id - The prompt ID to toggle
+ * @returns {boolean} True if the prompt is now selected, false if unselected
+ */
+function togglePromptSelection(id) {
+    const selectedIds = getSelectedPromptIds();
+    const index = selectedIds.indexOf(id);
+    let result;
+    
+    if (index >= 0) {
+        // Remove from selected
+        selectedIds.splice(index, 1);
+        setSelectedPromptIds(selectedIds);
+        result = false;
+    } else {
+        // Add to selected
+        selectedIds.push(id);
+        setSelectedPromptIds(selectedIds);
+        result = true;
     }
+    
+    // Update main context usage display if aiHackare is available
+    if (window.aiHackare && window.aiHackare.chatManager) {
+        window.aiHackare.chatManager.estimateContextUsage(
+            window.aiHackare.uiManager.updateContextUsage.bind(window.aiHackare.uiManager),
+            window.aiHackare.settingsManager.getCurrentModel()
+        );
+    }
+    
+    return result;
+}
     
     /**
      * Check if a prompt is selected
@@ -163,11 +174,13 @@ window.PromptsService = (function() {
  * @returns {boolean} True if prompts were applied, false if no prompts were selected
  */
 function applySelectedPromptsAsSystem() {
+    console.log("PromptsService.applySelectedPromptsAsSystem called");
     const selectedPrompts = getSelectedPrompts();
     const selectedDefaultPrompts = window.DefaultPromptsService ? 
         window.DefaultPromptsService.getSelectedDefaultPrompts() : [];
     
     const allSelectedPrompts = [...selectedDefaultPrompts, ...selectedPrompts];
+    console.log("Selected prompts count:", allSelectedPrompts.length);
     
     if (allSelectedPrompts.length > 0) {
         // Combine all selected prompts
@@ -175,8 +188,42 @@ function applySelectedPromptsAsSystem() {
             .map(prompt => prompt.content)
             .join('\n\n---\n\n');
         
+        console.log("Combined content length:", combinedContent.length);
+        
         // Save to system prompt in storage service
         StorageService.saveSystemPrompt(combinedContent);
+        
+        // Update main context usage display if aiHackare is available
+        if (window.aiHackare && window.aiHackare.chatManager) {
+            console.log("Updating main context usage from applySelectedPromptsAsSystem");
+            
+            // Get the current messages
+            const messages = window.aiHackare.chatManager.getMessages() || [];
+            
+            // Calculate percentage using the utility function directly
+            const percentage = UIUtils.estimateContextUsage(
+                messages, 
+                ModelInfoService.modelInfo, 
+                window.aiHackare.settingsManager.getCurrentModel(),
+                combinedContent
+            );
+            
+            console.log("Calculated percentage:", percentage);
+            
+            // Update the UI directly
+            if (window.aiHackare.uiManager) {
+                const usageFill = document.querySelector('.usage-fill');
+                const usageText = document.querySelector('.usage-text');
+                
+                if (usageFill && usageText) {
+                    console.log("Directly updating UI elements");
+                    UIUtils.updateContextUsage(usageFill, usageText, percentage);
+                } else {
+                    console.log("Could not find UI elements");
+                }
+            }
+        }
+        
         return true;
     }
     

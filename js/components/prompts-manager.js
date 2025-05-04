@@ -187,9 +187,49 @@ function loadPromptsList() {
         checkbox.checked = selectedPromptIds.includes(prompt.id);
         checkbox.addEventListener('click', (e) => {
             e.stopPropagation(); // Prevent triggering the prompt item click
+            console.log("Regular prompt checkbox clicked:", prompt.id);
             PromptsService.togglePromptSelection(prompt.id);
             PromptsService.applySelectedPromptsAsSystem();
             updatePromptsTokenUsage(); // Update token usage bar
+            
+            // Get all selected prompts
+            const selectedDefaultPrompts = DefaultPromptsService.getSelectedDefaultPrompts();
+            const selectedPrompts = PromptsService.getSelectedPrompts();
+            const allSelectedPrompts = [...selectedDefaultPrompts, ...selectedPrompts];
+            
+            // Combine all selected prompts
+            const combinedContent = allSelectedPrompts
+                .map(prompt => prompt.content)
+                .join('\n\n---\n\n');
+            
+            // Get current messages
+            const messages = window.aiHackare && window.aiHackare.chatManager ? 
+                window.aiHackare.chatManager.getMessages() || [] : [];
+            
+            // Get current model
+            const currentModel = window.aiHackare && window.aiHackare.settingsManager ? 
+                window.aiHackare.settingsManager.getCurrentModel() : '';
+            
+            // Calculate percentage directly
+            const percentage = UIUtils.estimateContextUsage(
+                messages, 
+                ModelInfoService.modelInfo, 
+                currentModel,
+                combinedContent
+            );
+            
+            console.log("Direct calculation - percentage:", percentage);
+            
+            // Update the UI directly
+            const usageFill = document.querySelector('.usage-fill');
+            const usageText = document.querySelector('.usage-text');
+            
+            if (usageFill && usageText) {
+                console.log("Directly updating main UI elements from checkbox handler");
+                UIUtils.updateContextUsage(usageFill, usageText, percentage);
+            } else {
+                console.log("Could not find main UI elements");
+            }
         });
         promptItem.appendChild(checkbox);
         
@@ -337,8 +377,16 @@ function loadPromptsList() {
                 // Reload prompts list
                 loadPromptsList();
                 
-                // Apply selected prompts as system prompt
-                PromptsService.applySelectedPromptsAsSystem();
+            // Apply selected prompts as system prompt
+            PromptsService.applySelectedPromptsAsSystem();
+            
+            // Update main context usage display if aiHackare is available
+            if (window.aiHackare && window.aiHackare.chatManager) {
+                window.aiHackare.chatManager.estimateContextUsage(
+                    window.aiHackare.uiManager.updateContextUsage.bind(window.aiHackare.uiManager),
+                    window.aiHackare.settingsManager.getCurrentModel()
+                );
+            }
             });
             
             // Add elements to the section
@@ -415,9 +463,49 @@ function addDefaultPromptsSection() {
         checkbox.checked = selectedDefaultPromptIds.includes(prompt.id);
         checkbox.addEventListener('click', (e) => {
             e.stopPropagation(); // Prevent triggering the prompt item click
+            console.log("Default prompt checkbox clicked:", prompt.id);
             DefaultPromptsService.toggleDefaultPromptSelection(prompt.id);
             PromptsService.applySelectedPromptsAsSystem();
             updatePromptsTokenUsage(); // Update token usage bar
+            
+            // Get all selected prompts
+            const selectedDefaultPrompts = DefaultPromptsService.getSelectedDefaultPrompts();
+            const selectedPrompts = PromptsService.getSelectedPrompts();
+            const allSelectedPrompts = [...selectedDefaultPrompts, ...selectedPrompts];
+            
+            // Combine all selected prompts
+            const combinedContent = allSelectedPrompts
+                .map(prompt => prompt.content)
+                .join('\n\n---\n\n');
+            
+            // Get current messages
+            const messages = window.aiHackare && window.aiHackare.chatManager ? 
+                window.aiHackare.chatManager.getMessages() || [] : [];
+            
+            // Get current model
+            const currentModel = window.aiHackare && window.aiHackare.settingsManager ? 
+                window.aiHackare.settingsManager.getCurrentModel() : '';
+            
+            // Calculate percentage directly
+            const percentage = UIUtils.estimateContextUsage(
+                messages, 
+                ModelInfoService.modelInfo, 
+                currentModel,
+                combinedContent
+            );
+            
+            console.log("Direct calculation - percentage:", percentage);
+            
+            // Update the UI directly
+            const usageFill = document.querySelector('.usage-fill');
+            const usageText = document.querySelector('.usage-text');
+            
+            if (usageFill && usageText) {
+                console.log("Directly updating main UI elements from checkbox handler");
+                UIUtils.updateContextUsage(usageFill, usageText, percentage);
+            } else {
+                console.log("Could not find main UI elements");
+            }
         });
         promptItem.appendChild(checkbox);
         
