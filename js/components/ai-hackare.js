@@ -467,41 +467,41 @@ window.AIHackareComponent = (function() {
         );
     };
     
-    /**
-     * Toggle the model selection menu
-     */
-    AIHackare.prototype.toggleModelSelectionMenu = function() {
-        const modelMenu = document.getElementById('model-selection-menu');
-        const currentModel = this.settingsManager.getCurrentModel();
-        const modelName = this.elements.modelNameElement.textContent;
-        const apiKey = this.settingsManager.getApiKey();
-        const baseUrl = this.settingsManager.getBaseUrl();
-        
-        // Only go directly to settings if there's an API configuration error
-        if (!apiKey || !baseUrl || modelName.includes('error')) {
-            this.showSettingsModal();
-            return;
-        }
-        
-        if (modelMenu) {
-            if (modelMenu.classList.contains('active')) {
-                this.hideModelSelectionMenu();
-            } else {
-                // Position the menu
-                const modelInfoBtn = this.elements.modelInfoBtn;
-                if (modelInfoBtn) {
-                    const rect = modelInfoBtn.getBoundingClientRect();
-                    modelMenu.style.top = (rect.bottom + window.scrollY) + 'px';
-                }
-                
-                // Populate model info
-                this.populateModelCardInfo(currentModel);
-                
-                // Show the menu
-                modelMenu.classList.add('active');
+        /**
+         * Toggle the model selection menu
+         */
+        AIHackare.prototype.toggleModelSelectionMenu = function() {
+            const modelMenu = document.getElementById('model-selection-menu');
+            const currentModel = this.settingsManager.getCurrentModel();
+            const modelName = this.elements.modelNameElement.textContent;
+            const apiKey = this.settingsManager.getApiKey();
+            const baseUrl = this.settingsManager.getBaseUrl();
+            
+            // Only go directly to settings if there's an API configuration error
+            if (!apiKey || !baseUrl || modelName.includes('error')) {
+                this.showSettingsModal();
+                return;
             }
-        }
-    };
+            
+            if (modelMenu) {
+                if (modelMenu.classList.contains('active')) {
+                    this.hideModelSelectionMenu();
+                } else {
+                    // Position the menu
+                    const modelInfoBtn = this.elements.modelInfoBtn;
+                    if (modelInfoBtn) {
+                        const rect = modelInfoBtn.getBoundingClientRect();
+                        modelMenu.style.top = (rect.bottom + window.scrollY) + 'px';
+                    }
+                    
+                    // Populate model info
+                    this.populateModelCardInfo(currentModel);
+                    
+                    // Show the menu
+                    modelMenu.classList.add('active');
+                }
+            }
+        };
     
     /**
      * Hide the model selection menu
@@ -600,6 +600,12 @@ window.AIHackareComponent = (function() {
                         } else {
                             modelCardInfo.appendChild(contextWindowElement);
                         }
+                        
+                        // Update the context usage display with the new context window size
+                        this.chatManager.estimateContextUsage(
+                            this.uiManager.updateContextUsage.bind(this.uiManager),
+                            modelId
+                        );
                     }
                     
                     // Now use the settings manager to populate the model select
@@ -685,11 +691,19 @@ window.AIHackareComponent = (function() {
                         modelMenuSelect.addEventListener('change', (e) => {
                             const selectedModel = e.target.value;
                             if (selectedModel && selectedModel !== modelId) {
-                                // Save the selected model
-                                StorageService.saveModel(selectedModel);
+                                console.log(`Model selection changed to: ${selectedModel}`);
+                                
+                                // Save the selected model using the model manager
+                                this.settingsManager.saveModel(selectedModel);
                                 
                                 // Update the model info display
                                 this.uiManager.updateModelInfoDisplay(selectedModel);
+                                
+                                // Update context usage with the new model
+                                this.chatManager.estimateContextUsage(
+                                    this.uiManager.updateContextUsage.bind(this.uiManager),
+                                    selectedModel
+                                );
                                 
                                 // Add a system message
                                 this.chatManager.addSystemMessage(`Model changed to ${ModelInfoService.getDisplayName(selectedModel)}`);

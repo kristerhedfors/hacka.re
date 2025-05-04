@@ -21,17 +21,52 @@ window.ModelInfoService = (function() {
     const systemModels = [];
 
     /**
+     * Get the context window size for a model
+     * @param {string} modelId - The model ID
+     * @returns {number|null} The context window size in tokens, or null if unknown
+     */
+    function getContextSize(modelId) {
+        // Handle null or undefined modelId
+        if (modelId === null || modelId === undefined) {
+            console.log('Getting context size for undefined or null model');
+            return null;
+        }
+        
+        // Convert to string if it's not already
+        const modelIdStr = String(modelId);
+        
+        console.log(`Getting context size for model: ${modelIdStr}`);
+        console.log(`Model info for ${modelIdStr}:`, modelInfo[modelIdStr]);
+        
+        // If we have model info from the API, use that
+        if (modelInfo[modelIdStr] && modelInfo[modelIdStr].context_window) {
+            console.log(`Found context window size: ${modelInfo[modelIdStr].context_window}`);
+            return modelInfo[modelIdStr].context_window;
+        }
+        
+        // Return null if we don't know the context size
+        console.log(`No context window size found for model: ${modelIdStr}`);
+        return null;
+    }
+
+    /**
      * Get a simplified display name for a model
      * @param {string} modelId - The model ID
      * @returns {string} A user-friendly display name
      */
     function getDisplayName(modelId) {
-        let displayName = modelId;
+        // Ensure modelId is a string
+        if (modelId === null || modelId === undefined) {
+            return 'Unknown Model';
+        }
+        
+        // Convert to string if it's not already
+        let displayName = String(modelId);
         
         // Common model name patterns
-        if (modelId && modelId.includes('/')) {
+        if (displayName.includes('/')) {
             // Extract the model name from paths like 'meta-llama/llama-4-...'
-            const parts = modelId.split('/');
+            const parts = displayName.split('/');
             displayName = parts[parts.length - 1];
         }
         
@@ -75,6 +110,7 @@ window.ModelInfoService = (function() {
         previewModels: previewModels,
         systemModels: systemModels,
         defaultModels: defaultModels,
-        getDisplayName: getDisplayName
+        getDisplayName: getDisplayName,
+        getContextSize: getContextSize
     };
 })();

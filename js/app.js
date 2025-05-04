@@ -13,6 +13,49 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update title and subtitle on page load
         updateTitleAndSubtitle();
     }
+    
+    // Add event listener for message input to update context usage
+    const messageInput = document.getElementById('message-input');
+    if (messageInput) {
+        messageInput.addEventListener('input', function() {
+            // Get the current model
+            const currentModel = aiHackare.settingsManager.getCurrentModel();
+            
+            // Create a temporary messages array with the current input
+            const messages = aiHackare.chatManager.getMessages() || [];
+            
+            // Always create a fresh copy of the messages array
+            const tempMessages = [...messages];
+            
+            // If the input is not empty, add it as a temporary user message
+            if (this.value.trim()) {
+                tempMessages.push({
+                    role: 'user',
+                    content: this.value
+                });
+            }
+            
+            // Log the message input value and tempMessages length for debugging
+            console.log('Message input value:', this.value);
+            console.log('Temp messages length:', tempMessages.length);
+            
+            // Estimate context usage with the temporary messages
+            const systemPrompt = aiHackare.settingsManager.getSystemPrompt() || '';
+            const usageInfo = UIUtils.estimateContextUsage(
+                tempMessages, 
+                ModelInfoService.modelInfo, 
+                currentModel,
+                systemPrompt
+            );
+            
+            // Update the context usage display
+            aiHackare.uiManager.updateContextUsage(
+                usageInfo.percentage, 
+                usageInfo.estimatedTokens, 
+                usageInfo.contextSize
+            );
+        });
+    }
 });
 
 /**

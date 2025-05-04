@@ -35,7 +35,23 @@ window.ModelManager = (function() {
         function getCurrentModel() {
             // Always get the current model from storage to ensure we have the latest value
             // This is especially important when the namespace changes due to title/subtitle changes
-            return StorageService.getModel();
+            const storedModel = StorageService.getModel();
+            
+            // If we have a current model in memory and it doesn't match storage,
+            // update storage with our current model (this helps with model persistence issues)
+            if (currentModel && currentModel !== storedModel) {
+                console.log(`Model mismatch detected: memory=${currentModel}, storage=${storedModel}. Updating storage.`);
+                StorageService.saveModel(currentModel);
+                return currentModel;
+            }
+            
+            // If we have a stored model but no current model in memory, update our memory
+            if (storedModel && !currentModel) {
+                console.log(`Updating memory model from storage: ${storedModel}`);
+                currentModel = storedModel;
+            }
+            
+            return storedModel || currentModel;
         }
         
         /**
@@ -43,8 +59,36 @@ window.ModelManager = (function() {
          * @param {string} model - The model ID to save
          */
         function saveModel(model) {
+            if (!model) {
+                console.warn('Attempted to save empty model ID');
+                return;
+            }
+            
+            console.log(`Saving model: ${model}`);
             StorageService.saveModel(model);
             currentModel = model;
+            
+            // Update the model select element if it exists
+            if (elements.modelSelect && elements.modelSelect.value !== model) {
+                console.log(`Updating model select UI to: ${model}`);
+                
+                // Check if the option exists
+                let optionExists = false;
+                for (let i = 0; i < elements.modelSelect.options.length; i++) {
+                    if (elements.modelSelect.options[i].value === model) {
+                        elements.modelSelect.value = model;
+                        optionExists = true;
+                        break;
+                    }
+                }
+                
+                // If the option doesn't exist, we might need to fetch models
+                if (!optionExists && model) {
+                    console.log(`Model ${model} not found in select options. Will be applied after models are fetched.`);
+                    // Set as pending to be applied after models are fetched
+                    pendingSharedModel = model;
+                }
+            }
         }
         
         /**
@@ -60,9 +104,10 @@ window.ModelManager = (function() {
          * @param {string} apiKey - The API key to use
          * @param {string} baseUrl - The base URL to use
          * @param {boolean} updateStorage - Whether to update storage with the provided values
+         * @param {Function} [updateContextUsage] - Optional callback to update context usage display
          * @returns {Promise<Object>} Promise resolving to result object
          */
-        async function fetchAvailableModels(apiKey, baseUrl, updateStorage = false) {
+        async function fetchAvailableModels(apiKey, baseUrl, updateStorage = false, updateContextUsage = null) {
             if (!apiKey) return { success: false, error: 'API key is required' };
             
             try {
@@ -282,6 +327,13 @@ window.ModelManager = (function() {
                         elements.modelSelect.value = modelToSelect;
                         console.log(`Selected model for ${provider}: ${modelToSelect}`);
                     }
+                }
+                
+                // If updateContextUsage callback is provided, call it to refresh the context usage display
+                // with the newly fetched model information
+                if (updateContextUsage && typeof updateContextUsage === 'function') {
+                    console.log('Updating context usage after fetching models');
+                    updateContextUsage();
                 }
                 
                 return { success: true };

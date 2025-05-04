@@ -18,6 +18,7 @@ The unit tests are organized into the following files:
 - `link-sharing-service.test.js`: Tests for the LinkSharingService module
 - `share-service.test.js`: Tests for the ShareService module
 - `model-context-window-test.html`: Test for displaying model context window size in the model selection menu
+- `model-selection-test.html`: Tests for model selection and SSE streaming functionality
 
 ### Browser-Based Tests (Playwright)
 
@@ -46,6 +47,9 @@ To run the unit tests in a browser:
 2. The tests will run automatically and display the results
 3. Green checkmarks (✓) indicate passing tests
 4. Red X marks (✗) indicate failing tests, with error messages
+
+For individual feature tests, open the specific test HTML file in a browser:
+- `model-selection-test.html` - Tests model selection persistence and SSE streaming
 
 #### From the Command Line (Optional)
 
@@ -111,6 +115,14 @@ Tests for the ShareService wrapper:
 - Testing comprehensive sharing options (API key, system prompt, model, conversation)
 - Ensuring backward compatibility is maintained
 
+#### Model Selection and SSE Tests
+
+Tests for model selection and Server-Sent Events (SSE) streaming:
+
+- Model persistence in storage
+- Model selection UI updates
+- SSE streaming for real-time AI responses
+
 ### Playwright Test Coverage
 
 #### Basic UI Tests
@@ -130,6 +142,20 @@ These tests verify the behavior of the application with mocked API responses:
 - API key configuration works correctly
 - Model selection works correctly
 - Sending a message and receiving a response works correctly
+
+## Recent Improvements
+
+### Server-Sent Events (SSE) Streaming
+
+- Improved SSE implementation for more reliable streaming of AI responses
+- Added better buffer handling for partial messages
+- Implemented fallback mechanism for browsers without native EventSource support
+
+### Model Selection Persistence
+
+- Fixed issues with model selection not being properly persisted
+- Improved synchronization between UI and storage
+- Added better error handling for model selection changes
 
 ## Notes
 

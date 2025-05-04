@@ -136,7 +136,7 @@ window.UIUtils = (function() {
      * @param {Object} modelInfo - Information about the current model
      * @param {string} currentModel - Current model ID
      * @param {string} systemPrompt - System prompt content
-     * @returns {number} - Estimated usage percentage
+     * @returns {Object} - Object containing estimated tokens, context size, and usage percentage
      */
     function estimateContextUsage(messages, modelInfo, currentModel, systemPrompt = '') {
         console.log("estimateContextUsage called with:");
@@ -171,24 +171,29 @@ window.UIUtils = (function() {
         console.log("Total chars:", totalChars, "Estimated tokens:", estimatedTokens);
         
         // Get context window size for the current model
-        const modelData = modelInfo[currentModel];
-        let contextSize = 8192; // Default to 8K if not specified
+        let contextSize = null;
         
-        if (modelData && modelData.contextWindow !== '-') {
-            // Parse context window size (e.g., "128K" -> 131072)
-            const sizeStr = modelData.contextWindow.toLowerCase();
-            if (sizeStr.endsWith('k')) {
-                contextSize = parseInt(sizeStr) * 1024;
-            } else {
-                contextSize = parseInt(sizeStr.replace(/,/g, ''));
-            }
+        // Try to get context size from ModelInfoService
+        if (window.ModelInfoService && typeof ModelInfoService.getContextSize === 'function') {
+            contextSize = ModelInfoService.getContextSize(currentModel);
         }
+        
+        // If we couldn't get a context size, default to 8192
+        if (!contextSize) {
+            contextSize = 8192;
+        }
+        
         console.log("Context size for model:", contextSize);
         
         // Calculate percentage
         const percentage = Math.min(Math.round((estimatedTokens / contextSize) * 100), 100);
         console.log("Calculated percentage:", percentage, "%");
-        return percentage;
+        
+        return {
+            estimatedTokens: estimatedTokens,
+            contextSize: contextSize,
+            percentage: percentage
+        };
     }
 
     // Public API

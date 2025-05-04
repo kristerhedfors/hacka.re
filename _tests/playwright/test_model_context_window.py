@@ -44,7 +44,28 @@ def test_model_context_window_display(page, serve_hacka_re):
     reload_button.click()
     
     # Wait for the models to be loaded
-    time.sleep(2)
+    # First, check if the model select has any non-disabled options
+    try:
+        page.wait_for_selector("#model-select option:not([disabled])", state="visible", timeout=5000)
+        print("Models loaded successfully")
+    except Exception as e:
+        print(f"Error waiting for models to load: {e}")
+        # Force a longer wait time
+        time.sleep(2)
+        
+        # Check if there are any options in the model select
+        options_count = page.evaluate("""() => {
+            const select = document.getElementById('model-select');
+            if (!select) return 0;
+            return Array.from(select.options).filter(opt => !opt.disabled).length;
+        }""")
+        print(f"Found {options_count} non-disabled options in model select")
+        
+        if options_count == 0:
+            # Try clicking the reload button again
+            print("No options found, clicking reload button again")
+            reload_button.click()
+            time.sleep(2)
     
     # Select the recommended test model
     from test_utils import select_recommended_test_model, RECOMMENDED_TEST_MODEL
@@ -69,7 +90,7 @@ def test_model_context_window_display(page, serve_hacka_re):
     page.wait_for_selector("#model-selection-menu.active", state="visible", timeout=5000)
     
     # Wait for the API call to complete and the context window to be displayed
-    time.sleep(2)
+    time.sleep(1)
     
     # Check if the context window size is displayed
     # First, get all model properties

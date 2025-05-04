@@ -241,24 +241,7 @@ def setup_api_and_model(page):
     api_key_input = page.locator("#api-key-update")
     api_key_input.fill(API_KEY)
     
-    # Mock the API response for model list
-    def handle_models_request(route):
-        route.fulfill(
-            status=200,
-            content_type="application/json",
-            body="""
-            {
-                "data": [
-                    {"id": "llama-3.1-8b-instant", "name": "Llama 3.1 8B Instant"},
-                    {"id": "mixtral-8x7b-32768", "name": "Mixtral 8x7B 32K"},
-                    {"id": "gemma-7b-it", "name": "Gemma 7B IT"}
-                ]
-            }
-            """
-        )
-    
-    # Intercept API calls to the models endpoint
-    page.route("**/models", handle_models_request)
+    # No mocking - use real API calls to Groq cloud
     
     # Select Groq Cloud as the API provider
     base_url_select = page.locator("#base-url-select")

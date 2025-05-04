@@ -65,6 +65,7 @@ The tests are organized into the following files:
 - `test_chat.py`: Tests related to chat functionality
 - `test_default_prompts.py`: Tests related to the default prompts feature
 - `test_model_context_window.py`: Tests related to displaying model context window size in the model selection menu
+- `test_context_window_scaling.py`: Tests related to context window meter scaling with model context size
 
 ## Test Categories
 
@@ -85,6 +86,7 @@ These tests verify the behavior of the application with mocked API responses:
 - API key configuration works correctly
 - Model selection works correctly
 - Sending a message and receiving a response works correctly
+- Context window meter scales with model context size
 
 ## Adding New Tests
 

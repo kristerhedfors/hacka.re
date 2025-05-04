@@ -365,6 +365,7 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
          * Estimate context usage
          * @param {Function} updateContextUsage - Function to update context usage
          * @param {string} currentModel - Current model ID
+         * @returns {Object} - Object containing estimated tokens, context size, and usage percentage
          */
         function estimateContextUsage(updateContextUsage, currentModel) {
             // Get system prompt
@@ -374,25 +375,25 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
             console.log("- systemPrompt length:", systemPrompt ? systemPrompt.length : 0);
             console.log("- messages count:", messages ? messages.length : 0);
             
-            // Calculate percentage using the utility function
-            const percentage = UIUtils.estimateContextUsage(
+            // Calculate usage using the utility function
+            const usageInfo = UIUtils.estimateContextUsage(
                 messages, 
                 ModelInfoService.modelInfo, 
                 currentModel,
                 systemPrompt
             );
             
-            console.log("ChatManager: calculated percentage:", percentage);
+            console.log("ChatManager: calculated usage info:", usageInfo);
             
             // Update the display
             if (updateContextUsage) {
-                console.log("ChatManager: calling updateContextUsage with percentage:", percentage);
-                updateContextUsage(percentage);
+                console.log("ChatManager: calling updateContextUsage with percentage:", usageInfo.percentage);
+                updateContextUsage(usageInfo.percentage, usageInfo.estimatedTokens, usageInfo.contextSize);
             } else {
                 console.log("ChatManager: updateContextUsage function not provided");
             }
             
-            return percentage;
+            return usageInfo;
         }
         
         /**

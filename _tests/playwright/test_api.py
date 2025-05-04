@@ -30,7 +30,7 @@ def test_api_key_configuration(page, serve_hacka_re):
     settings_button.click(timeout=1000)
     
     # Wait for the settings modal to become visible
-    page.wait_for_selector("#settings-modal.active", state="visible", timeout=5000)
+    page.wait_for_selector("#settings-modal.active", state="visible", timeout=2500)
     
     # Enter the Groq Cloud API key from .env
     api_key_input = page.locator("#api-key-update")
@@ -113,25 +113,6 @@ def test_model_selection(page, serve_hacka_re):
     # Navigate to the application
     page.goto(serve_hacka_re)
     
-    # Mock the API response for model list to include the recommended test model
-    def handle_models_request(route):
-        route.fulfill(
-            status=200,
-            content_type="application/json",
-            body="""
-            {
-                "data": [
-                    {"id": "llama-3.1-8b-instant", "name": "Llama 3.1 8B Instant"},
-                    {"id": "model1", "name": "Test Model 1"},
-                    {"id": "model2", "name": "Test Model 2"}
-                ]
-            }
-            """
-        )
-    
-    # Intercept API calls to the models endpoint
-    page.route("**/models", handle_models_request)
-    
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
     
@@ -145,7 +126,7 @@ def test_model_selection(page, serve_hacka_re):
     settings_button.click(timeout=1000)
     
     # Wait for the settings modal to become visible
-    page.wait_for_selector("#settings-modal.active", state="visible", timeout=5000)
+    page.wait_for_selector("#settings-modal.active", state="visible", timeout=2500)
     
     # Enter the Groq Cloud API key from .env
     api_key_input = page.locator("#api-key-update")
@@ -160,7 +141,28 @@ def test_model_selection(page, serve_hacka_re):
     reload_button.click()
     
     # Wait for the models to be loaded
-    time.sleep(2)  # Give some time for the mock response to be processed and UI to update
+    # First, check if the model select has any non-disabled options
+    try:
+        page.wait_for_selector("#model-select option:not([disabled])", state="visible", timeout=2500)
+        print("Models loaded successfully")
+    except Exception as e:
+        print(f"Error waiting for models to load: {e}")
+        # Force a longer wait time
+        time.sleep(1)
+        
+        # Check if there are any options in the model select
+        options_count = page.evaluate("""() => {
+            const select = document.getElementById('model-select');
+            if (!select) return 0;
+            return Array.from(select.options).filter(opt => !opt.disabled).length;
+        }""")
+        print(f"Found {options_count} non-disabled options in model select")
+        
+        if options_count == 0:
+            # Try clicking the reload button again
+            print("No options found, clicking reload button again")
+            reload_button.click()
+            time.sleep(1)
     
     # Select the recommended test model
     from test_utils import select_recommended_test_model
