@@ -118,21 +118,27 @@ def test_default_prompts_content(page, serve_hacka_re):
     default_prompts_list = page.locator(".default-prompts-list")
     expect(default_prompts_list).to_be_visible()
     
-    # Check that there is at least one default prompt item
+    # Check that there are at least two default prompt items
     default_prompt_items = page.locator(".default-prompt-item")
-    expect(default_prompt_items).to_have_count(1)
+    count = default_prompt_items.count()
+    assert count >= 2, f"Expected at least 2 default prompt items, but found {count}"
     
-    # Check that the first default prompt is about the hacka.re project
-    first_default_prompt = default_prompt_items.first
-    expect(first_default_prompt).to_contain_text("About hacka.re Project")
+    # Check that one of the default prompts is about the hacka.re project
+    hacka_re_prompt = page.locator(".default-prompt-item:has-text('About hacka.re Project')")
+    expect(hacka_re_prompt).to_be_visible()
     
-    # Check that the default prompt has a checkbox
-    checkbox = first_default_prompt.locator(".prompt-item-checkbox")
-    expect(checkbox).to_be_visible()
+    # Check that another default prompt is about function calling
+    function_calling_prompt = page.locator(".default-prompt-item:has-text('Function calling')")
+    expect(function_calling_prompt).to_be_visible()
     
-    # Check that the default prompt has an info icon instead of a delete icon
-    info_icon = first_default_prompt.locator(".prompt-item-info")
-    expect(info_icon).to_be_visible()
+    # Check that each default prompt has a checkbox
+    for prompt in [hacka_re_prompt, function_calling_prompt]:
+        checkbox = prompt.locator(".prompt-item-checkbox")
+        expect(checkbox).to_be_visible()
+        
+        # Check that the default prompt has an info icon instead of a delete icon
+        info_icon = prompt.locator(".prompt-item-info")
+        expect(info_icon).to_be_visible()
     
     # Close the prompts modal
     close_button = page.locator("#close-prompts-modal")
@@ -166,24 +172,39 @@ def test_default_prompts_selection(page, serve_hacka_re):
     default_prompts_list = page.locator(".default-prompts-list")
     expect(default_prompts_list).to_be_visible()
     
-    # Get the first default prompt checkbox
-    first_default_prompt = page.locator(".default-prompt-item").first
-    checkbox = first_default_prompt.locator(".prompt-item-checkbox")
+    # Define the prompts to test
+    prompts_to_test = [
+        ".default-prompt-item:has-text('About hacka.re Project')",
+        ".default-prompt-item:has-text('Function calling')"
+    ]
     
-    # Check the initial state of the checkbox (should be unchecked by default)
-    initial_checked_state = checkbox.is_checked()
-    
-    # Click the checkbox to toggle its state
-    checkbox.click()
-    
-    # Check that the checkbox state has changed
-    expect(checkbox).to_be_checked() if not initial_checked_state else expect(checkbox).not_to_be_checked()
-    
-    # Click the checkbox again to toggle back to the initial state
-    checkbox.click()
-    
-    # Check that the checkbox state has changed back
-    expect(checkbox).to_be_checked() if initial_checked_state else expect(checkbox).not_to_be_checked()
+    # Test each prompt
+    for prompt_selector in prompts_to_test:
+        # Find the prompt
+        prompt = page.locator(prompt_selector)
+        expect(prompt).to_be_visible()
+        
+        # Get the checkbox
+        checkbox = prompt.locator(".prompt-item-checkbox")
+        
+        # Check the initial state of the checkbox
+        initial_checked_state = checkbox.is_checked()
+        
+        # Click the checkbox to toggle its state
+        checkbox.click()
+        
+        # Check that the checkbox state has changed
+        expect(checkbox).to_be_checked() if not initial_checked_state else expect(checkbox).not_to_be_checked()
+        
+        # Check that the token usage bar has been updated
+        prompts_usage_fill = page.locator(".prompts-usage-fill")
+        expect(prompts_usage_fill).to_be_visible()
+        
+        # Click the checkbox again to toggle back to the initial state
+        checkbox.click()
+        
+        # Check that the checkbox state has changed back
+        expect(checkbox).to_be_checked() if initial_checked_state else expect(checkbox).not_to_be_checked()
     
     # Close the prompts modal
     close_button = page.locator("#close-prompts-modal")
@@ -217,30 +238,50 @@ def test_default_prompts_info_button(page, serve_hacka_re):
     default_prompts_list = page.locator(".default-prompts-list")
     expect(default_prompts_list).to_be_visible()
     
-    # Get the first default prompt info button
-    first_default_prompt = page.locator(".default-prompt-item").first
-    info_button = first_default_prompt.locator(".prompt-item-info")
+    # Define the prompts to test
+    prompts_to_test = [
+        {
+            "selector": ".default-prompt-item:has-text('About hacka.re Project')",
+            "expected_label": "About hacka.re Project",
+            "expected_content_fragment": "hacka.re is a privacy-focused web client"
+        },
+        {
+            "selector": ".default-prompt-item:has-text('Function calling')",
+            "expected_label": "Function calling (experimental)",
+            "expected_content_fragment": "OpenAI-compatible function calling"
+        }
+    ]
     
-    # Click the info button
-    info_button.click()
-    
-    # Check that the prompt content is displayed in the editor fields
-    label_field = page.locator("#new-prompt-label")
-    content_field = page.locator("#new-prompt-content")
-    
-    # Check that the fields are visible
-    expect(label_field).to_be_visible()
-    expect(content_field).to_be_visible()
-    
-    # Check that the fields contain the expected content
-    expect(label_field).to_have_value("About hacka.re Project")
-    # Check that the content field contains the expected text
-    content_text = content_field.input_value()
-    assert "hacka.re is a privacy-focused web client" in content_text, "Content field does not contain expected text"
-    
-    # Check that the fields are read-only
-    expect(label_field).to_have_attribute("readonly", "readonly")
-    expect(content_field).to_have_attribute("readonly", "readonly")
+    # Test each prompt
+    for prompt_info in prompts_to_test:
+        # Find the prompt
+        prompt = page.locator(prompt_info["selector"])
+        expect(prompt).to_be_visible()
+        
+        # Get the info button
+        info_button = prompt.locator(".prompt-item-info")
+        
+        # Click the info button
+        info_button.click()
+        
+        # Check that the prompt content is displayed in the editor fields
+        label_field = page.locator("#new-prompt-label")
+        content_field = page.locator("#new-prompt-content")
+        
+        # Check that the fields are visible
+        expect(label_field).to_be_visible()
+        expect(content_field).to_be_visible()
+        
+        # Check that the fields contain the expected content
+        expect(label_field).to_have_value(prompt_info["expected_label"])
+        
+        # Check that the content field contains the expected text
+        content_text = content_field.input_value()
+        assert prompt_info["expected_content_fragment"] in content_text, f"Content field does not contain expected text: '{prompt_info['expected_content_fragment']}'"
+        
+        # Check that the fields are read-only
+        expect(label_field).to_have_attribute("readonly", "readonly")
+        expect(content_field).to_have_attribute("readonly", "readonly")
     
     # Close the prompts modal
     close_button = page.locator("#close-prompts-modal")
