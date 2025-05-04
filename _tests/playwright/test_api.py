@@ -113,7 +113,7 @@ def test_model_selection(page, serve_hacka_re):
     # Navigate to the application
     page.goto(serve_hacka_re)
     
-    # Mock the API response for model list
+    # Mock the API response for model list to include the recommended test model
     def handle_models_request(route):
         route.fulfill(
             status=200,
@@ -121,6 +121,7 @@ def test_model_selection(page, serve_hacka_re):
             body="""
             {
                 "data": [
+                    {"id": "llama-3.1-8b-instant", "name": "Llama 3.1 8B Instant"},
                     {"id": "model1", "name": "Test Model 1"},
                     {"id": "model2", "name": "Test Model 2"}
                 ]
@@ -161,31 +162,13 @@ def test_model_selection(page, serve_hacka_re):
     # Wait for the models to be loaded
     time.sleep(2)  # Give some time for the mock response to be processed and UI to update
     
-    # Print the available options in the model select dropdown
-    print("Available options in model select dropdown:")
-    options = page.evaluate("""() => {
-        const select = document.getElementById('model-select');
-        if (!select) return [];
-        return Array.from(select.options).map(option => ({
-            value: option.value,
-            text: option.textContent,
-            disabled: option.disabled
-        }));
-    }""")
+    # Select the recommended test model
+    from test_utils import select_recommended_test_model
+    selected_model = select_recommended_test_model(page)
     
-    for option in options:
-        print(f"  Option: {option.get('text', '')} (value: {option.get('value', '')}, disabled: {option.get('disabled', False)})")
-    
-    # Select the first non-disabled option
-    if options and not any(option.get('disabled', False) for option in options):
-        first_option_value = options[0].get('value', '')
-        print(f"Selecting first option: {first_option_value}")
-        model_select = page.locator("#model-select")
-        model_select.select_option(first_option_value)
-    else:
-        print("No valid options found in model select dropdown")
-        # Skip the test if no valid options are found
-        pytest.skip("No valid options found in model select dropdown")
+    # Skip the test if no valid model could be selected
+    if not selected_model:
+        pytest.skip("No valid model could be selected")
     
     # Scroll down to make sure the save button is visible
     page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
