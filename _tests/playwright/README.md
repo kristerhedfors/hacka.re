@@ -38,13 +38,13 @@ pytest
 To run a specific test file:
 
 ```bash
-pytest test_basic_ui.py
+pytest test_page.py
 ```
 
 To run a specific test:
 
 ```bash
-pytest test_basic_ui.py::test_page_loads
+pytest test_page.py::test_page_loads
 ```
 
 To run tests with more verbose output:
@@ -64,8 +64,6 @@ The tests are organized into the following files:
 - `test_api.py`: Tests related to API functionality
 - `test_chat.py`: Tests related to chat functionality
 - `test_default_prompts.py`: Tests related to the default prompts feature
-- `test_basic_ui.py`: Re-exports tests from `test_page.py` and `test_modals.py` for backward compatibility
-- `test_functional.py`: Re-exports tests from `test_api.py`, `test_chat.py`, and other test modules for backward compatibility
 - `test_model_context_window.py`: Tests related to displaying model context window size in the model selection menu
 
 ## Test Categories
