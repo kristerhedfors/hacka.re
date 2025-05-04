@@ -4,12 +4,11 @@ This directory contains browser-based tests for the hacka.re web client using Pl
 
 ## Setup
 
-The tests are set up to run in a Python virtual environment created with `uv`. The environment and dependencies are already configured.
+The tests are set up to run in a Python virtual environment. The environment and dependencies are already configured.
 
 ### Prerequisites
 
 - Python 3.11+
-- uv package manager
 
 ### Installation
 
@@ -25,7 +24,7 @@ The tests are set up to run in a Python virtual environment created with `uv`. T
 
 3. Install dependencies (if not already installed):
    ```bash
-   uv pip install -r requirements.txt
+   pip install -r requirements.txt
    ```
 
 ## Running Tests
@@ -39,13 +38,13 @@ pytest
 To run a specific test file:
 
 ```bash
-pytest test_basic_ui.py
+pytest test_page.py
 ```
 
 To run a specific test:
 
 ```bash
-pytest test_basic_ui.py::test_page_loads
+pytest test_page.py::test_page_loads
 ```
 
 To run tests with more verbose output:
@@ -64,8 +63,8 @@ The tests are organized into the following files:
 - `test_modals.py`: Tests related to modals (settings, prompts, share)
 - `test_api.py`: Tests related to API functionality
 - `test_chat.py`: Tests related to chat functionality
-- `test_basic_ui.py`: Re-exports tests from `test_page.py` and `test_modals.py` for backward compatibility
-- `test_functional.py`: Re-exports tests from `test_api.py` and `test_chat.py` for backward compatibility
+- `test_default_prompts.py`: Tests related to the default prompts feature
+- `test_model_context_window.py`: Tests related to displaying model context window size in the model selection menu
 
 ## Test Categories
 

@@ -17,6 +17,7 @@ The unit tests are organized into the following files:
 - `crypto-utils.test.js`: Tests for the CryptoUtils module
 - `link-sharing-service.test.js`: Tests for the LinkSharingService module
 - `share-service.test.js`: Tests for the ShareService module
+- `model-context-window-test.html`: Test for displaying model context window size in the model selection menu
 
 ### Browser-Based Tests (Playwright)
 

@@ -44,6 +44,12 @@ window.AIHackareComponent = (function() {
         this.apiToolsManager.init();
         this.promptsManager.init();
         
+        // Initialize context usage display with current messages and system prompt
+        this.chatManager.estimateContextUsage(
+            this.uiManager.updateContextUsage.bind(this.uiManager),
+            this.settingsManager.getCurrentModel()
+        );
+        
         // Add tool calling setting to settings form with system message callback
         this.apiToolsManager.addToolCallingSetting(
             this.elements.settingsForm,
@@ -571,8 +577,34 @@ window.AIHackareComponent = (function() {
             // Show loading state
             const modelMenuSelect = document.getElementById('model-menu-select');
             
-            // Use the settings manager to fetch models
-            this.settingsManager.fetchAvailableModels(apiKey, currentBaseUrl, false)
+            // Use the API service directly to get the raw model data
+            ApiService.fetchAvailableModels(apiKey, currentBaseUrl)
+                .then((models) => {
+                    // Find the current model's data
+                    const currentModelData = models.find(model => model.id === modelId);
+                    
+                    // If we have data for the current model, display context window size
+                    if (currentModelData && currentModelData.context_window) {
+                        // Add context window size to the model info
+                        const contextWindowElement = document.createElement('div');
+                        contextWindowElement.className = 'model-property';
+                        contextWindowElement.innerHTML = `
+                            <div class="property-name">Context Window:</div>
+                            <div class="property-value">${currentModelData.context_window.toLocaleString()} tokens</div>
+                        `;
+                        
+                        // Insert before the note about clicking models
+                        const modelNote = modelCardInfo.querySelector('.model-note');
+                        if (modelNote) {
+                            modelCardInfo.insertBefore(contextWindowElement, modelNote);
+                        } else {
+                            modelCardInfo.appendChild(contextWindowElement);
+                        }
+                    }
+                    
+                    // Now use the settings manager to populate the model select
+                    return this.settingsManager.fetchAvailableModels(apiKey, currentBaseUrl, false);
+                })
                 .then(() => {
                     // Update the select with the fetched models
                     if (modelMenuSelect) {
