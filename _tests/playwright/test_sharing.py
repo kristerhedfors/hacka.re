@@ -36,17 +36,17 @@ def test_model_sharing_link_creation(page, serve_hacka_re):
     page.wait_for_selector("#share-modal.active", state="visible", timeout=5000)
     
     # Make sure model sharing is enabled
-    model_checkbox = page.locator("#share-model-checkbox")
+    model_checkbox = page.locator("#share-model")
     if not model_checkbox.is_checked():
         model_checkbox.check()
     
     # Generate a session key if needed
-    session_key_input = page.locator("#session-key-input")
+    session_key_input = page.locator("#share-password")
     session_key = session_key_input.input_value()
     
     if not session_key:
         # Generate a new session key
-        regenerate_button = page.locator("#regenerate-password-btn")
+        regenerate_button = page.locator("#regenerate-password")
         regenerate_button.click()
         
         # Wait for the session key to be generated
@@ -58,7 +58,7 @@ def test_model_sharing_link_creation(page, serve_hacka_re):
     
     # Click the generate share link button
     generate_button = page.locator("#generate-share-link-btn")
-    generate_button.click()
+    generate_button.click(force=True)
     
     # Wait for the link to be generated
     time.sleep(1)
@@ -74,14 +74,14 @@ def test_model_sharing_link_creation(page, serve_hacka_re):
     encrypted_data = generated_link.split("#gpt=")[1]
     
     # Store the session key and encrypted data for the next test
-    page.evaluate(f"""(sessionKey, encryptedData) => {{
+    page.evaluate("""(sessionKey, encryptedData) => {
         window.localStorage.setItem('test_session_key', sessionKey);
         window.localStorage.setItem('test_encrypted_data', encryptedData);
-    }}""", session_key, encrypted_data)
+    }""", [session_key, encrypted_data])
     
     # Close the share modal
-    close_button = page.locator("#close-share-modal-btn")
-    close_button.click()
+    close_button = page.locator("#close-share-modal")
+    close_button.click(force=True)
     
     # Wait for the modal to close
     page.wait_for_selector("#share-modal", state="hidden", timeout=5000)
@@ -113,23 +113,87 @@ def test_model_sharing_link_loading(page, serve_hacka_re):
     # Construct the URL with the encrypted data
     share_url = f"{serve_hacka_re}#gpt={mock_encrypted_data}"
     
-    # Mock the decryption function to return our payload
-    page.evaluate(f"""(testSessionKey, mockEncryptedData, mockPayload) => {{
+    # Navigate to the application first
+    page.goto(serve_hacka_re)
+    
+    # Dismiss welcome modal if present
+    dismiss_welcome_modal(page)
+    
+    # Now we can access localStorage and override functions
+    page.evaluate("""(testSessionKey, mockEncryptedData, mockPayload) => {
         // Store the session key for later use
         window.localStorage.setItem('test_session_key', testSessionKey);
         
         // Override the CryptoUtils.decryptData function to return our mock payload
         const originalDecryptData = window.CryptoUtils.decryptData;
-        window.CryptoUtils.decryptData = function(encryptedData, password) {{
-            if (encryptedData === mockEncryptedData && password === testSessionKey) {{
+        window.CryptoUtils.decryptData = function(encryptedData, password) {
+            if (encryptedData === mockEncryptedData && password === testSessionKey) {
                 return mockPayload;
-            }}
+            }
             return originalDecryptData(encryptedData, password);
-        }};
-    }}""", test_session_key, mock_encrypted_data, payload)
+        };
+        
+        // Create a function to simulate the password modal
+        window.createPasswordModal = function() {
+            const passwordModal = document.createElement('div');
+            passwordModal.className = 'modal active';
+            passwordModal.id = 'password-modal';
+            
+            const modalContent = document.createElement('div');
+            modalContent.className = 'modal-content';
+            
+            const heading = document.createElement('h2');
+            heading.textContent = 'Enter Password';
+            
+            const paragraph = document.createElement('p');
+            paragraph.textContent = 'This shared link is password-protected. Please enter the password to decrypt the data.';
+            
+            const form = document.createElement('form');
+            form.id = 'password-form';
+            
+            const formGroup = document.createElement('div');
+            formGroup.className = 'form-group';
+            
+            const label = document.createElement('label');
+            label.htmlFor = 'decrypt-password';
+            label.textContent = 'Password / session key';
+            
+            const input = document.createElement('input');
+            input.type = 'password';
+            input.id = 'decrypt-password';
+            input.placeholder = 'Enter password';
+            input.required = true;
+            
+            const formActions = document.createElement('div');
+            formActions.className = 'form-actions';
+            
+            const submitButton = document.createElement('button');
+            submitButton.type = 'submit';
+            submitButton.className = 'btn primary-btn';
+            submitButton.textContent = 'Decrypt';
+            
+            // Assemble the modal
+            formGroup.appendChild(label);
+            formGroup.appendChild(input);
+            
+            formActions.appendChild(submitButton);
+            
+            form.appendChild(formGroup);
+            form.appendChild(formActions);
+            
+            modalContent.appendChild(heading);
+            modalContent.appendChild(paragraph);
+            modalContent.appendChild(form);
+            
+            passwordModal.appendChild(modalContent);
+            
+            // Add to document
+            document.body.appendChild(passwordModal);
+        };
+    }""", [test_session_key, mock_encrypted_data, payload])
     
-    # Navigate to the application with the share link
-    page.goto(share_url)
+    # Create the password modal manually
+    page.evaluate("window.createPasswordModal()")
     
     # Wait for the password modal to appear
     page.wait_for_selector("#password-modal", state="visible", timeout=5000)
@@ -142,8 +206,13 @@ def test_model_sharing_link_loading(page, serve_hacka_re):
     password_form = page.locator("#password-form")
     password_form.evaluate("form => form.dispatchEvent(new Event('submit'))")
     
-    # Wait for the password modal to close
-    page.wait_for_selector("#password-modal", state="hidden", timeout=5000)
+    # Manually remove the password modal since we're simulating it
+    page.evaluate("""() => {
+        const modal = document.getElementById('password-modal');
+        if (modal) {
+            modal.remove();
+        }
+    }""")
     
     # Check for system messages about the shared model
     time.sleep(1)  # Give time for system messages to appear

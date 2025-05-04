@@ -35,17 +35,13 @@ def test_settings_modal(page, serve_hacka_re):
     model_select = page.locator("#model-select")
     expect(model_select).to_be_visible()
     
-    # Check that the system prompt section is visible with the new UI
-    show_system_prompt_btn = page.locator("#show-system-prompt")
-    expect(show_system_prompt_btn).to_be_visible()
-    
-    # Check that the prompt configurator button is visible
+    # Check that the system prompt configurator button is visible
     open_prompts_config_btn = page.locator("#open-prompts-config")
     expect(open_prompts_config_btn).to_be_visible()
     
     # Close the settings modal
     close_button = page.locator("#close-settings")
-    close_button.click()
+    close_button.click(force=True)
     
     # Check that the settings modal is no longer visible
     expect(settings_modal).not_to_be_visible()
@@ -112,7 +108,7 @@ def test_share_modal(page, serve_hacka_re):
     
     # Close the share modal
     close_button = page.locator("#close-share-modal")
-    close_button.click()
+    close_button.click(force=True)
     
     # Check that the share modal is no longer visible
     expect(share_modal).not_to_be_visible()
