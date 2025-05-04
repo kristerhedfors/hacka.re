@@ -46,43 +46,13 @@ def test_model_context_window_display(page, serve_hacka_re):
     # Wait for the models to be loaded
     time.sleep(2)
     
-    # Print the available options in the model select dropdown
-    print("Available options in model select dropdown:")
-    options = page.evaluate("""() => {
-        const select = document.getElementById('model-select');
-        if (!select) return [];
-        return Array.from(select.options).map(option => ({
-            value: option.value,
-            text: option.textContent,
-            disabled: option.disabled
-        }));
-    }""")
+    # Select the recommended test model
+    from test_utils import select_recommended_test_model, RECOMMENDED_TEST_MODEL
+    selected_model = select_recommended_test_model(page)
     
-    for option in options:
-        print(f"  Option: {option.get('text', '')} (value: {option.get('value', '')}, disabled: {option.get('disabled', False)})")
-    
-    # Select a model that is likely to have context window information
-    # For Groq, we'll use llama-3.1-8b-instant which has a 8192 token context window
-    model_to_select = "llama3-8b-8192"
-    
-    # Check if the model is available
-    model_available = False
-    for option in options:
-        if option.get('value', '') == model_to_select:
-            model_available = True
-            break
-    
-    if not model_available:
-        # If the specific model is not available, select the first non-disabled option
-        for option in options:
-            if not option.get('disabled', False):
-                model_to_select = option.get('value', '')
-                print(f"Selected alternative model: {model_to_select}")
-                break
-    
-    # Select the model
-    model_select = page.locator("#model-select")
-    model_select.select_option(model_to_select)
+    # Skip the test if no valid model could be selected
+    if not selected_model:
+        pytest.skip("No valid model could be selected")
     
     # Save the settings
     save_button = page.locator("#settings-form button[type='submit']")
