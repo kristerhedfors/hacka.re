@@ -24,6 +24,14 @@ window.SystemPromptManager = (function() {
             // If no system prompt is set, use the default one
             if (!systemPrompt) {
                 loadDefaultSystemPrompt();
+            } else {
+                // Update main context usage display if aiHackare is available
+                if (window.aiHackare && window.aiHackare.chatManager) {
+                    window.aiHackare.chatManager.estimateContextUsage(
+                        window.aiHackare.uiManager.updateContextUsage.bind(window.aiHackare.uiManager),
+                        window.aiHackare.settingsManager.getCurrentModel()
+                    );
+                }
             }
             
             // Set up event listener for open prompts config button (prompt library link)
@@ -154,6 +162,14 @@ For more information about the technologies used in hacka.re:
                 elements.systemPromptInput.value = defaultPrompt;
             }
             
+            // Update main context usage display if aiHackare is available
+            if (window.aiHackare && window.aiHackare.chatManager) {
+                window.aiHackare.chatManager.estimateContextUsage(
+                    window.aiHackare.uiManager.updateContextUsage.bind(window.aiHackare.uiManager),
+                    window.aiHackare.settingsManager.getCurrentModel()
+                );
+            }
+            
             console.log('Default system prompt loaded successfully');
         }
         
@@ -174,6 +190,14 @@ For more information about the technologies used in hacka.re:
         function saveSystemPrompt(prompt) {
             StorageService.saveSystemPrompt(prompt);
             systemPrompt = prompt;
+            
+            // Update main context usage display if aiHackare is available
+            if (window.aiHackare && window.aiHackare.chatManager) {
+                window.aiHackare.chatManager.estimateContextUsage(
+                    window.aiHackare.uiManager.updateContextUsage.bind(window.aiHackare.uiManager),
+                    window.aiHackare.settingsManager.getCurrentModel()
+                );
+            }
         }
         
         // Public API

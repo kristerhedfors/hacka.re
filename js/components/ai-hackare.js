@@ -44,6 +44,12 @@ window.AIHackareComponent = (function() {
         this.apiToolsManager.init();
         this.promptsManager.init();
         
+        // Initialize context usage display with current messages and system prompt
+        this.chatManager.estimateContextUsage(
+            this.uiManager.updateContextUsage.bind(this.uiManager),
+            this.settingsManager.getCurrentModel()
+        );
+        
         // Add tool calling setting to settings form with system message callback
         this.apiToolsManager.addToolCallingSetting(
             this.elements.settingsForm,

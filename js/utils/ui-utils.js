@@ -52,7 +52,14 @@ window.UIUtils = (function() {
      * @param {number} percentage - Usage percentage (0-100)
      */
     function updateContextUsage(fillElement, textElement, percentage) {
-        if (!fillElement || !textElement) return;
+        console.log("updateContextUsage called with percentage:", percentage);
+        console.log("fillElement:", fillElement);
+        console.log("textElement:", textElement);
+        
+        if (!fillElement || !textElement) {
+            console.log("Missing fillElement or textElement, returning");
+            return;
+        }
         
         // Update the fill width
         fillElement.style.width = `${percentage}%`;
@@ -77,6 +84,7 @@ window.UIUtils = (function() {
         }
         
         fillElement.style.backgroundColor = color;
+        console.log("Context usage updated to:", percentage, "% with color:", color);
     }
 
     /**
@@ -127,19 +135,40 @@ window.UIUtils = (function() {
      * @param {Array} messages - Array of chat messages
      * @param {Object} modelInfo - Information about the current model
      * @param {string} currentModel - Current model ID
+     * @param {string} systemPrompt - System prompt content
      * @returns {number} - Estimated usage percentage
      */
-    function estimateContextUsage(messages, modelInfo, currentModel) {
+    function estimateContextUsage(messages, modelInfo, currentModel, systemPrompt = '') {
+        console.log("estimateContextUsage called with:");
+        console.log("- messages count:", messages ? messages.length : 0);
+        console.log("- currentModel:", currentModel);
+        console.log("- systemPrompt length:", systemPrompt ? systemPrompt.length : 0);
+        
         // Estimate token count based on message content
         // A rough estimate is 1 token per 4 characters
         let totalChars = 0;
         
-        messages.forEach(message => {
-            totalChars += message.content.length;
-        });
+        // Add system prompt characters if provided
+        if (systemPrompt) {
+            totalChars += systemPrompt.length;
+            console.log("Added system prompt chars:", systemPrompt.length);
+        }
+        
+        // Add message characters
+        let messageChars = 0;
+        if (messages && messages.length > 0) {
+            messages.forEach(message => {
+                if (message && message.content) {
+                    totalChars += message.content.length;
+                    messageChars += message.content.length;
+                }
+            });
+        }
+        console.log("Added message chars:", messageChars);
         
         // Estimate tokens (4 chars per token is a rough approximation)
         const estimatedTokens = Math.ceil(totalChars / 4);
+        console.log("Total chars:", totalChars, "Estimated tokens:", estimatedTokens);
         
         // Get context window size for the current model
         const modelData = modelInfo[currentModel];
@@ -154,9 +183,12 @@ window.UIUtils = (function() {
                 contextSize = parseInt(sizeStr.replace(/,/g, ''));
             }
         }
+        console.log("Context size for model:", contextSize);
         
         // Calculate percentage
-        return Math.min(Math.round((estimatedTokens / contextSize) * 100), 100);
+        const percentage = Math.min(Math.round((estimatedTokens / contextSize) * 100), 100);
+        console.log("Calculated percentage:", percentage, "%");
+        return percentage;
     }
 
     // Public API
