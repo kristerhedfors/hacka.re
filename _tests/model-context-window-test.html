@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en" class="theme-modern">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Context Window Test</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/themes.css">
+    <link rel="stylesheet" href="../lib/font-awesome/all.min.css">
+    <script src="../lib/marked/marked.min.js"></script>
+    <script src="../lib/dompurify/purify.min.js"></script>
+    <script src="../lib/tweetnacl/nacl-fast.min.js"></script>
+    <script src="../lib/tweetnacl/nacl-util.min.js"></script>
+    <script src="../lib/qrcode/qrcode.min.js"></script>
+    <style>
+        .test-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: var(--bg-color);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .test-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: var(--bg-color-secondary);
+            border-radius: 5px;
+        }
+        .test-button {
+            padding: 8px 16px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .test-button:hover {
+            background-color: var(--accent-color-hover);
+        }
+        .test-result {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: var(--system-msg-bg);
+            border-left: 4px solid var(--accent-color);
+            border-radius: 4px;
+        }
+        .success {
+            border-left-color: #4CAF50;
+        }
+        .failure {
+            border-left-color: #F44336;
+        }
+        #model-selection-menu {
+            position: relative;
+            top: auto !important;
+            display: none;
+            width: 100%;
+            max-width: 400px;
+            margin-top: 20px;
+            padding: 15px;
+            background-color: var(--bg-color);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        #model-selection-menu.active {
+            display: block;
+        }
+        .model-property {
+            display: flex;
+            margin-bottom: 8px;
+        }
+        .property-name {
+            font-weight: bold;
+            width: 150px;
+        }
+        .property-value {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="logo">
+                <h1 class="logo-text">Model Context Window Test</h1>
+            </div>
+        </header>
+
+        <main>
+            <div class="test-container">
+                <div class="test-section">
+                    <h2>Test Model Context Window Display</h2>
+                    <p>This test verifies that the context window size is displayed correctly in the model selection menu.</p>
+                    
+                    <div>
+                        <button id="run-test" class="test-button">Run Test</button>
+                        <button id="toggle-menu" class="test-button">Toggle Menu</button>
+                    </div>
+                    
+                    <div id="test-result" class="test-result" style="display: none;"></div>
+                </div>
+                
+                <!-- Mock model info display -->
+                <div class="model-info" id="model-info-btn">
+                    <div class="active-model">
+                        <span class="model-developer"></span>
+                        <span class="model-name">Test Model</span>
+                    </div>
+                    <div class="model-stats">
+                        <span class="model-context"></span>
+                        <span class="context-usage">
+                            <div class="usage-bar">
+                                <div class="usage-fill" style="width: 0%"></div>
+                            </div>
+                            <span class="usage-text">0%</span>
+                        </span>
+                        <span class="token-speed">
+                            <span class="token-speed-text">0 t/s</span>
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Model selection menu -->
+                <div id="model-selection-menu" class="model-dropdown">
+                    <h3>Select Model</h3>
+                    <div id="model-card-info"></div>
+                    <div class="model-dropdown-actions">
+                        <button type="button" class="btn secondary-btn" id="close-model-menu">Close</button>
+                        <button type="button" class="btn primary-btn" id="go-to-settings">Settings</button>
+                    </div>
+                </div>
+                
+                <!-- Hidden elements needed for the test -->
+                <div style="display: none;">
+                    <select id="model-select"></select>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Load the necessary scripts -->
+    <script src="../js/utils/crypto-utils.js"></script>
+    <script src="../js/services/model-info.js"></script>
+    <script src="../js/services/encryption-service.js"></script>
+    <script src="../js/services/namespace-service.js"></script>
+    <script src="../js/services/core-storage-service.js"></script>
+    <script src="../js/services/data-service.js"></script>
+    <script src="../js/services/storage-service.js"></script>
+    <script src="../js/services/api-service.js"></script>
+    <script src="../js/utils/ui-utils.js"></script>
+    <script src="../js/components/dom-elements.js"></script>
+    <script src="../js/components/ui-manager.js"></script>
+    <script src="../js/components/settings/model-manager.js"></script>
+    <script src="../js/components/settings/settings-manager.js"></script>
+    <script src="../js/components/ai-hackare.js"></script>
+
+    <!-- Test script -->
+    <script>
+        // Mock the API service to return test data
+        const originalFetchAvailableModels = ApiService.fetchAvailableModels;
+        ApiService.fetchAvailableModels = async function(apiKey, customBaseUrl) {
+            console.log('Mock fetchAvailableModels called');
+            
+            // Return mock model data with context window size
+            return [
+                {
+                    id: 'test-model',
+                    object: 'model',
+                    created: 1677610602,
+                    owned_by: 'test-owner',
+                    context_window: 16384,
+                    pricing: {
+                        prompt: 0.0001,
+                        completion: 0.0002
+                    }
+                },
+                {
+                    id: 'test-model-2',
+                    object: 'model',
+                    created: 1677610602,
+                    owned_by: 'test-owner',
+                    context_window: 32768,
+                    pricing: {
+                        prompt: 0.0001,
+                        completion: 0.0002
+                    }
+                }
+            ];
+        };
+        
+        // Mock the storage service
+        StorageService.getModel = function() {
+            return 'test-model';
+        };
+        
+        StorageService.getApiKey = function() {
+            return 'test-api-key';
+        };
+        
+        StorageService.getBaseUrl = function() {
+            return 'https://api.groq.com/openai/v1';
+        };
+        
+        StorageService.saveModel = function(model) {
+            console.log('Model saved:', model);
+        };
+        
+        // Mock the DOM elements
+        DOMElements.getElements = function() {
+            return {
+                modelSelect: document.getElementById('model-select'),
+                modelNameElement: document.querySelector('.model-name'),
+                modelDeveloperElement: document.querySelector('.model-developer'),
+                modelContextElement: document.querySelector('.model-context'),
+                modelStats: document.querySelector('.model-stats'),
+                usageFill: document.querySelector('.usage-fill'),
+                usageText: document.querySelector('.usage-text'),
+                tokenSpeedText: document.querySelector('.token-speed-text'),
+                modelInfoBtn: document.getElementById('model-info-btn')
+            };
+        };
+        
+        // Initialize the test
+        document.addEventListener('DOMContentLoaded', function() {
+            // Create a minimal AIHackare instance for testing
+            const aiHackare = new AIHackareComponent.AIHackare();
+            
+            // Mock the settingsManager methods
+            aiHackare.settingsManager = {
+                getCurrentModel: function() {
+                    return 'test-model';
+                },
+                getApiKey: function() {
+                    return 'test-api-key';
+                },
+                getBaseUrl: function() {
+                    return 'https://api.groq.com/openai/v1';
+                },
+                fetchAvailableModels: async function(apiKey, baseUrl, updateStorage) {
+                    return { success: true };
+                }
+            };
+            
+            // Mock the chatManager methods
+            aiHackare.chatManager = {
+                addSystemMessage: function(message) {
+                    console.log('System message:', message);
+                }
+            };
+            
+            // Add event listeners for the test buttons
+            document.getElementById('run-test').addEventListener('click', async function() {
+                const testResult = document.getElementById('test-result');
+                testResult.innerHTML = 'Running test...';
+                testResult.style.display = 'block';
+                testResult.className = 'test-result';
+                
+                try {
+                    // Call the populateModelCardInfo method
+                    aiHackare.populateModelCardInfo('test-model');
+                    
+                    // Show the model selection menu
+                    const modelMenu = document.getElementById('model-selection-menu');
+                    modelMenu.classList.add('active');
+                    
+                    // Wait for the API call to complete
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    // Check if the context window size is displayed
+                    const contextWindowElement = document.querySelector('.model-property:nth-child(4)');
+                    if (contextWindowElement && contextWindowElement.textContent.includes('Context Window') && contextWindowElement.textContent.includes('16,384')) {
+                        testResult.innerHTML = 'Test passed! Context window size is displayed correctly.';
+                        testResult.classList.add('success');
+                    } else {
+                        testResult.innerHTML = 'Test failed! Context window size is not displayed correctly.';
+                        testResult.classList.add('failure');
+                    }
+                } catch (error) {
+                    testResult.innerHTML = 'Test failed with error: ' + error.message;
+                    testResult.classList.add('failure');
+                    console.error(error);
+                }
+            });
+            
+            document.getElementById('toggle-menu').addEventListener('click', function() {
+                const modelMenu = document.getElementById('model-selection-menu');
+                modelMenu.classList.toggle('active');
+            });
+            
+            document.getElementById('close-model-menu').addEventListener('click', function() {
+                const modelMenu = document.getElementById('model-selection-menu');
+                modelMenu.classList.remove('active');
+            });
+        });
+    </script>
+</body>
+</html>

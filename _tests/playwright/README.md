@@ -66,7 +66,8 @@ The tests are organized into the following files:
 - `test_chat.py`: Tests related to chat functionality
 - `test_default_prompts.py`: Tests related to the default prompts feature
 - `test_basic_ui.py`: Re-exports tests from `test_page.py` and `test_modals.py` for backward compatibility
-- `test_functional.py`: Re-exports tests from `test_api.py` and `test_chat.py` for backward compatibility
+- `test_functional.py`: Re-exports tests from `test_api.py`, `test_chat.py`, and other test modules for backward compatibility
+- `test_model_context_window.py`: Tests related to displaying model context window size in the model selection menu
 
 ## Test Categories
 
