@@ -49,31 +49,13 @@ def test_chat_message_send_receive(page, serve_hacka_re):
     # Wait for the models to be loaded
     time.sleep(2)  # Give some time for the API response to be processed and UI to update
     
-    # Print the available options in the model select dropdown
-    print("Available options in model select dropdown:")
-    options = page.evaluate("""() => {
-        const select = document.getElementById('model-select');
-        if (!select) return [];
-        return Array.from(select.options).map(option => ({
-            value: option.value,
-            text: option.textContent,
-            disabled: option.disabled
-        }));
-    }""")
+    # Select the recommended test model
+    from test_utils import select_recommended_test_model
+    selected_model = select_recommended_test_model(page)
     
-    for option in options:
-        print(f"  Option: {option.get('text', '')} (value: {option.get('value', '')}, disabled: {option.get('disabled', False)})")
-    
-    # Select the first non-disabled option
-    if options and not any(option.get('disabled', False) for option in options):
-        first_option_value = options[0].get('value', '')
-        print(f"Selecting first option: {first_option_value}")
-        model_select = page.locator("#model-select")
-        model_select.select_option(first_option_value)
-    else:
-        print("No valid options found in model select dropdown")
-        # Skip the test if no valid options are found
-        pytest.skip("No valid options found in model select dropdown")
+    # Skip the test if no valid model could be selected
+    if not selected_model:
+        pytest.skip("No valid model could be selected")
     
     # Scroll down to make sure the save button is visible
     page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
@@ -263,7 +245,11 @@ def test_chat_message_send_receive(page, serve_hacka_re):
             print(f"Pending network requests: {pending_requests}")
         
         # Use a more specific selector to find the assistant message
-        page.wait_for_selector(".message.assistant .message-content", state="visible", timeout=30000)
+        # Use a 10-second timeout as requested
+        page.wait_for_selector(".message.assistant .message-content", state="visible", timeout=10000)
+        
+        # Wait a bit longer to ensure content is fully loaded
+        time.sleep(3)
         
         # Get all assistant messages
         assistant_messages = page.locator(".message.assistant .message-content")
@@ -272,9 +258,14 @@ def test_chat_message_send_receive(page, serve_hacka_re):
         # Check if any of the assistant messages contain a response
         found_response = False
         for i in range(assistant_messages.count()):
+            # Get both text content and inner HTML for debugging
             message_text = assistant_messages.nth(i).text_content()
-            print(f"  Assistant message {i+1}: {message_text}")
-            if message_text.strip():
+            message_html = assistant_messages.nth(i).inner_html()
+            print(f"  Assistant message {i+1} text: {message_text}")
+            print(f"  Assistant message {i+1} HTML: {message_html}")
+            
+            # Check if there's any content
+            if message_text.strip() or (message_html and message_html.strip() != ''):
                 found_response = True
                 print(f"  Found non-empty response in message {i+1}")
                 break

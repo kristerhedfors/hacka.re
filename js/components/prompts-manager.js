@@ -40,14 +40,18 @@ window.PromptsManager = (function() {
          */
         function estimatePromptsTokenUsage() {
             const selectedPrompts = PromptsService.getSelectedPrompts();
+            const selectedDefaultPrompts = window.DefaultPromptsService ? 
+                window.DefaultPromptsService.getSelectedDefaultPrompts() : [];
+            
+            const allSelectedPrompts = [...selectedDefaultPrompts, ...selectedPrompts];
             
             // If no prompts selected, return 0
-            if (selectedPrompts.length === 0) {
+            if (allSelectedPrompts.length === 0) {
                 return 0;
             }
             
             // Combine all selected prompts content
-            const combinedContent = selectedPrompts
+            const combinedContent = allSelectedPrompts
                 .map(prompt => prompt.content)
                 .join('\n\n---\n\n');
             
@@ -112,143 +116,188 @@ window.PromptsManager = (function() {
             currentPrompt = null;
         }
         
-        /**
-         * Load the prompts list
-         */
-        function loadPromptsList() {
-            if (!elements.promptsList) return;
+/**
+ * Load the prompts list
+ */
+function loadPromptsList() {
+    if (!elements.promptsList) return;
+    
+    // Clear the list
+    elements.promptsList.innerHTML = '';
+    
+    // Add token usage bar
+    const tokenUsageContainer = document.createElement('div');
+    tokenUsageContainer.className = 'prompts-token-usage-container';
+    tokenUsageContainer.innerHTML = `
+        <div class="prompts-token-usage-label">
+            Context usage: <span class="prompts-usage-text">0%</span>
+        </div>
+        <div class="prompts-usage-bar">
+            <div class="prompts-usage-fill" style="width: 0%"></div>
+        </div>
+    `;
+    elements.promptsList.appendChild(tokenUsageContainer);
+    
+    // Store references to the usage elements
+    promptsUsageFill = tokenUsageContainer.querySelector('.prompts-usage-fill');
+    promptsUsageText = tokenUsageContainer.querySelector('.prompts-usage-text');
+    
+    // Add default prompts section if DefaultPromptsService is available
+    if (window.DefaultPromptsService) {
+        addDefaultPromptsSection();
+    }
+    
+    // Get all prompts
+    let prompts = PromptsService.getPrompts();
+    
+    // Sort prompts alphabetically by name
+    prompts.sort((a, b) => {
+        const aName = a.name ? a.name.toLowerCase() : '';
+        const bName = b.name ? b.name.toLowerCase() : '';
+        return aName.localeCompare(bName);
+    });
+    
+    // Get selected prompt IDs
+    const selectedPromptIds = PromptsService.getSelectedPromptIds();
+    
+    if (prompts.length === 0) {
+        // Show a message if no prompts
+        const noPromptsMessage = document.createElement('div');
+        noPromptsMessage.className = 'no-prompts-message';
+        noPromptsMessage.textContent = 'No saved prompts. Create one below.';
+        elements.promptsList.appendChild(noPromptsMessage);
+        // Don't return early, continue to add the new prompt section
+    }
+    
+    // Add each prompt to the list
+    prompts.forEach(prompt => {
+        const promptItem = document.createElement('div');
+        promptItem.className = 'prompt-item';
+        promptItem.dataset.id = prompt.id;
+        
+        // Add active class if this is the current prompt
+        if (currentPrompt && prompt.id === currentPrompt.id) {
+            promptItem.classList.add('active');
+        }
+        
+        // Create checkbox for selecting the prompt
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'prompt-item-checkbox';
+        checkbox.checked = selectedPromptIds.includes(prompt.id);
+        checkbox.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent triggering the prompt item click
+            console.log("Regular prompt checkbox clicked:", prompt.id);
+            PromptsService.togglePromptSelection(prompt.id);
+            PromptsService.applySelectedPromptsAsSystem();
+            updatePromptsTokenUsage(); // Update token usage bar
             
-            // Clear the list
-            elements.promptsList.innerHTML = '';
+            // Get all selected prompts
+            const selectedDefaultPrompts = DefaultPromptsService.getSelectedDefaultPrompts();
+            const selectedPrompts = PromptsService.getSelectedPrompts();
+            const allSelectedPrompts = [...selectedDefaultPrompts, ...selectedPrompts];
             
-            // Add token usage bar
-            const tokenUsageContainer = document.createElement('div');
-            tokenUsageContainer.className = 'prompts-token-usage-container';
-            tokenUsageContainer.innerHTML = `
-                <div class="prompts-token-usage-label">
-                    Context usage: <span class="prompts-usage-text">0%</span>
-                </div>
-                <div class="prompts-usage-bar">
-                    <div class="prompts-usage-fill" style="width: 0%"></div>
-                </div>
-            `;
-            elements.promptsList.appendChild(tokenUsageContainer);
+            // Combine all selected prompts
+            const combinedContent = allSelectedPrompts
+                .map(prompt => prompt.content)
+                .join('\n\n---\n\n');
             
-            // Store references to the usage elements
-            promptsUsageFill = tokenUsageContainer.querySelector('.prompts-usage-fill');
-            promptsUsageText = tokenUsageContainer.querySelector('.prompts-usage-text');
+            // Get current messages
+            const messages = window.aiHackare && window.aiHackare.chatManager ? 
+                window.aiHackare.chatManager.getMessages() || [] : [];
             
-            // Get all prompts
-            let prompts = PromptsService.getPrompts();
+            // Get current model
+            const currentModel = window.aiHackare && window.aiHackare.settingsManager ? 
+                window.aiHackare.settingsManager.getCurrentModel() : '';
             
-            // Sort prompts alphabetically by name
-            prompts.sort((a, b) => {
-                const aName = a.name ? a.name.toLowerCase() : '';
-                const bName = b.name ? b.name.toLowerCase() : '';
-                return aName.localeCompare(bName);
-            });
+            // Calculate percentage directly
+            const percentage = UIUtils.estimateContextUsage(
+                messages, 
+                ModelInfoService.modelInfo, 
+                currentModel,
+                combinedContent
+            );
             
-            // Get selected prompt IDs
-            const selectedPromptIds = PromptsService.getSelectedPromptIds();
+            console.log("Direct calculation - percentage:", percentage);
             
-            if (prompts.length === 0) {
-                // Show a message if no prompts
-                const noPromptsMessage = document.createElement('div');
-                noPromptsMessage.className = 'no-prompts-message';
-                noPromptsMessage.textContent = 'No saved prompts. Create one below.';
-                elements.promptsList.appendChild(noPromptsMessage);
-                // Don't return early, continue to add the new prompt section
+            // Update the UI directly
+            const usageFill = document.querySelector('.usage-fill');
+            const usageText = document.querySelector('.usage-text');
+            
+            if (usageFill && usageText) {
+                console.log("Directly updating main UI elements from checkbox handler");
+                UIUtils.updateContextUsage(usageFill, usageText, percentage);
+            } else {
+                console.log("Could not find main UI elements");
             }
-            
-            // Add each prompt to the list
-            prompts.forEach(prompt => {
-                const promptItem = document.createElement('div');
-                promptItem.className = 'prompt-item';
-                promptItem.dataset.id = prompt.id;
+        });
+        promptItem.appendChild(checkbox);
+        
+        // Create prompt name element
+        const promptName = document.createElement('div');
+        promptName.className = 'prompt-item-name';
+        promptName.textContent = prompt.name || 'Unnamed Prompt';
+        promptItem.appendChild(promptName);
+        
+        // Add delete icon
+        const deleteIcon = document.createElement('button');
+        deleteIcon.className = 'prompt-item-delete';
+        deleteIcon.innerHTML = '<i class="fas fa-trash"></i>';
+        deleteIcon.title = 'Delete prompt';
+        deleteIcon.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent triggering the prompt item click
+            if (confirm(`Are you sure you want to delete the prompt "${prompt.name}"?`)) {
+                PromptsService.deletePrompt(prompt.id);
                 
-                // Add active class if this is the current prompt
-                if (currentPrompt && prompt.id === currentPrompt.id) {
-                    promptItem.classList.add('active');
+                // Clear current prompt if this was the selected one
+                if (currentPrompt && currentPrompt.id === prompt.id) {
+                    currentPrompt = null;
                 }
                 
-                // Create checkbox for selecting the prompt
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.className = 'prompt-item-checkbox';
-                checkbox.checked = selectedPromptIds.includes(prompt.id);
-                checkbox.addEventListener('click', (e) => {
-                    e.stopPropagation(); // Prevent triggering the prompt item click
-                    PromptsService.togglePromptSelection(prompt.id);
-                    PromptsService.applySelectedPromptsAsSystem();
-                    updatePromptsTokenUsage(); // Update token usage bar
+                // Reload prompts list
+                loadPromptsList();
+            }
+        });
+        promptItem.appendChild(deleteIcon);
+        
+        // Add click event to highlight the prompt and load it into the editor
+        promptItem.addEventListener('click', (e) => {
+            // Don't trigger if clicking on the checkbox or delete icon
+            if (e.target !== checkbox && !e.target.closest('.prompt-item-delete')) {
+                // Toggle active class
+                const isActive = promptItem.classList.contains('active');
+                
+                // Remove active class from all items
+                const promptItems = elements.promptsList.querySelectorAll('.prompt-item');
+                promptItems.forEach(item => {
+                    item.classList.remove('active');
                 });
-                promptItem.appendChild(checkbox);
                 
-                // Create prompt name element
-                const promptName = document.createElement('div');
-                promptName.className = 'prompt-item-name';
-                promptName.textContent = prompt.name || 'Unnamed Prompt';
-                promptItem.appendChild(promptName);
-                
-                // Add delete icon
-                const deleteIcon = document.createElement('button');
-                deleteIcon.className = 'prompt-item-delete';
-                deleteIcon.innerHTML = '<i class="fas fa-trash"></i>';
-                deleteIcon.title = 'Delete prompt';
-                deleteIcon.addEventListener('click', (e) => {
-                    e.stopPropagation(); // Prevent triggering the prompt item click
-                    if (confirm(`Are you sure you want to delete the prompt "${prompt.name}"?`)) {
-                        PromptsService.deletePrompt(prompt.id);
-                        
-                        // Clear current prompt if this was the selected one
-                        if (currentPrompt && currentPrompt.id === prompt.id) {
-                            currentPrompt = null;
-                        }
-                        
-                        // Reload prompts list
-                        loadPromptsList();
+                // Add active class to this item if it wasn't already active
+                if (!isActive) {
+                    promptItem.classList.add('active');
+                    currentPrompt = prompt;
+                    
+                    // Load the prompt into the editor fields
+                    const labelField = document.getElementById('new-prompt-label');
+                    const contentField = document.getElementById('new-prompt-content');
+                    
+                    if (labelField && contentField) {
+                        labelField.value = prompt.name || '';
+                        contentField.value = prompt.content || '';
                     }
-                });
-                promptItem.appendChild(deleteIcon);
-                
-                // Add click event to highlight the prompt and load it into the editor
-                promptItem.addEventListener('click', (e) => {
-                    // Don't trigger if clicking on the checkbox or delete icon
-                    if (e.target !== checkbox && !e.target.closest('.prompt-item-delete')) {
-                        // Toggle active class
-                        const isActive = promptItem.classList.contains('active');
-                        
-                        // Remove active class from all items
-                        const promptItems = elements.promptsList.querySelectorAll('.prompt-item');
-                        promptItems.forEach(item => {
-                            item.classList.remove('active');
-                        });
-                        
-                        // Add active class to this item if it wasn't already active
-                        if (!isActive) {
-                            promptItem.classList.add('active');
-                            currentPrompt = prompt;
-                            
-                            // Load the prompt into the editor fields
-                            const labelField = document.getElementById('new-prompt-label');
-                            const contentField = document.getElementById('new-prompt-content');
-                            
-                            if (labelField && contentField) {
-                                labelField.value = prompt.name || '';
-                                contentField.value = prompt.content || '';
-                            }
-                        } else {
-                            currentPrompt = null;
-                        }
-                    }
-                });
-                
-                elements.promptsList.appendChild(promptItem);
-            });
+                } else {
+                    currentPrompt = null;
+                }
+            }
+        });
+        
+        elements.promptsList.appendChild(promptItem);
+    });
             
-            // Add new prompt input fields at the bottom
-            const newPromptSection = document.createElement('div');
-            newPromptSection.className = 'new-prompt-section';
+    // Add new prompt input fields at the bottom
+    const newPromptSection = document.createElement('div');
+    newPromptSection.className = 'new-prompt-section';
             
             // Add label field
             const labelField = document.createElement('input');
@@ -328,8 +377,16 @@ window.PromptsManager = (function() {
                 // Reload prompts list
                 loadPromptsList();
                 
-                // Apply selected prompts as system prompt
-                PromptsService.applySelectedPromptsAsSystem();
+            // Apply selected prompts as system prompt
+            PromptsService.applySelectedPromptsAsSystem();
+            
+            // Update main context usage display if aiHackare is available
+            if (window.aiHackare && window.aiHackare.chatManager) {
+                window.aiHackare.chatManager.estimateContextUsage(
+                    window.aiHackare.uiManager.updateContextUsage.bind(window.aiHackare.uiManager),
+                    window.aiHackare.settingsManager.getCurrentModel()
+                );
+            }
             });
             
             // Add elements to the section
@@ -342,15 +399,161 @@ window.PromptsManager = (function() {
             // Add the new prompt section to the list
             elements.promptsList.appendChild(newPromptSection);
             
-            // Update the system prompt in the settings modal
-            const systemPrompt = StorageService.getSystemPrompt();
-            if (elements.systemPromptInput && systemPrompt) {
-                elements.systemPromptInput.value = systemPrompt;
-            }
+    // Update the system prompt in the settings modal
+    const systemPrompt = StorageService.getSystemPrompt();
+    if (elements.systemPromptInput && systemPrompt) {
+        elements.systemPromptInput.value = systemPrompt;
+    }
+    
+    // Update token usage bar
+    updatePromptsTokenUsage();
+}
+
+/**
+ * Add the default prompts section to the prompts list
+ */
+function addDefaultPromptsSection() {
+    // Create default prompts section
+    const defaultPromptsSection = document.createElement('div');
+    defaultPromptsSection.className = 'default-prompts-section';
+    
+    // Create header with expand/collapse functionality
+    const sectionHeader = document.createElement('div');
+    sectionHeader.className = 'default-prompts-header';
+    
+    // Add expand/collapse icon
+    const expandIcon = document.createElement('i');
+    expandIcon.className = 'fas fa-chevron-right';
+    sectionHeader.appendChild(expandIcon);
+    
+    // Add section title
+    const sectionTitle = document.createElement('h4');
+    sectionTitle.textContent = 'Default Prompts';
+    sectionHeader.appendChild(sectionTitle);
+    
+    // Add click event to expand/collapse
+    let isExpanded = false;
+    sectionHeader.addEventListener('click', () => {
+        isExpanded = !isExpanded;
+        expandIcon.className = isExpanded ? 'fas fa-chevron-down' : 'fas fa-chevron-right';
+        defaultPromptsList.style.display = isExpanded ? 'block' : 'none';
+    });
+    
+    defaultPromptsSection.appendChild(sectionHeader);
+    
+    // Create container for default prompts
+    const defaultPromptsList = document.createElement('div');
+    defaultPromptsList.className = 'default-prompts-list';
+    defaultPromptsList.style.display = 'none'; // Initially collapsed
+    
+    // Get default prompts and selected IDs
+    const defaultPrompts = DefaultPromptsService.getDefaultPrompts();
+    const selectedDefaultPromptIds = DefaultPromptsService.getSelectedDefaultPromptIds();
+    
+    // Add each default prompt to the list
+    defaultPrompts.forEach(prompt => {
+        const promptItem = document.createElement('div');
+        promptItem.className = 'prompt-item default-prompt-item';
+        promptItem.dataset.id = prompt.id;
+        
+        // Create checkbox for selecting the prompt
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'prompt-item-checkbox';
+        checkbox.checked = selectedDefaultPromptIds.includes(prompt.id);
+        checkbox.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent triggering the prompt item click
+            console.log("Default prompt checkbox clicked:", prompt.id);
+            DefaultPromptsService.toggleDefaultPromptSelection(prompt.id);
+            PromptsService.applySelectedPromptsAsSystem();
+            updatePromptsTokenUsage(); // Update token usage bar
             
-            // Update token usage bar
-            updatePromptsTokenUsage();
-        }
+            // Get all selected prompts
+            const selectedDefaultPrompts = DefaultPromptsService.getSelectedDefaultPrompts();
+            const selectedPrompts = PromptsService.getSelectedPrompts();
+            const allSelectedPrompts = [...selectedDefaultPrompts, ...selectedPrompts];
+            
+            // Combine all selected prompts
+            const combinedContent = allSelectedPrompts
+                .map(prompt => prompt.content)
+                .join('\n\n---\n\n');
+            
+            // Get current messages
+            const messages = window.aiHackare && window.aiHackare.chatManager ? 
+                window.aiHackare.chatManager.getMessages() || [] : [];
+            
+            // Get current model
+            const currentModel = window.aiHackare && window.aiHackare.settingsManager ? 
+                window.aiHackare.settingsManager.getCurrentModel() : '';
+            
+            // Calculate percentage directly
+            const percentage = UIUtils.estimateContextUsage(
+                messages, 
+                ModelInfoService.modelInfo, 
+                currentModel,
+                combinedContent
+            );
+            
+            console.log("Direct calculation - percentage:", percentage);
+            
+            // Update the UI directly
+            const usageFill = document.querySelector('.usage-fill');
+            const usageText = document.querySelector('.usage-text');
+            
+            if (usageFill && usageText) {
+                console.log("Directly updating main UI elements from checkbox handler");
+                UIUtils.updateContextUsage(usageFill, usageText, percentage);
+            } else {
+                console.log("Could not find main UI elements");
+            }
+        });
+        promptItem.appendChild(checkbox);
+        
+        // Create prompt name element
+        const promptName = document.createElement('div');
+        promptName.className = 'prompt-item-name';
+        promptName.textContent = prompt.name || 'Unnamed Default Prompt';
+        promptItem.appendChild(promptName);
+        
+        // Add info icon instead of delete (default prompts can't be deleted)
+        const infoIcon = document.createElement('button');
+        infoIcon.className = 'prompt-item-info';
+        infoIcon.innerHTML = '<i class="fas fa-info-circle"></i>';
+        infoIcon.title = 'View default prompt content';
+        infoIcon.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent triggering the prompt item click
+            
+            // Show content in a read-only way (using the editor fields)
+            const labelField = document.getElementById('new-prompt-label');
+            const contentField = document.getElementById('new-prompt-content');
+            
+            if (labelField && contentField) {
+                labelField.value = prompt.name || '';
+                contentField.value = prompt.content || '';
+                // Make it clear these are read-only for default prompts
+                labelField.setAttribute('readonly', 'readonly');
+                contentField.setAttribute('readonly', 'readonly');
+                
+                // Remove readonly after a short delay when clicking elsewhere
+                setTimeout(() => {
+                    document.addEventListener('click', function removeReadonly(e) {
+                        if (!e.target.closest('.new-prompt-section')) {
+                            labelField.removeAttribute('readonly');
+                            contentField.removeAttribute('readonly');
+                            document.removeEventListener('click', removeReadonly);
+                        }
+                    });
+                }, 100);
+            }
+        });
+        promptItem.appendChild(infoIcon);
+        
+        defaultPromptsList.appendChild(promptItem);
+    });
+    
+    defaultPromptsSection.appendChild(defaultPromptsList);
+    elements.promptsList.appendChild(defaultPromptsSection);
+}
         
         /**
          * Create a new prompt

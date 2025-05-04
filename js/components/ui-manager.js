@@ -455,6 +455,9 @@ window.UIManager = (function() {
          * @param {number} percentage - Usage percentage (0-100)
          */
         function updateContextUsage(percentage) {
+            console.log("UIManager.updateContextUsage called with percentage:", percentage);
+            console.log("elements.usageFill:", elements.usageFill);
+            console.log("elements.usageText:", elements.usageText);
             UIUtils.updateContextUsage(elements.usageFill, elements.usageText, percentage);
         }
         

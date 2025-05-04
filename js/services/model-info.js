@@ -11,7 +11,7 @@ window.ModelInfoService = (function() {
     // Default models for different providers
     const defaultModels = {
         'openai': 'gpt-4.1',
-        'groq': 'meta-llama/llama-4-scout-17b-16e-instruct'
+        'groq': 'llama-3.1-8b-instant'
         // For Ollama, we'll select the first model in the list
     };
 

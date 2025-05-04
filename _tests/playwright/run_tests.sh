@@ -8,9 +8,9 @@ cd "$(dirname "$0")"
 # Check if virtual environment exists
 if [ ! -d ".venv" ]; then
     echo "Virtual environment not found. Creating one..."
-    uv venv .venv
+    python -m venv .venv
     source .venv/bin/activate
-    uv pip install -r requirements.txt
+    pip install -r requirements.txt
     playwright install
 else
     # Activate the virtual environment

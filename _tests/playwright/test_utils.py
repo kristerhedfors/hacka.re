@@ -5,6 +5,9 @@ from playwright.sync_api import Page, expect
 # Maximum allowed time for any operation (in seconds)
 MAX_OPERATION_TIME = 2.0
 
+# Recommended model for tests (as per README)
+RECOMMENDED_TEST_MODEL = "llama-3.1-8b-instant"
+
 class OperationTimeoutError(Exception):
     """Exception raised when an operation takes too long."""
     pass
@@ -173,3 +176,57 @@ def check_system_messages(page):
                 print(f"  🌐 API: {message}")
             else:
                 print(f"  ℹ️ INFO: {message}")
+    
+    return system_messages
+
+# Helper function to select the recommended test model
+def select_recommended_test_model(page):
+    """
+    Select the recommended test model (llama-3.1-8b-instant) from the model dropdown.
+    If the recommended model is not available, it will select the first available model.
+    
+    Args:
+        page: The Playwright page object
+        
+    Returns:
+        str: The selected model ID
+    """
+    # Print the available options in the model select dropdown
+    print("Available options in model select dropdown:")
+    options = page.evaluate("""() => {
+        const select = document.getElementById('model-select');
+        if (!select) return [];
+        return Array.from(select.options).map(option => ({
+            value: option.value,
+            text: option.textContent,
+            disabled: option.disabled
+        }));
+    }""")
+    
+    for option in options:
+        print(f"  Option: {option.get('text', '')} (value: {option.get('value', '')}, disabled: {option.get('disabled', False)})")
+    
+    # Check if the recommended model is available
+    recommended_model_available = False
+    for option in options:
+        if option.get('value', '') == RECOMMENDED_TEST_MODEL and not option.get('disabled', False):
+            recommended_model_available = True
+            break
+    
+    model_select = page.locator("#model-select")
+    
+    if recommended_model_available:
+        print(f"Selecting recommended test model: {RECOMMENDED_TEST_MODEL}")
+        model_select.select_option(RECOMMENDED_TEST_MODEL)
+        return RECOMMENDED_TEST_MODEL
+    else:
+        # If the recommended model is not available, select the first non-disabled option
+        for option in options:
+            if not option.get('disabled', False):
+                first_option_value = option.get('value', '')
+                print(f"Recommended model not available. Selecting first option: {first_option_value}")
+                model_select.select_option(first_option_value)
+                return first_option_value
+        
+        print("No valid options found in model select dropdown")
+        return None

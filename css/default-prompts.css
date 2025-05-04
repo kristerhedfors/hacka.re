@@ -1,0 +1,58 @@
+/**
+ * Default Prompts CSS
+ * Styles for the default prompts section in the system prompt menu
+ */
+
+.default-prompts-section {
+    margin-bottom: 20px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.default-prompts-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: var(--bg-color-secondary);
+    cursor: pointer;
+    user-select: none;
+}
+
+.default-prompts-header h4 {
+    margin: 0 0 0 10px;
+    font-size: 16px;
+    font-weight: 700; /* Changed from 500 to 700 for bold text */
+}
+
+.default-prompts-header i {
+    font-size: 14px;
+    transition: transform 0.2s ease;
+}
+
+.default-prompts-list {
+    padding: 10px;
+    background-color: var(--bg-color);
+    border-top: 1px solid var(--border-color);
+}
+
+.default-prompt-item {
+    background-color: var(--bg-color-secondary);
+    border-left: 3px solid var(--accent-color);
+}
+
+.prompt-item-info {
+    background: none;
+    border: none;
+    color: var(--text-color-secondary);
+    cursor: pointer;
+    padding: 5px;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.prompt-item-info:hover {
+    color: var(--accent-color);
+}
