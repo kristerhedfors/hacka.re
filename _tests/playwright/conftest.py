@@ -42,4 +42,8 @@ def serve_hacka_re(page):
     yield base_url
     
     # Clean up: kill the server process
-    os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+    try:
+        os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+    except ProcessLookupError:
+        # Process is already gone, which is fine
+        print("HTTP server process already terminated")

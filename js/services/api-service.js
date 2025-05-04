@@ -63,7 +63,19 @@ window.ApiService = (function() {
         }
         
         const data = await response.json();
-        return data.data;
+        const models = data.data;
+        
+        // Store model information in ModelInfoService
+        if (window.ModelInfoService && models && Array.isArray(models)) {
+            models.forEach(model => {
+                if (model.id) {
+                    // Store the entire model object in modelInfo
+                    ModelInfoService.modelInfo[model.id] = model;
+                }
+            });
+        }
+        
+        return models;
     }
 
 /**
@@ -81,6 +93,10 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
     if (!apiKey) {
         throw new Error('API key is required');
     }
+    
+    // Initialize response variables
+    let completeResponse = '';
+    let toolCalls = [];
     
     // Create a copy of the messages array to avoid modifying the original
     let apiMessages = [...messages];
@@ -124,71 +140,175 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
         throw new Error(error.error?.message || 'Error connecting to API');
     }
     
-    // Process the stream
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder('utf-8');
-    let completeResponse = '';
-    let toolCalls = [];
-    
-    while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        // Decode chunk
-        const chunk = decoder.decode(value);
-        
-        // Process SSE format
-        const lines = chunk.split('\n');
-        for (const line of lines) {
-            if (line.startsWith('data: ') && line !== 'data: [DONE]') {
-                try {
-                    const data = JSON.parse(line.substring(6));
-                    const delta = data.choices[0]?.delta || {};
-                    
-                    // Handle content updates
-                    if (delta.content) {
-                        completeResponse += delta.content;
-                        if (onChunk) {
-                            onChunk(completeResponse);
+    // Set up EventSource for SSE
+    if (window.EventSource && 'ReadableStream' in window) {
+        // Use native EventSource for better SSE handling
+        const stream = new ReadableStream({
+            start(controller) {
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+                let buffer = '';
+                
+                function push() {
+                    reader.read().then(({ done, value }) => {
+                        if (done) {
+                            controller.close();
+                            return;
                         }
-                    }
-                    
-                    // Handle tool calls
-                    if (delta.tool_calls) {
-                        // Process each tool call delta
-                        for (const toolCallDelta of delta.tool_calls) {
-                            const { index, id, function: funcDelta } = toolCallDelta;
-                            
-                            // Initialize tool call if it doesn't exist
-                            if (!toolCalls[index]) {
-                                toolCalls[index] = {
-                                    id: id || '',
-                                    type: 'function',
-                                    function: {
-                                        name: '',
-                                        arguments: ''
-                                    }
-                                };
+                        
+                        // Decode chunk and add to buffer
+                        buffer += decoder.decode(value, { stream: true });
+                        
+                        // Process complete SSE messages
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop() || ''; // Keep the last incomplete line in the buffer
+                        
+                        for (const line of lines) {
+                            if (line.trim() === '') continue;
+                            controller.enqueue(line + '\n');
+                        }
+                        
+                        push();
+                    }).catch(error => {
+                        controller.error(error);
+                    });
+                }
+                
+                push();
+            }
+        });
+        
+        // Process the stream
+        const reader = stream.getReader();
+        
+        while (true) {
+            try {
+                const { done, value } = await reader.read();
+                if (done) break;
+                
+                // Process SSE format
+                const line = value.toString();
+                if (line.startsWith('data: ') && line !== 'data: [DONE]\n') {
+                    try {
+                        const data = JSON.parse(line.substring(6));
+                        const delta = data.choices[0]?.delta || {};
+                        
+                        // Handle content updates
+                        if (delta.content) {
+                            completeResponse += delta.content;
+                            if (onChunk) {
+                                onChunk(completeResponse);
                             }
-                            
-                            // Update tool call with delta information
-                            if (id) toolCalls[index].id = id;
-                            
-                            if (funcDelta) {
-                                if (funcDelta.name) {
-                                    toolCalls[index].function.name = 
-                                        (toolCalls[index].function.name || '') + funcDelta.name;
+                        }
+                        
+                        // Handle tool calls
+                        if (delta.tool_calls) {
+                            // Process each tool call delta
+                            for (const toolCallDelta of delta.tool_calls) {
+                                const { index, id, function: funcDelta } = toolCallDelta;
+                                
+                                // Initialize tool call if it doesn't exist
+                                if (!toolCalls[index]) {
+                                    toolCalls[index] = {
+                                        id: id || '',
+                                        type: 'function',
+                                        function: {
+                                            name: '',
+                                            arguments: ''
+                                        }
+                                    };
                                 }
                                 
-                                if (funcDelta.arguments) {
-                                    toolCalls[index].function.arguments = 
-                                        (toolCalls[index].function.arguments || '') + funcDelta.arguments;
+                                // Update tool call with delta information
+                                if (id) toolCalls[index].id = id;
+                                
+                                if (funcDelta) {
+                                    if (funcDelta.name) {
+                                        toolCalls[index].function.name = 
+                                            (toolCalls[index].function.name || '') + funcDelta.name;
+                                    }
+                                    
+                                    if (funcDelta.arguments) {
+                                        toolCalls[index].function.arguments = 
+                                            (toolCalls[index].function.arguments || '') + funcDelta.arguments;
+                                    }
                                 }
                             }
                         }
+                    } catch (e) {
+                        console.error('Error parsing SSE:', e);
                     }
-                } catch (e) {
-                    console.error('Error parsing SSE:', e);
+                }
+            } catch (error) {
+                console.error('Error reading SSE stream:', error);
+                break;
+            }
+        }
+    } else {
+        // Fallback to manual stream processing for older browsers
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            // Decode chunk
+            const chunk = decoder.decode(value);
+            
+            // Process SSE format
+            const lines = chunk.split('\n');
+            for (const line of lines) {
+                if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+                    try {
+                        const data = JSON.parse(line.substring(6));
+                        const delta = data.choices[0]?.delta || {};
+                        
+                        // Handle content updates
+                        if (delta.content) {
+                            completeResponse += delta.content;
+                            if (onChunk) {
+                                onChunk(completeResponse);
+                            }
+                        }
+                        
+                        // Handle tool calls
+                        if (delta.tool_calls) {
+                            // Process each tool call delta
+                            for (const toolCallDelta of delta.tool_calls) {
+                                const { index, id, function: funcDelta } = toolCallDelta;
+                                
+                                // Initialize tool call if it doesn't exist
+                                if (!toolCalls[index]) {
+                                    toolCalls[index] = {
+                                        id: id || '',
+                                        type: 'function',
+                                        function: {
+                                            name: '',
+                                            arguments: ''
+                                        }
+                                    };
+                                }
+                                
+                                // Update tool call with delta information
+                                if (id) toolCalls[index].id = id;
+                                
+                                if (funcDelta) {
+                                    if (funcDelta.name) {
+                                        toolCalls[index].function.name = 
+                                            (toolCalls[index].function.name || '') + funcDelta.name;
+                                    }
+                                    
+                                    if (funcDelta.arguments) {
+                                        toolCalls[index].function.arguments = 
+                                            (toolCalls[index].function.arguments || '') + funcDelta.arguments;
+                                    }
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error parsing SSE:', e);
+                    }
                 }
             }
         }
@@ -235,6 +355,7 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
                 
                 // Process the follow-up stream
                 const followUpReader = followUpResponse.body.getReader();
+                const followUpDecoder = new TextDecoder('utf-8');
                 let followUpCompleteResponse = '';
                 
                 while (true) {
@@ -242,7 +363,7 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
                     if (done) break;
                     
                     // Decode chunk
-                    const chunk = decoder.decode(value);
+                    const chunk = followUpDecoder.decode(value);
                     
                     // Process SSE format
                     const lines = chunk.split('\n');

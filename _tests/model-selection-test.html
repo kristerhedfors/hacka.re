@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Selection Test</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .test-button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            min-height: 20px;
+        }
+        .success {
+            color: green;
+        }
+        .error {
+            color: red;
+        }
+        h2 {
+            margin-top: 0;
+        }
+        .log-container {
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: #f8f8f8;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>Model Selection Test</h1>
+    <p>This page tests the model selection functionality to ensure it works correctly.</p>
+
+    <div class="test-section">
+        <h2>Test 1: Model Persistence</h2>
+        <p>Tests that model selection is properly persisted in storage.</p>
+        <button id="test1-button" class="test-button">Run Test</button>
+        <div id="test1-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Model Selection UI</h2>
+        <p>Tests that model selection UI updates correctly.</p>
+        <button id="test2-button" class="test-button">Run Test</button>
+        <div id="test2-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: SSE Streaming</h2>
+        <p>Tests that Server-Sent Events (SSE) streaming works correctly.</p>
+        <button id="test3-button" class="test-button">Run Test</button>
+        <div id="test3-result" class="result"></div>
+    </div>
+
+    <div class="log-container">
+        <h3>Test Log</h3>
+        <div id="log-output"></div>
+    </div>
+
+    <!-- Load required libraries and services -->
+    <script src="../lib/marked/marked.min.js"></script>
+    <script src="../lib/dompurify/purify.min.js"></script>
+    <script src="../lib/tweetnacl/nacl-util.min.js"></script>
+    <script src="../lib/tweetnacl/nacl-fast.min.js"></script>
+    
+    <!-- Load utility scripts -->
+    <script src="../js/utils/crypto-utils.js"></script>
+    <script src="../js/utils/ui-utils.js"></script>
+    
+    <!-- Load services -->
+    <script src="../js/services/namespace-service.js"></script>
+    <script src="../js/services/encryption-service.js"></script>
+    <script src="../js/services/core-storage-service.js"></script>
+    <script src="../js/services/data-service.js"></script>
+    <script src="../js/services/storage-service.js"></script>
+    <script src="../js/services/model-info.js"></script>
+    <script src="../js/services/api-service.js"></script>
+    
+    <!-- Load components -->
+    <script src="../js/components/dom-elements.js"></script>
+    <script src="../js/components/settings/model-manager.js"></script>
+    <script src="../js/components/settings/api-key-manager.js"></script>
+    <script src="../js/components/settings/base-url-manager.js"></script>
+    <script src="../js/components/settings/system-prompt-manager.js"></script>
+    <script src="../js/components/settings/title-subtitle-manager.js"></script>
+    <script src="../js/components/settings/welcome-manager.js"></script>
+    <script src="../js/components/settings/shared-link-manager.js"></script>
+    <script src="../js/components/settings/settings-manager.js"></script>
+    
+    <script>
+        // Mock elements for testing
+        const mockElements = {
+            modelSelect: document.createElement('select'),
+            modelNameElement: document.createElement('div'),
+            modelDeveloperElement: document.createElement('div'),
+            modelContextElement: document.createElement('div'),
+            usageFill: document.createElement('div'),
+            usageText: document.createElement('span'),
+            settingsForm: document.createElement('form'),
+            apiKeyUpdate: document.createElement('input'),
+            baseUrl: document.createElement('input'),
+            baseUrlSelect: document.createElement('select'),
+            systemPromptInput: document.createElement('textarea'),
+            modelReloadBtn: document.createElement('button')
+        };
+
+        // Create a logger
+        const logger = {
+            log: function(message) {
+                const logOutput = document.getElementById('log-output');
+                const logEntry = document.createElement('div');
+                logEntry.className = 'log-entry';
+                logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                logOutput.appendChild(logEntry);
+                console.log(message);
+            }
+        };
+
+        // Override console.log to capture logs
+        const originalConsoleLog = console.log;
+        console.log = function() {
+            originalConsoleLog.apply(console, arguments);
+            const message = Array.from(arguments).map(arg => {
+                if (typeof arg === 'object') {
+                    try {
+                        return JSON.stringify(arg);
+                    } catch (e) {
+                        return String(arg);
+                    }
+                }
+                return String(arg);
+            }).join(' ');
+            
+            const logOutput = document.getElementById('log-output');
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logOutput.appendChild(logEntry);
+        };
+
+        // Test 1: Model Persistence
+        document.getElementById('test1-button').addEventListener('click', async function() {
+            const resultElement = document.getElementById('test1-result');
+            resultElement.innerHTML = 'Running test...';
+            
+            try {
+                // Create model manager
+                const modelManager = ModelManager.createModelManager(mockElements);
+                modelManager.init();
+                
+                // Set a test model
+                const testModel = 'llama-3.1-8b-instant';
+                logger.log(`Setting test model: ${testModel}`);
+                modelManager.saveModel(testModel);
+                
+                // Get the model from storage
+                const storedModel = StorageService.getModel();
+                logger.log(`Retrieved model from storage: ${storedModel}`);
+                
+                // Get the model from the model manager
+                const currentModel = modelManager.getCurrentModel();
+                logger.log(`Retrieved model from model manager: ${currentModel}`);
+                
+                // Check if they match
+                if (storedModel === testModel && currentModel === testModel) {
+                    resultElement.innerHTML = `<span class="success">✓ Success: Model was correctly persisted (${testModel})</span>`;
+                } else {
+                    resultElement.innerHTML = `<span class="error">✗ Error: Model persistence failed. Expected: ${testModel}, Got from storage: ${storedModel}, Got from manager: ${currentModel}</span>`;
+                }
+            } catch (error) {
+                resultElement.innerHTML = `<span class="error">✗ Error: ${error.message}</span>`;
+                console.error(error);
+            }
+        });
+
+        // Test 2: Model Selection UI
+        document.getElementById('test2-button').addEventListener('click', async function() {
+            const resultElement = document.getElementById('test2-result');
+            resultElement.innerHTML = 'Running test...';
+            
+            try {
+                // Create settings manager
+                const settingsManager = SettingsManager.createSettingsManager(mockElements);
+                
+                // Initialize the model manager
+                const modelManager = ModelManager.createModelManager(mockElements);
+                modelManager.init();
+                
+                // Set up the model select element
+                mockElements.modelSelect.innerHTML = `
+                    <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant</option>
+                    <option value="llama-3.1-70b">Llama 3.1 70B</option>
+                    <option value="gemma-7b">Gemma 7B</option>
+                `;
+                
+                // Set a test model
+                const testModel = 'llama-3.1-70b';
+                logger.log(`Setting test model: ${testModel}`);
+                settingsManager.saveModel(testModel);
+                
+                // Check if the model select element was updated
+                const selectedModel = mockElements.modelSelect.value;
+                logger.log(`Selected model in UI: ${selectedModel}`);
+                
+                // Get the model from storage
+                const storedModel = StorageService.getModel();
+                logger.log(`Retrieved model from storage: ${storedModel}`);
+                
+                // Get the model from the settings manager
+                const currentModel = settingsManager.getCurrentModel();
+                logger.log(`Retrieved model from settings manager: ${currentModel}`);
+                
+                // Check if they match
+                if (storedModel === testModel && currentModel === testModel) {
+                    resultElement.innerHTML = `<span class="success">✓ Success: Model selection UI works correctly (${testModel})</span>`;
+                } else {
+                    resultElement.innerHTML = `<span class="error">✗ Error: Model selection UI failed. Expected: ${testModel}, Got from storage: ${storedModel}, Got from manager: ${currentModel}, UI value: ${selectedModel}</span>`;
+                }
+            } catch (error) {
+                resultElement.innerHTML = `<span class="error">✗ Error: ${error.message}</span>`;
+                console.error(error);
+            }
+        });
+
+        // Test 3: SSE Streaming
+        document.getElementById('test3-button').addEventListener('click', async function() {
+            const resultElement = document.getElementById('test3-result');
+            resultElement.innerHTML = 'Running test...';
+            
+            try {
+                // Mock the fetch API to simulate SSE streaming
+                const originalFetch = window.fetch;
+                
+                // Create a mock ReadableStream
+                const mockStream = new ReadableStream({
+                    start(controller) {
+                        const encoder = new TextEncoder();
+                        
+                        // Simulate SSE messages
+                        const messages = [
+                            'data: {"choices":[{"delta":{"content":"Hello"}}]}\n\n',
+                            'data: {"choices":[{"delta":{"content":" world"}}]}\n\n',
+                            'data: {"choices":[{"delta":{"content":"!"}}]}\n\n',
+                            'data: [DONE]\n\n'
+                        ];
+                        
+                        // Send messages with delays
+                        let index = 0;
+                        const sendNextMessage = () => {
+                            if (index < messages.length) {
+                                controller.enqueue(encoder.encode(messages[index]));
+                                index++;
+                                setTimeout(sendNextMessage, 100);
+                            } else {
+                                controller.close();
+                            }
+                        };
+                        
+                        sendNextMessage();
+                    }
+                });
+                
+                // Mock fetch to return our stream
+                window.fetch = function() {
+                    return Promise.resolve({
+                        ok: true,
+                        body: mockStream,
+                        headers: new Headers(),
+                        status: 200,
+                        statusText: 'OK'
+                    });
+                };
+                
+                // Test the SSE streaming
+                let receivedContent = '';
+                const onChunk = (content) => {
+                    receivedContent = content;
+                    logger.log(`Received chunk: ${content}`);
+                };
+                
+                // Call the API service
+                const response = await ApiService.generateChatCompletion(
+                    'test-api-key',
+                    'llama-3.1-8b-instant',
+                    [{ role: 'user', content: 'Test message' }],
+                    null,
+                    onChunk,
+                    'Test system prompt',
+                    null
+                );
+                
+                // Restore the original fetch
+                window.fetch = originalFetch;
+                
+                // Check if the response is correct
+                if (response === 'Hello world!') {
+                    resultElement.innerHTML = `<span class="success">✓ Success: SSE streaming works correctly. Received: "${response}"</span>`;
+                } else {
+                    resultElement.innerHTML = `<span class="error">✗ Error: SSE streaming failed. Expected: "Hello world!", Got: "${response}"</span>`;
+                }
+            } catch (error) {
+                resultElement.innerHTML = `<span class="error">✗ Error: ${error.message}</span>`;
+                console.error(error);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -47,7 +47,28 @@ def test_chat_message_send_receive(page, serve_hacka_re):
     reload_button.click()
     
     # Wait for the models to be loaded
-    time.sleep(2)  # Give some time for the API response to be processed and UI to update
+    # First, check if the model select has any non-disabled options
+    try:
+        page.wait_for_selector("#model-select option:not([disabled])", state="visible", timeout=5000)
+        print("Models loaded successfully")
+    except Exception as e:
+        print(f"Error waiting for models to load: {e}")
+        # Force a longer wait time
+        time.sleep(2)
+        
+        # Check if there are any options in the model select
+        options_count = page.evaluate("""() => {
+            const select = document.getElementById('model-select');
+            if (!select) return 0;
+            return Array.from(select.options).filter(opt => !opt.disabled).length;
+        }""")
+        print(f"Found {options_count} non-disabled options in model select")
+        
+        if options_count == 0:
+            # Try clicking the reload button again
+            print("No options found, clicking reload button again")
+            reload_button.click()
+            time.sleep(2)
     
     # Select the recommended test model
     from test_utils import select_recommended_test_model
@@ -178,10 +199,10 @@ def test_chat_message_send_receive(page, serve_hacka_re):
         # Wait for the API key modal to be closed
         page.wait_for_selector("#api-key-modal", state="hidden", timeout=5000)
     
-    # Wait longer for the user message to appear in the chat (server-side inference can take time)
+    # Wait for the user message to appear in the chat
     print("Waiting for user message to appear in chat...")
     try:
-        page.wait_for_selector(".message.user .message-content", state="visible", timeout=15000)
+        page.wait_for_selector(".message.user .message-content", state="visible", timeout=5000)
         user_message = page.locator(".message.user .message-content")
         expect(user_message).to_be_visible()
         expect(user_message).to_contain_text(test_message)
@@ -213,7 +234,7 @@ def test_chat_message_send_receive(page, serve_hacka_re):
         }}""", i)
         print(f"  Message {i+1} [{message_class}]: {message}")
     
-    # Wait longer for the assistant response to appear (server-side inference can take time)
+    # Wait for the assistant response to appear
     print("Waiting for assistant response...")
     try:
         # Check if the typing indicator is visible
@@ -244,12 +265,11 @@ def test_chat_message_send_receive(page, serve_hacka_re):
             }""")
             print(f"Pending network requests: {pending_requests}")
         
-        # Use a more specific selector to find the assistant message
-        # Use a 10-second timeout as requested
-        page.wait_for_selector(".message.assistant .message-content", state="visible", timeout=10000)
+        # Use a more specific selector to find the assistant message with reduced timeout
+        page.wait_for_selector(".message.assistant .message-content", state="visible", timeout=5000)
         
-        # Wait a bit longer to ensure content is fully loaded
-        time.sleep(3)
+        # Wait a short time to ensure content is fully loaded
+        time.sleep(1)
         
         # Get all assistant messages
         assistant_messages = page.locator(".message.assistant .message-content")
@@ -301,8 +321,8 @@ def test_chat_message_send_receive(page, serve_hacka_re):
             
             # Try to force the chat completion to appear by checking the network requests
             print("Checking network requests for chat completion...")
-            # Wait a bit longer for any pending requests to complete
-            time.sleep(3)
+            # Wait a short time for any pending requests to complete
+            time.sleep(1)
             # Skip the test if we still can't find the response
             pytest.skip("Expected assistant response not found in any messages")
     except Exception as e:

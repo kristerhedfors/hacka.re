@@ -64,13 +64,19 @@ window.PromptsManager = (function() {
             const modelInfo = window.ModelInfoService.modelInfo;
             let contextSize = 8192; // Default to 8K if not specified
             
-            if (modelInfo[currentModel] && modelInfo[currentModel].contextWindow !== '-') {
-                // Parse context window size (e.g., "128K" -> 131072)
-                const sizeStr = modelInfo[currentModel].contextWindow.toLowerCase();
-                if (sizeStr.endsWith('k')) {
-                    contextSize = parseInt(sizeStr) * 1024;
-                } else {
-                    contextSize = parseInt(sizeStr.replace(/,/g, ''));
+            if (modelInfo[currentModel]) {
+                // Get context_window property from model info
+                if (modelInfo[currentModel].context_window) {
+                    contextSize = modelInfo[currentModel].context_window;
+                } else if (modelInfo[currentModel].contextWindow && modelInfo[currentModel].contextWindow !== '-') {
+                    // Fallback to contextWindow property if available
+                    // Parse context window size (e.g., "128K" -> 131072)
+                    const sizeStr = String(modelInfo[currentModel].contextWindow);
+                    if (sizeStr.toLowerCase && sizeStr.toLowerCase().endsWith('k')) {
+                        contextSize = parseInt(sizeStr) * 1024;
+                    } else {
+                        contextSize = parseInt(String(sizeStr).replace(/,/g, ''));
+                    }
                 }
             }
             
@@ -210,15 +216,15 @@ function loadPromptsList() {
             const currentModel = window.aiHackare && window.aiHackare.settingsManager ? 
                 window.aiHackare.settingsManager.getCurrentModel() : '';
             
-            // Calculate percentage directly
-            const percentage = UIUtils.estimateContextUsage(
+            // Calculate usage info directly
+            const usageInfo = UIUtils.estimateContextUsage(
                 messages, 
                 ModelInfoService.modelInfo, 
                 currentModel,
                 combinedContent
             );
             
-            console.log("Direct calculation - percentage:", percentage);
+            console.log("Direct calculation - percentage:", usageInfo.percentage);
             
             // Update the UI directly
             const usageFill = document.querySelector('.usage-fill');
@@ -226,7 +232,7 @@ function loadPromptsList() {
             
             if (usageFill && usageText) {
                 console.log("Directly updating main UI elements from checkbox handler");
-                UIUtils.updateContextUsage(usageFill, usageText, percentage);
+                UIUtils.updateContextUsage(usageFill, usageText, usageInfo.percentage);
             } else {
                 console.log("Could not find main UI elements");
             }
@@ -486,15 +492,15 @@ function addDefaultPromptsSection() {
             const currentModel = window.aiHackare && window.aiHackare.settingsManager ? 
                 window.aiHackare.settingsManager.getCurrentModel() : '';
             
-            // Calculate percentage directly
-            const percentage = UIUtils.estimateContextUsage(
+            // Calculate usage info directly
+            const usageInfo = UIUtils.estimateContextUsage(
                 messages, 
                 ModelInfoService.modelInfo, 
                 currentModel,
                 combinedContent
             );
             
-            console.log("Direct calculation - percentage:", percentage);
+            console.log("Direct calculation - percentage:", usageInfo.percentage);
             
             // Update the UI directly
             const usageFill = document.querySelector('.usage-fill');
@@ -502,7 +508,7 @@ function addDefaultPromptsSection() {
             
             if (usageFill && usageText) {
                 console.log("Directly updating main UI elements from checkbox handler");
-                UIUtils.updateContextUsage(usageFill, usageText, percentage);
+                UIUtils.updateContextUsage(usageFill, usageText, usageInfo.percentage);
             } else {
                 console.log("Could not find main UI elements");
             }

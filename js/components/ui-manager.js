@@ -408,14 +408,16 @@ window.UIManager = (function() {
             }
             
             // Determine model developer based on model ID
-            if (currentModel.includes('llama')) {
-                provider = 'Meta';
-            } else if (currentModel.includes('gemma')) {
-                provider = 'Google';
-            } else if (currentModel.includes('mistral') || currentModel.includes('mixtral')) {
-                provider = 'Mistral AI';
-            } else if (currentModel.includes('claude')) {
-                provider = 'Anthropic';
+            if (typeof currentModel === 'string') {
+                if (currentModel.includes('llama')) {
+                    provider = 'Meta';
+                } else if (currentModel.includes('gemma')) {
+                    provider = 'Google';
+                } else if (currentModel.includes('mistral') || currentModel.includes('mixtral')) {
+                    provider = 'Mistral AI';
+                } else if (currentModel.includes('claude')) {
+                    provider = 'Anthropic';
+                }
             }
             
             // Move model developer to the model stats section
@@ -443,7 +445,8 @@ window.UIManager = (function() {
             }
             
             if (elements.modelContextElement) {
-                elements.modelContextElement.textContent = '';
+                // Set initial content to make the element visible
+                elements.modelContextElement.textContent = '0 tokens';
             }
             
             // Initialize context usage display
@@ -453,12 +456,29 @@ window.UIManager = (function() {
         /**
          * Update the context usage display
          * @param {number} percentage - Usage percentage (0-100)
+         * @param {number} [estimatedTokens] - Estimated token count
+         * @param {number} [contextSize] - Context window size
          */
-        function updateContextUsage(percentage) {
+        function updateContextUsage(percentage, estimatedTokens, contextSize) {
             console.log("UIManager.updateContextUsage called with percentage:", percentage);
+            console.log("- estimatedTokens:", estimatedTokens);
+            console.log("- contextSize:", contextSize);
             console.log("elements.usageFill:", elements.usageFill);
             console.log("elements.usageText:", elements.usageText);
+            
+            // Update the usage bar and percentage text
             UIUtils.updateContextUsage(elements.usageFill, elements.usageText, percentage);
+            
+            // Update the context window display if we have a model context element
+            if (elements.modelContextElement && estimatedTokens !== undefined) {
+                // If we have a context size, show tokens out of context size
+                if (contextSize) {
+                    elements.modelContextElement.textContent = `${estimatedTokens.toLocaleString()} / ${contextSize.toLocaleString()} tokens`;
+                } else {
+                    // Otherwise just show the token count
+                    elements.modelContextElement.textContent = `${estimatedTokens.toLocaleString()} tokens`;
+                }
+            }
         }
         
         /**

@@ -26,6 +26,10 @@ window.SettingsManager = (function() {
         // Function to set messages in the chat
         let setMessages = null;
         
+        // Track when models were last fetched
+        let lastModelsFetchTime = 0;
+        const MODEL_FETCH_INTERVAL = 60000; // 1 minute in milliseconds
+        
         /**
          * Initialize the settings manager
          * @param {Function} updateModelInfoDisplay - Function to update model info display
@@ -60,8 +64,18 @@ window.SettingsManager = (function() {
                             const apiKey = apiKeyManager.getApiKey();
                             const baseUrl = baseUrlManager.getBaseUrl();
                             
-                            // Fetch models with the new values
-                            modelManager.fetchAvailableModels(apiKey, baseUrl, true).then(modelResult => {
+                    // Create a callback to update context usage
+                    const updateContextUsageCallback = () => {
+                        if (window.aiHackare && window.aiHackare.chatManager) {
+                            window.aiHackare.chatManager.estimateContextUsage(
+                                updateModelInfoDisplay,
+                                modelManager.getCurrentModel()
+                            );
+                        }
+                    };
+                    
+                    // Fetch models with the new values and pass the callback
+                    modelManager.fetchAvailableModels(apiKey, baseUrl, true, updateContextUsageCallback).then(modelResult => {
                                 if (modelResult.success && modelResult.model) {
                                     // If a shared model was applied successfully
                                     const displayName = ModelInfoService.getDisplayName(modelResult.model);
@@ -86,8 +100,18 @@ window.SettingsManager = (function() {
                             const apiKey = apiKeyManager.getApiKey();
                             const baseUrl = baseUrlManager.getBaseUrl();
                             
-                            // Fetch models with the new values
-                            modelManager.fetchAvailableModels(apiKey, baseUrl, true);
+                            // Create a callback to update context usage
+                            const updateContextUsageCallback = () => {
+                                if (window.aiHackare && window.aiHackare.chatManager) {
+                                    window.aiHackare.chatManager.estimateContextUsage(
+                                        updateModelInfoDisplay,
+                                        modelManager.getCurrentModel()
+                                    );
+                                }
+                            };
+                            
+                            // Fetch models with the new values and pass the callback
+                            modelManager.fetchAvailableModels(apiKey, baseUrl, true, updateContextUsageCallback);
                         }
                     } else {
                         // Decryption failed or was cancelled
@@ -99,7 +123,18 @@ window.SettingsManager = (function() {
                         } else {
                             // Fetch available models if API key exists
                             const baseUrl = baseUrlManager.getBaseUrl();
-                            modelManager.fetchAvailableModels(apiKey, baseUrl, true);
+                            
+                            // Create a callback to update context usage
+                            const updateContextUsageCallback = () => {
+                                if (window.aiHackare && window.aiHackare.chatManager) {
+                                    window.aiHackare.chatManager.estimateContextUsage(
+                                        updateModelInfoDisplay,
+                                        modelManager.getCurrentModel()
+                                    );
+                                }
+                            };
+                            
+                            modelManager.fetchAvailableModels(apiKey, baseUrl, true, updateContextUsageCallback);
                         }
                     }
                 });
@@ -126,9 +161,19 @@ window.SettingsManager = (function() {
                     // Load saved base URL before fetching models
                     const baseUrl = baseUrlManager.getBaseUrl();
                     
+                    // Create a callback to update context usage
+                    const updateContextUsageCallback = () => {
+                        if (window.aiHackare && window.aiHackare.chatManager) {
+                            window.aiHackare.chatManager.estimateContextUsage(
+                                updateModelInfoDisplay,
+                                modelManager.getCurrentModel()
+                            );
+                        }
+                    };
+                    
                     // Fetch available models if API key exists
                     // Use updateStorage=true to ensure the values are properly loaded
-                    modelManager.fetchAvailableModels(apiKey, baseUrl, true);
+                    modelManager.fetchAvailableModels(apiKey, baseUrl, true, updateContextUsageCallback);
                 }
             }
             
@@ -149,8 +194,18 @@ window.SettingsManager = (function() {
                     const currentApiKey = elements.apiKeyUpdate.value.trim() || apiKeyManager.getApiKey();
                     const currentBaseUrl = elements.baseUrl.value.trim() || baseUrlManager.getBaseUrl();
                     
+                    // Create a callback to update context usage
+                    const updateContextUsageCallback = () => {
+                        if (window.aiHackare && window.aiHackare.chatManager) {
+                            window.aiHackare.chatManager.estimateContextUsage(
+                                updateModelInfoDisplay,
+                                modelManager.getCurrentModel()
+                            );
+                        }
+                    };
+                    
                     // Fetch models from API using the current UI values
-                    modelManager.fetchAvailableModels(currentApiKey, currentBaseUrl).then(() => {
+                    modelManager.fetchAvailableModels(currentApiKey, currentBaseUrl, false, updateContextUsageCallback).then(() => {
                         // Re-enable the button and restore icon
                         this.innerHTML = originalIcon;
                         this.disabled = false;
@@ -169,6 +224,62 @@ window.SettingsManager = (function() {
         }
         
         /**
+         * Show the settings modal
+         * @param {string} apiKey - Current API key
+         * @param {string} currentModel - Current model ID
+         * @param {string} systemPrompt - Current system prompt
+         * @param {Function} fetchAvailableModels - Function to fetch available models
+         * @param {Function} populateDefaultModels - Function to populate default models
+         */
+        function showSettingsModal(apiKey, currentModel, systemPrompt, fetchAvailableModels, populateDefaultModels) {
+            // Update the API key field with masked value if exists
+            if (apiKey) {
+                elements.apiKeyUpdate.placeholder = '••••••••••••••••••••••••••';
+                
+                // Check if we should fetch models
+                const currentTime = Date.now();
+                const shouldFetchModels = (currentTime - lastModelsFetchTime) > MODEL_FETCH_INTERVAL;
+                
+                if (shouldFetchModels) {
+                    console.log("Auto-fetching models (time since last fetch: " + 
+                        Math.round((currentTime - lastModelsFetchTime) / 1000) + " seconds)");
+                    
+                    // Show loading state in the model select
+                    elements.modelSelect.innerHTML = '<option disabled selected>Loading models...</option>';
+                    
+                    // Fetch models
+                    fetchAvailableModels().then(() => {
+                        // Update last fetch time
+                        lastModelsFetchTime = Date.now();
+                        
+                        // Set current model
+                        if (currentModel) {
+                            elements.modelSelect.value = currentModel;
+                        }
+                    }).catch(error => {
+                        console.error("Error auto-fetching models:", error);
+                        populateDefaultModels();
+                    });
+                } else {
+                    console.log("Using cached models (fetched " + 
+                        Math.round((currentTime - lastModelsFetchTime) / 1000) + " seconds ago)");
+                }
+            } else {
+                populateDefaultModels();
+            }
+            
+            // Set current model
+            if (elements.modelSelect.options.length > 0) {
+                elements.modelSelect.value = currentModel;
+            }
+            
+            // System prompt is now handled by the system-prompt-manager.js
+            // No need to set it here as it's displayed on demand when the user clicks "Show System Prompt"
+            
+            elements.settingsModal.classList.add('active');
+        }
+        
+        /**
          * Save the API key
          * @param {Function} hideApiKeyModal - Function to hide API key modal
          * @param {Function} addSystemMessage - Function to add system message
@@ -183,8 +294,22 @@ window.SettingsManager = (function() {
                 // Make sure base URL is loaded before fetching models
                 const baseUrl = baseUrlManager.getBaseUrl();
                 
+                // Create a callback to update context usage
+                const updateContextUsageCallback = () => {
+                    if (window.aiHackare && window.aiHackare.chatManager) {
+                        window.aiHackare.chatManager.estimateContextUsage(
+                            updateModelInfoDisplay,
+                            modelManager.getCurrentModel()
+                        );
+                    }
+                };
+                
                 // Fetch available models with the new API key and update storage
-                modelManager.fetchAvailableModels(newApiKey, baseUrl, true);
+                modelManager.fetchAvailableModels(newApiKey, baseUrl, true, updateContextUsageCallback)
+                    .then(() => {
+                        // Update last fetch time
+                        lastModelsFetchTime = Date.now();
+                    });
                 
                 return true;
             }
@@ -213,6 +338,12 @@ window.SettingsManager = (function() {
                 elements.baseUrl.value.trim()
             );
             
+            // Check if API key or base URL changed
+            const currentApiKey = apiKeyManager.getApiKey();
+            const currentBaseUrl = baseUrlManager.getBaseUrl();
+            const apiKeyChanged = newApiKey && newApiKey !== currentApiKey;
+            const baseUrlChanged = newBaseUrl !== currentBaseUrl;
+            
             // Save the provider selection and base URL
             baseUrlManager.saveBaseUrl(newBaseUrl, selectedProvider);
             
@@ -223,9 +354,29 @@ window.SettingsManager = (function() {
             // System prompt is now managed by the PromptsService and SystemPromptManager
             // No need to save it here as it's saved when prompts are selected
             
+            // Create a callback to update context usage
+            const updateContextUsageCallback = () => {
+                if (window.aiHackare && window.aiHackare.chatManager) {
+                    window.aiHackare.chatManager.estimateContextUsage(
+                        updateModelInfoDisplay,
+                        modelManager.getCurrentModel()
+                    );
+                }
+            };
+            
+            // If API key or base URL changed, reset the model fetch cache
+            if (apiKeyChanged || baseUrlChanged) {
+                console.log("API key or base URL changed, resetting model fetch cache");
+                lastModelsFetchTime = 0;
+            }
+            
             // Fetch models with the new values and update storage
             // This ensures the values are saved and used for future API calls
-            modelManager.fetchAvailableModels(apiKeyToUse, newBaseUrl, true);
+            modelManager.fetchAvailableModels(apiKeyToUse, newBaseUrl, true, updateContextUsageCallback)
+                .then(() => {
+                    // Update last fetch time
+                    lastModelsFetchTime = Date.now();
+                });
             
             // Update model info in header
             if (updateModelInfoDisplay) {
@@ -262,6 +413,27 @@ window.SettingsManager = (function() {
          */
         function getCurrentModel() {
             return modelManager.getCurrentModel();
+        }
+        
+        /**
+         * Save the current model
+         * @param {string} model - The model ID to save
+         */
+        function saveModel(model) {
+            if (model && modelManager && typeof modelManager.saveModel === 'function') {
+                console.log(`SettingsManager: Saving model ${model}`);
+                modelManager.saveModel(model);
+                
+                // Update context usage with the new model if possible
+                if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.uiManager) {
+                    window.aiHackare.chatManager.estimateContextUsage(
+                        window.aiHackare.uiManager.updateContextUsage.bind(window.aiHackare.uiManager),
+                        model
+                    );
+                }
+            } else {
+                console.warn('SettingsManager: Unable to save model - invalid model or modelManager');
+            }
         }
         
         /**
@@ -371,12 +543,14 @@ window.SettingsManager = (function() {
             saveSettings,
             getApiKey,
             getCurrentModel,
+            saveModel,
             getSystemPrompt,
             getBaseUrl,
             fetchAvailableModels,
             populateDefaultModels,
             clearAllSettings,
-            setPendingSharedModel
+            setPendingSharedModel,
+            showSettingsModal
         };
     }
 
