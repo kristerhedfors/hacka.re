@@ -246,21 +246,6 @@ def test_chat_message_send_receive(page, serve_hacka_re):
                 return document.querySelector('.typing-indicator') !== null;
             }""")
             print(f"Typing indicator exists in DOM: {indicator_exists}")
-            
-            # Check if there are any network requests in progress
-            pending_requests = page.evaluate("""() => {
-                if (window.performance && window.performance.getEntries) {
-                    const entries = window.performance.getEntries();
-                    const pendingFetches = entries.filter(e => 
-                        e.entryType === 'resource' && 
-                        e.initiatorType === 'fetch' && 
-                        !e.responseEnd
-                    );
-                    return pendingFetches.length;
-                }
-                return 'Not supported';
-            }""")
-            print(f"Pending network requests: {pending_requests}")
         
         # Use a more specific selector to find the assistant message
         page.wait_for_selector(".message.assistant .message-content", state="visible", timeout=30000)

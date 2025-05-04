@@ -100,7 +100,8 @@ To add new tests:
 
 - The tests use a local HTTP server to serve the application
 - The tests use Playwright's `expect` assertions to verify the state of the application
-- **Important**: Unlike many test suites, we do NOT mock LLM API calls. Instead, we use real API calls with your provided API key to ensure the application works correctly with actual LLM providers.
+- **Important**: Unlike many test suites, we do NOT mock ANY API calls. All tests go against the real Groq Cloud API with the API key in the `.env` file. This ensures the application works correctly with actual LLM providers.
 - Be mindful of token usage in tests. Tests should be designed to minimize the number of API calls and token usage while still providing adequate test coverage.
 - We prefer using `llama-3.1-8b-instant` from Groq during tests due to its lower token costs and faster response times.
 - The `.env` file should contain a valid API key for the LLM provider you're testing with (e.g., Groq, OpenAI).
+- Do not add any mocking code to the tests, as this defeats the purpose of testing against real APIs.
