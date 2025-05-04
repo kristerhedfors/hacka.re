@@ -4,12 +4,11 @@ This directory contains browser-based tests for the hacka.re web client using Pl
 
 ## Setup
 
-The tests are set up to run in a Python virtual environment created with `uv`. The environment and dependencies are already configured.
+The tests are set up to run in a Python virtual environment. The environment and dependencies are already configured.
 
 ### Prerequisites
 
 - Python 3.11+
-- uv package manager
 
 ### Installation
 
@@ -25,7 +24,7 @@ The tests are set up to run in a Python virtual environment created with `uv`. T
 
 3. Install dependencies (if not already installed):
    ```bash
-   uv pip install -r requirements.txt
+   pip install -r requirements.txt
    ```
 
 ## Running Tests
