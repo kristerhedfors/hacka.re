@@ -158,26 +158,30 @@ window.PromptsService = (function() {
         return allPrompts.filter(prompt => selectedIds.includes(prompt.id));
     }
     
-    /**
-     * Apply selected prompts as the system prompt
-     * @returns {boolean} True if prompts were applied, false if no prompts were selected
-     */
-    function applySelectedPromptsAsSystem() {
-        const selectedPrompts = getSelectedPrompts();
+/**
+ * Apply selected prompts as the system prompt
+ * @returns {boolean} True if prompts were applied, false if no prompts were selected
+ */
+function applySelectedPromptsAsSystem() {
+    const selectedPrompts = getSelectedPrompts();
+    const selectedDefaultPrompts = window.DefaultPromptsService ? 
+        window.DefaultPromptsService.getSelectedDefaultPrompts() : [];
+    
+    const allSelectedPrompts = [...selectedDefaultPrompts, ...selectedPrompts];
+    
+    if (allSelectedPrompts.length > 0) {
+        // Combine all selected prompts
+        const combinedContent = allSelectedPrompts
+            .map(prompt => prompt.content)
+            .join('\n\n---\n\n');
         
-        if (selectedPrompts.length > 0) {
-            // Combine all selected prompts
-            const combinedContent = selectedPrompts
-                .map(prompt => prompt.content)
-                .join('\n\n---\n\n');
-            
-            // Save to system prompt in storage service
-            StorageService.saveSystemPrompt(combinedContent);
-            return true;
-        }
-        
-        return false;
+        // Save to system prompt in storage service
+        StorageService.saveSystemPrompt(combinedContent);
+        return true;
     }
+    
+    return false;
+}
     
     /**
      * Generate a unique ID for a prompt
