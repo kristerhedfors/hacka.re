@@ -59,6 +59,9 @@ window.DOMElements = (function() {
             promptsList: document.getElementById('prompts-list'),
             closePromptsModal: document.getElementById('close-prompts-modal'),
             
+            // MCP button
+            mcpBtn: document.getElementById('mcp-btn'),
+            
             // Settings modal elements
             settingsBtn: document.getElementById('settings-btn'),
             settingsModal: document.getElementById('settings-modal'),
