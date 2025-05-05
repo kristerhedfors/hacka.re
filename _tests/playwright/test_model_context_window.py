@@ -29,7 +29,7 @@ def test_model_context_window_display(page, serve_hacka_re):
     settings_button.click(timeout=1000)
     
     # Wait for the settings modal to become visible
-    page.wait_for_selector("#settings-modal.active", state="visible", timeout=5000)
+    page.wait_for_selector("#settings-modal.active", state="visible", timeout=2500)
     
     # Enter the API key
     api_key_input = page.locator("#api-key-update")
@@ -46,12 +46,12 @@ def test_model_context_window_display(page, serve_hacka_re):
     # Wait for the models to be loaded
     # First, check if the model select has any non-disabled options
     try:
-        page.wait_for_selector("#model-select option:not([disabled])", state="visible", timeout=5000)
+        page.wait_for_selector("#model-select option:not([disabled])", state="visible", timeout=2500)
         print("Models loaded successfully")
     except Exception as e:
         print(f"Error waiting for models to load: {e}")
-        # Force a longer wait time
-        time.sleep(2)
+        # Force a shorter wait time
+        time.sleep(1)
         
         # Check if there are any options in the model select
         options_count = page.evaluate("""() => {
@@ -65,7 +65,7 @@ def test_model_context_window_display(page, serve_hacka_re):
             # Try clicking the reload button again
             print("No options found, clicking reload button again")
             reload_button.click()
-            time.sleep(2)
+            time.sleep(1)
     
     # Select the recommended test model
     from test_utils import select_recommended_test_model, RECOMMENDED_TEST_MODEL
@@ -80,7 +80,7 @@ def test_model_context_window_display(page, serve_hacka_re):
     save_button.click(force=True)
     
     # Wait for the settings modal to close
-    page.wait_for_selector("#settings-modal.active", state="hidden", timeout=5000)
+    page.wait_for_selector("#settings-modal.active", state="hidden", timeout=2500)
     
     # Click on the model info button to open the model selection menu
     model_info_btn = page.locator("#model-info-btn")
@@ -121,4 +121,4 @@ def test_model_context_window_display(page, serve_hacka_re):
     close_button.click()
     
     # Wait for the model selection menu to close
-    page.wait_for_selector("#model-selection-menu.active", state="hidden", timeout=5000)
+    page.wait_for_selector("#model-selection-menu.active", state="hidden", timeout=2500)

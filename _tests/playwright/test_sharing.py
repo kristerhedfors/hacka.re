@@ -33,7 +33,7 @@ def test_model_sharing_link_creation(page, serve_hacka_re):
     share_button.click(timeout=1000)
     
     # Wait for the share modal to become visible
-    page.wait_for_selector("#share-modal.active", state="visible", timeout=5000)
+    page.wait_for_selector("#share-modal.active", state="visible", timeout=2500)
     
     # Make sure model sharing is enabled
     model_checkbox = page.locator("#share-model")
@@ -61,7 +61,7 @@ def test_model_sharing_link_creation(page, serve_hacka_re):
     generate_button.click(force=True)
     
     # Wait for the link to be generated
-    time.sleep(1)
+    time.sleep(2)
     
     # Get the generated link
     generated_link = page.locator("#generated-link").input_value()
@@ -84,7 +84,7 @@ def test_model_sharing_link_creation(page, serve_hacka_re):
     close_button.click(force=True)
     
     # Wait for the modal to close
-    page.wait_for_selector("#share-modal", state="hidden", timeout=5000)
+    page.wait_for_selector("#share-modal", state="hidden", timeout=2500)
     
     print("Model sharing link creation test passed")
 
@@ -196,7 +196,7 @@ def test_model_sharing_link_loading(page, serve_hacka_re):
     page.evaluate("window.createPasswordModal()")
     
     # Wait for the password modal to appear
-    page.wait_for_selector("#password-modal", state="visible", timeout=5000)
+    page.wait_for_selector("#password-modal", state="visible", timeout=2500)
     
     # Enter the session key
     password_input = page.locator("#decrypt-password")
@@ -235,7 +235,7 @@ def setup_api_and_model(page):
     settings_button.click(timeout=1000)
     
     # Wait for the settings modal to become visible
-    page.wait_for_selector("#settings-modal.active", state="visible", timeout=5000)
+    page.wait_for_selector("#settings-modal.active", state="visible", timeout=2500)
     
     # Enter the API key
     api_key_input = page.locator("#api-key-update")
@@ -263,4 +263,4 @@ def setup_api_and_model(page):
     save_button.click(force=True)
     
     # Wait for the settings modal to close
-    page.wait_for_selector("#settings-modal", state="hidden", timeout=5000)
+    page.wait_for_selector("#settings-modal", state="hidden", timeout=2500)

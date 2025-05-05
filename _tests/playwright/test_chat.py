@@ -32,7 +32,7 @@ def test_chat_message_send_receive(page, serve_hacka_re):
     settings_button.click(timeout=1000)
     
     # Wait for the settings modal to become visible
-    page.wait_for_selector("#settings-modal.active", state="visible", timeout=5000)
+    page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
     
     # Enter the Groq Cloud API key from .env
     api_key_input = page.locator("#api-key-update")
@@ -49,12 +49,12 @@ def test_chat_message_send_receive(page, serve_hacka_re):
     # Wait for the models to be loaded
     # First, check if the model select has any non-disabled options
     try:
-        page.wait_for_selector("#model-select option:not([disabled])", state="visible", timeout=5000)
+        page.wait_for_selector("#model-select option:not([disabled])", state="visible", timeout=2000)
         print("Models loaded successfully")
     except Exception as e:
         print(f"Error waiting for models to load: {e}")
-        # Force a longer wait time
-        time.sleep(2)
+        # Force a shorter wait time
+        time.sleep(1)
         
         # Check if there are any options in the model select
         options_count = page.evaluate("""() => {
@@ -68,7 +68,7 @@ def test_chat_message_send_receive(page, serve_hacka_re):
             # Try clicking the reload button again
             print("No options found, clicking reload button again")
             reload_button.click()
-            time.sleep(2)
+            time.sleep(1)
     
     # Select the recommended test model
     from test_utils import select_recommended_test_model
@@ -89,7 +89,7 @@ def test_chat_message_send_receive(page, serve_hacka_re):
     check_system_messages(page)
     
     # Wait for the settings modal to be closed
-    page.wait_for_selector("#settings-modal", state="hidden", timeout=5000)
+    page.wait_for_selector("#settings-modal", state="hidden", timeout=2000)
     
     # Check if the API key was saved correctly
     print("Checking if API key was saved correctly")
@@ -120,7 +120,7 @@ def test_chat_message_send_receive(page, serve_hacka_re):
             settings_button.click(timeout=1000)
             
             # Wait for the settings modal to become visible
-            page.wait_for_selector("#settings-modal.active", state="visible", timeout=5000)
+            page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
             
             # Check if a model is selected
             current_model = page.evaluate("""() => {
@@ -153,7 +153,7 @@ def test_chat_message_send_receive(page, serve_hacka_re):
             save_button.click(force=True)
             
             # Wait for the settings modal to be closed
-            page.wait_for_selector("#settings-modal", state="hidden", timeout=5000)
+            page.wait_for_selector("#settings-modal", state="hidden", timeout=2000)
     
     # Type a message in the chat input
     message_input = page.locator("#message-input")
@@ -197,12 +197,12 @@ def test_chat_message_send_receive(page, serve_hacka_re):
         submit_button.click()
         
         # Wait for the API key modal to be closed
-        page.wait_for_selector("#api-key-modal", state="hidden", timeout=5000)
+        page.wait_for_selector("#api-key-modal", state="hidden", timeout=2000)
     
     # Wait for the user message to appear in the chat
     print("Waiting for user message to appear in chat...")
     try:
-        page.wait_for_selector(".message.user .message-content", state="visible", timeout=5000)
+        page.wait_for_selector(".message.user .message-content", state="visible", timeout=2000)
         user_message = page.locator(".message.user .message-content")
         expect(user_message).to_be_visible()
         expect(user_message).to_contain_text(test_message)
@@ -266,7 +266,7 @@ def test_chat_message_send_receive(page, serve_hacka_re):
             print(f"Pending network requests: {pending_requests}")
         
         # Use a more specific selector to find the assistant message with reduced timeout
-        page.wait_for_selector(".message.assistant .message-content", state="visible", timeout=5000)
+        page.wait_for_selector(".message.assistant .message-content", state="visible", timeout=2500)
         
         # Wait a short time to ensure content is fully loaded
         time.sleep(1)
