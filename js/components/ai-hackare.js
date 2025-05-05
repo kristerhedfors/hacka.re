@@ -19,6 +19,7 @@ window.AIHackareComponent = (function() {
         this.shareManager = ShareManager.createShareManager(this.elements);
         this.apiToolsManager = ApiToolsManager.createApiToolsManager(this.elements);
         this.promptsManager = PromptsManager.createPromptsManager(this.elements);
+        this.mcpManager = MCPManager.createMCPManager(this.elements);
         
         // Make chatManager accessible globally for the close GPT button
         window.aiHackare = this;
@@ -43,6 +44,7 @@ window.AIHackareComponent = (function() {
         this.chatManager.init();
         this.apiToolsManager.init();
         this.promptsManager.init();
+        this.mcpManager.init();
         
         // Initialize context usage display with current messages and system prompt
         this.chatManager.estimateContextUsage(
@@ -364,7 +366,8 @@ window.AIHackareComponent = (function() {
             this.settingsManager.getSystemPrompt(),
             this.uiManager.showApiKeyModal.bind(this.uiManager),
             this.uiManager.updateContextUsage.bind(this.uiManager),
-            this.apiToolsManager
+            this.apiToolsManager,
+            this.mcpManager
         );
     };
     
