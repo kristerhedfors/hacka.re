@@ -30,7 +30,7 @@ def test_api_key_configuration(page, serve_hacka_re):
     settings_button.click(timeout=1000)
     
     # Wait for the settings modal to become visible
-    page.wait_for_selector("#settings-modal.active", state="visible", timeout=2500)
+    page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
     
     # Enter the Groq Cloud API key from .env
     api_key_input = page.locator("#api-key-update")
@@ -126,7 +126,7 @@ def test_model_selection(page, serve_hacka_re):
     settings_button.click(timeout=1000)
     
     # Wait for the settings modal to become visible
-    page.wait_for_selector("#settings-modal.active", state="visible", timeout=2500)
+    page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
     
     # Enter the Groq Cloud API key from .env
     api_key_input = page.locator("#api-key-update")
@@ -143,7 +143,7 @@ def test_model_selection(page, serve_hacka_re):
     # Wait for the models to be loaded
     # First, check if the model select has any non-disabled options
     try:
-        page.wait_for_selector("#model-select option:not([disabled])", state="visible", timeout=2500)
+        page.wait_for_selector("#model-select option:not([disabled])", state="visible", timeout=2000)
         print("Models loaded successfully")
     except Exception as e:
         print(f"Error waiting for models to load: {e}")
