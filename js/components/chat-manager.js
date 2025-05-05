@@ -35,8 +35,9 @@ window.ChatManager = (function() {
  * @param {Function} showApiKeyModal - Function to show API key modal
  * @param {Function} updateContextUsage - Function to update context usage
  * @param {Object} apiToolsManager - API tools manager for tool calling
+ * @param {Object} mcpManager - MCP manager for MCP tool calling
  */
-function sendMessage(message, apiKey, currentModel, systemPrompt, showApiKeyModal, updateContextUsage, apiToolsManager) {
+function sendMessage(message, apiKey, currentModel, systemPrompt, showApiKeyModal, updateContextUsage, apiToolsManager, mcpManager) {
     if (!message) return;
     
     if (!apiKey) {
@@ -60,7 +61,7 @@ function sendMessage(message, apiKey, currentModel, systemPrompt, showApiKeyModa
     elements.messageInput.focus();
     
     // Send to API
-    generateResponse(apiKey, currentModel, systemPrompt, updateContextUsage, apiToolsManager);
+    generateResponse(apiKey, currentModel, systemPrompt, updateContextUsage, apiToolsManager, mcpManager);
 }
 
 /**
@@ -70,8 +71,9 @@ function sendMessage(message, apiKey, currentModel, systemPrompt, showApiKeyModa
  * @param {string} systemPrompt - System prompt
  * @param {Function} updateContextUsage - Function to update context usage
  * @param {Object} apiToolsManager - API tools manager for tool calling
+ * @param {Object} mcpManager - MCP manager for MCP tool calling
  */
-async function generateResponse(apiKey, currentModel, systemPrompt, updateContextUsage, apiToolsManager) {
+async function generateResponse(apiKey, currentModel, systemPrompt, updateContextUsage, apiToolsManager, mcpManager) {
     if (!apiKey) return;
     
     isGenerating = true;
@@ -111,6 +113,44 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
         controller = new AbortController();
         const signal = controller.signal;
         
+        // Combine tools from API tools manager and MCP manager
+        const combinedToolsManager = {
+            getToolDefinitions: () => {
+                const apiTools = apiToolsManager ? apiToolsManager.getToolDefinitions() : [];
+                const mcpTools = mcpManager ? mcpManager.getToolDefinitions() : [];
+                return [...apiTools, ...mcpTools];
+            },
+            processToolCalls: async (toolCalls) => {
+                // Process tool calls based on their names
+                const apiToolCalls = [];
+                const mcpToolCalls = [];
+                
+                // Separate tool calls by type
+                for (const toolCall of toolCalls) {
+                    const toolName = toolCall.function.name;
+                    
+                    // Check if it's an MCP tool (contains a dot)
+                    if (toolName.includes('.')) {
+                        mcpToolCalls.push(toolCall);
+                    } else {
+                        apiToolCalls.push(toolCall);
+                    }
+                }
+                
+                // Process each type of tool calls
+                const apiResults = apiToolCalls.length > 0 && apiToolsManager 
+                    ? await apiToolsManager.processToolCalls(apiToolCalls) 
+                    : [];
+                
+                const mcpResults = mcpToolCalls.length > 0 && mcpManager 
+                    ? await mcpManager.processToolCalls(mcpToolCalls) 
+                    : [];
+                
+                // Combine results
+                return [...apiResults, ...mcpResults];
+            }
+        };
+        
         // Generate response
         const aiResponse = await ApiService.generateChatCompletion(
             apiKey,
@@ -119,7 +159,7 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
             signal,
             (content) => updateAIMessage(content, aiMessageId, updateContextUsage),
             systemPrompt,
-            apiToolsManager
+            combinedToolsManager
         );
         
         // Remove typing indicator
