@@ -27,11 +27,6 @@ window.DefaultPromptsService = (function() {
             DEFAULT_PROMPTS.push(window.FunctionCallingPrompt);
         }
         
-        // Add MCP prompt if it exists
-        if (window.McpPrompt) {
-            DEFAULT_PROMPTS.push(window.McpPrompt);
-        }
-        
         // Additional prompts can be added here in the future
         
         console.log(`Loaded ${DEFAULT_PROMPTS.length} default prompts`);

@@ -19,7 +19,6 @@ window.AIHackareComponent = (function() {
         this.shareManager = ShareManager.createShareManager(this.elements);
         this.apiToolsManager = ApiToolsManager.createApiToolsManager(this.elements);
         this.promptsManager = PromptsManager.createPromptsManager(this.elements);
-        this.mcpManager = MCPManager.createMCPManager(this.elements);
         
         // Make chatManager accessible globally for the close GPT button
         window.aiHackare = this;
@@ -44,7 +43,6 @@ window.AIHackareComponent = (function() {
         this.chatManager.init();
         this.apiToolsManager.init();
         this.promptsManager.init();
-        this.mcpManager.init();
         
         // Initialize context usage display with current messages and system prompt
         this.chatManager.estimateContextUsage(
@@ -63,6 +61,14 @@ window.AIHackareComponent = (function() {
         
         // Auto-resize textarea
         UIUtils.setupTextareaAutoResize(this.elements.messageInput);
+        
+        // Hide loading overlay after initialization is complete
+        // Use a small timeout to ensure all components are rendered
+        setTimeout(function() {
+            if (window.LoadingOverlay && typeof window.LoadingOverlay.hideLoadingOverlay === 'function') {
+                window.LoadingOverlay.hideLoadingOverlay();
+            }
+        }, 300);
     };
     
     /**
@@ -92,6 +98,17 @@ window.AIHackareComponent = (function() {
         this.elements.settingsBtn.addEventListener('click', () => {
             this.showSettingsModal();
         });
+        
+        // Theme toggle button click - cycle through themes
+        if (this.elements.themeToggleBtn) {
+            this.elements.themeToggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Stop event propagation
+                e.preventDefault(); // Prevent default behavior
+                if (window.ThemeService) {
+                    window.ThemeService.cycleTheme();
+                }
+            });
+        }
         
         // Prompts button click
         if (this.elements.promptsBtn) {
@@ -125,14 +142,11 @@ window.AIHackareComponent = (function() {
         // Close model menu when clicking outside
         document.addEventListener('click', (e) => {
             const modelMenu = document.getElementById('model-selection-menu');
-            const modelInfoBtn = this.elements.modelInfoBtn;
-            
-            if (modelMenu && modelMenu.classList.contains('active') && 
-                !modelMenu.contains(e.target) && 
-                modelInfoBtn && !modelInfoBtn.contains(e.target)) {
+            if (modelMenu && modelMenu.classList.contains('active') && e.target === modelMenu) {
                 this.hideModelSelectionMenu();
             }
         });
+        
         
         // Share modal event listeners
         if (this.elements.shareModal) {
@@ -366,8 +380,7 @@ window.AIHackareComponent = (function() {
             this.settingsManager.getSystemPrompt(),
             this.uiManager.showApiKeyModal.bind(this.uiManager),
             this.uiManager.updateContextUsage.bind(this.uiManager),
-            this.apiToolsManager,
-            this.mcpManager
+            this.apiToolsManager
         );
     };
     
@@ -490,18 +503,12 @@ window.AIHackareComponent = (function() {
                 if (modelMenu.classList.contains('active')) {
                     this.hideModelSelectionMenu();
                 } else {
-                    // Position the menu
-                    const modelInfoBtn = this.elements.modelInfoBtn;
-                    if (modelInfoBtn) {
-                        const rect = modelInfoBtn.getBoundingClientRect();
-                        modelMenu.style.top = (rect.bottom + window.scrollY) + 'px';
-                    }
-                    
                     // Populate model info
                     this.populateModelCardInfo(currentModel);
                     
-                    // Show the menu
+                    // Show the menu as a modal
                     modelMenu.classList.add('active');
+                    document.body.classList.add('modal-open');
                 }
             }
         };
@@ -513,6 +520,12 @@ window.AIHackareComponent = (function() {
         const modelMenu = document.getElementById('model-selection-menu');
         if (modelMenu) {
             modelMenu.classList.remove('active');
+            
+            // Check if any other modals are still active
+            const activeModalsExist = document.querySelectorAll('.modal.active').length > 0;
+            if (!activeModalsExist) {
+                document.body.classList.remove('modal-open');
+            }
         }
     };
     

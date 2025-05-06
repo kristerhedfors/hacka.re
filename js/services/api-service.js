@@ -78,203 +78,232 @@ window.ApiService = (function() {
         return models;
     }
 
-/**
- * Generate a chat completion from the API
- * @param {string} apiKey - The API key for authentication
- * @param {string} model - The model ID to use
- * @param {Array} messages - Array of chat messages
- * @param {AbortSignal} signal - AbortController signal for cancellation
- * @param {Function} onChunk - Callback function for handling streaming chunks
- * @param {string} systemPrompt - Optional system prompt to prepend to messages
- * @param {Object} apiToolsManager - Optional API tools manager for tool calling
- * @returns {Promise<string>} - Promise resolving to the complete AI response
- */
-async function generateChatCompletion(apiKey, model, messages, signal, onChunk, systemPrompt, apiToolsManager) {
-    if (!apiKey) {
-        throw new Error('API key is required');
-    }
-    
-    // Initialize response variables
-    let completeResponse = '';
-    let toolCalls = [];
-    
-    // Create a copy of the messages array to avoid modifying the original
-    let apiMessages = [...messages];
-    
-    // Add system prompt if provided
-    if (systemPrompt && systemPrompt.trim()) {
-        apiMessages.unshift({
-            role: 'system',
-            content: systemPrompt
-        });
-    }
-    
-    // Prepare request body
-    const requestBody = {
-        model: model,
-        messages: apiMessages,
-        stream: true
-    };
-    
-    // Add tools if tool calling is enabled and apiToolsManager is provided
-    if (apiToolsManager) {
-        const toolDefinitions = apiToolsManager.getToolDefinitions();
-        if (toolDefinitions && toolDefinitions.length > 0) {
-            requestBody.tools = toolDefinitions;
-            requestBody.tool_choice = "auto";
+    /**
+     * Generate a chat completion from the API
+     * @param {string} apiKey - The API key for authentication
+     * @param {string} model - The model ID to use
+     * @param {Array} messages - Array of chat messages
+     * @param {AbortSignal} signal - AbortController signal for cancellation
+     * @param {Function} onChunk - Callback function for handling streaming chunks
+     * @param {string} systemPrompt - Optional system prompt to prepend to messages
+     * @param {Object} apiToolsManager - Optional API tools manager for tool calling
+     * @returns {Promise<string>} - Promise resolving to the complete AI response
+     */
+    async function generateChatCompletion(apiKey, model, messages, signal, onChunk, systemPrompt, apiToolsManager) {
+        if (!apiKey) {
+            throw new Error('API key is required');
         }
-    }
-    
-    const response = await fetch(getEndpointUrl('CHAT'), {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify(requestBody),
-        signal: signal
-    });
-    
-    if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error?.message || 'Error connecting to API');
-    }
-    
-    // Set up streaming response processing
-    // Use a more efficient approach that processes chunks immediately
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder('utf-8');
-    let buffer = '';
-    
-    // Process the stream directly without additional ReadableStream wrapper
-    while (true) {
-        try {
-            const { done, value } = await reader.read();
-            if (done) break;
-            
-            // Decode chunk and add to buffer
-            buffer += decoder.decode(value, { stream: true });
-            
-            // Process complete SSE messages
-            let newlineIndex;
-            while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
-                const line = buffer.slice(0, newlineIndex);
-                buffer = buffer.slice(newlineIndex + 1);
-                
-                if (line.trim() === '') continue;
-                
-                if (line.startsWith('data: ') && line !== 'data: [DONE]') {
-                    try {
-                        const data = JSON.parse(line.substring(6));
-                        const delta = data.choices[0]?.delta || {};
-                        
-                        // Handle content updates
-                        if (delta.content) {
-                            completeResponse += delta.content;
-                            if (onChunk) {
-                                // Use requestAnimationFrame to avoid blocking the main thread
-                                // This ensures smoother token display
-                                window.requestAnimationFrame(() => {
-                                    onChunk(completeResponse);
-                                });
+        
+        // Initialize response variables
+        let completeResponse = '';
+        let toolCalls = [];
+        
+        // Create a copy of the messages array to avoid modifying the original
+        let apiMessages = [...messages];
+        
+        // Add system prompt if provided
+        if (systemPrompt && systemPrompt.trim()) {
+            apiMessages.unshift({
+                role: 'system',
+                content: systemPrompt
+            });
+        }
+        
+        // Prepare request body
+        const requestBody = {
+            model: model,
+            messages: apiMessages,
+            stream: true
+        };
+        
+        // Add tools if tool calling is enabled and apiToolsManager is provided
+        if (apiToolsManager) {
+            const toolDefinitions = apiToolsManager.getToolDefinitions();
+            if (toolDefinitions && toolDefinitions.length > 0) {
+                requestBody.tools = toolDefinitions;
+                requestBody.tool_choice = "auto";
+            }
+        }
+        
+        const response = await fetch(getEndpointUrl('CHAT'), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify(requestBody),
+            signal: signal
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error?.message || 'Error connecting to API');
+        }
+        
+        // Set up EventSource for SSE
+        if (window.EventSource && 'ReadableStream' in window) {
+            // Use native EventSource for better SSE handling
+            const stream = new ReadableStream({
+                start(controller) {
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder('utf-8');
+                    let buffer = '';
+                    
+                    function push() {
+                        reader.read().then(({ done, value }) => {
+                            if (done) {
+                                controller.close();
+                                return;
                             }
+                            
+                            // Decode chunk and add to buffer
+                            buffer += decoder.decode(value, { stream: true });
+                            
+                            // Process complete SSE messages
+                            const lines = buffer.split('\n');
+                            buffer = lines.pop() || ''; // Keep the last incomplete line in the buffer
+                            
+                            for (const line of lines) {
+                                if (line.trim() === '') continue;
+                                controller.enqueue(line + '\n');
+                            }
+                            
+                            push();
+                        }).catch(error => {
+                            controller.error(error);
+                        });
+                    }
+                    
+                    push();
+                }
+            });
+            
+            // Process the stream with batched updates
+            const reader = stream.getReader();
+            let buffer = '';
+            let lastUpdateTime = 0;
+            let lastHeartbeatTime = Date.now();
+            const UPDATE_INTERVAL = 50; // ms between updates
+            const HEARTBEAT_INTERVAL = 1000; // Send heartbeat updates every 1 second even if no new content
+            
+            try {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    
+                    // If stream is done, ensure we flush any remaining buffer
+                    if (done) {
+                        if (buffer.length > 0 && onChunk) {
+                            onChunk(completeResponse);
                         }
-                        
-                        // Handle tool calls
-                        if (delta.tool_calls) {
-                            // Process each tool call delta
-                            for (const toolCallDelta of delta.tool_calls) {
-                                const { index, id, function: funcDelta } = toolCallDelta;
+                        break;
+                    }
+                    
+                    // Process SSE format
+                    const line = value.toString();
+                    if (line.startsWith('data: ') && line !== 'data: [DONE]\n') {
+                        try {
+                            const data = JSON.parse(line.substring(6));
+                            const delta = data.choices[0]?.delta || {};
+                            
+                            // Handle content updates
+                            if (delta.content) {
+                                completeResponse += delta.content;
+                                buffer += delta.content;
                                 
-                                // Initialize tool call if it doesn't exist
-                                if (!toolCalls[index]) {
-                                    toolCalls[index] = {
-                                        id: id || '',
-                                        type: 'function',
-                                        function: {
-                                            name: '',
-                                            arguments: ''
-                                        }
-                                    };
+                                // Only update the UI periodically to reduce rendering load
+                                const now = Date.now();
+                                if (now - lastUpdateTime >= UPDATE_INTERVAL) {
+                                    if (onChunk && buffer.length > 0) {
+                                        onChunk(completeResponse);
+                                        buffer = ''; // Clear buffer after update
+                                    }
+                                    lastUpdateTime = now;
+                                    lastHeartbeatTime = now;
                                 }
-                                
-                                // Update tool call with delta information
-                                if (id) toolCalls[index].id = id;
-                                
-                                if (funcDelta) {
-                                    if (funcDelta.name) {
-                                        toolCalls[index].function.name = 
-                                            (toolCalls[index].function.name || '') + funcDelta.name;
+                            }
+                            
+                            // Send heartbeat updates even if no new content to ensure UI stays responsive
+                            const now = Date.now();
+                            if (now - lastHeartbeatTime >= HEARTBEAT_INTERVAL && onChunk) {
+                                onChunk(completeResponse);
+                                lastHeartbeatTime = now;
+                            }
+                            
+                            // Handle tool calls
+                            if (delta.tool_calls) {
+                                // Process each tool call delta
+                                for (const toolCallDelta of delta.tool_calls) {
+                                    const { index, id, function: funcDelta } = toolCallDelta;
+                                    
+                                    // Initialize tool call if it doesn't exist
+                                    if (!toolCalls[index]) {
+                                        toolCalls[index] = {
+                                            id: id || '',
+                                            type: 'function',
+                                            function: {
+                                                name: '',
+                                                arguments: ''
+                                            }
+                                        };
                                     }
                                     
-                                    if (funcDelta.arguments) {
-                                        toolCalls[index].function.arguments = 
-                                            (toolCalls[index].function.arguments || '') + funcDelta.arguments;
+                                    // Update tool call with delta information
+                                    if (id) toolCalls[index].id = id;
+                                    
+                                    if (funcDelta) {
+                                        if (funcDelta.name) {
+                                            toolCalls[index].function.name = 
+                                                (toolCalls[index].function.name || '') + funcDelta.name;
+                                        }
+                                        
+                                        if (funcDelta.arguments) {
+                                            toolCalls[index].function.arguments = 
+                                                (toolCalls[index].function.arguments || '') + funcDelta.arguments;
+                                        }
                                     }
                                 }
                             }
+                        } catch (e) {
+                            console.error('Error parsing SSE:', e);
                         }
-                    } catch (e) {
-                        console.error('Error parsing SSE:', e);
                     }
                 }
+            } catch (error) {
+                console.error('Error reading SSE stream:', error);
+                // Try to recover from errors by sending what we have so far
+                if (onChunk) {
+                    onChunk(completeResponse + " [Error: Connection interrupted. Please try again.]");
+                }
+            } finally {
+                // Make sure to send any remaining buffered content
+                if (buffer.length > 0 && onChunk) {
+                    onChunk(completeResponse);
+                }
             }
-        } catch (error) {
-            console.error('Error reading SSE stream:', error);
-            break;
-        }
-    }
-    
-    // Process tool calls if any were received and apiToolsManager is provided
-    if (toolCalls.length > 0 && apiToolsManager) {
-        try {
-            // Process the tool calls
-            const toolResults = await apiToolsManager.processToolCalls(toolCalls);
+        } else {
+            // Fallback to manual stream processing for older browsers
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder('utf-8');
+            let buffer = '';
+            let lastUpdateTime = 0;
+            let lastHeartbeatTime = Date.now();
+            const UPDATE_INTERVAL = 50; // ms between updates
+            const HEARTBEAT_INTERVAL = 1000; // Send heartbeat updates every 1 second even if no new content
             
-            if (toolResults && toolResults.length > 0) {
-                // Add tool results to messages
-                apiMessages.push({
-                    role: 'assistant',
-                    content: completeResponse,
-                    tool_calls: toolCalls
-                });
-                
-                // Add each tool result as a separate message
-                for (const result of toolResults) {
-                    apiMessages.push(result);
-                }
-                
-                // Make a follow-up request to get the final response
-                const followUpResponse = await fetch(getEndpointUrl('CHAT'), {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`
-                    },
-                    body: JSON.stringify({
-                        model: model,
-                        messages: apiMessages,
-                        stream: true
-                    }),
-                    signal: signal
-                });
-                
-                if (!followUpResponse.ok) {
-                    const error = await followUpResponse.json();
-                    throw new Error(error.error?.message || 'Error connecting to API for follow-up');
-                }
-                
-                // Process the follow-up stream
-                const followUpReader = followUpResponse.body.getReader();
-                const followUpDecoder = new TextDecoder('utf-8');
-                let followUpCompleteResponse = '';
-                
+            try {
                 while (true) {
-                    const { done, value } = await followUpReader.read();
-                    if (done) break;
+                    const { done, value } = await reader.read();
+                    
+                    // If stream is done, ensure we flush any remaining buffer
+                    if (done) {
+                        if (buffer.length > 0 && onChunk) {
+                            onChunk(completeResponse);
+                        }
+                        break;
+                    }
                     
                     // Decode chunk
-                    const chunk = followUpDecoder.decode(value);
+                    const chunk = decoder.decode(value, { stream: true });
                     
                     // Process SSE format
                     const lines = chunk.split('\n');
@@ -282,31 +311,210 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
                         if (line.startsWith('data: ') && line !== 'data: [DONE]') {
                             try {
                                 const data = JSON.parse(line.substring(6));
-                                const content = data.choices[0]?.delta?.content || '';
-                                if (content) {
-                                    followUpCompleteResponse += content;
-                                    if (onChunk) {
-                                        // Append to the original response with a separator
-                                        onChunk(completeResponse + "\n\n" + followUpCompleteResponse);
+                                const delta = data.choices[0]?.delta || {};
+                                
+                                // Handle content updates
+                                if (delta.content) {
+                                    completeResponse += delta.content;
+                                    buffer += delta.content;
+                                    
+                                    // Only update the UI periodically to reduce rendering load
+                                    const now = Date.now();
+                                    if (now - lastUpdateTime >= UPDATE_INTERVAL) {
+                                        if (onChunk && buffer.length > 0) {
+                                            onChunk(completeResponse);
+                                            buffer = ''; // Clear buffer after update
+                                        }
+                                        lastUpdateTime = now;
+                                        lastHeartbeatTime = now;
+                                    }
+                                }
+                                
+                                // Send heartbeat updates even if no new content to ensure UI stays responsive
+                                const now = Date.now();
+                                if (now - lastHeartbeatTime >= HEARTBEAT_INTERVAL && onChunk) {
+                                    onChunk(completeResponse);
+                                    lastHeartbeatTime = now;
+                                }
+                                
+                                // Handle tool calls
+                                if (delta.tool_calls) {
+                                    // Process each tool call delta
+                                    for (const toolCallDelta of delta.tool_calls) {
+                                        const { index, id, function: funcDelta } = toolCallDelta;
+                                        
+                                        // Initialize tool call if it doesn't exist
+                                        if (!toolCalls[index]) {
+                                            toolCalls[index] = {
+                                                id: id || '',
+                                                type: 'function',
+                                                function: {
+                                                    name: '',
+                                                    arguments: ''
+                                                }
+                                            };
+                                        }
+                                        
+                                        // Update tool call with delta information
+                                        if (id) toolCalls[index].id = id;
+                                        
+                                        if (funcDelta) {
+                                            if (funcDelta.name) {
+                                                toolCalls[index].function.name = 
+                                                    (toolCalls[index].function.name || '') + funcDelta.name;
+                                            }
+                                            
+                                            if (funcDelta.arguments) {
+                                                toolCalls[index].function.arguments = 
+                                                    (toolCalls[index].function.arguments || '') + funcDelta.arguments;
+                                            }
+                                        }
                                     }
                                 }
                             } catch (e) {
-                                console.error('Error parsing follow-up SSE:', e);
+                                console.error('Error parsing SSE:', e);
                             }
                         }
                     }
                 }
-                
-                // Return the combined response
-                return completeResponse + "\n\n" + followUpCompleteResponse;
+            } catch (error) {
+                console.error('Error reading stream:', error);
+                // Try to recover from errors by continuing if possible
+                if (onChunk) {
+                    onChunk(completeResponse + " [Error: Connection interrupted. Please try again.]");
+                }
+            } finally {
+                // Make sure to send any remaining buffered content
+                if (buffer.length > 0 && onChunk) {
+                    onChunk(completeResponse);
+                }
             }
-        } catch (error) {
-            console.error('Error processing tool calls:', error);
         }
+        
+        // Process tool calls if any were received and apiToolsManager is provided
+        if (toolCalls.length > 0 && apiToolsManager) {
+            try {
+                // Process the tool calls
+                const toolResults = await apiToolsManager.processToolCalls(toolCalls);
+                
+                if (toolResults && toolResults.length > 0) {
+                    // Add tool results to messages
+                    apiMessages.push({
+                        role: 'assistant',
+                        content: completeResponse,
+                        tool_calls: toolCalls
+                    });
+                    
+                    // Add each tool result as a separate message
+                    for (const result of toolResults) {
+                        apiMessages.push(result);
+                    }
+                    
+                    // Make a follow-up request to get the final response
+                    const followUpResponse = await fetch(getEndpointUrl('CHAT'), {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}`
+                        },
+                        body: JSON.stringify({
+                            model: model,
+                            messages: apiMessages,
+                            stream: true
+                        }),
+                        signal: signal
+                    });
+                    
+                    if (!followUpResponse.ok) {
+                        const error = await followUpResponse.json();
+                        throw new Error(error.error?.message || 'Error connecting to API for follow-up');
+                    }
+                    
+                    // Process the follow-up stream with batched updates
+                    const followUpReader = followUpResponse.body.getReader();
+                    const followUpDecoder = new TextDecoder('utf-8');
+                    let followUpCompleteResponse = '';
+                    let followUpBuffer = '';
+                    let followUpLastUpdateTime = 0;
+                    let followUpLastHeartbeatTime = Date.now();
+                    const FOLLOW_UP_UPDATE_INTERVAL = 50; // ms between updates
+                    const FOLLOW_UP_HEARTBEAT_INTERVAL = 1000; // Send heartbeat updates every 1 second
+                    
+                    try {
+                        while (true) {
+                            const { done, value } = await followUpReader.read();
+                            
+                            // If stream is done, ensure we flush any remaining buffer
+                            if (done) {
+                                if (followUpBuffer.length > 0 && onChunk) {
+                                    onChunk(completeResponse + "\n\n" + followUpCompleteResponse);
+                                }
+                                break;
+                            }
+                            
+                            // Decode chunk
+                            const chunk = followUpDecoder.decode(value, { stream: true });
+                            
+                            // Process SSE format
+                            const lines = chunk.split('\n');
+                            for (const line of lines) {
+                                if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+                                    try {
+                                        const data = JSON.parse(line.substring(6));
+                                        const content = data.choices[0]?.delta?.content || '';
+                                        if (content) {
+                                            followUpCompleteResponse += content;
+                                            followUpBuffer += content;
+                                            
+                                            // Only update the UI periodically to reduce rendering load
+                                            const now = Date.now();
+                                            if (now - followUpLastUpdateTime >= FOLLOW_UP_UPDATE_INTERVAL) {
+                                                if (onChunk && followUpBuffer.length > 0) {
+                                                    // Append to the original response with a separator
+                                                    onChunk(completeResponse + "\n\n" + followUpCompleteResponse);
+                                                    followUpBuffer = ''; // Clear buffer after update
+                                                }
+                                                followUpLastUpdateTime = now;
+                                                followUpLastHeartbeatTime = now;
+                                            }
+                                        }
+                                        
+                                        // Send heartbeat updates even if no new content
+                                        const now = Date.now();
+                                        if (now - followUpLastHeartbeatTime >= FOLLOW_UP_HEARTBEAT_INTERVAL && onChunk) {
+                                            onChunk(completeResponse + "\n\n" + followUpCompleteResponse);
+                                            followUpLastHeartbeatTime = now;
+                                        }
+                                    } catch (e) {
+                                        console.error('Error parsing follow-up SSE:', e);
+                                    }
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error reading follow-up stream:', error);
+                        // Try to recover from errors
+                        if (onChunk) {
+                            onChunk(completeResponse + "\n\n" + followUpCompleteResponse + 
+                                  " [Error: Connection interrupted during follow-up. Please try again.]");
+                        }
+                    } finally {
+                        // Make sure to send any remaining buffered content
+                        if (followUpBuffer.length > 0 && onChunk) {
+                            onChunk(completeResponse + "\n\n" + followUpCompleteResponse);
+                        }
+                    }
+                    
+                    // Return the combined response
+                    return completeResponse + "\n\n" + followUpCompleteResponse;
+                }
+            } catch (error) {
+                console.error('Error processing tool calls:', error);
+            }
+        }
+        
+        return completeResponse;
     }
-    
-    return completeResponse;
-}
 
     // Public API
     return {

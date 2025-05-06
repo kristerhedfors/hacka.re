@@ -1,13 +1,17 @@
-<html lang="en" class="theme-modern">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>hacka.re - Chat with AI Models</title>
     <meta name="description" content="A simple chat interface for OpenAI-compatible APIs">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#006AA7">
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/themes.css">
     <link rel="stylesheet" href="css/copy-code.css">
     <link rel="stylesheet" href="css/default-prompts.css">
+    <link rel="stylesheet" href="css/mobile.css">
     <!-- Font Awesome for icons (local) -->
     <link rel="stylesheet" href="lib/font-awesome/all.min.css">
     <!-- Markdown parser (local) -->
@@ -20,35 +24,14 @@
     <script src="lib/qrcode/qrcode.min.js"></script>
 </head>
 <body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay">
+        <div class="loading-logo">hacka.re</div>
+        <div class="loading-spinner"></div>
+    </div>
+    
     <div class="app-container">
         <header>
-            <span class="beta-tag">BETA</span>
-            <div class="logo">
-                <h1 class="logo-text">hacka.re<span class="heart-logo">♥&#xFE0E;
-                    <!-- SVG fallback for Firefox Focus -->
-                    <svg class="firefox-focus-fallback" width="16" height="6" viewBox="0 0 16 6" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 3; display: none;">
-                        <circle cx="3" cy="3" r="1.5" fill="#22CC22" />
-                        <circle cx="8" cy="3" r="1.5" fill="#22CC22" />
-                        <circle cx="13" cy="3" r="1.5" fill="#22CC22" />
-                    </svg>
-                    <div class="typing-dots"></div>
-                    <div class="tooltip">
-                        <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 10px; border-radius: 8px;">
-                            <p><strong>hacka.re</strong>: Privacy-focused chat client that stores API keys, conversations, and settings locally in your browser.</p>
-                        </div>
-                        <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 10px; border-radius: 8px;">
-                            <p><strong>Features</strong>: Serverless, offline-capable, MIT licensed. Create encrypted, password-protected GPTs with custom prompts.</p>
-                        </div>
-                        <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 10px; border-radius: 8px;">
-                            <p><strong>Get started</strong>: Configure with base URL (OpenAI-compatible) and API key.</p>
-                        </div>
-                        <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 0; border-radius: 8px;">
-                            <p style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;"><i class="fas fa-magic"></i> <strong>Vibe-Coded</strong> with Claude 3.7 Sonnet | <a href="about/index.html">About</a> | <a href="about/development.html">Development</a> | <a href="about/disclaimer.html">Disclaimer</a></p>
-                        </div>
-                    </div>
-                </span></h1>
-                <p class="tagline">För hackare, av hackare.</p>
-            </div>
             <div class="model-info" id="model-info-btn">
                 <div class="active-model">
                     <span class="model-developer"></span>
@@ -68,9 +51,6 @@
                 </div>
             </div>
             <div class="settings">
-                <button id="mcp-btn" class="icon-btn" title="Model Context Protocol">
-                    <span class="mcp-icon">MCP</span>
-                </button>
                 <button id="prompts-btn" class="icon-btn" title="System Prompt Menu">
                     <i class="fas fa-list-alt"></i>
                 </button>
@@ -80,6 +60,12 @@
                 <button id="settings-btn" class="icon-btn" title="Settings">
                     <i class="fas fa-cog"></i>
                 </button>
+                <button id="theme-toggle-btn" class="icon-btn" title="Change Theme">
+                    <i class="fas fa-paint-brush"></i>
+                </button>
+                <a href="#" id="clear-chat" class="icon-btn" title="Clear Chat">
+                    <i class="fas fa-trash-alt"></i>
+                </a>
             </div>
         </header>
 
@@ -99,13 +85,17 @@
             </div>
         </div>
 
-        <!-- Model selection menu -->
-        <div id="model-selection-menu" class="model-dropdown">
-            <h3>Select Model</h3>
-            <div id="model-card-info"></div>
-            <div class="model-dropdown-actions">
-                <button type="button" class="btn secondary-btn" id="close-model-menu">Close</button>
-                <button type="button" class="btn primary-btn" id="go-to-settings">Settings</button>
+<!-- Model selection menu -->
+<div id="model-selection-menu" class="modal">
+            <div class="modal-content model-dropdown">
+                <div class="settings-header">
+                    <h2>Select Model</h2>
+                </div>
+                <div id="model-card-info"></div>
+                <div class="model-dropdown-actions">
+                    <button type="button" class="btn secondary-btn" id="close-model-menu">Close</button>
+                    <button type="button" class="btn primary-btn" id="go-to-settings">Settings</button>
+                </div>
             </div>
         </div>
 
@@ -251,74 +241,6 @@
             </div>
         </div>
         
-        <div id="mcp-modal" class="modal">
-            <div class="modal-content">
-                <div class="settings-header">
-                    <h2>Model Context Protocol (MCP)</h2>
-                    <span class="info-icon" id="mcp-info-icon">
-                        <i class="fas fa-info-circle"></i>
-                        <div class="tooltip">
-                            <div class="tooltip-content">
-                                <div class="important-notice">
-                                    <p><strong>Model Context Protocol (MCP)</strong>: Extend AI capabilities by connecting to MCP servers that provide additional tools and resources.</p>
-                                </div>
-                                <div class="important-notice">
-                                    <p><strong>MCP Servers</strong>: Add servers to enable tool calling and access to external resources like APIs, databases, and more.</p>
-                                </div>
-                                <div class="important-notice">
-                                    <p><strong>Privacy</strong>: Server configurations are stored locally in your browser. No data is sent to external servers unless explicitly configured.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </span>
-                </div>
-                <div class="mcp-container">
-                    <div class="mcp-servers-section">
-                        <h3>MCP Servers</h3>
-                        <p class="form-help">Add and manage MCP servers to extend AI capabilities with additional tools and resources.</p>
-                        <div id="mcp-servers-list">
-                            <!-- MCP servers will be populated here -->
-                            <div class="empty-state" id="mcp-empty-state">
-                                <p>No MCP servers configured. Add a server to enable tool calling.</p>
-                            </div>
-                        </div>
-                        
-                        <div class="mcp-add-server-section">
-                            <h4>Add MCP Server</h4>
-                            <form id="mcp-add-server-form">
-                                <div class="form-group">
-                                    <label for="mcp-server-name">Server Name</label>
-                                    <input type="text" id="mcp-server-name" placeholder="Enter a name for this server" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="mcp-server-url">Server URL</label>
-                                    <input type="text" id="mcp-server-url" placeholder="URL to connect to the server (e.g., http://localhost:8000)" required>
-                                    <p class="form-help">The URL where the MCP server is accessible (required for network-based connections)</p>
-                                </div>
-                                <div class="form-group">
-                                    <label for="mcp-server-command">Server Command (reference only)</label>
-                                    <input type="text" id="mcp-server-command" placeholder="Command used to start the server (for reference only)">
-                                    <p class="form-help">This is just for documentation - commands cannot be executed from the browser</p>
-                                </div>
-                                <div class="form-group">
-                                    <label for="mcp-server-env">Environment Variables (optional)</label>
-                                    <textarea id="mcp-server-env" placeholder="KEY1=value1&#10;KEY2=value2"></textarea>
-                                    <p class="form-help">One environment variable per line in KEY=value format</p>
-                                </div>
-                                <div class="form-actions" style="margin-top: 15px;">
-                                    <button type="submit" class="btn primary-btn">Add Server</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                    
-                    <div class="form-actions" style="margin-top: 15px;">
-                        <button type="button" id="close-mcp-modal" class="btn secondary-btn">Close</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
         <div id="settings-modal" class="modal">
             <div class="modal-content">
                 <div class="settings-header">
@@ -404,18 +326,14 @@
                             <i class="fas fa-paper-plane"></i>
                         </button>
                     </form>
-                    <div class="chat-actions">
-                        <a href="#" id="clear-chat">Clear Chat</a>
-                    </div>
                 </div>
             </div>
         </main>
 
-        <footer>
-            <p><a href="https://hacka.re" target="_blank">hacka.re</a> | <a href="about/index.html">About</a> | <a href="about/disclaimer.html">Disclaimer</a></p>
-        </footer>
+        <!-- Footer removed for cleaner interface -->
     </div>
 
+    <script src="js/loading-overlay.js"></script>
     <script src="js/utils/crypto-utils.js"></script>
     <script src="js/services/model-info.js"></script>
     <script src="js/services/encryption-service.js"></script>
@@ -425,13 +343,11 @@
     <script src="js/services/storage-service.js"></script>
     <script src="js/services/api-service.js"></script>
     <script src="js/services/api-tools-service.js"></script>
-    <script src="js/services/mcp-service.js"></script>
     <script src="js/services/link-sharing-service.js"></script>
     <script src="js/services/share-service.js"></script>
     <!-- Default prompts -->
     <script src="js/default-prompts/hacka-re-project.js"></script>
     <script src="js/default-prompts/function-calling.js"></script>
-    <script src="js/default-prompts/mcp-prompt.js"></script>
     <script src="js/services/default-prompts-service.js"></script>
     <script src="js/services/prompts-service.js"></script>
     <script src="js/utils/ui-utils.js"></script>
@@ -451,7 +367,6 @@
     <script src="js/components/share-manager.js"></script>
     <script src="js/components/api-tools-manager.js"></script>
     <script src="js/components/prompts-manager.js"></script>
-    <script src="js/components/mcp-manager.js"></script>
     <script src="js/components/ai-hackare.js"></script>
     <script src="js/app.js"></script>
     <script src="js/themes.js"></script>
@@ -459,5 +374,7 @@
     <script src="js/logo-animation.js"></script>
     <script src="js/settings-tooltip.js"></script>
     <script src="js/link-sharing-tooltip.js"></script>
+    <script src="js/mobile-utils.js"></script>
+    <script src="js/modal-effects.js"></script>
 </body>
 </html>

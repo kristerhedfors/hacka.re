@@ -35,9 +35,8 @@ window.ChatManager = (function() {
  * @param {Function} showApiKeyModal - Function to show API key modal
  * @param {Function} updateContextUsage - Function to update context usage
  * @param {Object} apiToolsManager - API tools manager for tool calling
- * @param {Object} mcpManager - MCP manager for MCP tool calling
  */
-function sendMessage(message, apiKey, currentModel, systemPrompt, showApiKeyModal, updateContextUsage, apiToolsManager, mcpManager) {
+function sendMessage(message, apiKey, currentModel, systemPrompt, showApiKeyModal, updateContextUsage, apiToolsManager) {
     if (!message) return;
     
     if (!apiKey) {
@@ -61,7 +60,7 @@ function sendMessage(message, apiKey, currentModel, systemPrompt, showApiKeyModa
     elements.messageInput.focus();
     
     // Send to API
-    generateResponse(apiKey, currentModel, systemPrompt, updateContextUsage, apiToolsManager, mcpManager);
+    generateResponse(apiKey, currentModel, systemPrompt, updateContextUsage, apiToolsManager);
 }
 
 /**
@@ -71,9 +70,8 @@ function sendMessage(message, apiKey, currentModel, systemPrompt, showApiKeyModa
  * @param {string} systemPrompt - System prompt
  * @param {Function} updateContextUsage - Function to update context usage
  * @param {Object} apiToolsManager - API tools manager for tool calling
- * @param {Object} mcpManager - MCP manager for MCP tool calling
  */
-async function generateResponse(apiKey, currentModel, systemPrompt, updateContextUsage, apiToolsManager, mcpManager) {
+async function generateResponse(apiKey, currentModel, systemPrompt, updateContextUsage, apiToolsManager) {
     if (!apiKey) return;
     
     isGenerating = true;
@@ -93,8 +91,10 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
     // Dispatch event to start heart animation
     document.dispatchEvent(new CustomEvent('ai-response-start'));
     
-    // Add typing indicator
+    // Create typing indicator but make it invisible
     const typingIndicator = UIUtils.createTypingIndicator();
+    // Still append it to the DOM but with display: none
+    typingIndicator.style.display = 'none';
     elements.chatMessages.appendChild(typingIndicator);
     UIUtils.scrollToBottom(elements.chatMessages);
     
@@ -113,44 +113,6 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
         controller = new AbortController();
         const signal = controller.signal;
         
-        // Combine tools from API tools manager and MCP manager
-        const combinedToolsManager = {
-            getToolDefinitions: () => {
-                const apiTools = apiToolsManager ? apiToolsManager.getToolDefinitions() : [];
-                const mcpTools = mcpManager ? mcpManager.getToolDefinitions() : [];
-                return [...apiTools, ...mcpTools];
-            },
-            processToolCalls: async (toolCalls) => {
-                // Process tool calls based on their names
-                const apiToolCalls = [];
-                const mcpToolCalls = [];
-                
-                // Separate tool calls by type
-                for (const toolCall of toolCalls) {
-                    const toolName = toolCall.function.name;
-                    
-                    // Check if it's an MCP tool (contains a dot)
-                    if (toolName.includes('.')) {
-                        mcpToolCalls.push(toolCall);
-                    } else {
-                        apiToolCalls.push(toolCall);
-                    }
-                }
-                
-                // Process each type of tool calls
-                const apiResults = apiToolCalls.length > 0 && apiToolsManager 
-                    ? await apiToolsManager.processToolCalls(apiToolCalls) 
-                    : [];
-                
-                const mcpResults = mcpToolCalls.length > 0 && mcpManager 
-                    ? await mcpManager.processToolCalls(mcpToolCalls) 
-                    : [];
-                
-                // Combine results
-                return [...apiResults, ...mcpResults];
-            }
-        };
-        
         // Generate response
         const aiResponse = await ApiService.generateChatCompletion(
             apiKey,
@@ -159,7 +121,7 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
             signal,
             (content) => updateAIMessage(content, aiMessageId, updateContextUsage),
             systemPrompt,
-            combinedToolsManager
+            apiToolsManager
         );
         
         // Remove typing indicator
@@ -260,6 +222,12 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
             UIUtils.scrollToBottom(elements.chatMessages);
         }
         
+        // Create a buffer for content updates to reduce rendering frequency
+        let contentBuffer = '';
+        let lastRenderTime = 0;
+        const RENDER_INTERVAL = 100; // ms between renders
+        let renderTimeoutId = null; // Track the timeout ID for rendering
+        
         /**
          * Update an AI message in the chat
          * @param {string} content - New message content
@@ -268,45 +236,50 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
          */
         function updateAIMessage(content, id, updateContextUsage) {
             const messageElement = document.querySelector(`.message[data-id="${id}"]`);
-            if (messageElement) {
-                const contentElement = messageElement.querySelector('.message-content');
-                
-                // Use requestAnimationFrame for smoother UI updates
-                window.requestAnimationFrame(() => {
-                    contentElement.innerHTML = UIUtils.renderMarkdown(content);
-                    UIUtils.scrollToBottom(elements.chatMessages);
-                });
-                
-                // Calculate token speed
-                calculateTokenSpeed(content);
-                
-                // Update context usage less frequently during streaming
-                // Only update every 1000ms or when content length changes significantly
-                const now = Date.now();
-                const contentLengthThreshold = 500; // Update if content grows by 500 chars
-                
-                // Store the last content length and update time on the message element
-                if (!messageElement.dataset.lastContentLength) {
-                    messageElement.dataset.lastContentLength = "0";
-                    messageElement.dataset.lastUpdateTime = "0";
+            if (!messageElement) return;
+            
+            const contentElement = messageElement.querySelector('.message-content');
+            const now = Date.now();
+            
+            // Store the content in the buffer
+            contentBuffer = content;
+            
+            // Only render if enough time has passed since the last render
+            if (now - lastRenderTime >= RENDER_INTERVAL) {
+                // Clear any pending render timeout
+                if (renderTimeoutId) {
+                    clearTimeout(renderTimeoutId);
                 }
                 
-                const lastContentLength = parseInt(messageElement.dataset.lastContentLength, 10);
-                const lastUpdateTime = parseInt(messageElement.dataset.lastUpdateTime, 10);
+                // Render the content
+                contentElement.innerHTML = UIUtils.renderMarkdown(contentBuffer);
+                lastRenderTime = now;
                 
-                // Check if we should update context usage
-                const timeSinceLastUpdate = now - lastUpdateTime;
-                const contentLengthDelta = Math.abs(content.length - lastContentLength);
+                // Use debounced scroll to bottom to reduce scroll operations
+                UIUtils.debouncedScrollToBottom(elements.chatMessages);
                 
-                if (timeSinceLastUpdate > 1000 || contentLengthDelta > contentLengthThreshold) {
-                    // Update the last content length and update time
-                    messageElement.dataset.lastContentLength = content.length.toString();
-                    messageElement.dataset.lastUpdateTime = now.toString();
-                    
-                    // Update context usage
-                    if (updateContextUsage) {
+                // Calculate token speed (this is lightweight so no need to debounce)
+                calculateTokenSpeed(content);
+                
+                // Use debounced context usage update to reduce calculations
+                if (updateContextUsage) {
+                    // Only update context usage every 500ms
+                    const debouncedEstimateContextUsage = UIUtils.debounce(() => {
                         estimateContextUsage(updateContextUsage);
-                    }
+                    }, 500);
+                    debouncedEstimateContextUsage();
+                }
+            } else {
+                // Schedule a render if one isn't already scheduled
+                if (!renderTimeoutId) {
+                    renderTimeoutId = setTimeout(() => {
+                        contentElement.innerHTML = UIUtils.renderMarkdown(contentBuffer);
+                        lastRenderTime = Date.now();
+                        renderTimeoutId = null;
+                        
+                        // Scroll to bottom after rendering
+                        UIUtils.debouncedScrollToBottom(elements.chatMessages);
+                    }, RENDER_INTERVAL - (now - lastRenderTime));
                 }
             }
         }
@@ -316,12 +289,10 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
          * @param {string} content - Current content
          */
         function calculateTokenSpeed(content) {
-            const now = Date.now();
-            
             // Initialize timing on first token
             if (!generationStartTime) {
-                generationStartTime = now;
-                lastUpdateTime = now;
+                generationStartTime = Date.now();
+                lastUpdateTime = generationStartTime;
                 tokenCount = 0;
                 
                 // Reset token speed display
@@ -332,31 +303,24 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
             }
             
             // Estimate new tokens (rough approximation: 1 token per 4 characters)
-            const newTokenCount = Math.ceil(content.length / 4);
+            const newContent = content;
+            const newTokenCount = Math.ceil(newContent.length / 4);
             
             // Calculate tokens added since last update
+            const tokenDelta = newTokenCount - tokenCount;
             tokenCount = newTokenCount;
             
-            // Only update the display every 500ms to reduce UI updates
-            if (now - lastUpdateTime < 500) {
-                return;
-            }
-            
-            // Update the last update time
-            lastUpdateTime = now;
-            
-            // Calculate time since start in seconds
-            const timeSinceStart = (now - generationStartTime) / 1000;
+            // Only update speed calculation periodically to smooth out the display
+            const now = Date.now();
+            const timeSinceStart = (now - generationStartTime) / 1000; // in seconds
             
             if (timeSinceStart > 0 && tokenCount > 0) {
                 // Calculate tokens per second
                 const tokensPerSecond = Math.round(tokenCount / timeSinceStart);
                 
-                // Update the display using requestAnimationFrame to avoid blocking the main thread
+                // Update the display
                 if (elements.tokenSpeedText) {
-                    window.requestAnimationFrame(() => {
-                        elements.tokenSpeedText.textContent = `${tokensPerSecond} t/s`;
-                    });
+                    elements.tokenSpeedText.textContent = `${tokensPerSecond} t/s`;
                 }
             }
         }
