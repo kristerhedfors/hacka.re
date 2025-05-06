@@ -32,6 +32,16 @@ window.DefaultPromptsService = (function() {
             DEFAULT_PROMPTS.push(window.McpPrompt);
         }
         
+        // Add OWASP Top 10 for LLM Applications prompt if it exists
+        if (window.OwaspLlmTop10Prompt) {
+            DEFAULT_PROMPTS.push(window.OwaspLlmTop10Prompt);
+        }
+        
+        // Add MCP SDK README prompt if it exists
+        if (window.McpSdkReadmePrompt) {
+            DEFAULT_PROMPTS.push(window.McpSdkReadmePrompt);
+        }
+        
         // Additional prompts can be added here in the future
         
         console.log(`Loaded ${DEFAULT_PROMPTS.length} default prompts`);
