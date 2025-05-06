@@ -83,39 +83,49 @@ window.MCPManager = (function() {
             }
         }
         
-        /**
-         * Handle adding a new server
-         * @param {Event} e - Form submission event
-         */
-        function handleAddServer(e) {
-            e.preventDefault();
-            
-            // Get form values
-            const nameInput = document.getElementById('mcp-server-name');
-            const commandInput = document.getElementById('mcp-server-command');
-            const envInput = document.getElementById('mcp-server-env');
-            
-            if (!nameInput || !commandInput) {
-                return;
+/**
+ * Handle adding a new server
+ * @param {Event} e - Form submission event
+ */
+function handleAddServer(e) {
+    e.preventDefault();
+    
+    // Get form values
+    const nameInput = document.getElementById('mcp-server-name');
+    const urlInput = document.getElementById('mcp-server-url');
+    const commandInput = document.getElementById('mcp-server-command');
+    const envInput = document.getElementById('mcp-server-env');
+    
+    if (!nameInput || !urlInput) {
+        return;
+    }
+    
+    const name = nameInput.value.trim();
+    const url = urlInput.value.trim();
+    const command = commandInput ? commandInput.value.trim() : '';
+    const envText = envInput ? envInput.value.trim() : '';
+    
+    // URL is required for network-based connections
+    if (!url) {
+        if (window.aiHackare && window.aiHackare.chatManager) {
+            window.aiHackare.chatManager.addSystemMessage(`Failed to add MCP server "${name}". A server URL must be provided.`);
+        }
+        return;
+    }
+    
+    // Parse environment variables
+    const env = {};
+    if (envText) {
+        envText.split('\n').forEach(line => {
+            const [key, value] = line.split('=');
+            if (key && value) {
+                env[key.trim()] = value.trim();
             }
-            
-            const name = nameInput.value.trim();
-            const command = commandInput.value.trim();
-            const envText = envInput ? envInput.value.trim() : '';
-            
-            // Parse environment variables
-            const env = {};
-            if (envText) {
-                envText.split('\n').forEach(line => {
-                    const [key, value] = line.split('=');
-                    if (key && value) {
-                        env[key.trim()] = value.trim();
-                    }
-                });
-            }
-            
-            // Add server
-            const success = MCPService.addServer({ name, command, env });
+        });
+    }
+    
+    // Add server
+    const success = MCPService.addServer({ name, url, command, env });
             
             if (success) {
                 // Clear form
@@ -171,120 +181,127 @@ window.MCPManager = (function() {
             });
         }
         
-        /**
-         * Create a server item element
-         * @param {Object} server - Server configuration
-         * @returns {HTMLElement} Server item element
-         */
-        function createServerItem(server) {
-            const serverItem = document.createElement('div');
-            serverItem.className = 'mcp-server-item';
-            serverItem.dataset.id = server.id;
-            
-            // Server header (name and actions)
-            const serverHeader = document.createElement('div');
-            serverHeader.className = 'mcp-server-header';
-            
-            // Server name
-            const serverName = document.createElement('div');
-            serverName.className = 'mcp-server-name';
-            serverName.textContent = server.name;
-            serverHeader.appendChild(serverName);
-            
-            // Server actions
-            const serverActions = document.createElement('div');
-            serverActions.className = 'mcp-server-actions';
-            
-            // Server status
-            const serverStatus = document.createElement('div');
-            serverStatus.className = `mcp-server-status ${server.status}`;
-            
-            // Status icon
-            const statusIcon = document.createElement('i');
-            if (server.status === MCPService.SERVER_STATUS.CONNECTED) {
-                statusIcon.className = 'fas fa-plug';
-                serverStatus.textContent = ' Connected';
-            } else if (server.status === MCPService.SERVER_STATUS.CONNECTING) {
-                statusIcon.className = 'fas fa-spinner fa-spin';
-                serverStatus.textContent = ' Connecting...';
-            } else {
-                statusIcon.className = 'fas fa-times-circle';
-                serverStatus.textContent = ' Disconnected';
-            }
-            serverStatus.prepend(statusIcon);
-            serverActions.appendChild(serverStatus);
-            
-            // Start/stop button
-            const startStopBtn = document.createElement('button');
-            startStopBtn.className = 'btn icon-btn';
-            startStopBtn.title = server.status === MCPService.SERVER_STATUS.CONNECTED ? 'Stop Server' : 'Start Server';
-            
-            const startStopIcon = document.createElement('i');
-            startStopIcon.className = server.status === MCPService.SERVER_STATUS.CONNECTED ? 'fas fa-stop' : 'fas fa-play';
-            startStopBtn.appendChild(startStopIcon);
-            
-            startStopBtn.addEventListener('click', async () => {
-                if (server.status === MCPService.SERVER_STATUS.CONNECTED) {
-                    // Stop server
-                    const success = await MCPService.stopServer(server.id);
-                    if (success) {
-                        refreshServersList();
-                        if (window.aiHackare && window.aiHackare.chatManager) {
-                            window.aiHackare.chatManager.addSystemMessage(`MCP server "${server.name}" stopped.`);
-                        }
-                    }
-                } else if (server.status === MCPService.SERVER_STATUS.DISCONNECTED) {
-                    // Start server
-                    const success = await MCPService.startServer(server.id);
-                    if (success) {
-                        refreshServersList();
-                        if (window.aiHackare && window.aiHackare.chatManager) {
-                            window.aiHackare.chatManager.addSystemMessage(`MCP server "${server.name}" started.`);
-                        }
-                    }
+/**
+ * Create a server item element
+ * @param {Object} server - Server configuration
+ * @returns {HTMLElement} Server item element
+ */
+function createServerItem(server) {
+    const serverItem = document.createElement('div');
+    serverItem.className = 'mcp-server-item';
+    serverItem.dataset.id = server.id;
+    
+    // Server header (name and actions)
+    const serverHeader = document.createElement('div');
+    serverHeader.className = 'mcp-server-header';
+    
+    // Server name
+    const serverName = document.createElement('div');
+    serverName.className = 'mcp-server-name';
+    serverName.textContent = server.name;
+    serverHeader.appendChild(serverName);
+    
+    // Server actions
+    const serverActions = document.createElement('div');
+    serverActions.className = 'mcp-server-actions';
+    
+    // Server status
+    const serverStatus = document.createElement('div');
+    serverStatus.className = `mcp-server-status ${server.status}`;
+    
+    // Status icon
+    const statusIcon = document.createElement('i');
+    if (server.status === MCPService.SERVER_STATUS.CONNECTED) {
+        statusIcon.className = 'fas fa-plug';
+        serverStatus.textContent = ' Connected';
+    } else if (server.status === MCPService.SERVER_STATUS.CONNECTING) {
+        statusIcon.className = 'fas fa-spinner fa-spin';
+        serverStatus.textContent = ' Connecting...';
+    } else {
+        statusIcon.className = 'fas fa-times-circle';
+        serverStatus.textContent = ' Disconnected';
+    }
+    serverStatus.prepend(statusIcon);
+    serverActions.appendChild(serverStatus);
+    
+    // Start/stop button
+    const startStopBtn = document.createElement('button');
+    startStopBtn.className = 'btn icon-btn';
+    startStopBtn.title = server.status === MCPService.SERVER_STATUS.CONNECTED ? 'Stop Server' : 'Start Server';
+    
+    const startStopIcon = document.createElement('i');
+    startStopIcon.className = server.status === MCPService.SERVER_STATUS.CONNECTED ? 'fas fa-stop' : 'fas fa-play';
+    startStopBtn.appendChild(startStopIcon);
+    
+    startStopBtn.addEventListener('click', async () => {
+        if (server.status === MCPService.SERVER_STATUS.CONNECTED) {
+            // Stop server
+            const success = await MCPService.stopServer(server.id);
+            if (success) {
+                refreshServersList();
+                if (window.aiHackare && window.aiHackare.chatManager) {
+                    window.aiHackare.chatManager.addSystemMessage(`MCP server "${server.name}" stopped.`);
                 }
-            });
-            serverActions.appendChild(startStopBtn);
-            
-            // Remove button
-            const removeBtn = document.createElement('button');
-            removeBtn.className = 'btn icon-btn';
-            removeBtn.title = 'Remove Server';
-            
-            const removeIcon = document.createElement('i');
-            removeIcon.className = 'fas fa-trash';
-            removeBtn.appendChild(removeIcon);
-            
-            removeBtn.addEventListener('click', () => {
-                if (confirm(`Are you sure you want to remove the MCP server "${server.name}"?`)) {
-                    const success = MCPService.removeServer(server.id);
-                    if (success) {
-                        refreshServersList();
-                        if (window.aiHackare && window.aiHackare.chatManager) {
-                            window.aiHackare.chatManager.addSystemMessage(`MCP server "${server.name}" removed.`);
-                        }
-                    }
-                }
-            });
-            serverActions.appendChild(removeBtn);
-            
-            serverHeader.appendChild(serverActions);
-            serverItem.appendChild(serverHeader);
-            
-            // Server details
-            const serverDetails = document.createElement('div');
-            serverDetails.className = 'mcp-server-details';
-            serverDetails.textContent = `Command: ${server.command}`;
-            
-            // Add environment variables if any
-            if (server.env && Object.keys(server.env).length > 0) {
-                const envText = Object.entries(server.env)
-                    .map(([key, value]) => `${key}=${value}`)
-                    .join(', ');
-                serverDetails.textContent += ` | Env: ${envText}`;
             }
-            
-            serverItem.appendChild(serverDetails);
+        } else if (server.status === MCPService.SERVER_STATUS.DISCONNECTED) {
+            // Start server
+            const success = await MCPService.startServer(server.id);
+            if (success) {
+                refreshServersList();
+                if (window.aiHackare && window.aiHackare.chatManager) {
+                    window.aiHackare.chatManager.addSystemMessage(`MCP server "${server.name}" started.`);
+                }
+            }
+        }
+    });
+    serverActions.appendChild(startStopBtn);
+    
+    // Remove button
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'btn icon-btn';
+    removeBtn.title = 'Remove Server';
+    
+    const removeIcon = document.createElement('i');
+    removeIcon.className = 'fas fa-trash';
+    removeBtn.appendChild(removeIcon);
+    
+    removeBtn.addEventListener('click', () => {
+        if (confirm(`Are you sure you want to remove the MCP server "${server.name}"?`)) {
+            const success = MCPService.removeServer(server.id);
+            if (success) {
+                refreshServersList();
+                if (window.aiHackare && window.aiHackare.chatManager) {
+                    window.aiHackare.chatManager.addSystemMessage(`MCP server "${server.name}" removed.`);
+                }
+            }
+        }
+    });
+    serverActions.appendChild(removeBtn);
+    
+    serverHeader.appendChild(serverActions);
+    serverItem.appendChild(serverHeader);
+    
+    // Server details
+    const serverDetails = document.createElement('div');
+    serverDetails.className = 'mcp-server-details';
+    
+    // Always show URL first (required field)
+    serverDetails.textContent = `URL: ${server.url}`;
+    
+    // Add command as reference if available
+    if (server.command) {
+        serverDetails.textContent += ` | Command (reference only): ${server.command}`;
+    }
+    
+    // Add environment variables if any
+    if (server.env && Object.keys(server.env).length > 0) {
+        const envText = Object.entries(server.env)
+            .map(([key, value]) => `${key}=${value}`)
+            .join(', ');
+        serverDetails.textContent += ` | Env: ${envText}`;
+    }
+    
+    serverItem.appendChild(serverDetails);
             
             // Server tools (if connected)
             if (server.status === MCPService.SERVER_STATUS.CONNECTED && server.tools && server.tools.length > 0) {
