@@ -324,13 +324,17 @@ window.ThemeService = (function() {
         console.log('ThemeService: Creating theme toggle button');
         
         // Check if toggle already exists
-        if (document.getElementById('theme-toggle-btn')) {
-            console.log('ThemeService: Theme toggle button already exists');
+        let themeToggleBtn = document.getElementById('theme-toggle-btn');
+        
+        if (themeToggleBtn) {
+            console.log('ThemeService: Theme toggle button already exists, attaching event listener');
+            // Add click event listener to cycle through themes
+            themeToggleBtn.addEventListener('click', cycleTheme);
             return;
         }
         
-        // Create the theme toggle button
-        const themeToggleBtn = document.createElement('button');
+        // Create the theme toggle button if it doesn't exist
+        themeToggleBtn = document.createElement('button');
         themeToggleBtn.id = 'theme-toggle-btn';
         themeToggleBtn.className = 'icon-btn';
         themeToggleBtn.innerHTML = '<i class="fas fa-paint-brush"></i>';
