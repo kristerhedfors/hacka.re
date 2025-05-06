@@ -68,6 +68,9 @@
                 </div>
             </div>
             <div class="settings">
+                <button id="mcp-btn" class="icon-btn" title="Model Context Protocol">
+                    <span class="mcp-icon">MCP</span>
+                </button>
                 <button id="prompts-btn" class="icon-btn" title="System Prompt Menu">
                     <i class="fas fa-list-alt"></i>
                 </button>
@@ -248,6 +251,74 @@
             </div>
         </div>
         
+        <div id="mcp-modal" class="modal">
+            <div class="modal-content">
+                <div class="settings-header">
+                    <h2>Model Context Protocol (MCP)</h2>
+                    <span class="info-icon" id="mcp-info-icon">
+                        <i class="fas fa-info-circle"></i>
+                        <div class="tooltip">
+                            <div class="tooltip-content">
+                                <div class="important-notice">
+                                    <p><strong>Model Context Protocol (MCP)</strong>: Extend AI capabilities by connecting to MCP servers that provide additional tools and resources.</p>
+                                </div>
+                                <div class="important-notice">
+                                    <p><strong>MCP Servers</strong>: Add servers to enable tool calling and access to external resources like APIs, databases, and more.</p>
+                                </div>
+                                <div class="important-notice">
+                                    <p><strong>Privacy</strong>: Server configurations are stored locally in your browser. No data is sent to external servers unless explicitly configured.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </span>
+                </div>
+                <div class="mcp-container">
+                    <div class="mcp-servers-section">
+                        <h3>MCP Servers</h3>
+                        <p class="form-help">Add and manage MCP servers to extend AI capabilities with additional tools and resources.</p>
+                        <div id="mcp-servers-list">
+                            <!-- MCP servers will be populated here -->
+                            <div class="empty-state" id="mcp-empty-state">
+                                <p>No MCP servers configured. Add a server to enable tool calling.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mcp-add-server-section">
+                            <h4>Add MCP Server</h4>
+                            <form id="mcp-add-server-form">
+                                <div class="form-group">
+                                    <label for="mcp-server-name">Server Name</label>
+                                    <input type="text" id="mcp-server-name" placeholder="Enter a name for this server" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="mcp-server-url">Server URL</label>
+                                    <input type="text" id="mcp-server-url" placeholder="URL to connect to the server (e.g., http://localhost:8000)" required>
+                                    <p class="form-help">The URL where the MCP server is accessible (required for network-based connections)</p>
+                                </div>
+                                <div class="form-group">
+                                    <label for="mcp-server-command">Server Command (reference only)</label>
+                                    <input type="text" id="mcp-server-command" placeholder="Command used to start the server (for reference only)">
+                                    <p class="form-help">This is just for documentation - commands cannot be executed from the browser</p>
+                                </div>
+                                <div class="form-group">
+                                    <label for="mcp-server-env">Environment Variables (optional)</label>
+                                    <textarea id="mcp-server-env" placeholder="KEY1=value1&#10;KEY2=value2"></textarea>
+                                    <p class="form-help">One environment variable per line in KEY=value format</p>
+                                </div>
+                                <div class="form-actions" style="margin-top: 15px;">
+                                    <button type="submit" class="btn primary-btn">Add Server</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions" style="margin-top: 15px;">
+                        <button type="button" id="close-mcp-modal" class="btn secondary-btn">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <div id="settings-modal" class="modal">
             <div class="modal-content">
                 <div class="settings-header">
@@ -354,11 +425,13 @@
     <script src="js/services/storage-service.js"></script>
     <script src="js/services/api-service.js"></script>
     <script src="js/services/api-tools-service.js"></script>
+    <script src="js/services/mcp-service.js"></script>
     <script src="js/services/link-sharing-service.js"></script>
     <script src="js/services/share-service.js"></script>
     <!-- Default prompts -->
     <script src="js/default-prompts/hacka-re-project.js"></script>
     <script src="js/default-prompts/function-calling.js"></script>
+    <script src="js/default-prompts/mcp-prompt.js"></script>
     <script src="js/services/default-prompts-service.js"></script>
     <script src="js/services/prompts-service.js"></script>
     <script src="js/utils/ui-utils.js"></script>
@@ -378,6 +451,7 @@
     <script src="js/components/share-manager.js"></script>
     <script src="js/components/api-tools-manager.js"></script>
     <script src="js/components/prompts-manager.js"></script>
+    <script src="js/components/mcp-manager.js"></script>
     <script src="js/components/ai-hackare.js"></script>
     <script src="js/app.js"></script>
     <script src="js/themes.js"></script>

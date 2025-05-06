@@ -66,6 +66,48 @@ The tests are organized into the following files:
 - `test_default_prompts.py`: Tests related to the default prompts feature
 - `test_model_context_window.py`: Tests related to displaying model context window size in the model selection menu
 - `test_context_window_scaling.py`: Tests related to context window meter scaling with model context size
+- `test_mcp.py`: Tests related to Model Context Protocol (MCP) functionality
+- `test_token_counter_debounce.py`: Tests related to token counter debouncing for improved performance
+
+## Testing MCP Functionality
+
+The Model Context Protocol (MCP) tests are divided into two categories:
+
+1. **UI Tests**: These tests verify the MCP UI elements and basic functionality without requiring an actual MCP server.
+2. **Integration Tests**: These tests require an actual running MCP server to test the full integration.
+
+### Running MCP UI Tests
+
+The basic MCP UI tests can be run like any other test:
+
+```bash
+pytest test_mcp.py -k "not test_filesystem_mcp_server_integration"
+```
+
+### Running MCP Integration Tests
+
+To run the MCP integration tests, you need to:
+
+1. Start an MCP server using supergateway. For example, to start a filesystem MCP server:
+
+   ```bash
+   npx -y supergateway \
+     --stdio "npx -y @modelcontextprotocol/server-filesystem ./my-folder" \
+     --port 8000 \
+     --baseUrl http://localhost:8000 \
+     --ssePath /sse \
+     --messagePath /message
+   ```
+
+   Replace `./my-folder` with the path to a directory you want to expose through the filesystem server.
+
+2. Run the specific integration test:
+
+   ```bash
+   pytest test_mcp.py::test_filesystem_mcp_server_integration -v
+   ```
+
+Note that the integration test is marked with `@pytest.mark.skip` by default since it requires an actual running MCP server. You'll need to remove this mark or use the `-k` flag to run it.
 
 ## Test Categories
 
@@ -87,6 +129,11 @@ These tests verify the behavior of the application with mocked API responses:
 - Model selection works correctly
 - Sending a message and receiving a response works correctly
 - Context window meter scales with model context size
+- Token counter debouncing works correctly for typing and pasting
+- MCP server management (adding, starting, stopping, and removing servers)
+- MCP tool integration with the chat interface
+  - Basic UI tests for adding, starting, stopping, and removing MCP servers
+  - Integration tests with actual MCP servers (requires running an MCP server)
 
 ## Adding New Tests
 
