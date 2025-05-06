@@ -17,7 +17,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add event listener for message input to update context usage
     const messageInput = document.getElementById('message-input');
     if (messageInput) {
-        messageInput.addEventListener('input', function() {
+        // Debounce function to limit how often the token counter updates
+        let debounceTimeout;
+        const debounceDelay = 300; // 300ms delay
+        
+        // Function to update context usage
+        const updateContextUsage = function() {
             // Get the current model
             const currentModel = aiHackare.settingsManager.getCurrentModel();
             
@@ -35,10 +40,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
             
-            // Log the message input value and tempMessages length for debugging
-            console.log('Message input value:', this.value);
-            console.log('Temp messages length:', tempMessages.length);
-            
             // Estimate context usage with the temporary messages
             const systemPrompt = aiHackare.settingsManager.getSystemPrompt() || '';
             const usageInfo = UIUtils.estimateContextUsage(
@@ -54,6 +55,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 usageInfo.estimatedTokens, 
                 usageInfo.contextSize
             );
+        };
+        
+        // Add input event listener with debouncing
+        messageInput.addEventListener('input', function() {
+            // Clear any existing timeout
+            clearTimeout(debounceTimeout);
+            
+            // Set a new timeout
+            debounceTimeout = setTimeout(() => {
+                updateContextUsage.call(this);
+            }, debounceDelay);
+            
+            // For large pastes (over 100 chars), update immediately
+            if (this.value.length > 100) {
+                clearTimeout(debounceTimeout);
+                updateContextUsage.call(this);
+            }
         });
     }
 });
