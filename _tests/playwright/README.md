@@ -68,6 +68,7 @@ The tests are organized into the following files:
 - `test_context_window_scaling.py`: Tests related to context window meter scaling with model context size
 - `test_mcp.py`: Tests related to Model Context Protocol (MCP) functionality
 - `test_token_counter_debounce.py`: Tests related to token counter debouncing for improved performance
+- `test_themes.py`: Tests related to theme switching functionality and mobile responsiveness
 
 ## Testing MCP Functionality
 
@@ -134,6 +135,12 @@ These tests verify the behavior of the application with mocked API responses:
 - MCP tool integration with the chat interface
   - Basic UI tests for adding, starting, stopping, and removing MCP servers
   - Integration tests with actual MCP servers (requires running an MCP server)
+- Theme switching functionality
+  - Cycling through different themes (Modern, Sunset, Ocean, etc.)
+  - Coexistence of theme toggle and MCP buttons in the header
+- Mobile responsiveness
+  - Proper CSS classes added for mobile devices
+  - Responsive layout adjustments for different screen sizes
 
 ## Adding New Tests
 
