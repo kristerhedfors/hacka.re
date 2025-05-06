@@ -7,8 +7,8 @@ window.ThemeService = (function() {
     const THEME_STORAGE_KEY = 'aihackare_theme_mode';
     let darkModeToggleBtn;
     
-    // Define the theme cycle order - only colorful themes
-    const themeOrder = ['sunset', 'ocean', 'forest', 'midnight'];
+    // Define the theme cycle order - include light and dark modes
+    const themeOrder = ['light', 'dark', 'sunset', 'ocean', 'forest', 'midnight'];
     
     /**
      * Initialize the theme
@@ -19,18 +19,24 @@ window.ThemeService = (function() {
         // Create theme toggle button
         createThemeToggle();
         
-        // Always use midnight theme regardless of saved preference
-        console.log('ThemeService: Always using midnight theme on reload');
+        // Get saved theme preference or use system preference
+        const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+        console.log('ThemeService: Saved theme preference:', savedTheme);
         
-        // Apply midnight theme to loading overlay immediately
-        const loadingOverlay = document.querySelector('.loading-overlay');
-        if (loadingOverlay) {
-            // Always set the loading overlay background to midnight theme
-            loadingOverlay.style.background = 'linear-gradient(to bottom, #0d47a1, #4a148c)';
+        // Apply theme based on saved preference or system preference
+        if (savedTheme) {
+            console.log('ThemeService: Applying saved theme:', savedTheme);
+            applyTheme(savedTheme);
+        } else {
+            // Check system preference
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                console.log('ThemeService: System prefers dark mode, applying dark theme');
+                enableDarkMode();
+            } else {
+                console.log('ThemeService: System prefers light mode or no preference, applying light theme');
+                enableLightMode();
+            }
         }
-        
-        // Always enable midnight theme
-        enableMidnightTheme();
         
         // Add keyboard shortcuts for cycling themes (Alt+Shift+T)
         document.addEventListener('keydown', function(event) {
@@ -45,18 +51,28 @@ window.ThemeService = (function() {
             const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
             console.log('ThemeService: System prefers dark mode:', prefersDarkMode.matches);
             
-            // Always use midnight theme regardless of system preference
-            console.log('ThemeService: Ignoring system preference, always using midnight theme');
+            // Listen for changes to system preference
+            prefersDarkMode.addEventListener('change', (e) => {
+                // Only apply system preference if no saved preference exists
+                if (!localStorage.getItem(THEME_STORAGE_KEY)) {
+                    console.log('ThemeService: System preference changed, new preference:', e.matches ? 'dark' : 'light');
+                    if (e.matches) {
+                        enableDarkMode();
+                    } else {
+                        enableLightMode();
+                    }
+                }
+            });
         }
     }
     
     /**
      * Create and add the dark mode toggle button to the header
-     * (Button creation disabled as per user request)
+     * This function is kept for compatibility but doesn't create a separate button anymore
      */
     function createDarkModeToggle() {
-        console.log('ThemeService: Dark mode toggle button creation disabled');
-        // Dark mode toggle button creation has been disabled
+        console.log('ThemeService: Dark mode toggle functionality now integrated into theme cycle button');
+        // No longer creating a separate dark mode toggle button
         return;
     }
     
@@ -247,6 +263,39 @@ window.ThemeService = (function() {
     }
     
     /**
+     * Apply a theme by name
+     */
+    function applyTheme(themeName) {
+        console.log('ThemeService: Applying theme:', themeName);
+        
+        switch (themeName) {
+            case 'light':
+                enableLightMode();
+                break;
+            case 'dark':
+                enableDarkMode();
+                break;
+            case 'sunset':
+                enableSunsetTheme();
+                break;
+            case 'ocean':
+                enableOceanTheme();
+                break;
+            case 'forest':
+                enableForestTheme();
+                break;
+            case 'midnight':
+                enableMidnightTheme();
+                break;
+            default:
+                // Fallback to light mode if theme name is unknown
+                console.log('ThemeService: Unknown theme name, defaulting to light mode');
+                enableLightMode();
+                break;
+        }
+    }
+
+    /**
      * Cycle to the next theme in the theme order
      */
     function cycleTheme() {
@@ -260,11 +309,10 @@ window.ThemeService = (function() {
             // Find the index of the current theme in the theme order
             let currentIndex = themeOrder.indexOf(currentTheme);
             
-            // If current theme is not in the theme order (e.g., light or dark mode),
-            // default to midnight theme
+            // If current theme is not in the theme order, default to light theme
             if (currentIndex === -1) {
-                console.log('ThemeService: Current theme not in cycle order, defaulting to midnight theme');
-                enableMidnightTheme();
+                console.log('ThemeService: Current theme not in cycle order, defaulting to light theme');
+                enableLightMode();
                 return;
             }
             
@@ -276,34 +324,11 @@ window.ThemeService = (function() {
             console.log('ThemeService: Next theme:', nextTheme);
             
             // Apply the next theme
-            switch (nextTheme) {
-                case 'sunset':
-                    enableSunsetTheme();
-                    // Update loading overlay background if it exists
-                    updateLoadingOverlayBackground('sunset');
-                    break;
-                case 'ocean':
-                    enableOceanTheme();
-                    // Update loading overlay background if it exists
-                    updateLoadingOverlayBackground('ocean');
-                    break;
-                case 'forest':
-                    enableForestTheme();
-                    // Update loading overlay background if it exists
-                    updateLoadingOverlayBackground('forest');
-                    break;
-                case 'midnight':
-                    enableMidnightTheme();
-                    // Update loading overlay background if it exists
-                    updateLoadingOverlayBackground('midnight');
-                    break;
-                default:
-                    // Fallback to midnight theme if something goes wrong
-                    console.log('ThemeService: Unknown theme in cycle, defaulting to midnight theme');
-                    enableMidnightTheme();
-                    // Update loading overlay background if it exists
-                    updateLoadingOverlayBackground('midnight');
-                    break;
+            applyTheme(nextTheme);
+            
+            // Update loading overlay background if it exists
+            if (['sunset', 'ocean', 'forest', 'midnight'].includes(nextTheme)) {
+                updateLoadingOverlayBackground(nextTheme);
             }
             
             // Force a repaint to ensure the changes take effect

@@ -6,7 +6,7 @@ def test_theme_toggle_button_exists(page):
     page.goto("file:///Users/user/dev/hacka.re/index.html")
     theme_toggle_btn = page.locator("#theme-toggle-btn")
     expect(theme_toggle_btn).to_be_visible()
-    expect(theme_toggle_btn).to_have_attribute("title", "Change Theme")
+    expect(theme_toggle_btn).to_have_attribute("title", "Cycle Theme")
 
 def test_mcp_button_exists(page):
     """Test that the MCP button exists in the header."""
