@@ -522,24 +522,6 @@ window.UIManager = (function() {
             }
         }
         
-        /**
-         * Show the MCP modal
-         */
-        function showMcpModal() {
-            if (document.getElementById('mcp-modal')) {
-                document.getElementById('mcp-modal').classList.add('active');
-            }
-        }
-        
-        /**
-         * Hide the MCP modal
-         */
-        function hideMcpModal() {
-            if (document.getElementById('mcp-modal')) {
-                document.getElementById('mcp-modal').classList.remove('active');
-            }
-        }
-        
         // Public API
         return {
             showApiKeyModal,
@@ -548,8 +530,6 @@ window.UIManager = (function() {
             hideSettingsModal,
             showShareModal,
             hideShareModal,
-            showMcpModal,
-            hideMcpModal,
             togglePasswordVisibility,
             toggleMessageHistoryInput,
             updateLinkLengthBar,

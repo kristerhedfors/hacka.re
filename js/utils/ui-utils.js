@@ -4,36 +4,34 @@
  */
 
 window.UIUtils = (function() {
+    // Debounce function to limit the frequency of function calls
+    function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+            const context = this;
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(context, args), wait);
+        };
+    }
     /**
      * Render markdown content to HTML
      * @param {string} text - Markdown text to render
      * @returns {string} - Sanitized HTML
      */
     function renderMarkdown(text) {
-        // Skip rendering if text is empty
-        if (!text || text.trim() === '') {
+        // Check if text is empty or undefined
+        if (!text) {
             return '';
         }
         
         try {
-            // Configure marked for better performance
-            marked.setOptions({
-                gfm: true,
-                breaks: true,
-                silent: true,  // Don't throw on parse errors
-                smartLists: true,
-                smartypants: false, // Disable smartypants for better performance
-                headerIds: false,   // Disable header IDs for better performance
-                mangle: false       // Disable mangling for better performance
-            });
-            
             // Uses marked.js to render markdown
             // DOMPurify is used to sanitize the HTML
             return DOMPurify.sanitize(marked.parse(text));
-        } catch (e) {
-            console.error('Error rendering markdown:', e);
-            // Fallback to simple HTML escaping if markdown rendering fails
-            return `<p>${escapeHTML(text)}</p>`;
+        } catch (error) {
+            console.error('Error rendering markdown:', error);
+            // Return the original text as a fallback
+            return DOMPurify.sanitize(`<p>${escapeHTML(text)}</p>`);
         }
     }
 
@@ -89,24 +87,9 @@ window.UIUtils = (function() {
         // Update the text
         textElement.textContent = `${percentage}%`;
         
-        // Update color based on usage percentage (heatmap)
-        let color;
-        if (percentage < 30) {
-            // Green for low usage
-            color = '#10b981';
-        } else if (percentage < 60) {
-            // Yellow for medium usage
-            color = '#f59e0b';
-        } else if (percentage < 80) {
-            // Orange for high usage
-            color = '#f97316';
-        } else {
-            // Red for very high usage
-            color = '#ef4444';
-        }
-        
-        fillElement.style.backgroundColor = color;
-        console.log("Context usage updated to:", percentage, "% with color:", color);
+        // Use white color for the usage bar
+        fillElement.style.backgroundColor = '#FFFFFF';
+        console.log("Context usage updated to:", percentage, "% with white color");
     }
 
     /**
@@ -124,20 +107,37 @@ window.UIUtils = (function() {
             messageElement.dataset.id = id;
         }
         
+        // Create content container
+        const contentElement = document.createElement('div');
+        
         if (role === 'assistant') {
-            messageElement.innerHTML = `
-                <div class="message-content markdown-content">
-                    ${content ? renderMarkdown(content) : ''}
-                </div>
-            `;
+            contentElement.className = 'message-content markdown-content';
+            
+            // For assistant messages, only render markdown if content is not too large
+            // This improves initial rendering performance
+            if (content && content.length > 0) {
+                if (content.length < 5000) {
+                    // For smaller content, render immediately
+                    contentElement.innerHTML = renderMarkdown(content);
+                } else {
+                    // For larger content, use a more efficient approach
+                    // First add a loading indicator
+                    contentElement.innerHTML = '<p>Rendering message...</p>';
+                    
+                    // Then render the content asynchronously
+                    setTimeout(() => {
+                        contentElement.innerHTML = renderMarkdown(content);
+                    }, 10);
+                }
+            }
         } else {
-            messageElement.innerHTML = `
-                <div class="message-content">
-                    <p>${escapeHTML(content)}</p>
-                </div>
-            `;
+            contentElement.className = 'message-content';
+            const paragraph = document.createElement('p');
+            paragraph.textContent = content; // This is more efficient than innerHTML with escapeHTML
+            contentElement.appendChild(paragraph);
         }
         
+        messageElement.appendChild(contentElement);
         return messageElement;
     }
 
@@ -152,12 +152,6 @@ window.UIUtils = (function() {
         return typingIndicator;
     }
 
-    // Cache for context size by model
-    const contextSizeCache = {};
-    
-    // Cache for token estimates by content length
-    const tokenEstimateCache = {};
-    
     /**
      * Estimate token count based on character count
      * @param {Array} messages - Array of chat messages
@@ -167,23 +161,10 @@ window.UIUtils = (function() {
      * @returns {Object} - Object containing estimated tokens, context size, and usage percentage
      */
     function estimateContextUsage(messages, modelInfo, currentModel, systemPrompt = '') {
-        // Get context window size for the current model (use cache if available)
-        let contextSize = contextSizeCache[currentModel];
-        
-        if (!contextSize) {
-            // Try to get context size from ModelInfoService
-            if (window.ModelInfoService && typeof ModelInfoService.getContextSize === 'function') {
-                contextSize = ModelInfoService.getContextSize(currentModel);
-            }
-            
-            // If we couldn't get a context size, default to 8192
-            if (!contextSize) {
-                contextSize = 8192;
-            }
-            
-            // Cache the context size for this model
-            contextSizeCache[currentModel] = contextSize;
-        }
+        console.log("estimateContextUsage called with:");
+        console.log("- messages count:", messages ? messages.length : 0);
+        console.log("- currentModel:", currentModel);
+        console.log("- systemPrompt length:", systemPrompt ? systemPrompt.length : 0);
         
         // Estimate token count based on message content
         // A rough estimate is 1 token per 4 characters
@@ -192,33 +173,43 @@ window.UIUtils = (function() {
         // Add system prompt characters if provided
         if (systemPrompt) {
             totalChars += systemPrompt.length;
+            console.log("Added system prompt chars:", systemPrompt.length);
         }
         
         // Add message characters
+        let messageChars = 0;
         if (messages && messages.length > 0) {
-            for (let i = 0; i < messages.length; i++) {
-                const message = messages[i];
+            messages.forEach(message => {
                 if (message && message.content) {
                     totalChars += message.content.length;
+                    messageChars += message.content.length;
                 }
-            }
+            });
+        }
+        console.log("Added message chars:", messageChars);
+        
+        // Estimate tokens (4 chars per token is a rough approximation)
+        const estimatedTokens = Math.ceil(totalChars / 4);
+        console.log("Total chars:", totalChars, "Estimated tokens:", estimatedTokens);
+        
+        // Get context window size for the current model
+        let contextSize = null;
+        
+        // Try to get context size from ModelInfoService
+        if (window.ModelInfoService && typeof ModelInfoService.getContextSize === 'function') {
+            contextSize = ModelInfoService.getContextSize(currentModel);
         }
         
-        // Use cached token estimate if available
-        let estimatedTokens = tokenEstimateCache[totalChars];
-        if (!estimatedTokens) {
-            // Estimate tokens (4 chars per token is a rough approximation)
-            estimatedTokens = Math.ceil(totalChars / 4);
-            
-            // Cache the token estimate for this content length
-            // Only cache for reasonable content lengths to avoid memory issues
-            if (totalChars < 1000000) {
-                tokenEstimateCache[totalChars] = estimatedTokens;
-            }
+        // If we couldn't get a context size, default to 8192
+        if (!contextSize) {
+            contextSize = 8192;
         }
+        
+        console.log("Context size for model:", contextSize);
         
         // Calculate percentage
         const percentage = Math.min(Math.round((estimatedTokens / contextSize) * 100), 100);
+        console.log("Calculated percentage:", percentage, "%");
         
         return {
             estimatedTokens: estimatedTokens,
@@ -227,15 +218,24 @@ window.UIUtils = (function() {
         };
     }
 
+    // Create debounced versions of functions
+    const debouncedRenderMarkdown = debounce(renderMarkdown, 100); // 100ms debounce
+    const debouncedScrollToBottom = debounce(scrollToBottom, 250); // 250ms debounce
+    const debouncedUpdateContextUsage = debounce(updateContextUsage, 500); // 500ms debounce
+
     // Public API
     return {
         renderMarkdown: renderMarkdown,
+        debouncedRenderMarkdown: debouncedRenderMarkdown,
         escapeHTML: escapeHTML,
         scrollToBottom: scrollToBottom,
+        debouncedScrollToBottom: debouncedScrollToBottom,
         setupTextareaAutoResize: setupTextareaAutoResize,
         updateContextUsage: updateContextUsage,
+        debouncedUpdateContextUsage: debouncedUpdateContextUsage,
         createMessageElement: createMessageElement,
         createTypingIndicator: createTypingIndicator,
-        estimateContextUsage: estimateContextUsage
+        estimateContextUsage: estimateContextUsage,
+        debounce: debounce
     };
 })();
