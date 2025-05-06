@@ -131,8 +131,16 @@ def test_default_prompts_content(page, serve_hacka_re):
     function_calling_prompt = page.locator(".default-prompt-item:has-text('Function calling')")
     expect(function_calling_prompt).to_be_visible()
     
+    # Check that the OWASP Top 10 for LLM Applications prompt exists
+    owasp_prompt = page.locator(".default-prompt-item:has-text('OWASP Top 10 for LLM Applications')")
+    expect(owasp_prompt).to_be_visible()
+    
+    # Check that the MCP SDK README prompt exists
+    mcp_sdk_prompt = page.locator(".default-prompt-item:has-text('Model Context Protocol SDK README')")
+    expect(mcp_sdk_prompt).to_be_visible()
+    
     # Check that each default prompt has a checkbox
-    for prompt in [hacka_re_prompt, function_calling_prompt]:
+    for prompt in [hacka_re_prompt, function_calling_prompt, owasp_prompt, mcp_sdk_prompt]:
         checkbox = prompt.locator(".prompt-item-checkbox")
         expect(checkbox).to_be_visible()
         
@@ -175,7 +183,9 @@ def test_default_prompts_selection(page, serve_hacka_re):
     # Define the prompts to test
     prompts_to_test = [
         ".default-prompt-item:has-text('About hacka.re Project')",
-        ".default-prompt-item:has-text('Function calling')"
+        ".default-prompt-item:has-text('Function calling')",
+        ".default-prompt-item:has-text('OWASP Top 10 for LLM Applications')",
+        ".default-prompt-item:has-text('Model Context Protocol SDK README')"
     ]
     
     # Test each prompt
@@ -249,6 +259,16 @@ def test_default_prompts_info_button(page, serve_hacka_re):
             "selector": ".default-prompt-item:has-text('Function calling')",
             "expected_label": "Function calling (experimental)",
             "expected_content_fragment": "OpenAI-compatible function calling"
+        },
+        {
+            "selector": ".default-prompt-item:has-text('OWASP Top 10 for LLM Applications')",
+            "expected_label": "OWASP Top 10 for LLM Applications",
+            "expected_content_fragment": "OWASP Top 10 for Large Language Model Applications"
+        },
+        {
+            "selector": ".default-prompt-item:has-text('Model Context Protocol SDK README')",
+            "expected_label": "Model Context Protocol SDK README",
+            "expected_content_fragment": "MCP Python SDK"
         }
     ]
     
