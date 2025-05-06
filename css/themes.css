@@ -221,6 +221,14 @@ html.theme-midnight {
 .theme-modern.dark-mode .modal-content {
     background-color: var(--bg-color-secondary);
     border-color: var(--border-color);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+/* Light mode modal content */
+.theme-modern .modal-content {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .theme-modern.dark-mode input, 
@@ -234,6 +242,14 @@ html.theme-midnight {
 .theme-modern.dark-mode .model-dropdown {
     background-color: var(--bg-color-secondary);
     border-color: var(--border-color);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+/* Light mode model dropdown */
+.theme-modern .model-dropdown {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 /* Header and footer styles for dark mode */
@@ -298,23 +314,66 @@ html.theme-midnight {
     border-color: var(--border-color);
     color: var(--text-color);
     box-shadow: none;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+/* Light mode tooltip */
+.theme-modern .tooltip {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 /* Dark mode toggle button styles */
-#dark-mode-toggle {
-    transition: transform 0.3s ease;
+#dark-mode-toggle-btn {
+    transition: background-color 0.3s ease;
 }
 
-#dark-mode-toggle:hover {
-    transform: rotate(15deg);
+#dark-mode-toggle-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2); /* Add background on hover for better visibility */
 }
 
-.theme-modern.dark-mode #dark-mode-toggle i.fa-sun {
+.theme-modern.dark-mode #dark-mode-toggle-btn i.fa-sun {
     color: #f6e05e; /* Yellow for sun icon */
 }
 
-.theme-modern #dark-mode-toggle i.fa-moon {
+.theme-modern #dark-mode-toggle-btn i.fa-moon {
     color: #6b7280; /* Gray for moon icon */
+}
+
+/* Theme toggle button styles */
+#theme-toggle-btn {
+    transition: background-color 0.3s ease;
+}
+
+#theme-toggle-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2); /* Add background on hover for better visibility */
+}
+
+/* Override the header text gradient effect for all icon buttons */
+header .settings .icon-btn i,
+#theme-toggle-btn i.fa-paint-brush,
+#dark-mode-toggle-btn i,
+#mcp-btn .mcp-icon,
+#prompts-btn i,
+#share-btn i,
+#clear-chat i,
+#settings-btn i {
+    animation: none !important;
+    background: none !important;
+    -webkit-background-clip: initial !important;
+    background-clip: initial !important;
+    -webkit-text-fill-color: initial !important;
+    text-fill-color: initial !important;
+}
+
+/* Make paintbrush icon white in all themes */
+#theme-toggle-btn i.fa-paint-brush {
+    color: #ffffff; /* White for paint brush icon in all themes */
+}
+
+#theme-toggle-btn:hover i.fa-paint-brush {
+    color: #ffffff; /* Maintain white color on hover in all themes */
 }
 
 /* Fix for send button focus ring in dark mode */
@@ -471,8 +530,8 @@ html.theme-midnight {
 
 /* Modal open effects for modern theme */
 .theme-modern.modal-open .app-container > *:not(.modal) {
-    filter: blur(5px);
-    opacity: 0.8;
+    filter: blur(8px);
+    opacity: 0.7;
     transition: filter 0.3s ease, opacity 0.3s ease;
 }
 
@@ -523,6 +582,7 @@ html.theme-midnight {
 .theme-modern.dark-mode html,
 .theme-modern.dark-mode body {
     height: 100vh;
+    width: 100%;
     margin: 0;
     padding: 0;
     overflow-x: hidden;
@@ -531,6 +591,7 @@ html.theme-midnight {
 .theme-modern.dark-mode body {
     display: flex;
     flex-direction: column;
+    width: 100%;
 }
 
 .theme-modern.dark-mode .app-container {
@@ -538,6 +599,8 @@ html.theme-midnight {
     display: flex;
     flex-direction: column;
     height: 100vh;
+    width: 100%;
+    max-width: 100%;
     margin: 0;
     padding: 0;
 }
@@ -811,6 +874,8 @@ html.theme-midnight {
     background-color: rgba(0, 0, 0, 0.7);
     color: var(--light-text);
     border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .theme-sunset .modal-content h2,
@@ -1006,6 +1071,7 @@ html.theme-midnight {
 .theme-forest html, .theme-forest body,
 .theme-midnight html, .theme-midnight body {
     height: 100vh;
+    width: 100%;
     margin: 0;
     padding: 0;
     overflow-x: hidden;
@@ -1017,6 +1083,7 @@ html.theme-midnight {
 .theme-midnight body {
     display: flex;
     flex-direction: column;
+    width: 100%;
 }
 
 .theme-sunset .app-container,
@@ -1027,6 +1094,8 @@ html.theme-midnight {
     display: flex;
     flex-direction: column;
     height: 100vh;
+    width: 100%;
+    max-width: 100%;
     margin: 0;
     padding: 0;
 }
@@ -1082,6 +1151,79 @@ html.theme-midnight {
     margin-bottom: 0;
 }
 
+/* Header button styles for gradient themes */
+.theme-sunset header .settings .icon-btn i,
+.theme-ocean header .settings .icon-btn i,
+.theme-forest header .settings .icon-btn i,
+.theme-midnight header .settings .icon-btn i,
+.theme-sunset #theme-toggle-btn i.fa-paint-brush,
+.theme-ocean #theme-toggle-btn i.fa-paint-brush,
+.theme-forest #theme-toggle-btn i.fa-paint-brush,
+.theme-midnight #theme-toggle-btn i.fa-paint-brush,
+.theme-sunset #dark-mode-toggle-btn i,
+.theme-ocean #dark-mode-toggle-btn i,
+.theme-forest #dark-mode-toggle-btn i,
+.theme-midnight #dark-mode-toggle-btn i,
+.theme-sunset #mcp-btn .mcp-icon,
+.theme-ocean #mcp-btn .mcp-icon,
+.theme-forest #mcp-btn .mcp-icon,
+.theme-midnight #mcp-btn .mcp-icon,
+.theme-sunset #prompts-btn i,
+.theme-ocean #prompts-btn i,
+.theme-forest #prompts-btn i,
+.theme-midnight #prompts-btn i,
+.theme-sunset #share-btn i,
+.theme-ocean #share-btn i,
+.theme-forest #share-btn i,
+.theme-midnight #share-btn i,
+.theme-sunset #clear-chat i,
+.theme-ocean #clear-chat i,
+.theme-forest #clear-chat i,
+.theme-midnight #clear-chat i,
+.theme-sunset #settings-btn i,
+.theme-ocean #settings-btn i,
+.theme-forest #settings-btn i,
+.theme-midnight #settings-btn i {
+    animation: none !important;
+    background: none !important;
+    -webkit-background-clip: initial !important;
+    background-clip: initial !important;
+    -webkit-text-fill-color: initial !important;
+    text-fill-color: initial !important;
+    color: var(--light-text); /* White color for icons in gradient themes */
+}
+
+.theme-sunset header .settings .icon-btn:hover i,
+.theme-ocean header .settings .icon-btn:hover i,
+.theme-forest header .settings .icon-btn:hover i,
+.theme-midnight header .settings .icon-btn:hover i,
+.theme-sunset #theme-toggle-btn:hover i.fa-paint-brush,
+.theme-ocean #theme-toggle-btn:hover i.fa-paint-brush,
+.theme-forest #theme-toggle-btn:hover i.fa-paint-brush,
+.theme-midnight #theme-toggle-btn:hover i.fa-paint-brush,
+.theme-sunset #dark-mode-toggle-btn:hover i,
+.theme-ocean #dark-mode-toggle-btn:hover i,
+.theme-forest #dark-mode-toggle-btn:hover i,
+.theme-midnight #dark-mode-toggle-btn:hover i,
+.theme-sunset #mcp-btn:hover .mcp-icon,
+.theme-ocean #mcp-btn:hover .mcp-icon,
+.theme-forest #mcp-btn:hover .mcp-icon,
+.theme-midnight #mcp-btn:hover .mcp-icon,
+.theme-sunset #prompts-btn:hover i,
+.theme-ocean #prompts-btn:hover i,
+.theme-forest #prompts-btn:hover i,
+.theme-midnight #prompts-btn:hover i,
+.theme-sunset #share-btn:hover i,
+.theme-ocean #share-btn:hover i,
+.theme-forest #share-btn:hover i,
+.theme-midnight #share-btn:hover i,
+.theme-sunset #settings-btn:hover i,
+.theme-ocean #settings-btn:hover i,
+.theme-forest #settings-btn:hover i,
+.theme-midnight #settings-btn:hover i {
+    color: var(--light-text); /* Maintain white color on hover in gradient themes */
+}
+
 /* Tooltip styles for gradient themes */
 .theme-sunset .tooltip,
 .theme-ocean .tooltip,
@@ -1090,6 +1232,8 @@ html.theme-midnight {
     background-color: rgba(0, 0, 0, 0.7);
     color: var(--light-text);
     border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .theme-sunset .tooltip::after,
@@ -1113,8 +1257,8 @@ html.theme-midnight {
 .theme-ocean.modal-open .app-container > *:not(.modal),
 .theme-forest.modal-open .app-container > *:not(.modal),
 .theme-midnight.modal-open .app-container > *:not(.modal) {
-    filter: blur(5px);
-    opacity: 0.8;
+    filter: blur(8px);
+    opacity: 0.7;
     transition: filter 0.3s ease, opacity 0.3s ease;
 }
 
@@ -1142,6 +1286,8 @@ html.theme-midnight {
     background-color: rgba(0, 0, 0, 0.7);
     color: var(--light-text);
     border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .theme-sunset #model-card-info,
