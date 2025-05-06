@@ -291,8 +291,14 @@
                                     <input type="text" id="mcp-server-name" placeholder="Enter a name for this server" required>
                                 </div>
                                 <div class="form-group">
-                                    <label for="mcp-server-command">Server Command</label>
-                                    <input type="text" id="mcp-server-command" placeholder="Command to start the server (e.g., node server.js)" required>
+                                    <label for="mcp-server-url">Server URL</label>
+                                    <input type="text" id="mcp-server-url" placeholder="URL to connect to the server (e.g., http://localhost:8000)" required>
+                                    <p class="form-help">The URL where the MCP server is accessible (required for network-based connections)</p>
+                                </div>
+                                <div class="form-group">
+                                    <label for="mcp-server-command">Server Command (reference only)</label>
+                                    <input type="text" id="mcp-server-command" placeholder="Command used to start the server (for reference only)">
+                                    <p class="form-help">This is just for documentation - commands cannot be executed from the browser</p>
                                 </div>
                                 <div class="form-group">
                                     <label for="mcp-server-env">Environment Variables (optional)</label>

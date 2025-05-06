@@ -25,9 +25,27 @@ window.McpPrompt = {
 
 **Adding MCP Servers in hacka.re**
 1. Click the MCP button in the top toolbar
-2. Fill out the server form with name, command, and environment variables
+2. Fill out the server form with name, URL, optional command reference, and environment variables
 3. Click "Add Server" to register the server
-4. Use the start/stop button to control the server
+4. Use the start/stop button to control the server connection
+
+**Network-Based MCP Connections**
+- As a browser-based application, hacka.re cannot directly execute commands
+- MCP servers must be started externally and exposed over HTTP
+- The URL field is required to connect to MCP servers over the network
+- The command field is for reference only (documentation of how to start the server)
+
+**Using Supergateway for MCP Servers**
+- Supergateway can be used to expose MCP servers over HTTP:
+  \\\`\\\`\\\`
+  npx -y supergateway \\\\
+    --stdio "npx -y @modelcontextprotocol/server-filesystem ./my-folder" \\\\
+    --port 8000 \\\\
+    --baseUrl http://localhost:8000 \\\\
+    --ssePath /sse \\\\
+    --messagePath /message
+  \\\`\\\`\\\`
+- Then connect to it in hacka.re using the URL: \\\`http://localhost:8000\\\`
 
 **Testing MCP Functionality**
 - Playwright tests are available in \`_tests/playwright/test_mcp.py\`
