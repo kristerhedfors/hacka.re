@@ -270,15 +270,43 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
             const messageElement = document.querySelector(`.message[data-id="${id}"]`);
             if (messageElement) {
                 const contentElement = messageElement.querySelector('.message-content');
-                contentElement.innerHTML = UIUtils.renderMarkdown(content);
-                UIUtils.scrollToBottom(elements.chatMessages);
+                
+                // Use requestAnimationFrame for smoother UI updates
+                window.requestAnimationFrame(() => {
+                    contentElement.innerHTML = UIUtils.renderMarkdown(content);
+                    UIUtils.scrollToBottom(elements.chatMessages);
+                });
                 
                 // Calculate token speed
                 calculateTokenSpeed(content);
                 
-                // Update context usage
-                if (updateContextUsage) {
-                    estimateContextUsage(updateContextUsage);
+                // Update context usage less frequently during streaming
+                // Only update every 1000ms or when content length changes significantly
+                const now = Date.now();
+                const contentLengthThreshold = 500; // Update if content grows by 500 chars
+                
+                // Store the last content length and update time on the message element
+                if (!messageElement.dataset.lastContentLength) {
+                    messageElement.dataset.lastContentLength = "0";
+                    messageElement.dataset.lastUpdateTime = "0";
+                }
+                
+                const lastContentLength = parseInt(messageElement.dataset.lastContentLength, 10);
+                const lastUpdateTime = parseInt(messageElement.dataset.lastUpdateTime, 10);
+                
+                // Check if we should update context usage
+                const timeSinceLastUpdate = now - lastUpdateTime;
+                const contentLengthDelta = Math.abs(content.length - lastContentLength);
+                
+                if (timeSinceLastUpdate > 1000 || contentLengthDelta > contentLengthThreshold) {
+                    // Update the last content length and update time
+                    messageElement.dataset.lastContentLength = content.length.toString();
+                    messageElement.dataset.lastUpdateTime = now.toString();
+                    
+                    // Update context usage
+                    if (updateContextUsage) {
+                        estimateContextUsage(updateContextUsage);
+                    }
                 }
             }
         }
@@ -288,10 +316,12 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
          * @param {string} content - Current content
          */
         function calculateTokenSpeed(content) {
+            const now = Date.now();
+            
             // Initialize timing on first token
             if (!generationStartTime) {
-                generationStartTime = Date.now();
-                lastUpdateTime = generationStartTime;
+                generationStartTime = now;
+                lastUpdateTime = now;
                 tokenCount = 0;
                 
                 // Reset token speed display
@@ -302,24 +332,31 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
             }
             
             // Estimate new tokens (rough approximation: 1 token per 4 characters)
-            const newContent = content;
-            const newTokenCount = Math.ceil(newContent.length / 4);
+            const newTokenCount = Math.ceil(content.length / 4);
             
             // Calculate tokens added since last update
-            const tokenDelta = newTokenCount - tokenCount;
             tokenCount = newTokenCount;
             
-            // Only update speed calculation periodically to smooth out the display
-            const now = Date.now();
-            const timeSinceStart = (now - generationStartTime) / 1000; // in seconds
+            // Only update the display every 500ms to reduce UI updates
+            if (now - lastUpdateTime < 500) {
+                return;
+            }
+            
+            // Update the last update time
+            lastUpdateTime = now;
+            
+            // Calculate time since start in seconds
+            const timeSinceStart = (now - generationStartTime) / 1000;
             
             if (timeSinceStart > 0 && tokenCount > 0) {
                 // Calculate tokens per second
                 const tokensPerSecond = Math.round(tokenCount / timeSinceStart);
                 
-                // Update the display
+                // Update the display using requestAnimationFrame to avoid blocking the main thread
                 if (elements.tokenSpeedText) {
-                    elements.tokenSpeedText.textContent = `${tokensPerSecond} t/s`;
+                    window.requestAnimationFrame(() => {
+                        elements.tokenSpeedText.textContent = `${tokensPerSecond} t/s`;
+                    });
                 }
             }
         }

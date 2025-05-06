@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Token Streaming Performance Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .test-container {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        
+        .output {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            margin-top: 10px;
+        }
+        
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        
+        .stats {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        
+        .controls {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            margin-right: 10px;
+        }
+        
+        input[type="number"] {
+            width: 80px;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Token Streaming Performance Test</h1>
+    
+    <div class="test-container">
+        <h2>Test Configuration</h2>
+        <div class="controls">
+            <label for="token-count">Number of tokens to simulate:</label>
+            <input type="number" id="token-count" value="1000" min="100" max="10000">
+            
+            <label for="token-delay">Delay between tokens (ms):</label>
+            <input type="number" id="token-delay" value="10" min="1" max="100">
+        </div>
+        
+        <button id="start-test">Start Test</button>
+        <button id="stop-test">Stop Test</button>
+        
+        <div class="stats">
+            <div>Tokens streamed: <span id="tokens-streamed">0</span></div>
+            <div>Tokens per second: <span id="tokens-per-second">0</span></div>
+            <div>Elapsed time: <span id="elapsed-time">0.00s</span></div>
+        </div>
+        
+        <h3>Output:</h3>
+        <div id="output" class="output"></div>
+    </div>
+    
+    <script>
+        // Load the required libraries from the main project
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+        
+        // Load required libraries
+        Promise.all([
+            loadScript('../lib/marked/marked.min.js'),
+            loadScript('../lib/dompurify/purify.min.js')
+        ]).then(() => {
+            console.log('Libraries loaded successfully');
+            
+            // Variables for the test
+            let testRunning = false;
+            let startTime = 0;
+            let tokensStreamed = 0;
+            let outputInterval;
+            let statsInterval;
+            let testText = '';
+            
+            // Generate some test text with markdown formatting
+            function generateTestText(length) {
+                const paragraphs = [
+                    "# Heading 1\n\nThis is a paragraph with **bold** and *italic* text.",
+                    "## Heading 2\n\nHere's a list:\n- Item 1\n- Item 2\n- Item 3",
+                    "### Code Example\n\n```javascript\nfunction hello() {\n  console.log('Hello world!');\n}\n```",
+                    "#### Heading 4\n\nHere's a [link](https://example.com) and some `inline code`.",
+                    "##### Heading 5\n\n> This is a blockquote with some text that spans multiple lines to demonstrate how blockquotes are rendered.",
+                    "###### Heading 6\n\n1. Ordered item 1\n2. Ordered item 2\n3. Ordered item 3",
+                    "Here's a horizontal rule:\n\n---\n\nAnd some more text after it."
+                ];
+                
+                let result = '';
+                while (result.length < length * 4) { // Approximate 4 chars per token
+                    result += paragraphs[Math.floor(Math.random() * paragraphs.length)] + '\n\n';
+                }
+                
+                return result.substring(0, length * 4); // Trim to approximate token count
+            }
+            
+            // Render markdown with the optimized function
+            function renderMarkdown(text) {
+                // Skip rendering if text is empty
+                if (!text || text.trim() === '') {
+                    return '';
+                }
+                
+                try {
+                    // Configure marked for better performance
+                    marked.setOptions({
+                        gfm: true,
+                        breaks: true,
+                        silent: true,  // Don't throw on parse errors
+                        smartLists: true,
+                        smartypants: false, // Disable smartypants for better performance
+                        headerIds: false,   // Disable header IDs for better performance
+                        mangle: false       // Disable mangling for better performance
+                    });
+                    
+                    // Uses marked.js to render markdown
+                    // DOMPurify is used to sanitize the HTML
+                    return DOMPurify.sanitize(marked.parse(text));
+                } catch (e) {
+                    console.error('Error rendering markdown:', e);
+                    // Fallback to simple HTML escaping if markdown rendering fails
+                    return `<p>${text}</p>`;
+                }
+            }
+            
+            // Elements
+            const startTestBtn = document.getElementById('start-test');
+            const stopTestBtn = document.getElementById('stop-test');
+            const tokenCountInput = document.getElementById('token-count');
+            const tokenDelayInput = document.getElementById('token-delay');
+            const outputElement = document.getElementById('output');
+            const tokensStreamedElement = document.getElementById('tokens-streamed');
+            const tokensPerSecondElement = document.getElementById('tokens-per-second');
+            const elapsedTimeElement = document.getElementById('elapsed-time');
+            
+            // Start the test
+            startTestBtn.addEventListener('click', () => {
+                if (testRunning) return;
+                
+                // Reset state
+                testRunning = true;
+                tokensStreamed = 0;
+                startTime = Date.now();
+                outputElement.innerHTML = '';
+                tokensStreamedElement.textContent = '0';
+                tokensPerSecondElement.textContent = '0';
+                elapsedTimeElement.textContent = '0.00s';
+                
+                // Get test parameters
+                const tokenCount = parseInt(tokenCountInput.value, 10);
+                const tokenDelay = parseInt(tokenDelayInput.value, 10);
+                
+                // Generate test text
+                testText = generateTestText(tokenCount);
+                
+                // Start streaming tokens
+                let currentPosition = 0;
+                const chunkSize = 5; // Simulate 5 tokens at a time (about 20 chars)
+                
+                outputInterval = setInterval(() => {
+                    if (!testRunning || currentPosition >= testText.length) {
+                        clearInterval(outputInterval);
+                        testRunning = false;
+                        return;
+                    }
+                    
+                    // Get the next chunk of text
+                    const nextPosition = Math.min(currentPosition + chunkSize * 4, testText.length);
+                    const chunk = testText.substring(0, nextPosition);
+                    currentPosition = nextPosition;
+                    
+                    // Update tokens streamed
+                    tokensStreamed = Math.ceil(currentPosition / 4);
+                    tokensStreamedElement.textContent = tokensStreamed;
+                    
+                    // Render the markdown
+                    window.requestAnimationFrame(() => {
+                        outputElement.innerHTML = renderMarkdown(chunk);
+                        outputElement.scrollTop = outputElement.scrollHeight;
+                    });
+                    
+                    // Stop if we've reached the end
+                    if (currentPosition >= testText.length) {
+                        clearInterval(outputInterval);
+                        testRunning = false;
+                    }
+                }, tokenDelay);
+                
+                // Update stats every 100ms
+                statsInterval = setInterval(() => {
+                    if (!testRunning) {
+                        clearInterval(statsInterval);
+                        return;
+                    }
+                    
+                    const elapsedSeconds = (Date.now() - startTime) / 1000;
+                    elapsedTimeElement.textContent = elapsedSeconds.toFixed(2) + 's';
+                    
+                    const tokensPerSecond = Math.round(tokensStreamed / elapsedSeconds);
+                    tokensPerSecondElement.textContent = tokensPerSecond;
+                }, 100);
+            });
+            
+            // Stop the test
+            stopTestBtn.addEventListener('click', () => {
+                if (!testRunning) return;
+                
+                testRunning = false;
+                clearInterval(outputInterval);
+                clearInterval(statsInterval);
+            });
+        }).catch(error => {
+            console.error('Error loading libraries:', error);
+            document.body.innerHTML = '<h1>Error loading libraries</h1><p>Please make sure you are running this file from the hacka.re project directory.</p>';
+        });
+    </script>
+</body>
+</html>

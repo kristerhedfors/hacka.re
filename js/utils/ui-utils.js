@@ -10,9 +10,31 @@ window.UIUtils = (function() {
      * @returns {string} - Sanitized HTML
      */
     function renderMarkdown(text) {
-        // Uses marked.js to render markdown
-        // DOMPurify is used to sanitize the HTML
-        return DOMPurify.sanitize(marked.parse(text));
+        // Skip rendering if text is empty
+        if (!text || text.trim() === '') {
+            return '';
+        }
+        
+        try {
+            // Configure marked for better performance
+            marked.setOptions({
+                gfm: true,
+                breaks: true,
+                silent: true,  // Don't throw on parse errors
+                smartLists: true,
+                smartypants: false, // Disable smartypants for better performance
+                headerIds: false,   // Disable header IDs for better performance
+                mangle: false       // Disable mangling for better performance
+            });
+            
+            // Uses marked.js to render markdown
+            // DOMPurify is used to sanitize the HTML
+            return DOMPurify.sanitize(marked.parse(text));
+        } catch (e) {
+            console.error('Error rendering markdown:', e);
+            // Fallback to simple HTML escaping if markdown rendering fails
+            return `<p>${escapeHTML(text)}</p>`;
+        }
     }
 
     /**
@@ -130,6 +152,12 @@ window.UIUtils = (function() {
         return typingIndicator;
     }
 
+    // Cache for context size by model
+    const contextSizeCache = {};
+    
+    // Cache for token estimates by content length
+    const tokenEstimateCache = {};
+    
     /**
      * Estimate token count based on character count
      * @param {Array} messages - Array of chat messages
@@ -139,10 +167,23 @@ window.UIUtils = (function() {
      * @returns {Object} - Object containing estimated tokens, context size, and usage percentage
      */
     function estimateContextUsage(messages, modelInfo, currentModel, systemPrompt = '') {
-        console.log("estimateContextUsage called with:");
-        console.log("- messages count:", messages ? messages.length : 0);
-        console.log("- currentModel:", currentModel);
-        console.log("- systemPrompt length:", systemPrompt ? systemPrompt.length : 0);
+        // Get context window size for the current model (use cache if available)
+        let contextSize = contextSizeCache[currentModel];
+        
+        if (!contextSize) {
+            // Try to get context size from ModelInfoService
+            if (window.ModelInfoService && typeof ModelInfoService.getContextSize === 'function') {
+                contextSize = ModelInfoService.getContextSize(currentModel);
+            }
+            
+            // If we couldn't get a context size, default to 8192
+            if (!contextSize) {
+                contextSize = 8192;
+            }
+            
+            // Cache the context size for this model
+            contextSizeCache[currentModel] = contextSize;
+        }
         
         // Estimate token count based on message content
         // A rough estimate is 1 token per 4 characters
@@ -151,43 +192,33 @@ window.UIUtils = (function() {
         // Add system prompt characters if provided
         if (systemPrompt) {
             totalChars += systemPrompt.length;
-            console.log("Added system prompt chars:", systemPrompt.length);
         }
         
         // Add message characters
-        let messageChars = 0;
         if (messages && messages.length > 0) {
-            messages.forEach(message => {
+            for (let i = 0; i < messages.length; i++) {
+                const message = messages[i];
                 if (message && message.content) {
                     totalChars += message.content.length;
-                    messageChars += message.content.length;
                 }
-            });
-        }
-        console.log("Added message chars:", messageChars);
-        
-        // Estimate tokens (4 chars per token is a rough approximation)
-        const estimatedTokens = Math.ceil(totalChars / 4);
-        console.log("Total chars:", totalChars, "Estimated tokens:", estimatedTokens);
-        
-        // Get context window size for the current model
-        let contextSize = null;
-        
-        // Try to get context size from ModelInfoService
-        if (window.ModelInfoService && typeof ModelInfoService.getContextSize === 'function') {
-            contextSize = ModelInfoService.getContextSize(currentModel);
+            }
         }
         
-        // If we couldn't get a context size, default to 8192
-        if (!contextSize) {
-            contextSize = 8192;
+        // Use cached token estimate if available
+        let estimatedTokens = tokenEstimateCache[totalChars];
+        if (!estimatedTokens) {
+            // Estimate tokens (4 chars per token is a rough approximation)
+            estimatedTokens = Math.ceil(totalChars / 4);
+            
+            // Cache the token estimate for this content length
+            // Only cache for reasonable content lengths to avoid memory issues
+            if (totalChars < 1000000) {
+                tokenEstimateCache[totalChars] = estimatedTokens;
+            }
         }
-        
-        console.log("Context size for model:", contextSize);
         
         // Calculate percentage
         const percentage = Math.min(Math.round((estimatedTokens / contextSize) * 100), 100);
-        console.log("Calculated percentage:", percentage, "%");
         
         return {
             estimatedTokens: estimatedTokens,
