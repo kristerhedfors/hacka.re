@@ -80,6 +80,7 @@ window.DOMElements = (function() {
             clearChat: document.getElementById('clear-chat'),
             
             // Model info elements
+            modelNameDisplay: document.querySelector('.model-name-display'),
             modelContextElement: document.querySelector('.model-context'),
             modelStats: document.querySelector('.model-stats'),
             usageFill: document.querySelector('.usage-fill'),
