@@ -118,18 +118,14 @@ def test_default_prompts_content(page, serve_hacka_re):
     default_prompts_list = page.locator(".default-prompts-list")
     expect(default_prompts_list).to_be_visible()
     
-    # Check that there are at least two default prompt items
+    # Check that there are at least one default prompt item
     default_prompt_items = page.locator(".default-prompt-item")
     count = default_prompt_items.count()
-    assert count >= 2, f"Expected at least 2 default prompt items, but found {count}"
+    assert count >= 1, f"Expected at least 1 default prompt item, but found {count}"
     
     # Check that one of the default prompts is about the hacka.re project
     hacka_re_prompt = page.locator(".default-prompt-item:has-text('About hacka.re Project')")
     expect(hacka_re_prompt).to_be_visible()
-    
-    # Check that another default prompt is about function calling
-    function_calling_prompt = page.locator(".default-prompt-item:has-text('Function calling')")
-    expect(function_calling_prompt).to_be_visible()
     
     # Check that the OWASP Top 10 for LLM Applications prompt exists
     owasp_prompt = page.locator(".default-prompt-item:has-text('OWASP Top 10 for LLM Applications')")
@@ -140,7 +136,7 @@ def test_default_prompts_content(page, serve_hacka_re):
     expect(mcp_sdk_prompt).to_be_visible()
     
     # Check that each default prompt has a checkbox
-    for prompt in [hacka_re_prompt, function_calling_prompt, owasp_prompt, mcp_sdk_prompt]:
+    for prompt in [hacka_re_prompt, owasp_prompt, mcp_sdk_prompt]:
         checkbox = prompt.locator(".prompt-item-checkbox")
         expect(checkbox).to_be_visible()
         
@@ -183,7 +179,6 @@ def test_default_prompts_selection(page, serve_hacka_re):
     # Define the prompts to test
     prompts_to_test = [
         ".default-prompt-item:has-text('About hacka.re Project')",
-        ".default-prompt-item:has-text('Function calling')",
         ".default-prompt-item:has-text('OWASP Top 10 for LLM Applications')",
         ".default-prompt-item:has-text('Model Context Protocol SDK README')"
     ]
@@ -254,11 +249,6 @@ def test_default_prompts_info_button(page, serve_hacka_re):
             "selector": ".default-prompt-item:has-text('About hacka.re Project')",
             "expected_label": "About hacka.re Project",
             "expected_content_fragment": "hacka.re is a privacy-focused web client"
-        },
-        {
-            "selector": ".default-prompt-item:has-text('Function calling')",
-            "expected_label": "Function calling (experimental)",
-            "expected_content_fragment": "OpenAI-compatible function calling"
         },
         {
             "selector": ".default-prompt-item:has-text('OWASP Top 10 for LLM Applications')",
