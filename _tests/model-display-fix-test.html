@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Display Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-result {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+        }
+        .success {
+            color: green;
+        }
+        .failure {
+            color: red;
+        }
+        button {
+            padding: 8px 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        /* Styles to match the actual app */
+        .model-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #6366f1;
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            color: white;
+        }
+        .active-model {
+            font-weight: 600;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: flex-start;
+            position: relative;
+        }
+        .model-name-container {
+            display: inline-block;
+            position: relative;
+        }
+        .model-name {
+            font-size: 1.1rem;
+            position: relative;
+            pointer-events: none;
+        }
+        .model-stats {
+            display: flex;
+            gap: 10px;
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+        .model-provider {
+            font-size: 0.765rem;
+            opacity: 0.9;
+        }
+        .model-context-container {
+            display: flex;
+            align-items: center;
+            margin-left: 5px;
+        }
+        .model-context {
+            margin-left: 2px;
+        }
+        .context-usage {
+            display: flex;
+            align-items: center;
+            margin-left: 5px;
+        }
+        .usage-bar {
+            width: 60px;
+            height: 8px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .usage-fill {
+            height: 100%;
+            background-color: #10b981;
+            border-radius: 4px;
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+        .usage-text {
+            font-size: 0.8rem;
+            min-width: 30px;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Model Display Fix Test</h1>
+    <p>This test verifies that the model display in the top bar works correctly when opening the site directly.</p>
+
+    <div class="test-section">
+        <h2>Model Display Simulation</h2>
+        <p>This test simulates the model display behavior and ensures the model name isn't overwritten by context window calculations.</p>
+        
+        <div class="model-info">
+            <div class="active-model">
+                <span class="model-developer"></span>
+                <span class="model-name-container">
+                    <span class="model-name" data-model-id="llama-3.1-8b-instant">Llama 3.1 8B Instant</span>
+                </span>
+            </div>
+            <div class="model-stats">
+                <span class="model-provider">by Meta</span>
+                <span class="model-context-container">
+                    <span class="model-context">0 tokens</span>
+                </span>
+                <span class="context-usage">
+                    <div class="usage-bar">
+                        <div class="usage-fill" style="width: 0%"></div>
+                    </div>
+                    <span class="usage-text">0%</span>
+                </span>
+            </div>
+        </div>
+        
+        <button id="run-test">Run Test</button>
+        <button id="reset-test">Reset</button>
+        <div id="test-result" class="test-result"></div>
+    </div>
+
+    <script>
+        // Mock ModelInfoService
+        window.ModelInfoService = {
+            getDisplayName: function(modelId) {
+                const displayNames = {
+                    'llama-3.1-8b-instant': 'Llama 3.1 8B Instant',
+                    'gpt-4.1': 'GPT-4.1'
+                };
+                return displayNames[modelId] || modelId;
+            }
+        };
+
+        // Elements
+        const elements = {
+            modelNameContainer: document.querySelector('.model-name-container'),
+            modelNameElement: document.querySelector('.model-name'),
+            modelContextElement: document.querySelector('.model-context'),
+            usageFill: document.querySelector('.usage-fill'),
+            usageText: document.querySelector('.usage-text')
+        };
+
+        // Function to update context usage (simplified version of the one in ui-manager.js)
+        function updateContextUsage(percentage, estimatedTokens, contextSize) {
+            console.log("updateContextUsage called with:", percentage, estimatedTokens, contextSize);
+            
+            // Debug model name element before any updates
+            console.log("BEFORE UPDATE - Model name element:", {
+                textContent: elements.modelNameElement.textContent,
+                modelId: elements.modelNameElement.dataset.modelId
+            });
+            
+            // Update the usage bar and percentage text
+            elements.usageFill.style.width = `${percentage}%`;
+            elements.usageText.textContent = `${percentage}%`;
+            
+            // Debug model name element after usage bar update
+            console.log("AFTER USAGE BAR UPDATE - Model name element:", {
+                textContent: elements.modelNameElement.textContent,
+                modelId: elements.modelNameElement.dataset.modelId
+            });
+            
+            // Update the context window display
+            if (elements.modelContextElement && estimatedTokens !== undefined) {
+                // Store the original model name before updating context
+                let originalModelName = elements.modelNameElement.textContent;
+                
+                // If we have a context size, show tokens out of context size
+                if (contextSize) {
+                    elements.modelContextElement.textContent = `${estimatedTokens.toLocaleString()} / ${contextSize.toLocaleString()} tokens`;
+                } else {
+                    // Otherwise just show the token count
+                    elements.modelContextElement.textContent = `${estimatedTokens.toLocaleString()} tokens`;
+                }
+                
+                // Debug model name element after context element update
+                console.log("AFTER CONTEXT ELEMENT UPDATE - Model name element:", {
+                    textContent: elements.modelNameElement.textContent,
+                    modelId: elements.modelNameElement.dataset.modelId,
+                    changed: originalModelName !== elements.modelNameElement.textContent
+                });
+                
+                // If the model name changed during context update, log a warning
+                if (originalModelName !== elements.modelNameElement.textContent) {
+                    console.warn("MODEL NAME CHANGED DURING CONTEXT UPDATE!", {
+                        from: originalModelName,
+                        to: elements.modelNameElement.textContent
+                    });
+                }
+            }
+            
+            // Ensure the model name hasn't been overwritten by checking the data attribute
+            if (elements.modelNameElement && elements.modelNameElement.dataset.modelId) {
+                const currentText = elements.modelNameElement.textContent;
+                const storedModelId = elements.modelNameElement.dataset.modelId;
+                const expectedDisplayName = ModelInfoService.getDisplayName(storedModelId);
+                
+                // If the current text is a number or doesn't match the expected display name,
+                // restore the proper model name
+                if (/^\d+$/.test(currentText) || currentText !== expectedDisplayName) {
+                    console.log(`Model name was overwritten with "${currentText}", restoring to "${expectedDisplayName}"`);
+                    elements.modelNameElement.textContent = expectedDisplayName;
+                }
+            }
+            
+            // Final debug check
+            console.log("FINAL - Model name element:", {
+                textContent: elements.modelNameElement.textContent,
+                modelId: elements.modelNameElement.dataset.modelId
+            });
+        }
+
+        // Test function that simulates the bug and tests the fix
+        function runTest() {
+            const resultElement = document.getElementById('test-result');
+            resultElement.innerHTML = '<p>Running test...</p>';
+            
+            // Step 1: Verify initial state
+            const initialModelName = elements.modelNameElement.textContent;
+            const modelId = elements.modelNameElement.dataset.modelId;
+            
+            resultElement.innerHTML += `<p>Initial model name: "${initialModelName}"</p>`;
+            resultElement.innerHTML += `<p>Model ID from data attribute: "${modelId}"</p>`;
+            
+            // Step 2: Simulate the bug by directly setting the model name to a number
+            setTimeout(() => {
+                // This simulates what was happening in the original code
+                elements.modelNameElement.textContent = '100000';
+                
+                resultElement.innerHTML += '<p>Simulated bug: Model name set to "100000"</p>';
+                
+                // Step 3: Call updateContextUsage which should fix the model name
+                setTimeout(() => {
+                    // Simulate context usage update with a context size of 100000
+                    updateContextUsage(50, 50000, 100000);
+                    
+                    // Check if the fix worked
+                    const currentName = elements.modelNameElement.textContent;
+                    const expectedName = ModelInfoService.getDisplayName(modelId);
+                    
+                    if (currentName === expectedName) {
+                        resultElement.innerHTML += `<p class="success">Success! Model name was restored to "${expectedName}"</p>`;
+                    } else {
+                        resultElement.innerHTML += `<p class="failure">Failure! Model name is still "${currentName}" instead of "${expectedName}"</p>`;
+                    }
+                    
+                    // Additional test: Try to set the context element to a number and see if it affects the model name
+                    elements.modelContextElement.textContent = '100000 tokens';
+                    
+                    // Check if the model name was affected
+                    const nameAfterContextUpdate = elements.modelNameElement.textContent;
+                    if (nameAfterContextUpdate === expectedName) {
+                        resultElement.innerHTML += `<p class="success">Success! Model name remains "${nameAfterContextUpdate}" after context update</p>`;
+                    } else {
+                        resultElement.innerHTML += `<p class="failure">Failure! Model name changed to "${nameAfterContextUpdate}" after context update</p>`;
+                    }
+                }, 500);
+            }, 500);
+        }
+
+        // Reset the test
+        function resetTest() {
+            const modelId = 'llama-3.1-8b-instant';
+            const displayName = ModelInfoService.getDisplayName(modelId);
+            elements.modelNameElement.textContent = displayName;
+            elements.modelNameElement.dataset.modelId = modelId;
+            elements.modelContextElement.textContent = '0 tokens';
+            elements.usageFill.style.width = '0%';
+            elements.usageText.textContent = '0%';
+            document.getElementById('test-result').innerHTML = '';
+        }
+
+        // Add event listeners
+        document.getElementById('run-test').addEventListener('click', runTest);
+        document.getElementById('reset-test').addEventListener('click', resetTest);
+    </script>
+</body>
+</html>

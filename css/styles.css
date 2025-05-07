@@ -489,11 +489,6 @@ body.firefox-focus .heart-logo {
     display: inline-block;
 }
 
-.model-name {
-    font-size: 1.1rem;
-    position: relative;
-    left: -16px; /* Move left to align with "by Meta" */
-}
 
 .model-stats {
     display: flex;
