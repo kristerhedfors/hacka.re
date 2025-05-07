@@ -370,12 +370,6 @@ window.UIManager = (function() {
         function updateModelInfoDisplay(currentModel) {
             if (!currentModel) {
                 // Clear all fields if no model is selected
-                if (elements.modelNameElement) {
-                    elements.modelNameElement.textContent = 'No model selected';
-                }
-                if (elements.modelDeveloperElement) {
-                    elements.modelDeveloperElement.textContent = '';
-                }
                 if (elements.modelContextElement) {
                     elements.modelContextElement.textContent = '';
                 }
@@ -383,31 +377,9 @@ window.UIManager = (function() {
                 return;
             }
             
-            // Get a simplified display name for the model
-            const displayName = ModelInfoService.getDisplayName(currentModel);
+            // Determine the provider based on the model ID
+            let provider = 'Custom';
             
-            // Update model name
-            if (elements.modelNameElement) {
-                elements.modelNameElement.textContent = displayName;
-            }
-            
-            // Determine the provider based on the base URL and model ID
-            let provider = '';
-            const baseUrl = StorageService.getBaseUrl();
-            
-            if (baseUrl) {
-                if (baseUrl.includes('groq.com')) {
-                    provider = 'Groq';
-                } else if (baseUrl.includes('openai.com')) {
-                    provider = 'OpenAI';
-                } else if (baseUrl.includes('localhost:11434')) {
-                    provider = 'Ollama';
-                } else {
-                    provider = 'Custom';
-                }
-            }
-            
-            // Determine model developer based on model ID
             if (typeof currentModel === 'string') {
                 if (currentModel.includes('llama')) {
                     provider = 'Meta';
@@ -417,13 +389,31 @@ window.UIManager = (function() {
                     provider = 'Mistral AI';
                 } else if (currentModel.includes('claude')) {
                     provider = 'Anthropic';
+                } else if (currentModel.includes('gpt')) {
+                    provider = 'OpenAI';
+                } else if (currentModel.includes('whisper')) {
+                    provider = 'OpenAI';
+                } else if (currentModel.includes('allam')) {
+                    provider = 'Aleph Alpha';
+                } else if (currentModel.includes('playai')) {
+                    provider = 'PlayAI';
+                } else if (currentModel.includes('qwen')) {
+                    provider = 'Alibaba';
+                } else if (currentModel.includes('deepseek')) {
+                    provider = 'DeepSeek';
+                } else {
+                    // If no specific model pattern is matched, determine by base URL
+                    const baseUrl = StorageService.getBaseUrl();
+                    if (baseUrl) {
+                        if (baseUrl.includes('groq.com')) {
+                            provider = 'Groq';
+                        } else if (baseUrl.includes('openai.com')) {
+                            provider = 'OpenAI';
+                        } else if (baseUrl.includes('localhost:11434')) {
+                            provider = 'Ollama';
+                        }
+                    }
                 }
-            }
-            
-            // Move model developer to the model stats section
-            if (elements.modelDeveloperElement) {
-                // Remove from active-model section
-                elements.modelDeveloperElement.textContent = '';
             }
             
             // Create or update provider element in model stats
@@ -478,6 +468,64 @@ window.UIManager = (function() {
                     // Otherwise just show the token count
                     elements.modelContextElement.textContent = `${estimatedTokens.toLocaleString()} tokens`;
                 }
+            }
+            
+            // Always update the model provider based on the current model
+            const currentModel = StorageService.getModel();
+            if (currentModel && elements.modelStats) {
+                // Determine the provider based on the model ID
+                let provider = 'Custom';
+                
+                if (typeof currentModel === 'string') {
+                    if (currentModel.includes('llama')) {
+                        provider = 'Meta';
+                    } else if (currentModel.includes('gemma')) {
+                        provider = 'Google';
+                    } else if (currentModel.includes('mistral') || currentModel.includes('mixtral')) {
+                        provider = 'Mistral AI';
+                    } else if (currentModel.includes('claude')) {
+                        provider = 'Anthropic';
+                    } else if (currentModel.includes('gpt')) {
+                        provider = 'OpenAI';
+                    } else if (currentModel.includes('whisper')) {
+                        provider = 'OpenAI';
+                    } else if (currentModel.includes('allam')) {
+                        provider = 'Aleph Alpha';
+                    } else if (currentModel.includes('playai')) {
+                        provider = 'PlayAI';
+                    } else if (currentModel.includes('qwen')) {
+                        provider = 'Alibaba';
+                    } else if (currentModel.includes('deepseek')) {
+                        provider = 'DeepSeek';
+                    } else {
+                        // If no specific model pattern is matched, determine by base URL
+                        const baseUrl = StorageService.getBaseUrl();
+                        if (baseUrl) {
+                            if (baseUrl.includes('groq.com')) {
+                                provider = 'Groq';
+                            } else if (baseUrl.includes('openai.com')) {
+                                provider = 'OpenAI';
+                            } else if (baseUrl.includes('localhost:11434')) {
+                                provider = 'Ollama';
+                            }
+                        }
+                    }
+                }
+                
+                // Check if provider element already exists
+                let providerElement = elements.modelStats.querySelector('.model-provider');
+                
+                // If not, create it
+                if (!providerElement) {
+                    providerElement = document.createElement('span');
+                    providerElement.className = 'model-provider';
+                    
+                    // Insert at the beginning of model stats
+                    elements.modelStats.insertBefore(providerElement, elements.modelStats.firstChild);
+                }
+                
+                // Update the provider text with "by" prefix
+                providerElement.textContent = 'by ' + provider;
             }
         }
         
