@@ -1,5 +1,6 @@
 import pytest
 from playwright.sync_api import expect
+import time
 
 def test_theme_toggle_button_exists(page):
     """Test that the theme toggle button exists in the header."""
@@ -110,6 +111,56 @@ def test_mcp_modal_opens(page):
     
     # Check that the modal is no longer visible
     expect(mcp_modal).not_to_be_visible()
+
+def test_dark_mode_default(page):
+    """Test that dark mode is the default theme when no preference is saved."""
+    # Navigate to the page first
+    page.goto("file:///Users/user/dev/hacka.re/index.html")
+    
+    # Close any active modals
+    # First check for welcome modal
+    if page.locator("#welcome-modal.active").is_visible():
+        page.click("#welcome-modal .modal-content button.primary-btn")
+        page.wait_for_selector("#welcome-modal.active", state="hidden")
+    
+    # Check for settings modal
+    if page.locator("#settings-modal.active").is_visible():
+        page.click("#close-settings")
+        page.wait_for_selector("#settings-modal.active", state="hidden")
+    
+    # Check for any other active modals and close them
+    active_modals = page.locator(".modal.active")
+    if active_modals.count() > 0:
+        for i in range(active_modals.count()):
+            modal = active_modals.nth(i)
+            # Try to find a close button in the modal
+            close_buttons = modal.locator("button.secondary-btn, button[id^='close-'], button[id$='-close']")
+            if close_buttons.count() > 0:
+                close_buttons.first.click()
+                page.wait_for_timeout(300)  # Wait for modal animation
+    
+    # Clear localStorage to ensure no theme preference is saved
+    page.evaluate("""() => {
+        localStorage.removeItem('aihackare_theme_mode');
+    }""")
+    
+    # Reload the page to apply default theme
+    page.reload()
+    
+    # Wait for the page to load
+    page.wait_for_load_state('networkidle')
+    
+    # Wait a bit for the theme to be applied
+    page.wait_for_timeout(500)
+    
+    # Check if dark mode is applied by default
+    is_dark_mode = page.evaluate("() => document.documentElement.classList.contains('dark-mode')")
+    assert is_dark_mode, "Dark mode should be the default theme when no preference is saved"
+    
+    # Verify the theme is saved in localStorage
+    saved_theme = page.evaluate("() => localStorage.getItem('aihackare_theme_mode')")
+    assert saved_theme == 'dark', "Dark theme should be saved in localStorage"
+
 
 def test_mobile_utils_loaded(page):
     """Test that mobile utilities are loaded correctly."""

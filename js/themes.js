@@ -23,19 +23,14 @@ window.ThemeService = (function() {
         const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
         console.log('ThemeService: Saved theme preference:', savedTheme);
         
-        // Apply theme based on saved preference or system preference
+        // Apply theme based on saved preference or default to dark mode
         if (savedTheme) {
             console.log('ThemeService: Applying saved theme:', savedTheme);
             applyTheme(savedTheme);
         } else {
-            // Check system preference
-            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                console.log('ThemeService: System prefers dark mode, applying dark theme');
-                enableDarkMode();
-            } else {
-                console.log('ThemeService: System prefers light mode or no preference, applying light theme');
-                enableLightMode();
-            }
+            // Default to dark mode regardless of system preference
+            console.log('ThemeService: No saved preference, defaulting to dark mode');
+            enableDarkMode();
         }
         
         // Add keyboard shortcuts for cycling themes (Alt+Shift+T)
