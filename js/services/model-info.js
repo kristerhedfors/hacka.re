@@ -20,6 +20,33 @@ window.ModelInfoService = (function() {
     const previewModels = [];
     const systemModels = [];
 
+    // Hardcoded context window sizes for models when not available from API
+    const contextWindowSizes = {
+        // Gemma models
+        'gemma2-9b-it': 8192,
+        
+        // Meta models
+        'llama-3.3-70b-versatile': 128 * 1024,
+        'llama-3.1-8b-instant': 128 * 1024,
+        'llama-guard-3-8b': 8192,
+        'llama3-70b-8192': 8192,
+        'llama3-8b-8192': 8192,
+        'meta-llama/llama-4-maverick-17b-128e-instruct': 131072,
+        'meta-llama/llama-4-scout-17b-16e-instruct': 131072,
+        
+        // Other models
+        'allam-2-7b': 4096,
+        'deepseek-r1-distill-llama-70b': 128 * 1024,
+        'mistral-saba-24b': 32 * 1024,
+        'playai-tts': 10 * 1024,
+        'playai-tts-arabic': 10 * 1024,
+        'qwen-qwq-32b': 128 * 1024,
+        
+        // Groq models
+        'compound-beta': 128 * 1024,
+        'compound-beta-mini': 128 * 1024
+    };
+
     /**
      * Get the context window size for a model
      * @param {string} modelId - The model ID
@@ -42,6 +69,12 @@ window.ModelInfoService = (function() {
         if (modelInfo[modelIdStr] && modelInfo[modelIdStr].context_window) {
             console.log(`Found context window size: ${modelInfo[modelIdStr].context_window}`);
             return modelInfo[modelIdStr].context_window;
+        }
+        
+        // Check if we have a hardcoded context window size for this model
+        if (contextWindowSizes[modelIdStr]) {
+            console.log(`Using hardcoded context window size for ${modelIdStr}: ${contextWindowSizes[modelIdStr]}`);
+            return contextWindowSizes[modelIdStr];
         }
         
         // Return null if we don't know the context size
