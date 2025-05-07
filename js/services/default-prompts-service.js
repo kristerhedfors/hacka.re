@@ -23,15 +23,6 @@ window.DefaultPromptsService = (function() {
             DEFAULT_PROMPTS.push(window.HackaReProjectPrompt);
         }
         
-        if (window.FunctionCallingPrompt) {
-            DEFAULT_PROMPTS.push(window.FunctionCallingPrompt);
-        }
-        
-        // Add MCP prompt if it exists
-        if (window.McpPrompt) {
-            DEFAULT_PROMPTS.push(window.McpPrompt);
-        }
-        
         // Add OWASP Top 10 for LLM Applications prompt if it exists
         if (window.OwaspLlmTop10Prompt) {
             DEFAULT_PROMPTS.push(window.OwaspLlmTop10Prompt);
