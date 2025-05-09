@@ -1,10 +1,17 @@
 /**
  * Model Context Protocol (MCP) Default Prompt
+ * 
+ * NOTE: MCP functionality is currently under development and temporarily disabled.
+ * This prompt is kept in place for future implementation.
  */
 window.McpPrompt = {
     id: 'mcp-prompt',
-    name: 'Model Context Protocol (experimental)',
-    content: `# ✨ MCP Server Primer (leave as‑is)
+    name: 'Model Context Protocol (under development)',
+    content: `# ⚠️ MCP FUNCTIONALITY UNDER DEVELOPMENT
+
+> **IMPORTANT NOTICE**: Model Context Protocol (MCP) functionality is currently under development and has been temporarily disabled. This prompt is kept for reference purposes only. Please check back later for updates.
+
+# ✨ MCP Server Primer (leave as‑is)
 
 > *"You are given a catalogue of external MCP servers.  
 > When you need a capability, match the intent to a tool.  

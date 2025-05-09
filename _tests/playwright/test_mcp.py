@@ -2,6 +2,9 @@ import pytest
 from playwright.sync_api import expect
 from test_utils import dismiss_welcome_modal
 
+# Skip all MCP tests as the functionality is currently disabled
+pytestmark = pytest.mark.skip(reason="MCP functionality is currently under development and temporarily disabled")
+
 def test_mcp_button_exists(page, serve_hacka_re):
     """Test that the MCP button exists in the UI."""
     page.goto(serve_hacka_re)

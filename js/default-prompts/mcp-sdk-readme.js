@@ -1,11 +1,18 @@
 /**
  * Model Context Protocol SDK README Default Prompt
+ * 
+ * NOTE: MCP functionality is currently under development and temporarily disabled.
+ * This prompt is kept in place for future implementation.
  */
 
 window.McpSdkReadmePrompt = {
     id: 'mcp-sdk-readme',
-    name: 'Model Context Protocol SDK README',
-    content: `# MCP Python SDK
+    name: 'Model Context Protocol SDK README (under development)',
+    content: `# ⚠️ MCP FUNCTIONALITY UNDER DEVELOPMENT
+
+> **IMPORTANT NOTICE**: Model Context Protocol (MCP) functionality is currently under development and has been temporarily disabled. This prompt is kept for reference purposes only. Please check back later for updates.
+
+# MCP Python SDK
 
 <div align="center">
 
