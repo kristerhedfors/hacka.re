@@ -26,6 +26,21 @@ window.ModelManager = (function() {
                     elements.modelSelect.value = savedModel;
                 }
             }
+            
+            // Add event listener for model select change
+            if (elements.modelSelect) {
+                elements.modelSelect.addEventListener('change', function() {
+                    const selectedModel = this.value;
+                    
+                    // Update context usage with the new model if possible
+                    if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.uiManager) {
+                        window.aiHackare.chatManager.estimateContextUsage(
+                            window.aiHackare.uiManager.updateContextUsage.bind(window.aiHackare.uiManager),
+                            selectedModel
+                        );
+                    }
+                });
+            }
         }
         
         /**

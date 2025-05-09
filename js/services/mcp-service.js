@@ -1,9 +1,14 @@
 /**
  * MCP Service
  * Handles Model Context Protocol (MCP) server operations
+ * 
+ * NOTE: MCP functionality is currently under development and temporarily disabled.
+ * This service is kept in place for future implementation.
  */
 
 window.MCPService = (function() {
+    // DEVELOPMENT NOTE: MCP functionality is currently disabled
+    console.log('MCP Service initialized - functionality is currently under development');
     // Storage keys
     const MCP_SERVERS_KEY = 'mcp_servers';
     

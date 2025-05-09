@@ -63,15 +63,83 @@ window.MCPManager = (function() {
         
         /**
          * Show the MCP modal
+         * Currently disabled as MCP functionality is under development
          */
         function showMcpModal() {
-            // Refresh the servers list
-            refreshServersList();
-            
-            // Show the modal
-            if (mcpModal) {
-                mcpModal.classList.add('active');
+            // Show a popup message indicating MCP is under development
+            if (window.aiHackare && window.aiHackare.chatManager) {
+                window.aiHackare.chatManager.addSystemMessage("Model Context Protocol (MCP) functionality is currently under development and has been temporarily disabled. Please check back later.");
             }
+            
+            // Create and show a popup alert
+            const popup = document.createElement('div');
+            popup.className = 'mcp-development-popup';
+            popup.innerHTML = `
+                <div class="mcp-development-popup-content">
+                    <h3>Feature Under Development</h3>
+                    <p>Model Context Protocol (MCP) functionality is currently under development and has been temporarily disabled.</p>
+                    <p>Please check back later for updates.</p>
+                    <button class="btn primary-btn close-popup-btn">Close</button>
+                </div>
+            `;
+            
+            // Add styles for the popup
+            const style = document.createElement('style');
+            style.textContent = `
+                .mcp-development-popup {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-color: rgba(0, 0, 0, 0.5);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 1000;
+                }
+                .mcp-development-popup-content {
+                    background-color: var(--bg-color);
+                    padding: 20px;
+                    border-radius: 8px;
+                    max-width: 400px;
+                    text-align: center;
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+                }
+                .mcp-development-popup h3 {
+                    margin-top: 0;
+                    color: var(--accent-color);
+                }
+                .close-popup-btn {
+                    margin-top: 15px;
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // Add the popup to the body
+            document.body.appendChild(popup);
+            
+            // Add event listener to close button
+            const closeBtn = popup.querySelector('.close-popup-btn');
+            closeBtn.addEventListener('click', () => {
+                document.body.removeChild(popup);
+            });
+            
+            // Also close when clicking outside the popup content
+            popup.addEventListener('click', (e) => {
+                if (e.target === popup) {
+                    document.body.removeChild(popup);
+                }
+            });
+            
+            // DISABLED: Original functionality
+            // Refresh the servers list
+            // refreshServersList();
+            // 
+            // Show the modal
+            // if (mcpModal) {
+            //     mcpModal.classList.add('active');
+            // }
         }
         
         /**

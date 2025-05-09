@@ -72,22 +72,24 @@ The tests are organized into the following files:
 
 ## Testing MCP Functionality
 
+> **Note**: MCP functionality is currently under development and temporarily disabled. All MCP tests are currently skipped with `pytestmark = pytest.mark.skip(reason="MCP functionality is currently under development and temporarily disabled")`.
+
 The Model Context Protocol (MCP) tests are divided into two categories:
 
 1. **UI Tests**: These tests verify the MCP UI elements and basic functionality without requiring an actual MCP server.
 2. **Integration Tests**: These tests require an actual running MCP server to test the full integration.
 
-### Running MCP UI Tests
+### Running MCP UI Tests (Currently Disabled)
 
-The basic MCP UI tests can be run like any other test:
+When MCP functionality is re-enabled, the basic MCP UI tests can be run like any other test:
 
 ```bash
 pytest test_mcp.py -k "not test_filesystem_mcp_server_integration"
 ```
 
-### Running MCP Integration Tests
+### Running MCP Integration Tests (Currently Disabled)
 
-To run the MCP integration tests, you need to:
+When MCP functionality is re-enabled, to run the MCP integration tests, you'll need to:
 
 1. Start an MCP server using supergateway. For example, to start a filesystem MCP server:
 
