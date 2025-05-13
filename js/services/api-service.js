@@ -87,9 +87,10 @@ window.ApiService = (function() {
  * @param {Function} onChunk - Callback function for handling streaming chunks
  * @param {string} systemPrompt - Optional system prompt to prepend to messages
  * @param {Object} apiToolsManager - Optional API tools manager for tool calling
+ * @param {Function} addSystemMessage - Optional callback to add a system message
  * @returns {Promise<string>} - Promise resolving to the complete AI response
  */
-async function generateChatCompletion(apiKey, model, messages, signal, onChunk, systemPrompt, apiToolsManager) {
+async function generateChatCompletion(apiKey, model, messages, signal, onChunk, systemPrompt, apiToolsManager, addSystemMessage) {
     if (!apiKey) {
         throw new Error('API key is required');
     }
@@ -228,8 +229,13 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
     // Process tool calls if any were received and apiToolsManager is provided
     if (toolCalls.length > 0 && apiToolsManager) {
         try {
+            // Notify user that tool calls were received
+            if (addSystemMessage) {
+                addSystemMessage(`Received ${toolCalls.length} tool call(s) from the AI`);
+            }
+            
             // Process the tool calls
-            const toolResults = await apiToolsManager.processToolCalls(toolCalls);
+            const toolResults = await apiToolsManager.processToolCalls(toolCalls, addSystemMessage);
             
             if (toolResults && toolResults.length > 0) {
                 // Add tool results to messages

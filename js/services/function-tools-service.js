@@ -202,13 +202,23 @@ window.FunctionToolsService = (function() {
      * @returns {Promise<any>} The result of the function execution
      */
     async function executeJsFunction(name, args) {
+        // Validate function exists
         const functionData = jsFunctions[name];
         if (!functionData || !functionData.code) {
             throw new Error(`Function "${name}" not found or has no code`);
         }
         
+        // Validate arguments
+        if (args === undefined || args === null) {
+            throw new Error(`Invalid arguments provided to function "${name}"`);
+        }
+        
+        // Set execution timeout (30 seconds)
+        const EXECUTION_TIMEOUT = 30000;
+        let timeoutId;
+        
         try {
-            // Create a safe execution environment
+            // Create a safe execution environment with limited capabilities
             const sandbox = {
                 fetch: window.fetch.bind(window),
                 console: console,
@@ -241,21 +251,56 @@ window.FunctionToolsService = (function() {
                 `
             );
             
-            // Execute the function with the sandbox variables
-            const result = await func(...Object.values(sandbox));
+            // Create a promise that rejects after timeout
+            const timeoutPromise = new Promise((_, reject) => {
+                timeoutId = setTimeout(() => {
+                    reject(new Error(`Function "${name}" execution timed out after ${EXECUTION_TIMEOUT/1000} seconds`));
+                }, EXECUTION_TIMEOUT);
+            });
+            
+            // Race the function execution against the timeout
+            const result = await Promise.race([
+                func(...Object.values(sandbox)),
+                timeoutPromise
+            ]);
+            
+            // Clear the timeout if function completed successfully
+            clearTimeout(timeoutId);
+            
+            // Validate result is serializable
+            try {
+                JSON.stringify(result);
+            } catch (jsonError) {
+                throw new Error(`Function "${name}" returned a non-serializable result: ${jsonError.message}`);
+            }
+            
             return result;
         } catch (error) {
+            // Clear timeout if it exists
+            if (timeoutId) clearTimeout(timeoutId);
+            
             console.error(`Error executing function "${name}":`, error);
-            throw error;
+            
+            // Provide more specific error messages based on error type
+            if (error instanceof TypeError) {
+                throw new Error(`Type error in function "${name}": ${error.message}`);
+            } else if (error instanceof ReferenceError) {
+                throw new Error(`Reference error in function "${name}": ${error.message}`);
+            } else if (error instanceof SyntaxError) {
+                throw new Error(`Syntax error in function "${name}": ${error.message}`);
+            } else {
+                throw error;
+            }
         }
     }
     
     /**
      * Process tool calls from the API response
      * @param {Array} toolCalls - Array of tool calls from the API
+     * @param {Function} addSystemMessage - Optional callback to add a system message
      * @returns {Promise<Array>} Array of tool results
      */
-    async function processToolCalls(toolCalls) {
+    async function processToolCalls(toolCalls, addSystemMessage) {
         if (!isFunctionToolsEnabled() || !toolCalls || toolCalls.length === 0) {
             return [];
         }
@@ -264,13 +309,58 @@ window.FunctionToolsService = (function() {
         
         for (const toolCall of toolCalls) {
             try {
+                if (!toolCall.function) {
+                    throw new Error('Invalid tool call format: missing function property');
+                }
+                
                 const { name, arguments: argsString } = toolCall.function;
                 
+                if (!name) {
+                    throw new Error('Invalid tool call format: missing function name');
+                }
+                
+                // Check if function exists
+                if (!jsFunctions[name]) {
+                    const errorMsg = `Function "${name}" not found`;
+                    if (addSystemMessage) {
+                        addSystemMessage(`Error: ${errorMsg}`);
+                    }
+                    throw new Error(errorMsg);
+                }
+                
+                // Check if function is enabled
+                if (!enabledFunctions.includes(name)) {
+                    const errorMsg = `Function "${name}" is disabled`;
+                    if (addSystemMessage) {
+                        addSystemMessage(`Error: ${errorMsg}`);
+                    }
+                    throw new Error(errorMsg);
+                }
+                
                 // Parse arguments from string to object
-                const args = JSON.parse(argsString);
+                let args;
+                try {
+                    args = JSON.parse(argsString);
+                } catch (parseError) {
+                    const errorMsg = `Invalid arguments format for function "${name}": ${parseError.message}`;
+                    if (addSystemMessage) {
+                        addSystemMessage(`Error: ${errorMsg}`);
+                    }
+                    throw new Error(errorMsg);
+                }
+                
+                // Log function execution
+                if (addSystemMessage) {
+                    addSystemMessage(`Executing function "${name}" with arguments: ${argsString}`);
+                }
                 
                 // Execute the JavaScript function
                 const result = await executeJsFunction(name, args);
+                
+                // Log successful execution
+                if (addSystemMessage) {
+                    addSystemMessage(`Function "${name}" executed successfully`);
+                }
                 
                 toolResults.push({
                     tool_call_id: toolCall.id,
@@ -281,12 +371,21 @@ window.FunctionToolsService = (function() {
             } catch (error) {
                 console.error('Error processing tool call:', error);
                 
+                // Log error to user if callback provided
+                if (addSystemMessage) {
+                    addSystemMessage(`Error executing function: ${error.message}`);
+                }
+                
                 // Add error result
                 toolResults.push({
                     tool_call_id: toolCall.id,
                     role: "tool",
-                    name: toolCall.function.name,
-                    content: JSON.stringify({ error: error.message })
+                    name: toolCall.function?.name || 'unknown',
+                    content: JSON.stringify({ 
+                        error: error.message,
+                        status: 'error',
+                        timestamp: new Date().toISOString()
+                    })
                 });
             }
         }

@@ -262,9 +262,10 @@ window.ApiToolsService = (function() {
     /**
      * Process tool calls from the API response
      * @param {Array} toolCalls - Array of tool calls from the API
+     * @param {Function} addSystemMessage - Optional callback to add a system message
      * @returns {Promise<Array>} Array of tool results
      */
-    async function processToolCalls(toolCalls) {
+    async function processToolCalls(toolCalls, addSystemMessage) {
         if (!isToolCallingEnabled() || !toolCalls || toolCalls.length === 0) {
             return [];
         }
@@ -273,17 +274,56 @@ window.ApiToolsService = (function() {
         
         for (const toolCall of toolCalls) {
             try {
+                if (!toolCall.function) {
+                    throw new Error('Invalid tool call format: missing function property');
+                }
+                
+                const { name } = toolCall.function;
+                
+                if (!name) {
+                    throw new Error('Invalid tool call format: missing function name');
+                }
+                
+                // Check if tool exists
+                if (!toolRegistry[name]) {
+                    const errorMsg = `Tool "${name}" not found`;
+                    if (addSystemMessage) {
+                        addSystemMessage(`Error: ${errorMsg}`);
+                    }
+                    throw new Error(errorMsg);
+                }
+                
+                // Log tool execution
+                if (addSystemMessage) {
+                    addSystemMessage(`Executing tool "${name}"`);
+                }
+                
                 const result = await executeToolCall(toolCall);
+                
+                // Log successful execution
+                if (addSystemMessage) {
+                    addSystemMessage(`Tool "${name}" executed successfully`);
+                }
+                
                 toolResults.push(result);
             } catch (error) {
                 console.error('Error processing tool call:', error);
+                
+                // Log error to user if callback provided
+                if (addSystemMessage) {
+                    addSystemMessage(`Error executing tool: ${error.message}`);
+                }
                 
                 // Add error result
                 toolResults.push({
                     tool_call_id: toolCall.id,
                     role: "tool",
-                    name: toolCall.function.name,
-                    content: JSON.stringify({ error: error.message })
+                    name: toolCall.function?.name || 'unknown',
+                    content: JSON.stringify({ 
+                        error: error.message,
+                        status: 'error',
+                        timestamp: new Date().toISOString()
+                    })
                 });
             }
         }

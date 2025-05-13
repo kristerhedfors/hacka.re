@@ -125,37 +125,37 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
                 return [...apiTools, ...functionTools, ...mcpTools, ...functionCallingTools];
             },
             processToolCalls: async (toolCalls) => {
-                // Process tool calls based on their names
-                const apiToolCalls = [];
-                const functionToolCalls = [];
-                const mcpToolCalls = [];
-                
-                // Separate tool calls by type
-                for (const toolCall of toolCalls) {
-                    const toolName = toolCall.function.name;
-                    
-                    // Check if it's an MCP tool (contains a dot)
-                    if (toolName.includes('.')) {
-                        mcpToolCalls.push(toolCall);
-                    } else if (FunctionToolsService && FunctionToolsService.getJsFunctions()[toolName]) {
-                        functionToolCalls.push(toolCall);
-                    } else {
-                        apiToolCalls.push(toolCall);
-                    }
-                }
-                
-                // Process each type of tool calls
-                const apiResults = apiToolCalls.length > 0 && apiToolsManager 
-                    ? await apiToolsManager.processToolCalls(apiToolCalls) 
-                    : [];
-                
-                const functionResults = functionToolCalls.length > 0 && FunctionToolsService
-                    ? await FunctionToolsService.processToolCalls(functionToolCalls)
-                    : [];
-                
-                const mcpResults = mcpToolCalls.length > 0 && mcpManager 
-                    ? await mcpManager.processToolCalls(mcpToolCalls) 
-                    : [];
+        // Process tool calls based on their names
+        const apiToolCalls = [];
+        const functionToolCalls = [];
+        const mcpToolCalls = [];
+        
+        // Separate tool calls by type
+        for (const toolCall of toolCalls) {
+            const toolName = toolCall.function.name;
+            
+            // Check if it's an MCP tool (contains a dot)
+            if (toolName.includes('.')) {
+                mcpToolCalls.push(toolCall);
+            } else if (FunctionToolsService && FunctionToolsService.getJsFunctions()[toolName]) {
+                functionToolCalls.push(toolCall);
+            } else {
+                apiToolCalls.push(toolCall);
+            }
+        }
+        
+        // Process each type of tool calls
+        const apiResults = apiToolCalls.length > 0 && apiToolsManager 
+            ? await apiToolsManager.processToolCalls(apiToolCalls, addSystemMessage) 
+            : [];
+        
+        const functionResults = functionToolCalls.length > 0 && FunctionToolsService
+            ? await FunctionToolsService.processToolCalls(functionToolCalls, addSystemMessage)
+            : [];
+        
+        const mcpResults = mcpToolCalls.length > 0 && mcpManager 
+            ? await mcpManager.processToolCalls(mcpToolCalls, addSystemMessage) 
+            : [];
                 
                 // Combine results
                 return [...apiResults, ...functionResults, ...mcpResults];
@@ -170,7 +170,8 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
             signal,
             (content) => updateAIMessage(content, aiMessageId, updateContextUsage),
             systemPrompt,
-            combinedToolsManager
+            combinedToolsManager,
+            addSystemMessage
         );
         
         // Remove typing indicator
