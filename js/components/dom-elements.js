@@ -59,6 +59,20 @@ window.DOMElements = (function() {
             promptsList: document.getElementById('prompts-list'),
             closePromptsModal: document.getElementById('close-prompts-modal'),
             
+            // Function calling elements
+            functionBtn: document.getElementById('function-btn'),
+            functionModal: document.getElementById('function-modal'),
+            functionList: document.getElementById('function-list'),
+            emptyFunctionState: document.getElementById('empty-function-state'),
+            functionEditorForm: document.getElementById('function-editor-form'),
+            functionName: document.getElementById('function-name'),
+            functionCode: document.getElementById('function-code'),
+            functionValidationResult: document.getElementById('function-validation-result'),
+            functionToolDefinition: document.getElementById('function-tool-definition'),
+            functionValidateBtn: document.getElementById('function-validate-btn'),
+            functionClearBtn: document.getElementById('function-clear-btn'),
+            closeFunctionModal: document.getElementById('close-function-modal'),
+            
             // MCP button
             mcpBtn: document.getElementById('mcp-btn'),
             
