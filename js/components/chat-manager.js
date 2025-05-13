@@ -124,23 +124,45 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
                 const functionCallingTools = functionCallingManager ? functionCallingManager.getFunctionDefinitions() : [];
                 return [...apiTools, ...functionTools, ...mcpTools, ...functionCallingTools];
             },
-            processToolCalls: async (toolCalls) => {
+            processToolCalls: async (toolCalls, addSystemMessage) => {
         // Process tool calls based on their names
         const apiToolCalls = [];
         const functionToolCalls = [];
         const mcpToolCalls = [];
         
+        // Validate toolCalls is an array
+        if (!Array.isArray(toolCalls)) {
+            console.error('Invalid tool calls format: not an array', toolCalls);
+            if (addSystemMessage) {
+                addSystemMessage('Error: Invalid tool calls format received from API');
+            }
+            return [];
+        }
+        
         // Separate tool calls by type
         for (const toolCall of toolCalls) {
-            const toolName = toolCall.function.name;
-            
-            // Check if it's an MCP tool (contains a dot)
-            if (toolName.includes('.')) {
-                mcpToolCalls.push(toolCall);
-            } else if (FunctionToolsService && FunctionToolsService.getJsFunctions()[toolName]) {
-                functionToolCalls.push(toolCall);
-            } else {
-                apiToolCalls.push(toolCall);
+            try {
+                // Validate toolCall has the expected structure
+                if (!toolCall || !toolCall.function || typeof toolCall.function.name !== 'string') {
+                    console.error('Invalid tool call format:', toolCall);
+                    continue;
+                }
+                
+                const toolName = toolCall.function.name;
+                
+                // Check if it's an MCP tool (contains a dot)
+                if (toolName.includes('.')) {
+                    mcpToolCalls.push(toolCall);
+                } else if (FunctionToolsService && FunctionToolsService.getJsFunctions()[toolName]) {
+                    functionToolCalls.push(toolCall);
+                } else {
+                    apiToolCalls.push(toolCall);
+                }
+            } catch (error) {
+                console.error('Error processing tool call:', error, toolCall);
+                if (addSystemMessage) {
+                    addSystemMessage(`Error processing tool call: ${error.message}`);
+                }
             }
         }
         

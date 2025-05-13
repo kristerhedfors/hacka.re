@@ -182,15 +182,22 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
                         }
                         
                         // Handle tool calls
-                        if (delta.tool_calls) {
+                        if (delta.tool_calls && Array.isArray(delta.tool_calls)) {
                             // Process each tool call delta
                             for (const toolCallDelta of delta.tool_calls) {
-                                const { index, id, function: funcDelta } = toolCallDelta;
+                                if (!toolCallDelta) continue;
+                                
+                                const index = toolCallDelta.index;
+                                const id = toolCallDelta.id || '';
+                                const funcDelta = toolCallDelta.function || {};
+                                
+                                // Skip if index is undefined
+                                if (index === undefined) continue;
                                 
                                 // Initialize tool call if it doesn't exist
                                 if (!toolCalls[index]) {
                                     toolCalls[index] = {
-                                        id: id || '',
+                                        id: id,
                                         type: 'function',
                                         function: {
                                             name: '',
