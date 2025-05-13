@@ -218,6 +218,12 @@ window.FunctionCallingManager = (function() {
                 return { success: false };
             }
             
+            // Check if name follows JavaScript naming conventions
+            if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name)) {
+                showValidationResult('Invalid function name. Must start with a letter, underscore, or $ and contain only letters, numbers, underscores, or $', 'error');
+                return { success: false };
+            }
+            
             // Validate code
             if (!code) {
                 showValidationResult('Function code is required', 'error');
@@ -237,8 +243,18 @@ window.FunctionCallingManager = (function() {
                 
                 // Check if the function name matches the provided name
                 if (functionName !== name) {
-                    showValidationResult(`Function name in code (${functionName}) does not match the provided name (${name})`, 'warning');
-                    // Continue with validation, but return warning
+                    showValidationResult(`Function name in code (${functionName}) does not match the provided name (${name})`, 'error');
+                    return { success: false };
+                }
+                
+                // Check for basic syntax errors by trying to parse the function
+                try {
+                    // Use Function constructor to check for syntax errors
+                    // This won't execute the code, just parse it
+                    new Function(code);
+                } catch (syntaxError) {
+                    showValidationResult(`Syntax error in function: ${syntaxError.message}`, 'error');
+                    return { success: false };
                 }
                 
                 // Try to extract function parameters and description using Function.toString()
