@@ -4,11 +4,17 @@
  */
 
 window.ApiToolsService = (function() {
-    // Storage key for tool calling setting
+    // Storage keys
     const TOOL_CALLING_ENABLED_KEY = 'tool_calling_enabled';
+    const OPENAPI_FUNCTIONS_KEY = 'openapi_functions';
+    const ENABLED_FUNCTIONS_KEY = 'enabled_functions';
     
     // Registry of available tools
     const toolRegistry = {};
+    
+    // Registry of OpenAPI functions
+    let openApiFunctions = {};
+    let enabledFunctions = [];
     
     /**
      * Check if tool calling is enabled
@@ -73,9 +79,147 @@ window.ApiToolsService = (function() {
             return [];
         }
         
-        return Object.entries(toolRegistry).map(([name, tool]) => {
+        const registeredTools = Object.entries(toolRegistry).map(([name, tool]) => {
             return tool.definition;
         });
+        
+        // Add enabled OpenAPI functions
+        const enabledOpenApiFunctions = getEnabledOpenApiFunctions();
+        
+        return [...registeredTools, ...enabledOpenApiFunctions];
+    }
+    
+    /**
+     * Load OpenAPI functions from storage
+     */
+    function loadOpenApiFunctions() {
+        const storedFunctions = CoreStorageService.getValue(OPENAPI_FUNCTIONS_KEY);
+        if (storedFunctions) {
+            openApiFunctions = storedFunctions;
+        }
+        
+        const storedEnabledFunctions = CoreStorageService.getValue(ENABLED_FUNCTIONS_KEY);
+        if (storedEnabledFunctions) {
+            enabledFunctions = storedEnabledFunctions;
+        }
+    }
+    
+    /**
+     * Save OpenAPI functions to storage
+     */
+    function saveOpenApiFunctions() {
+        CoreStorageService.setValue(OPENAPI_FUNCTIONS_KEY, openApiFunctions);
+        CoreStorageService.setValue(ENABLED_FUNCTIONS_KEY, enabledFunctions);
+    }
+    
+    /**
+     * Add an OpenAPI function specification
+     * @param {string} name - The name of the function
+     * @param {Object} spec - The OpenAPI specification object
+     * @returns {boolean} Whether the function was added successfully
+     */
+    function addOpenApiFunction(name, spec) {
+        // Validate the spec
+        if (!spec || !spec.type || spec.type !== 'function' || !spec.function || !spec.function.name) {
+            return false;
+        }
+        
+        // Ensure the function name in the spec matches the provided name
+        if (spec.function.name !== name) {
+            return false;
+        }
+        
+        // Add the function to the registry
+        openApiFunctions[name] = spec;
+        
+        // Save to storage
+        saveOpenApiFunctions();
+        
+        return true;
+    }
+    
+    /**
+     * Remove an OpenAPI function specification
+     * @param {string} name - The name of the function to remove
+     */
+    function removeOpenApiFunction(name) {
+        if (openApiFunctions[name]) {
+            delete openApiFunctions[name];
+            
+            // Also remove from enabled functions if present
+            enabledFunctions = enabledFunctions.filter(funcName => funcName !== name);
+            
+            // Save to storage
+            saveOpenApiFunctions();
+            
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Get all OpenAPI function specifications
+     * @returns {Object} The OpenAPI function registry
+     */
+    function getOpenApiFunctions() {
+        return openApiFunctions;
+    }
+    
+    /**
+     * Enable an OpenAPI function
+     * @param {string} name - The name of the function to enable
+     */
+    function enableOpenApiFunction(name) {
+        if (openApiFunctions[name] && !enabledFunctions.includes(name)) {
+            enabledFunctions.push(name);
+            saveOpenApiFunctions();
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Disable an OpenAPI function
+     * @param {string} name - The name of the function to disable
+     */
+    function disableOpenApiFunction(name) {
+        const index = enabledFunctions.indexOf(name);
+        if (index !== -1) {
+            enabledFunctions.splice(index, 1);
+            saveOpenApiFunctions();
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Check if an OpenAPI function is enabled
+     * @param {string} name - The name of the function to check
+     * @returns {boolean} Whether the function is enabled
+     */
+    function isOpenApiFunctionEnabled(name) {
+        return enabledFunctions.includes(name);
+    }
+    
+    /**
+     * Get all enabled OpenAPI functions
+     * @returns {Array} Array of enabled OpenAPI function specifications
+     */
+    function getEnabledOpenApiFunctions() {
+        return enabledFunctions
+            .filter(name => openApiFunctions[name])
+            .map(name => openApiFunctions[name]);
+    }
+    
+    /**
+     * Get all enabled function names
+     * @returns {Array} Array of enabled function names
+     */
+    function getEnabledFunctionNames() {
+        return enabledFunctions;
     }
     
     /**
@@ -186,8 +330,9 @@ window.ApiToolsService = (function() {
         );
     }
     
-    // Initialize built-in tools
+    // Initialize
     initializeBuiltInTools();
+    loadOpenApiFunctions();
     
     // Public API
     return {
@@ -197,6 +342,14 @@ window.ApiToolsService = (function() {
         getRegisteredTools,
         getToolDefinitions,
         executeToolCall,
-        processToolCalls
+        processToolCalls,
+        addOpenApiFunction,
+        removeOpenApiFunction,
+        getOpenApiFunctions,
+        enableOpenApiFunction,
+        disableOpenApiFunction,
+        isOpenApiFunctionEnabled,
+        getEnabledOpenApiFunctions,
+        getEnabledFunctionNames
     };
 })();

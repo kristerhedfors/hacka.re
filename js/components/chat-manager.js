@@ -36,8 +36,9 @@ window.ChatManager = (function() {
  * @param {Function} updateContextUsage - Function to update context usage
  * @param {Object} apiToolsManager - API tools manager for tool calling
  * @param {Object} mcpManager - MCP manager for MCP tool calling
+ * @param {Object} functionCallingManager - Function calling manager for OpenAPI functions
  */
-function sendMessage(message, apiKey, currentModel, systemPrompt, showApiKeyModal, updateContextUsage, apiToolsManager, mcpManager) {
+function sendMessage(message, apiKey, currentModel, systemPrompt, showApiKeyModal, updateContextUsage, apiToolsManager, mcpManager, functionCallingManager) {
     if (!message) return;
     
     if (!apiKey) {
@@ -61,7 +62,7 @@ function sendMessage(message, apiKey, currentModel, systemPrompt, showApiKeyModa
     elements.messageInput.focus();
     
     // Send to API
-    generateResponse(apiKey, currentModel, systemPrompt, updateContextUsage, apiToolsManager, mcpManager);
+    generateResponse(apiKey, currentModel, systemPrompt, updateContextUsage, apiToolsManager, mcpManager, functionCallingManager);
 }
 
 /**
@@ -72,8 +73,9 @@ function sendMessage(message, apiKey, currentModel, systemPrompt, showApiKeyModa
  * @param {Function} updateContextUsage - Function to update context usage
  * @param {Object} apiToolsManager - API tools manager for tool calling
  * @param {Object} mcpManager - MCP manager for MCP tool calling
+ * @param {Object} functionCallingManager - Function calling manager for OpenAPI functions
  */
-async function generateResponse(apiKey, currentModel, systemPrompt, updateContextUsage, apiToolsManager, mcpManager) {
+async function generateResponse(apiKey, currentModel, systemPrompt, updateContextUsage, apiToolsManager, mcpManager, functionCallingManager) {
     if (!apiKey) return;
     
     isGenerating = true;
@@ -113,16 +115,19 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
         controller = new AbortController();
         const signal = controller.signal;
         
-        // Combine tools from API tools manager and MCP manager
+        // Combine tools from API tools manager, Function tools manager, MCP manager, and function calling manager
         const combinedToolsManager = {
             getToolDefinitions: () => {
                 const apiTools = apiToolsManager ? apiToolsManager.getToolDefinitions() : [];
+                const functionTools = FunctionToolsService ? FunctionToolsService.getToolDefinitions() : [];
                 const mcpTools = mcpManager ? mcpManager.getToolDefinitions() : [];
-                return [...apiTools, ...mcpTools];
+                const functionCallingTools = functionCallingManager ? functionCallingManager.getFunctionDefinitions() : [];
+                return [...apiTools, ...functionTools, ...mcpTools, ...functionCallingTools];
             },
             processToolCalls: async (toolCalls) => {
                 // Process tool calls based on their names
                 const apiToolCalls = [];
+                const functionToolCalls = [];
                 const mcpToolCalls = [];
                 
                 // Separate tool calls by type
@@ -132,6 +137,8 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
                     // Check if it's an MCP tool (contains a dot)
                     if (toolName.includes('.')) {
                         mcpToolCalls.push(toolCall);
+                    } else if (FunctionToolsService && FunctionToolsService.getJsFunctions()[toolName]) {
+                        functionToolCalls.push(toolCall);
                     } else {
                         apiToolCalls.push(toolCall);
                     }
@@ -142,12 +149,16 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
                     ? await apiToolsManager.processToolCalls(apiToolCalls) 
                     : [];
                 
+                const functionResults = functionToolCalls.length > 0 && FunctionToolsService
+                    ? await FunctionToolsService.processToolCalls(functionToolCalls)
+                    : [];
+                
                 const mcpResults = mcpToolCalls.length > 0 && mcpManager 
                     ? await mcpManager.processToolCalls(mcpToolCalls) 
                     : [];
                 
                 // Combine results
-                return [...apiResults, ...mcpResults];
+                return [...apiResults, ...functionResults, ...mcpResults];
             }
         };
         
