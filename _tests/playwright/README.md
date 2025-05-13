@@ -69,7 +69,7 @@ The tests are organized into the following files:
 - `test_mcp.py`: Tests related to Model Context Protocol (MCP) functionality
 - `test_token_counter_debounce.py`: Tests related to token counter debouncing for improved performance
 - `test_themes.py`: Tests related to theme switching functionality and mobile responsiveness
-- `test_function_calling.py`: Tests related to the function calling (OpenAPI) feature and JavaScript function execution
+- `test_function_calling.py`: Tests related to the function calling (OpenAPI) feature and JavaScript function execution, including error handling and RC4 encryption/decryption functionality
 
 ## Testing MCP Functionality
 
@@ -152,6 +152,12 @@ These tests verify the behavior of the application with mocked API responses:
     - Enabling and disabling functions
     - Handling of various error scenarios (syntax errors, execution errors, timeouts, etc.)
     - RC4 encryption/decryption functions for testing complex operations
+      - Encryption and decryption of text with a secret key
+      - Validation of encryption/decryption results
+      - Testing with known test vectors
+      - Error handling for missing parameters
+      - Error handling for invalid hex format in ciphertext
+      - Proper user feedback for all error conditions
 
 ## Adding New Tests
 

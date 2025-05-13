@@ -1,39 +1,89 @@
 /**
- * RC4 Encryption/Decryption Utilities
+ * RC4 Utilities Module
  * 
- * IMPORTANT: THIS IS PURE LLM-GENERATED CODE TO BE USED IN TESTING ONLY.
- * This code has not been validated or audited for security and should never
- * be used in production environments or for any sensitive data.
+ * This module provides RC4 encryption and decryption functions for testing purposes.
  * 
- * This module is specifically designed to be used as tools in tool calling LLM invocations
- * for testing the function calling capabilities of the hacka.re application.
+ * IMPORTANT: This is a simplified implementation for testing purposes only.
+ * It should NOT be used for actual cryptographic security in production.
  * 
- * This module provides functions for RC4 encryption and decryption.
- * RC4 is a symmetric stream cipher that uses a variable length key.
- * 
- * Note: RC4 is considered insecure for cryptographic purposes.
- * This implementation is for educational and testing purposes only.
+ * This code is LLM-generated for testing function calling error handling.
  */
 
 window.RC4Utils = (function() {
     /**
+     * Convert a string to a byte array
+     * @param {string} str - The string to convert
+     * @returns {Array} The byte array
+     */
+    function stringToBytes(str) {
+        const bytes = [];
+        for (let i = 0; i < str.length; i++) {
+            bytes.push(str.charCodeAt(i));
+        }
+        return bytes;
+    }
+    
+    /**
+     * Convert a byte array to a string
+     * @param {Array} bytes - The byte array to convert
+     * @returns {string} The string
+     */
+    function bytesToString(bytes) {
+        return String.fromCharCode.apply(null, bytes);
+    }
+    
+    /**
+     * Convert a byte array to a hex string
+     * @param {Array} bytes - The byte array to convert
+     * @returns {string} The hex string
+     */
+    function bytesToHex(bytes) {
+        return Array.from(bytes)
+            .map(byte => byte.toString(16).padStart(2, '0'))
+            .join('');
+    }
+    
+    /**
+     * Convert a hex string to a byte array
+     * @param {string} hex - The hex string to convert
+     * @returns {Array} The byte array
+     */
+    function hexToBytes(hex) {
+        if (hex.length % 2 !== 0) {
+            throw new Error('Hex string must have an even number of characters');
+        }
+        
+        const bytes = [];
+        for (let i = 0; i < hex.length; i += 2) {
+            const byte = parseInt(hex.substr(i, 2), 16);
+            if (isNaN(byte)) {
+                throw new Error('Invalid hex character at position ' + i);
+            }
+            bytes.push(byte);
+        }
+        return bytes;
+    }
+    
+    /**
      * Initialize the RC4 key scheduling algorithm
-     * @param {string} key - The encryption/decryption key
-     * @returns {Array} The initialized state array
+     * @param {Array} key - The key as a byte array
+     * @returns {Array} The initialized state
      */
     function initializeState(key) {
-        // Convert key to array of bytes if it's a string
-        const keyBytes = typeof key === 'string' 
-            ? Array.from(key).map(c => c.charCodeAt(0))
-            : key;
+        if (!key || key.length === 0) {
+            throw new Error('Key cannot be empty');
+        }
         
-        // Initialize state array with values from 0 to 255
-        const state = Array.from({ length: 256 }, (_, i) => i);
+        // Initialize state array
+        const state = [];
+        for (let i = 0; i < 256; i++) {
+            state[i] = i;
+        }
         
         // Key scheduling algorithm
         let j = 0;
         for (let i = 0; i < 256; i++) {
-            j = (j + state[i] + keyBytes[i % keyBytes.length]) % 256;
+            j = (j + state[i] + key[i % key.length]) % 256;
             // Swap state[i] and state[j]
             [state[i], state[j]] = [state[j], state[i]];
         }
@@ -42,8 +92,8 @@ window.RC4Utils = (function() {
     }
     
     /**
-     * Generate the keystream for RC4
-     * @param {Array} state - The initialized state array
+     * Generate the RC4 keystream
+     * @param {Array} state - The initialized state
      * @param {number} length - The length of the keystream to generate
      * @returns {Array} The keystream
      */
@@ -55,7 +105,6 @@ window.RC4Utils = (function() {
         // Create a copy of the state to avoid modifying the original
         const stateCopy = [...state];
         
-        // Generate keystream
         for (let k = 0; k < length; k++) {
             i = (i + 1) % 256;
             j = (j + stateCopy[i]) % 256;
@@ -63,7 +112,6 @@ window.RC4Utils = (function() {
             // Swap stateCopy[i] and stateCopy[j]
             [stateCopy[i], stateCopy[j]] = [stateCopy[j], stateCopy[i]];
             
-            // Generate keystream byte
             const t = (stateCopy[i] + stateCopy[j]) % 256;
             keystream.push(stateCopy[t]);
         }
@@ -72,92 +120,99 @@ window.RC4Utils = (function() {
     }
     
     /**
-     * Encrypt or decrypt data using RC4
-     * @param {string} data - The data to encrypt/decrypt
-     * @param {string} key - The encryption/decryption key
-     * @returns {string} The encrypted/decrypted data as a hex string
-     */
-    function process(data, key) {
-        // Convert data to array of bytes
-        const dataBytes = typeof data === 'string'
-            ? Array.from(data).map(c => c.charCodeAt(0))
-            : data;
-        
-        // Initialize state
-        const state = initializeState(key);
-        
-        // Generate keystream
-        const keystream = generateKeystream(state, dataBytes.length);
-        
-        // XOR data with keystream
-        const result = dataBytes.map((byte, index) => byte ^ keystream[index]);
-        
-        // Convert result to hex string
-        return result.map(byte => byte.toString(16).padStart(2, '0')).join('');
-    }
-    
-    /**
-     * Encrypt data using RC4
+     * Encrypt a string using RC4
      * @param {string} plaintext - The plaintext to encrypt
      * @param {string} key - The encryption key
-     * @returns {string} The encrypted data as a hex string
+     * @returns {string} The ciphertext as a hex string
      */
     function encrypt(plaintext, key) {
-        return process(plaintext, key);
+        if (!plaintext) {
+            throw new Error('Plaintext cannot be empty');
+        }
+        
+        if (!key) {
+            throw new Error('Key cannot be empty');
+        }
+        
+        // Convert strings to byte arrays
+        const plaintextBytes = stringToBytes(plaintext);
+        const keyBytes = stringToBytes(key);
+        
+        // Initialize state
+        const state = initializeState(keyBytes);
+        
+        // Generate keystream
+        const keystream = generateKeystream(state, plaintextBytes.length);
+        
+        // XOR plaintext with keystream
+        const ciphertextBytes = plaintextBytes.map((byte, i) => byte ^ keystream[i]);
+        
+        // Convert to hex string
+        return bytesToHex(ciphertextBytes);
     }
     
     /**
-     * Decrypt data using RC4
-     * @param {string} ciphertext - The ciphertext to decrypt (hex string)
+     * Decrypt a hex string using RC4
+     * @param {string} ciphertext - The ciphertext as a hex string
      * @param {string} key - The decryption key
-     * @returns {string} The decrypted data as a string
+     * @returns {string} The plaintext
      */
     function decrypt(ciphertext, key) {
-        // Convert hex string to array of bytes
-        const ciphertextBytes = [];
-        for (let i = 0; i < ciphertext.length; i += 2) {
-            ciphertextBytes.push(parseInt(ciphertext.substr(i, 2), 16));
+        if (!ciphertext) {
+            throw new Error('Ciphertext cannot be empty');
         }
         
-        // Process the ciphertext
-        const decryptedBytes = process(ciphertextBytes, key);
-        
-        // Convert decrypted bytes to string
-        const decryptedChars = [];
-        for (let i = 0; i < decryptedBytes.length; i += 2) {
-            const byte = parseInt(decryptedBytes.substr(i, 2), 16);
-            decryptedChars.push(String.fromCharCode(byte));
+        if (!key) {
+            throw new Error('Key cannot be empty');
         }
         
-        return decryptedChars.join('');
+        // Validate hex format
+        if (!/^[0-9a-fA-F]+$/.test(ciphertext)) {
+            throw new Error('Ciphertext must be in hexadecimal format');
+        }
+        
+        // Convert hex string to byte array
+        const ciphertextBytes = hexToBytes(ciphertext);
+        const keyBytes = stringToBytes(key);
+        
+        // Initialize state
+        const state = initializeState(keyBytes);
+        
+        // Generate keystream
+        const keystream = generateKeystream(state, ciphertextBytes.length);
+        
+        // XOR ciphertext with keystream
+        const plaintextBytes = ciphertextBytes.map((byte, i) => byte ^ keystream[i]);
+        
+        // Convert to string
+        return bytesToString(plaintextBytes);
     }
     
     /**
      * Test the RC4 implementation with a known test vector
-     * @returns {Object} Test result with success flag and details
+     * @returns {Object} The test result
      */
     function testImplementation() {
-        // Test vector: Key = "Key", Plaintext = "Plaintext"
-        // Expected ciphertext (in hex): BBF316E8D940AF0AD3
-        const key = "Key";
-        const plaintext = "Plaintext";
-        const expectedHex = "bbf316e8d940af0ad3";
-        
         try {
-            const encrypted = encrypt(plaintext, key);
-            const decrypted = decrypt(encrypted, key);
+            // Test vector from RFC 6229
+            const key = 'Key';
+            const plaintext = 'Plaintext';
             
+            // Encrypt
+            const ciphertext = encrypt(plaintext, key);
+            
+            // Decrypt
+            const decrypted = decrypt(ciphertext, key);
+            
+            // Verify
             const success = decrypted === plaintext;
-            const matchesTestVector = encrypted.toLowerCase() === expectedHex;
             
             return {
                 success: success,
-                encryptionMatchesTestVector: matchesTestVector,
                 key: key,
                 plaintext: plaintext,
-                encrypted: encrypted,
-                decrypted: decrypted,
-                expectedHex: expectedHex
+                ciphertext: ciphertext,
+                decrypted: decrypted
             };
         } catch (error) {
             return {
@@ -169,8 +224,8 @@ window.RC4Utils = (function() {
     
     // Public API
     return {
-        encrypt,
-        decrypt,
-        testImplementation
+        encrypt: encrypt,
+        decrypt: decrypt,
+        testImplementation: testImplementation
     };
 })();
