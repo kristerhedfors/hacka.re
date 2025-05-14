@@ -193,27 +193,35 @@ def test_function_calling_integration(page: Page, serve_hacka_re):
     # Dismiss settings modal if already open
     dismiss_settings_modal(page)
     
-    # Enable tool calling in settings
+    # Open settings to verify tool calling section
     page.locator("#settings-btn").click()
     settings_modal = page.locator("#settings-modal")
     expect(settings_modal).to_be_visible()
     
-    # Check if the tool calling checkbox exists and enable it
-    tool_calling_checkbox = page.locator("#enable-tool-calling")
-    if tool_calling_checkbox.is_visible():
-        tool_calling_checkbox.check()
+    # Scroll to the bottom of the modal to see the Tool Calling section
+    page.evaluate("""() => {
+        const modal = document.querySelector('#settings-modal .modal-content');
+        if (modal) {
+            modal.scrollTop = modal.scrollHeight;
+        }
+    }""")
     
-    # Enable function tools checkbox
-    function_tools_checkbox = page.locator("#enable-function-tools")
-    if function_tools_checkbox.is_visible():
-        function_tools_checkbox.check()
+    # Wait a moment for the scroll to complete
+    page.wait_for_timeout(500)
     
-    # Save settings
-    page.locator("#save-settings-btn").click()
-    expect(settings_modal).not_to_be_visible()
+    # Check if the "Manage Functions" button is visible
+    manage_functions_btn = page.locator("button:has-text('Manage Functions')")
+    if manage_functions_btn.is_visible():
+        # Close settings modal by clicking the Manage Functions button
+        manage_functions_btn.click()
+    else:
+        # Close settings modal normally
+        page.locator("#save-settings-btn").click()
+        
+        # Open function modal
+        page.locator("#function-btn").click()
     
-    # Add a function
-    page.locator("#function-btn").click()
+    # Verify function modal is visible
     function_modal = page.locator("#function-modal")
     expect(function_modal).to_be_visible()
     
@@ -272,24 +280,6 @@ def test_function_error_handling(page: Page, serve_hacka_re):
     
     # Dismiss settings modal if already open
     dismiss_settings_modal(page)
-    
-    # Enable tool calling in settings
-    page.locator("#settings-btn").click()
-    settings_modal = page.locator("#settings-modal")
-    expect(settings_modal).to_be_visible()
-    
-    # Enable tool calling and function tools
-    tool_calling_checkbox = page.locator("#enable-tool-calling")
-    if tool_calling_checkbox.is_visible():
-        tool_calling_checkbox.check()
-    
-    function_tools_checkbox = page.locator("#enable-function-tools")
-    if function_tools_checkbox.is_visible():
-        function_tools_checkbox.check()
-    
-    # Save settings
-    page.locator("#save-settings-btn").click()
-    expect(settings_modal).not_to_be_visible()
     
     # Add a function with error
     page.locator("#function-btn").click()
@@ -391,24 +381,6 @@ def test_rc4_encryption_functions(page: Page, serve_hacka_re):
     
     # Dismiss settings modal if already open
     dismiss_settings_modal(page)
-    
-    # Enable tool calling in settings
-    page.locator("#settings-btn").click()
-    settings_modal = page.locator("#settings-modal")
-    expect(settings_modal).to_be_visible()
-    
-    # Enable tool calling and function tools
-    tool_calling_checkbox = page.locator("#enable-tool-calling")
-    if tool_calling_checkbox.is_visible():
-        tool_calling_checkbox.check()
-    
-    function_tools_checkbox = page.locator("#enable-function-tools")
-    if function_tools_checkbox.is_visible():
-        function_tools_checkbox.check()
-    
-    # Save settings
-    page.locator("#save-settings-btn").click()
-    expect(settings_modal).not_to_be_visible()
     
     # Add RC4 encryption function
     page.locator("#function-btn").click()

@@ -14,7 +14,10 @@ class OperationTimeoutError(Exception):
 
 # Helper function to measure and print execution time
 def timed_test(func):
-    def wrapper(page, serve_hacka_re):
+    def wrapper(*args, **kwargs):
+        # Extract the page object from args
+        page = args[0]
+        
         # Store original methods to time them
         original_goto = page.goto
         original_locator = page.locator
@@ -54,7 +57,7 @@ def timed_test(func):
         
         # Time the entire test
         start_time = time.time()
-        result = func(page, serve_hacka_re)
+        result = func(*args, **kwargs)
         end_time = time.time()
         execution_time = end_time - start_time
         print(f"\n⏱️ {func.__name__} completed in {execution_time:.3f} seconds")

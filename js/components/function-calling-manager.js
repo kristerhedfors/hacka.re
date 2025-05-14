@@ -36,9 +36,16 @@ window.FunctionCallingManager = (function() {
                 elements.functionClearBtn.addEventListener('click', clearFunctionEditor);
             }
             
+            // Add event listener for function code changes to auto-extract function name
+            if (elements.functionCode) {
+                elements.functionCode.addEventListener('input', extractFunctionName);
+            }
+            
             // Set initial function code example
             if (elements.functionCode && !elements.functionCode.value) {
                 elements.functionCode.value = getDefaultFunctionCode();
+                // Extract function name from default code
+                setTimeout(extractFunctionName, 100);
             }
             
             // Load functions from storage and render them
@@ -470,10 +477,15 @@ window.FunctionCallingManager = (function() {
         function clearFunctionEditor() {
             if (elements.functionName) {
                 elements.functionName.value = '';
+                // Remove auto-completed styling and make editable
+                elements.functionName.classList.remove('auto-completed');
+                elements.functionName.removeAttribute('readonly');
             }
             
             if (elements.functionCode) {
                 elements.functionCode.value = getDefaultFunctionCode();
+                // Extract function name from default code
+                setTimeout(extractFunctionName, 100);
             }
             
             hideValidationResult();
@@ -484,6 +496,41 @@ window.FunctionCallingManager = (function() {
                 setTimeout(() => {
                     elements.functionName.focus();
                 }, 100);
+            }
+        }
+        
+        /**
+         * Extract function name from code and auto-fill the function name field
+         */
+        function extractFunctionName() {
+            if (!elements.functionCode || !elements.functionName) return;
+            
+            const code = elements.functionCode.value.trim();
+            if (!code) return;
+            
+            try {
+                // Normalize indentation and extract function name
+                const normalizedCode = code.replace(/^[ \t]+/gm, '');
+                const functionMatch = normalizedCode.match(/^\s*(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\([^)]*\)/);
+                
+                if (functionMatch) {
+                    const functionName = functionMatch[1];
+                    
+                    // Auto-fill the function name field
+                    elements.functionName.value = functionName;
+                    
+                    // Add auto-completed class to style the field
+                    elements.functionName.classList.add('auto-completed');
+                    
+                    // Make the field read-only
+                    elements.functionName.setAttribute('readonly', 'readonly');
+                } else {
+                    // If no function name found, remove auto-completed styling and make editable
+                    elements.functionName.classList.remove('auto-completed');
+                    elements.functionName.removeAttribute('readonly');
+                }
+            } catch (error) {
+                console.error('Error extracting function name:', error);
             }
         }
         
