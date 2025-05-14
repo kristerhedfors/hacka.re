@@ -311,24 +311,17 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
                         toolCallMessage += `- Name: ${toolCall.function.name}\n`;
                         toolCallMessage += `- ID: ${toolCall.id}\n`;
                         
-                        // Format the arguments as pretty JSON if possible
+                        // Format the arguments as JSON on a single line
                         try {
                             const args = JSON.parse(toolCall.function.arguments);
-                            const formattedArgs = JSON.stringify(args, null, 2);
+                            const formattedArgs = JSON.stringify(args);
                             
-                            // Add arguments as a separate message
+                            // Add function call in the requested format
+                            addSystemMessage(`Function call requested by model: ${toolCall.function.name}(${formattedArgs})`);
+                            
+                            // Add the tool info
                             if (typeof DebugService.displayMultilineDebug === 'function') {
-                                // First add the tool info
                                 DebugService.displayMultilineDebug(toolCallMessage, addSystemMessage);
-                                
-                                // Then add the arguments with a header
-                                addSystemMessage(`- Arguments for tool #${index + 1}:`);
-                                
-                                // Split the JSON by lines and add each line
-                                const argLines = formattedArgs.split('\n');
-                                argLines.forEach(line => {
-                                    addSystemMessage(`  ${line}`);
-                                });
                             } else {
                                 // Fallback if displayMultilineDebug is not available
                                 toolCallMessage += `- Arguments: ${formattedArgs}`;
@@ -389,29 +382,13 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
                                 // Add header message
                                 addSystemMessage(`Fixed arguments for math_addition_tool:`);
                                 
-                                // Show the original arguments
-                                addSystemMessage(`Original arguments:`);
-                                const originalArgsFormatted = JSON.stringify(originalArgs, null, 2);
-                                if (typeof DebugService.displayMultilineDebug === 'function') {
-                                    const originalArgsLines = originalArgsFormatted.split('\n');
-                                    originalArgsLines.forEach(line => {
-                                        addSystemMessage(`  ${line}`);
-                                    });
-                                } else {
-                                    addSystemMessage(`  ${originalArgsFormatted}`);
-                                }
+                                // Show the original arguments on a single line
+                                const originalArgsFormatted = JSON.stringify(originalArgs);
+                                addSystemMessage(`Original arguments: ${originalArgsFormatted}`);
                                 
-                                // Show the fixed arguments
-                                addSystemMessage(`Fixed arguments:`);
-                                const fixedArgsFormatted = JSON.stringify(args, null, 2);
-                                if (typeof DebugService.displayMultilineDebug === 'function') {
-                                    const fixedArgsLines = fixedArgsFormatted.split('\n');
-                                    fixedArgsLines.forEach(line => {
-                                        addSystemMessage(`  ${line}`);
-                                    });
-                                } else {
-                                    addSystemMessage(`  ${fixedArgsFormatted}`);
-                                }
+                                // Show the fixed arguments on a single line
+                                const fixedArgsFormatted = JSON.stringify(args);
+                                addSystemMessage(`Fixed arguments: ${fixedArgsFormatted}`);
                                 
                                 // Add explanation of what was fixed
                                 const changes = [];

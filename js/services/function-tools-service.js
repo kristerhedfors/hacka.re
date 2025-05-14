@@ -351,27 +351,20 @@ window.FunctionToolsService = (function() {
                 
                 // Log function execution
                 if (addSystemMessage) {
-                    // Add header message
-                    addSystemMessage(`Executing function "${name}" with arguments:`);
-                    
-                    // Format the arguments as pretty JSON if possible
+                    // Format the arguments as JSON on a single line
                     try {
                         const args = JSON.parse(argsString);
-                        const formattedArgs = JSON.stringify(args, null, 2);
+                        const formattedArgs = JSON.stringify(args);
                         
-                        // Use the debug service to display the arguments
-                        if (window.DebugService && typeof DebugService.displayMultilineDebug === 'function') {
-                            const argLines = formattedArgs.split('\n');
-                            argLines.forEach(line => {
-                                addSystemMessage(`  ${line}`);
-                            });
-                        } else {
-                            // Fallback if debug service is not available
-                            addSystemMessage(`  ${formattedArgs}`);
-                        }
+                        // Add function call in the requested format
+                        addSystemMessage(`Function call requested by model: ${name}(${formattedArgs})`);
+                        
+                        // Add execution message
+                        addSystemMessage(`Executing function "${name}"`);
                     } catch (e) {
                         // If parsing fails, just show the raw arguments
-                        addSystemMessage(`  ${argsString}`);
+                        addSystemMessage(`Function call requested by model: ${name}(${argsString})`);
+                        addSystemMessage(`Executing function "${name}"`);
                     }
                 }
                 
