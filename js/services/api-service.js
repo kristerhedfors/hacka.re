@@ -216,8 +216,23 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
                                     }
                                     
                                     if (funcDelta.arguments) {
+                                        // Log the incoming arguments delta for debugging
+                                        console.log(`Tool call delta arguments for index ${index}:`, funcDelta.arguments);
+                                        
+                                        // Concatenate the arguments
                                         toolCalls[index].function.arguments = 
                                             (toolCalls[index].function.arguments || '') + funcDelta.arguments;
+                                        
+                                        // Log the current state of the arguments
+                                        console.log(`Current tool call arguments for index ${index}:`, toolCalls[index].function.arguments);
+                                        
+                                        // Try to parse the arguments as JSON to check if they're valid
+                                        try {
+                                            JSON.parse(toolCalls[index].function.arguments);
+                                            console.log(`Valid JSON arguments for index ${index}`);
+                                        } catch (e) {
+                                            console.log(`Invalid JSON arguments for index ${index}, still receiving deltas`);
+                                        }
                                     }
                                 }
                             }
@@ -236,12 +251,111 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
     // Process tool calls if any were received and apiToolsManager is provided
     if (toolCalls.length > 0 && apiToolsManager) {
         try {
-            // Notify user that tool calls were received
+            // Notify user that tool calls were received with detailed information
             if (addSystemMessage) {
-                addSystemMessage(`Received ${toolCalls.length} tool call(s) from the AI`);
+                // Create a detailed message about the tool calls
+                let detailsMessage = `Received ${toolCalls.length} tool call(s) from the AI\n`;
+                detailsMessage += `(Debug mode: Showing detailed tool call information)\n\n`;
+                
+                // Add details for each tool call
+                toolCalls.forEach((toolCall, index) => {
+                    detailsMessage += `Tool #${index + 1}:\n`;
+                    detailsMessage += `- Name: ${toolCall.function.name}\n`;
+                    detailsMessage += `- ID: ${toolCall.id}\n`;
+                    
+                    // Format the arguments as pretty JSON if possible
+                    try {
+                        const args = JSON.parse(toolCall.function.arguments);
+                        detailsMessage += `- Arguments: \n\`\`\`json\n${JSON.stringify(args, null, 2)}\n\`\`\`\n`;
+                    } catch (e) {
+                        // If parsing fails, just show the raw arguments
+                        detailsMessage += `- Arguments: ${toolCall.function.arguments}\n`;
+                    }
+                });
+                
+                addSystemMessage(detailsMessage);
             }
             
-            // Process the tool calls
+            // Before processing, try to fix any issues with the tool call arguments
+            for (let i = 0; i < toolCalls.length; i++) {
+                const toolCall = toolCalls[i];
+                if (toolCall.function && toolCall.function.arguments) {
+                    try {
+                        // Try to parse the arguments as JSON
+                        const args = JSON.parse(toolCall.function.arguments);
+                        
+                        // Check if this is the math_addition_tool and if the arguments are strings
+                        if (toolCall.function.name === 'math_addition_tool') {
+                            // Save the original arguments for comparison
+                            const originalArgs = JSON.parse(JSON.stringify(args));
+                            
+                            // Convert string numbers to actual numbers
+                            if (args.a && typeof args.a === 'string') {
+                                args.a = parseFloat(args.a);
+                            }
+                            if (args.b && typeof args.b === 'string') {
+                                args.b = parseFloat(args.b);
+                            }
+                            
+                            // Remove any unexpected arguments (like 'c')
+                            const validKeys = ['a', 'b'];
+                            Object.keys(args).forEach(key => {
+                                if (!validKeys.includes(key)) {
+                                    console.log(`Removing unexpected argument '${key}' from math_addition_tool`);
+                                    delete args[key];
+                                }
+                            });
+                            
+                            // Update the tool call arguments with the fixed version
+                            toolCall.function.arguments = JSON.stringify(args);
+                            console.log(`Fixed arguments for math_addition_tool:`, args);
+                            
+                            // Add a system message to show that we've fixed the arguments
+                            if (addSystemMessage) {
+                                // Create a detailed message showing what was fixed
+                                let fixMessage = `Fixed arguments for math_addition_tool:\n`;
+                                
+                                // Show the original arguments
+                                fixMessage += `Original: \`\`\`json\n${JSON.stringify(originalArgs, null, 2)}\n\`\`\`\n`;
+                                
+                                // Show the fixed arguments
+                                fixMessage += `Fixed: \`\`\`json\n${JSON.stringify(args, null, 2)}\n\`\`\`\n`;
+                                
+                                // Add explanation of what was fixed
+                                const changes = [];
+                                if (typeof originalArgs.a === 'string' && typeof args.a === 'number') {
+                                    changes.push(`Converted 'a' from string "${originalArgs.a}" to number ${args.a}`);
+                                }
+                                if (typeof originalArgs.b === 'string' && typeof args.b === 'number') {
+                                    changes.push(`Converted 'b' from string "${originalArgs.b}" to number ${args.b}`);
+                                }
+                                
+                                // Check for removed arguments
+                                Object.keys(originalArgs).forEach(key => {
+                                    if (!args.hasOwnProperty(key)) {
+                                        changes.push(`Removed unexpected argument '${key}'`);
+                                    }
+                                });
+                                
+                                if (changes.length > 0) {
+                                    fixMessage += `Changes made:\n`;
+                                    changes.forEach(change => {
+                                        fixMessage += `- ${change}\n`;
+                                    });
+                                } else {
+                                    fixMessage += `No changes were needed\n`;
+                                }
+                                
+                                addSystemMessage(fixMessage);
+                            }
+                        }
+                    } catch (e) {
+                        console.error(`Error fixing tool call arguments for index ${i}:`, e);
+                    }
+                }
+            }
+            
+            // Process the tool calls with the fixed arguments
             const toolResults = await apiToolsManager.processToolCalls(toolCalls, addSystemMessage);
             
             if (toolResults && toolResults.length > 0) {
