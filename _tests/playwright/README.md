@@ -70,6 +70,7 @@ The tests are organized into the following files:
 - `test_token_counter_debounce.py`: Tests related to token counter debouncing for improved performance
 - `test_themes.py`: Tests related to theme switching functionality and mobile responsiveness
 - `test_function_calling.py`: Tests related to the function calling (OpenAPI) feature and JavaScript function execution, including error handling and RC4 encryption/decryption functionality
+- `test_function_calling_with_api.py`: Tests related to function calling with a configured API key, using a function calling model, and validating function invocation through chat conversations
 
 ## Testing MCP Functionality
 
@@ -158,6 +159,14 @@ These tests verify the behavior of the application with mocked API responses:
       - Error handling for missing parameters
       - Error handling for invalid hex format in ciphertext
       - Proper user feedback for all error conditions
+    - Function calling with API key integration
+      - Configuring API key using .env file
+      - Selecting function calling models
+      - Enabling function calling in settings
+      - Adding example functions with JSDoc comments for better tool definitions
+      - Testing function invocation through natural language chat conversations
+      - Validating function execution and response integration
+      - Testing multiple functions in the same conversation
 
 ## Adding New Tests
 
