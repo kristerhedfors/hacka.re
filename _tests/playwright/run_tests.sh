@@ -50,6 +50,10 @@ while [[ $# -gt 0 ]]; do
             TIMEOUT="$2"
             shift 2
             ;;
+        -k)
+            K_EXPR="$2"
+            shift 2
+            ;;
         --help|-h)
             echo "Usage: $0 [options]"
             echo ""
@@ -60,6 +64,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --verbose, -v   Run tests with verbose output"
             echo "  --test-file     Specify a test file to run"
             echo "  --timeout       Set timeout in milliseconds (default: 5000)"
+            echo "  -k              Filter tests by expression (e.g., -k \"not function_calling_api\")"
             echo "  --help, -h      Show this help message"
             exit 0
             ;;
@@ -70,13 +75,18 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# Prepare pytest arguments
+if [ -n "$K_EXPR" ]; then
+    PYTEST_ARGS="$PYTEST_ARGS -k \"$K_EXPR\""
+fi
+
 # Run the tests
 if [ -n "$TEST_FILE" ]; then
     echo "Running tests in $TEST_FILE with $BROWSER browser..."
-    python -m pytest $TEST_FILE $PYTEST_ARGS --browser $BROWSER $HEADLESS
+    eval "python -m pytest $TEST_FILE $PYTEST_ARGS --browser $BROWSER $HEADLESS"
 else
     echo "Running all tests with $BROWSER browser..."
-    python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS
+    eval "python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS"
 fi
 
 # Deactivate the virtual environment
