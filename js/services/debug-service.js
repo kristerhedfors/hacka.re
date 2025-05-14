@@ -98,6 +98,37 @@ window.DebugService = (function() {
         }
     }
     
+    /**
+     * Display a multiline debug message in the chat
+     * Splits the message into lines and adds each line as a separate system message
+     * with special styling for a continuous block appearance
+     * @param {string} message - The multiline message to display
+     * @param {Function} addSystemMessage - Function to add a system message to the chat
+     */
+    function displayMultilineDebug(message, addSystemMessage) {
+        if (!debugMode || !addSystemMessage) return;
+        
+        // Split the message into lines
+        const lines = message.split('\n');
+        
+        // Filter out empty lines
+        const nonEmptyLines = lines.filter(line => line.trim() !== '');
+        
+        if (nonEmptyLines.length === 0) return;
+        
+        // Add each line as a separate system message with debug-message class
+        nonEmptyLines.forEach((line, index) => {
+            // For the last line, add a special class to restore normal bottom margin
+            const isLast = index === nonEmptyLines.length - 1;
+            const className = isLast ? 'debug-message debug-message-last' : 'debug-message';
+            
+            // Add the system message with the appropriate class
+            if (typeof addSystemMessage === 'function') {
+                addSystemMessage(line, className);
+            }
+        });
+    }
+    
     // Public API
     return {
         init,
@@ -106,6 +137,7 @@ window.DebugService = (function() {
         log,
         error,
         warn,
-        info
+        info,
+        displayMultilineDebug
     };
 })();

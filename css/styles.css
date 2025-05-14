@@ -675,6 +675,16 @@ main {
     animation: fadeIn 0.3s ease;
 }
 
+/* Debug message styling - tighter spacing for continuous block appearance */
+.message.system.debug-message {
+    margin-bottom: 0.1rem; /* Much smaller margin between debug messages */
+}
+
+/* Last debug message in a sequence should have normal margin */
+.message.system.debug-message.debug-message-last {
+    margin-bottom: 1rem;
+}
+
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
@@ -689,8 +699,15 @@ main {
 }
 
 .message.system {
-    align-self: center;
+    align-self: flex-start;
     max-width: 90%;
+    margin-left: 4ch; /* 4 character width margin */
+}
+
+/* Debug message content should have less padding to appear more compact */
+.debug-message .message-content {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
 }
 
 .message-content {
@@ -712,7 +729,7 @@ main {
 .system .message-content {
     background-color: var(--system-msg-bg);
     border-radius: var(--border-radius);
-    text-align: center;
+    text-align: left;
 }
 
 .message-content p {

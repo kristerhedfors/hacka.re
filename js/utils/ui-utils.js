@@ -130,6 +130,17 @@ window.UIUtils = (function() {
                     ${content ? renderMarkdown(content) : ''}
                 </div>
             `;
+        } else if (role === 'system') {
+            // For system messages, preserve newlines by using innerHTML with <br> tags
+            // First escape HTML to prevent XSS, then replace newlines with <br>
+            const escapedContent = escapeHTML(content);
+            const contentWithLineBreaks = escapedContent.replace(/\n/g, '<br>');
+            
+            messageElement.innerHTML = `
+                <div class="message-content" style="font-family: 'Courier New', monospace;">
+                    ${contentWithLineBreaks}
+                </div>
+            `;
         } else {
             messageElement.innerHTML = `
                 <div class="message-content">

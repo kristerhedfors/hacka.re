@@ -398,10 +398,16 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
         /**
          * Add a system message to the chat
          * @param {string} content - Message content
+         * @param {string} className - Optional CSS class to add to the message
          */
-        function addSystemMessage(content) {
+        function addSystemMessage(content, className) {
             // Create message element
             const messageElement = UIUtils.createMessageElement('system', content);
+            
+            // Add custom class if provided
+            if (className) {
+                messageElement.classList.add(...className.split(' '));
+            }
             
             // Add to chat
             elements.chatMessages.appendChild(messageElement);

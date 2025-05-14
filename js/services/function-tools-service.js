@@ -351,7 +351,28 @@ window.FunctionToolsService = (function() {
                 
                 // Log function execution
                 if (addSystemMessage) {
-                    addSystemMessage(`Executing function "${name}" with arguments: ${argsString}`);
+                    // Add header message
+                    addSystemMessage(`Executing function "${name}" with arguments:`);
+                    
+                    // Format the arguments as pretty JSON if possible
+                    try {
+                        const args = JSON.parse(argsString);
+                        const formattedArgs = JSON.stringify(args, null, 2);
+                        
+                        // Use the debug service to display the arguments
+                        if (window.DebugService && typeof DebugService.displayMultilineDebug === 'function') {
+                            const argLines = formattedArgs.split('\n');
+                            argLines.forEach(line => {
+                                addSystemMessage(`  ${line}`);
+                            });
+                        } else {
+                            // Fallback if debug service is not available
+                            addSystemMessage(`  ${formattedArgs}`);
+                        }
+                    } catch (e) {
+                        // If parsing fails, just show the raw arguments
+                        addSystemMessage(`  ${argsString}`);
+                    }
                 }
                 
                 // Execute the JavaScript function
@@ -373,7 +394,16 @@ window.FunctionToolsService = (function() {
                 
                 // Log error to user if callback provided
                 if (addSystemMessage) {
-                    addSystemMessage(`Error executing function: ${error.message}`);
+                    // Add header message
+                    addSystemMessage(`Error executing function:`);
+                    
+                    // Use the debug service to display the error message
+                    if (window.DebugService && typeof DebugService.displayMultilineDebug === 'function') {
+                        DebugService.displayMultilineDebug(error.message, addSystemMessage);
+                    } else {
+                        // Fallback if debug service is not available
+                        addSystemMessage(`  ${error.message}`);
+                    }
                 }
                 
                 // Add error result
