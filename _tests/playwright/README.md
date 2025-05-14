@@ -170,6 +170,16 @@ These tests verify the behavior of the application with mocked API responses:
 
 ## Function Calling Test Implementation Notes
 
+### Default Test Function
+
+The default function in the function calling menu is a `multiply_numbers` function that takes two numeric arguments. This function was chosen for testing purposes for several reasons:
+
+1. **Easy to invoke**: The function requires just two numeric arguments, making it straightforward to call from the LLM.
+2. **Easy to validate**: Multiplication produces deterministic results that can be easily verified.
+3. **Unlikely to be solved by an LLM**: Unlike functions that retrieve information (like getting the time in Berlin), multiplication requires actual computation rather than knowledge retrieval, ensuring the function is actually executed rather than the LLM attempting to simulate the result.
+
+This approach provides a more reliable test case than functions that depend on external APIs or that produce results an LLM might be able to guess or approximate.
+
 When implementing or modifying function calling tests, be aware of these important considerations:
 
 ### Key Implementation Details
