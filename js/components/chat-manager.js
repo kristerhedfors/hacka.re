@@ -35,7 +35,7 @@ window.ChatManager = (function() {
  * @param {Function} showApiKeyModal - Function to show API key modal
  * @param {Function} updateContextUsage - Function to update context usage
  * @param {Object} apiToolsManager - API tools manager for tool calling
- * @param {Object} mcpManager - MCP manager for MCP tool calling
+ * @param {Object} mcpManager - Deprecated parameter, kept for compatibility
  * @param {Object} functionCallingManager - Function calling manager for OpenAPI functions
  */
 function sendMessage(message, apiKey, currentModel, systemPrompt, showApiKeyModal, updateContextUsage, apiToolsManager, mcpManager, functionCallingManager) {
@@ -72,7 +72,7 @@ function sendMessage(message, apiKey, currentModel, systemPrompt, showApiKeyModa
  * @param {string} systemPrompt - System prompt
  * @param {Function} updateContextUsage - Function to update context usage
  * @param {Object} apiToolsManager - API tools manager for tool calling
- * @param {Object} mcpManager - MCP manager for MCP tool calling
+ * @param {Object} mcpManager - Deprecated parameter, kept for compatibility
  * @param {Object} functionCallingManager - Function calling manager for OpenAPI functions
  */
 async function generateResponse(apiKey, currentModel, systemPrompt, updateContextUsage, apiToolsManager, mcpManager, functionCallingManager) {
@@ -120,15 +120,13 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
             getToolDefinitions: () => {
                 const apiTools = apiToolsManager ? apiToolsManager.getToolDefinitions() : [];
                 const functionTools = FunctionToolsService ? FunctionToolsService.getToolDefinitions() : [];
-                const mcpTools = mcpManager ? mcpManager.getToolDefinitions() : [];
                 const functionCallingTools = functionCallingManager ? functionCallingManager.getFunctionDefinitions() : [];
-                return [...apiTools, ...functionTools, ...mcpTools, ...functionCallingTools];
+                return [...apiTools, ...functionTools, ...functionCallingTools];
             },
             processToolCalls: async (toolCalls, addSystemMessage) => {
         // Process tool calls based on their names
         const apiToolCalls = [];
         const functionToolCalls = [];
-        const mcpToolCalls = [];
         
         // Validate toolCalls is an array
         if (!Array.isArray(toolCalls)) {
@@ -150,10 +148,8 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
                 
                 const toolName = toolCall.function.name;
                 
-                // Check if it's an MCP tool (contains a dot)
-                if (toolName.includes('.')) {
-                    mcpToolCalls.push(toolCall);
-                } else if (FunctionToolsService && FunctionToolsService.getJsFunctions()[toolName]) {
+                // Check if it's a function tool
+                if (FunctionToolsService && FunctionToolsService.getJsFunctions()[toolName]) {
                     functionToolCalls.push(toolCall);
                 } else {
                     apiToolCalls.push(toolCall);
@@ -175,12 +171,8 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
             ? await FunctionToolsService.processToolCalls(functionToolCalls, addSystemMessage)
             : [];
         
-        const mcpResults = mcpToolCalls.length > 0 && mcpManager 
-            ? await mcpManager.processToolCalls(mcpToolCalls, addSystemMessage) 
-            : [];
-                
                 // Combine results
-                return [...apiResults, ...functionResults, ...mcpResults];
+                return [...apiResults, ...functionResults];
             }
         };
         
