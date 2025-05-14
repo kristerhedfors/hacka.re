@@ -123,6 +123,43 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
         if (toolDefinitions && toolDefinitions.length > 0) {
             requestBody.tools = toolDefinitions;
             requestBody.tool_choice = "auto";
+            
+            // Debug mode: Print all tools declared in the chat API invocation
+            if (addSystemMessage && toolDefinitions.length > 0) {
+                let debugMessage = "Debug mode: Tools declared in this chat API invocation\n\n";
+                
+                toolDefinitions.forEach((tool, index) => {
+                    debugMessage += `Tool #${index + 1}: ${tool.function?.name || 'unnamed'}\n`;
+                    debugMessage += `Type: ${tool.type || 'unknown'}\n`;
+                    
+                    if (tool.function) {
+                        debugMessage += `Description: ${tool.function.description || 'No description'}\n`;
+                        
+                        if (tool.function.parameters) {
+                            debugMessage += `Parameters:\n`;
+                            
+                            if (tool.function.parameters.properties) {
+                                const properties = tool.function.parameters.properties;
+                                Object.keys(properties).forEach(paramName => {
+                                    const param = properties[paramName];
+                                    debugMessage += `  - ${paramName} (${param.type || 'any'}): ${param.description || 'No description'}\n`;
+                                    if (param.enum) {
+                                        debugMessage += `    Allowed values: ${param.enum.join(', ')}\n`;
+                                    }
+                                });
+                            }
+                            
+                            if (tool.function.parameters.required && tool.function.parameters.required.length > 0) {
+                                debugMessage += `Required parameters: ${tool.function.parameters.required.join(', ')}\n`;
+                            }
+                        }
+                    }
+                    
+                    debugMessage += `\n`;
+                });
+                
+                addSystemMessage(debugMessage);
+            }
         }
     }
     
