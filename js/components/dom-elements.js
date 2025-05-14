@@ -73,9 +73,6 @@ window.DOMElements = (function() {
             functionClearBtn: document.getElementById('function-clear-btn'),
             closeFunctionModal: document.getElementById('close-function-modal'),
             
-            // MCP button
-            mcpBtn: document.getElementById('mcp-btn'),
-            
             // Settings modal elements
             settingsBtn: document.getElementById('settings-btn'),
             settingsModal: document.getElementById('settings-modal'),

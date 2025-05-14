@@ -125,7 +125,7 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
             requestBody.tool_choice = "auto";
             
                 // Debug mode: Print all tools declared in the chat API invocation
-                if (addSystemMessage && toolDefinitions.length > 0) {
+                if (addSystemMessage && toolDefinitions.length > 0 && window.DebugService && DebugService.getDebugMode()) {
                     let debugMessage = "Debug mode: Tools declared in this chat API invocation";
                     
                     // Add header as a separate message
@@ -159,11 +159,11 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
                             }
                         }
                         
-                        // Use the new debug service function to display multiline debug message
-                        if (window.DebugService && typeof DebugService.displayMultilineDebug === 'function') {
+                        // Use the debug service function to display multiline debug message
+                        if (typeof DebugService.displayMultilineDebug === 'function') {
                             DebugService.displayMultilineDebug(toolMessage, addSystemMessage);
                         } else {
-                            // Fallback if debug service is not available
+                            // Fallback if displayMultilineDebug is not available
                             addSystemMessage(toolMessage);
                         }
                     });
@@ -300,50 +300,54 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
             if (addSystemMessage) {
                 // Add header message
                 addSystemMessage(`Received ${toolCalls.length} tool call(s) from the AI`);
-                addSystemMessage(`(Debug mode: Showing detailed tool call information)`);
                 
-                // Add details for each tool call as separate messages
-                toolCalls.forEach((toolCall, index) => {
-                    let toolCallMessage = `Tool #${index + 1}:\n`;
-                    toolCallMessage += `- Name: ${toolCall.function.name}\n`;
-                    toolCallMessage += `- ID: ${toolCall.id}\n`;
-                    
-                    // Format the arguments as pretty JSON if possible
-                    try {
-                        const args = JSON.parse(toolCall.function.arguments);
-                        const formattedArgs = JSON.stringify(args, null, 2);
+                // Only show detailed information in debug mode
+                if (window.DebugService && DebugService.getDebugMode()) {
+                    addSystemMessage(`(Debug mode: Showing detailed tool call information)`);
+                
+                    // Add details for each tool call as separate messages
+                    toolCalls.forEach((toolCall, index) => {
+                        let toolCallMessage = `Tool #${index + 1}:\n`;
+                        toolCallMessage += `- Name: ${toolCall.function.name}\n`;
+                        toolCallMessage += `- ID: ${toolCall.id}\n`;
                         
-                        // Add arguments as a separate message
-                        if (window.DebugService && typeof DebugService.displayMultilineDebug === 'function') {
-                            // First add the tool info
-                            DebugService.displayMultilineDebug(toolCallMessage, addSystemMessage);
+                        // Format the arguments as pretty JSON if possible
+                        try {
+                            const args = JSON.parse(toolCall.function.arguments);
+                            const formattedArgs = JSON.stringify(args, null, 2);
                             
-                            // Then add the arguments with a header
-                            addSystemMessage(`- Arguments for tool #${index + 1}:`);
+                            // Add arguments as a separate message
+                            if (typeof DebugService.displayMultilineDebug === 'function') {
+                                // First add the tool info
+                                DebugService.displayMultilineDebug(toolCallMessage, addSystemMessage);
+                                
+                                // Then add the arguments with a header
+                                addSystemMessage(`- Arguments for tool #${index + 1}:`);
+                                
+                                // Split the JSON by lines and add each line
+                                const argLines = formattedArgs.split('\n');
+                                argLines.forEach(line => {
+                                    addSystemMessage(`  ${line}`);
+                                });
+                            } else {
+                                // Fallback if displayMultilineDebug is not available
+                                toolCallMessage += `- Arguments: ${formattedArgs}`;
+                                addSystemMessage(toolCallMessage);
+                            }
+                        } catch (e) {
+                            // If parsing fails, just show the raw arguments
+                            toolCallMessage += `- Arguments: ${toolCall.function.arguments}`;
                             
-                            // Split the JSON by lines and add each line
-                            const argLines = formattedArgs.split('\n');
-                            argLines.forEach(line => {
-                                addSystemMessage(`  ${line}`);
-                            });
-                        } else {
-                            // Fallback if debug service is not available
-                            toolCallMessage += `- Arguments: ${formattedArgs}`;
-                            addSystemMessage(toolCallMessage);
+                            // Use the debug service
+                            if (typeof DebugService.displayMultilineDebug === 'function') {
+                                DebugService.displayMultilineDebug(toolCallMessage, addSystemMessage);
+                            } else {
+                                // Fallback if displayMultilineDebug is not available
+                                addSystemMessage(toolCallMessage);
+                            }
                         }
-                    } catch (e) {
-                        // If parsing fails, just show the raw arguments
-                        toolCallMessage += `- Arguments: ${toolCall.function.arguments}`;
-                        
-                        // Use the debug service
-                        if (window.DebugService && typeof DebugService.displayMultilineDebug === 'function') {
-                            DebugService.displayMultilineDebug(toolCallMessage, addSystemMessage);
-                        } else {
-                            // Fallback if debug service is not available
-                            addSystemMessage(toolCallMessage);
-                        }
-                    }
-                });
+                    });
+                }
             }
             
             // Before processing, try to fix any issues with the tool call arguments
@@ -381,14 +385,14 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
                             console.log(`Fixed arguments for math_addition_tool:`, args);
                             
                             // Add a system message to show that we've fixed the arguments
-                            if (addSystemMessage) {
+                            if (addSystemMessage && window.DebugService && DebugService.getDebugMode()) {
                                 // Add header message
                                 addSystemMessage(`Fixed arguments for math_addition_tool:`);
                                 
                                 // Show the original arguments
                                 addSystemMessage(`Original arguments:`);
                                 const originalArgsFormatted = JSON.stringify(originalArgs, null, 2);
-                                if (window.DebugService && typeof DebugService.displayMultilineDebug === 'function') {
+                                if (typeof DebugService.displayMultilineDebug === 'function') {
                                     const originalArgsLines = originalArgsFormatted.split('\n');
                                     originalArgsLines.forEach(line => {
                                         addSystemMessage(`  ${line}`);
@@ -400,7 +404,7 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
                                 // Show the fixed arguments
                                 addSystemMessage(`Fixed arguments:`);
                                 const fixedArgsFormatted = JSON.stringify(args, null, 2);
-                                if (window.DebugService && typeof DebugService.displayMultilineDebug === 'function') {
+                                if (typeof DebugService.displayMultilineDebug === 'function') {
                                     const fixedArgsLines = fixedArgsFormatted.split('\n');
                                     fixedArgsLines.forEach(line => {
                                         addSystemMessage(`  ${line}`);
