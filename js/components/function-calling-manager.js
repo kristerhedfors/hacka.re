@@ -254,9 +254,10 @@ function multiply_numbers(a, b) {
             try {
                 // Check if the code is a valid function - normalize indentation
                 const normalizedCode = code.replace(/^[ \t]+/gm, '');
-                const functionMatch = normalizedCode.match(/^\s*(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\([^)]*\)/);
+                // Allow comments and whitespace before the function declaration
+                const functionMatch = normalizedCode.match(/(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\([^)]*\)/);
                 if (!functionMatch) {
-                    showValidationResult('Invalid function format. Must be a named function declaration.', 'error');
+                    showValidationResult('Invalid function format. Must be a named function declaration like: function funcName(a, b) { ... }', 'error');
                     return { success: false };
                 }
                 
