@@ -59,16 +59,30 @@ window.FunctionCallingManager = (function() {
          * @returns {string} Default function code
          */
         function getDefaultFunctionCode() {
-            return `async function getCurrentTimeInBerlin() {
-  try {
-    const response = await fetch('https://worldtimeapi.org/api/timezone/Europe/Berlin');
-    if (!response.ok) {
-      throw new Error(\`API request failed with status \${response.status}\`);
-    }
-    return await response.json();
-  } catch (error) {
-    return { error: error.message };
+            return `/**
+ * Multiplies two numbers together
+ * @description A simple function that multiplies two numbers and returns the result
+ * @param {number} a - The first number to multiply
+ * @param {number} b - The second number to multiply
+ * @returns {Object} Object containing the result of the multiplication
+ */
+function multiply_numbers(a, b) {
+  // Validate inputs are numbers
+  if (typeof a !== 'number' || typeof b !== 'number') {
+    return { 
+      error: "Both inputs must be numbers",
+      success: false
+    };
   }
+  
+  // Perform the multiplication
+  const result = a * b;
+  
+  // Return the result
+  return {
+    result: result,
+    success: true
+  };
 }`;
         }
         
@@ -509,9 +523,12 @@ window.FunctionCallingManager = (function() {
             if (!code) return;
             
             try {
-                // Normalize indentation and extract function name
+                // Normalize indentation
                 const normalizedCode = code.replace(/^[ \t]+/gm, '');
-                const functionMatch = normalizedCode.match(/^\s*(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\([^)]*\)/);
+                
+                // First, try to find a function declaration anywhere in the code
+                // This will work even if there are JSDoc comments or other code before the function
+                const functionMatch = normalizedCode.match(/(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\([^)]*\)/);
                 
                 if (functionMatch) {
                     const functionName = functionMatch[1];
