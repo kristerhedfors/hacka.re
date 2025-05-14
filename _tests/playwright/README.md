@@ -168,6 +168,55 @@ These tests verify the behavior of the application with mocked API responses:
       - Validating function execution and response integration
       - Testing multiple functions in the same conversation
 
+## Function Calling Test Implementation Notes
+
+When implementing or modifying function calling tests, be aware of these important considerations:
+
+### Key Implementation Details
+
+1. **Function Name Field Behavior**: The function name input field is **read-only** and auto-populated from the function declaration in the code editor. Tests must:
+   - First set the function code with a properly named function
+   - Wait for the function name field to be auto-populated
+   - Then proceed with validation and submission
+
+2. **Correct Test Flow**:
+   ```python
+   # First, set the function code - the name field will be auto-populated
+   function_code = page.locator("#function-code")
+   function_code.fill("""function test_function() { ... }""")
+   
+   # Check that the function name field was auto-populated
+   function_name = page.locator("#function-name")
+   expect(function_name).to_have_value("test_function")
+   
+   # Then validate and submit
+   ```
+
+3. **Element Visibility**: Always ensure elements are visible before interacting with them using `scroll_into_view_if_needed()` to prevent test failures.
+
+### Common Pitfalls
+
+1. **Decorator Issues**: The `timed_test` decorator in `test_utils.py` can cause issues with function calling tests. It expects the first argument to be a `page` object, but this may not be passed correctly in all test configurations. If you encounter `IndexError: tuple index out of range` errors, consider removing the decorator.
+
+2. **Direct Interaction with Read-Only Fields**: Attempting to directly fill the function name field will fail with timeout errors:
+   ```
+   TimeoutError: Locator.fill: Timeout 30000ms exceeded.
+   Call log:
+     - locator resolved to <input readonly="readonly" .../>
+     - element is not editable
+   ```
+
+3. **Waiting Strategies**: Avoid arbitrary waits (e.g., `page.wait_for_timeout()`). Instead, use proper waiting strategies:
+   ```python
+   # Good practice
+   page.wait_for_selector("#validation-result:not(:empty)", state="visible")
+   
+   # Avoid
+   page.wait_for_timeout(500)  # Arbitrary wait
+   ```
+
+The working implementation can be found in `test_function_calling_correct.py` and `test_function_calling_simple.py`, which demonstrate the proper approach to testing the function calling features.
+
 ## Adding New Tests
 
 To add new tests:
