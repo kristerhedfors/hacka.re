@@ -311,7 +311,16 @@ window.ApiToolsService = (function() {
                 
                 // Log error to user if callback provided
                 if (addSystemMessage) {
-                    addSystemMessage(`Error executing tool: ${error.message}`);
+                    // Add header message
+                    addSystemMessage(`Error executing tool:`);
+                    
+                    // Use the debug service to display the error message
+                    if (window.DebugService && typeof DebugService.displayMultilineDebug === 'function') {
+                        DebugService.displayMultilineDebug(error.message, addSystemMessage);
+                    } else {
+                        // Fallback if debug service is not available
+                        addSystemMessage(`  ${error.message}`);
+                    }
                 }
                 
                 // Add error result

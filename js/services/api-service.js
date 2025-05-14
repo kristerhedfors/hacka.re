@@ -124,42 +124,50 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
             requestBody.tools = toolDefinitions;
             requestBody.tool_choice = "auto";
             
-            // Debug mode: Print all tools declared in the chat API invocation
-            if (addSystemMessage && toolDefinitions.length > 0) {
-                let debugMessage = "Debug mode: Tools declared in this chat API invocation\n\n";
-                
-                toolDefinitions.forEach((tool, index) => {
-                    debugMessage += `Tool #${index + 1}: ${tool.function?.name || 'unnamed'}\n`;
-                    debugMessage += `Type: ${tool.type || 'unknown'}\n`;
+                // Debug mode: Print all tools declared in the chat API invocation
+                if (addSystemMessage && toolDefinitions.length > 0) {
+                    let debugMessage = "Debug mode: Tools declared in this chat API invocation";
                     
-                    if (tool.function) {
-                        debugMessage += `Description: ${tool.function.description || 'No description'}\n`;
+                    // Add header as a separate message
+                    addSystemMessage(debugMessage);
+                    
+                    // Add each tool as separate messages
+                    toolDefinitions.forEach((tool, index) => {
+                        let toolMessage = `Tool #${index + 1}: ${tool.function?.name || 'unnamed'}\n`;
+                        toolMessage += `Type: ${tool.type || 'unknown'}\n`;
                         
-                        if (tool.function.parameters) {
-                            debugMessage += `Parameters:\n`;
+                        if (tool.function) {
+                            toolMessage += `Description: ${tool.function.description || 'No description'}\n`;
                             
-                            if (tool.function.parameters.properties) {
-                                const properties = tool.function.parameters.properties;
-                                Object.keys(properties).forEach(paramName => {
-                                    const param = properties[paramName];
-                                    debugMessage += `  - ${paramName} (${param.type || 'any'}): ${param.description || 'No description'}\n`;
-                                    if (param.enum) {
-                                        debugMessage += `    Allowed values: ${param.enum.join(', ')}\n`;
-                                    }
-                                });
-                            }
-                            
-                            if (tool.function.parameters.required && tool.function.parameters.required.length > 0) {
-                                debugMessage += `Required parameters: ${tool.function.parameters.required.join(', ')}\n`;
+                            if (tool.function.parameters) {
+                                toolMessage += `Parameters:\n`;
+                                
+                                if (tool.function.parameters.properties) {
+                                    const properties = tool.function.parameters.properties;
+                                    Object.keys(properties).forEach(paramName => {
+                                        const param = properties[paramName];
+                                        toolMessage += `  - ${paramName} (${param.type || 'any'}): ${param.description || 'No description'}\n`;
+                                        if (param.enum) {
+                                            toolMessage += `    Allowed values: ${param.enum.join(', ')}\n`;
+                                        }
+                                    });
+                                }
+                                
+                                if (tool.function.parameters.required && tool.function.parameters.required.length > 0) {
+                                    toolMessage += `Required parameters: ${tool.function.parameters.required.join(', ')}`;
+                                }
                             }
                         }
-                    }
-                    
-                    debugMessage += `\n`;
-                });
-                
-                addSystemMessage(debugMessage);
-            }
+                        
+                        // Use the new debug service function to display multiline debug message
+                        if (window.DebugService && typeof DebugService.displayMultilineDebug === 'function') {
+                            DebugService.displayMultilineDebug(toolMessage, addSystemMessage);
+                        } else {
+                            // Fallback if debug service is not available
+                            addSystemMessage(toolMessage);
+                        }
+                    });
+                }
         }
     }
     
@@ -290,27 +298,52 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
         try {
             // Notify user that tool calls were received with detailed information
             if (addSystemMessage) {
-                // Create a detailed message about the tool calls
-                let detailsMessage = `Received ${toolCalls.length} tool call(s) from the AI\n`;
-                detailsMessage += `(Debug mode: Showing detailed tool call information)\n\n`;
+                // Add header message
+                addSystemMessage(`Received ${toolCalls.length} tool call(s) from the AI`);
+                addSystemMessage(`(Debug mode: Showing detailed tool call information)`);
                 
-                // Add details for each tool call
+                // Add details for each tool call as separate messages
                 toolCalls.forEach((toolCall, index) => {
-                    detailsMessage += `Tool #${index + 1}:\n`;
-                    detailsMessage += `- Name: ${toolCall.function.name}\n`;
-                    detailsMessage += `- ID: ${toolCall.id}\n`;
+                    let toolCallMessage = `Tool #${index + 1}:\n`;
+                    toolCallMessage += `- Name: ${toolCall.function.name}\n`;
+                    toolCallMessage += `- ID: ${toolCall.id}\n`;
                     
                     // Format the arguments as pretty JSON if possible
                     try {
                         const args = JSON.parse(toolCall.function.arguments);
-                        detailsMessage += `- Arguments: \n\`\`\`json\n${JSON.stringify(args, null, 2)}\n\`\`\`\n`;
+                        const formattedArgs = JSON.stringify(args, null, 2);
+                        
+                        // Add arguments as a separate message
+                        if (window.DebugService && typeof DebugService.displayMultilineDebug === 'function') {
+                            // First add the tool info
+                            DebugService.displayMultilineDebug(toolCallMessage, addSystemMessage);
+                            
+                            // Then add the arguments with a header
+                            addSystemMessage(`- Arguments for tool #${index + 1}:`);
+                            
+                            // Split the JSON by lines and add each line
+                            const argLines = formattedArgs.split('\n');
+                            argLines.forEach(line => {
+                                addSystemMessage(`  ${line}`);
+                            });
+                        } else {
+                            // Fallback if debug service is not available
+                            toolCallMessage += `- Arguments: ${formattedArgs}`;
+                            addSystemMessage(toolCallMessage);
+                        }
                     } catch (e) {
                         // If parsing fails, just show the raw arguments
-                        detailsMessage += `- Arguments: ${toolCall.function.arguments}\n`;
+                        toolCallMessage += `- Arguments: ${toolCall.function.arguments}`;
+                        
+                        // Use the debug service
+                        if (window.DebugService && typeof DebugService.displayMultilineDebug === 'function') {
+                            DebugService.displayMultilineDebug(toolCallMessage, addSystemMessage);
+                        } else {
+                            // Fallback if debug service is not available
+                            addSystemMessage(toolCallMessage);
+                        }
                     }
                 });
-                
-                addSystemMessage(detailsMessage);
             }
             
             // Before processing, try to fix any issues with the tool call arguments
@@ -349,14 +382,32 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
                             
                             // Add a system message to show that we've fixed the arguments
                             if (addSystemMessage) {
-                                // Create a detailed message showing what was fixed
-                                let fixMessage = `Fixed arguments for math_addition_tool:\n`;
+                                // Add header message
+                                addSystemMessage(`Fixed arguments for math_addition_tool:`);
                                 
                                 // Show the original arguments
-                                fixMessage += `Original: \`\`\`json\n${JSON.stringify(originalArgs, null, 2)}\n\`\`\`\n`;
+                                addSystemMessage(`Original arguments:`);
+                                const originalArgsFormatted = JSON.stringify(originalArgs, null, 2);
+                                if (window.DebugService && typeof DebugService.displayMultilineDebug === 'function') {
+                                    const originalArgsLines = originalArgsFormatted.split('\n');
+                                    originalArgsLines.forEach(line => {
+                                        addSystemMessage(`  ${line}`);
+                                    });
+                                } else {
+                                    addSystemMessage(`  ${originalArgsFormatted}`);
+                                }
                                 
                                 // Show the fixed arguments
-                                fixMessage += `Fixed: \`\`\`json\n${JSON.stringify(args, null, 2)}\n\`\`\`\n`;
+                                addSystemMessage(`Fixed arguments:`);
+                                const fixedArgsFormatted = JSON.stringify(args, null, 2);
+                                if (window.DebugService && typeof DebugService.displayMultilineDebug === 'function') {
+                                    const fixedArgsLines = fixedArgsFormatted.split('\n');
+                                    fixedArgsLines.forEach(line => {
+                                        addSystemMessage(`  ${line}`);
+                                    });
+                                } else {
+                                    addSystemMessage(`  ${fixedArgsFormatted}`);
+                                }
                                 
                                 // Add explanation of what was fixed
                                 const changes = [];
@@ -375,15 +426,13 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
                                 });
                                 
                                 if (changes.length > 0) {
-                                    fixMessage += `Changes made:\n`;
+                                    addSystemMessage(`Changes made:`);
                                     changes.forEach(change => {
-                                        fixMessage += `- ${change}\n`;
+                                        addSystemMessage(`- ${change}`);
                                     });
                                 } else {
-                                    fixMessage += `No changes were needed\n`;
+                                    addSystemMessage(`No changes were needed`);
                                 }
-                                
-                                addSystemMessage(fixMessage);
                             }
                         }
                     } catch (e) {
