@@ -41,6 +41,54 @@ window.SystemPromptManager = (function() {
                     openPromptsConfigurator();
                 });
             }
+            
+            // Add debug mode checkbox after system prompt section
+            addDebugModeCheckbox();
+        }
+        
+        /**
+         * Add debug mode checkbox to the settings form
+         */
+        function addDebugModeCheckbox() {
+            // Create the debug mode checkbox container
+            const debugModeContainer = document.createElement('div');
+            debugModeContainer.className = 'form-group';
+            debugModeContainer.style.marginTop = '10px';
+            
+            // Create the checkbox group div to keep checkbox and label on same line
+            const checkboxGroup = document.createElement('div');
+            checkboxGroup.className = 'checkbox-group';
+            
+            // Create the checkbox input
+            const debugModeCheckbox = document.createElement('input');
+            debugModeCheckbox.type = 'checkbox';
+            debugModeCheckbox.id = 'debug-mode';
+            debugModeCheckbox.checked = DebugService.getDebugMode();
+            
+            // Create the label
+            const debugModeLabel = document.createElement('label');
+            debugModeLabel.htmlFor = 'debug-mode';
+            debugModeLabel.textContent = 'Debug mode';
+            
+            // Add event listener to the checkbox
+            debugModeCheckbox.addEventListener('change', function() {
+                DebugService.setDebugMode(this.checked);
+                DebugService.log('Debug mode ' + (this.checked ? 'enabled' : 'disabled'));
+            });
+            
+            // Append elements to the checkbox group
+            checkboxGroup.appendChild(debugModeCheckbox);
+            checkboxGroup.appendChild(debugModeLabel);
+            
+            // Append checkbox group to the container
+            debugModeContainer.appendChild(checkboxGroup);
+            
+            // Find the system prompt section to insert after
+            const systemPromptSection = elements.openPromptsConfigBtn.closest('.form-group');
+            if (systemPromptSection && systemPromptSection.parentNode) {
+                // Insert the debug mode container after the system prompt section
+                systemPromptSection.parentNode.insertBefore(debugModeContainer, systemPromptSection.nextSibling);
+            }
         }
         
         

@@ -14,7 +14,8 @@ window.NamespaceService = (function() {
         BASE_URL: 'base_url',
         BASE_URL_PROVIDER: 'base_url_provider',
         TITLE: 'hackare_title',
-        SUBTITLE: 'hackare_subtitle'
+        SUBTITLE: 'hackare_subtitle',
+        DEBUG_MODE: 'debug_mode'
     };
     
     // Special keys that don't get namespaced (to avoid circular dependency)

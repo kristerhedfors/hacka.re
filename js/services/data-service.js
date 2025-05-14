@@ -229,6 +229,26 @@ window.DataService = (function() {
         return sessionStorage.getItem(STORAGE_KEYS.SUBTITLE) || "För hackare av hackare";
     }
     
+    /**
+     * Save debug mode setting to local storage
+     * @param {boolean} enabled - Whether debug mode is enabled
+     */
+    function saveDebugMode(enabled) {
+        CoreStorageService.setValue(STORAGE_KEYS.DEBUG_MODE, enabled);
+    }
+    
+    /**
+     * Get debug mode setting from local storage
+     * @returns {boolean} Whether debug mode is enabled
+     */
+    function getDebugMode() {
+        return CoreStorageService.getValue(
+            STORAGE_KEYS.DEBUG_MODE, 
+            STORAGE_KEYS.DEBUG_MODE, 
+            saveDebugMode
+        ) || false;
+    }
+    
     // Public API
     return {
         saveApiKey: saveApiKey,
@@ -250,6 +270,8 @@ window.DataService = (function() {
         saveTitle: saveTitle,
         getTitle: getTitle,
         saveSubtitle: saveSubtitle,
-        getSubtitle: getSubtitle
+        getSubtitle: getSubtitle,
+        saveDebugMode: saveDebugMode,
+        getDebugMode: getDebugMode
     };
 })();
