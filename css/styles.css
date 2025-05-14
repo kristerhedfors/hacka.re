@@ -1289,7 +1289,7 @@ footer a:hover {
 
 .modal-content {
     background-color: var(--light-color);
-    padding: 2rem;
+    padding: 1.5rem;
     border-radius: var(--border-radius);
     max-width: 500px;
     width: 90%;
@@ -1310,12 +1310,12 @@ footer a:hover {
 }
 
 .form-group {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
     font-weight: 600;
 }
 
@@ -1323,7 +1323,7 @@ footer a:hover {
 .form-group select,
 .form-group textarea {
     width: 100%;
-    padding: 0.75rem;
+    padding: 0.6rem;
     border: 1px solid rgba(0, 0, 0, 0.2);
     border-radius: var(--border-radius);
     font-size: 1rem;
