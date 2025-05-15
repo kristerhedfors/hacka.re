@@ -1,10 +1,9 @@
 import pytest
 from playwright.sync_api import Page, expect
 
-from test_utils import timed_test, dismiss_welcome_modal, check_system_messages
+from test_utils import dismiss_welcome_modal, check_system_messages
 
-@timed_test
-def test_page_loads(page, serve_hacka_re):
+def test_page_loads(page: Page, serve_hacka_re):
     """Test that the hacka.re page loads correctly."""
     # Navigate to the application
     page.goto(serve_hacka_re)
@@ -25,8 +24,7 @@ def test_page_loads(page, serve_hacka_re):
     expect(tagline).to_be_visible()
     expect(tagline).to_contain_text("För hackare av hackare")
 
-@timed_test
-def test_chat_interface_elements(page, serve_hacka_re):
+def test_chat_interface_elements(page: Page, serve_hacka_re):
     """Test that the chat interface elements are present."""
     # Navigate to the application
     page.goto(serve_hacka_re)

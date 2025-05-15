@@ -1,9 +1,8 @@
 import pytest
 import time
-import json
 import os
 from dotenv import load_dotenv
-from playwright.sync_api import Page, expect, Route, Request
+from playwright.sync_api import Page, expect
 
 from test_utils import dismiss_welcome_modal, dismiss_settings_modal, check_system_messages
 
@@ -23,8 +22,6 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
     
     # Dismiss settings modal if already open
     dismiss_settings_modal(page)
-    
-    # No waiting - everything should be immediate
     
     # Click the settings button
     settings_button = page.locator("#settings-btn")
@@ -248,6 +245,21 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
                 return document.querySelector('.typing-indicator') !== null;
             }""")
             print(f"Typing indicator exists in DOM: {indicator_exists}")
+            
+            # Check if there are any network requests in progress
+            pending_requests = page.evaluate("""() => {
+                if (window.performance && window.performance.getEntries) {
+                    const entries = window.performance.getEntries();
+                    const pendingFetches = entries.filter(e => 
+                        e.entryType === 'resource' && 
+                        e.initiatorType === 'fetch' && 
+                        !e.responseEnd
+                    );
+                    return pendingFetches.length;
+                }
+                return 'Not supported';
+            }""")
+            print(f"Pending network requests: {pending_requests}")
         
         # Use a more specific selector to find the assistant message with reduced timeout
         page.wait_for_selector(".message.assistant .message-content", state="visible", timeout=2500)
