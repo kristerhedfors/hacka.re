@@ -18,11 +18,8 @@ def add_test_function(page):
     function_modal = page.locator("#function-modal")
     expect(function_modal).to_be_visible()
     
-    # Fill in the function name
-    function_name = page.locator("#function-name")
-    function_name.fill("get_weather")
-    
     # Fill in the function code with JSDoc comments for better tool definition
+    # The function name field will be auto-populated from the function declaration
     function_code = page.locator("#function-code")
     function_code.fill("""/**
  * @description Get the current weather for a location
@@ -102,7 +99,6 @@ def add_multiple_test_functions(page):
     # Add weather function
     add_function(
         page,
-        "get_weather",
         """/**
  * @description Get the current weather for a location
  * @param {string} location - The city or location to get weather for
@@ -137,7 +133,6 @@ function get_weather(location, unit = "celsius") {
     # Add calculator function
     add_function(
         page,
-        "calculate",
         """/**
  * @description Perform a mathematical calculation
  * @param {string} operation - The operation to perform (add, subtract, multiply, divide)
@@ -181,15 +176,22 @@ function calculate(operation, num1, num2) {
     page.locator("#close-function-modal").click()
     expect(function_modal).not_to_be_visible()
 
-def add_function(page, name, code):
+def add_function(page, code):
     """Helper function to add a function with validation."""
-    # Fill in the function name
-    function_name = page.locator("#function-name")
-    function_name.fill(name)
-    
-    # Fill in the function code
+    # Fill in the function code - the name field will be auto-populated
     function_code = page.locator("#function-code")
     function_code.fill(code)
+    
+    # Extract the function name from the code
+    function_name_match = page.evaluate("""(code) => {
+        const match = code.match(/function\\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\\s*\\(/);
+        return match ? match[1] : null;
+    }""", code)
+    
+    # Check that the function name field was auto-populated
+    function_name = page.locator("#function-name")
+    expect(function_name).to_be_visible()
+    expect(function_name).to_have_value(function_name_match)
     
     # Validate the function
     page.locator("#function-validate-btn").click()
@@ -204,7 +206,7 @@ def add_function(page, name, code):
     
     # Check if the function was added to the list
     function_list = page.locator("#function-list")
-    expect(function_list.locator(f".function-item-name:has-text('{name}')")).to_be_visible()
+    expect(function_list.locator(f".function-item-name:has-text('{function_name_match}')")).to_be_visible()
 
 def cleanup_functions(page):
     """Clean up by deleting the test function."""
