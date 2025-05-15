@@ -9,7 +9,7 @@ import time
 from urllib.parse import urljoin
 from playwright.sync_api import Page, expect
 
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal
+from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
 
 from function_calling_api.helpers.setup_helpers import (
     setup_console_logging, 
@@ -37,7 +37,8 @@ def test_rc4_encryption_functions_with_api(page: Page, serve_hacka_re, api_key):
     except Exception as e:
         print(f"Error during initial navigation: {e}")
         # Take a screenshot for debugging
-        page.screenshot(path="_tests/playwright/videos/initial_navigation_error_rc4.png")
+        screenshot_with_markdown(page, "initial_navigation_error_rc4", 
+                               {"Error": str(e), "Component": "Navigation", "Status": "Error"})
     
     # Wait for the page to be fully loaded
     try:
@@ -46,7 +47,8 @@ def test_rc4_encryption_functions_with_api(page: Page, serve_hacka_re, api_key):
     except Exception as e:
         print(f"Error waiting for network idle: {e}")
         # Take a screenshot for debugging
-        page.screenshot(path="_tests/playwright/videos/network_idle_timeout_rc4.png")
+        screenshot_with_markdown(page, "network_idle_timeout_rc4",
+                               {"Error": str(e), "Component": "Navigation", "Status": "Timeout", "Timeout": "5000ms"})
     
     # Verify the page loaded correctly
     title = page.title()
@@ -56,7 +58,8 @@ def test_rc4_encryption_functions_with_api(page: Page, serve_hacka_re, api_key):
     if not title or "hacka.re" not in title.lower():
         print("WARNING: Page may not have loaded correctly")
         # Take a screenshot for debugging
-        page.screenshot(path="_tests/playwright/videos/page_load_issue_rc4.png")
+        screenshot_with_markdown(page, "page_load_issue_rc4",
+                               {"Warning": "Page may not have loaded correctly", "Component": "Navigation", "Status": "Warning", "Title": title})
         
         # Try to navigate directly to index.html using proper URL joining
         index_url = urljoin(base_url, "index.html")
@@ -71,7 +74,8 @@ def test_rc4_encryption_functions_with_api(page: Page, serve_hacka_re, api_key):
         except Exception as e:
             print(f"Error during direct navigation to index.html: {e}")
             # Take a screenshot for debugging
-            page.screenshot(path="_tests/playwright/videos/direct_navigation_error_rc4.png")
+            screenshot_with_markdown(page, "direct_navigation_error_rc4",
+                                   {"Error": str(e), "Component": "Navigation", "Status": "Error", "Navigation Target": index_url})
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
@@ -86,7 +90,8 @@ def test_rc4_encryption_functions_with_api(page: Page, serve_hacka_re, api_key):
     except Exception as e:
         print(f"Error configuring API key and model: {e}")
         # Take a screenshot for debugging
-        page.screenshot(path="_tests/playwright/videos/api_key_config_error_rc4.png")
+        screenshot_with_markdown(page, "api_key_config_error_rc4",
+                               {"Error": str(e), "Component": "API Key Configuration", "Status": "Error"})
         pytest.fail(f"Failed to configure API key and model: {e}")
     
     # Enable tool calling and function tools
@@ -96,7 +101,8 @@ def test_rc4_encryption_functions_with_api(page: Page, serve_hacka_re, api_key):
     except Exception as e:
         print(f"Error enabling tool calling and function tools: {e}")
         # Take a screenshot for debugging
-        page.screenshot(path="_tests/playwright/videos/enable_tools_error_rc4.png")
+        screenshot_with_markdown(page, "enable_tools_error_rc4",
+                               {"Error": str(e), "Component": "Tool Calling and Function Tools", "Status": "Error"})
         pytest.fail(f"Failed to enable tool calling and function tools: {e}")
     
     # Add RC4 encryption function
@@ -106,7 +112,8 @@ def test_rc4_encryption_functions_with_api(page: Page, serve_hacka_re, api_key):
     except Exception as e:
         print(f"Error clicking function button: {e}")
         # Take a screenshot for debugging
-        page.screenshot(path="_tests/playwright/videos/function_btn_error_rc4.png")
+        screenshot_with_markdown(page, "function_btn_error_rc4",
+                               {"Error": str(e), "Component": "Function Button", "Status": "Error"})
         # Try JavaScript as a fallback
         page.evaluate("""() => {
             const functionBtn = document.querySelector('#function-btn');
@@ -121,7 +128,8 @@ def test_rc4_encryption_functions_with_api(page: Page, serve_hacka_re, api_key):
     except Exception as e:
         print(f"Error waiting for function modal to be visible: {e}")
         # Take a screenshot for debugging
-        page.screenshot(path="_tests/playwright/videos/function_modal_not_visible_rc4.png")
+        screenshot_with_markdown(page, "function_modal_not_visible_rc4",
+                               {"Error": str(e), "Component": "Function Modal", "Status": "Not Visible"})
         # Try to make it visible with JavaScript
         page.evaluate("""() => {
             const modal = document.querySelector('#function-modal');
@@ -188,7 +196,8 @@ function rc4_encrypt(plaintext, key) {
     except Exception as e:
         print(f"Error checking validation result for encrypt function: {e}")
         # Take a screenshot for debugging
-        page.screenshot(path="_tests/playwright/videos/validation_result_encrypt_error.png")
+        screenshot_with_markdown(page, "validation_result_encrypt_error",
+                               {"Error": str(e), "Component": "Function Validation", "Status": "Error", "Function": "rc4_encrypt"})
     
     # Submit the form
     try:
@@ -253,7 +262,8 @@ function rc4_decrypt(ciphertext, key) {
     except Exception as e:
         print(f"Error checking validation result for decrypt function: {e}")
         # Take a screenshot for debugging
-        page.screenshot(path="_tests/playwright/videos/validation_result_decrypt_error.png")
+        screenshot_with_markdown(page, "validation_result_decrypt_error",
+                               {"Error": str(e), "Component": "Function Validation", "Status": "Error", "Function": "rc4_decrypt"})
     
     # Submit the form
     try:
@@ -276,7 +286,8 @@ function rc4_decrypt(ciphertext, key) {
     except Exception as e:
         print(f"Error checking if functions were added to the list: {e}")
         # Take a screenshot for debugging
-        page.screenshot(path="_tests/playwright/videos/functions_not_added.png")
+        screenshot_with_markdown(page, "functions_not_added",
+                               {"Error": str(e), "Component": "Function List", "Status": "Error", "Function Count": str(function_count)})
         # Check how many functions are in the list
         function_count = function_list.locator(".function-item-name").count()
         print(f"Found {function_count} functions in the list")
@@ -347,14 +358,16 @@ function rc4_decrypt(ciphertext, key) {
         print(f"Assistant response: {assistant_text}")
         
         # Take a screenshot of the encryption response
-        page.screenshot(path="_tests/playwright/videos/rc4_encryption_response.png")
+        screenshot_with_markdown(page, "rc4_encryption_response",
+                               {"Component": "Chat Response", "Status": "Success", "Response Type": "Encryption", "Message": assistant_text[:100] + "..."})
         
         # The test passes as long as we got a response
         expect(assistant_message).to_be_visible()
     except Exception as e:
         print(f"Error waiting for assistant response: {e}")
         # Take a screenshot for debugging
-        page.screenshot(path="_tests/playwright/videos/assistant_response_timeout_rc4.png")
+        screenshot_with_markdown(page, "assistant_response_timeout_rc4",
+                               {"Error": str(e), "Component": "Chat Response", "Status": "Timeout", "System Messages": str(system_message_count)})
         # Check if there are any system messages
         system_messages = page.locator(".message.system .message-content")
         system_message_count = system_messages.count()
@@ -440,7 +453,8 @@ function rc4_decrypt(ciphertext, key) {
         }""")
     
     # Take a final screenshot
-    page.screenshot(path="_tests/playwright/videos/rc4_test_complete.png")
+    screenshot_with_markdown(page, "rc4_test_complete",
+                           {"Component": "Test Completion", "Status": "Complete", "Execution Time": f"{execution_time:.3f} seconds"})
     
     # End timing and print execution time
     end_time = time.time()
