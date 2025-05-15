@@ -252,17 +252,9 @@ window.FunctionToolsService = (function() {
                 `
                 ${functionData.code}
                 
-                // Extract the function name from the code
-                const codeStr = ${JSON.stringify(functionData.code)};
-                const funcMatch = codeStr.match(/^\\s*(?:async\\s+)?function\\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\\s*\\(/);
-                if (!funcMatch) {
-                    throw new Error('Could not extract function name');
-                }
-                
-                const funcName = funcMatch[1];
-                
-                // Call the function with the provided arguments
-                return eval(funcName)(args);
+                // Since we already know the function name (it's the 'name' parameter),
+                // we can directly call it without trying to extract it from the code
+                return ${name}(args);
                 `
             );
             
