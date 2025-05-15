@@ -5,8 +5,8 @@
 
 /* Function calling menu item */
 .function-icon {
-    font-style: italic;
-    font-weight: bold;
+    font-style: normal;
+    font-weight: 900;
     font-size: 1.2rem;
     display: flex;
     align-items: center;

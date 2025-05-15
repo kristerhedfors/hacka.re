@@ -38,6 +38,15 @@ window.FunctionCallingManager = (function() {
                 elements.functionClearBtn.addEventListener('click', clearFunctionEditor);
             }
             
+            // Add event listeners for copy buttons
+            if (elements.copyFunctionCodeBtn) {
+                elements.copyFunctionCodeBtn.addEventListener('click', copyFunctionCode);
+            }
+            
+            if (elements.copyToolDefinitionBtn) {
+                elements.copyToolDefinitionBtn.addEventListener('click', copyToolDefinition);
+            }
+            
             // Add event listener for function code changes to auto-extract function name
             if (elements.functionCode) {
                 elements.functionCode.addEventListener('input', extractFunctionName);
@@ -619,6 +628,64 @@ function multiply_numbers(a, b) {
             } catch (error) {
                 console.error('Error extracting function name:', error);
             }
+        }
+        
+        /**
+         * Copy function code to clipboard
+         */
+        function copyFunctionCode() {
+            if (!elements.functionCode) return;
+            
+            const code = elements.functionCode.value.trim();
+            if (!code) {
+                if (addSystemMessage) {
+                    addSystemMessage('No function code to copy.');
+                }
+                return;
+            }
+            
+            // Copy to clipboard
+            navigator.clipboard.writeText(code)
+                .then(() => {
+                    if (addSystemMessage) {
+                        addSystemMessage('Function code copied to clipboard.');
+                    }
+                })
+                .catch(err => {
+                    console.error('Failed to copy function code:', err);
+                    if (addSystemMessage) {
+                        addSystemMessage('Failed to copy function code. Please try again.');
+                    }
+                });
+        }
+        
+        /**
+         * Copy tool definition to clipboard
+         */
+        function copyToolDefinition() {
+            if (!elements.functionToolDefinition) return;
+            
+            const toolDefinition = elements.functionToolDefinition.textContent.trim();
+            if (!toolDefinition || !elements.functionToolDefinition.classList.contains('active')) {
+                if (addSystemMessage) {
+                    addSystemMessage('No tool definition to copy. Please validate the function first.');
+                }
+                return;
+            }
+            
+            // Copy to clipboard
+            navigator.clipboard.writeText(toolDefinition)
+                .then(() => {
+                    if (addSystemMessage) {
+                        addSystemMessage('Tool definition copied to clipboard.');
+                    }
+                })
+                .catch(err => {
+                    console.error('Failed to copy tool definition:', err);
+                    if (addSystemMessage) {
+                        addSystemMessage('Failed to copy tool definition. Please try again.');
+                    }
+                });
         }
         
         /**
