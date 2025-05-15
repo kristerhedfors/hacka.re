@@ -131,10 +131,10 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
                     // Add header as a separate message
                     addSystemMessage(debugMessage);
                     
-                    // Log the sources of tool definitions
-                    console.log("Tool definitions sources:");
-                    console.log("- ApiToolsService:", ApiToolsService.getToolDefinitions().length);
-                    console.log("- FunctionToolsService:", FunctionToolsService ? FunctionToolsService.getToolDefinitions().length : 0);
+                // Log the sources of tool definitions
+                console.log("Tool definitions sources:");
+                console.log("- Built-in tools:", Object.keys(ApiToolsService.getBuiltInTools()).length);
+                console.log("- User functions:", FunctionToolsService ? FunctionToolsService.getEnabledToolDefinitions().length : 0);
                     
                     // Add each tool as separate messages
                     toolDefinitions.forEach((tool, index) => {

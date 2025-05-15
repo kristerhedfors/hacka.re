@@ -6,15 +6,9 @@
 window.ApiToolsService = (function() {
     // Storage keys
     const TOOL_CALLING_ENABLED_KEY = 'tool_calling_enabled';
-    const OPENAPI_FUNCTIONS_KEY = 'openapi_functions';
-    const ENABLED_FUNCTIONS_KEY = 'enabled_functions';
     
-    // Registry of available tools
-    const toolRegistry = {};
-    
-    // Registry of OpenAPI functions
-    let openApiFunctions = {};
-    let enabledFunctions = [];
+    // Registry of available built-in tools
+    const builtInTools = {};
     
     /**
      * Check if tool calling is enabled
@@ -37,10 +31,10 @@ window.ApiToolsService = (function() {
         if (addSystemMessage && previousState !== enabled) {
             if (enabled) {
                 // Get list of available tools
-                const tools = Object.keys(toolRegistry);
+                const tools = Object.keys(builtInTools);
                 const toolsMessage = tools.length > 0 
-                    ? `Available tools: ${tools.join(', ')}`
-                    : 'No tools currently registered';
+                    ? `Available built-in tools: ${tools.join(', ')}`
+                    : 'No built-in tools currently registered';
                 
                 addSystemMessage(`Tool calling activated. ${toolsMessage}`);
             } else {
@@ -50,194 +44,93 @@ window.ApiToolsService = (function() {
     }
     
     /**
-     * Register a tool in the registry
+     * Register a built-in tool in the registry
      * @param {string} name - The name of the tool
      * @param {Object} toolDefinition - The tool definition object
      * @param {Function} handler - The function that handles tool execution
      */
-    function registerTool(name, toolDefinition, handler) {
-        toolRegistry[name] = {
+    function registerBuiltInTool(name, toolDefinition, handler) {
+        builtInTools[name] = {
             definition: toolDefinition,
             handler: handler
         };
     }
     
     /**
-     * Get all registered tools
-     * @returns {Object} The tool registry
+     * Get all registered built-in tools
+     * @returns {Object} The built-in tool registry
      */
-    function getRegisteredTools() {
-        return toolRegistry;
+    function getBuiltInTools() {
+        return builtInTools;
     }
     
     /**
+     * Get enabled tool definitions in OpenAI format for API requests
+     * @returns {Array} Array of enabled tool definitions in OpenAI format
+     */
+    function getEnabledToolDefinitions() {
+        console.log("ApiToolsService.getEnabledToolDefinitions called");
+        
+        // Get built-in tool definitions
+        const builtInToolDefinitions = Object.entries(builtInTools).map(([name, tool]) => {
+            return tool.definition;
+        });
+        console.log("- Built-in tool definitions:", builtInToolDefinitions.length, builtInToolDefinitions.map(t => t.function?.name));
+        
+        // Add enabled JavaScript functions from FunctionToolsService if available
+        let userFunctionDefinitions = [];
+        if (window.FunctionToolsService && typeof FunctionToolsService.getEnabledToolDefinitions === 'function') {
+            userFunctionDefinitions = FunctionToolsService.getEnabledToolDefinitions();
+        } else if (window.FunctionToolsService && typeof FunctionToolsService.getToolDefinitions === 'function') {
+            // Fallback for backward compatibility
+            userFunctionDefinitions = FunctionToolsService.getToolDefinitions();
+        }
+        console.log("- User function definitions:", userFunctionDefinitions.length, userFunctionDefinitions.map(t => t.function?.name));
+        
+        // Combine and deduplicate tool definitions
+        const allDefinitions = [...builtInToolDefinitions, ...userFunctionDefinitions];
+        console.log("- All definitions before deduplication:", allDefinitions.length, allDefinitions.map(t => t.function?.name));
+        
+        // Deduplicate by function name
+        const uniqueDefinitions = [];
+        const seenNames = new Set();
+        
+        for (const def of allDefinitions) {
+            if (def && def.function && def.function.name) {
+                const name = def.function.name;
+                if (!seenNames.has(name)) {
+                    seenNames.add(name);
+                    uniqueDefinitions.push(def);
+                } else {
+                    console.log(`- Skipping duplicate function: ${name}`);
+                }
+            }
+        }
+        
+        console.log("- Unique definitions after deduplication:", uniqueDefinitions.length, uniqueDefinitions.map(t => t.function?.name));
+        return uniqueDefinitions;
+    }
+    
+    /**
+     * @deprecated Use getEnabledToolDefinitions() instead
      * Get tool definitions in OpenAI format for API requests
      * @returns {Array} Array of tool definitions in OpenAI format
      */
     function getToolDefinitions() {
-        if (!isToolCallingEnabled()) {
-            return [];
-        }
-        
-        const registeredTools = Object.entries(toolRegistry).map(([name, tool]) => {
-            return tool.definition;
-        });
-        
-        // Add enabled OpenAPI functions
-        const enabledOpenApiFunctions = getEnabledOpenApiFunctions();
-        
-        // Add enabled JavaScript functions from FunctionToolsService if available
-        let functionTools = [];
-        if (window.FunctionToolsService && typeof FunctionToolsService.getToolDefinitions === 'function') {
-            functionTools = FunctionToolsService.getToolDefinitions();
-        }
-        
-        return [...registeredTools, ...enabledOpenApiFunctions, ...functionTools];
+        console.log("ApiToolsService.getToolDefinitions called (DEPRECATED - use getEnabledToolDefinitions instead)");
+        return getEnabledToolDefinitions();
     }
     
     /**
-     * Load OpenAPI functions from storage
-     */
-    function loadOpenApiFunctions() {
-        const storedFunctions = CoreStorageService.getValue(OPENAPI_FUNCTIONS_KEY);
-        if (storedFunctions) {
-            openApiFunctions = storedFunctions;
-        }
-        
-        const storedEnabledFunctions = CoreStorageService.getValue(ENABLED_FUNCTIONS_KEY);
-        if (storedEnabledFunctions) {
-            enabledFunctions = storedEnabledFunctions;
-        }
-    }
-    
-    /**
-     * Save OpenAPI functions to storage
-     */
-    function saveOpenApiFunctions() {
-        CoreStorageService.setValue(OPENAPI_FUNCTIONS_KEY, openApiFunctions);
-        CoreStorageService.setValue(ENABLED_FUNCTIONS_KEY, enabledFunctions);
-    }
-    
-    /**
-     * Add an OpenAPI function specification
-     * @param {string} name - The name of the function
-     * @param {Object} spec - The OpenAPI specification object
-     * @returns {boolean} Whether the function was added successfully
-     */
-    function addOpenApiFunction(name, spec) {
-        // Validate the spec
-        if (!spec || !spec.type || spec.type !== 'function' || !spec.function || !spec.function.name) {
-            return false;
-        }
-        
-        // Ensure the function name in the spec matches the provided name
-        if (spec.function.name !== name) {
-            return false;
-        }
-        
-        // Add the function to the registry
-        openApiFunctions[name] = spec;
-        
-        // Save to storage
-        saveOpenApiFunctions();
-        
-        return true;
-    }
-    
-    /**
-     * Remove an OpenAPI function specification
-     * @param {string} name - The name of the function to remove
-     */
-    function removeOpenApiFunction(name) {
-        if (openApiFunctions[name]) {
-            delete openApiFunctions[name];
-            
-            // Also remove from enabled functions if present
-            enabledFunctions = enabledFunctions.filter(funcName => funcName !== name);
-            
-            // Save to storage
-            saveOpenApiFunctions();
-            
-            return true;
-        }
-        
-        return false;
-    }
-    
-    /**
-     * Get all OpenAPI function specifications
-     * @returns {Object} The OpenAPI function registry
-     */
-    function getOpenApiFunctions() {
-        return openApiFunctions;
-    }
-    
-    /**
-     * Enable an OpenAPI function
-     * @param {string} name - The name of the function to enable
-     */
-    function enableOpenApiFunction(name) {
-        if (openApiFunctions[name] && !enabledFunctions.includes(name)) {
-            enabledFunctions.push(name);
-            saveOpenApiFunctions();
-            return true;
-        }
-        
-        return false;
-    }
-    
-    /**
-     * Disable an OpenAPI function
-     * @param {string} name - The name of the function to disable
-     */
-    function disableOpenApiFunction(name) {
-        const index = enabledFunctions.indexOf(name);
-        if (index !== -1) {
-            enabledFunctions.splice(index, 1);
-            saveOpenApiFunctions();
-            return true;
-        }
-        
-        return false;
-    }
-    
-    /**
-     * Check if an OpenAPI function is enabled
-     * @param {string} name - The name of the function to check
-     * @returns {boolean} Whether the function is enabled
-     */
-    function isOpenApiFunctionEnabled(name) {
-        return enabledFunctions.includes(name);
-    }
-    
-    /**
-     * Get all enabled OpenAPI functions
-     * @returns {Array} Array of enabled OpenAPI function specifications
-     */
-    function getEnabledOpenApiFunctions() {
-        return enabledFunctions
-            .filter(name => openApiFunctions[name])
-            .map(name => openApiFunctions[name]);
-    }
-    
-    /**
-     * Get all enabled function names
-     * @returns {Array} Array of enabled function names
-     */
-    function getEnabledFunctionNames() {
-        return enabledFunctions;
-    }
-    
-    /**
-     * Execute a tool based on the tool call from the API
+     * Execute a built-in tool based on the tool call from the API
      * @param {Object} toolCall - The tool call object from the API
      * @returns {Promise<Object>} The result of the tool execution
      */
-    async function executeToolCall(toolCall) {
+    async function executeBuiltInTool(toolCall) {
         const { name, arguments: args } = toolCall.function;
         
-        if (!toolRegistry[name]) {
-            throw new Error(`Tool "${name}" not found`);
+        if (!builtInTools[name]) {
+            throw new Error(`Built-in tool "${name}" not found`);
         }
         
         try {
@@ -245,7 +138,7 @@ window.ApiToolsService = (function() {
             const parsedArgs = JSON.parse(args);
             
             // Execute the tool handler
-            const result = await toolRegistry[name].handler(parsedArgs);
+            const result = await builtInTools[name].handler(parsedArgs);
             
             return {
                 tool_call_id: toolCall.id,
@@ -254,7 +147,7 @@ window.ApiToolsService = (function() {
                 content: JSON.stringify(result)
             };
         } catch (error) {
-            console.error(`Error executing tool "${name}":`, error);
+            console.error(`Error executing built-in tool "${name}":`, error);
             
             return {
                 tool_call_id: toolCall.id,
@@ -272,7 +165,7 @@ window.ApiToolsService = (function() {
      * @returns {Promise<Array>} Array of tool results
      */
     async function processToolCalls(toolCalls, addSystemMessage) {
-        if (!isToolCallingEnabled() || !toolCalls || toolCalls.length === 0) {
+        if (!toolCalls || toolCalls.length === 0) {
             return [];
         }
         
@@ -291,17 +184,17 @@ window.ApiToolsService = (function() {
                 }
                 
                 // Check if the tool is a built-in tool
-                if (toolRegistry[name]) {
+                if (builtInTools[name]) {
                     // Log tool execution
                     if (addSystemMessage) {
-                        addSystemMessage(`Executing tool "${name}"`);
+                        addSystemMessage(`Executing built-in tool "${name}"`);
                     }
                     
-                    const result = await executeToolCall(toolCall);
+                    const result = await executeBuiltInTool(toolCall);
                     
                     // Log successful execution
                     if (addSystemMessage) {
-                        addSystemMessage(`Tool "${name}" executed successfully`);
+                        addSystemMessage(`Built-in tool "${name}" executed successfully`);
                     }
                     
                     toolResults.push(result);
@@ -365,7 +258,7 @@ window.ApiToolsService = (function() {
     // Initialize built-in tools
     function initializeBuiltInTools() {
         // Register math_addition_tool
-        registerTool(
+        registerBuiltInTool(
             "math_addition_tool",
             {
                 type: "function",
@@ -403,24 +296,16 @@ window.ApiToolsService = (function() {
     
     // Initialize
     initializeBuiltInTools();
-    loadOpenApiFunctions();
     
     // Public API
     return {
         isToolCallingEnabled,
         setToolCallingEnabled,
-        registerTool,
-        getRegisteredTools,
-        getToolDefinitions,
-        executeToolCall,
-        processToolCalls,
-        addOpenApiFunction,
-        removeOpenApiFunction,
-        getOpenApiFunctions,
-        enableOpenApiFunction,
-        disableOpenApiFunction,
-        isOpenApiFunctionEnabled,
-        getEnabledOpenApiFunctions,
-        getEnabledFunctionNames
+        registerBuiltInTool,
+        getBuiltInTools,
+        getEnabledToolDefinitions,
+        getToolDefinitions, // Deprecated
+        executeBuiltInTool,
+        processToolCalls
     };
 })();

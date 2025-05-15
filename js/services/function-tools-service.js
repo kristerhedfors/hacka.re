@@ -192,11 +192,11 @@ window.FunctionToolsService = (function() {
     }
     
     /**
-     * Get tool definitions for API requests
-     * @returns {Array} Array of tool definitions in OpenAI format
+     * Get enabled tool definitions for API requests
+     * @returns {Array} Array of enabled tool definitions in OpenAI format
      */
-    function getToolDefinitions() {
-        console.log("FunctionToolsService.getToolDefinitions called");
+    function getEnabledToolDefinitions() {
+        console.log("FunctionToolsService.getEnabledToolDefinitions called");
         console.log("- Enabled functions:", enabledFunctions);
         console.log("- Available functions:", Object.keys(jsFunctions));
         
@@ -207,6 +207,16 @@ window.FunctionToolsService = (function() {
         
         console.log("- Returning tool definitions:", toolDefinitions.length, toolDefinitions.map(t => t.function?.name));
         return toolDefinitions;
+    }
+    
+    /**
+     * @deprecated Use getEnabledToolDefinitions() instead
+     * Get tool definitions for API requests
+     * @returns {Array} Array of tool definitions in OpenAI format
+     */
+    function getToolDefinitions() {
+        console.log("FunctionToolsService.getToolDefinitions called (DEPRECATED - use getEnabledToolDefinitions instead)");
+        return getEnabledToolDefinitions();
     }
     
     /**
@@ -587,7 +597,8 @@ window.FunctionToolsService = (function() {
         isJsFunctionEnabled,
         getEnabledJsFunctions,
         getEnabledFunctionNames,
-        getToolDefinitions,
+        getEnabledToolDefinitions,
+        getToolDefinitions, // Deprecated
         executeJsFunction,
         processToolCalls,
         generateToolDefinition
