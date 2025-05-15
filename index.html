@@ -71,7 +71,7 @@
                     <i class="fas fa-copy"></i>
                 </button>
                 <button id="function-btn" class="icon-btn" title="Function Calling (OpenAPI)">
-                    <span class="function-icon">f()</span>
+                    <span class="function-icon">𝑓()</span>
                 </button>
                 <button id="prompts-btn" class="icon-btn" title="System Prompt Menu">
                     <i class="fas fa-list-alt"></i>
@@ -289,7 +289,12 @@
                                 <input type="text" id="function-name" class="function-name-input" placeholder="Enter a name for this function" required tabindex="1">
                             </div>
                             <div class="form-group">
-                                <label for="function-code">JavaScript Function</label>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <label for="function-code">JavaScript Function</label>
+                                    <button type="button" id="copy-function-code-btn" class="icon-btn" title="Copy function code">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
                                 <textarea id="function-code" class="function-code-editor" placeholder="async function getCurrentTimeInBerlin() {
   try {
     const response = await fetch('https://worldtimeapi.org/api/timezone/Europe/Berlin');
@@ -303,6 +308,12 @@
 }" required tabindex="2"></textarea>
                                 <div id="function-validation-result" class="function-validation-result">
                                     Validation result will appear here
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+                                    <label>Tool Definition</label>
+                                    <button type="button" id="copy-tool-definition-btn" class="icon-btn" title="Copy tool definition">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
                                 </div>
                                 <div id="function-tool-definition" class="function-tool-definition">
                                     Tool definition will appear here
