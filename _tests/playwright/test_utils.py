@@ -17,6 +17,11 @@ class OperationTimeoutError(Exception):
 # Helper function to measure and print execution time
 def timed_test(func):
     def wrapper(*args, **kwargs):
+        # Check if args is empty or if the first argument is not a page object
+        if not args or not hasattr(args[0], 'goto'):
+            print(f"Warning: timed_test decorator used on {func.__name__} but page object not found as first argument")
+            return func(*args, **kwargs)
+            
         # Extract the page object from args
         page = args[0]
         

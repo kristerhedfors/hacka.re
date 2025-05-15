@@ -7,7 +7,7 @@ with functions in function calling API tests.
 import pytest
 from playwright.sync_api import Page, expect
 
-from test_utils import check_system_messages
+from test_utils import check_system_messages, screenshot_with_markdown
 
 def function_invocation_through_chat(page):
     """Test function invocation through chat conversation."""
@@ -29,7 +29,8 @@ def function_invocation_through_chat(page):
     expect(user_message).to_contain_text(test_message)
     
     # Take a screenshot after sending the message
-    page.screenshot(path="_tests/playwright/videos/after_sending_message.png")
+    screenshot_with_markdown(page, "after_sending_message", 
+                           {"Component": "Chat", "Status": "After sending message", "Message": test_message})
     
     # Wait for system messages about function execution
     # This may take some time as the model needs to decide to use the function
@@ -54,11 +55,13 @@ def function_invocation_through_chat(page):
         if not function_execution_message_found:
             print("WARNING: No function execution message found in system messages")
             # Take a screenshot for debugging
-            page.screenshot(path="_tests/playwright/videos/no_function_execution_message.png")
+            screenshot_with_markdown(page, "no_function_execution_message", 
+                                   {"Component": "System Messages", "Status": "Warning", "Issue": "No function execution message found"})
     except Exception as e:
         print(f"Error waiting for function execution message: {e}")
         # Take a screenshot for debugging
-        page.screenshot(path="_tests/playwright/videos/function_execution_timeout.png")
+        screenshot_with_markdown(page, "function_execution_timeout", 
+                               {"Component": "System Messages", "Status": "Error", "Error": str(e), "Timeout": "5000ms"})
         # Continue the test even if we don't see the function execution message
         # as the model might not always choose to use the function
     
@@ -73,12 +76,13 @@ def function_invocation_through_chat(page):
         assistant_text = assistant_message.text_content()
         print(f"Assistant response: {assistant_text}")
         
-        # Take a screenshot of the assistant response
-        page.screenshot(path="_tests/playwright/videos/assistant_response.png")
-        
         # Check if the response contains weather-related information
         weather_terms = ["weather", "temperature", "celsius", "fahrenheit", "degrees", "london", "condition", "rainy", "sunny", "cloudy"]
         contains_weather_info = any(term in assistant_text.lower() for term in weather_terms)
+        
+        # Take a screenshot of the assistant response
+        screenshot_with_markdown(page, "assistant_response", 
+                               {"Component": "Chat Response", "Status": "Success", "Contains Weather Info": str(contains_weather_info), "Response": assistant_text[:100] + "..."})
         
         if contains_weather_info:
             print("Assistant response contains weather information")
@@ -91,7 +95,8 @@ def function_invocation_through_chat(page):
     except Exception as e:
         print(f"Error waiting for assistant response: {e}")
         # Take a screenshot for debugging
-        page.screenshot(path="_tests/playwright/videos/assistant_response_timeout.png")
+        screenshot_with_markdown(page, "assistant_response_timeout", 
+                               {"Component": "Chat Response", "Status": "Error", "Error": str(e), "Timeout": "5000ms"})
         pytest.fail("Assistant response did not appear in chat")
 
 def multiple_function_invocation(page):
@@ -118,7 +123,8 @@ def multiple_function_invocation(page):
     page.wait_for_selector(".message.user .message-content", state="visible", timeout=2000)
     
     # Take a screenshot after sending the calculation message
-    page.screenshot(path="_tests/playwright/videos/after_sending_calculation.png")
+    screenshot_with_markdown(page, "after_sending_calculation", 
+                           {"Component": "Chat", "Status": "After sending message", "Message": test_message})
     
     # Wait for the assistant response
     try:
@@ -131,12 +137,13 @@ def multiple_function_invocation(page):
         assistant_text = assistant_message.text_content()
         print(f"Assistant response: {assistant_text}")
         
-        # Take a screenshot of the calculation response
-        page.screenshot(path="_tests/playwright/videos/calculation_response.png")
-        
         # Check if the response contains calculation-related information
         calculation_terms = ["25", "4", "100", "multiply", "multiplied", "result", "equals", "="]
         contains_calculation_info = any(term in assistant_text.lower() for term in calculation_terms)
+        
+        # Take a screenshot of the calculation response
+        screenshot_with_markdown(page, "calculation_response", 
+                               {"Component": "Chat Response", "Status": "Success", "Contains Calculation Info": str(contains_calculation_info), "Response": assistant_text[:100] + "..."})
         
         if contains_calculation_info:
             print("Assistant response contains calculation information")
@@ -148,7 +155,8 @@ def multiple_function_invocation(page):
     except Exception as e:
         print(f"Error waiting for assistant response: {e}")
         # Take a screenshot for debugging
-        page.screenshot(path="_tests/playwright/videos/calculation_response_timeout.png")
+        screenshot_with_markdown(page, "calculation_response_timeout", 
+                               {"Component": "Chat Response", "Status": "Error", "Error": str(e), "Timeout": "5000ms"})
         pytest.fail("Assistant response did not appear in chat")
     
     # Now try a weather query
@@ -164,7 +172,8 @@ def multiple_function_invocation(page):
     page.wait_for_selector(".message.user .message-content:has-text('Tokyo')", state="visible", timeout=2000)
     
     # Take a screenshot after sending the weather message
-    page.screenshot(path="_tests/playwright/videos/after_sending_weather.png")
+    screenshot_with_markdown(page, "after_sending_weather", 
+                           {"Component": "Chat", "Status": "After sending message", "Message": test_message})
     
     # Wait for the assistant response
     try:
@@ -183,12 +192,13 @@ def multiple_function_invocation(page):
         assistant_text = assistant_message.text_content()
         print(f"Assistant response for weather query: {assistant_text}")
         
-        # Take a screenshot of the weather response
-        page.screenshot(path="_tests/playwright/videos/weather_response.png")
-        
         # Check if the response contains weather-related information
         weather_terms = ["weather", "temperature", "celsius", "fahrenheit", "degrees", "tokyo", "condition", "sunny"]
         contains_weather_info = any(term in assistant_text.lower() for term in weather_terms)
+        
+        # Take a screenshot of the weather response
+        screenshot_with_markdown(page, "weather_response", 
+                               {"Component": "Chat Response", "Status": "Success", "Contains Weather Info": str(contains_weather_info), "Response": assistant_text[:100] + "..."})
         
         if contains_weather_info:
             print("Assistant response contains weather information")
@@ -200,5 +210,6 @@ def multiple_function_invocation(page):
     except Exception as e:
         print(f"Error waiting for assistant response: {e}")
         # Take a screenshot for debugging
-        page.screenshot(path="_tests/playwright/videos/weather_response_timeout.png")
+        screenshot_with_markdown(page, "weather_response_timeout", 
+                               {"Component": "Chat Response", "Status": "Error", "Error": str(e), "Timeout": "5000ms"})
         pytest.fail("Assistant response did not appear in chat")

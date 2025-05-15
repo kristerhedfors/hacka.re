@@ -1,10 +1,14 @@
 import pytest
 from playwright.sync_api import expect
 
-def test_debug_mode_checkbox_exists(page):
+def test_debug_mode_checkbox_exists(page, serve_hacka_re):
     """Test that the debug mode checkbox exists in the settings modal."""
     # Navigate to the application
-    page.goto("/")
+    page.goto(serve_hacka_re)
+    
+    # Dismiss welcome modal if present
+    from test_utils import dismiss_welcome_modal
+    dismiss_welcome_modal(page)
     
     # Open settings modal
     page.click("#settings-btn")
@@ -24,10 +28,14 @@ def test_debug_mode_checkbox_exists(page):
     expect(debug_label).to_be_visible()
     expect(debug_label).to_have_text("Debug mode")
 
-def test_debug_mode_toggle(page):
+def test_debug_mode_toggle(page, serve_hacka_re):
     """Test that the debug mode checkbox can be toggled."""
     # Navigate to the application
-    page.goto("/")
+    page.goto(serve_hacka_re)
+    
+    # Dismiss welcome modal if present
+    from test_utils import dismiss_welcome_modal
+    dismiss_welcome_modal(page)
     
     # Open settings modal
     page.click("#settings-btn")
@@ -56,10 +64,14 @@ def test_debug_mode_toggle(page):
     # Verify it's back to the initial state
     expect(debug_checkbox).to_be_checked() if initial_checked else expect(debug_checkbox).not_to_be_checked()
 
-def test_debug_mode_persistence(page):
+def test_debug_mode_persistence(page, serve_hacka_re):
     """Test that the debug mode setting persists after page reload."""
     # Navigate to the application
-    page.goto("/")
+    page.goto(serve_hacka_re)
+    
+    # Dismiss welcome modal if present
+    from test_utils import dismiss_welcome_modal
+    dismiss_welcome_modal(page)
     
     # Open settings modal
     page.click("#settings-btn")
@@ -81,8 +93,20 @@ def test_debug_mode_persistence(page):
     # Save settings
     page.click("#save-settings-btn")
     
+    # Wait for settings modal to close
+    expect(page.locator("#settings-modal")).not_to_be_visible()
+    
     # Reload the page
     page.reload()
+    
+    # Dismiss welcome modal if present after reload
+    dismiss_welcome_modal(page)
+    
+    # Check if settings modal is still visible after reload and dismiss it if it is
+    settings_modal = page.locator("#settings-modal")
+    if settings_modal.is_visible():
+        from test_utils import dismiss_settings_modal
+        dismiss_settings_modal(page)
     
     # Open settings modal again
     page.click("#settings-btn")

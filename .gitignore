@@ -94,3 +94,11 @@ _tests/playwright/.venv/
 .cache/
 .history/
 .sass-cache/
+
+# Playwright test files
+_tests/playwright/run_tests.out
+_tests/playwright/run_tests.out_bundle.md
+_tests/playwright/screenshots/
+_tests/playwright/screenshots_data/
+_tests/playwright/videos/
+_tests/playwright/*.png
