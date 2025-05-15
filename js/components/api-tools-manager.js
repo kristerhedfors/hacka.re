@@ -44,10 +44,11 @@ window.ApiToolsManager = (function() {
         /**
          * Process tool calls from the API response
          * @param {Array} toolCalls - Array of tool calls from the API
+         * @param {Function} addSystemMessage - Optional callback to add a system message
          * @returns {Promise<Array>} Array of tool results
          */
-        async function processToolCalls(toolCalls) {
-            return ApiToolsService.processToolCalls(toolCalls);
+        async function processToolCalls(toolCalls, addSystemMessage) {
+            return ApiToolsService.processToolCalls(toolCalls, addSystemMessage);
         }
         
         // Public API

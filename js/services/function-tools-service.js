@@ -18,7 +18,10 @@ window.FunctionToolsService = (function() {
      * @returns {boolean} Whether function tools are enabled
      */
     function isFunctionToolsEnabled() {
-        return CoreStorageService.getValue(FUNCTION_TOOLS_ENABLED_KEY) === true;
+        const enabled = CoreStorageService.getValue(FUNCTION_TOOLS_ENABLED_KEY) === true;
+        console.log("FunctionToolsService.isFunctionToolsEnabled called, returning:", enabled);
+        console.log("- FUNCTION_TOOLS_ENABLED_KEY value:", CoreStorageService.getValue(FUNCTION_TOOLS_ENABLED_KEY));
+        return enabled;
     }
     
     /**
@@ -28,7 +31,12 @@ window.FunctionToolsService = (function() {
      */
     function setFunctionToolsEnabled(enabled, addSystemMessage) {
         const previousState = isFunctionToolsEnabled();
+        console.log("FunctionToolsService.setFunctionToolsEnabled called with:", enabled);
+        console.log("- Previous state:", previousState);
+        
         CoreStorageService.setValue(FUNCTION_TOOLS_ENABLED_KEY, enabled);
+        console.log("- New state set in storage:", enabled);
+        console.log("- Verifying new state:", CoreStorageService.getValue(FUNCTION_TOOLS_ENABLED_KEY));
         
         // Display status message if the state has changed and a callback is provided
         if (addSystemMessage && previousState !== enabled) {
@@ -40,8 +48,10 @@ window.FunctionToolsService = (function() {
                     : 'No functions currently defined';
                 
                 addSystemMessage(`Function tools activated. ${functionsMessage}`);
+                console.log("- System message added for activation");
             } else {
                 addSystemMessage('Function tools deactivated. No functions are available.');
+                console.log("- System message added for deactivation");
             }
         }
     }
@@ -186,13 +196,17 @@ window.FunctionToolsService = (function() {
      * @returns {Array} Array of tool definitions in OpenAI format
      */
     function getToolDefinitions() {
-        if (!isFunctionToolsEnabled()) {
-            return [];
-        }
+        console.log("FunctionToolsService.getToolDefinitions called");
+        console.log("- Enabled functions:", enabledFunctions);
+        console.log("- Available functions:", Object.keys(jsFunctions));
         
-        return enabledFunctions
+        // Always return enabled functions, regardless of the global switch state
+        const toolDefinitions = enabledFunctions
             .filter(name => jsFunctions[name] && jsFunctions[name].toolDefinition)
             .map(name => jsFunctions[name].toolDefinition);
+        
+        console.log("- Returning tool definitions:", toolDefinitions.length, toolDefinitions.map(t => t.function?.name));
+        return toolDefinitions;
     }
     
     /**
@@ -301,7 +315,7 @@ window.FunctionToolsService = (function() {
      * @returns {Promise<Array>} Array of tool results
      */
     async function processToolCalls(toolCalls, addSystemMessage) {
-        if (!isFunctionToolsEnabled() || !toolCalls || toolCalls.length === 0) {
+        if (!toolCalls || toolCalls.length === 0) {
             return [];
         }
         
