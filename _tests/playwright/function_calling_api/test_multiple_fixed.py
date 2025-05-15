@@ -16,11 +16,11 @@ from function_calling_api.helpers.setup_helpers import (
     configure_api_key_and_model, 
     enable_tool_calling_and_function_tools
 )
-from function_calling_api.helpers.function_helpers import (
+from function_calling_api.helpers.function_helpers_fixed import (
     add_multiple_test_functions, 
     cleanup_functions
 )
-from function_calling_api.helpers.chat_helpers import multiple_function_invocation
+from function_calling_api.helpers.chat_helpers_fixed import multiple_function_invocation
 
 def test_multiple_functions_with_api_key(page: Page, serve_hacka_re, api_key):
     """Test multiple functions with a configured API key."""

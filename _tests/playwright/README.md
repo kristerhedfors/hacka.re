@@ -114,6 +114,59 @@ When MCP functionality is re-enabled, to run the MCP integration tests, you'll n
 
 Note that the integration test is marked with `@pytest.mark.skip` by default since it requires an actual running MCP server. You'll need to remove this mark or use the `-k` flag to run it.
 
+## Screenshot Debugging
+
+The tests are configured to save screenshots with associated markdown files containing debug information. This feature helps developers understand test failures and debug issues more effectively.
+
+### How It Works
+
+1. When a screenshot is taken during testing, a corresponding markdown file with the same name (but `.md` extension) is created
+2. The markdown file contains:
+   - Test file name and test function name
+   - Screenshot timestamp
+   - Page URL and title
+   - Custom debug information provided by the test
+   - Console logs (if any)
+
+### Using the Screenshot Viewer
+
+Two scripts are provided to view screenshots and their associated debug information:
+
+1. **View Screenshots HTML Viewer**:
+   ```bash
+   ./view_screenshots.sh
+   ```
+   This script generates an HTML file that displays screenshots and markdown content horizontally, allowing you to scroll through them. The viewer includes:
+   - Navigation buttons to move between screenshots
+   - Keyboard navigation (left/right arrow keys)
+   - Formatted display of markdown content
+   - Timestamps for each screenshot
+
+2. **Bundle Screenshots and Test Results**:
+   ```bash
+   _tests/playwright/bundle_screenshots.sh
+   ```
+   This script generates a comprehensive markdown report (`test_results.md`) that includes:
+   - Test output results and stack traces in chronological order
+   - Screenshots and their associated debug information
+   
+   This report is automatically generated after running tests with `run_tests.sh`.
+
+### Adding Screenshots to Your Tests
+
+To add screenshots to your tests, use the `screenshot_with_markdown` function from `test_utils.py`:
+
+```python
+from test_utils import screenshot_with_markdown
+
+# Basic usage
+screenshot_with_markdown(page, "_tests/playwright/videos/my_screenshot.png")
+
+# With custom debug information
+screenshot_with_markdown(page, "_tests/playwright/videos/my_screenshot.png", 
+                       {"Error": str(e), "Component": "API Key Configuration"})
+```
+
 ## Test Categories
 
 ### Basic UI Tests
