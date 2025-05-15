@@ -69,13 +69,10 @@ window.ApiToolsService = (function() {
      * @returns {Array} Array of enabled tool definitions in OpenAI format
      */
     function getEnabledToolDefinitions() {
-        console.log("ApiToolsService.getEnabledToolDefinitions called");
-        
         // Get built-in tool definitions
         const builtInToolDefinitions = Object.entries(builtInTools).map(([name, tool]) => {
             return tool.definition;
         });
-        console.log("- Built-in tool definitions:", builtInToolDefinitions.length, builtInToolDefinitions.map(t => t.function?.name));
         
         // Add enabled JavaScript functions from FunctionToolsService if available
         let userFunctionDefinitions = [];
@@ -85,11 +82,9 @@ window.ApiToolsService = (function() {
             // Fallback for backward compatibility
             userFunctionDefinitions = FunctionToolsService.getToolDefinitions();
         }
-        console.log("- User function definitions:", userFunctionDefinitions.length, userFunctionDefinitions.map(t => t.function?.name));
         
         // Combine and deduplicate tool definitions
         const allDefinitions = [...builtInToolDefinitions, ...userFunctionDefinitions];
-        console.log("- All definitions before deduplication:", allDefinitions.length, allDefinitions.map(t => t.function?.name));
         
         // Deduplicate by function name
         const uniqueDefinitions = [];
@@ -101,13 +96,10 @@ window.ApiToolsService = (function() {
                 if (!seenNames.has(name)) {
                     seenNames.add(name);
                     uniqueDefinitions.push(def);
-                } else {
-                    console.log(`- Skipping duplicate function: ${name}`);
                 }
             }
         }
         
-        console.log("- Unique definitions after deduplication:", uniqueDefinitions.length, uniqueDefinitions.map(t => t.function?.name));
         return uniqueDefinitions;
     }
     
