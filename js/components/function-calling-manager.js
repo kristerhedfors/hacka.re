@@ -422,9 +422,6 @@ function multiply_numbers(a, b) {
                 // Enable the function by default
                 FunctionToolsService.enableJsFunction(name);
                 
-                // Clear form
-                clearFunctionEditor();
-                
                 // Render updated list
                 renderFunctionList();
                 
@@ -432,6 +429,9 @@ function multiply_numbers(a, b) {
                 if (addSystemMessage) {
                     addSystemMessage(`Function "${name}" added and enabled for tool calling.`);
                 }
+                
+                // Show success message
+                showValidationResult(`Function "${name}" added successfully.`, 'success');
                 
                 // Focus back on the function name field for the next entry
                 if (elements.functionName) {

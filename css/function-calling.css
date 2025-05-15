@@ -18,8 +18,7 @@
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
-    max-height: 80vh;
-    overflow-y: auto;
+    /* Removed max-height and overflow-y to prevent double scrolling */
 }
 
 .function-list {
