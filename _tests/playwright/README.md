@@ -29,7 +29,39 @@ The tests are set up to run in a Python virtual environment. The environment and
 
 ## Running Tests
 
-To run all tests:
+### Using the run_tests.sh Script
+
+The recommended way to run tests is using the `run_tests.sh` script, which provides enhanced logging and output capture:
+
+```bash
+./run_tests.sh
+```
+
+This script offers several advantages:
+- Captures all output, including Ctrl+C interruptions, to a file called `run_tests.out`
+- Automatically generates markdown reports with test results and screenshots
+- Makes test output available as context for LLM-assisted coding
+- Sets up the virtual environment automatically if it doesn't exist
+
+#### Command Line Options
+
+```bash
+./run_tests.sh [options]
+```
+
+Options:
+- `--headless`: Run tests in headless mode (no browser UI)
+- `--firefox`: Run tests in Firefox (default is Chromium)
+- `--webkit`: Run tests in WebKit
+- `--verbose`, `-v`: Run tests with verbose output
+- `--test-file <file>`: Specify a test file to run
+- `--timeout <ms>`: Set timeout in milliseconds (default: 5000)
+- `-k "<expression>"`: Filter tests by expression (e.g., `-k "not function_calling_api"`)
+- `--help`, `-h`: Show help message
+
+### Using pytest Directly
+
+You can also run tests directly with pytest:
 
 ```bash
 pytest
@@ -52,6 +84,8 @@ To run tests with more verbose output:
 ```bash
 pytest -v
 ```
+
+However, using pytest directly won't capture output in the same way as `run_tests.sh`, which is important for LLM-assisted coding.
 
 ## Test Structure
 
@@ -114,6 +148,55 @@ When MCP functionality is re-enabled, to run the MCP integration tests, you'll n
 
 Note that the integration test is marked with `@pytest.mark.skip` by default since it requires an actual running MCP server. You'll need to remove this mark or use the `-k` flag to run it.
 
+## Test Output Logging and LLM-Assisted Coding
+
+The `run_tests.sh` script is designed to capture comprehensive test output that can be used as context for LLM-assisted coding, even when tests are interrupted or when terminal output is not directly available in an integrated development environment.
+
+### How Test Output Logging Works
+
+1. **Complete Output Capture**: 
+   - All stdout and stderr output is captured to `run_tests.out` using `tee`
+   - This includes pytest output, console logs, and error messages
+   - Even if tests are interrupted with Ctrl+C, the output up to that point is preserved
+   - Stack traces from interruptions are also captured
+
+2. **Markdown Report Generation**:
+   - After tests complete (or are interrupted), `bundle_test_results.sh` is automatically called
+   - This script generates two markdown reports:
+     - `test_results.md`: Contains test output from `test_output.log` plus screenshots
+     - `run_tests.out_bundle.md`: Contains all captured output from `run_tests.out` plus screenshots
+
+3. **Output Files**:
+   - `run_tests.out`: Raw terminal output including any interruptions
+   - `test_output.log`: Direct pytest output
+   - `run_tests.out_bundle.md`: Formatted markdown with test output and screenshots
+   - `test_results.md`: Alternative formatted markdown report
+
+### Using Test Output for LLM-Assisted Coding
+
+These output files are particularly valuable when:
+- Tests are interrupted by keyboard interrupt (Ctrl+C)
+- Terminal output is not directly visible in an integrated development environment
+- You need to share test results with an LLM coding assistant
+- You want to analyze test failures with additional context
+
+To use the test output with an LLM:
+1. Run tests with `./run_tests.sh`
+2. If tests fail or are interrupted, the output is still captured
+3. Provide `run_tests.out` or `run_tests.out_bundle.md` as context to the LLM
+4. The LLM can analyze the test output, including any errors or failures
+
+### Viewing Test Reports
+
+You can view the generated markdown reports with:
+```bash
+# If you have glow installed
+glow -p run_tests.out_bundle.md
+
+# Or use any markdown viewer
+# Or open in a text editor
+```
+
 ## Screenshot Debugging
 
 The tests are configured to save screenshots with associated markdown files containing debug information. This feature helps developers understand test failures and debug issues more effectively.
@@ -142,11 +225,11 @@ Two scripts are provided to view screenshots and their associated debug informat
    - Formatted display of markdown content
    - Timestamps for each screenshot
 
-2. **Bundle Screenshots and Test Results**:
+2. **Bundle Test Results**:
    ```bash
-   _tests/playwright/bundle_screenshots.sh
+   _tests/playwright/bundle_test_results.sh
    ```
-   This script generates a comprehensive markdown report (`test_results.md`) that includes:
+   This script generates comprehensive markdown reports that include:
    - Test output results and stack traces in chronological order
    - Screenshots and their associated debug information
    
@@ -159,13 +242,48 @@ To add screenshots to your tests, use the `screenshot_with_markdown` function fr
 ```python
 from test_utils import screenshot_with_markdown
 
-# Basic usage
+# Basic usage (NOT RECOMMENDED - always include debug info)
 screenshot_with_markdown(page, "_tests/playwright/videos/my_screenshot.png")
 
-# With custom debug information
+# With custom debug information (RECOMMENDED)
 screenshot_with_markdown(page, "_tests/playwright/videos/my_screenshot.png", 
-                       {"Error": str(e), "Component": "API Key Configuration"})
+                       {"Status": "After clicking submit button", 
+                        "Component": "API Key Configuration"})
 ```
+
+### IMPORTANT: Always Include Debug Information
+
+**All tests must include debug information with screenshots.** This is critical for:
+
+1. **LLM-Assisted Coding**: When using LLMs to help debug test failures, the debug information provides essential context that the LLM needs to understand what was happening when the screenshot was taken.
+
+2. **Interrupted Tests**: If tests are interrupted (e.g., by Ctrl+C), the screenshots with debug information may be the only record of what was happening at the time of interruption.
+
+3. **Debugging Complex Issues**: Debug information helps identify the state of the application at the time of the screenshot, making it easier to diagnose issues.
+
+#### Debug Information Best Practices
+
+When taking screenshots, always include relevant debug information:
+
+```python
+# Good example with comprehensive debug info
+screenshot_with_markdown(page, "settings_modal.png", {
+    "Status": "After clicking save button",
+    "API Key": "Configured",
+    "Selected Model": model_name,
+    "Error Message": error_text if error_text else "None"
+})
+
+# Another good example for function calling tests
+screenshot_with_markdown(page, "function_execution.png", {
+    "Function Name": function_name,
+    "Arguments": str(args),
+    "Execution Status": "Completed" if success else "Failed",
+    "Result": result_text
+})
+```
+
+Without proper debug information, screenshots have limited value for debugging and LLM-assisted coding. The bundled test reports will show "No debug information available for this screenshot" for screenshots without debug info.
 
 ## Test Categories
 
