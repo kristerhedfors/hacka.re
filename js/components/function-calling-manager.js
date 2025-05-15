@@ -11,6 +11,8 @@ window.FunctionCallingManager = (function() {
      * @returns {Object} Function Calling Manager instance
      */
     function createFunctionCallingManager(elements, addSystemMessage) {
+        // Track if we're editing an existing function
+        let editingFunctionName = null;
         /**
          * Initialize the function calling manager
          */
@@ -170,6 +172,12 @@ function multiply_numbers(a, b) {
                     }
                 });
                 
+                // Create content container (will be clickable)
+                const contentContainer = document.createElement('div');
+                contentContainer.style.flex = '1';
+                contentContainer.style.cursor = 'pointer';
+                contentContainer.title = 'Click to edit function';
+                
                 // Create name element
                 const nameElement = document.createElement('div');
                 nameElement.className = 'function-item-name';
@@ -185,6 +193,11 @@ function multiply_numbers(a, b) {
                     descriptionElement.style.color = 'rgba(0, 0, 0, 0.6)';
                     descriptionElement.style.marginTop = '0.25rem';
                 }
+                
+                // Add click event to load function into editor
+                contentContainer.addEventListener('click', () => {
+                    loadFunctionIntoEditor(name, functionSpec);
+                });
                 
                 // Create delete button
                 const deleteButton = document.createElement('button');
@@ -206,8 +219,6 @@ function multiply_numbers(a, b) {
                 // Assemble function item
                 functionItem.appendChild(checkbox);
                 
-                const contentContainer = document.createElement('div');
-                contentContainer.style.flex = '1';
                 contentContainer.appendChild(nameElement);
                 if (descriptionElement) {
                     contentContainer.appendChild(descriptionElement);
@@ -393,7 +404,45 @@ function multiply_numbers(a, b) {
         }
         
         /**
-         * Handle adding a new function
+         * Load a function into the editor for editing
+         * @param {string} name - Function name
+         * @param {Object} functionSpec - Function specification
+         */
+        function loadFunctionIntoEditor(name, functionSpec) {
+            // Set the editing flag
+            editingFunctionName = name;
+            
+            // Set the function name
+            if (elements.functionName) {
+                elements.functionName.value = name;
+                // Make it read-only since it's auto-completed
+                elements.functionName.classList.add('auto-completed');
+                elements.functionName.setAttribute('readonly', 'readonly');
+            }
+            
+            // Set the function code
+            if (elements.functionCode && functionSpec.code) {
+                elements.functionCode.value = functionSpec.code;
+                
+                // Trigger any event listeners that might be attached to the code editor
+                const event = new Event('input', { bubbles: true });
+                elements.functionCode.dispatchEvent(event);
+            }
+            
+            // Scroll to the editor form
+            if (elements.functionEditorForm) {
+                elements.functionEditorForm.scrollIntoView({ behavior: 'smooth' });
+            }
+            
+            // Hide validation result and tool definition
+            hideValidationResult();
+            hideToolDefinition();
+            
+            console.log(`Loaded function "${name}" into editor for editing`);
+        }
+        
+        /**
+         * Handle adding or updating a function
          * @param {Event} event - The form submit event
          */
         function handleAddFunction(event) {
@@ -409,14 +458,28 @@ function multiply_numbers(a, b) {
             const name = elements.functionName.value.trim();
             const code = elements.functionCode.value.trim();
             
-            // Store both the function code and the tool definition
-            const functionData = {
-                code: code,
-                toolDefinition: validation.toolDefinition
-            };
+            let success;
+            let message;
             
-            // Add function
-            const success = FunctionToolsService.addJsFunction(name, code, validation.toolDefinition);
+            // Check if we're editing an existing function or adding a new one
+            if (editingFunctionName) {
+                // If the name has changed (shouldn't happen due to readonly, but just in case)
+                if (editingFunctionName !== name) {
+                    // Remove the old function
+                    FunctionToolsService.removeJsFunction(editingFunctionName);
+                }
+                
+                // Update the function
+                success = FunctionToolsService.addJsFunction(name, code, validation.toolDefinition);
+                message = `Function "${name}" updated successfully.`;
+                
+                // Reset editing flag
+                editingFunctionName = null;
+            } else {
+                // Add new function
+                success = FunctionToolsService.addJsFunction(name, code, validation.toolDefinition);
+                message = `Function "${name}" added successfully.`;
+            }
             
             if (success) {
                 // Enable the function by default
@@ -427,20 +490,21 @@ function multiply_numbers(a, b) {
                 
                 // Add system message
                 if (addSystemMessage) {
-                    addSystemMessage(`Function "${name}" added and enabled for tool calling.`);
+                    addSystemMessage(`Function "${name}" ${editingFunctionName ? 'updated' : 'added'} and enabled for tool calling.`);
                 }
                 
                 // Show success message
-                showValidationResult(`Function "${name}" added successfully.`, 'success');
+                showValidationResult(message, 'success');
                 
-                // Focus back on the function name field for the next entry
-                if (elements.functionName) {
+                // Keep the function in the editor for further editing
+                // Focus back on the function code field for further editing
+                if (elements.functionCode) {
                     setTimeout(() => {
-                        elements.functionName.focus();
+                        elements.functionCode.focus();
                     }, 100);
                 }
             } else {
-                showValidationResult('Failed to add function. Please check the function code.', 'error');
+                showValidationResult(`Failed to ${editingFunctionName ? 'update' : 'add'} function. Please check the function code.`, 'error');
             }
         }
         
@@ -490,6 +554,9 @@ function multiply_numbers(a, b) {
          * Clear the function editor
          */
         function clearFunctionEditor() {
+            // Reset editing flag
+            editingFunctionName = null;
+            
             if (elements.functionName) {
                 elements.functionName.value = '';
                 // Remove auto-completed styling and make editable
