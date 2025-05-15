@@ -1,6 +1,16 @@
 #!/bin/bash
 
 # Script to run Playwright tests for hacka.re
+# Captures all output including Ctrl+C interruptions to run_tests.out
+
+# Clear the run_tests.out file at the beginning of each run
+> run_tests.out
+
+# Start capturing all output to run_tests.out
+exec > >(tee run_tests.out) 2>&1
+
+# Set up trap to ensure we capture Ctrl+C interruptions with stack trace
+trap 'echo "Script interrupted with Ctrl+C at $(date)" | tee -a run_tests.out; ps -o pid,args -p $$ | tee -a run_tests.out; caller | tee -a run_tests.out' INT
 
 # Change to the script directory
 cd "$(dirname "$0")"
@@ -80,7 +90,7 @@ if [ -n "$K_EXPR" ]; then
     PYTEST_ARGS="$PYTEST_ARGS -k \"$K_EXPR\""
 fi
 
-# Run the tests and capture output
+# Run the tests
 if [ -n "$TEST_FILE" ]; then
     echo "Running tests in $TEST_FILE with $BROWSER browser..."
     eval "python -m pytest $TEST_FILE $PYTEST_ARGS --browser $BROWSER $HEADLESS" | tee test_output.log
@@ -89,9 +99,16 @@ else
     eval "python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS" | tee test_output.log
 fi
 
-# Generate test results markdown file
-echo "Generating test results markdown file..."
-./bundle_screenshots.sh
+# Generate test results markdown files
+echo "Generating test results markdown files..."
+./bundle_test_results.sh
 
 # Deactivate the virtual environment
 deactivate
+
+# Inform the user about the output files
+echo ""
+echo "All test output, including any Ctrl+C interruptions, has been captured to run_tests.out"
+echo "A bundled markdown report has been generated at run_tests.out_bundle.md"
+echo "You can view the markdown report with: glow -p run_tests.out_bundle.md"
+echo "These files can be used by the coding assistant LLM to analyze test results"

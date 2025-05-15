@@ -185,26 +185,35 @@ def check_system_messages(page):
     return system_messages
 
 # Helper function to take a screenshot and save a corresponding markdown file
-def screenshot_with_markdown(page, path, debug_info=None):
+def screenshot_with_markdown(page, name, debug_info=None):
     """
     Take a screenshot and save a corresponding markdown file with debug information.
     
     Args:
         page: The Playwright page object
-        path: The path where the screenshot should be saved (should end with .png)
+        name: The name of the screenshot (without extension)
         debug_info: Optional dictionary with additional debug information to include in the markdown
     
     Returns:
         tuple: (screenshot_path, markdown_path) - Paths to the created files
     """
-    # Ensure the directory exists
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+    # Construct paths using the screenshots and screenshots_data directories
+    screenshot_dir = "screenshots"
+    screenshot_data_dir = "screenshots_data"
+    
+    # Ensure the name doesn't have an extension
+    name = name.replace('.png', '')
+    
+    # Construct the full paths
+    screenshot_path = os.path.join(screenshot_dir, f"{name}.png")
+    md_path = os.path.join(screenshot_data_dir, f"{name}.md")
+    
+    # Ensure the directories exist
+    os.makedirs(screenshot_dir, exist_ok=True)
+    os.makedirs(screenshot_data_dir, exist_ok=True)
     
     # Take the screenshot
-    page.screenshot(path=path)
-    
-    # Create the markdown file path by replacing .png with .md
-    md_path = path.replace('.png', '.md')
+    page.screenshot(path=screenshot_path)
     
     # Get the calling test information
     frame = inspect.currentframe().f_back
@@ -245,7 +254,7 @@ def screenshot_with_markdown(page, path, debug_info=None):
     with open(md_path, 'w') as f:
         f.write(md_content)
     
-    return path, md_path
+    return screenshot_path, md_path
 
 # Helper function to select the recommended test model
 def select_recommended_test_model(page):
