@@ -130,6 +130,17 @@ window.UIUtils = (function() {
                     ${content ? renderMarkdown(content) : ''}
                 </div>
             `;
+        } else if (role === 'system') {
+            // For system messages, preserve newlines by using innerHTML with <br> tags
+            // First escape HTML to prevent XSS, then replace newlines with <br>
+            const escapedContent = escapeHTML(content);
+            const contentWithLineBreaks = escapedContent.replace(/\n/g, '<br>');
+            
+            messageElement.innerHTML = `
+                <div class="message-content" style="font-family: 'Courier New', monospace;">
+                    ${contentWithLineBreaks}
+                </div>
+            `;
         } else {
             messageElement.innerHTML = `
                 <div class="message-content">
@@ -227,6 +238,80 @@ window.UIUtils = (function() {
         };
     }
 
+    /**
+     * Copy chat content to clipboard
+     * @param {HTMLElement} chatMessagesElement - The chat messages container element
+     * @returns {boolean} - Whether the copy was successful
+     */
+    function copyChatContent(chatMessagesElement) {
+        if (!chatMessagesElement) {
+            console.error('Chat messages element not found');
+            return false;
+        }
+        
+        try {
+            // Get all message elements
+            const messageElements = chatMessagesElement.querySelectorAll('.message');
+            
+            if (!messageElements || messageElements.length === 0) {
+                console.log('No messages to copy');
+                return false;
+            }
+            
+            // Build a string with all messages
+            let chatContent = '';
+            
+            messageElements.forEach(messageElement => {
+                // Get role
+                const role = messageElement.classList.contains('user') ? 'User' : 
+                             messageElement.classList.contains('assistant') ? 'Assistant' : 
+                             'System';
+                
+                // Get content text (strip HTML)
+                const contentElement = messageElement.querySelector('.message-content');
+                let content = '';
+                
+                if (contentElement) {
+                    // Create a temporary div to get text content
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = contentElement.innerHTML;
+                    
+                    // Replace <br> tags with newlines
+                    const brElements = tempDiv.querySelectorAll('br');
+                    brElements.forEach(br => br.replaceWith('\n'));
+                    
+                    // Replace <p> tags with double newlines
+                    const pElements = tempDiv.querySelectorAll('p');
+                    pElements.forEach(p => {
+                        p.prepend('\n\n');
+                    });
+                    
+                    // Get text content
+                    content = tempDiv.textContent.trim();
+                }
+                
+                // Add to chat content
+                chatContent += `${role}: ${content}\n\n`;
+            });
+            
+            // Copy to clipboard
+            navigator.clipboard.writeText(chatContent.trim())
+                .then(() => {
+                    console.log('Chat content copied to clipboard');
+                    return true;
+                })
+                .catch(err => {
+                    console.error('Failed to copy chat content:', err);
+                    return false;
+                });
+            
+            return true;
+        } catch (error) {
+            console.error('Error copying chat content:', error);
+            return false;
+        }
+    }
+
     // Public API
     return {
         renderMarkdown: renderMarkdown,
@@ -236,6 +321,7 @@ window.UIUtils = (function() {
         updateContextUsage: updateContextUsage,
         createMessageElement: createMessageElement,
         createTypingIndicator: createTypingIndicator,
-        estimateContextUsage: estimateContextUsage
+        estimateContextUsage: estimateContextUsage,
+        copyChatContent: copyChatContent
     };
 })();

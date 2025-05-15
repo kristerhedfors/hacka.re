@@ -18,8 +18,11 @@ window.AIHackareComponent = (function() {
         this.settingsManager = SettingsManager.createSettingsManager(this.elements);
         this.shareManager = ShareManager.createShareManager(this.elements);
         this.apiToolsManager = ApiToolsManager.createApiToolsManager(this.elements);
+        this.functionCallingManager = FunctionCallingManager.createFunctionCallingManager(
+            this.elements, 
+            this.chatManager ? this.chatManager.addSystemMessage.bind(this.chatManager) : null
+        );
         this.promptsManager = PromptsManager.createPromptsManager(this.elements);
-        this.mcpManager = MCPManager.createMCPManager(this.elements);
         
         // Make chatManager accessible globally for the close GPT button
         window.aiHackare = this;
@@ -43,8 +46,8 @@ window.AIHackareComponent = (function() {
         
         this.chatManager.init();
         this.apiToolsManager.init();
+        this.functionCallingManager.init();
         this.promptsManager.init();
-        this.mcpManager.init();
         
         // Initialize context usage display with current messages and system prompt
         this.chatManager.estimateContextUsage(
@@ -97,6 +100,20 @@ window.AIHackareComponent = (function() {
         if (this.elements.promptsBtn) {
             this.elements.promptsBtn.addEventListener('click', () => {
                 this.promptsManager.showPromptsModal();
+            });
+        }
+        
+        // Function button click
+        if (this.elements.functionBtn) {
+            this.elements.functionBtn.addEventListener('click', () => {
+                this.functionCallingManager.showFunctionModal();
+            });
+        }
+        
+        // Copy chat button click
+        if (this.elements.copyChatBtn) {
+            this.elements.copyChatBtn.addEventListener('click', () => {
+                this.copyChatContent();
             });
         }
         
@@ -293,7 +310,17 @@ window.AIHackareComponent = (function() {
             if (e.target === this.elements.promptsModal) {
                 this.promptsManager.hidePromptsModal();
             }
+            if (e.target === this.elements.functionModal) {
+                this.uiManager.hideFunctionModal();
+            }
         });
+        
+        // Close function modal button
+        if (this.elements.closeFunctionModal) {
+            this.elements.closeFunctionModal.addEventListener('click', () => {
+                this.uiManager.hideFunctionModal();
+            });
+        }
         
         // Handle keyboard shortcuts
         document.addEventListener('keydown', (e) => {
@@ -308,6 +335,7 @@ window.AIHackareComponent = (function() {
                 );
                 this.hideModelSelectionMenu();
                 this.promptsManager.hidePromptsModal();
+                this.uiManager.hideFunctionModal();
             }
             
             // Ctrl/Cmd + Enter to send message
@@ -334,7 +362,8 @@ window.AIHackareComponent = (function() {
             this.uiManager.showApiKeyModal.bind(this.uiManager),
             this.uiManager.updateContextUsage.bind(this.uiManager),
             this.apiToolsManager,
-            this.mcpManager
+            null, // Removed MCP manager
+            this.functionCallingManager
         );
     };
     
@@ -443,6 +472,19 @@ window.AIHackareComponent = (function() {
     AIHackare.prototype.hideModelSelectionMenu = function() {
         // This is kept as a stub for compatibility with existing code
         // that might call this method, but the actual functionality has been removed
+    };
+    
+    /**
+     * Copy chat content to clipboard
+     */
+    AIHackare.prototype.copyChatContent = function() {
+        const success = UIUtils.copyChatContent(this.elements.chatMessages);
+        
+        if (success) {
+            this.chatManager.addSystemMessage('Chat content copied to clipboard.');
+        } else {
+            this.chatManager.addSystemMessage('Failed to copy chat content. Please try again.');
+        }
     };
 
     // Return the constructor

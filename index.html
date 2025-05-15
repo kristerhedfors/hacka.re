@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="css/mobile.css">
     <link rel="stylesheet" href="css/copy-code.css">
     <link rel="stylesheet" href="css/default-prompts.css">
+    <link rel="stylesheet" href="css/function-calling.css">
     <!-- Font Awesome for icons (local) -->
     <link rel="stylesheet" href="lib/font-awesome/all.min.css">
     <!-- Markdown parser (local) -->
@@ -66,8 +67,11 @@
                 </div>
             </div>
             <div class="settings">
-                <button id="mcp-btn" class="icon-btn" title="Model Context Protocol">
-                    <span class="mcp-icon">MCP</span>
+                <button id="copy-chat-btn" class="icon-btn" title="Copy Chat Content">
+                    <i class="fas fa-copy"></i>
+                </button>
+                <button id="function-btn" class="icon-btn" title="Function Calling (OpenAPI)">
+                    <span class="function-icon">𝑓()</span>
                 </button>
                 <button id="prompts-btn" class="icon-btn" title="System Prompt Menu">
                     <i class="fas fa-list-alt"></i>
@@ -242,69 +246,89 @@
             </div>
         </div>
         
-        <div id="mcp-modal" class="modal">
+        <div id="function-modal" class="modal">
             <div class="modal-content">
                 <div class="settings-header">
-                    <h2>Model Context Protocol (MCP)</h2>
-                    <span class="info-icon" id="mcp-info-icon">
+                    <h2>Function Calling (OpenAPI)</h2>
+                    <span class="info-icon" id="function-info-icon">
                         <i class="fas fa-info-circle"></i>
                         <div class="tooltip">
                             <div class="tooltip-content">
                                 <div class="important-notice">
-                                    <p><strong>Model Context Protocol (MCP)</strong>: Extend AI capabilities by connecting to MCP servers that provide additional tools and resources.</p>
+                                    <p><strong>Function Calling</strong>: Create JavaScript functions that can be called by AI models through the OpenAI-compatible API.</p>
                                 </div>
                                 <div class="important-notice">
-                                    <p><strong>MCP Servers</strong>: Add servers to enable tool calling and access to external resources like APIs, databases, and more.</p>
+                                    <p><strong>JavaScript Functions</strong>: Define functions with parameters that the AI can call to perform actions or retrieve information.</p>
                                 </div>
                                 <div class="important-notice">
-                                    <p><strong>Privacy</strong>: Server configurations are stored locally in your browser. No data is sent to external servers unless explicitly configured.</p>
+                                    <p><strong>Privacy</strong>: Functions are stored locally in your browser. No data is sent to external servers unless your function explicitly does so.</p>
                                 </div>
                             </div>
                         </div>
                     </span>
                 </div>
-                <div class="mcp-container">
-                    <div class="mcp-servers-section">
-                        <h3>MCP Servers</h3>
-                        <p class="form-help">Add and manage MCP servers to extend AI capabilities with additional tools and resources.</p>
-                        <div id="mcp-servers-list">
-                            <!-- MCP servers will be populated here -->
-                            <div class="empty-state" id="mcp-empty-state">
-                                <p>No MCP servers configured. Add a server to enable tool calling.</p>
+                <div class="function-calling-container">
+                    <div class="function-list-section">
+                        <h3>Available Functions</h3>
+                        <p class="form-help">Check the boxes for the functions you want to enable for tool calling.</p>
+                        <div id="function-list">
+                            <!-- Functions will be populated here -->
+                            <div class="empty-function-state" id="empty-function-state">
+                                <p>No functions defined. Create a function below.</p>
                             </div>
-                        </div>
-                        
-                        <div class="mcp-add-server-section">
-                            <h4>Add MCP Server</h4>
-                            <form id="mcp-add-server-form">
-                                <div class="form-group">
-                                    <label for="mcp-server-name">Server Name</label>
-                                    <input type="text" id="mcp-server-name" placeholder="Enter a name for this server" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="mcp-server-url">Server URL</label>
-                                    <input type="text" id="mcp-server-url" placeholder="URL to connect to the server (e.g., http://localhost:8000)" required>
-                                    <p class="form-help">The URL where the MCP server is accessible (required for network-based connections)</p>
-                                </div>
-                                <div class="form-group">
-                                    <label for="mcp-server-command">Server Command (reference only)</label>
-                                    <input type="text" id="mcp-server-command" placeholder="Command used to start the server (for reference only)">
-                                    <p class="form-help">This is just for documentation - commands cannot be executed from the browser</p>
-                                </div>
-                                <div class="form-group">
-                                    <label for="mcp-server-env">Environment Variables (optional)</label>
-                                    <textarea id="mcp-server-env" placeholder="KEY1=value1&#10;KEY2=value2"></textarea>
-                                    <p class="form-help">One environment variable per line in KEY=value format</p>
-                                </div>
-                                <div class="form-actions" style="margin-top: 15px;">
-                                    <button type="submit" class="btn primary-btn">Add Server</button>
-                                </div>
-                            </form>
                         </div>
                     </div>
                     
-                    <div class="form-actions" style="margin-top: 15px;">
-                        <button type="button" id="close-mcp-modal" class="btn secondary-btn">Close</button>
+                    <div class="function-editor">
+                        <div class="function-editor-header">
+                            <h4 class="function-editor-title">Save Function</h4>
+                        </div>
+                        <form id="function-editor-form">
+                            <div class="form-group">
+                                <label for="function-name">Function Name</label>
+                                <input type="text" id="function-name" class="function-name-input" placeholder="Enter a name for this function" required tabindex="1">
+                            </div>
+                            <div class="form-group">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <label for="function-code">JavaScript Function</label>
+                                    <button type="button" id="copy-function-code-btn" class="icon-btn" title="Copy function code">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                                <textarea id="function-code" class="function-code-editor" placeholder="async function getCurrentTimeInBerlin() {
+  try {
+    const response = await fetch('https://worldtimeapi.org/api/timezone/Europe/Berlin');
+    if (!response.ok) {
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    return { error: error.message };
+  }
+}" required tabindex="2"></textarea>
+                                <div id="function-validation-result" class="function-validation-result">
+                                    Validation result will appear here
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+                                    <label>Tool Definition</label>
+                                    <button type="button" id="copy-tool-definition-btn" class="icon-btn" title="Copy tool definition">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                                <div id="function-tool-definition" class="function-tool-definition">
+                                    Tool definition will appear here
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn primary-btn" tabindex="3">Save Function</button>
+                                <button type="button" id="function-validate-btn" class="btn secondary-btn" tabindex="4">Validate</button>
+                                <button type="button" id="function-clear-btn" class="btn secondary-btn" tabindex="5">Clear</button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" id="close-function-modal" class="btn secondary-btn" tabindex="6">Close</button>
                     </div>
                 </div>
             </div>
@@ -408,23 +432,24 @@
     </div>
 
     <script src="js/utils/crypto-utils.js"></script>
+    <script src="js/utils/rc4-utils.js"></script>
+    <script src="js/components/function-calling-manager.js"></script>
     <script src="js/services/model-info.js"></script>
     <script src="js/services/encryption-service.js"></script>
     <script src="js/services/namespace-service.js"></script>
     <script src="js/services/core-storage-service.js"></script>
     <script src="js/services/data-service.js"></script>
     <script src="js/services/storage-service.js"></script>
+    <script src="js/services/debug-service.js"></script>
     <script src="js/services/api-service.js"></script>
     <script src="js/services/api-tools-service.js"></script>
-    <script src="js/services/mcp-service.js"></script>
+    <script src="js/services/function-tools-service.js"></script>
     <script src="js/services/link-sharing-service.js"></script>
     <script src="js/services/share-service.js"></script>
     <!-- Default prompts -->
     <script src="js/default-prompts/hacka-re-project.js"></script>
     <script src="js/default-prompts/function-calling.js"></script>
-    <script src="js/default-prompts/mcp-prompt.js"></script>
     <script src="js/default-prompts/owasp-llm-top10.js"></script>
-    <script src="js/default-prompts/mcp-sdk-readme.js"></script>
     <script src="js/services/default-prompts-service.js"></script>
     <script src="js/services/prompts-service.js"></script>
     <script src="js/utils/ui-utils.js"></script>
@@ -440,11 +465,11 @@
     <script src="js/components/settings/title-subtitle-manager.js"></script>
     <script src="js/components/settings/welcome-manager.js"></script>
     <script src="js/components/settings/shared-link-manager.js"></script>
+    <script src="js/components/settings/tool-calling-manager.js"></script>
     <script src="js/components/settings/settings-manager.js"></script>
     <script src="js/components/share-manager.js"></script>
     <script src="js/components/api-tools-manager.js"></script>
     <script src="js/components/prompts-manager.js"></script>
-    <script src="js/components/mcp-manager.js"></script>
     <script src="js/components/ai-hackare.js"></script>
     <script src="js/app.js"></script>
     <script src="js/themes.js"></script>

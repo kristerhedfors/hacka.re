@@ -35,9 +35,10 @@ window.ChatManager = (function() {
  * @param {Function} showApiKeyModal - Function to show API key modal
  * @param {Function} updateContextUsage - Function to update context usage
  * @param {Object} apiToolsManager - API tools manager for tool calling
- * @param {Object} mcpManager - MCP manager for MCP tool calling
+ * @param {Object} mcpManager - Deprecated parameter, kept for compatibility
+ * @param {Object} functionCallingManager - Function calling manager for OpenAPI functions
  */
-function sendMessage(message, apiKey, currentModel, systemPrompt, showApiKeyModal, updateContextUsage, apiToolsManager, mcpManager) {
+function sendMessage(message, apiKey, currentModel, systemPrompt, showApiKeyModal, updateContextUsage, apiToolsManager, mcpManager, functionCallingManager) {
     if (!message) return;
     
     if (!apiKey) {
@@ -61,7 +62,7 @@ function sendMessage(message, apiKey, currentModel, systemPrompt, showApiKeyModa
     elements.messageInput.focus();
     
     // Send to API
-    generateResponse(apiKey, currentModel, systemPrompt, updateContextUsage, apiToolsManager, mcpManager);
+    generateResponse(apiKey, currentModel, systemPrompt, updateContextUsage, apiToolsManager, mcpManager, functionCallingManager);
 }
 
 /**
@@ -71,9 +72,10 @@ function sendMessage(message, apiKey, currentModel, systemPrompt, showApiKeyModa
  * @param {string} systemPrompt - System prompt
  * @param {Function} updateContextUsage - Function to update context usage
  * @param {Object} apiToolsManager - API tools manager for tool calling
- * @param {Object} mcpManager - MCP manager for MCP tool calling
+ * @param {Object} mcpManager - Deprecated parameter, kept for compatibility
+ * @param {Object} functionCallingManager - Function calling manager for OpenAPI functions
  */
-async function generateResponse(apiKey, currentModel, systemPrompt, updateContextUsage, apiToolsManager, mcpManager) {
+async function generateResponse(apiKey, currentModel, systemPrompt, updateContextUsage, apiToolsManager, mcpManager, functionCallingManager) {
     if (!apiKey) return;
     
     isGenerating = true;
@@ -113,41 +115,78 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
         controller = new AbortController();
         const signal = controller.signal;
         
-        // Combine tools from API tools manager and MCP manager
+        // Combine tools from API tools manager, Function tools manager, MCP manager, and function calling manager
         const combinedToolsManager = {
             getToolDefinitions: () => {
                 const apiTools = apiToolsManager ? apiToolsManager.getToolDefinitions() : [];
-                const mcpTools = mcpManager ? mcpManager.getToolDefinitions() : [];
-                return [...apiTools, ...mcpTools];
-            },
-            processToolCalls: async (toolCalls) => {
-                // Process tool calls based on their names
-                const apiToolCalls = [];
-                const mcpToolCalls = [];
+                const functionTools = FunctionToolsService ? FunctionToolsService.getToolDefinitions() : [];
+                const functionCallingTools = functionCallingManager ? functionCallingManager.getFunctionDefinitions() : [];
                 
-                // Separate tool calls by type
-                for (const toolCall of toolCalls) {
-                    const toolName = toolCall.function.name;
-                    
-                    // Check if it's an MCP tool (contains a dot)
-                    if (toolName.includes('.')) {
-                        mcpToolCalls.push(toolCall);
-                    } else {
-                        apiToolCalls.push(toolCall);
-                    }
+                // Debug logging
+                console.log("combinedToolsManager.getToolDefinitions called");
+                console.log("- apiTools:", apiTools.length, apiTools.map(t => t.function?.name));
+                console.log("- functionTools:", functionTools.length, functionTools.map(t => t.function?.name));
+                console.log("- functionCallingTools:", functionCallingTools.length, functionCallingTools.map(t => t.function?.name));
+                console.log("- FunctionToolsService enabled:", FunctionToolsService ? FunctionToolsService.isFunctionToolsEnabled() : false);
+                console.log("- FunctionToolsService enabled functions:", FunctionToolsService ? FunctionToolsService.getEnabledFunctionNames() : []);
+                
+                const allTools = [...apiTools, ...functionTools, ...functionCallingTools];
+                console.log("- Combined tools:", allTools.length, allTools.map(t => t.function?.name));
+                
+                return allTools;
+            },
+            processToolCalls: async (toolCalls, addSystemMessage) => {
+        // Process tool calls based on their names
+        const apiToolCalls = [];
+        const functionToolCalls = [];
+        
+        // Validate toolCalls is an array
+        if (!Array.isArray(toolCalls)) {
+            console.error('Invalid tool calls format: not an array', toolCalls);
+            if (addSystemMessage) {
+                addSystemMessage('Error: Invalid tool calls format received from API');
+            }
+            return [];
+        }
+        
+        // Separate tool calls by type
+        for (const toolCall of toolCalls) {
+            try {
+                // Validate toolCall has the expected structure
+                if (!toolCall || !toolCall.function || typeof toolCall.function.name !== 'string') {
+                    console.error('Invalid tool call format:', toolCall);
+                    continue;
                 }
                 
-                // Process each type of tool calls
-                const apiResults = apiToolCalls.length > 0 && apiToolsManager 
-                    ? await apiToolsManager.processToolCalls(apiToolCalls) 
-                    : [];
+                const toolName = toolCall.function.name;
                 
-                const mcpResults = mcpToolCalls.length > 0 && mcpManager 
-                    ? await mcpManager.processToolCalls(mcpToolCalls) 
-                    : [];
-                
+                // Check if it's a function tool (must exist and be enabled)
+                if (FunctionToolsService && 
+                    FunctionToolsService.getJsFunctions()[toolName] && 
+                    FunctionToolsService.isJsFunctionEnabled(toolName)) {
+                    functionToolCalls.push(toolCall);
+                } else {
+                    apiToolCalls.push(toolCall);
+                }
+            } catch (error) {
+                console.error('Error processing tool call:', error, toolCall);
+                if (addSystemMessage) {
+                    addSystemMessage(`Error processing tool call: ${error.message}`);
+                }
+            }
+        }
+        
+        // Process each type of tool calls
+        const apiResults = apiToolCalls.length > 0 && apiToolsManager 
+            ? await apiToolsManager.processToolCalls(apiToolCalls, addSystemMessage) 
+            : [];
+        
+        const functionResults = functionToolCalls.length > 0 && FunctionToolsService
+            ? await FunctionToolsService.processToolCalls(functionToolCalls, addSystemMessage)
+            : [];
+        
                 // Combine results
-                return [...apiResults, ...mcpResults];
+                return [...apiResults, ...functionResults];
             }
         };
         
@@ -159,7 +198,8 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
             signal,
             (content) => updateAIMessage(content, aiMessageId, updateContextUsage),
             systemPrompt,
-            combinedToolsManager
+            combinedToolsManager,
+            addSystemMessage
         );
         
         // Remove typing indicator
@@ -364,10 +404,16 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
         /**
          * Add a system message to the chat
          * @param {string} content - Message content
+         * @param {string} className - Optional CSS class to add to the message
          */
-        function addSystemMessage(content) {
+        function addSystemMessage(content, className) {
             // Create message element
             const messageElement = UIUtils.createMessageElement('system', content);
+            
+            // Add custom class if provided
+            if (className) {
+                messageElement.classList.add(...className.split(' '));
+            }
             
             // Add to chat
             elements.chatMessages.appendChild(messageElement);

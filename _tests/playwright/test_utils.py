@@ -1,5 +1,7 @@
 import pytest
 import time
+import os
+import inspect
 from playwright.sync_api import Page, expect
 
 # Maximum allowed time for any operation (in seconds)
@@ -14,7 +16,15 @@ class OperationTimeoutError(Exception):
 
 # Helper function to measure and print execution time
 def timed_test(func):
-    def wrapper(page, serve_hacka_re):
+    def wrapper(*args, **kwargs):
+        # Check if args is empty or if the first argument is not a page object
+        if not args or not hasattr(args[0], 'goto'):
+            print(f"Warning: timed_test decorator used on {func.__name__} but page object not found as first argument")
+            return func(*args, **kwargs)
+            
+        # Extract the page object from args
+        page = args[0]
+        
         # Store original methods to time them
         original_goto = page.goto
         original_locator = page.locator
@@ -54,7 +64,7 @@ def timed_test(func):
         
         # Time the entire test
         start_time = time.time()
-        result = func(page, serve_hacka_re)
+        result = func(*args, **kwargs)
         end_time = time.time()
         execution_time = end_time - start_time
         print(f"\n⏱️ {func.__name__} completed in {execution_time:.3f} seconds")
@@ -178,6 +188,78 @@ def check_system_messages(page):
                 print(f"  ℹ️ INFO: {message}")
     
     return system_messages
+
+# Helper function to take a screenshot and save a corresponding markdown file
+def screenshot_with_markdown(page, name, debug_info=None):
+    """
+    Take a screenshot and save a corresponding markdown file with debug information.
+    
+    Args:
+        page: The Playwright page object
+        name: The name of the screenshot (without extension)
+        debug_info: Optional dictionary with additional debug information to include in the markdown
+    
+    Returns:
+        tuple: (screenshot_path, markdown_path) - Paths to the created files
+    """
+    # Construct paths using the screenshots and screenshots_data directories
+    screenshot_dir = "screenshots"
+    screenshot_data_dir = "screenshots_data"
+    
+    # Ensure the name doesn't have an extension
+    name = name.replace('.png', '')
+    
+    # Construct the full paths
+    screenshot_path = os.path.join(screenshot_dir, f"{name}.png")
+    md_path = os.path.join(screenshot_data_dir, f"{name}.md")
+    
+    # Ensure the directories exist
+    os.makedirs(screenshot_dir, exist_ok=True)
+    os.makedirs(screenshot_data_dir, exist_ok=True)
+    
+    # Take the screenshot
+    page.screenshot(path=screenshot_path)
+    
+    # Get the calling test information
+    frame = inspect.currentframe().f_back
+    test_file = frame.f_code.co_filename
+    test_name = frame.f_code.co_name
+    
+    # Prepare the markdown content
+    md_content = f"# Screenshot Debug Info\n\n"
+    md_content += f"## Test Information\n\n"
+    md_content += f"- **Test File**: {os.path.basename(test_file)}\n"
+    md_content += f"- **Test Name**: {test_name}\n"
+    md_content += f"- **Screenshot Time**: {time.strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+    
+    # Add page information
+    md_content += f"## Page Information\n\n"
+    md_content += f"- **URL**: {page.url}\n"
+    md_content += f"- **Title**: {page.title()}\n\n"
+    
+    # Add custom debug information if provided
+    if debug_info:
+        md_content += f"## Debug Information\n\n"
+        for key, value in debug_info.items():
+            md_content += f"- **{key}**: {value}\n"
+        md_content += "\n"
+    
+    # Add console logs if available
+    console_logs = page.evaluate("""() => {
+        return window.consoleErrors || [];
+    }""")
+    
+    if console_logs and len(console_logs) > 0:
+        md_content += f"## Console Logs\n\n"
+        for log in console_logs:
+            md_content += f"- {log}\n"
+        md_content += "\n"
+    
+    # Write the markdown file
+    with open(md_path, 'w') as f:
+        f.write(md_content)
+    
+    return screenshot_path, md_path
 
 # Helper function to select the recommended test model
 def select_recommended_test_model(page):

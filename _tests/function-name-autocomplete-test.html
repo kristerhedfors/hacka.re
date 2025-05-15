@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Function Name Auto-Complete Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        textarea {
+            height: 200px;
+            font-family: monospace;
+        }
+        .auto-completed {
+            background-color: rgba(0, 0, 0, 0.05);
+            color: rgba(0, 0, 0, 0.7);
+            cursor: not-allowed;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Function Name Auto-Complete Test</h1>
+    <p>This page tests the auto-completion of function names from JavaScript code.</p>
+    
+    <div class="form-group">
+        <label for="function-name">Function Name</label>
+        <input type="text" id="function-name" placeholder="Function name will be auto-completed">
+    </div>
+    
+    <div class="form-group">
+        <label for="function-code">JavaScript Function</label>
+        <textarea id="function-code" placeholder="Enter your function code here"></textarea>
+    </div>
+    
+    <div>
+        <button id="clear-btn">Clear</button>
+        <button id="test-btn">Test with Example</button>
+    </div>
+    
+    <div id="result" class="result" style="display: none;"></div>
+    
+    <script>
+        // Example function code
+        const exampleCode = `/**
+ * @description Get the current weather for a location
+ * @param {string} location - The city or location to get weather for
+ * @param {string} unit - The temperature unit (celsius or fahrenheit)
+ */
+function getWeatherInfo(location, unit = "celsius") {
+  console.log(\`Getting weather for \${location} in \${unit}\`);
+  
+  // This is a mock function that returns fake weather data
+  const temperature = unit === "celsius" ? 22 : 72;
+  
+  return {
+    location: location,
+    temperature: temperature,
+    unit: unit,
+    condition: "Sunny",
+    humidity: 45,
+    timestamp: new Date().toISOString()
+  };
+}`;
+
+        // DOM elements
+        const functionNameInput = document.getElementById('function-name');
+        const functionCodeTextarea = document.getElementById('function-code');
+        const clearBtn = document.getElementById('clear-btn');
+        const testBtn = document.getElementById('test-btn');
+        const resultDiv = document.getElementById('result');
+        
+        // Function to extract function name from code
+        function extractFunctionName() {
+            const code = functionCodeTextarea.value.trim();
+            if (!code) return;
+            
+            try {
+                // Normalize indentation and extract function name
+                const normalizedCode = code.replace(/^[ \t]+/gm, '');
+                const functionMatch = normalizedCode.match(/^\s*(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\([^)]*\)/);
+                
+                if (functionMatch) {
+                    const functionName = functionMatch[1];
+                    
+                    // Auto-fill the function name field
+                    functionNameInput.value = functionName;
+                    
+                    // Add auto-completed class to style the field
+                    functionNameInput.classList.add('auto-completed');
+                    
+                    // Make the field read-only
+                    functionNameInput.setAttribute('readonly', 'readonly');
+                    
+                    // Show result
+                    resultDiv.textContent = `Function name "${functionName}" extracted and auto-completed`;
+                    resultDiv.style.display = 'block';
+                } else {
+                    // If no function name found, remove auto-completed styling and make editable
+                    functionNameInput.classList.remove('auto-completed');
+                    functionNameInput.removeAttribute('readonly');
+                    
+                    // Show result
+                    resultDiv.textContent = 'No function name found in the code';
+                    resultDiv.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error extracting function name:', error);
+                resultDiv.textContent = `Error: ${error.message}`;
+                resultDiv.style.display = 'block';
+            }
+        }
+        
+        // Function to clear the form
+        function clearForm() {
+            functionNameInput.value = '';
+            functionCodeTextarea.value = '';
+            functionNameInput.classList.remove('auto-completed');
+            functionNameInput.removeAttribute('readonly');
+            resultDiv.style.display = 'none';
+        }
+        
+        // Function to load example code
+        function loadExample() {
+            functionCodeTextarea.value = exampleCode;
+            extractFunctionName();
+        }
+        
+        // Event listeners
+        functionCodeTextarea.addEventListener('input', extractFunctionName);
+        clearBtn.addEventListener('click', clearForm);
+        testBtn.addEventListener('click', loadExample);
+    </script>
+</body>
+</html>

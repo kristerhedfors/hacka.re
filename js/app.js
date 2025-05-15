@@ -4,6 +4,12 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize the debug service
+    if (window.DebugService) {
+        DebugService.init();
+        DebugService.log('Debug service initialized');
+    }
+    
     // Initialize the chat application
     const aiHackare = new AIHackareComponent.AIHackare();
     aiHackare.init();

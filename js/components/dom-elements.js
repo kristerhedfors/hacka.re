@@ -59,8 +59,24 @@ window.DOMElements = (function() {
             promptsList: document.getElementById('prompts-list'),
             closePromptsModal: document.getElementById('close-prompts-modal'),
             
-            // MCP button
-            mcpBtn: document.getElementById('mcp-btn'),
+            // Copy chat button
+            copyChatBtn: document.getElementById('copy-chat-btn'),
+            
+            // Function calling elements
+            functionBtn: document.getElementById('function-btn'),
+            functionModal: document.getElementById('function-modal'),
+            functionList: document.getElementById('function-list'),
+            emptyFunctionState: document.getElementById('empty-function-state'),
+            functionEditorForm: document.getElementById('function-editor-form'),
+            functionName: document.getElementById('function-name'),
+            functionCode: document.getElementById('function-code'),
+            copyFunctionCodeBtn: document.getElementById('copy-function-code-btn'),
+            functionValidationResult: document.getElementById('function-validation-result'),
+            functionToolDefinition: document.getElementById('function-tool-definition'),
+            copyToolDefinitionBtn: document.getElementById('copy-tool-definition-btn'),
+            functionValidateBtn: document.getElementById('function-validate-btn'),
+            functionClearBtn: document.getElementById('function-clear-btn'),
+            closeFunctionModal: document.getElementById('close-function-modal'),
             
             // Settings modal elements
             settingsBtn: document.getElementById('settings-btn'),
