@@ -34,11 +34,11 @@ window.ApiToolsManager = (function() {
         }
         
         /**
-         * Get tool definitions for API requests
-         * @returns {Array} Array of tool definitions in OpenAI format
+         * Get enabled tool definitions for API requests with deduplication
+         * @returns {Array} Array of enabled tool definitions in OpenAI format
          */
         function getToolDefinitions() {
-            return ApiToolsService.getToolDefinitions();
+            return ApiToolsService.getEnabledToolDefinitions();
         }
         
         /**
