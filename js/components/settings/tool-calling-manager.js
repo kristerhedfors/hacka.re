@@ -55,9 +55,8 @@ window.ToolCallingManager = (function() {
             // Add to settings form
             settingsForm.insertBefore(toolCallingGroup, settingsForm.querySelector('.form-actions'));
             
-            // Ensure tool calling and function tools are enabled by default
+            // Ensure tool calling is enabled by default
             ApiToolsService.setToolCallingEnabled(true);
-            FunctionToolsService.setFunctionToolsEnabled(true);
         }
         
         // Public API

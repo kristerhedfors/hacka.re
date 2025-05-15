@@ -86,7 +86,13 @@ window.ApiToolsService = (function() {
         // Add enabled OpenAPI functions
         const enabledOpenApiFunctions = getEnabledOpenApiFunctions();
         
-        return [...registeredTools, ...enabledOpenApiFunctions];
+        // Add enabled JavaScript functions from FunctionToolsService if available
+        let functionTools = [];
+        if (window.FunctionToolsService && typeof FunctionToolsService.getToolDefinitions === 'function') {
+            functionTools = FunctionToolsService.getToolDefinitions();
+        }
+        
+        return [...registeredTools, ...enabledOpenApiFunctions, ...functionTools];
     }
     
     /**
@@ -284,28 +290,44 @@ window.ApiToolsService = (function() {
                     throw new Error('Invalid tool call format: missing function name');
                 }
                 
-                // Check if tool exists
-                if (!toolRegistry[name]) {
+                // Check if the tool is a built-in tool
+                if (toolRegistry[name]) {
+                    // Log tool execution
+                    if (addSystemMessage) {
+                        addSystemMessage(`Executing tool "${name}"`);
+                    }
+                    
+                    const result = await executeToolCall(toolCall);
+                    
+                    // Log successful execution
+                    if (addSystemMessage) {
+                        addSystemMessage(`Tool "${name}" executed successfully`);
+                    }
+                    
+                    toolResults.push(result);
+                }
+                // Check if the tool is a JavaScript function from FunctionToolsService
+                else if (window.FunctionToolsService && 
+                         typeof FunctionToolsService.isJsFunctionEnabled === 'function' && 
+                         FunctionToolsService.isJsFunctionEnabled(name)) {
+                    
+                    // Delegate to FunctionToolsService for processing
+                    if (addSystemMessage) {
+                        // Let FunctionToolsService handle the system messages
+                        const functionResults = await FunctionToolsService.processToolCalls([toolCall], addSystemMessage);
+                        toolResults.push(...functionResults);
+                    } else {
+                        const functionResults = await FunctionToolsService.processToolCalls([toolCall]);
+                        toolResults.push(...functionResults);
+                    }
+                }
+                else {
                     const errorMsg = `Tool "${name}" not found`;
                     if (addSystemMessage) {
                         addSystemMessage(`Error: ${errorMsg}`);
                     }
                     throw new Error(errorMsg);
                 }
-                
-                // Log tool execution
-                if (addSystemMessage) {
-                    addSystemMessage(`Executing tool "${name}"`);
-                }
-                
-                const result = await executeToolCall(toolCall);
-                
-                // Log successful execution
-                if (addSystemMessage) {
-                    addSystemMessage(`Tool "${name}" executed successfully`);
-                }
-                
-                toolResults.push(result);
             } catch (error) {
                 console.error('Error processing tool call:', error);
                 

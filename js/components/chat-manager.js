@@ -121,7 +121,19 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
                 const apiTools = apiToolsManager ? apiToolsManager.getToolDefinitions() : [];
                 const functionTools = FunctionToolsService ? FunctionToolsService.getToolDefinitions() : [];
                 const functionCallingTools = functionCallingManager ? functionCallingManager.getFunctionDefinitions() : [];
-                return [...apiTools, ...functionTools, ...functionCallingTools];
+                
+                // Debug logging
+                console.log("combinedToolsManager.getToolDefinitions called");
+                console.log("- apiTools:", apiTools.length, apiTools.map(t => t.function?.name));
+                console.log("- functionTools:", functionTools.length, functionTools.map(t => t.function?.name));
+                console.log("- functionCallingTools:", functionCallingTools.length, functionCallingTools.map(t => t.function?.name));
+                console.log("- FunctionToolsService enabled:", FunctionToolsService ? FunctionToolsService.isFunctionToolsEnabled() : false);
+                console.log("- FunctionToolsService enabled functions:", FunctionToolsService ? FunctionToolsService.getEnabledFunctionNames() : []);
+                
+                const allTools = [...apiTools, ...functionTools, ...functionCallingTools];
+                console.log("- Combined tools:", allTools.length, allTools.map(t => t.function?.name));
+                
+                return allTools;
             },
             processToolCalls: async (toolCalls, addSystemMessage) => {
         // Process tool calls based on their names
@@ -148,8 +160,10 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
                 
                 const toolName = toolCall.function.name;
                 
-                // Check if it's a function tool
-                if (FunctionToolsService && FunctionToolsService.getJsFunctions()[toolName]) {
+                // Check if it's a function tool (must exist and be enabled)
+                if (FunctionToolsService && 
+                    FunctionToolsService.getJsFunctions()[toolName] && 
+                    FunctionToolsService.isJsFunctionEnabled(toolName)) {
                     functionToolCalls.push(toolCall);
                 } else {
                     apiToolCalls.push(toolCall);
