@@ -96,9 +96,15 @@ _tests/playwright/.venv/
 .sass-cache/
 
 # Playwright test files
-_tests/playwright/run_tests.out
-_tests/playwright/run_tests.out_bundle.md
+_tests/playwright/*.out
+_tests/playwright/*.md
+_tests/playwright/*.log
 _tests/playwright/screenshots/
 _tests/playwright/screenshots_data/
 _tests/playwright/videos/
-_tests/playwright/*.png
+_tests/playwright/**/*.png
+
+# Project root test files
+run_tests.out
+run_tests.out_bundle.md
+test_results.md
