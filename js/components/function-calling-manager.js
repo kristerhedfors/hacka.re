@@ -66,7 +66,8 @@ window.FunctionCallingManager = (function() {
  * @description A simple function that multiplies two numbers and returns the result
  * @param {number} a - The first number to multiply
  * @param {number} b - The second number to multiply
- * @returns {Object} Object containing the result of the multiplication
+ * @returns {Object} IMPORTANT: Always return an object, not a primitive value.
+ *                   Returning a primitive value may cause issues with tool calling.
  */
 function multiply_numbers(a, b) {
   // Validate inputs are numbers
@@ -80,7 +81,8 @@ function multiply_numbers(a, b) {
   // Perform the multiplication
   const result = a * b;
   
-  // Return the result
+  // IMPORTANT: Always return an object, not a primitive value like 'return result'
+  // Returning a primitive value may cause issues with tool calling
   return {
     result: result,
     success: true

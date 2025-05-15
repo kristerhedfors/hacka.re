@@ -110,6 +110,13 @@ window.AIHackareComponent = (function() {
             });
         }
         
+        // Copy chat button click
+        if (this.elements.copyChatBtn) {
+            this.elements.copyChatBtn.addEventListener('click', () => {
+                this.copyChatContent();
+            });
+        }
+        
         
         // Share modal event listeners
         if (this.elements.shareModal) {
@@ -465,6 +472,19 @@ window.AIHackareComponent = (function() {
     AIHackare.prototype.hideModelSelectionMenu = function() {
         // This is kept as a stub for compatibility with existing code
         // that might call this method, but the actual functionality has been removed
+    };
+    
+    /**
+     * Copy chat content to clipboard
+     */
+    AIHackare.prototype.copyChatContent = function() {
+        const success = UIUtils.copyChatContent(this.elements.chatMessages);
+        
+        if (success) {
+            this.chatManager.addSystemMessage('Chat content copied to clipboard.');
+        } else {
+            this.chatManager.addSystemMessage('Failed to copy chat content. Please try again.');
+        }
     };
 
     // Return the constructor
