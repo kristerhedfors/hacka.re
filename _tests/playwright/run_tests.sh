@@ -80,14 +80,18 @@ if [ -n "$K_EXPR" ]; then
     PYTEST_ARGS="$PYTEST_ARGS -k \"$K_EXPR\""
 fi
 
-# Run the tests
+# Run the tests and capture output
 if [ -n "$TEST_FILE" ]; then
     echo "Running tests in $TEST_FILE with $BROWSER browser..."
-    eval "python -m pytest $TEST_FILE $PYTEST_ARGS --browser $BROWSER $HEADLESS"
+    eval "python -m pytest $TEST_FILE $PYTEST_ARGS --browser $BROWSER $HEADLESS" | tee test_output.log
 else
     echo "Running all tests with $BROWSER browser..."
-    eval "python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS"
+    eval "python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS" | tee test_output.log
 fi
+
+# Generate test results markdown file
+echo "Generating test results markdown file..."
+./bundle_screenshots.sh
 
 # Deactivate the virtual environment
 deactivate

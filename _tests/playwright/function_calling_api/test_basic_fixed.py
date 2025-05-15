@@ -9,14 +9,14 @@ import time
 from urllib.parse import urljoin
 from playwright.sync_api import Page, expect
 
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal
+from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
 
 from function_calling_api.helpers.setup_helpers import (
     setup_console_logging, 
     configure_api_key_and_model, 
     enable_tool_calling_and_function_tools
 )
-from function_calling_api.helpers.function_helpers import (
+from function_calling_api.helpers.function_helpers_fixed import (
     add_test_function, 
     cleanup_functions
 )
@@ -42,7 +42,8 @@ def test_function_calling_with_api_key(page: Page, serve_hacka_re, api_key):
     except Exception as e:
         print(f"Error during initial navigation: {e}")
         # Take a screenshot for debugging
-        page.screenshot(path="_tests/playwright/videos/initial_navigation_error.png")
+        screenshot_with_markdown(page, "_tests/playwright/videos/initial_navigation_error.png", 
+                               {"Error": str(e), "Navigation Target": base_url})
     
     # Wait for the page to be fully loaded
     try:
@@ -51,7 +52,8 @@ def test_function_calling_with_api_key(page: Page, serve_hacka_re, api_key):
     except Exception as e:
         print(f"Error waiting for network idle: {e}")
         # Take a screenshot for debugging
-        page.screenshot(path="_tests/playwright/videos/network_idle_timeout.png")
+        screenshot_with_markdown(page, "_tests/playwright/videos/network_idle_timeout.png", 
+                               {"Error": str(e), "Timeout": "5000ms"})
     
     # Verify the page loaded correctly
     title = page.title()
@@ -61,7 +63,8 @@ def test_function_calling_with_api_key(page: Page, serve_hacka_re, api_key):
     if not title or "hacka.re" not in title.lower():
         print("WARNING: Page may not have loaded correctly")
         # Take a screenshot for debugging
-        page.screenshot(path="_tests/playwright/videos/page_load_issue.png")
+        screenshot_with_markdown(page, "_tests/playwright/videos/page_load_issue.png", 
+                               {"Warning": "Page may not have loaded correctly", "Title": title})
         
         # Try to navigate directly to index.html using proper URL joining
         index_url = urljoin(base_url, "index.html")
@@ -76,7 +79,8 @@ def test_function_calling_with_api_key(page: Page, serve_hacka_re, api_key):
         except Exception as e:
             print(f"Error during direct navigation to index.html: {e}")
             # Take a screenshot for debugging
-            page.screenshot(path="_tests/playwright/videos/direct_navigation_error.png")
+            screenshot_with_markdown(page, "_tests/playwright/videos/direct_navigation_error.png", 
+                                   {"Error": str(e), "Navigation Target": index_url})
     
     # Check for any console errors
     console_errors = page.evaluate("""() => {
@@ -88,7 +92,8 @@ def test_function_calling_with_api_key(page: Page, serve_hacka_re, api_key):
             print(f"  - {error}")
     
     # Take a screenshot of the page after navigation
-    page.screenshot(path="_tests/playwright/videos/page_after_navigation.png")
+    screenshot_with_markdown(page, "_tests/playwright/videos/page_after_navigation.png", 
+                           {"Status": "After navigation", "Title": title})
     
     # Check if essential elements are present
     settings_btn_visible = page.locator("#settings-btn").is_visible()
@@ -103,7 +108,9 @@ def test_function_calling_with_api_key(page: Page, serve_hacka_re, api_key):
         except Exception as e:
             print(f"Error waiting for settings button: {e}")
             # Take a screenshot for debugging
-            page.screenshot(path="_tests/playwright/videos/settings_btn_not_found.png")
+            body_html = page.evaluate("() => document.body.innerHTML")
+            screenshot_with_markdown(page, "_tests/playwright/videos/settings_btn_not_found.png", 
+                                   {"Error": str(e), "Body HTML Preview": body_html[:200] + "..."})
             # Check the DOM structure
             body_html = page.evaluate("() => document.body.innerHTML")
             print(f"Body HTML (first 200 chars): {body_html[:200]}...")
@@ -121,7 +128,8 @@ def test_function_calling_with_api_key(page: Page, serve_hacka_re, api_key):
     except Exception as e:
         print(f"Error configuring API key and model: {e}")
         # Take a screenshot for debugging
-        page.screenshot(path="_tests/playwright/videos/api_key_config_error.png")
+        screenshot_with_markdown(page, "_tests/playwright/videos/api_key_config_error.png", 
+                               {"Error": str(e), "Component": "API Key Configuration"})
         pytest.fail(f"Failed to configure API key and model: {e}")
     
     # Enable tool calling and function tools
@@ -131,7 +139,8 @@ def test_function_calling_with_api_key(page: Page, serve_hacka_re, api_key):
     except Exception as e:
         print(f"Error enabling tool calling and function tools: {e}")
         # Take a screenshot for debugging
-        page.screenshot(path="_tests/playwright/videos/enable_tools_error.png")
+        screenshot_with_markdown(page, "_tests/playwright/videos/enable_tools_error.png", 
+                               {"Error": str(e), "Component": "Tool Calling and Function Tools"})
         pytest.fail(f"Failed to enable tool calling and function tools: {e}")
     
     # Add a test function
@@ -141,7 +150,8 @@ def test_function_calling_with_api_key(page: Page, serve_hacka_re, api_key):
     except Exception as e:
         print(f"Error adding test function: {e}")
         # Take a screenshot for debugging
-        page.screenshot(path="_tests/playwright/videos/add_function_error.png")
+        screenshot_with_markdown(page, "_tests/playwright/videos/add_function_error.png", 
+                               {"Error": str(e), "Component": "Function Addition"})
         pytest.fail(f"Failed to add test function: {e}")
     
     # Test function invocation through chat
@@ -151,7 +161,8 @@ def test_function_calling_with_api_key(page: Page, serve_hacka_re, api_key):
     except Exception as e:
         print(f"Error during function invocation test: {e}")
         # Take a screenshot for debugging
-        page.screenshot(path="_tests/playwright/videos/function_invocation_error.png")
+        screenshot_with_markdown(page, "_tests/playwright/videos/function_invocation_error.png", 
+                               {"Error": str(e), "Component": "Function Invocation"})
         pytest.fail(f"Failed during function invocation test: {e}")
     
     # Clean up - delete the function
@@ -161,7 +172,8 @@ def test_function_calling_with_api_key(page: Page, serve_hacka_re, api_key):
     except Exception as e:
         print(f"Error cleaning up functions: {e}")
         # Take a screenshot for debugging
-        page.screenshot(path="_tests/playwright/videos/cleanup_functions_error.png")
+        screenshot_with_markdown(page, "_tests/playwright/videos/cleanup_functions_error.png", 
+                               {"Error": str(e), "Component": "Function Cleanup"})
     
     # End timing and print execution time
     end_time = time.time()

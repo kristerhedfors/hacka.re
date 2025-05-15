@@ -1,5 +1,7 @@
 import pytest
 import time
+import os
+import inspect
 from playwright.sync_api import Page, expect
 
 # Maximum allowed time for any operation (in seconds)
@@ -181,6 +183,69 @@ def check_system_messages(page):
                 print(f"  ℹ️ INFO: {message}")
     
     return system_messages
+
+# Helper function to take a screenshot and save a corresponding markdown file
+def screenshot_with_markdown(page, path, debug_info=None):
+    """
+    Take a screenshot and save a corresponding markdown file with debug information.
+    
+    Args:
+        page: The Playwright page object
+        path: The path where the screenshot should be saved (should end with .png)
+        debug_info: Optional dictionary with additional debug information to include in the markdown
+    
+    Returns:
+        tuple: (screenshot_path, markdown_path) - Paths to the created files
+    """
+    # Ensure the directory exists
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    
+    # Take the screenshot
+    page.screenshot(path=path)
+    
+    # Create the markdown file path by replacing .png with .md
+    md_path = path.replace('.png', '.md')
+    
+    # Get the calling test information
+    frame = inspect.currentframe().f_back
+    test_file = frame.f_code.co_filename
+    test_name = frame.f_code.co_name
+    
+    # Prepare the markdown content
+    md_content = f"# Screenshot Debug Info\n\n"
+    md_content += f"## Test Information\n\n"
+    md_content += f"- **Test File**: {os.path.basename(test_file)}\n"
+    md_content += f"- **Test Name**: {test_name}\n"
+    md_content += f"- **Screenshot Time**: {time.strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+    
+    # Add page information
+    md_content += f"## Page Information\n\n"
+    md_content += f"- **URL**: {page.url}\n"
+    md_content += f"- **Title**: {page.title()}\n\n"
+    
+    # Add custom debug information if provided
+    if debug_info:
+        md_content += f"## Debug Information\n\n"
+        for key, value in debug_info.items():
+            md_content += f"- **{key}**: {value}\n"
+        md_content += "\n"
+    
+    # Add console logs if available
+    console_logs = page.evaluate("""() => {
+        return window.consoleErrors || [];
+    }""")
+    
+    if console_logs and len(console_logs) > 0:
+        md_content += f"## Console Logs\n\n"
+        for log in console_logs:
+            md_content += f"- {log}\n"
+        md_content += "\n"
+    
+    # Write the markdown file
+    with open(md_path, 'w') as f:
+        f.write(md_content)
+    
+    return path, md_path
 
 # Helper function to select the recommended test model
 def select_recommended_test_model(page):
