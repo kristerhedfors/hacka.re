@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Function Calling Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            border-left: 4px solid #4CAF50;
+        }
+        .error {
+            border-left: 4px solid #f44336;
+        }
+        textarea {
+            width: 100%;
+            height: 300px;
+            margin-bottom: 10px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>Function Calling Test</h1>
+    <p>This page tests the function calling feature with the World Time API OpenAPI specification.</p>
+    
+    <h2>OpenAPI Specification</h2>
+    <textarea id="openapi-spec">{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "World Time API",
+    "description": "A simple API to get the current time based on a request with a timezone.",
+    "version": "20210108"
+  },
+  "servers": [
+    {
+      "url": "https://worldtimeapi.org/api",
+      "description": "Main server for the World Time API"
+    }
+  ],
+  "paths": {
+    "/timezone/Europe/Berlin": {
+      "get": {
+        "operationId": "getCurrentTimeInBerlin",
+        "summary": "Request the current time for Berlin, same as for Hamburg, Europe timezone. Same as Central European time.",
+        "responses": {
+          "200": {
+            "description": "The current time for the Berlin, same as for Hamburg, Europe timezone in JSON format.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "abbreviation",
+                    "datetime",
+                    "day_of_week",
+                    "day_of_year",
+                    "dst",
+                    "dst_offset",
+                    "timezone",
+                    "unixtime",
+                    "utc_datetime",
+                    "utc_offset",
+                    "week_number"
+                  ],
+                  "properties": {
+                    "abbreviation": {
+                      "type": "string",
+                      "description": "The abbreviated name of the timezone."
+                    },
+                    "datetime": {
+                      "type": "string",
+                      "description": "An ISO8601-valid string representing the current, local date/time."
+                    },
+                    "day_of_week": {
+                      "type": "integer",
+                      "description": "Current day number of the week, where Sunday is 0."
+                    },
+                    "day_of_year": {
+                      "type": "integer",
+                      "description": "Ordinal date of the current year."
+                    },
+                    "dst": {
+                      "type": "boolean",
+                      "description": "Flag indicating whether the local time is in daylight savings."
+                    },
+                    "dst_offset": {
+                      "type": "integer",
+                      "description": "The difference in seconds between the current local time and daylight saving time for the location."
+                    },
+                    "timezone": {
+                      "type": "string",
+                      "description": "Timezone in `Area/Location` or `Area/Location/Region` format."
+                    },
+                    "unixtime": {
+                      "type": "integer",
+                      "description": "Number of seconds since the Epoch."
+                    },
+                    "utc_datetime": {
+                      "type": "string",
+                      "description": "An ISO8601-valid string representing the current date/time in UTC."
+                    },
+                    "utc_offset": {
+                      "type": "string",
+                      "description": "An ISO8601-valid string representing the offset from UTC."
+                    },
+                    "week_number": {
+                      "type": "integer",
+                      "description": "The current week number."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "An error response in JSON format.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Details about the error encountered."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}</textarea>
+    
+    <h2>Converted Function Specification</h2>
+    <textarea id="function-spec"></textarea>
+    
+    <div>
+        <button id="convert-btn">Convert to Function Spec</button>
+        <button id="test-btn">Test Function</button>
+    </div>
+    
+    <div id="result" class="result" style="display: none;"></div>
+    
+    <script>
+        document.getElementById('convert-btn').addEventListener('click', convertToFunctionSpec);
+        document.getElementById('test-btn').addEventListener('click', testFunction);
+        
+        function convertToFunctionSpec() {
+            try {
+                const openapiSpec = JSON.parse(document.getElementById('openapi-spec').value);
+                
+                // Find the first path and operation
+                const paths = Object.keys(openapiSpec.paths);
+                if (paths.length === 0) {
+                    throw new Error('No paths found in OpenAPI spec');
+                }
+                
+                const path = paths[0];
+                const operations = openapiSpec.paths[path];
+                const method = Object.keys(operations).find(m => m !== 'parameters');
+                
+                if (!method) {
+                    throw new Error('No operations found for path: ' + path);
+                }
+                
+                const operation = operations[method];
+                
+                // Create function spec
+                const functionSpec = {
+                    type: 'function',
+                    function: {
+                        name: operation.operationId || `${method}${path.replace(/\//g, '_').replace(/[{}]/g, '')}`,
+                        description: operation.summary || operation.description || openapiSpec.info.description,
+                        parameters: {
+                            type: 'object',
+                            properties: {},
+                            required: []
+                        }
+                    }
+                };
+                
+                // Add parameters if any
+                if (operation.parameters) {
+                    operation.parameters.forEach(param => {
+                        functionSpec.function.parameters.properties[param.name] = {
+                            type: param.schema.type,
+                            description: param.description || ''
+                        };
+                        
+                        if (param.required) {
+                            functionSpec.function.parameters.required.push(param.name);
+                        }
+                    });
+                }
+                
+                // Display the converted spec
+                document.getElementById('function-spec').value = JSON.stringify(functionSpec, null, 2);
+                
+                showResult('Successfully converted OpenAPI spec to function spec', false);
+            } catch (error) {
+                showResult('Error converting OpenAPI spec: ' + error.message, true);
+            }
+        }
+        
+        function testFunction() {
+            try {
+                const functionSpec = document.getElementById('function-spec').value;
+                
+                if (!functionSpec) {
+                    throw new Error('Please convert the OpenAPI spec first');
+                }
+                
+                // Create a test function to simulate the API call
+                const spec = JSON.parse(functionSpec);
+                const functionName = spec.function.name;
+                
+                // Create a mock implementation
+                window[functionName] = async function() {
+                    try {
+                        const response = await fetch('https://worldtimeapi.org/api/timezone/Europe/Berlin');
+                        if (!response.ok) {
+                            throw new Error('API request failed: ' + response.status);
+                        }
+                        return await response.json();
+                    } catch (error) {
+                        return { error: error.message };
+                    }
+                };
+                
+                // Call the function
+                window[functionName]().then(result => {
+                    showResult('Function call successful: ' + JSON.stringify(result, null, 2), false);
+                }).catch(error => {
+                    showResult('Error calling function: ' + error.message, true);
+                });
+            } catch (error) {
+                showResult('Error testing function: ' + error.message, true);
+            }
+        }
+        
+        function showResult(message, isError) {
+            const resultElement = document.getElementById('result');
+            resultElement.textContent = message;
+            resultElement.style.display = 'block';
+            
+            if (isError) {
+                resultElement.classList.add('error');
+            } else {
+                resultElement.classList.remove('error');
+            }
+        }
+        
+        // Auto-convert on page load
+        window.addEventListener('load', convertToFunctionSpec);
+    </script>
+</body>
+</html>

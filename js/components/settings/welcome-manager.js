@@ -73,8 +73,16 @@ window.WelcomeManager = (function() {
                 continueButton.className = 'btn primary-btn';
                 continueButton.textContent = 'Continue to Settings';
                 
+                // Add a close button for testing purposes
+                const closeButton = document.createElement('button');
+                closeButton.type = 'button';
+                closeButton.className = 'btn secondary-btn';
+                closeButton.id = 'close-welcome-modal';
+                closeButton.textContent = 'Close';
+                
                 // Assemble the modal
                 buttonContainer.appendChild(continueButton);
+                buttonContainer.appendChild(closeButton);
                 
                 modalContent.appendChild(heading);
                 modalContent.appendChild(welcomeContainer);
@@ -92,6 +100,11 @@ window.WelcomeManager = (function() {
                     if (onContinue) {
                         onContinue();
                     }
+                });
+                
+                // Handle close button click
+                closeButton.addEventListener('click', () => {
+                    welcomeModal.remove();
                 });
                 
                 return true; // Modal was shown

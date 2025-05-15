@@ -19,6 +19,7 @@ window.SettingsManager = (function() {
         const titleSubtitleManager = TitleSubtitleManager.createTitleSubtitleManager();
         const welcomeManager = WelcomeManager.createWelcomeManager(elements);
         const sharedLinkManager = SharedLinkManager.createSharedLinkManager(elements);
+        const toolCallingManager = ToolCallingManager.createToolCallingManager();
         
         // Session key getter function
         let getSessionKey = null;
@@ -64,18 +65,18 @@ window.SettingsManager = (function() {
                             const apiKey = apiKeyManager.getApiKey();
                             const baseUrl = baseUrlManager.getBaseUrl();
                             
-                    // Create a callback to update context usage
-                    const updateContextUsageCallback = () => {
-                        if (window.aiHackare && window.aiHackare.chatManager) {
-                            window.aiHackare.chatManager.estimateContextUsage(
-                                updateModelInfoDisplay,
-                                modelManager.getCurrentModel()
-                            );
-                        }
-                    };
-                    
-                    // Fetch models with the new values and pass the callback
-                    modelManager.fetchAvailableModels(apiKey, baseUrl, true, updateContextUsageCallback).then(modelResult => {
+                            // Create a callback to update context usage
+                            const updateContextUsageCallback = () => {
+                                if (window.aiHackare && window.aiHackare.chatManager) {
+                                    window.aiHackare.chatManager.estimateContextUsage(
+                                        updateModelInfoDisplay,
+                                        modelManager.getCurrentModel()
+                                    );
+                                }
+                            };
+                            
+                            // Fetch models with the new values and pass the callback
+                            modelManager.fetchAvailableModels(apiKey, baseUrl, true, updateContextUsageCallback).then(modelResult => {
                                 if (modelResult.success && modelResult.model) {
                                     // If a shared model was applied successfully
                                     const displayName = ModelInfoService.getDisplayName(modelResult.model);
@@ -220,6 +221,17 @@ window.SettingsManager = (function() {
             // Update model info in header
             if (updateModelInfoDisplay) {
                 updateModelInfoDisplay(modelManager.getCurrentModel());
+            }
+        }
+        
+        /**
+         * Add tool calling setting to settings form
+         * @param {HTMLElement} settingsForm - The settings form element
+         * @param {Function} addSystemMessage - Function to add a system message to the chat
+         */
+        function addToolCallingSetting(settingsForm, addSystemMessage) {
+            if (toolCallingManager && typeof toolCallingManager.addToolCallingSetting === 'function') {
+                toolCallingManager.addToolCallingSetting(settingsForm, addSystemMessage);
             }
         }
         
@@ -539,6 +551,7 @@ window.SettingsManager = (function() {
         // Public API
         return {
             init,
+            addToolCallingSetting,
             saveApiKey,
             saveSettings,
             getApiKey,

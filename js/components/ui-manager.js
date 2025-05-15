@@ -11,6 +11,24 @@ window.UIManager = (function() {
      * @returns {Object} UI Manager instance
      */
     function createUIManager(elements, config) {
+        /**
+         * Show the function modal
+         */
+        function showFunctionModal() {
+            if (elements.functionModal) {
+                elements.functionModal.classList.add('active');
+            }
+        }
+        
+        /**
+         * Hide the function modal
+         */
+        function hideFunctionModal() {
+            if (elements.functionModal) {
+                elements.functionModal.classList.remove('active');
+            }
+        }
+        
         // Constants for link length calculation
         const MAX_RECOMMENDED_LINK_LENGTH = 2000; // Most browsers accept URLs up to 2000 bytes
         
@@ -591,24 +609,6 @@ window.UIManager = (function() {
             }
         }
         
-        /**
-         * Show the MCP modal
-         */
-        function showMcpModal() {
-            if (document.getElementById('mcp-modal')) {
-                document.getElementById('mcp-modal').classList.add('active');
-            }
-        }
-        
-        /**
-         * Hide the MCP modal
-         */
-        function hideMcpModal() {
-            if (document.getElementById('mcp-modal')) {
-                document.getElementById('mcp-modal').classList.remove('active');
-            }
-        }
-        
         // Public API
         return {
             showApiKeyModal,
@@ -617,8 +617,8 @@ window.UIManager = (function() {
             hideSettingsModal,
             showShareModal,
             hideShareModal,
-            showMcpModal,
-            hideMcpModal,
+            showFunctionModal,
+            hideFunctionModal,
             togglePasswordVisibility,
             toggleMessageHistoryInput,
             updateLinkLengthBar,

@@ -4,11 +4,11 @@
  */
 
 window.ApiToolsService = (function() {
-    // Storage key for tool calling setting
+    // Storage keys
     const TOOL_CALLING_ENABLED_KEY = 'tool_calling_enabled';
     
-    // Registry of available tools
-    const toolRegistry = {};
+    // Registry of available built-in tools
+    const builtInTools = {};
     
     /**
      * Check if tool calling is enabled
@@ -31,10 +31,10 @@ window.ApiToolsService = (function() {
         if (addSystemMessage && previousState !== enabled) {
             if (enabled) {
                 // Get list of available tools
-                const tools = Object.keys(toolRegistry);
+                const tools = Object.keys(builtInTools);
                 const toolsMessage = tools.length > 0 
-                    ? `Available tools: ${tools.join(', ')}`
-                    : 'No tools currently registered';
+                    ? `Available built-in tools: ${tools.join(', ')}`
+                    : 'No built-in tools currently registered';
                 
                 addSystemMessage(`Tool calling activated. ${toolsMessage}`);
             } else {
@@ -44,50 +44,85 @@ window.ApiToolsService = (function() {
     }
     
     /**
-     * Register a tool in the registry
+     * Register a built-in tool in the registry
      * @param {string} name - The name of the tool
      * @param {Object} toolDefinition - The tool definition object
      * @param {Function} handler - The function that handles tool execution
      */
-    function registerTool(name, toolDefinition, handler) {
-        toolRegistry[name] = {
+    function registerBuiltInTool(name, toolDefinition, handler) {
+        builtInTools[name] = {
             definition: toolDefinition,
             handler: handler
         };
     }
     
     /**
-     * Get all registered tools
-     * @returns {Object} The tool registry
+     * Get all registered built-in tools
+     * @returns {Object} The built-in tool registry
      */
-    function getRegisteredTools() {
-        return toolRegistry;
+    function getBuiltInTools() {
+        return builtInTools;
     }
     
     /**
+     * Get enabled tool definitions in OpenAI format for API requests
+     * @returns {Array} Array of enabled tool definitions in OpenAI format
+     */
+    function getEnabledToolDefinitions() {
+        // Get built-in tool definitions
+        const builtInToolDefinitions = Object.entries(builtInTools).map(([name, tool]) => {
+            return tool.definition;
+        });
+        
+        // Add enabled JavaScript functions from FunctionToolsService if available
+        let userFunctionDefinitions = [];
+        if (window.FunctionToolsService && typeof FunctionToolsService.getEnabledToolDefinitions === 'function') {
+            userFunctionDefinitions = FunctionToolsService.getEnabledToolDefinitions();
+        } else if (window.FunctionToolsService && typeof FunctionToolsService.getToolDefinitions === 'function') {
+            // Fallback for backward compatibility
+            userFunctionDefinitions = FunctionToolsService.getToolDefinitions();
+        }
+        
+        // Combine and deduplicate tool definitions
+        const allDefinitions = [...builtInToolDefinitions, ...userFunctionDefinitions];
+        
+        // Deduplicate by function name
+        const uniqueDefinitions = [];
+        const seenNames = new Set();
+        
+        for (const def of allDefinitions) {
+            if (def && def.function && def.function.name) {
+                const name = def.function.name;
+                if (!seenNames.has(name)) {
+                    seenNames.add(name);
+                    uniqueDefinitions.push(def);
+                }
+            }
+        }
+        
+        return uniqueDefinitions;
+    }
+    
+    /**
+     * @deprecated Use getEnabledToolDefinitions() instead
      * Get tool definitions in OpenAI format for API requests
      * @returns {Array} Array of tool definitions in OpenAI format
      */
     function getToolDefinitions() {
-        if (!isToolCallingEnabled()) {
-            return [];
-        }
-        
-        return Object.entries(toolRegistry).map(([name, tool]) => {
-            return tool.definition;
-        });
+        console.log("ApiToolsService.getToolDefinitions called (DEPRECATED - use getEnabledToolDefinitions instead)");
+        return getEnabledToolDefinitions();
     }
     
     /**
-     * Execute a tool based on the tool call from the API
+     * Execute a built-in tool based on the tool call from the API
      * @param {Object} toolCall - The tool call object from the API
      * @returns {Promise<Object>} The result of the tool execution
      */
-    async function executeToolCall(toolCall) {
+    async function executeBuiltInTool(toolCall) {
         const { name, arguments: args } = toolCall.function;
         
-        if (!toolRegistry[name]) {
-            throw new Error(`Tool "${name}" not found`);
+        if (!builtInTools[name]) {
+            throw new Error(`Built-in tool "${name}" not found`);
         }
         
         try {
@@ -95,7 +130,7 @@ window.ApiToolsService = (function() {
             const parsedArgs = JSON.parse(args);
             
             // Execute the tool handler
-            const result = await toolRegistry[name].handler(parsedArgs);
+            const result = await builtInTools[name].handler(parsedArgs);
             
             return {
                 tool_call_id: toolCall.id,
@@ -104,7 +139,7 @@ window.ApiToolsService = (function() {
                 content: JSON.stringify(result)
             };
         } catch (error) {
-            console.error(`Error executing tool "${name}":`, error);
+            console.error(`Error executing built-in tool "${name}":`, error);
             
             return {
                 tool_call_id: toolCall.id,
@@ -118,10 +153,11 @@ window.ApiToolsService = (function() {
     /**
      * Process tool calls from the API response
      * @param {Array} toolCalls - Array of tool calls from the API
+     * @param {Function} addSystemMessage - Optional callback to add a system message
      * @returns {Promise<Array>} Array of tool results
      */
-    async function processToolCalls(toolCalls) {
-        if (!isToolCallingEnabled() || !toolCalls || toolCalls.length === 0) {
+    async function processToolCalls(toolCalls, addSystemMessage) {
+        if (!toolCalls || toolCalls.length === 0) {
             return [];
         }
         
@@ -129,17 +165,81 @@ window.ApiToolsService = (function() {
         
         for (const toolCall of toolCalls) {
             try {
-                const result = await executeToolCall(toolCall);
-                toolResults.push(result);
+                if (!toolCall.function) {
+                    throw new Error('Invalid tool call format: missing function property');
+                }
+                
+                const { name } = toolCall.function;
+                
+                if (!name) {
+                    throw new Error('Invalid tool call format: missing function name');
+                }
+                
+                // Check if the tool is a built-in tool
+                if (builtInTools[name]) {
+                    // Log tool execution
+                    if (addSystemMessage) {
+                        addSystemMessage(`Executing built-in tool "${name}"`);
+                    }
+                    
+                    const result = await executeBuiltInTool(toolCall);
+                    
+                    // Log successful execution
+                    if (addSystemMessage) {
+                        addSystemMessage(`Built-in tool "${name}" executed successfully`);
+                    }
+                    
+                    toolResults.push(result);
+                }
+                // Check if the tool is a JavaScript function from FunctionToolsService
+                else if (window.FunctionToolsService && 
+                         typeof FunctionToolsService.isJsFunctionEnabled === 'function' && 
+                         FunctionToolsService.isJsFunctionEnabled(name)) {
+                    
+                    // Delegate to FunctionToolsService for processing
+                    if (addSystemMessage) {
+                        // Let FunctionToolsService handle the system messages
+                        const functionResults = await FunctionToolsService.processToolCalls([toolCall], addSystemMessage);
+                        toolResults.push(...functionResults);
+                    } else {
+                        const functionResults = await FunctionToolsService.processToolCalls([toolCall]);
+                        toolResults.push(...functionResults);
+                    }
+                }
+                else {
+                    const errorMsg = `Tool "${name}" not found`;
+                    if (addSystemMessage) {
+                        addSystemMessage(`Error: ${errorMsg}`);
+                    }
+                    throw new Error(errorMsg);
+                }
             } catch (error) {
                 console.error('Error processing tool call:', error);
+                
+                // Log error to user if callback provided
+                if (addSystemMessage) {
+                    // Add header message
+                    addSystemMessage(`Error executing tool:`);
+                    
+                    // Use the debug service to display the error message
+                    if (window.DebugService && typeof DebugService.displayMultilineDebug === 'function') {
+                        DebugService.displayMultilineDebug(error.message, addSystemMessage);
+                    } else {
+                        // Fallback if debug service is not available
+                        addSystemMessage(`  ${error.message}`);
+                    }
+                }
                 
                 // Add error result
                 toolResults.push({
                     tool_call_id: toolCall.id,
                     role: "tool",
-                    name: toolCall.function.name,
-                    content: JSON.stringify({ error: error.message })
+                    name: toolCall.function?.name || 'unknown',
+                    content: JSON.stringify({ 
+                        error: error.message,
+                        status: 'error',
+                        timestamp: new Date().toISOString()
+                    })
                 });
             }
         }
@@ -150,7 +250,7 @@ window.ApiToolsService = (function() {
     // Initialize built-in tools
     function initializeBuiltInTools() {
         // Register math_addition_tool
-        registerTool(
+        registerBuiltInTool(
             "math_addition_tool",
             {
                 type: "function",
@@ -186,17 +286,18 @@ window.ApiToolsService = (function() {
         );
     }
     
-    // Initialize built-in tools
+    // Initialize
     initializeBuiltInTools();
     
     // Public API
     return {
         isToolCallingEnabled,
         setToolCallingEnabled,
-        registerTool,
-        getRegisteredTools,
-        getToolDefinitions,
-        executeToolCall,
+        registerBuiltInTool,
+        getBuiltInTools,
+        getEnabledToolDefinitions,
+        getToolDefinitions, // Deprecated
+        executeBuiltInTool,
         processToolCalls
     };
 })();

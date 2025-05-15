@@ -9,13 +9,6 @@ def test_theme_toggle_button_exists(page):
     expect(theme_toggle_btn).to_be_visible()
     expect(theme_toggle_btn).to_have_attribute("title", "Cycle Theme")
 
-def test_mcp_button_exists(page):
-    """Test that the MCP button exists in the header."""
-    page.goto("file:///Users/user/dev/hacka.re/index.html")
-    mcp_btn = page.locator("#mcp-btn")
-    expect(mcp_btn).to_be_visible()
-    expect(mcp_btn).to_have_attribute("title", "Model Context Protocol")
-
 def test_theme_switching(page):
     """Test that themes can be switched programmatically."""
     page.goto("file:///Users/user/dev/hacka.re/index.html")
@@ -68,49 +61,6 @@ def test_theme_switching(page):
     
     # Verify that the theme has changed again
     assert "theme-ocean" in next_theme_class, "Theme did not change to ocean theme"
-
-def test_mcp_modal_opens(page):
-    """Test that clicking the MCP button opens the MCP modal."""
-    page.goto("file:///Users/user/dev/hacka.re/index.html")
-    
-    # Close any active modals
-    # First check for welcome modal
-    if page.locator("#welcome-modal.active").is_visible():
-        page.click("#welcome-modal .modal-content button.primary-btn")
-        page.wait_for_selector("#welcome-modal.active", state="hidden")
-    
-    # Check for settings modal
-    if page.locator("#settings-modal.active").is_visible():
-        page.click("#close-settings")
-        page.wait_for_selector("#settings-modal.active", state="hidden")
-    
-    # Check for any other active modals and close them
-    active_modals = page.locator(".modal.active")
-    if active_modals.count() > 0:
-        for i in range(active_modals.count()):
-            modal = active_modals.nth(i)
-            # Try to find a close button in the modal
-            close_buttons = modal.locator("button.secondary-btn, button[id^='close-'], button[id$='-close']")
-            if close_buttons.count() > 0:
-                close_buttons.first.click()
-                page.wait_for_timeout(300)  # Wait for modal animation
-    
-    # Click the MCP button
-    page.click("#mcp-btn")
-    
-    # Check that the MCP modal is visible
-    mcp_modal = page.locator("#mcp-modal")
-    expect(mcp_modal).to_be_visible()
-    
-    # Check that the modal has the expected title
-    modal_title = page.locator("#mcp-modal .settings-header h2")
-    expect(modal_title).to_have_text("Model Context Protocol (MCP)")
-    
-    # Close the modal
-    page.click("#close-mcp-modal")
-    
-    # Check that the modal is no longer visible
-    expect(mcp_modal).not_to_be_visible()
 
 def test_dark_mode_default(page):
     """Test that dark mode is the default theme when no preference is saved."""
