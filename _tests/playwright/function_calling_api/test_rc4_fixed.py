@@ -141,10 +141,7 @@ def test_rc4_encryption_functions_with_api(page: Page, serve_hacka_re, api_key):
         print("Tried to make function modal visible with JavaScript")
         page.wait_for_timeout(1000)
     
-    # Add the encrypt function
-    function_name = page.locator("#function-name")
-    function_name.fill("rc4_encrypt")
-    
+    # Add the encrypt function - the function name will be auto-populated from the code
     function_code = page.locator("#function-code")
     function_code.fill("""/**
  * @description Encrypt text using RC4 algorithm
@@ -212,8 +209,12 @@ function rc4_encrypt(plaintext, key) {
         }""")
         print("Tried to submit encrypt function using JavaScript")
     
-    # Add the decrypt function
-    function_name.fill("rc4_decrypt")
+    # Add the decrypt function - the function name will be auto-populated from the code
+    
+    # Check that the function name field was auto-populated correctly from the encrypt function
+    function_name = page.locator("#function-name")
+    expect(function_name).to_be_visible()
+    expect(function_name).to_have_value("rc4_encrypt")
     
     function_code.fill("""/**
  * @description Decrypt text using RC4 algorithm
@@ -242,6 +243,10 @@ function rc4_decrypt(ciphertext, key) {
     };
   }
 }""")
+    
+    # Check that the function name field was auto-populated correctly for the decrypt function
+    expect(function_name).to_be_visible()
+    expect(function_name).to_have_value("rc4_decrypt")
     
     # Validate the function
     try:
