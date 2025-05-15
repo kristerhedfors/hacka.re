@@ -246,14 +246,15 @@ window.FunctionToolsService = (function() {
             // Create a function constructor with limited scope
             const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
             
-            // Create the function with the sandbox as its scope
+                // Create the function with the sandbox as its scope
             const func = new AsyncFunction(
                 ...Object.keys(sandbox),
                 `
                 ${functionData.code}
                 
                 // Extract the function name from the code
-                const funcMatch = ${functionData.code}.match(/^\\s*(?:async\\s+)?function\\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\\s*\\(/);
+                const codeStr = ${JSON.stringify(functionData.code)};
+                const funcMatch = codeStr.match(/^\\s*(?:async\\s+)?function\\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\\s*\\(/);
                 if (!funcMatch) {
                     throw new Error('Could not extract function name');
                 }
@@ -354,13 +355,61 @@ window.FunctionToolsService = (function() {
                 // Parse arguments from string to object
                 let args;
                 try {
+                    // First try to parse as JSON
                     args = JSON.parse(argsString);
                 } catch (parseError) {
-                    const errorMsg = `Invalid arguments format for function "${name}": ${parseError.message}`;
-                    if (addSystemMessage) {
-                        addSystemMessage(`Error: ${errorMsg}`);
+                    // If JSON parsing fails, try to parse as space-separated arguments
+                    try {
+                        console.log(`JSON parsing failed for ${name} arguments: ${argsString}. Trying alternative parsing.`);
+                        
+                        // Get the parameter names from the function definition
+                        const functionDef = jsFunctions[name];
+                        const paramNames = [];
+                        
+                        if (functionDef && functionDef.toolDefinition && 
+                            functionDef.toolDefinition.function && 
+                            functionDef.toolDefinition.function.parameters && 
+                            functionDef.toolDefinition.function.parameters.properties) {
+                            
+                            // Get parameter names from the tool definition
+                            Object.keys(functionDef.toolDefinition.function.parameters.properties).forEach(paramName => {
+                                paramNames.push(paramName);
+                            });
+                            
+                            // If we have parameter names, try to parse space-separated values
+                            if (paramNames.length > 0) {
+                                // Split by spaces, but respect quoted strings
+                                const argValues = argsString.match(/(?:[^\s"]+|"[^"]*")+/g) || [];
+                                
+                                // Create an object with parameter names and values
+                                args = {};
+                                paramNames.forEach((paramName, index) => {
+                                    if (index < argValues.length) {
+                                        let value = argValues[index];
+                                        // Remove quotes if present
+                                        if (value.startsWith('"') && value.endsWith('"')) {
+                                            value = value.substring(1, value.length - 1);
+                                        }
+                                        args[paramName] = value;
+                                    }
+                                });
+                                
+                                console.log(`Alternative parsing result for ${name}:`, args);
+                            } else {
+                                throw new Error(`No parameter names found for function "${name}"`);
+                            }
+                        } else {
+                            throw new Error(`No parameter definitions found for function "${name}"`);
+                        }
+                    } catch (alternativeParseError) {
+                        // If both parsing methods fail, throw the original error
+                        const errorMsg = `Invalid arguments format for function "${name}": ${parseError.message}`;
+                        if (addSystemMessage) {
+                            addSystemMessage(`Error: ${errorMsg}`);
+                            addSystemMessage(`Note: Alternative parsing also failed: ${alternativeParseError.message}`);
+                        }
+                        throw new Error(errorMsg);
                     }
-                    throw new Error(errorMsg);
                 }
                 
                 // Log function execution
