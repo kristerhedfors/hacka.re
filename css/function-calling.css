@@ -12,6 +12,27 @@
     align-items: center;
     justify-content: center;
     text-shadow: 0.5px 0 0 currentColor; /* Add text shadow to create bold effect */
+    position: relative; /* For the ::after pseudo-element */
+}
+
+/* Add a duplicate character with slight offset to create a bolder appearance */
+.function-icon::after {
+    content: "𝑓";
+    position: absolute;
+    left: 0.5px;
+    top: 0;
+    text-shadow: none;
+}
+
+/* Stronger effect for mobile devices */
+@media (max-width: 768px) {
+    .function-icon {
+        text-shadow: 0.75px 0 0 currentColor, -0.25px 0 0 currentColor; /* Stronger text shadow for mobile */
+    }
+    
+    .function-icon::after {
+        left: 0.75px; /* Slightly larger offset on mobile */
+    }
 }
 
 /* Function calling modal */
