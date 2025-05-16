@@ -78,6 +78,7 @@
     min-width: 220px;
     max-width: 320px;
     margin-bottom: 5px; /* Add space between icon and tooltip */
+    user-select: text; /* Allow text selection */
 }
 
 /* Prevent tooltip from disappearing when moving to the tooltip */
@@ -125,15 +126,24 @@
     border-radius: 3px;
     color: white;
     cursor: pointer;
-    font-size: 0.65rem;
-    margin-left: 5px;
-    padding: 2px 4px;
+    font-size: 0.7rem;
+    margin-left: 8px;
+    padding: 3px 6px;
     vertical-align: middle;
     transition: background-color 0.2s, color 0.2s;
+    position: relative;
+    z-index: 1002; /* Higher than tooltip */
+    pointer-events: auto; /* Ensure clicks are captured */
+    display: inline-block; /* Ensure proper sizing */
 }
 
 .tooltip-copy-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.4);
+}
+
+.tooltip-copy-btn:active {
+    background: rgba(255, 255, 255, 0.5);
+    transform: translateY(1px); /* Slight press effect */
 }
 
 .tooltip-copy-btn.copied {
@@ -157,6 +167,7 @@
     transform: translateY(10px);
     transition: opacity 0.3s, transform 0.3s;
     pointer-events: none;
+    font-weight: bold;
 }
 
 .copy-notification.show {

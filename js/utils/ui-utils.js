@@ -67,14 +67,16 @@ window.UIUtils = (function() {
             const colorIndex = (functionCallCounts[functionName] % 5) || 5;
             const colorClass = `color-${colorIndex}`;
             
-            // Create tooltip with function name (no copy button)
-            // Use a safer approach to create the tooltip content
+            // Create tooltip with function name and copy button
             const tooltipContent = `Function call: ${functionName}`;
+            const escapedFunctionName = escapeHTML(functionName).replace(/'/g, "\\'");
             
-            // Make the entire function call icon copy the function name when clicked
-            return `<span class="function-call-icon ${colorClass}" onclick="event.stopPropagation(); UIUtils.copyToClipboardWithNotification('${escapeHTML(functionName)}', 'Function name copied to clipboard', this)">
+            return `<span class="function-call-icon ${colorClass}">
                 <span class="function-icon-tooltip">
-                    <div>${escapeHTML(tooltipContent)}</div>
+                    <div>
+                        ${escapeHTML(tooltipContent)}
+                        <button class="tooltip-copy-btn" data-copy-text="${escapedFunctionName}" data-copy-message="Function name copied to clipboard">Copy</button>
+                    </div>
                 </span>
             </span>`;
         });
@@ -117,14 +119,18 @@ window.UIUtils = (function() {
                 }
             }
             
-            // Create tooltip with function name, result type, and value (no copy buttons)
-            // Use a safer approach to create the tooltip content
-            // Make the entire function result icon copy the result value when clicked
-            return `<span class="function-result-icon ${colorClass}" onclick="event.stopPropagation(); UIUtils.copyToClipboardWithNotification('${escapeHTML(decodedResult)}', 'Function result value copied to clipboard', this)">
+            // Create tooltip with function result type, value, and copy button
+            // Only include a copy button for the result value, not for the function name
+            const escapedResult = escapeHTML(decodedResult).replace(/'/g, "\\'");
+            
+            return `<span class="function-result-icon ${colorClass}">
                 <span class="function-icon-tooltip">
                     <div>${escapeHTML(`Function result: ${functionName}`)}</div>
                     <div>${escapeHTML(`Type: ${resultType}`)}</div>
-                    <div>${escapeHTML(`Value: ${displayValue}`)}</div>
+                    <div>
+                        ${escapeHTML(`Value: ${displayValue}`)}
+                        <button class="tooltip-copy-btn" data-copy-text="${escapedResult}" data-copy-message="Function result value copied to clipboard">Copy</button>
+                    </div>
                 </span>
             </span>`;
         });
@@ -407,6 +413,39 @@ window.UIUtils = (function() {
         }
     }
 
+    // Initialize event listeners for copy buttons
+    function initCopyButtons() {
+        console.log('Initializing copy buttons');
+        
+        // Use event delegation to handle clicks on copy buttons
+        document.addEventListener('click', function(event) {
+            // Check if the clicked element is a copy button
+            if (event.target && event.target.classList.contains('tooltip-copy-btn')) {
+                event.preventDefault();
+                event.stopPropagation();
+                
+                const button = event.target;
+                const textToCopy = button.getAttribute('data-copy-text');
+                const message = button.getAttribute('data-copy-message');
+                
+                console.log('Copy button clicked:', button);
+                console.log('Text to copy:', textToCopy);
+                console.log('Message:', message);
+                
+                if (textToCopy) {
+                    copyToClipboardWithNotification(textToCopy, message || 'Copied to clipboard', button);
+                } else {
+                    console.error('No text to copy found in data-copy-text attribute');
+                    showNotification('Error: No text to copy');
+                }
+                
+                return false;
+            }
+        });
+        
+        console.log('Copy button event listener initialized');
+    }
+    
     /**
      * Copy text to clipboard with notification
      * @param {string} text - Text to copy
@@ -414,31 +453,96 @@ window.UIUtils = (function() {
      * @param {HTMLElement} button - Button element that triggered the copy
      */
     function copyToClipboardWithNotification(text, message, button) {
-        // Copy to clipboard
-        navigator.clipboard.writeText(text)
-            .then(() => {
-                console.log('Copied to clipboard:', text);
-                
-                // Show visual feedback on the button
-                if (button) {
-                    const originalText = button.textContent;
-                    button.textContent = 'Copied!';
-                    button.classList.add('copied');
-                    
-                    // Reset button after a delay
-                    setTimeout(() => {
-                        button.textContent = originalText;
-                        button.classList.remove('copied');
-                    }, 1500);
-                }
-                
-                // Show notification
-                showNotification(message);
-            })
-            .catch(err => {
-                console.error('Failed to copy to clipboard:', err);
+        console.log('copyToClipboardWithNotification called with text:', text);
+        
+        try {
+            // Try using the newer clipboard API first
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text)
+                    .then(() => {
+                        console.log('Copied to clipboard using Clipboard API:', text);
+                        handleCopySuccess(text, message, button);
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy using Clipboard API:', err);
+                        // Fall back to execCommand method
+                        fallbackCopyTextToClipboard(text, message, button);
+                    });
+            } else {
+                // Fall back to execCommand method for older browsers
+                fallbackCopyTextToClipboard(text, message, button);
+            }
+        } catch (err) {
+            console.error('Error in copyToClipboardWithNotification:', err);
+            showNotification('Failed to copy to clipboard');
+        }
+    }
+    
+    /**
+     * Fallback method to copy text to clipboard using execCommand
+     * @param {string} text - Text to copy
+     * @param {string} message - Notification message
+     * @param {HTMLElement} button - Button element that triggered the copy
+     */
+    function fallbackCopyTextToClipboard(text, message, button) {
+        console.log('Using fallback copy method');
+        try {
+            // Create a temporary textarea element
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            
+            // Make the textarea out of viewport
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            // Execute copy command
+            const successful = document.execCommand('copy');
+            
+            // Remove the textarea
+            document.body.removeChild(textArea);
+            
+            if (successful) {
+                console.log('Copied to clipboard using execCommand:', text);
+                handleCopySuccess(text, message, button);
+            } else {
+                console.error('Failed to copy using execCommand');
                 showNotification('Failed to copy to clipboard');
-            });
+            }
+        } catch (err) {
+            console.error('Error in fallbackCopyTextToClipboard:', err);
+            showNotification('Failed to copy to clipboard');
+        }
+    }
+    
+    /**
+     * Handle successful copy operation
+     * @param {string} text - Text that was copied
+     * @param {string} message - Notification message
+     * @param {HTMLElement} button - Button element that triggered the copy
+     */
+    function handleCopySuccess(text, message, button) {
+        console.log('Copy successful:', text);
+        
+        // Show visual feedback on the button
+        if (button) {
+            const originalText = button.textContent;
+            button.textContent = 'Copied!';
+            button.classList.add('copied');
+            
+            // Reset button after a delay
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.classList.remove('copied');
+            }, 1500);
+        }
+        
+        // Show notification
+        showNotification(message);
     }
     
     /**
@@ -466,6 +570,14 @@ window.UIUtils = (function() {
         }, 2000);
     }
     
+    // Initialize copy buttons when the DOM is loaded
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initCopyButtons);
+    } else {
+        // DOM already loaded, initialize immediately
+        initCopyButtons();
+    }
+    
     // Public API
     return {
         renderMarkdown: renderMarkdown,
@@ -478,6 +590,7 @@ window.UIUtils = (function() {
         estimateContextUsage: estimateContextUsage,
         copyChatContent: copyChatContent,
         copyToClipboardWithNotification: copyToClipboardWithNotification,
-        showNotification: showNotification
+        showNotification: showNotification,
+        initCopyButtons: initCopyButtons
     };
 })();
