@@ -127,7 +127,7 @@
     color: white;
     cursor: pointer;
     font-size: 0.7rem;
-    margin-left: 8px;
+    margin-left: 0; /* Align with left side of text */
     padding: 3px 6px;
     vertical-align: middle;
     transition: background-color 0.2s, color 0.2s;
@@ -147,7 +147,7 @@
 }
 
 .tooltip-copy-btn.copied {
-    background-color: rgba(16, 185, 129, 0.6); /* Green background for success */
+    background-color: var(--primary-color, rgba(16, 185, 129, 0.6)); /* Use theme primary color */
     color: white;
 }
 
@@ -156,7 +156,7 @@
     position: fixed;
     bottom: 20px;
     right: 20px;
-    background-color: rgba(16, 185, 129, 0.9);
+    background-color: var(--primary-color, rgba(16, 185, 129, 0.9)); /* Use theme primary color */
     color: white;
     padding: 8px 16px;
     border-radius: 4px;
