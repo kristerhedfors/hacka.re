@@ -187,12 +187,13 @@ window.updateTitleAndSubtitle = function(forceUpdate = false) {
                                 
                                 // Add close button if it doesn't exist
                                 if (!container.querySelector('.close-gpt')) {
-                                    const closeBtn = document.createElement('span');
+                                    const closeBtn = document.createElement('button');
                                     closeBtn.className = 'close-gpt';
-                                    closeBtn.textContent = 'Delete';
+                                    closeBtn.innerHTML = '<i class="fas fa-trash"></i>';
                                     closeBtn.title = 'Delete this GPT and all its data';
                                     closeBtn.addEventListener('click', function(e) {
                                         e.stopPropagation(); // Prevent event bubbling
+                                        e.preventDefault(); // Prevent default behavior
                                         
                                         // Show confirmation dialog
                                         if (confirm(`Are you sure you want to delete this GPT (${title})? This will clear all data related to this specific GPT including its chat history and settings.`)) {

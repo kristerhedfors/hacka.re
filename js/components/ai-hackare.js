@@ -251,12 +251,17 @@ window.AIHackareComponent = (function() {
             });
         }
         
-        // Clear chat button
+        // Clear chat button - fixed for Safari and Firefox Focus
         this.elements.clearChatBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            if (confirm('Are you sure you want to clear the chat history?')) {
-                this.clearChatHistory();
-            }
+            e.stopPropagation(); // Prevent event bubbling
+            
+            // Use setTimeout to ensure the click event is fully processed before showing the confirm dialog
+            setTimeout(() => {
+                if (confirm('Are you sure you want to clear the chat history?')) {
+                    this.clearChatHistory();
+                }
+            }, 10);
         });
         
         // Show system prompt button

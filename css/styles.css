@@ -176,18 +176,26 @@ a[href="https://hacka.re/"] {
     position: absolute;
     bottom: 5px;
     right: 5px;
-    color: #003366; /* Darker blue color but not too bold */
-    font-size: 0.8rem;
-    font-weight: normal;
+    color: #666666; /* Gray color for the trash icon */
+    font-size: 0.9rem;
     cursor: pointer;
-    text-decoration: underline;
     background: none;
     border: none;
-    padding: 2px 5px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    -webkit-appearance: none; /* Fix for iOS Safari */
+    appearance: none;
 }
 
 .named-gpt-container .close-gpt:hover {
-    color: #00008B; /* Even darker blue on hover (Dark Blue) */
+    color: #ef4444; /* Red on hover */
+    background-color: rgba(239, 68, 68, 0.1); /* Light red background */
+}
+
+/* Ensure the icon is visible in all browsers */
+.named-gpt-container .close-gpt i {
+    pointer-events: none; /* Ensures clicks go to the button, not the icon */
 }
 
 .heart-logo {
@@ -803,12 +811,32 @@ main {
     color: var(--text-color);
     opacity: 0.7;
     transition: var(--transition);
+    -webkit-appearance: none; /* Fix for iOS Safari */
+    appearance: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 4px;
+    touch-action: manipulation; /* Improves touch behavior */
 }
 
 #clear-chat-btn:hover {
     color: #e74c3c;
     opacity: 1;
     background-color: rgba(231, 76, 60, 0.1);
+}
+
+/* Ensure the icon is visible in all browsers */
+#clear-chat-btn i {
+    pointer-events: none; /* Ensures clicks go to the button, not the icon */
+}
+
+/* Specific fix for Firefox Focus */
+@supports (-moz-appearance:none) {
+    #clear-chat-btn {
+        outline: none;
+        position: relative;
+        z-index: 1; /* Ensure it's above other elements */
+    }
 }
 
 #message-input {
