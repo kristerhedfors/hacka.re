@@ -478,9 +478,28 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
             // Also clear any legacy non-namespaced history that might exist
             localStorage.removeItem(StorageService.BASE_STORAGE_KEYS.HISTORY);
             
-            // Reset context usage
+            // Get system prompt for context usage calculation
+            const systemPrompt = StorageService.getSystemPrompt() || '';
+            
+            // Reset context usage with current system prompt
             if (updateContextUsage) {
-                updateContextUsage(0);
+                if (systemPrompt) {
+                    // If there's a system prompt, calculate usage based on it
+                    const currentModel = window.aiHackare && window.aiHackare.settingsManager ? 
+                        window.aiHackare.settingsManager.getCurrentModel() : '';
+                    
+                    const percentage = UIUtils.estimateContextUsage(
+                        [], // Empty messages array
+                        ModelInfoService.modelInfo, 
+                        currentModel,
+                        systemPrompt
+                    );
+                    
+                    updateContextUsage(percentage);
+                } else {
+                    // If no system prompt, set usage to 0
+                    updateContextUsage(0);
+                }
             }
         }
         

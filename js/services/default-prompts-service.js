@@ -122,15 +122,14 @@ window.DefaultPromptsService = (function() {
             StorageService.saveSystemPrompt(combinedContent);
             
             // Update main context usage display directly
-            if (window.ModelInfoService) {
+            if (window.ModelInfoService && window.aiHackare && window.aiHackare.chatManager) {
                 console.log("Updating main context usage directly from toggleDefaultPromptSelection");
                 
-                // Get the current messages
-                const messages = window.aiHackare && window.aiHackare.chatManager ? 
-                    window.aiHackare.chatManager.getMessages() || [] : [];
+                // Get the current messages - make sure we're getting the latest messages
+                const messages = window.aiHackare.chatManager.getMessages() || [];
                 
                 // Get current model
-                const currentModel = window.aiHackare && window.aiHackare.settingsManager ? 
+                const currentModel = window.aiHackare.settingsManager ? 
                     window.aiHackare.settingsManager.getCurrentModel() : '';
                 
                 // Calculate percentage using the utility function directly
@@ -152,6 +151,30 @@ window.DefaultPromptsService = (function() {
                     UIUtils.updateContextUsage(usageFill, usageText, percentage);
                 } else {
                     console.log("Could not find UI elements");
+                }
+            }
+        } else {
+            // No prompts selected, clear the system prompt
+            StorageService.saveSystemPrompt('');
+            
+            // Update context usage to reflect empty system prompt
+            if (window.ModelInfoService && window.aiHackare && window.aiHackare.chatManager) {
+                const messages = window.aiHackare.chatManager.getMessages() || [];
+                const currentModel = window.aiHackare.settingsManager ? 
+                    window.aiHackare.settingsManager.getCurrentModel() : '';
+                
+                const percentage = UIUtils.estimateContextUsage(
+                    messages, 
+                    ModelInfoService.modelInfo, 
+                    currentModel,
+                    ''
+                );
+                
+                const usageFill = document.querySelector('.usage-fill');
+                const usageText = document.querySelector('.usage-text');
+                
+                if (usageFill && usageText) {
+                    UIUtils.updateContextUsage(usageFill, usageText, percentage);
                 }
             }
         }
