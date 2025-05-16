@@ -68,13 +68,12 @@ window.UIUtils = (function() {
             const colorClass = `color-${colorIndex}`;
             
             // Create tooltip with function name and copy button
-            const tooltipContent = `Function call: ${functionName}`;
             const escapedFunctionName = escapeHTML(functionName).replace(/'/g, "\\'");
             
             return `<span class="function-call-icon ${colorClass}">
                 <span class="function-icon-tooltip">
                     <div>
-                        ${escapeHTML(tooltipContent)}
+                        Function call: <strong>${escapeHTML(functionName)}</strong><br>
                         <button class="tooltip-copy-btn" data-copy-text="${escapedFunctionName}" data-copy-message="Function name copied to clipboard">Copy</button>
                     </div>
                 </span>
@@ -125,10 +124,10 @@ window.UIUtils = (function() {
             
             return `<span class="function-result-icon ${colorClass}">
                 <span class="function-icon-tooltip">
-                    <div>${escapeHTML(`Function result: ${functionName}`)}</div>
-                    <div>${escapeHTML(`Type: ${resultType}`)}</div>
+                    <div>Function result: ${escapeHTML(functionName)}</div>
+                    <div>Type: ${escapeHTML(resultType)}</div>
                     <div>
-                        ${escapeHTML(`Value: ${displayValue}`)}
+                        Value: <strong>${escapeHTML(displayValue)}</strong><br>
                         <button class="tooltip-copy-btn" data-copy-text="${escapedResult}" data-copy-message="Function result value copied to clipboard">Copy</button>
                     </div>
                 </span>
