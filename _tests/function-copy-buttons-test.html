@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Function Copy Buttons Test</title>
+    <link rel="stylesheet" href="../css/function-calling.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-container {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .test-description {
+            margin-bottom: 10px;
+            color: #666;
+        }
+        .test-content {
+            margin: 20px 0;
+            line-height: 1.5;
+        }
+        .debug-info {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>Function Copy Buttons Test</h1>
+    
+    <div class="test-container">
+        <h2>Test 1: Function Call Icon with Copy Button</h2>
+        <div class="test-description">
+            Hover over the function call icon (f) below to see the tooltip with copy button.
+            Click the copy button to test if it copies the function name to clipboard.
+        </div>
+        <div class="test-content">
+            This is a test of the <span class="function-call-icon color-1">
+                <span class="function-icon-tooltip">
+                    <div>
+                        Function call: get_weather
+                        <button class="tooltip-copy-btn" onclick="copyToClipboard('get_weather', 'Function name copied to clipboard', this); return false;">Copy</button>
+                    </div>
+                </span>
+            </span> function call icon.
+        </div>
+    </div>
+    
+    <div class="test-container">
+        <h2>Test 2: Function Result Icon with Copy Button</h2>
+        <div class="test-description">
+            Hover over the function result icon (arrow) below to see the tooltip with copy button.
+            Click the copy button to test if it copies the function result to clipboard.
+        </div>
+        <div class="test-content">
+            This is a test of the <span class="function-result-icon color-1">
+                <span class="function-icon-tooltip">
+                    <div>Function result: get_weather</div>
+                    <div>Type: object</div>
+                    <div>
+                        Value: {"temperature": 22, "condition": "Sunny"}
+                        <button class="tooltip-copy-btn" onclick="copyToClipboard('{&quot;temperature&quot;: 22, &quot;condition&quot;: &quot;Sunny&quot;}', 'Function result value copied to clipboard', this); return false;">Copy</button>
+                    </div>
+                </span>
+            </span> function result icon.
+        </div>
+    </div>
+    
+    <div class="debug-info" id="debug-info">Debug information will appear here</div>
+    
+    <script>
+        // Function to copy text to clipboard
+        function copyToClipboard(text, message, button) {
+            console.log('copyToClipboard called with text:', text);
+            document.getElementById('debug-info').textContent = 'Attempting to copy: ' + text;
+            
+            try {
+                // Try using the newer clipboard API first
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text)
+                        .then(() => {
+                            console.log('Copied to clipboard using Clipboard API:', text);
+                            handleCopySuccess(text, message, button);
+                        })
+                        .catch(err => {
+                            console.error('Failed to copy using Clipboard API:', err);
+                            document.getElementById('debug-info').textContent += '\nClipboard API error: ' + err.message;
+                            // Fall back to execCommand method
+                            fallbackCopyTextToClipboard(text, message, button);
+                        });
+                } else {
+                    // Fall back to execCommand method for older browsers
+                    fallbackCopyTextToClipboard(text, message, button);
+                }
+            } catch (err) {
+                console.error('Error in copyToClipboard:', err);
+                document.getElementById('debug-info').textContent += '\nError: ' + err.message;
+                showNotification('Failed to copy to clipboard');
+            }
+        }
+        
+        // Fallback method to copy text to clipboard using execCommand
+        function fallbackCopyTextToClipboard(text, message, button) {
+            console.log('Using fallback copy method');
+            document.getElementById('debug-info').textContent += '\nUsing fallback copy method';
+            
+            try {
+                // Create a temporary textarea element
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                
+                // Make the textarea out of viewport
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                textArea.style.top = '-999999px';
+                
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                
+                // Execute copy command
+                const successful = document.execCommand('copy');
+                
+                // Remove the textarea
+                document.body.removeChild(textArea);
+                
+                if (successful) {
+                    console.log('Copied to clipboard using execCommand:', text);
+                    document.getElementById('debug-info').textContent += '\nCopied successfully using execCommand';
+                    handleCopySuccess(text, message, button);
+                } else {
+                    console.error('Failed to copy using execCommand');
+                    document.getElementById('debug-info').textContent += '\nFailed to copy using execCommand';
+                    showNotification('Failed to copy to clipboard');
+                }
+            } catch (err) {
+                console.error('Error in fallbackCopyTextToClipboard:', err);
+                document.getElementById('debug-info').textContent += '\nFallback error: ' + err.message;
+                showNotification('Failed to copy to clipboard');
+            }
+        }
+        
+        // Handle successful copy operation
+        function handleCopySuccess(text, message, button) {
+            console.log('Copy successful:', text);
+            document.getElementById('debug-info').textContent += '\nCopy successful: ' + text;
+            
+            // Show visual feedback on the button
+            if (button) {
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                
+                // Reset button after a delay
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('copied');
+                }, 1500);
+            }
+            
+            // Show notification
+            showNotification(message);
+        }
+        
+        // Show a notification
+        function showNotification(message) {
+            // Check if notification element already exists
+            let notification = document.querySelector('.copy-notification');
+            
+            // Create notification element if it doesn't exist
+            if (!notification) {
+                notification = document.createElement('div');
+                notification.className = 'copy-notification';
+                document.body.appendChild(notification);
+            }
+            
+            // Set message and show notification
+            notification.textContent = message;
+            notification.classList.add('show');
+            
+            // Hide notification after a delay
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
