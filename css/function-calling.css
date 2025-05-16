@@ -7,13 +7,14 @@
 .function-call-icon,
 .function-result-icon {
     display: inline-block;
-    margin: 0 2px;
+    margin: 0 5px; /* Increased margin to prevent overlap */
     font-size: 0.9em;
     vertical-align: middle;
     position: relative;
     font-style: normal;
     font-weight: 900;
     text-shadow: 0.5px 0 0 currentColor;
+    cursor: pointer; /* Add pointer cursor to indicate clickable */
 }
 
 /* Base color for function icons */
@@ -76,6 +77,29 @@
     pointer-events: auto; /* Allow interaction with the tooltip */
     min-width: 220px;
     max-width: 320px;
+    margin-bottom: 5px; /* Add space between icon and tooltip */
+}
+
+/* Prevent tooltip from disappearing when moving to the tooltip */
+.function-call-icon:hover,
+.function-result-icon:hover {
+    z-index: 1001; /* Higher z-index when hovered */
+}
+
+/* Keep tooltip visible when hovering over the tooltip itself */
+.function-icon-tooltip:hover {
+    opacity: 1;
+}
+
+/* Ensure tooltips don't overlap */
+.function-call-icon {
+    position: relative;
+    z-index: 1;
+}
+
+.function-result-icon {
+    position: relative;
+    z-index: 2; /* Higher z-index to prevent overlap */
 }
 
 /* Tooltip content divs */
@@ -105,10 +129,39 @@
     margin-left: 5px;
     padding: 2px 4px;
     vertical-align: middle;
+    transition: background-color 0.2s, color 0.2s;
 }
 
 .tooltip-copy-btn:hover {
     background: rgba(255, 255, 255, 0.3);
+}
+
+.tooltip-copy-btn.copied {
+    background-color: rgba(16, 185, 129, 0.6); /* Green background for success */
+    color: white;
+}
+
+/* Copy notification */
+.copy-notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: rgba(16, 185, 129, 0.9);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    z-index: 2000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.3s, transform 0.3s;
+    pointer-events: none;
+}
+
+.copy-notification.show {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .function-call-icon:hover .function-icon-tooltip,

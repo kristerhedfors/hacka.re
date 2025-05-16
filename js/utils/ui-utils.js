@@ -67,15 +67,14 @@ window.UIUtils = (function() {
             const colorIndex = (functionCallCounts[functionName] % 5) || 5;
             const colorClass = `color-${colorIndex}`;
             
-            // Create tooltip with function name and copy button
+            // Create tooltip with function name (no copy button)
             // Use a safer approach to create the tooltip content
             const tooltipContent = `Function call: ${functionName}`;
             
-            return `<span class="function-call-icon ${colorClass}">
+            // Make the entire function call icon copy the function name when clicked
+            return `<span class="function-call-icon ${colorClass}" onclick="event.stopPropagation(); UIUtils.copyToClipboardWithNotification('${escapeHTML(functionName)}', 'Function name copied to clipboard', this)">
                 <span class="function-icon-tooltip">
-                    <div>${escapeHTML(tooltipContent)}
-                        <button class="tooltip-copy-btn" data-copy="${escapeHTML(functionName)}" onclick="event.stopPropagation(); navigator.clipboard.writeText('${escapeHTML(functionName)}')">Copy name</button>
-                    </div>
+                    <div>${escapeHTML(tooltipContent)}</div>
                 </span>
             </span>`;
         });
@@ -118,21 +117,14 @@ window.UIUtils = (function() {
                 }
             }
             
-            // Create tooltip with function name, result type, value, and copy buttons
+            // Create tooltip with function name, result type, and value (no copy buttons)
             // Use a safer approach to create the tooltip content
-            return `<span class="function-result-icon ${colorClass}">
+            // Make the entire function result icon copy the result value when clicked
+            return `<span class="function-result-icon ${colorClass}" onclick="event.stopPropagation(); UIUtils.copyToClipboardWithNotification('${escapeHTML(decodedResult)}', 'Function result value copied to clipboard', this)">
                 <span class="function-icon-tooltip">
-                    <div>
-                        ${escapeHTML(`Function result: ${functionName}`)}
-                        <button class="tooltip-copy-btn" data-copy="${escapeHTML(functionName)}" onclick="event.stopPropagation(); navigator.clipboard.writeText('${escapeHTML(functionName)}')">Copy name</button>
-                    </div>
-                    <div>
-                        ${escapeHTML(`Type: ${resultType}`)}
-                    </div>
-                    <div>
-                        ${escapeHTML(`Value: ${displayValue}`)}
-                        <button class="tooltip-copy-btn" data-copy="value" onclick="event.stopPropagation(); navigator.clipboard.writeText('${escapeHTML(decodedResult)}')">Copy value</button>
-                    </div>
+                    <div>${escapeHTML(`Function result: ${functionName}`)}</div>
+                    <div>${escapeHTML(`Type: ${resultType}`)}</div>
+                    <div>${escapeHTML(`Value: ${displayValue}`)}</div>
                 </span>
             </span>`;
         });
@@ -415,6 +407,65 @@ window.UIUtils = (function() {
         }
     }
 
+    /**
+     * Copy text to clipboard with notification
+     * @param {string} text - Text to copy
+     * @param {string} message - Notification message
+     * @param {HTMLElement} button - Button element that triggered the copy
+     */
+    function copyToClipboardWithNotification(text, message, button) {
+        // Copy to clipboard
+        navigator.clipboard.writeText(text)
+            .then(() => {
+                console.log('Copied to clipboard:', text);
+                
+                // Show visual feedback on the button
+                if (button) {
+                    const originalText = button.textContent;
+                    button.textContent = 'Copied!';
+                    button.classList.add('copied');
+                    
+                    // Reset button after a delay
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.classList.remove('copied');
+                    }, 1500);
+                }
+                
+                // Show notification
+                showNotification(message);
+            })
+            .catch(err => {
+                console.error('Failed to copy to clipboard:', err);
+                showNotification('Failed to copy to clipboard');
+            });
+    }
+    
+    /**
+     * Show a notification
+     * @param {string} message - Notification message
+     */
+    function showNotification(message) {
+        // Check if notification element already exists
+        let notification = document.querySelector('.copy-notification');
+        
+        // Create notification element if it doesn't exist
+        if (!notification) {
+            notification = document.createElement('div');
+            notification.className = 'copy-notification';
+            document.body.appendChild(notification);
+        }
+        
+        // Set message and show notification
+        notification.textContent = message;
+        notification.classList.add('show');
+        
+        // Hide notification after a delay
+        setTimeout(() => {
+            notification.classList.remove('show');
+        }, 2000);
+    }
+    
     // Public API
     return {
         renderMarkdown: renderMarkdown,
@@ -425,6 +476,8 @@ window.UIUtils = (function() {
         createMessageElement: createMessageElement,
         createTypingIndicator: createTypingIndicator,
         estimateContextUsage: estimateContextUsage,
-        copyChatContent: copyChatContent
+        copyChatContent: copyChatContent,
+        copyToClipboardWithNotification: copyToClipboardWithNotification,
+        showNotification: showNotification
     };
 })();
