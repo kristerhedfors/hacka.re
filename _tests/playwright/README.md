@@ -148,6 +148,29 @@ When MCP functionality is re-enabled, to run the MCP integration tests, you'll n
 
 Note that the integration test is marked with `@pytest.mark.skip` by default since it requires an actual running MCP server. You'll need to remove this mark or use the `-k` flag to run it.
 
+## Handling Welcome Modal in Tests
+
+When creating new tests, it's important to handle the welcome modal that appears on the first visit to the site. The welcome modal can interfere with test execution if not properly dismissed.
+
+### Using the dismiss_welcome_modal Function
+
+Always include the `dismiss_welcome_modal` function from `test_utils.py` after navigating to the page:
+
+```python
+from test_utils import dismiss_welcome_modal
+
+def test_my_feature(page: Page, serve_hacka_re):
+    # Navigate to the page
+    page.goto(serve_hacka_re)
+    
+    # Dismiss welcome modal if present
+    dismiss_welcome_modal(page)
+    
+    # Continue with your test...
+```
+
+This function will check if the welcome modal is visible and dismiss it if necessary, allowing your test to interact with the page elements.
+
 ## Timeout Handling Best Practices
 
 To prevent tests from hanging indefinitely and ensure reliable test execution, follow these timeout handling best practices:

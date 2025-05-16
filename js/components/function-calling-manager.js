@@ -71,11 +71,12 @@ window.FunctionCallingManager = (function() {
          */
         function getDefaultFunctionCode() {
             return `/**
- * Example function that multiplies a with b and returns the result.
- * @description Example description of multiplier function.
- * @param {number} a - Number to be multiplied.   (Both descriptions and types, like {number}, are reflected
- * @param {number} b - Number to be multiplied.    in the API call and default to string if not specified.)
- * @returns {Object} NOTE: Returning objects with {"status": true, ...} may work better than plain values.
+ * Multiplies two numbers together
+ * @description A simple function that multiplies two numbers and returns the result
+ * @param {number} a - The first number to multiply
+ * @param {number} b - The second number to multiply
+ * @returns {Object} IMPORTANT: Always return an object, not a primitive value.
+ *                   Returning a primitive value may cause issues with tool calling.
  */
 function multiply_numbers(a, b) {
   // Validate inputs are numbers

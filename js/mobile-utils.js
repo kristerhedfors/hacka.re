@@ -22,8 +22,9 @@ window.MobileUtils = (function() {
                     document.body.classList.add('keyboard-open');
                     isKeyboardOpen = true;
                     
-                    // Scroll to the input field to ensure it's visible
-                    window.scrollTo(0, document.body.scrollHeight);
+                    // Scroll to the input field itself rather than the entire document height
+                    // This prevents scrolling past the footer
+                    messageInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }, 300);
             });
             
