@@ -394,6 +394,61 @@
 
             </div>
 
+            <div class="feature-section">
+    <h3>Function Calling Architecture</h3>
+    <p>
+        <a href="https://hacka.re/" target="_blank">hacka.re</a> implements a function calling system that allows users to define JavaScript functions that can be called by AI models through the OpenAI-compatible API. This feature enables the AI to perform actions or retrieve information by executing user-defined code.
+    </p>
+    
+    <p>
+        <strong>Function Calling Components:</strong>
+    </p>
+    <ol>
+        <li><strong>FunctionCallingManager:</strong> Handles the UI for creating, editing, and managing functions</li>
+        <li><strong>FunctionToolsService:</strong> Manages JavaScript function registration, validation, and execution</li>
+        <li><strong>ApiToolsService:</strong> Handles tool declarations and execution for OpenAI-compatible API tool calling</li>
+    </ol>
+    
+    <p>
+        <strong>Function Definition and Metadata Extraction:</strong>
+    </p>
+    <ul>
+        <li>Functions are defined using standard JavaScript syntax with JSDoc comments</li>
+        <li>The system automatically extracts function names, parameters, and metadata from the code</li>
+        <li>JSDoc comments are parsed to extract rich metadata:
+            <ul>
+                <li><code>@description</code> tags provide function descriptions</li>
+                <li><code>@param {type} name - description</code> tags define parameter types and descriptions</li>
+            </ul>
+        </li>
+        <li>This metadata is used to generate OpenAI-compatible tool definitions</li>
+    </ul>
+    
+    <p>
+        <strong>Security Measures:</strong>
+    </p>
+    <ul>
+        <li><strong>Sandboxed Execution:</strong> Functions run in a limited scope with controlled access to browser APIs</li>
+        <li><strong>Timeout Protection:</strong> Execution is limited to 30 seconds to prevent infinite loops</li>
+        <li><strong>Error Handling:</strong> Detailed error messages based on error type</li>
+        <li><strong>Result Validation:</strong> Ensures function results are JSON-serializable</li>
+    </ul>
+    
+    <p>
+        <strong>Integration with API Service:</strong>
+    </p>
+    <ul>
+        <li>Tool definitions are included in API requests when function calling is enabled</li>
+        <li>The system processes tool calls from the API response</li>
+        <li>Tool calls are routed to the appropriate handler based on the function name</li>
+        <li>Function results are returned to the API for follow-up responses</li>
+    </ul>
+    
+    <p>
+        This architecture extends the AI's capabilities while maintaining security and privacy by executing all code locally in the browser.
+    </p>
+</div>
+
             <div class="page-nav">
                 <a href="index.html">About</a>
                 <a href="architecture.html">Architecture</a>
