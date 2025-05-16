@@ -67,17 +67,74 @@ window.UIUtils = (function() {
             const colorIndex = (functionCallCounts[functionName] % 5) || 5;
             const colorClass = `color-${colorIndex}`;
             
-            return `<span class="function-call-icon ${colorClass}" title="Function call: ${functionName}"><span class="function-icon-tooltip">Function call: ${functionName}</span></span>`;
+            // Create tooltip with function name and copy button
+            // Use a safer approach to create the tooltip content
+            const tooltipContent = `Function call: ${functionName}`;
+            
+            return `<span class="function-call-icon ${colorClass}">
+                <span class="function-icon-tooltip">
+                    <div>${escapeHTML(tooltipContent)}
+                        <button class="tooltip-copy-btn" data-copy="${escapeHTML(functionName)}" onclick="event.stopPropagation(); navigator.clipboard.writeText('${escapeHTML(functionName)}')">Copy name</button>
+                    </div>
+                </span>
+            </span>`;
         });
         
         // Replace function result markers with icons
         // Handle potential newlines around the marker
-        text = text.replace(/\s*\[FUNCTION_RESULT:([^\]]+)\]\s*/g, (match, functionName) => {
+        // New format: [FUNCTION_RESULT:name:type:encodedValue]
+        text = text.replace(/\s*\[FUNCTION_RESULT:([^:]+):([^:]+):([^\]]+)\]\s*/g, (match, functionName, resultType, encodedResult) => {
             // Use the same color as the corresponding function call
             const colorIndex = (functionCallCounts[functionName] % 5) || 5;
             const colorClass = `color-${colorIndex}`;
             
-            return `<span class="function-result-icon ${colorClass}" title="Function result: ${functionName}"><span class="function-icon-tooltip">Function result: ${functionName}</span></span>`;
+            // Decode the result value
+            let decodedResult = '';
+            let displayValue = '';
+            
+            try {
+                decodedResult = decodeURIComponent(encodedResult);
+                
+                // Parse the result to get a formatted display value
+                const resultValue = JSON.parse(decodedResult);
+                
+                // Format the display value based on the type
+                if (resultType === 'object' || resultType === 'array') {
+                    // For objects and arrays, show a compact JSON representation
+                    displayValue = JSON.stringify(resultValue);
+                    // Limit the length for display
+                    if (displayValue.length > 100) {
+                        displayValue = displayValue.substring(0, 97) + '...';
+                    }
+                } else {
+                    // For primitives, show the value directly
+                    displayValue = String(resultValue);
+                }
+            } catch (e) {
+                // If parsing fails, show the raw decoded result
+                displayValue = decodedResult;
+                if (displayValue.length > 100) {
+                    displayValue = displayValue.substring(0, 97) + '...';
+                }
+            }
+            
+            // Create tooltip with function name, result type, value, and copy buttons
+            // Use a safer approach to create the tooltip content
+            return `<span class="function-result-icon ${colorClass}">
+                <span class="function-icon-tooltip">
+                    <div>
+                        ${escapeHTML(`Function result: ${functionName}`)}
+                        <button class="tooltip-copy-btn" data-copy="${escapeHTML(functionName)}" onclick="event.stopPropagation(); navigator.clipboard.writeText('${escapeHTML(functionName)}')">Copy name</button>
+                    </div>
+                    <div>
+                        ${escapeHTML(`Type: ${resultType}`)}
+                    </div>
+                    <div>
+                        ${escapeHTML(`Value: ${displayValue}`)}
+                        <button class="tooltip-copy-btn" data-copy="value" onclick="event.stopPropagation(); navigator.clipboard.writeText('${escapeHTML(decodedResult)}')">Copy value</button>
+                    </div>
+                </span>
+            </span>`;
         });
         
         return text;
