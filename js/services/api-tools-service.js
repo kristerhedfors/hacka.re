@@ -249,13 +249,15 @@ window.ApiToolsService = (function() {
     
     // Initialize built-in tools
     function initializeBuiltInTools() {
-        // Register math_addition_tool
+        // TOOL COMMENTED OUT: To reactivate this tool, simply uncomment the code below
+        /*
+        // Register my_function
         registerBuiltInTool(
-            "math_addition_tool",
+            "my_function",
             {
                 type: "function",
                 function: {
-                    name: "math_addition_tool",
+                    name: "my_function",
                     description: "Add two numbers together",
                     parameters: {
                         type: "object",
@@ -284,6 +286,7 @@ window.ApiToolsService = (function() {
                 return { result };
             }
         );
+        */
     }
     
     // Initialize

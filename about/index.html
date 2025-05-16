@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>hacka.re - A Modern Interface for AI Models</title>
-    <meta name="description" content="Information about hacka.re, a streamlined chat interface for OpenAI-compatible AI models">
+    <title>hacka.re - Chat with AI Models</title>
+    <meta name="description" content="Information about hacka.re, a privacy-focused chat client for OpenAI-compatible AI models">
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="css/themes.css">
     <!-- Font Awesome for icons (local) -->
@@ -212,11 +212,11 @@
     </style>
 </head>
 <body>
-    <div class="app-container">
+    <div class="app-container" style="max-width: none; width: 100%;">
         <div class="beta-tag">BETA</div>
         <header>
             <div class="logo">
-                <h1><a href="../index.html" style="text-decoration: none; color: inherit;">hacka.re</a></h1>
+                <h1><a href="../index.html" style="text-decoration: none; color: inherit;">hacka.re</a><span style="font-size: 92%;">: serverless GPTs</span></h1>
                 <p class="tagline">För hackare av hackare.</p>
             </div>
             <div class="settings">
@@ -226,7 +226,7 @@
 
         <main style="overflow-y: auto; overflow-x: auto; padding: 2rem;">
             <div class="container" style="max-width: 1000px; margin: 0 auto; word-wrap: break-word; overflow-wrap: break-word; width: 100%;">
-            <h2><a href="https://hacka.re/" target="_blank">hacka.re</a>: A Modern Interface for AI Models</h2>
+            <h2><a href="https://hacka.re/" target="_blank">hacka.re</a>: <span style="font-size: 92%;">serverless GPTs</span></h2>
             <p class="tagline" style="font-style: italic; font-size: 1.2em; margin-bottom: 30px;">
                 <em>För hackare av hackare.</em>
             </p>
@@ -268,7 +268,7 @@
 
                 <h4>Portable Deployment</h4>
                 <p>
-                    This static architecture allows for GPT's to be shared securely over otherwise insecure channels without touching servers aside from the LLM API endpoint(s) involved for inference. The entire hacka.re site can simply be downloaded and run from disk as static files interpreted entirely on the client-side, or extended and re-published freely as it is licensed under the MIT No Attribution license.
+                    This static architecture allows for GPT's to be shared securely over otherwise insecure channels without touching servers aside from the LLM API endpoint(s) involved for inference. The entire hacka.re site can simply be downloaded and run from disk as static files by opening it up in your favorite web browser, or extended and re-published freely as it is licensed under the MIT No Attribution license.
                 </p>
                 <br />
 

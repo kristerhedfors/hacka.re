@@ -23,12 +23,12 @@ window.ToolCallingManager = (function() {
             
             // Add heading
             const heading = document.createElement('h3');
-            heading.textContent = 'Tool Calling';
+            heading.textContent = 'Function Calling';
             toolCallingGroup.appendChild(heading);
             
             // Create info text
             const infoText = document.createElement('p');
-            infoText.textContent = 'Tool calling is controlled through the function calling modal. Functions that are enabled in the function modal will be available for the AI to use.';
+            infoText.textContent = 'Function calling is controlled through the function calling modal. Functions that are enabled in the function modal will be available for the AI to use.';
             infoText.style.marginBottom = '10px';
             toolCallingGroup.appendChild(infoText);
             
