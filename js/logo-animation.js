@@ -133,8 +133,13 @@ window.LogoAnimation = (function() {
             // Add tooltip functionality
             const tooltip = heartLogo.querySelector('.tooltip');
             if (tooltip) {
-                // Make tooltip stay open when clicked or hovered
-                heartLogo.addEventListener('click', function(e) {
+                // Get related elements that should trigger the tooltip
+                const logoText = document.querySelector('.logo-text');
+                const tagline = document.querySelector('.tagline');
+                const serverlessGPTs = document.querySelector('.serverless-gpts');
+                
+                // Function to toggle tooltip
+                function toggleTooltip(e) {
                     e.stopPropagation(); // Prevent document click from immediately closing it
                     
                     if (tooltip.classList.contains('active')) {
@@ -144,13 +149,23 @@ window.LogoAnimation = (function() {
                         tooltip.classList.add('active');
                         tooltipActive = true;
                     }
-                });
+                }
                 
-                // Make tooltip stay open when hovered
-                heartLogo.addEventListener('mouseenter', function() {
-                    tooltip.classList.add('active');
-                    tooltipActive = true;
-                });
+                // Add click event listeners to all related elements
+                heartLogo.addEventListener('click', toggleTooltip);
+                
+                // Add click event listeners to title, subtitle, and serverless GPTs text if they exist
+                if (logoText) {
+                    logoText.addEventListener('click', toggleTooltip);
+                }
+                
+                if (tagline) {
+                    tagline.addEventListener('click', toggleTooltip);
+                }
+                
+                if (serverlessGPTs) {
+                    serverlessGPTs.addEventListener('click', toggleTooltip);
+                }
                 
                 // Allow clicking inside the tooltip without closing it
                 tooltip.addEventListener('click', function(e) {
