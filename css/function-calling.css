@@ -3,6 +3,101 @@
  * Styles for the function calling feature
  */
 
+/* Function call and result icons in token stream */
+.function-call-icon,
+.function-result-icon {
+    display: inline-block;
+    margin: 0 2px;
+    font-size: 0.9em;
+    vertical-align: middle;
+    position: relative;
+    font-style: normal;
+    font-weight: 900;
+    text-shadow: 0.5px 0 0 currentColor;
+}
+
+/* Base color for function icons */
+.function-call-icon,
+.function-result-icon {
+    color: #6366f1; /* Default color (indigo) */
+}
+
+/* Different colors for multiple function calls */
+.function-call-icon.color-1, .function-result-icon.color-1 {
+    color: #6366f1; /* Indigo */
+}
+
+.function-call-icon.color-2, .function-result-icon.color-2 {
+    color: #8b5cf6; /* Violet */
+}
+
+.function-call-icon.color-3, .function-result-icon.color-3 {
+    color: #ec4899; /* Pink */
+}
+
+.function-call-icon.color-4, .function-result-icon.color-4 {
+    color: #f43f5e; /* Rose */
+}
+
+.function-call-icon.color-5, .function-result-icon.color-5 {
+    color: #f97316; /* Orange */
+}
+
+/* Function call icon (f) */
+.function-call-icon::after {
+    content: "𝑓";
+    position: relative;
+}
+
+/* Function result icon (thick right arrow) */
+.function-result-icon::after {
+    content: "➔"; /* Thick right-pointing arrow */
+    position: relative;
+    font-weight: bold;
+}
+
+/* Tooltip for function icons */
+.function-icon-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 1000;
+}
+
+.function-call-icon:hover .function-icon-tooltip,
+.function-result-icon:hover .function-icon-tooltip {
+    opacity: 1;
+}
+
+/* Add a duplicate character with slight offset to create a bolder appearance for function call icon */
+.function-call-icon::before {
+    content: "𝑓";
+    position: absolute;
+    left: 0.5px;
+    top: 0;
+    text-shadow: none;
+}
+
+/* For the result icon, add a duplicate arrow with slight offset */
+.function-result-icon::before {
+    content: "➔";
+    position: absolute;
+    left: 0.5px;
+    top: 0;
+    text-shadow: none;
+    font-weight: bold;
+}
+
 /* Function calling menu item */
 .function-icon {
     font-style: normal;
