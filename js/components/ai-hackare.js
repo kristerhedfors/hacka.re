@@ -252,9 +252,11 @@ window.AIHackareComponent = (function() {
         }
         
         // Clear chat button
-        this.elements.clearChat.addEventListener('click', (e) => {
+        this.elements.clearChatBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            this.clearChatHistory();
+            if (confirm('Are you sure you want to clear the chat history?')) {
+                this.clearChatHistory();
+            }
         });
         
         // Show system prompt button

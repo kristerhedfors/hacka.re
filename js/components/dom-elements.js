@@ -93,7 +93,7 @@ window.DOMElements = (function() {
             systemPromptPreview: document.getElementById('system-prompt-preview'),
             closeSettings: document.getElementById('close-settings'),
             clearAllSettings: document.getElementById('clear-all-settings'),
-            clearChat: document.getElementById('clear-chat'),
+            clearChatBtn: document.getElementById('clear-chat-btn'),
             
             // Model info elements
             modelNameDisplay: document.querySelector('.model-name-display'),
