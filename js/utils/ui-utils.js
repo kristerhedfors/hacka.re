@@ -16,6 +16,9 @@ window.UIUtils = (function() {
         }
         
         try {
+            // Process function call and result markers before markdown rendering
+            text = processFunctionMarkers(text);
+            
             // Configure marked for better performance
             marked.setOptions({
                 gfm: true,
@@ -35,6 +38,49 @@ window.UIUtils = (function() {
             // Fallback to simple HTML escaping if markdown rendering fails
             return `<p>${escapeHTML(text)}</p>`;
         }
+    }
+    
+    // Track function calls to assign different colors
+    const functionCallCounts = {};
+    
+    /**
+     * Process function call and result markers in text
+     * @param {string} text - Text to process
+     * @returns {string} - Text with markers replaced by HTML
+     */
+    function processFunctionMarkers(text) {
+        // Reset function call counts if this is a new message
+        // We can detect this by checking if there are no function call markers in the text
+        if (!text.includes('[FUNCTION_CALL:') && !text.includes('[FUNCTION_RESULT:')) {
+            Object.keys(functionCallCounts).forEach(key => {
+                delete functionCallCounts[key];
+            });
+        }
+        
+        // Replace function call markers with icons
+        // Handle potential whitespace around the marker
+        text = text.replace(/\s*\[FUNCTION_CALL:([^\]]+)\]\s*/g, (match, functionName) => {
+            // Increment the count for this function name
+            functionCallCounts[functionName] = (functionCallCounts[functionName] || 0) + 1;
+            
+            // Calculate color class (cycle through 5 colors)
+            const colorIndex = (functionCallCounts[functionName] % 5) || 5;
+            const colorClass = `color-${colorIndex}`;
+            
+            return `<span class="function-call-icon ${colorClass}" title="Function call: ${functionName}"><span class="function-icon-tooltip">Function call: ${functionName}</span></span>`;
+        });
+        
+        // Replace function result markers with icons
+        // Handle potential newlines around the marker
+        text = text.replace(/\s*\[FUNCTION_RESULT:([^\]]+)\]\s*/g, (match, functionName) => {
+            // Use the same color as the corresponding function call
+            const colorIndex = (functionCallCounts[functionName] % 5) || 5;
+            const colorClass = `color-${colorIndex}`;
+            
+            return `<span class="function-result-icon ${colorClass}" title="Function result: ${functionName}"><span class="function-icon-tooltip">Function result: ${functionName}</span></span>`;
+        });
+        
+        return text;
     }
 
     /**

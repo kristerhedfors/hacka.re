@@ -263,6 +263,18 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
                                     if (funcDelta.name) {
                                         toolCalls[index].function.name = 
                                             (toolCalls[index].function.name || '') + funcDelta.name;
+                                        
+                                        // If this is the first time we're seeing the name, insert a function call marker
+                                        if (toolCalls[index].function.name === funcDelta.name) {
+                                            // Insert a marker in the response to indicate a function call
+                                            const functionCallMarker = `[FUNCTION_CALL:${funcDelta.name}]`;
+                                            completeResponse += functionCallMarker;
+                                            if (onChunk) {
+                                                window.requestAnimationFrame(() => {
+                                                    onChunk(completeResponse);
+                                                });
+                                            }
+                                        }
                                     }
                                     
                                     if (funcDelta.arguments) {
@@ -441,6 +453,17 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
                 // Add each tool result as a separate message
                 for (const result of toolResults) {
                     apiMessages.push(result);
+                    
+                    // Insert a marker in the response to indicate a function result
+                    // Trim any trailing whitespace from the complete response to prevent newlines
+                    completeResponse = completeResponse.trimEnd();
+                    const functionResultMarker = `[FUNCTION_RESULT:${result.name}]`;
+                    completeResponse += functionResultMarker;
+                    if (onChunk) {
+                        window.requestAnimationFrame(() => {
+                            onChunk(completeResponse);
+                        });
+                    }
                 }
                 
                 // Make a follow-up request to get the final response
@@ -485,8 +508,9 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
                                 if (content) {
                                     followUpCompleteResponse += content;
                                     if (onChunk) {
-                                        // Append to the original response with a separator
-                                        onChunk(completeResponse + "\n\n" + followUpCompleteResponse);
+                                        // Append to the original response without a separator
+                                        // Trim any leading whitespace from the follow-up response to prevent newlines
+                                        onChunk(completeResponse + followUpCompleteResponse.trimStart());
                                     }
                                 }
                             } catch (e) {
@@ -497,7 +521,8 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
                 }
                 
                 // Return the combined response
-                return completeResponse + "\n\n" + followUpCompleteResponse;
+                // Trim any leading whitespace from the follow-up response to prevent newlines
+                return completeResponse + followUpCompleteResponse.trimStart();
             }
         } catch (error) {
             console.error('Error processing tool calls:', error);
