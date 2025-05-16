@@ -49,6 +49,13 @@
     flex: 1;
 }
 
+.function-item-description {
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+    color: var(--text-color);
+    opacity: 0.8;
+}
+
 .function-item-delete {
     background: none;
     border: none;
