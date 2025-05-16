@@ -7,10 +7,11 @@
 .function-icon {
     font-style: normal;
     font-weight: 900;
-    font-size: 1.2rem;
+    font-size: 1.65rem; /* Increased by 12% from 1.47rem */
     display: flex;
     align-items: center;
     justify-content: center;
+    text-shadow: 0.5px 0 0 currentColor; /* Add text shadow to create bold effect */
 }
 
 /* Function calling modal */
@@ -46,6 +47,13 @@
 .function-item-name {
     font-weight: 600;
     flex: 1;
+}
+
+.function-item-description {
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+    color: var(--text-color);
+    opacity: 0.8;
 }
 
 .function-item-delete {

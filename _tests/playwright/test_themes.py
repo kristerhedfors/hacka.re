@@ -62,8 +62,8 @@ def test_theme_switching(page):
     # Verify that the theme has changed again
     assert "theme-ocean" in next_theme_class, "Theme did not change to ocean theme"
 
-def test_dark_mode_default(page):
-    """Test that dark mode is the default theme when no preference is saved."""
+def test_light_mode_default(page):
+    """Test that light mode is the default theme when no preference is saved."""
     # Navigate to the page first
     page.goto("file:///Users/user/dev/hacka.re/index.html")
     
@@ -103,13 +103,13 @@ def test_dark_mode_default(page):
     # Wait a bit for the theme to be applied
     page.wait_for_timeout(500)
     
-    # Check if dark mode is applied by default
+    # Check if light mode is applied by default (absence of dark-mode class)
     is_dark_mode = page.evaluate("() => document.documentElement.classList.contains('dark-mode')")
-    assert is_dark_mode, "Dark mode should be the default theme when no preference is saved"
+    assert not is_dark_mode, "Light mode should be the default theme when no preference is saved"
     
     # Verify the theme is saved in localStorage
     saved_theme = page.evaluate("() => localStorage.getItem('aihackare_theme_mode')")
-    assert saved_theme == 'dark', "Dark theme should be saved in localStorage"
+    assert saved_theme == 'light', "Light theme should be saved in localStorage"
 
 
 def test_mobile_utils_loaded(page):

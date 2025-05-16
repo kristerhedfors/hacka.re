@@ -70,8 +70,8 @@
                 <button id="copy-chat-btn" class="icon-btn" title="Copy Chat Content">
                     <i class="fas fa-copy"></i>
                 </button>
-                <button id="function-btn" class="icon-btn" title="Function Calling (OpenAPI)">
-                    <span class="function-icon">𝑓()</span>
+                <button id="function-btn" class="icon-btn" title="Function Calling">
+                    <span class="function-icon">𝑓</span>
                 </button>
                 <button id="prompts-btn" class="icon-btn" title="System Prompt Menu">
                     <i class="fas fa-list-alt"></i>
@@ -249,13 +249,13 @@
         <div id="function-modal" class="modal">
             <div class="modal-content">
                 <div class="settings-header">
-                    <h2>Function Calling (OpenAPI)</h2>
+                    <h2>Function Calling</h2>
                     <span class="info-icon" id="function-info-icon">
                         <i class="fas fa-info-circle"></i>
                         <div class="tooltip">
                             <div class="tooltip-content">
                                 <div class="important-notice">
-                                    <p><strong>Function Calling</strong>: Create JavaScript functions that can be called by AI models through the OpenAI-compatible API.</p>
+                                    <p><strong>Function Calling</strong>: Create JavaScript functions that can be called by AI models through the OpenAI-compatible API. (The underlying API mechanism is known as Tool Calling in OpenAI's architecture.)</p>
                                 </div>
                                 <div class="important-notice">
                                     <p><strong>JavaScript Functions</strong>: Define functions with parameters that the AI can call to perform actions or retrieve information.</p>
@@ -270,7 +270,7 @@
                 <div class="function-calling-container">
                     <div class="function-list-section">
                         <h3>Available Functions</h3>
-                        <p class="form-help">Check the boxes for the functions you want to enable for tool calling.</p>
+                        <p class="form-help">Check the boxes for the functions you want to enable for function calling (also known as tool calling or tool use).</p>
                         <div id="function-list">
                             <!-- Functions will be populated here -->
                             <div class="empty-function-state" id="empty-function-state">
@@ -413,14 +413,16 @@
                     </div>
                 </div>
                 <div id="chat-input-container">
-                    <form id="chat-form">
-                        <textarea id="message-input" placeholder="Type your message here..." rows="1"></textarea>
-                        <button type="submit" id="send-btn" class="icon-btn" title="Send message" name="send-message-button" aria-label="Send Message Button">
-                            <i class="fas fa-paper-plane"></i>
+                    <div class="input-with-actions">
+                        <button id="clear-chat-btn" class="icon-btn" title="Clear chat history">
+                            <i class="fas fa-trash"></i>
                         </button>
-                    </form>
-                    <div class="chat-actions">
-                        <a href="#" id="clear-chat">Clear Chat</a>
+                        <form id="chat-form">
+                            <textarea id="message-input" placeholder="Type your message here..." rows="1"></textarea>
+                            <button type="submit" id="send-btn" class="icon-btn" title="Send message" name="send-message-button" aria-label="Send Message Button">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -475,7 +477,9 @@
     <script src="js/themes.js"></script>
     <script src="js/copy-code.js"></script>
     <script src="js/logo-animation.js"></script>
+    <script src="js/logo-tooltip.js"></script>
     <script src="js/settings-tooltip.js"></script>
+    <script src="js/function-tooltip.js"></script>
     <script src="js/link-sharing-tooltip.js"></script>
     <script src="js/mobile-utils.js"></script>
     <script src="js/modal-effects.js"></script>
