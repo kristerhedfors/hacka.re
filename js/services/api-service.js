@@ -313,28 +313,28 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
     // Process tool calls if any were received and apiToolsManager is provided
     if (toolCalls.length > 0 && apiToolsManager) {
         try {
-            // Notify user that tool calls were received with detailed information
-            if (addSystemMessage) {
-                // Add header message
-                addSystemMessage(`Received ${toolCalls.length} tool call(s) from the AI`);
-                
-                // Only show detailed information in debug mode
-                if (window.DebugService && DebugService.getDebugMode()) {
-                    addSystemMessage(`(Debug mode: Showing detailed tool call information)`);
-                
-                    // Add details for each tool call as separate messages
-                    toolCalls.forEach((toolCall, index) => {
-                        let toolCallMessage = `Tool #${index + 1}:\n`;
-                        toolCallMessage += `- Name: ${toolCall.function.name}\n`;
-                        toolCallMessage += `- ID: ${toolCall.id}\n`;
+                // Notify user that tool calls were received with detailed information
+                if (addSystemMessage) {
+                    // Only show system messages in debug mode
+                    if (window.DebugService && DebugService.getDebugMode()) {
+                        // Add header message
+                        addSystemMessage(`Received ${toolCalls.length} tool call(s) from the AI`);
                         
-                        // Format the arguments as JSON on a single line
-                        try {
-                            const args = JSON.parse(toolCall.function.arguments);
-                            const formattedArgs = JSON.stringify(args);
+                        addSystemMessage(`(Debug mode: Showing detailed tool call information)`);
+                    
+                        // Add details for each tool call as separate messages
+                        toolCalls.forEach((toolCall, index) => {
+                            let toolCallMessage = `Tool #${index + 1}:\n`;
+                            toolCallMessage += `- Name: ${toolCall.function.name}\n`;
+                            toolCallMessage += `- ID: ${toolCall.id}\n`;
                             
-                            // Add function call in the requested format
-                            addSystemMessage(`Function call requested by model: ${toolCall.function.name}(${formattedArgs})`);
+                            // Format the arguments as JSON on a single line
+                            try {
+                                const args = JSON.parse(toolCall.function.arguments);
+                                const formattedArgs = JSON.stringify(args);
+                                
+                                // Add function call in the requested format
+                                addSystemMessage(`Function call requested by model: ${toolCall.function.name}(${formattedArgs})`);
                             
                             // Add the tool info
                             if (typeof DebugService.displayMultilineDebug === 'function') {

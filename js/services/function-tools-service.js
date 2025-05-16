@@ -415,7 +415,7 @@ window.FunctionToolsService = (function() {
                 }
                 
                 // Log function execution
-                if (addSystemMessage) {
+                if (addSystemMessage && window.DebugService && DebugService.getDebugMode()) {
                     // Format the arguments as JSON on a single line
                     try {
                         const args = JSON.parse(argsString);
@@ -437,7 +437,7 @@ window.FunctionToolsService = (function() {
                 const result = await executeJsFunction(name, args);
                 
                 // Log successful execution
-                if (addSystemMessage) {
+                if (addSystemMessage && window.DebugService && DebugService.getDebugMode()) {
                     addSystemMessage(`Function "${name}" executed successfully`);
                 }
                 
