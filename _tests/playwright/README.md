@@ -148,6 +148,83 @@ When MCP functionality is re-enabled, to run the MCP integration tests, you'll n
 
 Note that the integration test is marked with `@pytest.mark.skip` by default since it requires an actual running MCP server. You'll need to remove this mark or use the `-k` flag to run it.
 
+## Timeout Handling Best Practices
+
+To prevent tests from hanging indefinitely and ensure reliable test execution, follow these timeout handling best practices:
+
+1. **Use Proper Waiting Strategies**:
+   ```python
+   # Good: Wait for a specific element state
+   page.wait_for_selector("#element-id", state="visible", timeout=5000)
+   
+   # Avoid: Arbitrary timeouts
+   page.wait_for_timeout(500)  # Not recommended
+   ```
+
+2. **Ensure Elements are Visible Before Interaction**:
+   ```python
+   # Scroll element into view before interacting
+   element = page.locator("#my-element")
+   element.scroll_into_view_if_needed()
+   
+   # Verify visibility before interaction
+   expect(element).to_be_visible()
+   element.click()
+   ```
+
+3. **Wait for Specific Element States**:
+   ```python
+   # Wait for element to contain text
+   page.wait_for_selector("#validation-result:not(:empty)", state="visible")
+   
+   # Wait for element to have specific attribute
+   page.wait_for_selector("input[value='expected-value']", state="visible")
+   ```
+
+4. **Provide Explicit Timeouts**:
+   ```python
+   # Set explicit timeout for potentially slow operations
+   page.wait_for_selector(".slow-loading-element", timeout=10000)
+   
+   # Use shorter timeouts for operations expected to be fast
+   page.wait_for_selector(".quick-element", timeout=2000)
+   ```
+
+5. **Handle Optional Elements Properly**:
+   ```python
+   # Check if element exists before interacting
+   element = page.locator(".may-not-exist")
+   if element.count() > 0:
+       element.click()
+   ```
+
+6. **Use the timed_test Decorator Correctly**:
+   ```python
+   @timed_test
+   def test_my_function(page: Page, serve_hacka_re):
+       # The page parameter must be the first argument
+       # ...
+   ```
+
+7. **Add Comprehensive Debug Information**:
+   ```python
+   # Include detailed debug info with screenshots
+   screenshot_with_markdown(page, "element_state", {
+       "Status": "After clicking button",
+       "Element Visible": "Yes",
+       "Error Messages": error_text if error_text else "None"
+   })
+   ```
+
+8. **Handle Dialogs Proactively**:
+   ```python
+   # Set up dialog handler before triggering action
+   page.on("dialog", lambda dialog: dialog.accept())
+   delete_button.click()  # Action that triggers a dialog
+   ```
+
+Following these practices will help prevent tests from hanging indefinitely and make them more reliable and maintainable.
+
 ## Test Output Logging and LLM-Assisted Coding
 
 The `run_tests.sh` script is designed to capture comprehensive test output that can be used as context for LLM-assisted coding, even when tests are interrupted or when terminal output is not directly available in an integrated development environment.
