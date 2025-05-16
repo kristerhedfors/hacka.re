@@ -139,6 +139,11 @@ a[href="https://hacka.re/"] {
     font-family: 'Courier New', monospace !important;
 }
 
+/* Ensure links in the heart logo tooltip use the same style as footer links */
+.heart-logo .tooltip a:not([href="https://hacka.re/"]) {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+}
+
 /* Remove .logo-text from the above rule to prevent Courier New from affecting serverless GPTs */
 
 /* Override for custom titles (which are wrapped in named-gpt-container) */
@@ -256,7 +261,6 @@ a[href="https://hacka.re/"] {
 
 /* Ensure text inside the heart logo tooltip is visible with maximum specificity */
 .heart-logo .tooltip p,
-.heart-logo .tooltip a,
 .heart-logo .tooltip div,
 .heart-logo .tooltip .important-notice,
 .heart-logo .tooltip .important-notice p {
@@ -267,6 +271,22 @@ a[href="https://hacka.re/"] {
     background-image: none !important;
     background-clip: initial !important;
     -webkit-background-clip: initial !important;
+}
+
+/* Style links in the heart logo tooltip to match footer links */
+.heart-logo .tooltip a:not([href="https://hacka.re/"]) {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+    color: var(--primary-color) !important;
+    -webkit-text-fill-color: var(--primary-color) !important;
+    text-fill-color: var(--primary-color) !important;
+    text-decoration: none !important;
+}
+
+.heart-logo .tooltip a:not([href="https://hacka.re/"]):hover {
+    color: var(--primary-dark) !important;
+    -webkit-text-fill-color: var(--primary-dark) !important;
+    text-fill-color: var(--primary-dark) !important;
+    text-decoration: underline !important;
 }
 
 /* Target the specific important-notice elements */
