@@ -455,9 +455,27 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
                     apiMessages.push(result);
                     
                     // Insert a marker in the response to indicate a function result
+                    // Include the function result value in the marker for tooltip display
                     // Trim any trailing whitespace from the complete response to prevent newlines
                     completeResponse = completeResponse.trimEnd();
-                    const functionResultMarker = `[FUNCTION_RESULT:${result.name}]`;
+                    
+                    // Get the result content and determine its type
+                    let resultContent = result.content;
+                    let resultValue;
+                    let resultType;
+                    
+                    try {
+                        resultValue = JSON.parse(resultContent);
+                        resultType = Array.isArray(resultValue) ? 'array' : typeof resultValue;
+                    } catch (e) {
+                        // If parsing fails, use the raw content
+                        resultValue = resultContent;
+                        resultType = 'string';
+                    }
+                    
+                    // Create the marker with function name and encoded result
+                    const encodedResult = encodeURIComponent(resultContent);
+                    const functionResultMarker = `[FUNCTION_RESULT:${result.name}:${resultType}:${encodedResult}]`;
                     completeResponse += functionResultMarker;
                     if (onChunk) {
                         window.requestAnimationFrame(() => {

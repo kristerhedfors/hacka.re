@@ -120,9 +120,13 @@ def test_function_calling_icons(page: Page, serve_hacka_re, api_key):
             function_result_icon = page.locator(".function-result-icon").first
             expect(function_result_icon).to_be_visible()
             
-            # Verify the tooltip text
+            # Verify the tooltip text includes function name, type and value with copy buttons
             tooltip_text = function_result_icon.locator(".function-icon-tooltip").text_content()
             expect(tooltip_text).to_contain_text("Function result:")
+            expect(tooltip_text).to_contain_text("Copy name")
+            expect(tooltip_text).to_contain_text("Type:")
+            expect(tooltip_text).to_contain_text("Value:")
+            expect(tooltip_text).to_contain_text("Copy value")
             
             # Verify the icon is inline with text (not on a separate line)
             has_text_siblings = page.evaluate("""() => {
