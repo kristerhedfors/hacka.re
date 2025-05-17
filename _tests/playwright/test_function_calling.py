@@ -45,13 +45,17 @@ def test_function_calling_ui(page: Page, serve_hacka_re, api_key):
     function_editor_form = page.locator("#function-editor-form")
     expect(function_editor_form).to_be_visible()
     
-    # Fill in the function name
-    function_name = page.locator("#function-name")
-    function_name.fill("test_function")
-    
-    # Fill in the function code
+    # Fill in the function code with a properly formatted function
     function_code = page.locator("#function-code")
-    function_code.fill("""function test_function(param1, param2) {
+    function_code.fill("""/**
+ * Test function for function calling
+ * @description A simple test function that returns a message
+ * @param {string} param1 - First parameter
+ * @param {string} param2 - Second parameter
+ * @returns {Object} The result object
+ * @callable_function This function will be exposed to the LLM
+ */
+function test_function(param1, param2) {
   return {
     message: `Received ${param1} and ${param2}`,
     success: true
@@ -64,7 +68,7 @@ def test_function_calling_ui(page: Page, serve_hacka_re, api_key):
     # Check for validation result
     validation_result = page.locator("#function-validation-result")
     expect(validation_result).to_be_visible()
-    expect(validation_result).to_contain_text("Function validated successfully")
+    expect(validation_result).to_contain_text("Library validated successfully")
     
     # Submit the form
     function_editor_form.locator("button[type='submit']").click()
@@ -122,14 +126,9 @@ def test_function_validation_errors(page: Page, serve_hacka_re, api_key):
     function_modal = page.locator("#function-modal")
     expect(function_modal).to_be_visible()
     
-    # Test case 1: Empty function name
-    function_name = page.locator("#function-name")
-    function_name.fill("")
-    
+    # Test case 1: Empty function code
     function_code = page.locator("#function-code")
-    function_code.fill("""function test_function() {
-  return { success: true };
-}""")
+    function_code.fill("")
     
     # Validate the function
     page.locator("#function-validate-btn").click()
@@ -137,28 +136,9 @@ def test_function_validation_errors(page: Page, serve_hacka_re, api_key):
     # Check for validation error
     validation_result = page.locator("#function-validation-result")
     expect(validation_result).to_be_visible()
-    expect(validation_result).to_contain_text("Function name is required")
-    
-    # Test case 2: Invalid function name format
-    function_name.fill("123-invalid-name")
-    
-    # Validate the function
-    page.locator("#function-validate-btn").click()
-    
-    # Check for validation error
-    expect(validation_result).to_contain_text("Invalid function name")
-    
-    # Test case 3: Empty function code
-    function_name.fill("valid_name")
-    function_code.fill("")
-    
-    # Validate the function
-    page.locator("#function-validate-btn").click()
-    
-    # Check for validation error
     expect(validation_result).to_contain_text("Function code is required")
     
-    # Test case 4: Invalid function format
+    # Test case 2: Invalid function format
     function_code.fill("""const myFunction = () => {
   return { success: true };
 }""")
@@ -167,23 +147,9 @@ def test_function_validation_errors(page: Page, serve_hacka_re, api_key):
     page.locator("#function-validate-btn").click()
     
     # Check for validation error
-    expect(validation_result).to_contain_text("Invalid function format")
+    expect(validation_result).to_contain_text("No functions found in the code")
     
-    # Test case 5: Function name mismatch
-    function_name.fill("one_name")
-    function_code.fill("""function different_name() {
-  return { success: true };
-}""")
-    
-    # Validate the function
-    page.locator("#function-validate-btn").click()
-    
-    # Check for validation error
-    expect(validation_result).to_contain_text("Function name in code")
-    expect(validation_result).to_contain_text("does not match")
-    
-    # Test case 6: Syntax error in function
-    function_name.fill("test_function")
+    # Test case 3: Syntax error in function
     function_code.fill("""function test_function() {
   return { success: true;
 }""")
@@ -253,13 +219,17 @@ def test_function_calling_integration(page: Page, serve_hacka_re, api_key):
     function_modal = page.locator("#function-modal")
     expect(function_modal).to_be_visible()
     
-    # Fill in the function name
-    function_name = page.locator("#function-name")
-    function_name.fill("get_weather")
-    
-    # Fill in the function code
+    # Fill in the function code with a properly formatted function
     function_code = page.locator("#function-code")
-    function_code.fill("""function get_weather(location, unit = "celsius") {
+    function_code.fill("""/**
+ * Gets weather information for a location
+ * @description Fetches weather data for the specified location
+ * @param {string} location - The location to get weather for
+ * @param {string} unit - The temperature unit (celsius or fahrenheit)
+ * @returns {Object} Weather information
+ * @callable_function This function will be exposed to the LLM
+ */
+function get_weather(location, unit = "celsius") {
   return {
     location: location,
     temperature: 22,
@@ -274,7 +244,7 @@ def test_function_calling_integration(page: Page, serve_hacka_re, api_key):
     # Check for validation result
     validation_result = page.locator("#function-validation-result")
     expect(validation_result).to_be_visible()
-    expect(validation_result).to_contain_text("Function validated successfully")
+    expect(validation_result).to_contain_text("Library validated successfully")
     
     # Submit the form
     page.locator("#function-editor-form button[type='submit']").click()
@@ -323,11 +293,15 @@ def test_function_error_handling(page: Page, serve_hacka_re, api_key):
     expect(function_modal).to_be_visible()
     
     # Add a function that will throw an error
-    function_name = page.locator("#function-name")
-    function_name.fill("error_function")
-    
     function_code = page.locator("#function-code")
-    function_code.fill("""function error_function(param) {
+    function_code.fill("""/**
+ * Function that throws an error when parameter is missing
+ * @description Tests error handling when a required parameter is missing
+ * @param {string} param - Required parameter
+ * @returns {Object} Success or error result
+ * @callable_function This function will be exposed to the LLM
+ */
+function error_function(param) {
   // This function will throw an error when executed
   if (!param) {
     throw new Error("Missing required parameter");
@@ -341,15 +315,19 @@ def test_function_error_handling(page: Page, serve_hacka_re, api_key):
     # Check for validation result
     validation_result = page.locator("#function-validation-result")
     expect(validation_result).to_be_visible()
-    expect(validation_result).to_contain_text("Function validated successfully")
+    expect(validation_result).to_contain_text("Library validated successfully")
     
     # Submit the form
     page.locator("#function-editor-form button[type='submit']").click()
     
     # Add a function that will time out
-    function_name.fill("timeout_function")
-    
-    function_code.fill("""function timeout_function() {
+    function_code.fill("""/**
+ * Function that simulates a timeout
+ * @description Tests timeout handling for long-running operations
+ * @returns {Object} Success message (but should time out)
+ * @callable_function This function will be exposed to the LLM
+ */
+function timeout_function() {
   // This function will simulate a long-running operation
   return new Promise(resolve => {
     setTimeout(() => {
@@ -362,15 +340,21 @@ def test_function_error_handling(page: Page, serve_hacka_re, api_key):
     page.locator("#function-validate-btn").click()
     
     # Check for validation result
-    expect(validation_result).to_contain_text("Function validated successfully")
+    validation_result = page.locator("#function-validation-result")
+    expect(validation_result).to_be_visible()
+    expect(validation_result).to_contain_text("Library validated successfully")
     
     # Submit the form
     page.locator("#function-editor-form button[type='submit']").click()
     
     # Add a function that returns non-serializable result
-    function_name.fill("non_serializable")
-    
-    function_code.fill("""function non_serializable() {
+    function_code.fill("""/**
+ * Function that returns a non-serializable result
+ * @description Tests error handling for circular references
+ * @returns {Object} A circular reference object that can't be serialized
+ * @callable_function This function will be exposed to the LLM
+ */
+function non_serializable() {
   // This function returns a non-serializable result
   const obj = {};
   obj.circular = obj; // Create circular reference
@@ -381,7 +365,9 @@ def test_function_error_handling(page: Page, serve_hacka_re, api_key):
     page.locator("#function-validate-btn").click()
     
     # Check for validation result
-    expect(validation_result).to_contain_text("Function validated successfully")
+    validation_result = page.locator("#function-validation-result")
+    expect(validation_result).to_be_visible()
+    expect(validation_result).to_contain_text("Library validated successfully")
     
     # Submit the form
     page.locator("#function-editor-form button[type='submit']").click()
@@ -431,12 +417,17 @@ def test_rc4_encryption_functions(page: Page, serve_hacka_re, api_key):
     function_modal = page.locator("#function-modal")
     expect(function_modal).to_be_visible()
     
-    # Add the encrypt function
-    function_name = page.locator("#function-name")
-    function_name.fill("rc4_encrypt")
-    
+    # Add all RC4 encryption functions at once
     function_code = page.locator("#function-code")
-    function_code.fill("""function rc4_encrypt(plaintext, key) {
+    function_code.fill("""/**
+ * RC4 encryption function
+ * @description Encrypts plaintext using RC4 algorithm
+ * @param {string} plaintext - Text to encrypt
+ * @param {string} key - Encryption key
+ * @returns {Object} Encryption result
+ * @callable_function This function will be exposed to the LLM
+ */
+function rc4_encrypt(plaintext, key) {
   // This function uses the RC4Utils module to encrypt data
   if (!plaintext || !key) {
     throw new Error("Both plaintext and key are required");
@@ -456,23 +447,17 @@ def test_rc4_encryption_functions(page: Page, serve_hacka_re, api_key):
       error: error.message
     };
   }
-}""")
-    
-    # Validate the function
-    page.locator("#function-validate-btn").click()
-    
-    # Check for validation result
-    validation_result = page.locator("#function-validation-result")
-    expect(validation_result).to_be_visible()
-    expect(validation_result).to_contain_text("Function validated successfully")
-    
-    # Submit the form
-    page.locator("#function-editor-form button[type='submit']").click()
-    
-    # Add the decrypt function
-    function_name.fill("rc4_decrypt")
-    
-    function_code.fill("""function rc4_decrypt(ciphertext, key) {
+}
+
+/**
+ * RC4 decryption function
+ * @description Decrypts ciphertext using RC4 algorithm
+ * @param {string} ciphertext - Text to decrypt
+ * @param {string} key - Decryption key
+ * @returns {Object} Decryption result
+ * @callable_function This function will be exposed to the LLM
+ */
+function rc4_decrypt(ciphertext, key) {
   // This function uses the RC4Utils module to decrypt data
   if (!ciphertext || !key) {
     throw new Error("Both ciphertext and key are required");
@@ -492,21 +477,15 @@ def test_rc4_encryption_functions(page: Page, serve_hacka_re, api_key):
       error: error.message
     };
   }
-}""")
-    
-    # Validate the function
-    page.locator("#function-validate-btn").click()
-    
-    # Check for validation result
-    expect(validation_result).to_contain_text("Function validated successfully")
-    
-    # Submit the form
-    page.locator("#function-editor-form button[type='submit']").click()
-    
-    # Add the test implementation function
-    function_name.fill("rc4_test")
-    
-    function_code.fill("""function rc4_test() {
+}
+
+/**
+ * RC4 test function
+ * @description Tests the RC4 implementation with known test vectors
+ * @returns {Object} Test results
+ * @callable_function This function will be exposed to the LLM
+ */
+function rc4_test() {
   // This function tests the RC4 implementation
   try {
     const result = RC4Utils.testImplementation();
@@ -523,7 +502,9 @@ def test_rc4_encryption_functions(page: Page, serve_hacka_re, api_key):
     page.locator("#function-validate-btn").click()
     
     # Check for validation result
-    expect(validation_result).to_contain_text("Function validated successfully")
+    validation_result = page.locator("#function-validation-result")
+    expect(validation_result).to_be_visible()
+    expect(validation_result).to_contain_text("Library validated successfully")
     
     # Submit the form
     page.locator("#function-editor-form button[type='submit']").click()
@@ -574,11 +555,14 @@ def test_function_enable_disable(page: Page, serve_hacka_re, api_key):
     expect(function_modal).to_be_visible()
     
     # Add a test function
-    function_name = page.locator("#function-name")
-    function_name.fill("test_function")
-    
     function_code = page.locator("#function-code")
-    function_code.fill("""function test_function() {
+    function_code.fill("""/**
+ * Simple test function
+ * @description A basic function for testing enable/disable functionality
+ * @returns {Object} Success status
+ * @callable_function This function will be exposed to the LLM
+ */
+function test_function() {
   return { success: true };
 }""")
     

@@ -286,31 +286,51 @@
                     
                     <div class="function-editor">
                         <div class="function-editor-header">
-                            <h4 class="function-editor-title">Save Function</h4>
+                            <h4 class="function-editor-title">Function Library</h4>
                         </div>
                         <form id="function-editor-form">
-                            <div class="form-group">
+                            <div class="form-group" style="display: none;">
                                 <label for="function-name">Function Name</label>
-                                <input type="text" id="function-name" class="function-name-input" placeholder="Enter a name for this function" required tabindex="1">
+                                <input type="text" id="function-name" class="function-name-input" placeholder="Enter a name for this function">
                             </div>
                             <div class="form-group">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <label for="function-code">JavaScript Function</label>
+                                    <label for="function-code">JavaScript Functions</label>
                                     <button type="button" id="copy-function-code-btn" class="icon-btn" title="Copy function code">
                                         <i class="fas fa-copy"></i>
                                     </button>
                                 </div>
-                                <textarea id="function-code" class="function-code-editor" placeholder="async function getCurrentTimeInBerlin() {
+                                <p class="form-help">Define multiple functions in one editor. Mark functions with <code>@callable_function</code> in JSDoc comments to expose them to the LLM.</p>
+                                <textarea id="function-code" class="function-code-editor" placeholder="/**
+ * Helper function that formats data (not exposed to LLM)
+ * @param {Object} data - The data to format
+ * @returns {string} Formatted data
+ */
+function formatData(data) {
+  return JSON.stringify(data, null, 2);
+}
+
+/**
+ * Gets the current time in Berlin
+ * @description Fetches the current time for Berlin timezone
+ * @returns {Object} Current time information
+ * @callable_function This function will be exposed to the LLM
+ */
+async function getCurrentTimeInBerlin() {
   try {
     const response = await fetch('https://worldtimeapi.org/api/timezone/Europe/Berlin');
     if (!response.ok) {
       throw new Error(`API request failed with status ${response.status}`);
     }
-    return await response.json();
+    const data = await response.json();
+    return {
+      time: data.datetime,
+      formatted: formatData(data)
+    };
   } catch (error) {
     return { error: error.message };
   }
-}" required tabindex="2"></textarea>
+}" required tabindex="2" style="height: 300px;"></textarea>
                                 <div id="function-validation-result" class="function-validation-result">
                                     Validation result will appear here
                                 </div>
@@ -325,9 +345,9 @@
                                 </div>
                             </div>
                             <div class="form-actions">
-                                <button type="submit" class="btn primary-btn" tabindex="3">Save Function</button>
+                                <button type="submit" class="btn primary-btn" tabindex="3">Save Functions</button>
                                 <button type="button" id="function-validate-btn" class="btn secondary-btn" tabindex="4">Validate</button>
-                                <button type="button" id="function-clear-btn" class="btn secondary-btn" tabindex="5">Clear</button>
+                                <button type="button" id="function-clear-btn" class="btn secondary-btn" tabindex="5">Reset</button>
                             </div>
                         </form>
                     </div>
