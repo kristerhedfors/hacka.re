@@ -8,7 +8,18 @@ import unittest
 import json
 import yaml
 
-from hacka_re_verifier.src.config import Config
+import sys
+import os
+
+# Add the parent directory to the Python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+try:
+    # Try importing from the installed package
+    from hacka_re_verifier.src import Config
+except ImportError:
+    # Fall back to relative import
+    from src import Config
 
 
 class TestConfig(unittest.TestCase):
@@ -70,7 +81,7 @@ class TestConfig(unittest.TestCase):
     def test_load_json_config(self):
         """Test loading configuration from a JSON file."""
         # Create a temporary JSON configuration file
-        with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix='.json', mode='w', delete=False) as f:
             json.dump({
                 'output_dir': 'custom_reports',
                 'modules': {
@@ -98,7 +109,7 @@ class TestConfig(unittest.TestCase):
     def test_load_yaml_config(self):
         """Test loading configuration from a YAML file."""
         # Create a temporary YAML configuration file
-        with tempfile.NamedTemporaryFile(suffix='.yaml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix='.yaml', mode='w', delete=False) as f:
             yaml.dump({
                 'output_dir': 'custom_reports',
                 'modules': {
