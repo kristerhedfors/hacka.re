@@ -39,9 +39,25 @@ def configure_api_key_and_model(page, api_key):
     api_key_input = page.locator("#api-key-update")
     api_key_input.fill(api_key)
     
-    # Select Groq Cloud as the API provider (known to support function calling)
+    # Get OPENAI_API_BASE and OPENAI_API_MODEL from conftest.py
+    import sys
+    import os
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+    from conftest import OPENAI_API_BASE, OPENAI_API_MODEL
+    
+    # Select OpenAI as the API provider
     base_url_select = page.locator("#base-url-select")
-    base_url_select.select_option("groq")
+    base_url_select.select_option("openai")
+    
+    # Set custom base URL if needed
+    if OPENAI_API_BASE and OPENAI_API_BASE != "https://api.openai.com/v1":
+        # Click the custom option
+        base_url_select.select_option("custom")
+        
+        # Wait for the custom base URL input to appear
+        custom_base_url_input = page.locator("#custom-base-url")
+        custom_base_url_input.fill(OPENAI_API_BASE)
+        print(f"Set custom base URL to: {OPENAI_API_BASE}")
     
     # Click the reload models button
     reload_button = page.locator("#model-reload-btn")

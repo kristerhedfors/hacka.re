@@ -5,8 +5,10 @@ from dotenv import load_dotenv
 
 # Load environment variables from .env file in the current directory
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
-# Get API key from environment variables
-API_KEY = os.getenv("OPENAI_API_KEY")
+# Get API key, model, and base URL from environment variables
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_API_MODEL = os.getenv("OPENAI_API_MODEL", "o4-mini")
+OPENAI_API_BASE = os.getenv("OPENAI_API_BASE", "https://api.openai.com/v1")
 
 @pytest.fixture(scope="function")
 def page(browser):
@@ -58,6 +60,6 @@ def serve_hacka_re(page):
 @pytest.fixture(scope="function")
 def api_key():
     """Fixture to provide the API key."""
-    if not API_KEY:
+    if not OPENAI_API_KEY:
         pytest.skip("API key is required for function calling tests")
-    return API_KEY
+    return OPENAI_API_KEY
