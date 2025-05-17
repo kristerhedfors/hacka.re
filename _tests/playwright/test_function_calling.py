@@ -53,7 +53,7 @@ def test_function_calling_ui(page: Page, serve_hacka_re, api_key):
  * @param {string} param1 - First parameter
  * @param {string} param2 - Second parameter
  * @returns {Object} The result object
- * @callable_function This function will be exposed to the LLM
+ * @tool This function will be exposed to the LLM
  */
 function test_function(param1, param2) {
   return {
@@ -227,7 +227,7 @@ def test_function_calling_integration(page: Page, serve_hacka_re, api_key):
  * @param {string} location - The location to get weather for
  * @param {string} unit - The temperature unit (celsius or fahrenheit)
  * @returns {Object} Weather information
- * @callable_function This function will be exposed to the LLM
+ * @callable This function will be exposed to the LLM
  */
 function get_weather(location, unit = "celsius") {
   return {
@@ -299,7 +299,7 @@ def test_function_error_handling(page: Page, serve_hacka_re, api_key):
  * @description Tests error handling when a required parameter is missing
  * @param {string} param - Required parameter
  * @returns {Object} Success or error result
- * @callable_function This function will be exposed to the LLM
+ * @tool This function will be exposed to the LLM
  */
 function error_function(param) {
   // This function will throw an error when executed
@@ -325,7 +325,7 @@ function error_function(param) {
  * Function that simulates a timeout
  * @description Tests timeout handling for long-running operations
  * @returns {Object} Success message (but should time out)
- * @callable_function This function will be exposed to the LLM
+ * @callable This function will be exposed to the LLM
  */
 function timeout_function() {
   // This function will simulate a long-running operation
@@ -352,7 +352,7 @@ function timeout_function() {
  * Function that returns a non-serializable result
  * @description Tests error handling for circular references
  * @returns {Object} A circular reference object that can't be serialized
- * @callable_function This function will be exposed to the LLM
+ * @tool This function will be exposed to the LLM
  */
 function non_serializable() {
   // This function returns a non-serializable result
@@ -425,7 +425,7 @@ def test_rc4_encryption_functions(page: Page, serve_hacka_re, api_key):
  * @param {string} plaintext - Text to encrypt
  * @param {string} key - Encryption key
  * @returns {Object} Encryption result
- * @callable_function This function will be exposed to the LLM
+ * @tool This function will be exposed to the LLM
  */
 function rc4_encrypt(plaintext, key) {
   // This function uses the RC4Utils module to encrypt data
@@ -455,7 +455,7 @@ function rc4_encrypt(plaintext, key) {
  * @param {string} ciphertext - Text to decrypt
  * @param {string} key - Decryption key
  * @returns {Object} Decryption result
- * @callable_function This function will be exposed to the LLM
+ * @callable This function will be exposed to the LLM
  */
 function rc4_decrypt(ciphertext, key) {
   // This function uses the RC4Utils module to decrypt data
@@ -483,7 +483,7 @@ function rc4_decrypt(ciphertext, key) {
  * RC4 test function
  * @description Tests the RC4 implementation with known test vectors
  * @returns {Object} Test results
- * @callable_function This function will be exposed to the LLM
+ * @tool This function will be exposed to the LLM
  */
 function rc4_test() {
   // This function tests the RC4 implementation
@@ -560,7 +560,7 @@ def test_function_enable_disable(page: Page, serve_hacka_re, api_key):
  * Simple test function
  * @description A basic function for testing enable/disable functionality
  * @returns {Object} Success status
- * @callable_function This function will be exposed to the LLM
+ * @tool This function will be exposed to the LLM
  */
 function test_function() {
   return { success: true };
