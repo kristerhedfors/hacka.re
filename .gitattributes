@@ -1,0 +1,6 @@
+# Mark hacka_re_verifier templates as vendored to prevent GitHub from treating them as Jekyll templates
+hacka_re_verifier/src/report_generation/templates/* linguist-vendored
+
+# Explicitly mark template files to be excluded from Jekyll processing
+hacka_re_verifier/src/report_generation/templates/report.md linguist-language=Jinja
+hacka_re_verifier/src/report_generation/templates/report.html linguist-language=Jinja
