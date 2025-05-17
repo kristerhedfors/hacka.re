@@ -30,8 +30,8 @@
         
         console.assert(defaultTitle === "hacka.re", 
             `Default title should be "hacka.re", got "${defaultTitle}"`);
-        console.assert(defaultSubtitle === "För hackare, av hackare", 
-            `Default subtitle should be "För hackare, av hackare", got "${defaultSubtitle}"`);
+        console.assert(defaultSubtitle === "Free, open, för hackare, av hackare", 
+            `Default subtitle should be "Free, open, för hackare, av hackare", got "${defaultSubtitle}"`);
         
         // Test saving and retrieving custom values
         const testTitle = "Test Title";
@@ -50,7 +50,7 @@
         
         // Reset to defaults for other tests
         StorageService.saveTitle("hacka.re");
-        StorageService.saveSubtitle("För hackare, av hackare");
+        StorageService.saveSubtitle("Free, open, för hackare, av hackare");
         
         console.log('Storage functions test completed.');
     }

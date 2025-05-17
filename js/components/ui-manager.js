@@ -123,7 +123,7 @@ window.UIManager = (function() {
             const currentTitle = StorageService.getTitle();
             const currentSubtitle = StorageService.getSubtitle();
             const defaultTitle = "hacka.re";
-            const defaultSubtitle = "För hackare av hackare";
+            const defaultSubtitle = "Free, open, för hackare av hackare";
             
             // Set title input - use placeholder for default values, actual value for custom values
             if (elements.shareTitleInput) {

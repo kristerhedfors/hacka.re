@@ -61,7 +61,7 @@
                     <p>This is a tooltip</p>
                 </div>
             </span></h1>
-            <p class="tagline">För hackare, av hackare.</p>
+            <p class="tagline">Free, open, för hackare, av hackare.</p>
         </div>
     </div>
     
@@ -86,7 +86,7 @@
                     <p>This is a tooltip</p>
                 </div>
             </span></h1>
-            <p class="tagline">För hackare, av hackare.</p>
+            <p class="tagline">Free, open, för hackare, av hackare.</p>
         </div>
     </div>
     
@@ -115,7 +115,7 @@
             const title = StorageService.getTitle();
             const subtitle = StorageService.getSubtitle();
             const defaultTitle = "hacka.re";
-            const defaultSubtitle = "För hackare, av hackare";
+            const defaultSubtitle = "Free, open, för hackare, av hackare";
             
             // Check if title and subtitle are unchanged (blank or default)
             const isTitleDefault = !title || title === defaultTitle;
@@ -179,7 +179,7 @@
         
         document.getElementById('reset-btn').addEventListener('click', function() {
             document.getElementById('title-input').value = 'hacka.re';
-            document.getElementById('subtitle-input').value = 'För hackare, av hackare';
+            document.getElementById('subtitle-input').value = 'Free, open, för hackare, av hackare';
             updateTitleAndSubtitle();
         });
         
