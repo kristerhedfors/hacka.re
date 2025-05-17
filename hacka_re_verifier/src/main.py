@@ -10,13 +10,40 @@ import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
-from .config import Config
-from .static_analysis.analyzer import StaticAnalyzer
-from .network_analysis.monitor import NetworkMonitor
-from .crypto_audit.auditor import CryptoAuditor
-from .storage_analysis.storage_checker import StorageChecker
-from .dependency_verification.dependency_checker import DependencyChecker
-from .report_generation.report_generator import ReportGenerator
+# Add the parent directory to the Python path when run as a script
+if __name__ == '__main__':
+    import os
+    import sys
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+try:
+    # Try importing from the installed package
+    from hacka_re_verifier.src.config import Config
+    from hacka_re_verifier.src.static_analysis import StaticAnalyzer
+    from hacka_re_verifier.src.network_analysis import NetworkMonitor
+    from hacka_re_verifier.src.crypto_audit import CryptoAuditor
+    from hacka_re_verifier.src.storage_analysis import StorageChecker
+    from hacka_re_verifier.src.dependency_verification import DependencyChecker
+    from hacka_re_verifier.src.report_generation import ReportGenerator
+except ImportError:
+    # Fall back to relative imports
+    try:
+        from .config import Config
+        from .static_analysis import StaticAnalyzer
+        from .network_analysis import NetworkMonitor
+        from .crypto_audit import CryptoAuditor
+        from .storage_analysis import StorageChecker
+        from .dependency_verification import DependencyChecker
+        from .report_generation import ReportGenerator
+    except ImportError:
+        # Fall back to absolute imports when run as a script
+        from src.config import Config
+        from src.static_analysis import StaticAnalyzer
+        from src.network_analysis import NetworkMonitor
+        from src.crypto_audit import CryptoAuditor
+        from src.storage_analysis import StorageChecker
+        from src.dependency_verification import DependencyChecker
+        from src.report_generation import ReportGenerator
 
 
 # Configure logging

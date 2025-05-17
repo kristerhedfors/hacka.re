@@ -39,7 +39,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'hacka-re-verifier=hacka_re_verifier.src.main:main',
+            'hacka-re-verifier=hacka_re_verifier.src:main',
         ],
     },
     classifiers=[

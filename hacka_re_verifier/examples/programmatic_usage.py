@@ -11,13 +11,24 @@ from pathlib import Path
 # Add the parent directory to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from hacka_re_verifier.src.config import Config
-from hacka_re_verifier.src.static_analysis.analyzer import StaticAnalyzer
-from hacka_re_verifier.src.network_analysis.monitor import NetworkMonitor
-from hacka_re_verifier.src.crypto_audit.auditor import CryptoAuditor
-from hacka_re_verifier.src.storage_analysis.storage_checker import StorageChecker
-from hacka_re_verifier.src.dependency_verification.dependency_checker import DependencyChecker
-from hacka_re_verifier.src.report_generation.report_generator import ReportGenerator
+try:
+    # Try importing from the installed package
+    from hacka_re_verifier.src import Config
+    from hacka_re_verifier.src.static_analysis import StaticAnalyzer
+    from hacka_re_verifier.src.network_analysis import NetworkMonitor
+    from hacka_re_verifier.src.crypto_audit import CryptoAuditor
+    from hacka_re_verifier.src.storage_analysis import StorageChecker
+    from hacka_re_verifier.src.dependency_verification import DependencyChecker
+    from hacka_re_verifier.src.report_generation import ReportGenerator
+except ImportError:
+    # Fall back to relative import
+    from src import Config
+    from src.static_analysis import StaticAnalyzer
+    from src.network_analysis import NetworkMonitor
+    from src.crypto_audit import CryptoAuditor
+    from src.storage_analysis import StorageChecker
+    from src.dependency_verification import DependencyChecker
+    from src.report_generation import ReportGenerator
 
 
 def main():
