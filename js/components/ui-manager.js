@@ -336,6 +336,29 @@ window.UIManager = (function() {
                 }
             }
             
+            // Add function library if selected
+            if (elements.shareFunctionLibraryCheckbox && elements.shareFunctionLibraryCheckbox.checked) {
+                // Get functions from FunctionToolsService
+                const functions = FunctionToolsService.getJsFunctions();
+                const enabledFunctions = FunctionToolsService.getEnabledFunctionNames();
+                
+                if (functions) {
+                    // Estimate the length of the functions
+                    Object.keys(functions).forEach(functionName => {
+                        const functionData = functions[functionName];
+                        // Add length of function code and tool definition
+                        estimatedLength += functionData.code.length + 
+                                          JSON.stringify(functionData.toolDefinition).length + 
+                                          functionName.length + 50; // 50 for JSON overhead
+                    });
+                }
+                
+                if (enabledFunctions && enabledFunctions.length > 0) {
+                    // Estimate the length of the enabled function names
+                    estimatedLength += enabledFunctions.join(',').length + 20; // 20 for JSON overhead
+                }
+            }
+            
             // Add conversation data if selected
             if (elements.shareConversationCheckbox && elements.shareConversationCheckbox.checked && messages.length > 0) {
                 const messageCount = parseInt(elements.messageHistoryCount.value, 10) || 1;
