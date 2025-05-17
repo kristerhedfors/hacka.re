@@ -325,7 +325,7 @@ function get_weather(location, units = "metric") {
                 const callableFunctions = functions.filter(func => func.isCallable);
                 
                 if (callableFunctions.length === 0) {
-                    showValidationResult('No callable functions found. By default, all functions are callable unless at least one function is tagged with @callable or @tool (equivalent)', 'warning');
+                    showValidationResult('No callable functions found. By default, all functions are callable unless at least one function is tagged with @callable or @tool (equivalent), or if functions are marked with @internal (which makes only non-@internal functions callable)', 'warning');
                     // Still return success, but with a warning
                     return { 
                         success: true,
@@ -521,6 +521,9 @@ function get_weather(location, units = "metric") {
                 // Keep track of added callable functions
                 const addedFunctions = [];
                 
+                // Generate a unique group ID for this set of functions
+                const groupId = 'group_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                
                 // First, add all auxiliary functions (non-callable)
                 const auxiliaryFunctions = validation.functions.filter(func => !func.isCallable);
                 auxiliaryFunctions.forEach(func => {
@@ -539,7 +542,8 @@ function get_weather(location, units = "metric") {
                                     required: []
                                 }
                             }
-                        }
+                        },
+                        groupId // Pass the group ID to associate all functions
                     );
                 });
                 
@@ -550,7 +554,8 @@ function get_weather(location, units = "metric") {
                     const success = FunctionToolsService.addJsFunction(
                         func.name, 
                         func.code, 
-                        validation.toolDefinitions[index]
+                        validation.toolDefinitions[index],
+                        groupId // Pass the group ID to associate all functions
                     );
                     
                     if (success) {
@@ -590,7 +595,7 @@ function get_weather(location, units = "metric") {
                 }
             } else {
                 // No callable functions found
-                showValidationResult('No callable functions found. By default, all functions are callable unless at least one function is tagged with @callable or @tool (equivalent)', 'warning');
+                showValidationResult('No callable functions found. By default, all functions are callable unless at least one function is tagged with @callable or @tool (equivalent), or if functions are marked with @internal (which makes only non-@internal functions callable)', 'warning');
             }
         }
         
@@ -648,11 +653,57 @@ function get_weather(location, units = "metric") {
             const functionNames = Object.keys(functions);
             
             if (editingFunctionName && functions[editingFunctionName]) {
-                // If we're editing a function, reload just that function
-                loadFunctionIntoEditor(editingFunctionName, functions[editingFunctionName]);
+                // If we're editing a function, reload just that function and its related functions
+                
+                // Get all functions in the same group
+                const relatedFunctions = FunctionToolsService.getFunctionsInSameGroup(editingFunctionName);
+                
+                // If we have related functions, combine them
+                if (relatedFunctions.length > 1) {
+                    // Sort the functions to ensure consistent order
+                    relatedFunctions.sort();
+                    
+                    // Combine the code of all related functions
+                    const combinedCode = relatedFunctions
+                        .filter(name => functions[name]) // Ensure the function exists
+                        .map(name => functions[name].code)
+                        .join('\n\n');
+                    
+                    if (elements.functionCode) {
+                        elements.functionCode.value = combinedCode;
+                        
+                        // Trigger any event listeners that might be attached to the code editor
+                        const event = new Event('input', { bubbles: true });
+                        elements.functionCode.dispatchEvent(event);
+                    }
+                } else {
+                    // If no related functions, just load this function
+                    loadFunctionIntoEditor(editingFunctionName, functions[editingFunctionName]);
+                }
             } else if (functionNames.length > 0) {
-                // If we have active functions, combine them into one code block
-                const combinedCode = functionNames.map(name => functions[name].code).join('\n\n');
+                // If we have active functions, we need to group them by their group IDs
+                const functionGroups = {};
+                
+                // Group functions by their group ID
+                functionNames.forEach(name => {
+                    const relatedFunctions = FunctionToolsService.getFunctionsInSameGroup(name);
+                    const groupKey = relatedFunctions.sort().join(','); // Use sorted function names as key
+                    
+                    if (!functionGroups[groupKey]) {
+                        functionGroups[groupKey] = relatedFunctions;
+                    }
+                });
+                
+                // Get unique groups
+                const uniqueGroups = Object.values(functionGroups);
+                
+                // Combine code from each group
+                const combinedCode = uniqueGroups.map(group => {
+                    return group
+                        .filter(name => functions[name]) // Ensure the function exists
+                        .map(name => functions[name].code)
+                        .join('\n\n');
+                }).join('\n\n\n');
                 
                 if (elements.functionCode) {
                     elements.functionCode.value = combinedCode;
@@ -711,16 +762,20 @@ function get_weather(location, units = "metric") {
                 const normalizedCode = code.replace(/^[ \t]+/gm, '');
                 
                 // Find all function declarations in the code
-                // This regex captures the JSDoc comment (if any) and the function declaration
-                const functionRegex = /(\/\*\*[\s\S]*?\*\/\s*)?(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(([^)]*)\)[\s\S]*?(?=\/\*\*[\s\S]*?function|\s*function\s+[a-zA-Z_$]|\s*$)/g;
+                // This regex captures the JSDoc comment (if any), any single-line comment before the function, and the function declaration
+                // The improved regex better handles multiple functions with JSDoc comments
+                const functionRegex = /(\/\*\*[\s\S]*?\*\/\s*)?(\/\/.*?(?:\n\s*|$))?(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(([^)]*)\)[\s\S]*?(?=\/\*\*|\s*\/\/|\s*function\s+[a-zA-Z_$]|\s*$)/g;
+                
+                console.log('Extracting functions with regex:', functionRegex.source);
                 
                 const functions = [];
                 let match;
                 
                 while ((match = functionRegex.exec(normalizedCode)) !== null) {
                     const jsDoc = match[1] || '';
-                    const functionName = match[2];
-                    const params = match[3];
+                    const singleLineComment = match[2] || '';
+                    const functionName = match[3];
+                    const params = match[4];
                     
                     // Get the full function code by finding the opening brace and matching closing brace
                     const functionStartIndex = match.index + (jsDoc ? jsDoc.length : 0);
@@ -750,36 +805,126 @@ function get_weather(location, units = "metric") {
                     // Extract the full function code including JSDoc
                     const fullFunctionCode = (jsDoc || '') + functionDeclaration.substring(0, endIndex);
                     
-                    // Check if the function is marked as callable with any of the supported markers
-                    // in JSDoc comments: @callable_function, @callable, @tool
+                // Check if the function is marked as callable with any of the supported markers
+                // in JSDoc comments: @callable_function, @callable, @tool
+                const hasCallableMarker = jsDoc && (
+                    jsDoc.includes('@callable_function') || 
+                    jsDoc.includes('@callable') || 
+                    jsDoc.includes('@tool')
+                );
+                
+                // Check for single-line comments with @callable or @tool
+                // This will match both "// @callable" and "// @tool"
+                const hasSingleLineCommentMarker = singleLineComment && 
+                    (singleLineComment.includes('@callable') || singleLineComment.includes('@tool'));
+                
+                // Check if the function is marked as internal
+                // This is a critical check that determines if a function should be excluded from callable functions
+                const hasInternalMarker = (jsDoc && jsDoc.includes('@internal')) || 
+                    (singleLineComment && singleLineComment.includes('@internal'));
+                
+                // Initialize isCallable to false for internal functions, undefined for others
+                // This ensures internal functions are never callable unless explicitly marked
+                const initialIsCallable = hasInternalMarker ? false : undefined;
+                
+                // Debug logging to help diagnose parsing issues
+                console.log(`Function ${functionName} parsing:`, {
+                    jsDoc: jsDoc ? jsDoc.substring(0, 50) + '...' : 'none',
+                    singleLineComment: singleLineComment ? singleLineComment.trim() : 'none',
+                    hasCallableMarker,
+                    hasSingleLineCommentMarker,
+                    hasInternalMarker
+                });
+                
+                // We don't need to check for comments within the function body anymore
+                // as they should be captured by the singleLineComment group
+                // This was causing issues with detecting comments meant for other functions
+                
+                // Mark as callable if it has any of the markers
+                // If it has a callable/tool marker, that takes precedence over @internal
+                // Otherwise, use the initialIsCallable value (false for internal functions)
+                const isCallable = hasCallableMarker || hasSingleLineCommentMarker || initialIsCallable;
+                    
+                    functions.push({
+                        name: functionName,
+                        code: fullFunctionCode,
+                        isCallable: isCallable,
+                        isInternal: hasInternalMarker
+                    });
+                }
+                
+                // Check if any function has a callable marker
+                const hasAnyCallableMarker = functions.some(func => {
+                    // Check if this function has a callable marker
+                    const functionCode = func.code;
+                    
+                    // Extract JSDoc comments
+                    const jsDoc = functionCode.match(/\/\*\*[\s\S]*?\*\//)?.[0] || '';
+                    
+                    // Extract all single-line comments
+                    const singleLineComments = functionCode.match(/\/\/.*?(?:\n|$)/g) || [];
+                    
+                    // Check JSDoc for callable markers
                     const hasCallableMarker = jsDoc && (
                         jsDoc.includes('@callable_function') || 
                         jsDoc.includes('@callable') || 
                         jsDoc.includes('@tool')
                     );
                     
-                    // Also check for single-line comments with @callable or @tool at the beginning of a line
-                    const hasSingleLineMarker = fullFunctionCode.match(/^\/\/\s*@(callable|tool)/m) !== null;
+                    // Check all single-line comments for markers
+                    const hasSingleLineCommentMarker = singleLineComments.some(comment => 
+                        comment.includes('@callable') || comment.includes('@tool')
+                    );
                     
-                    // Mark as callable if it has any of the markers
-                    const isCallable = hasCallableMarker || hasSingleLineMarker;
+                    // Check for internal markers
+                    const hasInternalMarker = jsDoc.includes('@internal') || 
+                        singleLineComments.some(comment => comment.includes('@internal'));
                     
-                    functions.push({
-                        name: functionName,
-                        code: fullFunctionCode,
-                        isCallable: isCallable
+                    // Debug logging for callable markers
+                    console.log(`Checking callable markers for ${func.name}:`, {
+                        jsDoc: jsDoc ? 'present' : 'none',
+                        singleLineComments: singleLineComments.length > 0 ? singleLineComments.join(' | ') : 'none',
+                        hasCallableMarker,
+                        hasSingleLineCommentMarker
                     });
-                }
+                    
+                    return hasCallableMarker || hasSingleLineCommentMarker;
+                });
                 
-                // Check if any function has a callable marker
-                const hasAnyCallableMarker = functions.some(func => func.isCallable);
+                // Check if any function has an internal marker
+                const hasAnyInternalMarker = functions.some(func => func.isInternal);
                 
-                // If no function has a callable marker, mark all as callable
+                // If no function has a callable marker:
                 if (!hasAnyCallableMarker && functions.length > 0) {
-                    functions.forEach(func => {
-                        func.isCallable = true;
-                    });
+                    // If there are any @internal markers, mark all functions as callable EXCEPT those marked as @internal
+                    if (hasAnyInternalMarker) {
+                        functions.forEach(func => {
+                            // Only set isCallable if it hasn't been explicitly set already
+                            if (func.isCallable === undefined) {
+                                func.isCallable = !func.isInternal;
+                            }
+                            
+                            // Debug logging for internal markers
+                            console.log(`Setting callable status for ${func.name}:`, {
+                                isInternal: func.isInternal,
+                                isCallable: func.isCallable
+                            });
+                        });
+                    } else {
+                        // If no @internal markers either, mark all as callable (original behavior)
+                        functions.forEach(func => {
+                            func.isCallable = true;
+                        });
+                    }
                 }
+                // If at least one function has a callable marker, only those explicitly marked remain callable
+                // (the @internal tag has no effect in this case as it's already the default for non-tagged functions)
+                
+                // Log the final callable status
+                console.log('Final callable status:', functions.map(f => `${f.name} (callable: ${f.isCallable})`));
+                
+                // Log the functions and their callable status for debugging
+                console.log('Extracted functions:', functions.map(f => `${f.name} (callable: ${f.isCallable})`));
                 
                 return functions;
             } catch (error) {
