@@ -120,15 +120,75 @@ window.UIUtils = (function() {
             
             // Create tooltip with function result type, value, and copy button
             // Only include a copy button for the result value, not for the function name
-            const escapedResult = escapeHTML(decodedResult).replace(/'/g, "\\'");
+            
+            // For the copy button, use a properly formatted JSON string for objects and arrays
+            let copyText = decodedResult;
+            try {
+                if (resultType === 'object' || resultType === 'array') {
+                    // Parse and re-stringify to ensure proper JSON formatting
+                    const resultValue = JSON.parse(decodedResult);
+                    copyText = JSON.stringify(resultValue, null, 2);
+                }
+            } catch (e) {
+                console.error('Error formatting result for copy:', e);
+                // Fall back to the raw decoded result
+                copyText = decodedResult;
+            }
+            
+            // Create a unique ID for this result to use with a data attribute instead of inline content
+            const resultId = `result_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+            
+            // Store the result in a global object that can be accessed by the copy function
+            if (!window.functionResults) {
+                window.functionResults = {};
+            }
+            window.functionResults[resultId] = copyText;
+            
+            // Use the ID instead of trying to escape the content for the data attribute
+            const copyButtonHtml = `<button class="tooltip-copy-btn" data-result-id="${resultId}" data-copy-message="Function result value copied to clipboard">Copy</button>`;
+            
+            // Add event listener for this specific button (will be attached when the HTML is added to the DOM)
+            setTimeout(() => {
+                const copyBtn = document.querySelector(`button[data-result-id="${resultId}"]`);
+                if (copyBtn) {
+                    copyBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const textToCopy = window.functionResults[resultId];
+                        if (textToCopy) {
+                            copyToClipboardWithNotification(textToCopy, "Function result value copied to clipboard", this);
+                        }
+                    });
+                }
+            }, 100);
+            
+            // For display, show more of the value for complex types
+            let displayValueHtml = escapeHTML(displayValue);
+            if (resultType === 'object' || resultType === 'array') {
+                try {
+                    // For objects and arrays, show a more detailed preview
+                    const resultValue = JSON.parse(decodedResult);
+                    // Format with indentation for better readability
+                    const formattedJson = JSON.stringify(resultValue, null, 2);
+                    // Limit to 300 characters for display, but show more than before
+                    const truncatedJson = formattedJson.length > 300 
+                        ? formattedJson.substring(0, 297) + '...' 
+                        : formattedJson;
+                    // Use pre tag to preserve formatting
+                    displayValueHtml = `<pre style="max-height: 200px; overflow-y: auto; margin: 5px 0;">${escapeHTML(truncatedJson)}</pre>`;
+                } catch (e) {
+                    console.error('Error formatting display value:', e);
+                    // Fall back to the simple escaped display value
+                }
+            }
             
             return `<span class="function-result-icon ${colorClass}">
-                <span class="function-icon-tooltip">
+                <span class="function-icon-tooltip" style="max-width: 400px;">
                     <div>Function result: ${escapeHTML(functionName)}</div>
                     <div>Type: ${escapeHTML(resultType)}</div>
                     <div>
-                        Value: <strong>${escapeHTML(displayValue)}</strong><br>
-                        <button class="tooltip-copy-btn" data-copy-text="${escapedResult}" data-copy-message="Function result value copied to clipboard">Copy</button>
+                        Value: <strong>${displayValueHtml}</strong><br>
+                        ${copyButtonHtml}
                     </div>
                 </span>
             </span>`;
@@ -594,12 +654,93 @@ window.UIUtils = (function() {
         }, 2000);
     }
     
-    // Initialize copy buttons when the DOM is loaded
+    /**
+     * Initialize tooltip behavior for function icons
+     * This ensures tooltips stay visible when moving from icon to tooltip
+     */
+    function initTooltipBehavior() {
+        console.log('Initializing tooltip behavior');
+        
+        // Use event delegation to handle mouseenter/mouseleave events
+        document.addEventListener('mouseenter', function(event) {
+            // Check if the target is a function icon or its tooltip
+            if (event.target.classList.contains('function-call-icon') || 
+                event.target.classList.contains('function-result-icon') ||
+                event.target.closest('.function-icon-tooltip')) {
+                
+                // Find the tooltip
+                let tooltip;
+                if (event.target.classList.contains('function-call-icon') || 
+                    event.target.classList.contains('function-result-icon')) {
+                    tooltip = event.target.querySelector('.function-icon-tooltip');
+                } else {
+                    tooltip = event.target.closest('.function-icon-tooltip');
+                }
+                
+                // Make sure tooltip stays visible
+                if (tooltip) {
+                    tooltip.style.opacity = '1';
+                    tooltip.style.pointerEvents = 'auto';
+                }
+            }
+        }, true);
+        
+        document.addEventListener('mouseleave', function(event) {
+            // Check if we're leaving a function icon and not entering its tooltip
+            if ((event.target.classList.contains('function-call-icon') || 
+                 event.target.classList.contains('function-result-icon')) &&
+                !event.relatedTarget?.closest('.function-icon-tooltip')) {
+                
+                // Find the tooltip
+                const tooltip = event.target.querySelector('.function-icon-tooltip');
+                
+                // Add a delay before hiding the tooltip
+                if (tooltip) {
+                    setTimeout(() => {
+                        // Only hide if the mouse is not over the tooltip
+                        if (!tooltip.matches(':hover')) {
+                            tooltip.style.opacity = '0';
+                            tooltip.style.pointerEvents = 'none';
+                        }
+                    }, 300);
+                }
+            }
+            
+            // Check if we're leaving a tooltip and not entering its parent icon
+            if (event.target.closest('.function-icon-tooltip') &&
+                !event.relatedTarget?.classList.contains('function-call-icon') &&
+                !event.relatedTarget?.classList.contains('function-result-icon') &&
+                !event.relatedTarget?.closest('.function-icon-tooltip')) {
+                
+                // Find the tooltip
+                const tooltip = event.target.closest('.function-icon-tooltip');
+                
+                // Hide the tooltip after a delay
+                if (tooltip) {
+                    setTimeout(() => {
+                        // Only hide if the mouse is not over the tooltip or its parent icon
+                        if (!tooltip.matches(':hover')) {
+                            tooltip.style.opacity = '0';
+                            tooltip.style.pointerEvents = 'none';
+                        }
+                    }, 300);
+                }
+            }
+        }, true);
+        
+        console.log('Tooltip behavior event listeners initialized');
+    }
+    
+    // Initialize copy buttons and tooltip behavior when the DOM is loaded
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initCopyButtons);
+        document.addEventListener('DOMContentLoaded', function() {
+            initCopyButtons();
+            initTooltipBehavior();
+        });
     } else {
         // DOM already loaded, initialize immediately
         initCopyButtons();
+        initTooltipBehavior();
     }
     
     // Public API
