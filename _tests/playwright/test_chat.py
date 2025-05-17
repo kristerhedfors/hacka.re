@@ -1,9 +1,8 @@
 import pytest
 import time
-import json
 import os
 from dotenv import load_dotenv
-from playwright.sync_api import Page, expect, Route, Request
+from playwright.sync_api import Page, expect
 
 from test_utils import dismiss_welcome_modal, dismiss_settings_modal, check_system_messages
 
@@ -24,8 +23,6 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
     # Dismiss settings modal if already open
     dismiss_settings_modal(page)
     
-    # No waiting - everything should be immediate
-    
     # Click the settings button
     settings_button = page.locator("#settings-btn")
     settings_button.click(timeout=1000)
@@ -33,13 +30,13 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
     # Wait for the settings modal to become visible
     page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
     
-    # Enter the Groq Cloud API key from .env
+    # Enter the OpenAI API key from .env
     api_key_input = page.locator("#api-key-update")
     api_key_input.fill(API_KEY)
     
-    # Select Groq Cloud as the API provider
+    # Select OpenAI as the API provider
     base_url_select = page.locator("#base-url-select")
-    base_url_select.select_option("groq")
+    base_url_select.select_option("openai")
     
     # Click the reload models button
     reload_button = page.locator("#model-reload-btn")
