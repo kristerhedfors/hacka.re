@@ -44,7 +44,39 @@ window.ModelInfoService = (function() {
         
         // Groq models
         'compound-beta': 128 * 1024,
-        'compound-beta-mini': 128 * 1024
+        'compound-beta-mini': 128 * 1024,
+        
+        // OpenAI models - Comprehensive list with accurate context window sizes
+        'gpt-4.1': 1048576,
+        'gpt-4.1-mini': 1048576,
+        'gpt-4.1-nano': 1048576,
+        'gpt-4.5': 128000,
+        'gpt-4o': 128000,
+        'gpt-4o-mini': 128000,
+        'gpt-4': 8192,
+        'gpt-4-32k': 32768,
+        'gpt-4-turbo': 128000,
+        'gpt-4-vision-preview': 128000,
+        'gpt-3.5-turbo': 4096,
+        'gpt-3.5-turbo-16k': 16384,
+        'gpt-3.5-turbo-instruct': 4096,
+        'o1': 200000,
+        'o1-mini': 128000,
+        'o1-pro': 200000,
+        'o3': 128000,
+        'o3-mini': 200000,
+        'o4-mini': 128000,
+        'text-embedding-ada-002': 8191,
+        'text-embedding-3-small': 8192,
+        'text-embedding-3-large': 8192,
+        'dall-e-2': 4000,
+        'dall-e-3': 4000,
+        'whisper-1': 25 * 1024 * 1024, // 25MB audio input
+        'gpt-4o-transcribe': 25 * 1024 * 1024, // audio input
+        'gpt-4o-mini-transcribe': 25 * 1024 * 1024, // audio input
+        'gpt-4o-mini-tts': 4096, // text input
+        'tts-1': 4096, // text input
+        'tts-1-hd': 4096 // text input
     };
 
     /**

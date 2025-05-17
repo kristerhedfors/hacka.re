@@ -61,23 +61,17 @@ window.PromptsManager = (function() {
             
             // Get context window size for the current model
             const currentModel = StorageService.getModel();
-            const modelInfo = window.ModelInfoService.modelInfo;
-            let contextSize = 8192; // Default to 8K if not specified
             
-            if (modelInfo[currentModel]) {
-                // Get context_window property from model info
-                if (modelInfo[currentModel].context_window) {
-                    contextSize = modelInfo[currentModel].context_window;
-                } else if (modelInfo[currentModel].contextWindow && modelInfo[currentModel].contextWindow !== '-') {
-                    // Fallback to contextWindow property if available
-                    // Parse context window size (e.g., "128K" -> 131072)
-                    const sizeStr = String(modelInfo[currentModel].contextWindow);
-                    if (sizeStr.toLowerCase && sizeStr.toLowerCase().endsWith('k')) {
-                        contextSize = parseInt(sizeStr) * 1024;
-                    } else {
-                        contextSize = parseInt(String(sizeStr).replace(/,/g, ''));
-                    }
-                }
+            // Use ModelInfoService.getContextSize to get the context window size
+            // This will check both the API-provided model info and the hardcoded context window sizes
+            let contextSize = window.ModelInfoService.getContextSize(currentModel);
+            
+            // Default to 8K if not specified
+            if (!contextSize) {
+                contextSize = 8192;
+                console.log(`No context size found for model ${currentModel}, defaulting to ${contextSize}`);
+            } else {
+                console.log(`Using context size ${contextSize} for model ${currentModel}`);
             }
             
             // Calculate percentage
