@@ -8,10 +8,12 @@ window.FunctionToolsService = (function() {
     const FUNCTION_TOOLS_ENABLED_KEY = 'function_tools_enabled';
     const JS_FUNCTIONS_KEY = 'js_functions';
     const ENABLED_FUNCTIONS_KEY = 'enabled_functions';
+    const FUNCTION_GROUPS_KEY = 'function_groups';
     
     // Registry of JavaScript functions
     let jsFunctions = {};
     let enabledFunctions = [];
+    let functionGroups = {}; // Maps function names to group IDs
     
     /**
      * Check if function tools are enabled
@@ -69,6 +71,11 @@ window.FunctionToolsService = (function() {
         if (storedEnabledFunctions) {
             enabledFunctions = storedEnabledFunctions;
         }
+        
+        const storedFunctionGroups = CoreStorageService.getValue(FUNCTION_GROUPS_KEY);
+        if (storedFunctionGroups) {
+            functionGroups = storedFunctionGroups;
+        }
     }
     
     /**
@@ -77,6 +84,7 @@ window.FunctionToolsService = (function() {
     function saveJsFunctions() {
         CoreStorageService.setValue(JS_FUNCTIONS_KEY, jsFunctions);
         CoreStorageService.setValue(ENABLED_FUNCTIONS_KEY, enabledFunctions);
+        CoreStorageService.setValue(FUNCTION_GROUPS_KEY, functionGroups);
     }
     
     /**
@@ -84,12 +92,18 @@ window.FunctionToolsService = (function() {
      * @param {string} name - The name of the function
      * @param {string} code - The JavaScript function code
      * @param {Object} toolDefinition - The tool definition generated from the function
+     * @param {string} groupId - Optional group ID to associate functions that were defined together
      * @returns {boolean} Whether the function was added successfully
      */
-    function addJsFunction(name, code, toolDefinition) {
+    function addJsFunction(name, code, toolDefinition, groupId) {
         // Validate inputs
         if (!name || !code || !toolDefinition) {
             return false;
+        }
+        
+        // Generate a group ID if not provided
+        if (!groupId) {
+            groupId = 'group_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         }
         
         // Add the function to the registry
@@ -98,6 +112,9 @@ window.FunctionToolsService = (function() {
             toolDefinition: toolDefinition
         };
         
+        // Associate the function with its group
+        functionGroups[name] = groupId;
+        
         // Save to storage
         saveJsFunctions();
         
@@ -105,16 +122,37 @@ window.FunctionToolsService = (function() {
     }
     
     /**
-     * Remove a JavaScript function
+     * Remove a JavaScript function and all functions in its group
      * @param {string} name - The name of the function to remove
      * @returns {boolean} Whether the function was removed successfully
      */
     function removeJsFunction(name) {
         if (jsFunctions[name]) {
-            delete jsFunctions[name];
+            // Get the group ID for this function
+            const groupId = functionGroups[name];
             
-            // Also remove from enabled functions if present
-            enabledFunctions = enabledFunctions.filter(funcName => funcName !== name);
+            if (groupId) {
+                // Find all functions in the same group
+                const functionsInGroup = Object.keys(functionGroups).filter(
+                    funcName => functionGroups[funcName] === groupId
+                );
+                
+                // Remove all functions in the group
+                functionsInGroup.forEach(funcName => {
+                    delete jsFunctions[funcName];
+                    delete functionGroups[funcName];
+                    
+                    // Also remove from enabled functions if present
+                    enabledFunctions = enabledFunctions.filter(fn => fn !== funcName);
+                });
+            } else {
+                // If no group ID (legacy data), just remove this function
+                delete jsFunctions[name];
+                delete functionGroups[name];
+                
+                // Also remove from enabled functions if present
+                enabledFunctions = enabledFunctions.filter(funcName => funcName !== name);
+            }
             
             // Save to storage
             saveJsFunctions();
@@ -599,6 +637,22 @@ window.FunctionToolsService = (function() {
     // Initialize
     loadJsFunctions();
     
+    /**
+     * Get all functions in the same group as the specified function
+     * @param {string} name - The name of the function
+     * @returns {Array} Array of function names in the same group
+     */
+    function getFunctionsInSameGroup(name) {
+        if (!functionGroups[name]) {
+            return [name]; // Return just this function if no group info
+        }
+        
+        const groupId = functionGroups[name];
+        return Object.keys(functionGroups).filter(
+            funcName => functionGroups[funcName] === groupId
+        );
+    }
+    
     // Public API
     return {
         isFunctionToolsEnabled,
@@ -615,6 +669,7 @@ window.FunctionToolsService = (function() {
         getToolDefinitions, // Deprecated
         executeJsFunction,
         processToolCalls,
-        generateToolDefinition
+        generateToolDefinition,
+        getFunctionsInSameGroup
     };
 })();
