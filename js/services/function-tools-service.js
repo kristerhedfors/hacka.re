@@ -256,11 +256,25 @@ window.FunctionToolsService = (function() {
             // Create a function constructor with limited scope
             const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
             
-                // Create the function with the sandbox as its scope
+            // Include all functions in the execution environment
+            let allFunctionsCode = '';
+            
+            // First add all non-callable functions (auxiliary functions)
+            for (const funcName in jsFunctions) {
+                if (funcName !== name) {  // Skip the function we're calling, we'll add it last
+                    allFunctionsCode += jsFunctions[funcName].code + '\n\n';
+                }
+            }
+            
+            // Then add the function we're calling
+            allFunctionsCode += functionData.code;
+            
+            // Create the function with the sandbox as its scope
             const func = new AsyncFunction(
                 ...Object.keys(sandbox),
                 `
-                ${functionData.code}
+                // Include all functions in the execution environment
+                ${allFunctionsCode}
                 
                 // Since we already know the function name (it's the 'name' parameter),
                 // we can directly call it without trying to extract it from the code

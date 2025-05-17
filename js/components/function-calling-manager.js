@@ -71,12 +71,22 @@ window.FunctionCallingManager = (function() {
          */
         function getDefaultFunctionCode() {
             return `/**
+ * Formats a number with commas as thousands separators
+ * This is an auxiliary function that won't be exposed to the LLM
+ * @param {number} num - The number to format
+ * @returns {string} The formatted number
+ */
+function formatNumber(num) {
+  return num.toString().replace(/\\B(?=(\\d{3})+(?!\\d))/g, ",");
+}
+
+/**
  * Multiplies two numbers together
  * @description A simple function that multiplies two numbers and returns the result
  * @param {number} a - The first number to multiply
  * @param {number} b - The second number to multiply
  * @returns {Object} IMPORTANT: Always return an object, not a primitive value.
- *                   Returning a primitive value may cause issues with tool calling.
+ * @callable_function This function will be exposed to the LLM for tool calling
  */
 function multiply_numbers(a, b) {
   // Validate inputs are numbers
@@ -90,11 +100,35 @@ function multiply_numbers(a, b) {
   // Perform the multiplication
   const result = a * b;
   
+  // Format the result using the auxiliary function
+  const formattedResult = formatNumber(result);
+  
   // IMPORTANT: Always return an object, not a primitive value like 'return result'
   // Returning a primitive value may cause issues with tool calling
   return {
     result: result,
+    formattedResult: formattedResult,
     success: true
+  };
+}
+
+/**
+ * Gets the current weather for a location
+ * @description Fetches current weather data for the specified location
+ * @param {string} location - The location to get weather for
+ * @param {string} units - The units to use (metric or imperial)
+ * @returns {Object} Weather information
+ * @callable_function This function will be exposed to the LLM for tool calling
+ */
+function get_weather(location, units = "metric") {
+  // This is just a mock implementation
+  return {
+    location: location,
+    temperature: 22,
+    units: units,
+    condition: "Sunny",
+    humidity: "45%",
+    formatted_temp: formatNumber(22) + (units === "metric" ? "°C" : "°F")
   };
 }`;
         }
@@ -156,9 +190,18 @@ function multiply_numbers(a, b) {
                 elements.emptyFunctionState.style.display = 'none';
             }
             
-            // Create function items
+            // Create function items - only show callable functions
             functionNames.forEach(name => {
                 const functionSpec = functions[name];
+                
+                // Skip auxiliary functions (those with description indicating they're not exposed to LLM)
+                if (functionSpec.toolDefinition && 
+                    functionSpec.toolDefinition.function && 
+                    functionSpec.toolDefinition.function.description &&
+                    functionSpec.toolDefinition.function.description.includes('(not exposed to LLM)')) {
+                    return;
+                }
+                
                 const isEnabled = FunctionToolsService.isJsFunctionEnabled(name);
                 
                 const functionItem = document.createElement('div');
@@ -243,28 +286,15 @@ function multiply_numbers(a, b) {
         }
         
         /**
-         * Validate the function code
-         * @returns {Object} Validation result with success, message, and tool definition
+         * Validate the function library code
+         * @returns {Object} Validation result with success, message, and extracted functions
          */
         function validateFunction() {
-            const name = elements.functionName.value.trim();
             const code = elements.functionCode.value.trim();
             
             // Reset validation result and tool definition
             hideValidationResult();
             hideToolDefinition();
-            
-            // Validate name
-            if (!name) {
-                showValidationResult('Function name is required', 'error');
-                return { success: false };
-            }
-            
-            // Check if name follows JavaScript naming conventions
-            if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name)) {
-                showValidationResult('Invalid function name. Must start with a letter, underscore, or $ and contain only letters, numbers, underscores, or $', 'error');
-                return { success: false };
-            }
             
             // Validate code
             if (!code) {
@@ -273,48 +303,58 @@ function multiply_numbers(a, b) {
             }
             
             try {
-                // Check if the code is a valid function - normalize indentation
-                const normalizedCode = code.replace(/^[ \t]+/gm, '');
-                // Allow comments and whitespace before the function declaration
-                const functionMatch = normalizedCode.match(/(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\([^)]*\)/);
-                if (!functionMatch) {
-                    showValidationResult('Invalid function format. Must be a named function declaration like: function funcName(a, b) { ... }', 'error');
-                    return { success: false };
-                }
-                
-                const functionName = functionMatch[1];
-                
-                // Check if the function name matches the provided name
-                if (functionName !== name) {
-                    showValidationResult(`Function name in code (${functionName}) does not match the provided name (${name})`, 'error');
-                    return { success: false };
-                }
-                
-                // Check for basic syntax errors by trying to parse the function
+                // Check for basic syntax errors by trying to parse the code
                 try {
                     // Use Function constructor to check for syntax errors
                     // This won't execute the code, just parse it
                     new Function(code);
                 } catch (syntaxError) {
-                    showValidationResult(`Syntax error in function: ${syntaxError.message}`, 'error');
+                    showValidationResult(`Syntax error in code: ${syntaxError.message}`, 'error');
                     return { success: false };
                 }
                 
-                // Try to extract function parameters and description using Function.toString()
-                const toolDefinition = generateToolDefinition(name, code);
+                // Extract all functions from the code
+                const functions = extractFunctions(code);
                 
-                // Show the tool definition
-                showToolDefinition(toolDefinition);
+                if (functions.length === 0) {
+                    showValidationResult('No functions found in the code', 'error');
+                    return { success: false };
+                }
+                
+                // Count callable functions
+                const callableFunctions = functions.filter(func => func.isCallable);
+                
+                if (callableFunctions.length === 0) {
+                    showValidationResult('No callable functions found. Add @callable_function to JSDoc comments to mark functions as callable.', 'warning');
+                    // Still return success, but with a warning
+                    return { 
+                        success: true,
+                        functions: functions,
+                        warning: true
+                    };
+                }
+                
+                // Generate tool definitions for callable functions
+                const toolDefinitions = callableFunctions.map(func => 
+                    generateToolDefinition(func.name, func.code)
+                );
+                
+                // Show the first tool definition as an example
+                if (toolDefinitions.length > 0) {
+                    showToolDefinition(toolDefinitions[0]);
+                }
                 
                 // Show success message
-                showValidationResult('Function validated successfully!', 'success');
+                showValidationResult(`Library validated successfully! Found ${functions.length} functions, ${callableFunctions.length} marked as callable.`, 'success');
                 
                 return { 
                     success: true, 
-                    toolDefinition 
+                    functions: functions,
+                    callableFunctions: callableFunctions,
+                    toolDefinitions: toolDefinitions
                 };
             } catch (error) {
-                showValidationResult(`Error validating function: ${error.message}`, 'error');
+                showValidationResult(`Error validating function library: ${error.message}`, 'error');
                 return { success: false };
             }
         }
@@ -452,59 +492,94 @@ function multiply_numbers(a, b) {
         }
         
         /**
-         * Handle adding or updating a function
+         * Handle adding or updating functions
          * @param {Event} event - The form submit event
          */
         function handleAddFunction(event) {
             event.preventDefault();
             
-            // Validate the function first
+            // Validate the function library first
             const validation = validateFunction();
             
             if (!validation.success) {
                 return;
             }
             
-            const name = elements.functionName.value.trim();
             const code = elements.functionCode.value.trim();
             
-            let success;
-            let message;
-            
-            // Check if we're editing an existing function or adding a new one
+            // If we're in edit mode, handle it differently
             if (editingFunctionName) {
-                // If the name has changed (shouldn't happen due to readonly, but just in case)
-                if (editingFunctionName !== name) {
-                    // Remove the old function
-                    FunctionToolsService.removeJsFunction(editingFunctionName);
-                }
-                
-                // Update the function
-                success = FunctionToolsService.addJsFunction(name, code, validation.toolDefinition);
-                message = `Function "${name}" updated successfully.`;
+                // Remove the old function
+                FunctionToolsService.removeJsFunction(editingFunctionName);
                 
                 // Reset editing flag
                 editingFunctionName = null;
-            } else {
-                // Add new function
-                success = FunctionToolsService.addJsFunction(name, code, validation.toolDefinition);
-                message = `Function "${name}" added successfully.`;
             }
             
-            if (success) {
-                // Enable the function by default
-                FunctionToolsService.enableJsFunction(name);
+            // Process all functions
+            if (validation.functions && validation.functions.length > 0) {
+                // Keep track of added callable functions
+                const addedFunctions = [];
+                
+                // First, add all auxiliary functions (non-callable)
+                const auxiliaryFunctions = validation.functions.filter(func => !func.isCallable);
+                auxiliaryFunctions.forEach(func => {
+                    // Add the function but don't enable it for tool calling
+                    FunctionToolsService.addJsFunction(
+                        func.name, 
+                        func.code, 
+                        { // Create a minimal tool definition for auxiliary functions
+                            type: 'function',
+                            function: {
+                                name: func.name,
+                                description: `Auxiliary function ${func.name} (not exposed to LLM)`,
+                                parameters: {
+                                    type: 'object',
+                                    properties: {},
+                                    required: []
+                                }
+                            }
+                        }
+                    );
+                });
+                
+                // Then add callable functions
+                const callableFunctions = validation.callableFunctions || [];
+                callableFunctions.forEach((func, index) => {
+                    // Add the function
+                    const success = FunctionToolsService.addJsFunction(
+                        func.name, 
+                        func.code, 
+                        validation.toolDefinitions[index]
+                    );
+                    
+                    if (success) {
+                        // Enable the function by default
+                        FunctionToolsService.enableJsFunction(func.name);
+                        addedFunctions.push(func.name);
+                    }
+                });
                 
                 // Render updated list
                 renderFunctionList();
                 
                 // Add system message
                 if (addSystemMessage) {
-                    addSystemMessage(`Function "${name}" ${editingFunctionName ? 'updated' : 'added'} and enabled for tool calling.`);
+                    if (addedFunctions.length === 1) {
+                        addSystemMessage(`Function "${addedFunctions[0]}" added and enabled for tool calling.`);
+                    } else if (addedFunctions.length > 1) {
+                        addSystemMessage(`${addedFunctions.length} functions added and enabled for tool calling: ${addedFunctions.join(', ')}`);
+                    }
                 }
                 
                 // Show success message
-                showValidationResult(message, 'success');
+                if (addedFunctions.length === 1) {
+                    showValidationResult(`Function "${addedFunctions[0]}" added successfully.`, 'success');
+                } else if (addedFunctions.length > 1) {
+                    showValidationResult(`${addedFunctions.length} functions added successfully.`, 'success');
+                } else {
+                    showValidationResult('No functions were added. Please check your code.', 'error');
+                }
                 
                 // Keep the function in the editor for further editing
                 // Focus back on the function code field for further editing
@@ -514,7 +589,8 @@ function multiply_numbers(a, b) {
                     }, 100);
                 }
             } else {
-                showValidationResult(`Failed to ${editingFunctionName ? 'update' : 'add'} function. Please check the function code.`, 'error');
+                // No callable functions found
+                showValidationResult('No callable functions found. Add @callable_function to JSDoc comments to mark functions as callable.', 'warning');
             }
         }
         
@@ -561,38 +637,139 @@ function multiply_numbers(a, b) {
         }
         
         /**
-         * Clear the function editor
+         * Reset the function editor to the currently active functions
          */
         function clearFunctionEditor() {
-            // Reset editing flag
-            editingFunctionName = null;
-            
-            if (elements.functionName) {
-                elements.functionName.value = '';
-                // Remove auto-completed styling and make editable
-                elements.functionName.classList.remove('auto-completed');
-                elements.functionName.removeAttribute('readonly');
-            }
-            
-            if (elements.functionCode) {
-                elements.functionCode.value = getDefaultFunctionCode();
-                // Extract function name from default code
-                setTimeout(extractFunctionName, 100);
-            }
-            
             hideValidationResult();
             hideToolDefinition();
             
-            // Focus back on the function name field
-            if (elements.functionName) {
+            // Get all functions
+            const functions = FunctionToolsService.getJsFunctions();
+            const functionNames = Object.keys(functions);
+            
+            if (editingFunctionName && functions[editingFunctionName]) {
+                // If we're editing a function, reload just that function
+                loadFunctionIntoEditor(editingFunctionName, functions[editingFunctionName]);
+            } else if (functionNames.length > 0) {
+                // If we have active functions, combine them into one code block
+                const combinedCode = functionNames.map(name => functions[name].code).join('\n\n');
+                
+                if (elements.functionCode) {
+                    elements.functionCode.value = combinedCode;
+                    
+                    // Trigger any event listeners that might be attached to the code editor
+                    const event = new Event('input', { bubbles: true });
+                    elements.functionCode.dispatchEvent(event);
+                }
+                
+                // Reset editing flag
+                editingFunctionName = null;
+                
+                if (elements.functionName) {
+                    elements.functionName.value = '';
+                    // Remove auto-completed styling and make editable
+                    elements.functionName.classList.remove('auto-completed');
+                    elements.functionName.removeAttribute('readonly');
+                }
+            } else {
+                // If no active functions, use the default function code
+                if (elements.functionCode) {
+                    elements.functionCode.value = getDefaultFunctionCode();
+                    // Extract function name from default code
+                    setTimeout(extractFunctionName, 100);
+                }
+                
+                // Reset editing flag
+                editingFunctionName = null;
+                
+                if (elements.functionName) {
+                    elements.functionName.value = '';
+                    // Remove auto-completed styling and make editable
+                    elements.functionName.classList.remove('auto-completed');
+                    elements.functionName.removeAttribute('readonly');
+                }
+            }
+            
+            // Focus back on the function code field
+            if (elements.functionCode) {
                 setTimeout(() => {
-                    elements.functionName.focus();
+                    elements.functionCode.focus();
                 }, 100);
             }
         }
         
         /**
+         * Extract all functions from code
+         * @param {string} code - The code to extract functions from
+         * @returns {Array} Array of function objects with name, code, and isCallable properties
+         */
+        function extractFunctions(code) {
+            if (!code) return [];
+            
+            try {
+                // Normalize indentation
+                const normalizedCode = code.replace(/^[ \t]+/gm, '');
+                
+                // Find all function declarations in the code
+                // This regex captures the JSDoc comment (if any) and the function declaration
+                const functionRegex = /(\/\*\*[\s\S]*?\*\/\s*)?(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(([^)]*)\)[\s\S]*?(?=\/\*\*[\s\S]*?function|\s*function\s+[a-zA-Z_$]|\s*$)/g;
+                
+                const functions = [];
+                let match;
+                
+                while ((match = functionRegex.exec(normalizedCode)) !== null) {
+                    const jsDoc = match[1] || '';
+                    const functionName = match[2];
+                    const params = match[3];
+                    
+                    // Get the full function code by finding the opening brace and matching closing brace
+                    const functionStartIndex = match.index + (jsDoc ? jsDoc.length : 0);
+                    const functionDeclaration = normalizedCode.substring(functionStartIndex);
+                    
+                    // Find the function body by matching braces
+                    let braceCount = 0;
+                    let endIndex = 0;
+                    let foundOpeningBrace = false;
+                    
+                    for (let i = 0; i < functionDeclaration.length; i++) {
+                        const char = functionDeclaration[i];
+                        
+                        if (char === '{') {
+                            foundOpeningBrace = true;
+                            braceCount++;
+                        } else if (char === '}') {
+                            braceCount--;
+                            
+                            if (foundOpeningBrace && braceCount === 0) {
+                                endIndex = i + 1;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Extract the full function code including JSDoc
+                    const fullFunctionCode = (jsDoc || '') + functionDeclaration.substring(0, endIndex);
+                    
+                    // Check if the function is marked as callable
+                    const isCallable = jsDoc && jsDoc.includes('@callable_function');
+                    
+                    functions.push({
+                        name: functionName,
+                        code: fullFunctionCode,
+                        isCallable: isCallable
+                    });
+                }
+                
+                return functions;
+            } catch (error) {
+                console.error('Error extracting functions:', error);
+                return [];
+            }
+        }
+        
+        /**
          * Extract function name from code and auto-fill the function name field
+         * This is kept for backward compatibility with the single function editor
          */
         function extractFunctionName() {
             if (!elements.functionCode || !elements.functionName) return;
@@ -601,18 +778,15 @@ function multiply_numbers(a, b) {
             if (!code) return;
             
             try {
-                // Normalize indentation
-                const normalizedCode = code.replace(/^[ \t]+/gm, '');
+                // Extract all functions from the code
+                const functions = extractFunctions(code);
                 
-                // First, try to find a function declaration anywhere in the code
-                // This will work even if there are JSDoc comments or other code before the function
-                const functionMatch = normalizedCode.match(/(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\([^)]*\)/);
-                
-                if (functionMatch) {
-                    const functionName = functionMatch[1];
+                // If we found at least one function, use the first one
+                if (functions.length > 0) {
+                    const firstFunction = functions[0];
                     
                     // Auto-fill the function name field
-                    elements.functionName.value = functionName;
+                    elements.functionName.value = firstFunction.name;
                     
                     // Add auto-completed class to style the field
                     elements.functionName.classList.add('auto-completed');
