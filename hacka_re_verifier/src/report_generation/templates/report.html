@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>hacka.re Verification Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1, h2, h3, h4 {
+            color: #2c3e50;
+        }
+        h1 {
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            border-bottom: 1px solid #3498db;
+            padding-bottom: 5px;
+            margin-top: 30px;
+        }
+        .summary {
+            background-color: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .score {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .good {
+            color: #27ae60;
+        }
+        .warning {
+            color: #f39c12;
+        }
+        .danger {
+            color: #e74c3c;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .issue {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .critical {
+            background-color: #ffebee;
+            border-left: 5px solid #e74c3c;
+        }
+        .high {
+            background-color: #fff8e1;
+            border-left: 5px solid #f39c12;
+        }
+        .medium {
+            background-color: #e3f2fd;
+            border-left: 5px solid #3498db;
+        }
+        .low {
+            background-color: #e8f5e9;
+            border-left: 5px solid #27ae60;
+        }
+        .recommendation {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+        }
+        .code {
+            font-family: monospace;
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        .chart {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .chart img {
+            max-width: 100%;
+            height: auto;
+        }
+        .screenshot {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .screenshot img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            font-size: 14px;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>hacka.re Verification Report</h1>
+        
+        <div class="summary">
+            <h2>Executive Summary</h2>
+            <p>This report presents the results of a comprehensive verification of the hacka.re project's privacy and security claims.</p>
+            
+            <h3>Overall Scores</h3>
+            <table>
+                <tr>
+                    <th>Category</th>
+                    <th>Score</th>
+                    <th>Rating</th>
+                </tr>
+                {% if 'static_analysis' in results %}
+                <tr>
+                    <td>Security (Static Analysis)</td>
+                    <td class="score {% if results.static_analysis.summary.security_score >= 90 %}good{% elif results.static_analysis.summary.security_score >= 70 %}warning{% else %}danger{% endif %}">
+                        {{ results.static_analysis.summary.security_score }}/100
+                    </td>
+                    <td>
+                        {% if results.static_analysis.summary.security_score >= 90 %}
+                            Excellent
+                        {% elif results.static_analysis.summary.security_score >= 80 %}
+                            Good
+                        {% elif results.static_analysis.summary.security_score >= 70 %}
+                            Satisfactory
+                        {% elif results.static_analysis.summary.security_score >= 60 %}
+                            Needs Improvement
+                        {% else %}
+                            Critical Issues
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endif %}
+                
+                {% if 'network_analysis' in results %}
+                <tr>
+                    <td>Privacy (Network Analysis)</td>
+                    <td class="score {% if results.network_analysis.summary.privacy_score >= 90 %}good{% elif results.network_analysis.summary.privacy_score >= 70 %}warning{% else %}danger{% endif %}">
+                        {{ results.network_analysis.summary.privacy_score }}/100
+                    </td>
+                    <td>
+                        {% if results.network_analysis.summary.privacy_score >= 90 %}
+                            Excellent
+                        {% elif results.network_analysis.summary.privacy_score >= 80 %}
+                            Good
+                        {% elif results.network_analysis.summary.privacy_score >= 70 %}
+                            Satisfactory
+                        {% elif results.network_analysis.summary.privacy_score >= 60 %}
+                            Needs Improvement
+                        {% else %}
+                            Critical Issues
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endif %}
+                
+                {% if 'crypto_audit' in results %}
+                <tr>
+                    <td>Cryptography</td>
+                    <td class="score {% if results.crypto_audit.summary.crypto_score >= 90 %}good{% elif results.crypto_audit.summary.crypto_score >= 70 %}warning{% else %}danger{% endif %}">
+                        {{ results.crypto_audit.summary.crypto_score }}/100
+                    </td>
+                    <td>
+                        {% if results.crypto_audit.summary.crypto_score >= 90 %}
+                            Excellent
+                        {% elif results.crypto_audit.summary.crypto_score >= 80 %}
+                            Good
+                        {% elif results.crypto_audit.summary.crypto_score >= 70 %}
+                            Satisfactory
+                        {% elif results.crypto_audit.summary.crypto_score >= 60 %}
+                            Needs Improvement
+                        {% else %}
+                            Critical Issues
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endif %}
+                
+                {% if 'storage_analysis' in results %}
+                <tr>
+                    <td>Storage Security</td>
+                    <td class="score {% if results.storage_analysis.summary.storage_score >= 90 %}good{% elif results.storage_analysis.summary.storage_score >= 70 %}warning{% else %}danger{% endif %}">
+                        {{ results.storage_analysis.summary.storage_score }}/100
+                    </td>
+                    <td>
+                        {% if results.storage_analysis.summary.storage_score >= 90 %}
+                            Excellent
+                        {% elif results.storage_analysis.summary.storage_score >= 80 %}
+                            Good
+                        {% elif results.storage_analysis.summary.storage_score >= 70 %}
+                            Satisfactory
+                        {% elif results.storage_analysis.summary.storage_score >= 60 %}
+                            Needs Improvement
+                        {% else %}
+                            Critical Issues
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endif %}
+                
+                {% if 'dependency_verification' in results %}
+                <tr>
+                    <td>Dependencies</td>
+                    <td class="score {% if results.dependency_verification.summary.dependency_score >= 90 %}good{% elif results.dependency_verification.summary.dependency_score >= 70 %}warning{% else %}danger{% endif %}">
+                        {{ results.dependency_verification.summary.dependency_score }}/100
+                    </td>
+                    <td>
+                        {% if results.dependency_verification.summary.dependency_score >= 90 %}
+                            Excellent
+                        {% elif results.dependency_verification.summary.dependency_score >= 80 %}
+                            Good
+                        {% elif results.dependency_verification.summary.dependency_score >= 70 %}
+                            Satisfactory
+                        {% elif results.dependency_verification.summary.dependency_score >= 60 %}
+                            Needs Improvement
+                        {% else %}
+                            Critical Issues
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endif %}
+                
+                <tr>
+                    <td><strong>Overall</strong></td>
+                    <td class="score {% if overall_score >= 90 %}good{% elif overall_score >= 70 %}warning{% else %}danger{% endif %}">
+                        {{ overall_score }}/100
+                    </td>
+                    <td>
+                        {% if overall_score >= 90 %}
+                            Excellent
+                        {% elif overall_score >= 80 %}
+                            Good
+                        {% elif overall_score >= 70 %}
+                            Satisfactory
+                        {% elif overall_score >= 60 %}
+                            Needs Improvement
+                        {% else %}
+                            Critical Issues
+                        {% endif %}
+                    </td>
+                </tr>
+            </table>
+            
+            <h3>Key Findings</h3>
+            <ul>
+                {% for finding in key_findings %}
+                <li>{{ finding }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <div class="chart">
+            <h2>Score Breakdown</h2>
+            <img src="score_chart.png" alt="Score Breakdown Chart">
+        </div>
+        
+        <h2>Top Recommendations</h2>
+        <div class="recommendations">
+            {% for recommendation in top_recommendations %}
+            <div class="recommendation {% if recommendation.priority == 'critical' %}critical{% elif recommendation.priority == 'high' %}high{% elif recommendation.priority == 'medium' %}medium{% else %}low{% endif %}">
+                <h4>{{ recommendation.message }}</h4>
+                <p><strong>Priority:</strong> {{ recommendation.priority|capitalize }}</p>
+            </div>
+            {% endfor %}
+        </div>
+        
+        {% if 'static_analysis' in results %}
+        <h2>Static Analysis</h2>
+        <div class="summary">
+            <p><strong>Files Analyzed:</strong> {{ results.static_analysis.summary.total_files_analyzed }}</p>
+            <p><strong>Lines Analyzed:</strong> {{ results.static_analysis.summary.total_lines_analyzed }}</p>
+            <p><strong>Issues Found:</strong> {{ results.static_analysis.summary.issues_found }}</p>
+            <p><strong>Security Score:</strong> <span class="score {% if results.static_analysis.summary.security_score >= 90 %}good{% elif results.static_analysis.summary.security_score >= 70 %}warning{% else %}danger{% endif %}">{{ results.static_analysis.summary.security_score }}/100</span></p>
+        </div>
+        
+        {% if results.static_analysis.security_issues %}
+        <h3>Security Issues</h3>
+        {% for issue in results.static_analysis.security_issues %}
+        <div class="issue {{ issue.severity }}">
+            <h4>{{ issue.message }}</h4>
+            <p><strong>Severity:</strong> {{ issue.severity|capitalize }}</p>
+            <p><strong>Type:</strong> {{ issue.type }}</p>
+            {% if issue.details %}
+            <p><strong>Details:</strong> {{ issue.details }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% endif %}
+        
+        {% if results.static_analysis.privacy_issues %}
+        <h3>Privacy Issues</h3>
+        {% for issue in results.static_analysis.privacy_issues %}
+        <div class="issue {{ issue.severity }}">
+            <h4>{{ issue.message }}</h4>
+            <p><strong>Severity:</strong> {{ issue.severity|capitalize }}</p>
+            <p><strong>Type:</strong> {{ issue.type }}</p>
+            {% if issue.details %}
+            <p><strong>Details:</strong> {{ issue.details }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% endif %}
+        
+        {% if results.static_analysis.recommendations %}
+        <h3>Recommendations</h3>
+        {% for recommendation in results.static_analysis.recommendations %}
+        <div class="recommendation {% if recommendation.priority == 'critical' %}critical{% elif recommendation.priority == 'high' %}high{% elif recommendation.priority == 'medium' %}medium{% else %}low{% endif %}">
+            <h4>{{ recommendation.message }}</h4>
+            <p><strong>Priority:</strong> {{ recommendation.priority|capitalize }}</p>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endif %}
+        
+        {% if 'network_analysis' in results %}
+        <h2>Network Analysis</h2>
+        <div class="summary">
+            <p><strong>Total Requests:</strong> {{ results.network_analysis.summary.total_requests }}</p>
+            <p><strong>Allowed Requests:</strong> {{ results.network_analysis.summary.allowed_requests }}</p>
+            <p><strong>Blocked Requests:</strong> {{ results.network_analysis.summary.blocked_requests }}</p>
+            <p><strong>Unknown Requests:</strong> {{ results.network_analysis.summary.unknown_requests }}</p>
+            <p><strong>Privacy Score:</strong> <span class="score {% if results.network_analysis.summary.privacy_score >= 90 %}good{% elif results.network_analysis.summary.privacy_score >= 70 %}warning{% else %}danger{% endif %}">{{ results.network_analysis.summary.privacy_score }}/100</span></p>
+        </div>
+        
+        {% if results.network_analysis.privacy_issues %}
+        <h3>Privacy Issues</h3>
+        {% for issue in results.network_analysis.privacy_issues %}
+        <div class="issue {{ issue.severity }}">
+            <h4>{{ issue.message }}</h4>
+            <p><strong>Severity:</strong> {{ issue.severity|capitalize }}</p>
+            <p><strong>Type:</strong> {{ issue.type }}</p>
+            {% if issue.details %}
+            <p><strong>Details:</strong> {{ issue.details }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% endif %}
+        
+        {% if results.network_analysis.recommendations %}
+        <h3>Recommendations</h3>
+        {% for recommendation in results.network_analysis.recommendations %}
+        <div class="recommendation {% if recommendation.priority == 'critical' %}critical{% elif recommendation.priority == 'high' %}high{% elif recommendation.priority == 'medium' %}medium{% else %}low{% endif %}">
+            <h4>{{ recommendation.message }}</h4>
+            <p><strong>Priority:</strong> {{ recommendation.priority|capitalize }}</p>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endif %}
+        
+        {% if 'crypto_audit' in results %}
+        <h2>Cryptographic Audit</h2>
+        <div class="summary">
+            <p><strong>Files Analyzed:</strong> {{ results.crypto_audit.summary.total_files_analyzed }}</p>
+            <p><strong>Crypto Functions Found:</strong> {{ results.crypto_audit.summary.crypto_functions_found }}</p>
+            <p><strong>Crypto Issues Found:</strong> {{ results.crypto_audit.summary.crypto_issues_found }}</p>
+            <p><strong>Crypto Score:</strong> <span class="score {% if results.crypto_audit.summary.crypto_score >= 90 %}good{% elif results.crypto_audit.summary.crypto_score >= 70 %}warning{% else %}danger{% endif %}">{{ results.crypto_audit.summary.crypto_score }}/100</span></p>
+        </div>
+        
+        {% if results.crypto_audit.crypto_issues %}
+        <h3>Cryptographic Issues</h3>
+        {% for issue in results.crypto_audit.crypto_issues %}
+        <div class="issue {{ issue.severity }}">
+            <h4>{{ issue.message }}</h4>
+            <p><strong>Severity:</strong> {{ issue.severity|capitalize }}</p>
+            <p><strong>Type:</strong> {{ issue.type }}</p>
+            <p><strong>File:</strong> {{ issue.file }}</p>
+            <p><strong>Line:</strong> {{ issue.line }}</p>
+            {% if issue.code %}
+            <div class="code">{{ issue.code }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% endif %}
+        
+        {% if results.crypto_audit.recommendations %}
+        <h3>Recommendations</h3>
+        {% for recommendation in results.crypto_audit.recommendations %}
+        <div class="recommendation {% if recommendation.priority == 'critical' %}critical{% elif recommendation.priority == 'high' %}high{% elif recommendation.priority == 'medium' %}medium{% else %}low{% endif %}">
+            <h4>{{ recommendation.message }}</h4>
+            <p><strong>Priority:</strong> {{ recommendation.priority|capitalize }}</p>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endif %}
+        
+        {% if 'storage_analysis' in results %}
+        <h2>Storage Analysis</h2>
+        <div class="summary">
+            <p><strong>Total Storage Items:</strong> {{ results.storage_analysis.summary.total_storage_items }}</p>
+            <p><strong>Encrypted Items:</strong> {{ results.storage_analysis.summary.encrypted_items }}</p>
+            <p><strong>Unencrypted Items:</strong> {{ results.storage_analysis.summary.unencrypted_items }}</p>
+            <p><strong>Storage Score:</strong> <span class="score {% if results.storage_analysis.summary.storage_score >= 90 %}good{% elif results.storage_analysis.summary.storage_score >= 70 %}warning{% else %}danger{% endif %}">{{ results.storage_analysis.summary.storage_score }}/100</span></p>
+        </div>
+        
+        {% if results.storage_analysis.storage_issues %}
+        <h3>Storage Issues</h3>
+        {% for issue in results.storage_analysis.storage_issues %}
+        <div class="issue {{ issue.severity }}">
+            <h4>{{ issue.message }}</h4>
+            <p><strong>Severity:</strong> {{ issue.severity|capitalize }}</p>
+            <p><strong>Type:</strong> {{ issue.type }}</p>
+            {% if issue.details %}
+            <p><strong>Details:</strong> {{ issue.details }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% endif %}
+        
+        {% if results.storage_analysis.recommendations %}
+        <h3>Recommendations</h3>
+        {% for recommendation in results.storage_analysis.recommendations %}
+        <div class="recommendation {% if recommendation.priority == 'critical' %}critical{% elif recommendation.priority == 'high' %}high{% elif recommendation.priority == 'medium' %}medium{% else %}low{% endif %}">
+            <h4>{{ recommendation.message }}</h4>
+            <p><strong>Priority:</strong> {{ recommendation.priority|capitalize }}</p>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endif %}
+        
+        {% if 'dependency_verification' in results %}
+        <h2>Dependency Verification</h2>
+        <div class="summary">
+            <p><strong>Total Dependencies:</strong> {{ results.dependency_verification.summary.total_dependencies }}</p>
+            <p><strong>Local Dependencies:</strong> {{ results.dependency_verification.summary.local_dependencies }}</p>
+            <p><strong>External Dependencies:</strong> {{ results.dependency_verification.summary.external_dependencies }}</p>
+            <p><strong>Missing Dependencies:</strong> {{ results.dependency_verification.summary.missing_dependencies }}</p>
+            <p><strong>Vulnerable Dependencies:</strong> {{ results.dependency_verification.summary.vulnerable_dependencies }}</p>
+            <p><strong>Dependency Score:</strong> <span class="score {% if results.dependency_verification.summary.dependency_score >= 90 %}good{% elif results.dependency_verification.summary.dependency_score >= 70 %}warning{% else %}danger{% endif %}">{{ results.dependency_verification.summary.dependency_score }}/100</span></p>
+        </div>
+        
+        {% if results.dependency_verification.dependency_issues %}
+        <h3>Dependency Issues</h3>
+        {% for issue in results.dependency_verification.dependency_issues %}
+        <div class="issue {{ issue.severity }}">
+            <h4>{{ issue.message }}</h4>
+            <p><strong>Severity:</strong> {{ issue.severity|capitalize }}</p>
+            <p><strong>Type:</strong> {{ issue.type }}</p>
+            {% if issue.details %}
+            <p><strong>Details:</strong> {{ issue.details }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% endif %}
+        
+        {% if results.dependency_verification.recommendations %}
+        <h3>Recommendations</h3>
+        {% for recommendation in results.dependency_verification.recommendations %}
+        <div class="recommendation {% if recommendation.priority == 'critical' %}critical{% elif recommendation.priority == 'high' %}high{% elif recommendation.priority == 'medium' %}medium{% else %}low{% endif %}">
+            <h4>{{ recommendation.message }}</h4>
+            <p><strong>Priority:</strong> {{ recommendation.priority|capitalize }}</p>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endif %}
+        
+        <div class="footer">
+            <p>Report generated on {{ timestamp }} by hacka.re Verifier</p>
+        </div>
+    </div>
+</body>
+</html>
