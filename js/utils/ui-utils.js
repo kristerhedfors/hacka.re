@@ -302,7 +302,14 @@ window.UIUtils = (function() {
                 console.log(`Got context size ${contextSize} for model ${currentModel} from ModelInfoService.getContextSize`);
             }
             
-            // If we couldn't get a context size, default to 8192
+            // If we couldn't get a context size from ModelInfoService.getContextSize,
+            // try to get it directly from the contextWindowSizes object in ModelInfoService
+            if (!contextSize && window.ModelInfoService && ModelInfoService.contextWindowSizes) {
+                contextSize = ModelInfoService.contextWindowSizes[currentModel];
+                console.log(`Got context size ${contextSize} for model ${currentModel} from ModelInfoService.contextWindowSizes`);
+            }
+            
+            // If we still don't have a context size, default to 8192
             if (!contextSize) {
                 contextSize = 8192;
                 console.log(`No context size found for model ${currentModel}, defaulting to ${contextSize}`);
