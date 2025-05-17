@@ -266,6 +266,9 @@
                                     <p><strong>JavaScript Functions</strong>: Define functions with parameters that the AI can call to perform actions or retrieve information.</p>
                                 </div>
                                 <div class="important-notice">
+                                    <p><strong>Function Tagging</strong>: By default, all functions are callable. If any function is tagged with <code>@callable</code> or <code>@tool</code>, then only tagged functions will be callable.</p>
+                                </div>
+                                <div class="important-notice">
                                     <p><strong>Privacy</strong>: Functions are stored locally in your browser. No data is sent to external servers unless your function explicitly does so.</p>
                                 </div>
                             </div>
@@ -300,7 +303,7 @@
                                         <i class="fas fa-copy"></i>
                                     </button>
                                 </div>
-                                <p class="form-help">Define multiple functions in one editor. Mark functions with <code>@callable_function</code> in JSDoc comments to expose them to the LLM.</p>
+                                <p class="form-help">Define multiple functions in one editor. By default, all functions are callable. If any function is tagged with <code>@callable</code> or <code>@tool</code> (at the beginning of a line or in JSDoc), then only tagged functions will be callable.</p>
                                 <textarea id="function-code" class="function-code-editor" placeholder="/**
  * Helper function that formats data (not exposed to LLM)
  * @param {Object} data - The data to format
@@ -314,7 +317,7 @@ function formatData(data) {
  * Gets the current time in Berlin
  * @description Fetches the current time for Berlin timezone
  * @returns {Object} Current time information
- * @callable_function This function will be exposed to the LLM
+ * @tool This function will be exposed to the LLM
  */
 async function getCurrentTimeInBerlin() {
   try {

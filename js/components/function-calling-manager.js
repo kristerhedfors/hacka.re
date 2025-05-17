@@ -86,7 +86,7 @@ function formatNumber(num) {
  * @param {number} a - The first number to multiply
  * @param {number} b - The second number to multiply
  * @returns {Object} IMPORTANT: Always return an object, not a primitive value.
- * @callable_function This function will be exposed to the LLM for tool calling
+ * @tool This function will be exposed to the LLM for tool calling
  */
 function multiply_numbers(a, b) {
   // Validate inputs are numbers
@@ -118,7 +118,7 @@ function multiply_numbers(a, b) {
  * @param {string} location - The location to get weather for
  * @param {string} units - The units to use (metric or imperial)
  * @returns {Object} Weather information
- * @callable_function This function will be exposed to the LLM for tool calling
+ * @callable This function will be exposed to the LLM for tool calling
  */
 function get_weather(location, units = "metric") {
   // This is just a mock implementation
@@ -325,7 +325,7 @@ function get_weather(location, units = "metric") {
                 const callableFunctions = functions.filter(func => func.isCallable);
                 
                 if (callableFunctions.length === 0) {
-                    showValidationResult('No callable functions found. Add @callable_function to JSDoc comments to mark functions as callable.', 'warning');
+                    showValidationResult('No callable functions found. By default, all functions are callable unless at least one function is tagged with @callable or @tool (equivalent)', 'warning');
                     // Still return success, but with a warning
                     return { 
                         success: true,
@@ -590,7 +590,7 @@ function get_weather(location, units = "metric") {
                 }
             } else {
                 // No callable functions found
-                showValidationResult('No callable functions found. Add @callable_function to JSDoc comments to mark functions as callable.', 'warning');
+                showValidationResult('No callable functions found. By default, all functions are callable unless at least one function is tagged with @callable or @tool (equivalent)', 'warning');
             }
         }
         
@@ -750,13 +750,34 @@ function get_weather(location, units = "metric") {
                     // Extract the full function code including JSDoc
                     const fullFunctionCode = (jsDoc || '') + functionDeclaration.substring(0, endIndex);
                     
-                    // Check if the function is marked as callable
-                    const isCallable = jsDoc && jsDoc.includes('@callable_function');
+                    // Check if the function is marked as callable with any of the supported markers
+                    // in JSDoc comments: @callable_function, @callable, @tool
+                    const hasCallableMarker = jsDoc && (
+                        jsDoc.includes('@callable_function') || 
+                        jsDoc.includes('@callable') || 
+                        jsDoc.includes('@tool')
+                    );
+                    
+                    // Also check for single-line comments with @callable or @tool at the beginning of a line
+                    const hasSingleLineMarker = fullFunctionCode.match(/^\/\/\s*@(callable|tool)/m) !== null;
+                    
+                    // Mark as callable if it has any of the markers
+                    const isCallable = hasCallableMarker || hasSingleLineMarker;
                     
                     functions.push({
                         name: functionName,
                         code: fullFunctionCode,
                         isCallable: isCallable
+                    });
+                }
+                
+                // Check if any function has a callable marker
+                const hasAnyCallableMarker = functions.some(func => func.isCallable);
+                
+                // If no function has a callable marker, mark all as callable
+                if (!hasAnyCallableMarker && functions.length > 0) {
+                    functions.forEach(func => {
+                        func.isCallable = true;
                     });
                 }
                 
