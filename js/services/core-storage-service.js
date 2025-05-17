@@ -37,6 +37,23 @@ window.CoreStorageService = (function() {
     function secureSet(key, value) {
         try {
             const passphrase = getPassphrase();
+            
+            // Check if we're using a master key that was decrypted with the fallback namespace hash
+            if (NamespaceService.isUsingFallbackForMasterKey && 
+                typeof NamespaceService.isUsingFallbackForMasterKey === 'function' && 
+                NamespaceService.isUsingFallbackForMasterKey()) {
+                
+                // Add a warning message if available
+                if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
+                    window.ChatManager.addSystemMessage(`[CRYPTO] WARNING: Encrypting data for key "${key}" using a master key that was decrypted with the fallback namespace hash of GPT title and subtitle`);
+                }
+                
+                console.log('[CRYPTO DEBUG] Using master key decrypted with fallback namespace hash for encryption:', {
+                    key: key,
+                    valueType: typeof value
+                });
+            }
+            
             const encryptedValue = EncryptionService.encrypt(value, passphrase);
             localStorage.setItem(key, encryptedValue);
             return true;
@@ -84,6 +101,23 @@ window.CoreStorageService = (function() {
         
         try {
             const passphrase = getPassphrase();
+            
+            // Check if we're using a master key that was decrypted with the fallback namespace hash
+            if (NamespaceService.isUsingFallbackForMasterKey && 
+                typeof NamespaceService.isUsingFallbackForMasterKey === 'function' && 
+                NamespaceService.isUsingFallbackForMasterKey()) {
+                
+                // Add a warning message if available
+                if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
+                    window.ChatManager.addSystemMessage(`[CRYPTO] WARNING: Decrypting data for key "${key}" using a master key that was decrypted with the fallback namespace hash of GPT title and subtitle`);
+                }
+                
+                console.log('[CRYPTO DEBUG] Using master key decrypted with fallback namespace hash for decryption:', {
+                    key: key,
+                    encryptedValueLength: encryptedValue ? encryptedValue.length : 0
+                });
+            }
+            
             return EncryptionService.decrypt(encryptedValue, passphrase);
         } catch (error) {
             // Create error object with safe properties
