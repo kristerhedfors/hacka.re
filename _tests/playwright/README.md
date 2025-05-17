@@ -107,6 +107,7 @@ The tests are organized into the following files:
 - `test_function_calling_with_api.py`: Tests related to function calling with a configured API key, using a function calling model, and validating function invocation through chat conversations
 - `test_clear_chat_button.py`: Tests related to the clear chat button (trash icon) functionality, ensuring it works correctly across all browsers including Safari and Firefox Focus
 - `test_function_library_sharing.py`: Tests related to sharing function libraries through the share menu, verifying that functions can be shared and loaded from a shared link
+- `test_function_library_multi.py`: Tests related to the multi-function library feature, verifying that multiple functions can be defined in one editor with some marked as callable using the @callable_function tag
 
 ## Testing MCP Functionality
 
