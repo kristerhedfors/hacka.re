@@ -17,7 +17,7 @@ This document provides a detailed technical specification of the cryptography an
 
 ## Overview
 
-The hacka.re application uses a sophisticated cryptographic system to secure user data stored in the browser's localStorage. The system is designed with the following goals:
+The hacka.re application uses a robust cryptographic system to secure user data stored in the browser's localStorage. The system is designed with the following goals:
 
 - **Privacy**: All sensitive data is encrypted before being stored in localStorage
 - **Isolation**: Different GPT configurations are isolated using namespaces

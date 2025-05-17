@@ -50,6 +50,7 @@ To run the unit tests in a browser:
 
 For individual feature tests, open the specific test HTML file in a browser:
 - `model-selection-test.html` - Tests model selection persistence and SSE streaming
+- `fallback-namespace-warning-test.html` - Tests the warning system for fallback namespace hash encryption/decryption
 
 #### From the Command Line (Optional)
 
@@ -123,6 +124,14 @@ Tests for model selection and Server-Sent Events (SSE) streaming:
 - Model selection UI updates
 - SSE streaming for real-time AI responses
 
+#### Fallback Namespace Warning Tests
+
+Tests for the warning system when using the fallback namespace hash:
+
+- Verifies that warnings are displayed when encrypting/decrypting data using a master key that was itself decrypted using the fallback namespace hash
+- Tests the behavior with and without a session key
+- Confirms that the system correctly identifies when it's using the fallback namespace hash
+
 ### Playwright Test Coverage
 
 #### Basic UI Tests
@@ -144,6 +153,13 @@ These tests verify the behavior of the application with mocked API responses:
 - Sending a message and receiving a response works correctly
 
 ## Recent Improvements
+
+### Fallback Namespace Hash Warning System
+
+- Added a warning system that displays system messages when data is encrypted/decrypted using a master key that was itself decrypted using the fallback namespace hash
+- Implemented tracking of when the master key is decrypted using the fallback namespace hash
+- Added warnings in the CoreStorageService for both encryption and decryption operations
+- Created a test page to verify the warning system functionality
 
 ### Server-Sent Events (SSE) Streaming
 

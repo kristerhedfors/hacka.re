@@ -31,7 +31,7 @@ The interface uses server-sent events (SSE) to stream AI responses in real-time,
 
 ## Comprehensive Secure Sharing
 
-hacka.re includes a sophisticated feature to securely share various aspects of your configuration with others through session key-protected URL-based sharing. This feature provides enhanced security through cryptographically sound session key-based key derivation, ensuring that only those with the correct session key can access your shared data.
+hacka.re includes a secure sharing mechanism that lets you share configuration aspects with others using session key-protected URLs. This feature uses cryptographic key derivation to ensure only users with the correct session key can access your shared data.
 
 ### Sharing Options:
 1. **API Key**: Share your GroqCloud API key for access to models

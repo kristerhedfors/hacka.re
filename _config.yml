@@ -1,0 +1,16 @@
+# Jekyll configuration for GitHub Pages
+
+# Exclude directories and/or files from being processed by Jekyll
+exclude:
+  - hacka_re_verifier
+  - node_modules
+  - _venv
+  - .git
+  - .gitignore
+  - package.json
+  - package-lock.json
+  - README.md
+  - LICENSE
+  - "*.log"
+  - "*.py"
+  - "*.sh"
