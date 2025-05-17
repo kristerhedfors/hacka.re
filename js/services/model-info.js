@@ -175,6 +175,7 @@ window.ModelInfoService = (function() {
         previewModels: previewModels,
         systemModels: systemModels,
         defaultModels: defaultModels,
+        contextWindowSizes: contextWindowSizes,  // Expose the contextWindowSizes object
         getDisplayName: getDisplayName,
         getContextSize: getContextSize
     };

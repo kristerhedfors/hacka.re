@@ -231,6 +231,11 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
         elements.sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
         elements.sendBtn.title = 'Send message';
         
+        // Update context usage one final time after generation is complete
+        if (updateContextUsage) {
+            estimateContextUsage(updateContextUsage, currentModel);
+        }
+        
         // Dispatch event to stop heart animation
         document.dispatchEvent(new CustomEvent('ai-response-end'));
     }
@@ -483,23 +488,20 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
             
             // Reset context usage with current system prompt
             if (updateContextUsage) {
-                if (systemPrompt) {
-                    // If there's a system prompt, calculate usage based on it
-                    const currentModel = window.aiHackare && window.aiHackare.settingsManager ? 
-                        window.aiHackare.settingsManager.getCurrentModel() : '';
-                    
-                    const percentage = UIUtils.estimateContextUsage(
-                        [], // Empty messages array
-                        ModelInfoService.modelInfo, 
-                        currentModel,
-                        systemPrompt
-                    );
-                    
-                    updateContextUsage(percentage);
-                } else {
-                    // If no system prompt, set usage to 0
-                    updateContextUsage(0);
-                }
+                // Get the current model
+                const currentModel = window.aiHackare && window.aiHackare.settingsManager ? 
+                    window.aiHackare.settingsManager.getCurrentModel() : '';
+                
+                // Calculate usage based on system prompt (if any)
+                const usageInfo = UIUtils.estimateContextUsage(
+                    [], // Empty messages array
+                    ModelInfoService.modelInfo, 
+                    currentModel,
+                    systemPrompt
+                );
+                
+                // Update the context usage display with all the information
+                updateContextUsage(usageInfo.percentage, usageInfo.estimatedTokens, usageInfo.contextSize);
             }
         }
         
