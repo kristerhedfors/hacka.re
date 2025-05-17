@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fallback Namespace Warning Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .test-description {
+            margin-bottom: 15px;
+            color: #555;
+        }
+        .test-controls {
+            margin-bottom: 15px;
+        }
+        button {
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        input[type="text"] {
+            padding: 8px;
+            width: 250px;
+            margin-right: 10px;
+        }
+        .system-messages {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            padding: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        .system-message {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        .warning {
+            color: #ff6600;
+            font-weight: bold;
+        }
+        .error {
+            color: #ff0000;
+            font-weight: bold;
+        }
+        .success {
+            color: #008800;
+        }
+    </style>
+</head>
+<body>
+    <h1>Fallback Namespace Warning Test</h1>
+    
+    <div class="test-section">
+        <div class="test-title">Test Description</div>
+        <div class="test-description">
+            This test demonstrates the warning system for when data is encrypted/decrypted using a master key 
+            that was itself decrypted using the fallback namespace hash of GPT title and subtitle.
+        </div>
+        
+        <div class="test-controls">
+            <div>
+                <label for="title">Title:</label>
+                <input type="text" id="title" value="Test Title">
+            </div>
+            <div style="margin-top: 10px;">
+                <label for="subtitle">Subtitle:</label>
+                <input type="text" id="subtitle" value="Test Subtitle">
+            </div>
+            <div style="margin-top: 15px;">
+                <button id="setTitleSubtitle">Set Title/Subtitle</button>
+                <button id="clearSessionKey">Clear Session Key</button>
+                <button id="runTest">Run Test</button>
+                <button id="clearMessages">Clear Messages</button>
+            </div>
+        </div>
+        
+        <div class="system-messages" id="systemMessages">
+            <div class="system-message">System messages will appear here...</div>
+        </div>
+    </div>
+    
+    <!-- Load required libraries -->
+    <script src="../lib/tweetnacl/nacl-fast.min.js"></script>
+    <script src="../lib/tweetnacl/nacl-util.min.js"></script>
+    
+    <!-- Load required services -->
+    <script src="../js/utils/crypto-utils.js"></script>
+    <script src="../js/services/encryption-service.js"></script>
+    <script src="../js/services/namespace-service.js"></script>
+    <script src="../js/services/core-storage-service.js"></script>
+    <script src="../js/services/data-service.js"></script>
+    <script src="../js/services/storage-service.js"></script>
+    
+    <script>
+        // Mock ChatManager for system messages
+        window.ChatManager = {
+            addSystemMessage: function(message) {
+                const messagesContainer = document.getElementById('systemMessages');
+                const messageElement = document.createElement('div');
+                messageElement.className = 'system-message';
+                
+                // Add special styling based on message content
+                if (message.includes('WARNING')) {
+                    messageElement.classList.add('warning');
+                } else if (message.includes('ERROR')) {
+                    messageElement.classList.add('error');
+                } else if (message.includes('Successfully')) {
+                    messageElement.classList.add('success');
+                }
+                
+                messageElement.textContent = message;
+                messagesContainer.appendChild(messageElement);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+        };
+        
+        // Mock ShareManager for session key
+        window.ShareManager = {
+            sessionKey: null,
+            getSessionKey: function() {
+                return this.sessionKey;
+            },
+            setSessionKey: function(key) {
+                this.sessionKey = key;
+            }
+        };
+        
+        // Initialize services
+        CoreStorageService.init();
+        
+        // Set up event listeners
+        document.getElementById('setTitleSubtitle').addEventListener('click', function() {
+            const title = document.getElementById('title').value;
+            const subtitle = document.getElementById('subtitle').value;
+            
+            // Save title and subtitle
+            StorageService.saveTitle(title);
+            StorageService.saveSubtitle(subtitle);
+            
+            ChatManager.addSystemMessage(`Title set to "${title}" and subtitle set to "${subtitle}"`);
+        });
+        
+        document.getElementById('clearSessionKey').addEventListener('click', function() {
+            // Clear session key
+            window.ShareManager.sessionKey = null;
+            ChatManager.addSystemMessage('Session key cleared. The system will now use the fallback namespace hash.');
+        });
+        
+        document.getElementById('runTest').addEventListener('click', function() {
+            // Run the test
+            ChatManager.addSystemMessage('--- Starting Test ---');
+            
+            // First, save some test data
+            const testData = {
+                message: 'This is a test message',
+                timestamp: new Date().toISOString()
+            };
+            
+            // Force a namespace access to ensure the namespace is created/loaded
+            // This is important because the flag is set during namespace resolution
+            const namespaceId = NamespaceService.getNamespaceId();
+            ChatManager.addSystemMessage(`Using namespace: ${namespaceId}`);
+            
+            // Save test data
+            CoreStorageService.setValue('test_data', testData);
+            ChatManager.addSystemMessage('Test data saved to storage');
+            
+            // Retrieve test data
+            const retrievedData = CoreStorageService.getValue('test_data');
+            ChatManager.addSystemMessage(`Test data retrieved: ${JSON.stringify(retrievedData)}`);
+            
+            // Check if we're using the fallback namespace hash
+            if (NamespaceService.isUsingFallbackForMasterKey && 
+                typeof NamespaceService.isUsingFallbackForMasterKey === 'function' && 
+                NamespaceService.isUsingFallbackForMasterKey()) {
+                ChatManager.addSystemMessage('VERIFICATION: The system is using the fallback namespace hash for the master key');
+            } else {
+                ChatManager.addSystemMessage('VERIFICATION: The system is NOT using the fallback namespace hash for the master key');
+            }
+            
+            // Save another piece of data to trigger encryption again
+            const testData2 = {
+                message: 'This is another test message',
+                timestamp: new Date().toISOString()
+            };
+            
+            CoreStorageService.setValue('test_data2', testData2);
+            ChatManager.addSystemMessage('Second test data saved to storage');
+            
+            // Check again if we're using the fallback namespace hash
+            if (NamespaceService.isUsingFallbackForMasterKey && 
+                typeof NamespaceService.isUsingFallbackForMasterKey === 'function' && 
+                NamespaceService.isUsingFallbackForMasterKey()) {
+                ChatManager.addSystemMessage('VERIFICATION 2: The system is using the fallback namespace hash for the master key');
+            } else {
+                ChatManager.addSystemMessage('VERIFICATION 2: The system is NOT using the fallback namespace hash for the master key');
+            }
+            
+            ChatManager.addSystemMessage('--- Test Complete ---');
+        });
+        
+        document.getElementById('clearMessages').addEventListener('click', function() {
+            // Clear system messages
+            document.getElementById('systemMessages').innerHTML = '';
+        });
+    </script>
+</body>
+</html>

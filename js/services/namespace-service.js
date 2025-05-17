@@ -34,6 +34,9 @@ window.NamespaceService = (function() {
     let currentNamespaceKey = null;
     let currentNamespaceHash = null;
     
+    // Flag to track if the current master key was decrypted using the fallback namespace hash
+    let usingFallbackForMasterKey = false;
+    
     /**
      * Store namespace data in localStorage
      * @param {string} namespaceId - The namespace ID
@@ -51,13 +54,19 @@ window.NamespaceService = (function() {
             // If no session key is available, use the namespace hash as fallback
             const encryptionKey = sessionKey || namespaceHash;
             
+            // Set the flag if we're using the namespace hash as fallback
+            if (!sessionKey) {
+                usingFallbackForMasterKey = true;
+            }
+            
             // Debug logging
             console.log('[CRYPTO DEBUG] Storing namespace data:', {
                 namespaceId: namespaceId,
                 usingSessionKey: !!sessionKey,
                 encryptionKeyType: sessionKey ? 'SESSION_KEY' : 'NAMESPACE_HASH',
                 encryptionKeyLength: encryptionKey.length,
-                namespaceHashLength: namespaceHash.length
+                namespaceHashLength: namespaceHash.length,
+                usingFallbackForMasterKey: usingFallbackForMasterKey
             });
             
             // Add a system message if available
@@ -198,6 +207,9 @@ window.NamespaceService = (function() {
             if (masterKey && window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
                 window.ChatManager.addSystemMessage(`[CRYPTO] Successfully decrypted master key for ${namespaceId} using ${decryptionMethod === 'SESSION_KEY' ? 'session key' : 'namespace hash'}`);
             }
+            
+            // Set the flag if we used the namespace hash as fallback
+            usingFallbackForMasterKey = (decryptionMethod === 'NAMESPACE_HASH');
             
             return masterKey;
         } catch (error) {
@@ -584,6 +596,14 @@ window.NamespaceService = (function() {
         return keysToReEncrypt;
     }
     
+    /**
+     * Check if the current master key was decrypted using the fallback namespace hash
+     * @returns {boolean} True if the master key was decrypted using the fallback namespace hash
+     */
+    function isUsingFallbackForMasterKey() {
+        return usingFallbackForMasterKey;
+    }
+    
     // Public API
     return {
         BASE_STORAGE_KEYS: BASE_STORAGE_KEYS,
@@ -599,6 +619,7 @@ window.NamespaceService = (function() {
         getNamespacedKey: getNamespacedKey,
         getKeysToReEncrypt: getKeysToReEncrypt,
         findExistingNamespace: findExistingNamespace,
-        getMasterKey: getMasterKey
+        getMasterKey: getMasterKey,
+        isUsingFallbackForMasterKey: isUsingFallbackForMasterKey
     };
 })();

@@ -10,10 +10,11 @@ from function_calling_api.helpers.setup_helpers import (
 )
 from function_calling_api.helpers.function_helpers import (
     add_test_function, 
+    add_function,
+    add_multiple_test_functions,
     cleanup_functions
 )
 
-@timed_test
 def test_function_calling_icons(page: Page, serve_hacka_re, api_key):
     """Test that function calling icons appear inline with the token stream."""
     # Set up console error logging
@@ -35,7 +36,7 @@ def test_function_calling_icons(page: Page, serve_hacka_re, api_key):
     enable_tool_calling_and_function_tools(page)
     
     # Add a test function
-    add_test_function(page)
+    add_test_function(page)  # This uses the default weather function
     
     # Type a message that should trigger the function
     message_input = page.locator("#message-input")
@@ -172,7 +173,6 @@ def test_function_calling_icons(page: Page, serve_hacka_re, api_key):
     # Clean up - delete the function
     cleanup_functions(page)
 
-@timed_test
 def test_multiple_function_calls_colors(page: Page, serve_hacka_re, api_key):
     """Test that multiple function calls use different colors."""
     # Set up console error logging
@@ -194,37 +194,7 @@ def test_multiple_function_calls_colors(page: Page, serve_hacka_re, api_key):
     enable_tool_calling_and_function_tools(page)
     
     # Add multiple test functions
-    # First function - weather
-    add_test_function(page, "get_weather", """function get_weather(location) {
-  return {
-    location: location,
-    temperature: 22,
-    unit: "celsius",
-    condition: "Sunny"
-  };
-}""")
-    
-    # Second function - calculator
-    add_test_function(page, "calculate", """function calculate(operation, a, b) {
-  let result;
-  switch (operation) {
-    case "add":
-      result = a + b;
-      break;
-    case "subtract":
-      result = a - b;
-      break;
-    case "multiply":
-      result = a * b;
-      break;
-    case "divide":
-      result = a / b;
-      break;
-    default:
-      return { error: "Invalid operation" };
-  }
-  return { result: result };
-}""")
+    add_multiple_test_functions(page)
     
     # Type a message that should trigger multiple functions
     message_input = page.locator("#message-input")
