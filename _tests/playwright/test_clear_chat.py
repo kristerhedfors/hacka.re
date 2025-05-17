@@ -3,6 +3,7 @@ import time
 from playwright.sync_api import Page, expect
 
 from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from function_calling_api.helpers.setup_helpers import configure_api_key_and_model
 
 def test_clear_chat_button_exists(page: Page, serve_hacka_re):
     """Test that the clear chat button exists and is visible."""
@@ -31,7 +32,7 @@ def test_clear_chat_button_exists(page: Page, serve_hacka_re):
         "Trash Icon Found": "Yes" if trash_icon.is_visible() else "No"
     })
 
-def test_clear_chat_confirmation_dialog(page: Page, serve_hacka_re):
+def test_clear_chat_confirmation_dialog(page: Page, serve_hacka_re, api_key):
     """Test that clicking the clear chat button shows a confirmation dialog."""
     # Navigate to the application
     page.goto(serve_hacka_re)
@@ -41,6 +42,44 @@ def test_clear_chat_confirmation_dialog(page: Page, serve_hacka_re):
     
     # Dismiss settings modal if already open
     dismiss_settings_modal(page)
+    
+    # Configure API key directly without using the helper function
+    # Click the settings button
+    settings_button = page.locator("#settings-btn")
+    settings_button.click(timeout=1000)
+    
+    # Wait for the settings modal to become visible
+    page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
+    
+    # Enter the API key
+    api_key_input = page.locator("#api-key-update")
+    api_key_input.fill(api_key)
+    
+    # Select OpenAI as the API provider
+    base_url_select = page.locator("#base-url-select")
+    base_url_select.select_option("openai")
+    
+    # Select a model (first available)
+    model_select = page.locator("#model-select")
+    
+    # Get available options
+    options = page.evaluate("""() => {
+        const select = document.getElementById('model-select');
+        if (!select) return [];
+        return Array.from(select.options)
+            .filter(opt => !opt.disabled)
+            .map(opt => opt.value);
+    }""")
+    
+    if options and len(options) > 0:
+        model_select.select_option(options[0])
+    
+    # Save the settings
+    save_button = page.locator("#save-settings-btn")
+    save_button.click(force=True)
+    
+    # Wait for the settings modal to be closed
+    page.wait_for_selector("#settings-modal", state="hidden", timeout=2000)
     
     # Add a test message to the chat
     message_input = page.locator("#message-input")
@@ -95,6 +134,13 @@ def test_clear_chat_confirmation_dialog(page: Page, serve_hacka_re):
         "Message Added": "Yes"
     })
     
+    # Take a screenshot before clearing
+    screenshot_with_markdown(page, "before_clear_chat_confirmation", {
+        "Test": "Clear Chat Confirmation Dialog",
+        "Status": "Before clicking clear button",
+        "Message Added": "Yes"
+    })
+    
     # Set up a dialog handler to handle the confirmation dialog
     # First, create a list to store dialog messages
     dialog_messages = []
@@ -104,7 +150,8 @@ def test_clear_chat_confirmation_dialog(page: Page, serve_hacka_re):
         dialog_messages.append(dialog.message)
         dialog.dismiss()  # Dismiss the dialog (click Cancel)
     
-    page.on("dialog", handle_dialog)
+    # Register the dialog handler
+    page.once("dialog", handle_dialog)
     
     # Click the clear chat button
     clear_chat_btn = page.locator("#clear-chat-btn")
@@ -131,14 +178,14 @@ def test_clear_chat_confirmation_dialog(page: Page, serve_hacka_re):
     })
     
     # Now set up a new dialog handler to accept the dialog
-    page.remove_listener("dialog", handle_dialog)
     dialog_messages.clear()
     
     def accept_dialog(dialog):
         dialog_messages.append(dialog.message)
         dialog.accept()  # Accept the dialog (click OK)
     
-    page.on("dialog", accept_dialog)
+    # Register the new dialog handler
+    page.once("dialog", accept_dialog)
     
     # Click the clear chat button again
     clear_chat_btn.click()

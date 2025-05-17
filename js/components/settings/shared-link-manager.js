@@ -156,6 +156,41 @@ window.SharedLinkManager = (function() {
                             PromptsService.applySelectedPromptsAsSystem();
                         }
                         
+                        // If there are shared functions, save them
+                        if (sharedData.functions && typeof sharedData.functions === 'object') {
+                            // Save each function
+                            Object.keys(sharedData.functions).forEach(functionName => {
+                                const functionData = sharedData.functions[functionName];
+                                FunctionToolsService.addJsFunction(
+                                    functionName,
+                                    functionData.code,
+                                    functionData.toolDefinition
+                                );
+                            });
+                            
+                            if (addSystemMessage) {
+                                addSystemMessage(`Shared function library with ${Object.keys(sharedData.functions).length} functions has been loaded.`);
+                            }
+                        }
+                        
+                        // If there are shared enabled functions, save them
+                        if (sharedData.enabledFunctions && Array.isArray(sharedData.enabledFunctions)) {
+                            // First disable all functions
+                            const allFunctions = Object.keys(FunctionToolsService.getJsFunctions());
+                            allFunctions.forEach(functionName => {
+                                FunctionToolsService.disableJsFunction(functionName);
+                            });
+                            
+                            // Then enable only the shared enabled functions
+                            sharedData.enabledFunctions.forEach(functionName => {
+                                FunctionToolsService.enableJsFunction(functionName);
+                            });
+                            
+                            if (addSystemMessage) {
+                                addSystemMessage(`Shared function selections have been applied.`);
+                            }
+                        }
+                        
                         // Clear the shared data from the URL
                         ShareService.clearSharedApiKeyFromUrl();
                         
@@ -370,6 +405,41 @@ window.SharedLinkManager = (function() {
                                 
                                 // Apply the selected prompts as system prompt
                                 PromptsService.applySelectedPromptsAsSystem();
+                            }
+                            
+                            // If there are shared functions, save them
+                            if (sharedData.functions && typeof sharedData.functions === 'object') {
+                                // Save each function
+                                Object.keys(sharedData.functions).forEach(functionName => {
+                                    const functionData = sharedData.functions[functionName];
+                                    FunctionToolsService.addJsFunction(
+                                        functionName,
+                                        functionData.code,
+                                        functionData.toolDefinition
+                                    );
+                                });
+                                
+                                if (addSystemMessage) {
+                                    addSystemMessage(`Shared function library with ${Object.keys(sharedData.functions).length} functions has been loaded.`);
+                                }
+                            }
+                            
+                            // If there are shared enabled functions, save them
+                            if (sharedData.enabledFunctions && Array.isArray(sharedData.enabledFunctions)) {
+                                // First disable all functions
+                                const allFunctions = Object.keys(FunctionToolsService.getJsFunctions());
+                                allFunctions.forEach(functionName => {
+                                    FunctionToolsService.disableJsFunction(functionName);
+                                });
+                                
+                                // Then enable only the shared enabled functions
+                                sharedData.enabledFunctions.forEach(functionName => {
+                                    FunctionToolsService.enableJsFunction(functionName);
+                                });
+                                
+                                if (addSystemMessage) {
+                                    addSystemMessage(`Shared function selections have been applied.`);
+                                }
                             }
                             
                             // Clear the shared data from the URL

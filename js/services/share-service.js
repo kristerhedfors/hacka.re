@@ -108,9 +108,10 @@ window.ShareService = (function() {
             payload.subtitle = options.subtitle;
         }
         
-        // Create link with prompt library option if requested
+        // Create link with prompt library and function library options if requested
         return LinkSharingService.createCustomShareableLink(payload, password, {
-            includePromptLibrary: options.includePromptLibrary
+            includePromptLibrary: options.includePromptLibrary,
+            includeFunctionLibrary: options.includeFunctionLibrary
         });
     }
     
