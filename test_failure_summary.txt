@@ -1,0 +1,81 @@
+# Playwright Test Failure Summary for hacka.re
+
+## Overview
+This document summarizes the key issues identified in the Playwright test output for the hacka.re project. The tests were run with the Chromium browser and 124 test items were collected, with many failures across different test categories.
+
+## Major Issue Categories
+
+### 1. Function Name Field Visibility Issues
+- The function name input field (`#function-name`) exists in the DOM but is consistently hidden (CSS `display: none`)
+- Element attributes: `readonly="readonly"`, `class="function-name-input auto-completed"`, `placeholder="Enter a name for this function"`
+- This appears to be intentional in some cases (test_function_library_multi checks for this)
+- However, it causes failures in many tests that try to interact with the field:
+  - All function-related tests fail with `TimeoutError: Locator expected to be visible` when trying to fill or scroll to this field
+  - Tests affected: function calling UI, function validation, function editing, RC4 encryption, etc.
+
+### 2. Function Validation Requirements
+- Functions need a specific JSDoc annotation `@callable_function` to be recognized as callable
+- Tests fail with error: "No callable functions found. Add @callable_function to JSDoc comments to mark functions as callable"
+- This affects all function validation tests and RC4 encryption function tests
+- The test code doesn't include this required annotation in the function definitions
+
+### 3. Clear Chat Dialog Issues
+- The clear chat confirmation dialog is not shown when clicking the clear button
+- Tests expecting this dialog fail with: "No confirmation dialog was shown"
+- Dialog handler is registered but never triggered
+
+### 4. User Message Display Issues
+- User messages don't appear in the chat when sending messages
+- Tests waiting for these messages time out with: `TimeoutError: Page.wait_for_selector: Timeout 30000ms exceeded`
+- This affects clear chat button tests and other chat-related tests
+
+### 5. Page Title Mismatch
+- The actual page title is: "hacka.re - Free, open, för hackare av hackare"
+- But tests expect: "hacka.re - För hackare av hackare"
+- This causes test_page_loads to fail
+
+### 6. UI Element Issues
+- Heart logo tooltip is not visible after clicking (test_heart_logo_tooltip)
+- System prompt status element is not found (test_system_prompt_status)
+- Prompts list has overflow-y: auto when it shouldn't (test_system_prompt_scrollbar)
+
+## Test Patterns
+
+The tests follow a common pattern:
+1. Navigate to the page
+2. Dismiss welcome modal
+3. Configure API key and model
+4. Perform test-specific actions
+5. Verify expected behavior
+
+Most tests successfully complete steps 1-3 but fail at steps 4-5 due to the issues listed above.
+
+## Recommendations
+
+1. **Function Name Field**:
+   - Update tests to work with the hidden function name field
+   - OR modify the UI to make the function name field visible when needed
+
+2. **Function Validation**:
+   - Add the required `@callable_function` annotation to all test function definitions
+   - Update test expectations to match the actual validation messages
+
+3. **Clear Chat Dialog**:
+   - Investigate why the confirmation dialog is not appearing
+   - Check event handlers and dialog implementation
+
+4. **User Message Display**:
+   - Debug why user messages aren't appearing in the chat
+   - Check message submission and rendering logic
+
+5. **Page Title**:
+   - Update test expectations to match the actual page title
+
+6. **UI Elements**:
+   - Fix tooltip visibility issues
+   - Add missing system prompt status element
+   - Fix scrollbar overflow settings
+
+## Conclusion
+
+The test failures appear to be primarily related to UI changes that haven't been reflected in the test code. The function calling feature in particular seems to have undergone significant changes (hidden function name field, new JSDoc requirements) that aren't accounted for in the tests. Updating the tests to match the current UI behavior should resolve most of the issues.
