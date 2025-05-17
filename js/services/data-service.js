@@ -226,7 +226,7 @@ window.DataService = (function() {
      */
     function getSubtitle() {
         // Subtitle is not namespaced to avoid circular dependency
-        return sessionStorage.getItem(STORAGE_KEYS.SUBTITLE) || "För hackare av hackare";
+        return sessionStorage.getItem(STORAGE_KEYS.SUBTITLE) || "Free, open, för hackare av hackare";
     }
     
     /**

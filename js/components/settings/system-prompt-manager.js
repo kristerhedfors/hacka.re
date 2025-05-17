@@ -118,7 +118,7 @@ window.SystemPromptManager = (function() {
 
 hacka.re is a modern, privacy-focused web client for AI models created in early 2025. It provides a streamlined, browser-based interface for interacting with powerful AI models while maintaining a focus on privacy and user control.
 
-The name "hacka.re" comes from "hackare" (the Swedish word for "hacker"), reflecting the project's ethos: a tool built by hackers for hackers. The tagline "För hackare, av hackare" translates to "for hackers, by hackers."
+The name "hacka.re" comes from "hackare" (the Swedish word for "hacker"), reflecting the project's ethos: a tool built by hackers for hackers. The tagline "Free, open, för hackare, av hackare" translates to "free, open, for hackers, by hackers."
 
 Unlike many commercial chat interfaces, hacka.re prioritizes user privacy by storing all data locally in the browser. Your API key and conversation history never leave your device except when making direct requests to the AI provider's API. This approach gives users complete control over their data while still providing access to state-of-the-art AI models.
 

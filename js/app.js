@@ -97,7 +97,7 @@ window.updateTitleAndSubtitle = function(forceUpdate = false) {
     const title = StorageService.getTitle();
     const subtitle = StorageService.getSubtitle();
     const defaultTitle = "hacka.re";
-    const defaultSubtitle = "För hackare av hackare";
+    const defaultSubtitle = "Free, open, för hackare av hackare";
     
     // Check if title and subtitle are unchanged (blank or default)
     const isTitleDefault = !title || title === defaultTitle;
