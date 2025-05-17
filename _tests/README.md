@@ -19,6 +19,7 @@ The unit tests are organized into the following files:
 - `share-service.test.js`: Tests for the ShareService module
 - `model-context-window-test.html`: Test for displaying model context window size in the model selection menu
 - `model-selection-test.html`: Tests for model selection and SSE streaming functionality
+- `function-library-sharing.test.html`: Tests for sharing function libraries through the share menu
 
 ### Browser-Based Tests (Playwright)
 
@@ -161,6 +162,14 @@ These tests verify the behavior of the application with real API calls to OpenAI
 - Sending a message and receiving a response works correctly
 
 ## Recent Improvements
+
+### Function Library Sharing
+
+- Added ability to share JavaScript functions through the share menu
+- Implemented encryption and decryption of function libraries in shared links
+- Added UI elements to enable function library sharing in the share modal
+- Created tests to verify function library sharing functionality
+- Ensured functions and their enabled/disabled state are properly preserved when shared
 
 ### Fallback Namespace Hash Warning System
 

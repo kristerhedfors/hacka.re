@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Function Library Sharing Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-result {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 3px;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .failure {
+            color: red;
+            font-weight: bold;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        pre {
+            background-color: #f8f8f8;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Function Library Sharing Test</h1>
+    <p>This test verifies that functions and enabled function names are properly encrypted in localStorage and can be included in shared links.</p>
+
+    <!-- Load required scripts -->
+    <script src="../lib/tweetnacl/nacl-fast.min.js"></script>
+    <script src="../lib/tweetnacl/nacl-util.min.js"></script>
+    <script src="../js/utils/crypto-utils.js"></script>
+    <script src="../js/services/model-info.js"></script>
+    <script src="../js/services/encryption-service.js"></script>
+    <script src="../js/services/namespace-service.js"></script>
+    <script src="../js/services/core-storage-service.js"></script>
+    <script src="../js/services/data-service.js"></script>
+    <script src="../js/services/storage-service.js"></script>
+    <script src="../js/services/link-sharing-service.js"></script>
+    <script src="../js/services/share-service.js"></script>
+    <script src="../js/services/function-tools-service.js"></script>
+
+    <div class="test-section">
+        <h2>Test 1: Encrypted Storage for Functions</h2>
+        <button id="test-encrypted-storage">Run Test</button>
+        <div id="encrypted-storage-result" class="test-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Encrypted Storage for Enabled Function Names</h2>
+        <button id="test-enabled-functions">Run Test</button>
+        <div id="enabled-functions-result" class="test-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Including Functions in Shared Links</h2>
+        <button id="test-shared-links">Run Test</button>
+        <div id="shared-links-result" class="test-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 4: Extracting Functions from Shared Links</h2>
+        <button id="test-extract-functions">Run Test</button>
+        <div id="extract-functions-result" class="test-result"></div>
+    </div>
+
+    <script>
+        // Helper function to display test results
+        function displayResult(elementId, success, message) {
+            const resultElement = document.getElementById(elementId);
+            resultElement.innerHTML = `
+                <div class="${success ? 'success' : 'failure'}">
+                    ${success ? 'PASSED' : 'FAILED'}: ${message}
+                </div>
+            `;
+        }
+
+        // Helper function to display detailed test results
+        function displayDetailedResult(elementId, success, message, details) {
+            const resultElement = document.getElementById(elementId);
+            resultElement.innerHTML = `
+                <div class="${success ? 'success' : 'failure'}">
+                    ${success ? 'PASSED' : 'FAILED'}: ${message}
+                </div>
+                <pre>${details}</pre>
+            `;
+        }
+
+        // Test 1: Verify that functions are stored encrypted in localStorage
+        document.getElementById('test-encrypted-storage').addEventListener('click', function() {
+            try {
+                // Clear any existing functions
+                localStorage.removeItem(NamespaceService.getNamespacedKey('js_functions'));
+                
+                // Create a test function
+                const testFunctionName = 'test-function-1';
+                const testFunctionCode = 'function test_function_1() { return "Hello, World!"; }';
+                const testToolDefinition = {
+                    type: 'function',
+                    function: {
+                        name: testFunctionName,
+                        description: 'Test function for encryption testing',
+                        parameters: {
+                            type: 'object',
+                            properties: {},
+                            required: []
+                        }
+                    }
+                };
+                
+                // Save the function using FunctionToolsService
+                FunctionToolsService.addJsFunction(testFunctionName, testFunctionCode, testToolDefinition);
+                
+                // Get the raw encrypted value from localStorage
+                const encryptedValue = localStorage.getItem(NamespaceService.getNamespacedKey('js_functions'));
+                
+                // Verify it's encrypted (should be a base64 string)
+                const isEncrypted = encryptedValue && 
+                                   encryptedValue.length > 0 && 
+                                   encryptedValue !== JSON.stringify({[testFunctionName]: {code: testFunctionCode, toolDefinition: testToolDefinition}});
+                
+                // Retrieve the function using FunctionToolsService
+                const retrievedFunctions = FunctionToolsService.getJsFunctions();
+                const retrievedFunction = retrievedFunctions[testFunctionName];
+                
+                // Verify the retrieved function matches the original
+                const isRetrieved = retrievedFunction && 
+                                   retrievedFunction.code === testFunctionCode &&
+                                   JSON.stringify(retrievedFunction.toolDefinition) === JSON.stringify(testToolDefinition);
+                
+                // Display results
+                const success = isEncrypted && isRetrieved;
+                const details = `
+Original function: ${JSON.stringify({[testFunctionName]: {code: testFunctionCode, toolDefinition: testToolDefinition}}, null, 2)}
+Encrypted value: ${encryptedValue ? encryptedValue.substring(0, 100) + '...' : 'null'}
+Retrieved function: ${JSON.stringify(retrievedFunction, null, 2)}
+Is encrypted: ${isEncrypted}
+Is correctly retrieved: ${isRetrieved}
+                `;
+                
+                displayDetailedResult('encrypted-storage-result', success, 
+                    success ? 'Functions are properly encrypted in localStorage and can be retrieved' 
+                            : 'Functions encryption or retrieval failed',
+                    details);
+            } catch (error) {
+                displayDetailedResult('encrypted-storage-result', false, 
+                    'Test failed with an error', 
+                    error.toString());
+            }
+        });
+
+        // Test 2: Verify that enabled function names are stored encrypted in localStorage
+        document.getElementById('test-enabled-functions').addEventListener('click', function() {
+            try {
+                // Clear any existing enabled function names
+                localStorage.removeItem(NamespaceService.getNamespacedKey('enabled_functions'));
+                
+                // Create test function names
+                const testFunctionNames = ['test-function-1', 'test-function-2', 'test-function-3'];
+                
+                // Make sure the functions exist
+                testFunctionNames.forEach(name => {
+                    if (!FunctionToolsService.getJsFunctions()[name]) {
+                        const testFunctionCode = `function ${name.replace(/-/g, '_')}() { return "Hello, World!"; }`;
+                        const testToolDefinition = {
+                            type: 'function',
+                            function: {
+                                name: name,
+                                description: `Test function ${name} for encryption testing`,
+                                parameters: {
+                                    type: 'object',
+                                    properties: {},
+                                    required: []
+                                }
+                            }
+                        };
+                        FunctionToolsService.addJsFunction(name, testFunctionCode, testToolDefinition);
+                    }
+                });
+                
+                // Enable the functions
+                testFunctionNames.forEach(name => {
+                    FunctionToolsService.enableJsFunction(name);
+                });
+                
+                // Get the raw encrypted value from localStorage
+                const encryptedValue = localStorage.getItem(NamespaceService.getNamespacedKey('enabled_functions'));
+                
+                // Verify it's encrypted (should be a base64 string)
+                const isEncrypted = encryptedValue && 
+                                   encryptedValue.length > 0 && 
+                                   encryptedValue !== JSON.stringify(testFunctionNames);
+                
+                // Retrieve the enabled function names
+                const retrievedNames = FunctionToolsService.getEnabledFunctionNames();
+                
+                // Verify the retrieved names match the original
+                const isRetrieved = retrievedNames && 
+                                   retrievedNames.length === testFunctionNames.length &&
+                                   retrievedNames.every((name, index) => testFunctionNames.includes(name));
+                
+                // Display results
+                const success = isEncrypted && isRetrieved;
+                const details = `
+Original names: ${JSON.stringify(testFunctionNames, null, 2)}
+Encrypted value: ${encryptedValue ? encryptedValue.substring(0, 100) + '...' : 'null'}
+Retrieved names: ${JSON.stringify(retrievedNames, null, 2)}
+Is encrypted: ${isEncrypted}
+Is correctly retrieved: ${isRetrieved}
+                `;
+                
+                displayDetailedResult('enabled-functions-result', success, 
+                    success ? 'Enabled function names are properly encrypted in localStorage and can be retrieved' 
+                            : 'Enabled function names encryption or retrieval failed',
+                    details);
+            } catch (error) {
+                displayDetailedResult('enabled-functions-result', false, 
+                    'Test failed with an error', 
+                    error.toString());
+            }
+        });
+
+        // Test 3: Verify that functions can be included in shared links
+        document.getElementById('test-shared-links').addEventListener('click', function() {
+            try {
+                // Clear any existing functions and enabled function names
+                localStorage.removeItem(NamespaceService.getNamespacedKey('js_functions'));
+                localStorage.removeItem(NamespaceService.getNamespacedKey('enabled_functions'));
+                
+                // Create test functions
+                const testFunctions = [
+                    {
+                        name: 'shared-function-1',
+                        code: 'function shared_function_1() { return "This is the first shared function"; }',
+                        toolDefinition: {
+                            type: 'function',
+                            function: {
+                                name: 'shared-function-1',
+                                description: 'First shared function',
+                                parameters: {
+                                    type: 'object',
+                                    properties: {},
+                                    required: []
+                                }
+                            }
+                        }
+                    },
+                    {
+                        name: 'shared-function-2',
+                        code: 'function shared_function_2() { return "This is the second shared function"; }',
+                        toolDefinition: {
+                            type: 'function',
+                            function: {
+                                name: 'shared-function-2',
+                                description: 'Second shared function',
+                                parameters: {
+                                    type: 'object',
+                                    properties: {},
+                                    required: []
+                                }
+                            }
+                        }
+                    }
+                ];
+                
+                // Save the functions
+                testFunctions.forEach(func => {
+                    FunctionToolsService.addJsFunction(func.name, func.code, func.toolDefinition);
+                });
+                
+                // Verify functions were saved
+                const savedFunctions = FunctionToolsService.getJsFunctions();
+                console.log('Saved functions:', savedFunctions);
+                
+                // Enable one of the functions
+                const enabledFunctionNames = ['shared-function-1'];
+                enabledFunctionNames.forEach(name => {
+                    FunctionToolsService.enableJsFunction(name);
+                });
+                
+                // Verify enabled function names were saved
+                const savedEnabledNames = FunctionToolsService.getEnabledFunctionNames();
+                console.log('Saved enabled function names:', savedEnabledNames);
+                
+                // Create a test password
+                const testPassword = 'test-password-123';
+                
+                // Create a payload with API key (required) and include function library
+                const payload = { apiKey: 'test-api-key-456' };
+                
+                // Create a shared link with function library
+                const sharedLink = LinkSharingService.createCustomShareableLink(
+                    payload, 
+                    testPassword,
+                    { includeFunctionLibrary: true }
+                );
+                
+                // Extract the encrypted data from the link
+                const encryptedData = sharedLink.split('#gpt=')[1];
+                
+                // Decrypt the data
+                const decryptedData = CryptoUtils.decryptData(encryptedData, testPassword);
+                
+                // Verify functions and enabled function names are included
+                const hasFunctions = decryptedData && 
+                                    typeof decryptedData.functions === 'object' && 
+                                    Object.keys(decryptedData.functions).length === testFunctions.length;
+                
+                const hasEnabledFunctions = decryptedData && 
+                                          Array.isArray(decryptedData.enabledFunctions) && 
+                                          decryptedData.enabledFunctions.length === enabledFunctionNames.length;
+                
+                // Display results
+                const success = hasFunctions && hasEnabledFunctions;
+                const details = `
+Shared link: ${sharedLink.substring(0, 50)}...
+Decrypted data: ${JSON.stringify(decryptedData, null, 2)}
+Has functions: ${hasFunctions}
+Has enabled function names: ${hasEnabledFunctions}
+                `;
+                
+                displayDetailedResult('shared-links-result', success, 
+                    success ? 'Functions and enabled function names are properly included in shared links' 
+                            : 'Including functions and enabled function names in shared links failed',
+                    details);
+            } catch (error) {
+                displayDetailedResult('shared-links-result', false, 
+                    'Test failed with an error', 
+                    error.toString());
+            }
+        });
+
+        // Test 4: Verify that functions can be extracted from shared links
+        document.getElementById('test-extract-functions').addEventListener('click', function() {
+            try {
+                // Create test functions
+                const testFunctions = {
+                    'extract-function-1': {
+                        code: 'function extract_function_1() { return "This is the first function to extract"; }',
+                        toolDefinition: {
+                            type: 'function',
+                            function: {
+                                name: 'extract-function-1',
+                                description: 'First function to extract',
+                                parameters: {
+                                    type: 'object',
+                                    properties: {},
+                                    required: []
+                                }
+                            }
+                        }
+                    },
+                    'extract-function-2': {
+                        code: 'function extract_function_2() { return "This is the second function to extract"; }',
+                        toolDefinition: {
+                            type: 'function',
+                            function: {
+                                name: 'extract-function-2',
+                                description: 'Second function to extract',
+                                parameters: {
+                                    type: 'object',
+                                    properties: {},
+                                    required: []
+                                }
+                            }
+                        }
+                    }
+                };
+                
+                // Create enabled function names
+                const enabledFunctionNames = ['extract-function-1'];
+                
+                // Create a test password
+                const testPassword = 'test-password-456';
+                
+                // Create a payload with API key (required), functions, and enabled function names
+                const payload = {
+                    apiKey: 'test-api-key-789',
+                    functions: testFunctions,
+                    enabledFunctions: enabledFunctionNames
+                };
+                
+                // Encrypt the payload
+                const encryptedData = CryptoUtils.encryptData(payload, testPassword);
+                
+                // Create a mock location object for testing
+                const mockLocation = {
+                    href: 'https://hacka.re/index.html',
+                    hash: '#gpt=' + encryptedData,
+                    pathname: '/index.html',
+                    search: ''
+                };
+                
+                // Set the mock location for testing
+                LinkSharingService._setTestingObjects(mockLocation);
+                
+                // Extract the shared data
+                const extractedData = LinkSharingService.extractSharedApiKey(testPassword);
+                
+                // Verify functions and enabled function names are extracted correctly
+                const hasFunctions = extractedData && 
+                                    typeof extractedData.functions === 'object' && 
+                                    Object.keys(extractedData.functions).length === Object.keys(testFunctions).length;
+                
+                const hasEnabledFunctions = extractedData && 
+                                          Array.isArray(extractedData.enabledFunctions) && 
+                                          extractedData.enabledFunctions.length === enabledFunctionNames.length;
+                
+                // Verify the content matches
+                const functionsMatch = hasFunctions && 
+                                      Object.keys(testFunctions).every(name => 
+                                          extractedData.functions[name].code === testFunctions[name].code &&
+                                          JSON.stringify(extractedData.functions[name].toolDefinition) === JSON.stringify(testFunctions[name].toolDefinition)
+                                      );
+                
+                const enabledFunctionsMatch = hasEnabledFunctions && 
+                                            extractedData.enabledFunctions.every((name, index) => 
+                                                name === enabledFunctionNames[index]
+                                            );
+                
+                // Reset the mock location
+                LinkSharingService._resetTestingObjects();
+                
+                // Display results
+                const success = hasFunctions && hasEnabledFunctions && functionsMatch && enabledFunctionsMatch;
+                const details = `
+Original functions: ${JSON.stringify(testFunctions, null, 2)}
+Original enabled function names: ${JSON.stringify(enabledFunctionNames, null, 2)}
+Extracted functions: ${JSON.stringify(extractedData.functions, null, 2)}
+Extracted enabled function names: ${JSON.stringify(extractedData.enabledFunctions, null, 2)}
+Has functions: ${hasFunctions}
+Has enabled function names: ${hasEnabledFunctions}
+Functions match: ${functionsMatch}
+Enabled function names match: ${enabledFunctionsMatch}
+                `;
+                
+                displayDetailedResult('extract-functions-result', success, 
+                    success ? 'Functions and enabled function names are properly extracted from shared links' 
+                            : 'Extracting functions and enabled function names from shared links failed',
+                    details);
+            } catch (error) {
+                displayDetailedResult('extract-functions-result', false, 
+                    'Test failed with an error', 
+                    error.toString());
+            }
+        });
+    </script>
+</body>
+</html>
