@@ -13,7 +13,7 @@ from function_calling_api.helpers.function_helpers import (
 )
 
 def test_function_library_multi(page: Page, serve_hacka_re, api_key):
-    """Test the multi-function library with @callable_function tag."""
+    """Test the multi-function library with @tool tag."""
     # Set up console error logging
     setup_console_logging(page)
     
@@ -45,7 +45,7 @@ def test_function_library_multi(page: Page, serve_hacka_re, api_key):
     function_code = page.locator("#function-code")
     placeholder = function_code.get_attribute("placeholder")
     expect(placeholder).to_contain("Helper function that formats data (not exposed to LLM)")
-    expect(placeholder).to_contain("@callable_function")
+    expect(placeholder).to_contain("@tool")
     
     # Fill in the function code with multiple functions
     function_code.fill("""/**
@@ -61,7 +61,7 @@ function formatData(data) {
  * Gets the current time in Berlin
  * @description Fetches the current time for Berlin timezone
  * @returns {Object} Current time information
- * @callable_function This function will be exposed to the LLM
+ * @tool This function will be exposed to the LLM
  */
 async function getCurrentTimeInBerlin() {
   try {
@@ -85,7 +85,7 @@ async function getCurrentTimeInBerlin() {
  * @param {number} a - The first number to multiply
  * @param {number} b - The second number to multiply
  * @returns {Object} The result of the multiplication
- * @callable_function This function will be exposed to the LLM
+ * @callable This function will be exposed to the LLM
  */
 function multiply_numbers(a, b) {
   // Validate inputs are numbers
