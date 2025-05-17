@@ -521,6 +521,9 @@ function get_weather(location, units = "metric") {
                 // Keep track of added callable functions
                 const addedFunctions = [];
                 
+                // Generate a unique group ID for this set of functions
+                const groupId = 'group_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                
                 // First, add all auxiliary functions (non-callable)
                 const auxiliaryFunctions = validation.functions.filter(func => !func.isCallable);
                 auxiliaryFunctions.forEach(func => {
@@ -539,7 +542,8 @@ function get_weather(location, units = "metric") {
                                     required: []
                                 }
                             }
-                        }
+                        },
+                        groupId // Pass the group ID to associate all functions
                     );
                 });
                 
@@ -550,7 +554,8 @@ function get_weather(location, units = "metric") {
                     const success = FunctionToolsService.addJsFunction(
                         func.name, 
                         func.code, 
-                        validation.toolDefinitions[index]
+                        validation.toolDefinitions[index],
+                        groupId // Pass the group ID to associate all functions
                     );
                     
                     if (success) {
@@ -648,11 +653,57 @@ function get_weather(location, units = "metric") {
             const functionNames = Object.keys(functions);
             
             if (editingFunctionName && functions[editingFunctionName]) {
-                // If we're editing a function, reload just that function
-                loadFunctionIntoEditor(editingFunctionName, functions[editingFunctionName]);
+                // If we're editing a function, reload just that function and its related functions
+                
+                // Get all functions in the same group
+                const relatedFunctions = FunctionToolsService.getFunctionsInSameGroup(editingFunctionName);
+                
+                // If we have related functions, combine them
+                if (relatedFunctions.length > 1) {
+                    // Sort the functions to ensure consistent order
+                    relatedFunctions.sort();
+                    
+                    // Combine the code of all related functions
+                    const combinedCode = relatedFunctions
+                        .filter(name => functions[name]) // Ensure the function exists
+                        .map(name => functions[name].code)
+                        .join('\n\n');
+                    
+                    if (elements.functionCode) {
+                        elements.functionCode.value = combinedCode;
+                        
+                        // Trigger any event listeners that might be attached to the code editor
+                        const event = new Event('input', { bubbles: true });
+                        elements.functionCode.dispatchEvent(event);
+                    }
+                } else {
+                    // If no related functions, just load this function
+                    loadFunctionIntoEditor(editingFunctionName, functions[editingFunctionName]);
+                }
             } else if (functionNames.length > 0) {
-                // If we have active functions, combine them into one code block
-                const combinedCode = functionNames.map(name => functions[name].code).join('\n\n');
+                // If we have active functions, we need to group them by their group IDs
+                const functionGroups = {};
+                
+                // Group functions by their group ID
+                functionNames.forEach(name => {
+                    const relatedFunctions = FunctionToolsService.getFunctionsInSameGroup(name);
+                    const groupKey = relatedFunctions.sort().join(','); // Use sorted function names as key
+                    
+                    if (!functionGroups[groupKey]) {
+                        functionGroups[groupKey] = relatedFunctions;
+                    }
+                });
+                
+                // Get unique groups
+                const uniqueGroups = Object.values(functionGroups);
+                
+                // Combine code from each group
+                const combinedCode = uniqueGroups.map(group => {
+                    return group
+                        .filter(name => functions[name]) // Ensure the function exists
+                        .map(name => functions[name].code)
+                        .join('\n\n');
+                }).join('\n\n\n');
                 
                 if (elements.functionCode) {
                     elements.functionCode.value = combinedCode;
