@@ -98,6 +98,25 @@ window.LinkSharingService = (function() {
             });
         }
         
+        // Add function library if requested
+        if (options.includeFunctionLibrary) {
+            // Get functions and ensure they're included in the payload
+            const functions = FunctionToolsService.getJsFunctions();
+            finalPayload.functions = functions;
+            
+            // Get enabled function names
+            const enabledFunctions = FunctionToolsService.getEnabledFunctionNames();
+            finalPayload.enabledFunctions = enabledFunctions;
+            
+            // Log for debugging
+            console.log('Including function library in shared link:', {
+                functionsCount: Object.keys(functions).length,
+                enabledFunctionsCount: enabledFunctions.length,
+                functions: functions,
+                enabledFunctions: enabledFunctions
+            });
+        }
+        
         // Encrypt the payload
         const encryptedData = CryptoUtils.encryptData(finalPayload, password);
         
@@ -175,6 +194,17 @@ window.LinkSharingService = (function() {
                 if (data.selectedPromptIds) {
                     result.selectedPromptIds = data.selectedPromptIds;
                     console.log('Extracted selected prompt IDs from shared link:', data.selectedPromptIds);
+                }
+                
+                // Include function library if present
+                if (data.functions) {
+                    result.functions = data.functions;
+                    console.log('Extracted functions from shared link:', Object.keys(data.functions));
+                }
+                
+                if (data.enabledFunctions) {
+                    result.enabledFunctions = data.enabledFunctions;
+                    console.log('Extracted enabled function names from shared link:', data.enabledFunctions);
                 }
                 
                 // Only include title and subtitle if they are actually present in the data
