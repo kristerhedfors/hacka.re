@@ -663,18 +663,23 @@ window.UIUtils = (function() {
         
         // Use event delegation to handle mouseenter/mouseleave events
         document.addEventListener('mouseenter', function(event) {
+            // Ensure event.target exists and has classList
+            if (!event.target || !event.target.classList) {
+                return;
+            }
+            
             // Check if the target is a function icon or its tooltip
-            if (event.target.classList.contains('function-call-icon') || 
-                event.target.classList.contains('function-result-icon') ||
-                event.target.closest('.function-icon-tooltip')) {
-                
+            const isCallIcon = event.target.classList.contains('function-call-icon');
+            const isResultIcon = event.target.classList.contains('function-result-icon');
+            const isTooltip = event.target.closest && event.target.closest('.function-icon-tooltip');
+            
+            if (isCallIcon || isResultIcon || isTooltip) {
                 // Find the tooltip
                 let tooltip;
-                if (event.target.classList.contains('function-call-icon') || 
-                    event.target.classList.contains('function-result-icon')) {
-                    tooltip = event.target.querySelector('.function-icon-tooltip');
+                if (isCallIcon || isResultIcon) {
+                    tooltip = event.target.querySelector && event.target.querySelector('.function-icon-tooltip');
                 } else {
-                    tooltip = event.target.closest('.function-icon-tooltip');
+                    tooltip = isTooltip;
                 }
                 
                 // Make sure tooltip stays visible
@@ -686,45 +691,68 @@ window.UIUtils = (function() {
         }, true);
         
         document.addEventListener('mouseleave', function(event) {
-            // Check if we're leaving a function icon and not entering its tooltip
-            if ((event.target.classList.contains('function-call-icon') || 
-                 event.target.classList.contains('function-result-icon')) &&
-                !event.relatedTarget?.closest('.function-icon-tooltip')) {
-                
-                // Find the tooltip
-                const tooltip = event.target.querySelector('.function-icon-tooltip');
-                
-                // Add a delay before hiding the tooltip
-                if (tooltip) {
-                    setTimeout(() => {
-                        // Only hide if the mouse is not over the tooltip
-                        if (!tooltip.matches(':hover')) {
-                            tooltip.style.opacity = '0';
-                            tooltip.style.pointerEvents = 'none';
-                        }
-                    }, 300);
-                }
+            // Ensure event.target exists and has classList
+            if (!event.target || !event.target.classList) {
+                return;
             }
             
-            // Check if we're leaving a tooltip and not entering its parent icon
-            if (event.target.closest('.function-icon-tooltip') &&
-                !event.relatedTarget?.classList.contains('function-call-icon') &&
-                !event.relatedTarget?.classList.contains('function-result-icon') &&
-                !event.relatedTarget?.closest('.function-icon-tooltip')) {
+            try {
+                // Check if we're leaving a function icon and not entering its tooltip
+                const isLeavingCallIcon = event.target.classList.contains('function-call-icon');
+                const isLeavingResultIcon = event.target.classList.contains('function-result-icon');
+                const isEnteringTooltip = event.relatedTarget && event.relatedTarget.closest && 
+                                         event.relatedTarget.closest('.function-icon-tooltip');
                 
-                // Find the tooltip
-                const tooltip = event.target.closest('.function-icon-tooltip');
-                
-                // Hide the tooltip after a delay
-                if (tooltip) {
-                    setTimeout(() => {
-                        // Only hide if the mouse is not over the tooltip or its parent icon
-                        if (!tooltip.matches(':hover')) {
-                            tooltip.style.opacity = '0';
-                            tooltip.style.pointerEvents = 'none';
-                        }
-                    }, 300);
+                if ((isLeavingCallIcon || isLeavingResultIcon) && !isEnteringTooltip) {
+                    // Find the tooltip
+                    const tooltip = event.target.querySelector && event.target.querySelector('.function-icon-tooltip');
+                    
+                    // Add a delay before hiding the tooltip
+                    if (tooltip) {
+                        setTimeout(() => {
+                            try {
+                                // Only hide if the mouse is not over the tooltip
+                                if (!tooltip.matches(':hover')) {
+                                    tooltip.style.opacity = '0';
+                                    tooltip.style.pointerEvents = 'none';
+                                }
+                            } catch (e) {
+                                console.error('Error in tooltip hover check:', e);
+                            }
+                        }, 300);
+                    }
                 }
+                
+                // Check if we're leaving a tooltip and not entering its parent icon
+                const isLeavingTooltip = event.target.closest && event.target.closest('.function-icon-tooltip');
+                const isEnteringCallIcon = event.relatedTarget && event.relatedTarget.classList && 
+                                          event.relatedTarget.classList.contains('function-call-icon');
+                const isEnteringResultIcon = event.relatedTarget && event.relatedTarget.classList && 
+                                            event.relatedTarget.classList.contains('function-result-icon');
+                const isEnteringAnotherTooltip = event.relatedTarget && event.relatedTarget.closest && 
+                                                event.relatedTarget.closest('.function-icon-tooltip');
+                
+                if (isLeavingTooltip && !isEnteringCallIcon && !isEnteringResultIcon && !isEnteringAnotherTooltip) {
+                    // Find the tooltip
+                    const tooltip = isLeavingTooltip;
+                    
+                    // Hide the tooltip after a delay
+                    if (tooltip) {
+                        setTimeout(() => {
+                            try {
+                                // Only hide if the mouse is not over the tooltip or its parent icon
+                                if (!tooltip.matches(':hover')) {
+                                    tooltip.style.opacity = '0';
+                                    tooltip.style.pointerEvents = 'none';
+                                }
+                            } catch (e) {
+                                console.error('Error in tooltip hover check:', e);
+                            }
+                        }, 300);
+                    }
+                }
+            } catch (e) {
+                console.error('Error in mouseleave handler:', e);
             }
         }, true);
         
