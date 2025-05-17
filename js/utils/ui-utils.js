@@ -266,6 +266,9 @@ window.UIUtils = (function() {
     // Cache for context size by model
     const contextSizeCache = {};
     
+    // Track the last model used to detect model changes
+    let lastModelUsed = null;
+    
     // Cache for token estimates by content length
     const tokenEstimateCache = {};
     
@@ -278,6 +281,17 @@ window.UIUtils = (function() {
      * @returns {Object} - Object containing estimated tokens, context size, and usage percentage
      */
     function estimateContextUsage(messages, modelInfo, currentModel, systemPrompt = '') {
+        // Check if the model has changed since last call
+        if (lastModelUsed !== currentModel) {
+            console.log(`Model changed from ${lastModelUsed} to ${currentModel}, clearing context size cache`);
+            // Clear the cache when the model changes
+            Object.keys(contextSizeCache).forEach(key => {
+                delete contextSizeCache[key];
+            });
+            // Update the last model used
+            lastModelUsed = currentModel;
+        }
+        
         // Get context window size for the current model (use cache if available)
         let contextSize = contextSizeCache[currentModel];
         
@@ -285,15 +299,19 @@ window.UIUtils = (function() {
             // Try to get context size from ModelInfoService
             if (window.ModelInfoService && typeof ModelInfoService.getContextSize === 'function') {
                 contextSize = ModelInfoService.getContextSize(currentModel);
+                console.log(`Got context size ${contextSize} for model ${currentModel} from ModelInfoService.getContextSize`);
             }
             
             // If we couldn't get a context size, default to 8192
             if (!contextSize) {
                 contextSize = 8192;
+                console.log(`No context size found for model ${currentModel}, defaulting to ${contextSize}`);
             }
             
             // Cache the context size for this model
             contextSizeCache[currentModel] = contextSize;
+        } else {
+            console.log(`Using cached context size ${contextSize} for model ${currentModel}`);
         }
         
         // Estimate token count based on message content

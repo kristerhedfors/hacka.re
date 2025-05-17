@@ -34,6 +34,11 @@ window.ModelManager = (function() {
                     
                     // Update context usage with the new model if possible
                     if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.uiManager) {
+                        // Get the context size for the selected model
+                        const contextSize = ModelInfoService.getContextSize(selectedModel);
+                        console.log(`Model changed to ${selectedModel}, context size: ${contextSize}`);
+                        
+                        // Update the context usage display with the new model
                         window.aiHackare.chatManager.estimateContextUsage(
                             window.aiHackare.uiManager.updateContextUsage.bind(window.aiHackare.uiManager),
                             selectedModel
