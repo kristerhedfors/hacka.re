@@ -7,8 +7,17 @@ from playwright.sync_api import Page, expect
 # Maximum allowed time for any operation (in seconds)
 MAX_OPERATION_TIME = 2.0
 
-# Recommended model for tests (as per README)
-RECOMMENDED_TEST_MODEL = "llama-3.1-8b-instant"
+# Import OPENAI_API_MODEL from conftest
+import os
+import sys
+sys.path.append(os.path.dirname(__file__))
+try:
+    from conftest import OPENAI_API_MODEL
+    # Recommended model for tests (from .env)
+    RECOMMENDED_TEST_MODEL = OPENAI_API_MODEL
+except ImportError:
+    # Fallback to default model if import fails
+    RECOMMENDED_TEST_MODEL = "o4-mini"
 
 class OperationTimeoutError(Exception):
     """Exception raised when an operation takes too long."""

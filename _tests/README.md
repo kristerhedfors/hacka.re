@@ -30,7 +30,7 @@ The Playwright tests are organized into the following files:
 
 - `conftest.py`: Contains pytest fixtures and setup for the tests
 - `test_basic_ui.py`: Basic UI tests that verify the presence and visibility of UI elements
-- `test_functional.py`: Functional tests that verify the behavior of the application with mocked API responses
+- `test_functional.py`: Functional tests that verify the behavior of the application with real API calls
 - `pytest.ini`: Configuration for pytest
 - `requirements.txt`: Python dependencies for the tests
 - `run_tests.sh`: Script to run the tests
@@ -69,7 +69,13 @@ The Playwright tests require Python and the uv package manager. A virtual enviro
 To run the Playwright tests:
 
 1. Navigate to the `playwright` directory: `cd _tests/playwright`
-2. Run the tests using the provided script: `./run_tests.sh`
+2. Create a `.env` file with your OpenAI API key:
+   ```
+   OPENAI_API_KEY=your_api_key_here
+   OPENAI_API_MODEL=o4-mini
+   OPENAI_API_BASE=https://api.openai.com/v1
+   ```
+3. Run the tests using the provided script: `./run_tests.sh`
 
 For more options, run `./run_tests.sh --help`
 
@@ -80,6 +86,8 @@ Alternatively, you can run the tests manually:
 3. Deactivate the virtual environment when done: `deactivate`
 
 For more information about the Playwright tests, see the [Playwright README](_tests/playwright/README.md).
+
+> **Note**: The Playwright tests use the OpenAI API with the o4-mini model for testing. Previously, they used Groq Cloud with the llama-3.1-8b-instant model.
 
 ## Test Coverage
 
@@ -146,7 +154,7 @@ These tests verify that the UI elements of the application are present and visib
 
 #### Functional Tests
 
-These tests verify the behavior of the application with mocked API responses:
+These tests verify the behavior of the application with real API calls to OpenAI:
 
 - API key configuration works correctly
 - Model selection works correctly
@@ -179,4 +187,4 @@ These tests verify the behavior of the application with mocked API responses:
 - The unit tests use a simple custom test framework rather than a full testing library to avoid adding dependencies.
 - The unit tests mock browser APIs like `window.location` and `window.history` to test URL manipulation without actually changing the page.
 - The Playwright tests use a local HTTP server to serve the application.
-- API calls in Playwright tests are mocked to avoid making real API calls.
+- Playwright tests make real API calls to OpenAI using the API key in the `.env` file, ensuring the application works correctly with actual LLM providers.
