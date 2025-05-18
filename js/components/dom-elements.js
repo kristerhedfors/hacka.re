@@ -72,6 +72,7 @@ window.DOMElements = (function() {
             functionName: document.getElementById('function-name'),
             functionCode: document.getElementById('function-code'),
             copyFunctionCodeBtn: document.getElementById('copy-function-code-btn'),
+            copyFunctionLibraryBtn: document.getElementById('copy-function-library-btn'),
             functionValidationResult: document.getElementById('function-validation-result'),
             functionToolDefinition: document.getElementById('function-tool-definition'),
             copyToolDefinitionBtn: document.getElementById('copy-tool-definition-btn'),
