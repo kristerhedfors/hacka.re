@@ -18,22 +18,19 @@ window.DefaultPromptsService = (function() {
         // Clear the array first
         DEFAULT_PROMPTS = [];
         
-        // Add prompts from individual files if they exist
+        // Add prompts from individual files if they exist in the specified order
+        
+        // 1. About hacka.re Project
         if (window.HackaReProjectPrompt) {
             DEFAULT_PROMPTS.push(window.HackaReProjectPrompt);
         }
         
-        // Add OWASP Top 10 for LLM Applications prompt if it exists
-        if (window.OwaspLlmTop10Prompt) {
-            DEFAULT_PROMPTS.push(window.OwaspLlmTop10Prompt);
+        // 2. The urgency of interpretability
+        if (window.InterpretabilityUrgencyPrompt) {
+            DEFAULT_PROMPTS.push(window.InterpretabilityUrgencyPrompt);
         }
         
-        // Add MCP SDK README prompt if it exists
-        if (window.McpSdkReadmePrompt) {
-            DEFAULT_PROMPTS.push(window.McpSdkReadmePrompt);
-        }
-        
-        // Add Function Library prompt if it exists
+        // 3. Function Library
         if (window.FunctionLibraryPrompt) {
             // If the content is a function, we need to evaluate it
             if (typeof window.FunctionLibraryPrompt.content === 'function') {
@@ -48,9 +45,19 @@ window.DefaultPromptsService = (function() {
             }
         }
         
-        // Add Agent Orchestration Example prompt if it exists
+        // 4. Agent orchestration example
         if (window.AgentOrchestrationPrompt) {
             DEFAULT_PROMPTS.push(window.AgentOrchestrationPrompt);
+        }
+        
+        // 5. OWASP Top 10 for LLM Applications
+        if (window.OwaspLlmTop10Prompt) {
+            DEFAULT_PROMPTS.push(window.OwaspLlmTop10Prompt);
+        }
+        
+        // Add MCP SDK README prompt if it exists
+        if (window.McpSdkReadmePrompt) {
+            DEFAULT_PROMPTS.push(window.McpSdkReadmePrompt);
         }
         
         // Additional prompts can be added here in the future
