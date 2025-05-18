@@ -23,25 +23,35 @@
     color: #6366f1; /* Default color (indigo) */
 }
 
+/* Function group colors - used for both function calls and function items */
+:root {
+    /* Theme-compatible color scales */
+    --function-color-1: var(--primary-color, #6366f1); /* Primary theme color */
+    --function-color-2: #8b5cf6; /* Violet */
+    --function-color-3: #ec4899; /* Pink */
+    --function-color-4: #f43f5e; /* Rose */
+    --function-color-5: #f97316; /* Orange */
+}
+
 /* Different colors for multiple function calls */
 .function-call-icon.color-1, .function-result-icon.color-1 {
-    color: #6366f1; /* Indigo */
+    color: var(--function-color-1);
 }
 
 .function-call-icon.color-2, .function-result-icon.color-2 {
-    color: #8b5cf6; /* Violet */
+    color: var(--function-color-2);
 }
 
 .function-call-icon.color-3, .function-result-icon.color-3 {
-    color: #ec4899; /* Pink */
+    color: var(--function-color-3);
 }
 
 .function-call-icon.color-4, .function-result-icon.color-4 {
-    color: #f43f5e; /* Rose */
+    color: var(--function-color-4);
 }
 
 .function-call-icon.color-5, .function-result-icon.color-5 {
-    color: #f97316; /* Orange */
+    color: var(--function-color-5);
 }
 
 /* Function call icon (f) */
@@ -284,6 +294,90 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Function group color indicators - with thicker borders (12px) */
+.function-item[data-group-color="color-1"] {
+    border-left: 12px solid var(--function-color-1);
+}
+
+.function-item[data-group-color="color-2"] {
+    border-left: 12px solid var(--function-color-2);
+}
+
+.function-item[data-group-color="color-3"] {
+    border-left: 12px solid var(--function-color-3);
+}
+
+.function-item[data-group-color="color-4"] {
+    border-left: 12px solid var(--function-color-4);
+}
+
+.function-item[data-group-color="color-5"] {
+    border-left: 12px solid var(--function-color-5);
+}
+
+/* Subtle background tint for function groups */
+.function-item[data-group-color="color-1"]::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--function-color-1);
+    opacity: 0.05;
+    pointer-events: none;
+}
+
+.function-item[data-group-color="color-2"]::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--function-color-2);
+    opacity: 0.05;
+    pointer-events: none;
+}
+
+.function-item[data-group-color="color-3"]::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--function-color-3);
+    opacity: 0.05;
+    pointer-events: none;
+}
+
+.function-item[data-group-color="color-4"]::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--function-color-4);
+    opacity: 0.05;
+    pointer-events: none;
+}
+
+.function-item[data-group-color="color-5"]::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--function-color-5);
+    opacity: 0.05;
+    pointer-events: none;
 }
 
 .function-item-checkbox {
