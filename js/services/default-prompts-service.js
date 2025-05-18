@@ -48,6 +48,11 @@ window.DefaultPromptsService = (function() {
             }
         }
         
+        // Add Agent Orchestration Example prompt if it exists
+        if (window.AgentOrchestrationPrompt) {
+            DEFAULT_PROMPTS.push(window.AgentOrchestrationPrompt);
+        }
+        
         // Additional prompts can be added here in the future
         
         console.log(`Loaded ${DEFAULT_PROMPTS.length} default prompts`);
