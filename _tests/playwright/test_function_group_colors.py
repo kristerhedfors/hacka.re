@@ -1,35 +1,13 @@
 import pytest
-from playwright.sync_api import Page, expect
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from playwright.sync_api import expect
 
-from function_calling_api.helpers.setup_helpers import (
-    setup_console_logging, 
-    configure_api_key_and_model, 
-    enable_tool_calling_and_function_tools
-)
-
-def test_function_group_colors(page: Page, serve_hacka_re, api_key):
+def test_function_group_colors(page, base_url):
     """Test that functions from the same import are grouped by color and deletion works for the entire group."""
-    # Set up console error logging
-    setup_console_logging(page)
-    
     # Navigate to the page
-    page.goto(serve_hacka_re)
+    page.goto(base_url)
     
-    # Dismiss welcome modal if present
-    dismiss_welcome_modal(page)
-    
-    # Dismiss settings modal if already open
-    dismiss_settings_modal(page)
-    
-    # Configure API key and model
-    configure_api_key_and_model(page, api_key)
-    
-    # Enable tool calling and function tools
-    enable_tool_calling_and_function_tools(page)
-    
-    # Open function modal
-    page.locator("#function-btn").click()
+    # Open the function modal
+    page.click('button[title="Function tools"]')
     
     # Wait for the modal to be visible
     expect(page.locator('.modal.function-modal')).to_be_visible()
