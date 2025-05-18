@@ -33,6 +33,21 @@ window.DefaultPromptsService = (function() {
             DEFAULT_PROMPTS.push(window.McpSdkReadmePrompt);
         }
         
+        // Add Function Library prompt if it exists
+        if (window.FunctionLibraryPrompt) {
+            // If the content is a function, we need to evaluate it
+            if (typeof window.FunctionLibraryPrompt.content === 'function') {
+                // Create a copy of the prompt with the evaluated content
+                const evaluatedPrompt = {
+                    ...window.FunctionLibraryPrompt,
+                    content: window.FunctionLibraryPrompt.content()
+                };
+                DEFAULT_PROMPTS.push(evaluatedPrompt);
+            } else {
+                DEFAULT_PROMPTS.push(window.FunctionLibraryPrompt);
+            }
+        }
+        
         // Additional prompts can be added here in the future
         
         console.log(`Loaded ${DEFAULT_PROMPTS.length} default prompts`);
@@ -103,9 +118,21 @@ window.DefaultPromptsService = (function() {
         }
         
         // Get all selected prompts
-        const selectedDefaultPrompts = getSelectedDefaultPrompts();
+        let selectedDefaultPrompts = getSelectedDefaultPrompts();
         const selectedPrompts = window.PromptsService ? 
             window.PromptsService.getSelectedPrompts() : [];
+        
+        // Re-evaluate Function Library prompt content if it's selected
+        selectedDefaultPrompts = selectedDefaultPrompts.map(prompt => {
+            if (prompt.id === 'function_library' && window.FunctionLibraryPrompt && typeof window.FunctionLibraryPrompt.content === 'function') {
+                // Create a copy with the re-evaluated content
+                return {
+                    ...prompt,
+                    content: window.FunctionLibraryPrompt.content()
+                };
+            }
+            return prompt;
+        });
         
         const allSelectedPrompts = [...selectedDefaultPrompts, ...selectedPrompts];
         console.log("Selected prompts count:", allSelectedPrompts.length);
