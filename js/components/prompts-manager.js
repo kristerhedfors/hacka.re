@@ -142,11 +142,6 @@ function loadPromptsList() {
     promptsUsageFill = tokenUsageContainer.querySelector('.prompts-usage-fill');
     promptsUsageText = tokenUsageContainer.querySelector('.prompts-usage-text');
     
-    // Add default prompts section if DefaultPromptsService is available
-    if (window.DefaultPromptsService) {
-        addDefaultPromptsSection();
-    }
-    
     // Get all prompts
     let prompts = PromptsService.getPrompts();
     
@@ -294,6 +289,11 @@ function loadPromptsList() {
         
         elements.promptsList.appendChild(promptItem);
     });
+    
+    // Add default prompts section if DefaultPromptsService is available
+    if (window.DefaultPromptsService) {
+        addDefaultPromptsSection();
+    }
             
     // Add new prompt input fields at the bottom
     const newPromptSection = document.createElement('div');
@@ -529,7 +529,19 @@ function addDefaultPromptsSection() {
             
             if (labelField && contentField) {
                 labelField.value = prompt.name || '';
-                contentField.value = prompt.content || '';
+                
+                // For the Function Library prompt, re-evaluate the content function to get the current state
+                let contentValue = '';
+                if (prompt.id === 'function_library' && window.FunctionLibraryPrompt && typeof window.FunctionLibraryPrompt.content === 'function') {
+                    // Re-evaluate the function to get the current content
+                    contentValue = window.FunctionLibraryPrompt.content();
+                } else {
+                    // For other prompts, use the stored content
+                    contentValue = prompt.content || '';
+                }
+                
+                contentField.value = contentValue;
+                
                 // Make it clear these are read-only for default prompts
                 labelField.setAttribute('readonly', 'readonly');
                 contentField.setAttribute('readonly', 'readonly');
