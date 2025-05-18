@@ -47,6 +47,11 @@ window.FunctionCallingManager = (function() {
                 elements.copyToolDefinitionBtn.addEventListener('click', copyToolDefinition);
             }
             
+            // Add event listener for copying function library
+            if (elements.copyFunctionLibraryBtn) {
+                elements.copyFunctionLibraryBtn.addEventListener('click', copyFunctionLibrary);
+            }
+            
             // Add event listener for function code changes to auto-extract function name
             if (elements.functionCode) {
                 elements.functionCode.addEventListener('input', extractFunctionName);
@@ -1025,6 +1030,57 @@ function get_weather(location, units = "metric") {
                         addSystemMessage('Failed to copy tool definition. Please try again.');
                     }
                 });
+        }
+        
+        /**
+         * Copy entire function library as JSON to clipboard
+         */
+        function copyFunctionLibrary() {
+            // Get all functions
+            const functions = FunctionToolsService.getJsFunctions();
+            
+            if (!functions || Object.keys(functions).length === 0) {
+                if (addSystemMessage) {
+                    addSystemMessage('No functions in library to copy.');
+                }
+                return;
+            }
+            
+            try {
+                // Create a JSON representation of the functions library
+                const functionsLibrary = {};
+                
+                // For each function, include its code and tool definition
+                Object.keys(functions).forEach(name => {
+                    functionsLibrary[name] = {
+                        code: functions[name].code,
+                        toolDefinition: functions[name].toolDefinition,
+                        enabled: FunctionToolsService.isJsFunctionEnabled(name)
+                    };
+                });
+                
+                // Convert to JSON string with pretty formatting
+                const jsonString = JSON.stringify(functionsLibrary, null, 2);
+                
+                // Copy to clipboard
+                navigator.clipboard.writeText(jsonString)
+                    .then(() => {
+                        if (addSystemMessage) {
+                            addSystemMessage('Function library copied to clipboard as JSON.');
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy function library:', err);
+                        if (addSystemMessage) {
+                            addSystemMessage('Failed to copy function library. Please try again.');
+                        }
+                    });
+            } catch (error) {
+                console.error('Error serializing function library:', error);
+                if (addSystemMessage) {
+                    addSystemMessage(`Error copying function library: ${error.message}`);
+                }
+            }
         }
         
         /**
