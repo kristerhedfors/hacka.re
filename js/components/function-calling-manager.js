@@ -47,6 +47,11 @@ window.FunctionCallingManager = (function() {
                 elements.copyToolDefinitionBtn.addEventListener('click', copyToolDefinition);
             }
             
+            // Add event listener for copying function library
+            if (elements.copyFunctionLibraryBtn) {
+                elements.copyFunctionLibraryBtn.addEventListener('click', copyFunctionLibrary);
+            }
+            
             // Add event listener for function code changes to auto-extract function name
             if (elements.functionCode) {
                 elements.functionCode.addEventListener('input', extractFunctionName);
@@ -190,6 +195,24 @@ function get_weather(location, units = "metric") {
                 elements.emptyFunctionState.style.display = 'none';
             }
             
+            // Group functions by their group ID
+            const groupedFunctions = {};
+            const groupColors = {};
+            let colorIndex = 1;
+            
+            // First pass: group functions and assign colors to groups
+            functionNames.forEach(name => {
+                const relatedFunctions = FunctionToolsService.getFunctionsInSameGroup(name);
+                const groupKey = relatedFunctions.sort().join(','); // Use sorted function names as key
+                
+                if (!groupedFunctions[groupKey]) {
+                    groupedFunctions[groupKey] = relatedFunctions;
+                    // Assign a color to this group (cycle through 5 colors)
+                    groupColors[groupKey] = `color-${colorIndex}`;
+                    colorIndex = colorIndex % 5 + 1; // Cycle through colors 1-5
+                }
+            });
+            
             // Create function items - only show callable functions
             functionNames.forEach(name => {
                 const functionSpec = functions[name];
@@ -204,8 +227,18 @@ function get_weather(location, units = "metric") {
                 
                 const isEnabled = FunctionToolsService.isJsFunctionEnabled(name);
                 
+                // Get the group this function belongs to
+                const relatedFunctions = FunctionToolsService.getFunctionsInSameGroup(name);
+                const groupKey = relatedFunctions.sort().join(',');
+                const groupColor = groupColors[groupKey] || 'color-1';
+                
                 const functionItem = document.createElement('div');
                 functionItem.className = 'function-item';
+                functionItem.dataset.groupColor = groupColor;
+                functionItem.dataset.groupKey = groupKey;
+                
+                // Add a color indicator based on the group
+                functionItem.style.borderLeft = `4px solid var(--function-${groupColor})`;
                 
                 // Create checkbox
                 const checkbox = document.createElement('input');
@@ -256,15 +289,37 @@ function get_weather(location, units = "metric") {
                 const deleteButton = document.createElement('button');
                 deleteButton.className = 'function-item-delete';
                 deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
-                deleteButton.title = 'Delete function';
+                deleteButton.title = 'Delete function and its related functions';
                 deleteButton.addEventListener('click', () => {
-                    if (confirm(`Are you sure you want to delete the function "${name}"?`)) {
+                    // Get all functions in the same group
+                    const relatedFunctions = FunctionToolsService.getFunctionsInSameGroup(name);
+                    
+                    // Create confirmation message based on group size
+                    let confirmMessage;
+                    if (relatedFunctions.length > 1) {
+                        // Format the list of functions for display
+                        const functionsList = relatedFunctions
+                            .filter(f => f !== name) // Exclude the current function
+                            .map(f => `"${f}"`)
+                            .join(', ');
+                        
+                        confirmMessage = `Are you sure you want to delete the function "${name}" and its related ${relatedFunctions.length - 1} function(s): ${functionsList}?`;
+                        confirmMessage += `\n\nAll functions in this ${groupColor} group will be deleted.`;
+                    } else {
+                        confirmMessage = `Are you sure you want to delete the function "${name}"?`;
+                    }
+                    
+                    if (confirm(confirmMessage)) {
                         FunctionToolsService.removeJsFunction(name);
                         renderFunctionList();
                         
                         // Add system message about the deletion
                         if (addSystemMessage) {
-                            addSystemMessage(`Function "${name}" removed.`);
+                            if (relatedFunctions.length > 1) {
+                                addSystemMessage(`Function "${name}" and ${relatedFunctions.length - 1} related functions removed.`);
+                            } else {
+                                addSystemMessage(`Function "${name}" removed.`);
+                            }
                         }
                     }
                 });
@@ -1025,6 +1080,57 @@ function get_weather(location, units = "metric") {
                         addSystemMessage('Failed to copy tool definition. Please try again.');
                     }
                 });
+        }
+        
+        /**
+         * Copy entire function library as JSON to clipboard
+         */
+        function copyFunctionLibrary() {
+            // Get all functions
+            const functions = FunctionToolsService.getJsFunctions();
+            
+            if (!functions || Object.keys(functions).length === 0) {
+                if (addSystemMessage) {
+                    addSystemMessage('No functions in library to copy.');
+                }
+                return;
+            }
+            
+            try {
+                // Create a JSON representation of the functions library
+                const functionsLibrary = {};
+                
+                // For each function, include its code and tool definition
+                Object.keys(functions).forEach(name => {
+                    functionsLibrary[name] = {
+                        code: functions[name].code,
+                        toolDefinition: functions[name].toolDefinition,
+                        enabled: FunctionToolsService.isJsFunctionEnabled(name)
+                    };
+                });
+                
+                // Convert to JSON string with pretty formatting
+                const jsonString = JSON.stringify(functionsLibrary, null, 2);
+                
+                // Copy to clipboard
+                navigator.clipboard.writeText(jsonString)
+                    .then(() => {
+                        if (addSystemMessage) {
+                            addSystemMessage('Function library copied to clipboard as JSON.');
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy function library:', err);
+                        if (addSystemMessage) {
+                            addSystemMessage('Failed to copy function library. Please try again.');
+                        }
+                    });
+            } catch (error) {
+                console.error('Error serializing function library:', error);
+                if (addSystemMessage) {
+                    addSystemMessage(`Error copying function library: ${error.message}`);
+                }
+            }
         }
         
         /**
