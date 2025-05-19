@@ -3,7 +3,6 @@ from playwright.sync_api import Page, expect
 
 from test_utils import timed_test, dismiss_welcome_modal, dismiss_settings_modal
 
-@timed_test
 def test_default_prompts_section_exists(page, serve_hacka_re):
     """Test that the default prompts section exists in the prompts modal."""
     # Navigate to the application
@@ -11,6 +10,9 @@ def test_default_prompts_section_exists(page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
+    
+    # Wait a moment for the page to fully load
+    page.wait_for_timeout(500)
     
     # Click the prompts button
     prompts_button = page.locator("#prompts-btn")
@@ -42,7 +44,6 @@ def test_default_prompts_section_exists(page, serve_hacka_re):
     # Check that the prompts modal is no longer visible
     expect(prompts_modal).not_to_be_visible()
 
-@timed_test
 def test_default_prompts_expand_collapse(page, serve_hacka_re):
     """Test that the default prompts section can be expanded and collapsed."""
     # Navigate to the application
@@ -50,6 +51,9 @@ def test_default_prompts_expand_collapse(page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
+    
+    # Wait a moment for the page to fully load
+    page.wait_for_timeout(500)
     
     # Click the prompts button
     prompts_button = page.locator("#prompts-btn")
@@ -93,7 +97,6 @@ def test_default_prompts_expand_collapse(page, serve_hacka_re):
     # Check that the prompts modal is no longer visible
     expect(prompts_modal).not_to_be_visible()
 
-@timed_test
 def test_default_prompts_content(page, serve_hacka_re):
     """Test that the default prompts section contains the expected content."""
     # Navigate to the application
@@ -101,6 +104,9 @@ def test_default_prompts_content(page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
+    
+    # Wait a moment for the page to fully load
+    page.wait_for_timeout(500)
     
     # Click the prompts button
     prompts_button = page.locator("#prompts-btn")
@@ -131,12 +137,8 @@ def test_default_prompts_content(page, serve_hacka_re):
     owasp_prompt = page.locator(".default-prompt-item:has-text('OWASP Top 10 for LLM Applications')")
     expect(owasp_prompt).to_be_visible()
     
-    # Check that the MCP SDK README prompt exists
-    mcp_sdk_prompt = page.locator(".default-prompt-item:has-text('Model Context Protocol SDK README')")
-    expect(mcp_sdk_prompt).to_be_visible()
-    
     # Check that each default prompt has a checkbox
-    for prompt in [hacka_re_prompt, owasp_prompt, mcp_sdk_prompt]:
+    for prompt in [hacka_re_prompt, owasp_prompt]:
         checkbox = prompt.locator(".prompt-item-checkbox")
         expect(checkbox).to_be_visible()
         
@@ -151,7 +153,6 @@ def test_default_prompts_content(page, serve_hacka_re):
     # Check that the prompts modal is no longer visible
     expect(prompts_modal).not_to_be_visible()
 
-@timed_test
 def test_default_prompts_selection(page, serve_hacka_re):
     """Test that default prompts can be selected and deselected."""
     # Navigate to the application
@@ -159,6 +160,9 @@ def test_default_prompts_selection(page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
+    
+    # Wait a moment for the page to fully load
+    page.wait_for_timeout(500)
     
     # Click the prompts button
     prompts_button = page.locator("#prompts-btn")
@@ -179,8 +183,7 @@ def test_default_prompts_selection(page, serve_hacka_re):
     # Define the prompts to test
     prompts_to_test = [
         ".default-prompt-item:has-text('About hacka.re Project')",
-        ".default-prompt-item:has-text('OWASP Top 10 for LLM Applications')",
-        ".default-prompt-item:has-text('Model Context Protocol SDK README')"
+        ".default-prompt-item:has-text('OWASP Top 10 for LLM Applications')"
     ]
     
     # Test each prompt
@@ -218,14 +221,111 @@ def test_default_prompts_selection(page, serve_hacka_re):
     # Check that the prompts modal is no longer visible
     expect(prompts_modal).not_to_be_visible()
 
-@timed_test
 def test_default_prompts_info_button(page, serve_hacka_re):
-    """Test that the info button shows the default prompt content."""
+    """Test that the info button shows a popup with information about the prompt."""
     # Navigate to the application
     page.goto(serve_hacka_re)
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
+    
+    # Wait a moment for the page to fully load
+    page.wait_for_timeout(500)
+    
+    # Click the prompts button
+    prompts_button = page.locator("#prompts-btn")
+    prompts_button.click()
+    
+    # Check that the prompts modal is visible
+    prompts_modal = page.locator("#prompts-modal")
+    expect(prompts_modal).to_be_visible()
+    
+    # Click the default prompts header to expand
+    default_prompts_header = page.locator(".default-prompts-header")
+    default_prompts_header.click()
+    
+    # Check that the default prompts list is now visible (expanded)
+    default_prompts_list = page.locator(".default-prompts-list")
+    expect(default_prompts_list).to_be_visible()
+    
+    # Define the prompts to test
+    prompts_to_test = [
+        {
+            "selector": ".default-prompt-item:has-text('About hacka.re Project')",
+            "expected_title": "About hacka.re Project",
+            "expected_description": "Information about the hacka.re project, including architecture"
+        },
+        {
+            "selector": ".default-prompt-item:has-text('OWASP Top 10 for LLM Applications')",
+            "expected_title": "OWASP Top 10 for LLM Applications",
+            "expected_description": "The entire OWASP Top 10 for LLM applications as of May 2025"
+        },
+        {
+            "selector": ".default-prompt-item:has-text('Function library')",
+            "expected_title": "Function library",
+            "expected_description": "All JavaScript functions currently stored in",
+            "has_link": True
+        }
+    ]
+    
+    # Test each prompt
+    for prompt_info in prompts_to_test:
+        # Find the prompt
+        prompt = page.locator(prompt_info["selector"])
+        expect(prompt).to_be_visible()
+        
+        # Get the info button
+        info_button = prompt.locator(".prompt-item-info")
+        
+        # Click the info button
+        info_button.click()
+        
+        # Check that the info popup is displayed
+        popup = page.locator(".prompt-info-popup")
+        expect(popup).to_be_visible()
+        
+        # Check that the popup contains the expected title
+        popup_title = popup.locator(".prompt-info-header h3")
+        expect(popup_title).to_have_text(prompt_info["expected_title"])
+        
+        # Check that the popup contains the expected description
+        popup_content = popup.locator(".prompt-info-content p").first
+        expect(popup_content).to_contain_text(prompt_info["expected_description"])
+        
+        # Check for Function Library link if this prompt has one
+        if prompt_info.get("has_link", False):
+            function_library_link = popup.locator(".function-library-link")
+            expect(function_library_link).to_be_visible()
+            expect(function_library_link).to_have_text("Function Library")
+        
+        # Check that the popup contains the hint about clicking the prompt name
+        popup_hint = popup.locator(".prompt-info-hint")
+        expect(popup_hint).to_contain_text("Click on the prompt name")
+        
+        # Close the popup by clicking the close button
+        close_popup_button = popup.locator(".prompt-info-close")
+        close_popup_button.click()
+        
+        # Check that the popup is no longer visible
+        expect(popup).not_to_be_visible()
+    
+    # Close the prompts modal
+    close_button = page.locator("#close-prompts-modal")
+    close_button.click()
+    
+    # Check that the prompts modal is no longer visible
+    expect(prompts_modal).not_to_be_visible()
+
+def test_default_prompts_name_click(page, serve_hacka_re):
+    """Test that clicking on the prompt name loads the prompt content into the editor."""
+    # Navigate to the application
+    page.goto(serve_hacka_re)
+    
+    # Dismiss welcome modal if present
+    dismiss_welcome_modal(page)
+    
+    # Wait a moment for the page to fully load
+    page.wait_for_timeout(500)
     
     # Click the prompts button
     prompts_button = page.locator("#prompts-btn")
@@ -248,17 +348,12 @@ def test_default_prompts_info_button(page, serve_hacka_re):
         {
             "selector": ".default-prompt-item:has-text('About hacka.re Project')",
             "expected_label": "About hacka.re Project",
-            "expected_content_fragment": "hacka.re is a privacy-focused web client"
+            "expected_content_fragment": "hacka.re is a highly portable, low-dependency, privacy-first chat interface"
         },
         {
             "selector": ".default-prompt-item:has-text('OWASP Top 10 for LLM Applications')",
             "expected_label": "OWASP Top 10 for LLM Applications",
             "expected_content_fragment": "OWASP Top 10 for Large Language Model Applications"
-        },
-        {
-            "selector": ".default-prompt-item:has-text('Model Context Protocol SDK README')",
-            "expected_label": "Model Context Protocol SDK README",
-            "expected_content_fragment": "MCP Python SDK"
         }
     ]
     
@@ -268,11 +363,11 @@ def test_default_prompts_info_button(page, serve_hacka_re):
         prompt = page.locator(prompt_info["selector"])
         expect(prompt).to_be_visible()
         
-        # Get the info button
-        info_button = prompt.locator(".prompt-item-info")
+        # Get the prompt name element
+        prompt_name = prompt.locator(".prompt-item-name")
         
-        # Click the info button
-        info_button.click()
+        # Click the prompt name
+        prompt_name.click()
         
         # Check that the prompt content is displayed in the editor fields
         label_field = page.locator("#new-prompt-label")

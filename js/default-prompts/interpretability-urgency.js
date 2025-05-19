@@ -4,7 +4,7 @@
  */
 
 window.InterpretabilityUrgencyPrompt = {
-    id: 'interpretability_urgency',
+    id: 'interpretability-urgency',
     name: 'The urgency of interpretability',
     content: `# The Urgency of Interpretability
 ## By Dario Amodei
