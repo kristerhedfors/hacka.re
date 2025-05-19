@@ -160,7 +160,7 @@ window.DataService = (function() {
             STORAGE_KEYS.BASE_URL_PROVIDER, 
             STORAGE_KEYS.BASE_URL_PROVIDER, 
             saveBaseUrlProvider
-        ) || 'groq';
+        ) || 'openai';
     }
     
     /**

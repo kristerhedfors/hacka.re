@@ -18,8 +18,8 @@ window.BaseUrlManager = (function() {
          */
         function init() {
             // Load saved base URL and provider
-            baseUrl = StorageService.getBaseUrl();
-            const baseUrlProvider = StorageService.getBaseUrlProvider();
+            baseUrl = DataService.getBaseUrl();
+            const baseUrlProvider = DataService.getBaseUrlProvider();
             
             // Set the provider dropdown
             if (elements.baseUrlSelect) {
@@ -46,7 +46,7 @@ window.BaseUrlManager = (function() {
                     } else {
                         // Hide custom URL field and set to default URL for the provider
                         elements.customBaseUrlGroup.style.display = 'none';
-                        const defaultUrl = StorageService.getDefaultBaseUrlForProvider(selectedProvider);
+                        const defaultUrl = DataService.getDefaultBaseUrlForProvider(selectedProvider);
                         if (elements.baseUrl) {
                             elements.baseUrl.value = defaultUrl;
                         }
@@ -60,16 +60,16 @@ window.BaseUrlManager = (function() {
                             
                             // Load saved Azure settings
                             if (elements.azureApiBase) {
-                                elements.azureApiBase.value = StorageService.getAzureApiBase() || '';
+                                elements.azureApiBase.value = DataService.getAzureApiBase() || '';
                             }
                             if (elements.azureApiVersion) {
-                                elements.azureApiVersion.value = StorageService.getAzureApiVersion() || '2024-03-01-preview';
+                                elements.azureApiVersion.value = DataService.getAzureApiVersion() || '2024-03-01-preview';
                             }
                             if (elements.azureDeploymentName) {
-                                elements.azureDeploymentName.value = StorageService.getAzureDeploymentName() || '';
+                                elements.azureDeploymentName.value = DataService.getAzureDeploymentName() || '';
                             }
                             if (elements.azureModelName) {
-                                elements.azureModelName.value = StorageService.getAzureModelName() || '';
+                                elements.azureModelName.value = DataService.getAzureModelName() || '';
                             }
                         }
                         
@@ -99,7 +99,7 @@ window.BaseUrlManager = (function() {
         function getBaseUrl() {
             // Always get the base URL from storage to ensure we have the latest value
             // This is especially important when the namespace changes due to title/subtitle changes
-            return StorageService.getBaseUrl();
+            return DataService.getBaseUrl();
         }
         
         /**
@@ -108,8 +108,8 @@ window.BaseUrlManager = (function() {
          * @param {string} provider - The provider to save
          */
         function saveBaseUrl(url, provider) {
-            StorageService.saveBaseUrl(url);
-            StorageService.saveBaseUrlProvider(provider);
+            DataService.saveBaseUrl(url);
+            DataService.saveBaseUrlProvider(provider);
             baseUrl = url;
         }
         
@@ -118,7 +118,7 @@ window.BaseUrlManager = (function() {
          * @returns {string} Current base URL provider
          */
         function getBaseUrlProvider() {
-            return StorageService.getBaseUrlProvider();
+            return DataService.getBaseUrlProvider();
         }
         
         /**
@@ -127,7 +127,7 @@ window.BaseUrlManager = (function() {
          * @returns {string} The default base URL for the provider
          */
         function getDefaultBaseUrlForProvider(provider) {
-            return StorageService.getDefaultBaseUrlForProvider(provider);
+            return DataService.getDefaultBaseUrlForProvider(provider);
         }
         
         /**
@@ -145,7 +145,7 @@ window.BaseUrlManager = (function() {
                 // based on the API base, API version, and deployment name
                 return customUrl.trim();
             } else {
-                return StorageService.getDefaultBaseUrlForProvider(selectedProvider);
+                return DataService.getDefaultBaseUrlForProvider(selectedProvider);
             }
         }
         

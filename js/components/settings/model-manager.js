@@ -310,8 +310,8 @@ window.ModelManager = (function() {
                 
                 // If no model is currently selected, select a default model based on the provider
                 if (!currentModel || currentModel === '') {
-                    // Determine the provider from the base URL
-                    let provider = 'groq'; // Default provider
+                 // Determine the provider from the base URL
+                 let provider = 'openai'; // Default provider
                     if (baseUrl) {
                         if (baseUrl.includes('openai.com')) {
                             provider = 'openai';

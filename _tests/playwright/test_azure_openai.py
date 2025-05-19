@@ -13,17 +13,38 @@ def test_azure_openai_settings(page, serve_hacka_re):
     # Navigate to the application
     page.goto(serve_hacka_re)
     
+    # Wait for the page to load
+    page.wait_for_selector("body", state="visible")
+    
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
     
     # Open settings modal
     page.click("#settings-btn")
     
+    # Wait for settings modal to be fully loaded and visible
+    page.wait_for_selector("#settings-modal.active", state="visible", timeout=5000)
+    
+    # Wait for the base-url-select to be visible and enabled
+    page.wait_for_selector("#base-url-select", state="visible", timeout=5000)
+    
+    # First check that standard model dropdown and reload button are visible with default provider
+    expect(page.locator("#model-select")).to_be_visible()
+    expect(page.locator("#reload-models-btn")).to_be_visible()
+    
     # Select Azure OpenAI provider
-    page.select_option("#base-url-select", "azure-openai")
+    base_url_select = page.locator("#base-url-select")
+    base_url_select.select_option("azure-openai")
+    
+    # Wait for the change to take effect
+    page.wait_for_timeout(500)
     
     # Verify that Azure OpenAI settings are displayed
     expect(page.locator("#azure-settings-group")).to_be_visible()
+    
+    # Verify that standard model dropdown and reload button are hidden when Azure OpenAI is selected
+    expect(page.locator("#model-select")).not_to_be_visible()
+    expect(page.locator("#reload-models-btn")).not_to_be_visible()
     
     # Fill in Azure OpenAI settings
     page.fill("#azure-api-base", "https://test-resource.openai.azure.com")
@@ -64,14 +85,35 @@ def test_azure_openai_clear_settings(page, serve_hacka_re):
     # Navigate to the application
     page.goto(serve_hacka_re)
     
+    # Wait for the page to load
+    page.wait_for_selector("body", state="visible")
+    
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
     
     # Open settings modal
     page.click("#settings-btn")
     
+    # Wait for settings modal to be fully loaded and visible
+    page.wait_for_selector("#settings-modal.active", state="visible", timeout=5000)
+    
+    # Wait for the base-url-select to be visible and enabled
+    page.wait_for_selector("#base-url-select", state="visible", timeout=5000)
+    
+    # First check that standard model dropdown and reload button are visible with default provider
+    expect(page.locator("#model-select")).to_be_visible()
+    expect(page.locator("#reload-models-btn")).to_be_visible()
+    
     # Select Azure OpenAI provider
-    page.select_option("#base-url-select", "azure-openai")
+    base_url_select = page.locator("#base-url-select")
+    base_url_select.select_option("azure-openai")
+    
+    # Wait for the change to take effect
+    page.wait_for_timeout(500)
+    
+    # Verify that standard model dropdown and reload button are hidden when Azure OpenAI is selected
+    expect(page.locator("#model-select")).not_to_be_visible()
+    expect(page.locator("#reload-models-btn")).not_to_be_visible()
     
     # Fill in Azure OpenAI settings
     page.fill("#azure-api-base", "https://test-resource.openai.azure.com")
@@ -105,6 +147,10 @@ def test_azure_openai_clear_settings(page, serve_hacka_re):
     # Verify that Azure OpenAI settings are not displayed
     expect(page.locator("#azure-settings-group")).not_to_be_visible()
     
+    # Verify that standard model dropdown and reload button are visible again after clearing settings
+    expect(page.locator("#model-select")).to_be_visible()
+    expect(page.locator("#reload-models-btn")).to_be_visible()
+    
     # Close settings modal
     page.click("#close-settings")
 
@@ -113,18 +159,31 @@ def test_azure_openai_provider_switch(page, serve_hacka_re):
     # Navigate to the application
     page.goto(serve_hacka_re)
     
+    # Wait for the page to load
+    page.wait_for_selector("body", state="visible")
+    
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
     
     # Open settings modal
     page.click("#settings-btn")
     
+    # Wait for settings modal to be fully loaded and visible
+    page.wait_for_selector("#settings-modal.active", state="visible", timeout=5000)
+    
+    # Wait for the base-url-select to be visible and enabled
+    page.wait_for_selector("#base-url-select", state="visible", timeout=5000)
+    
     # First check that standard model dropdown and reload button are visible with default provider
     expect(page.locator("#model-select")).to_be_visible()
     expect(page.locator("#reload-models-btn")).to_be_visible()
     
     # Select Azure OpenAI provider
-    page.select_option("#base-url-select", "azure-openai")
+    base_url_select = page.locator("#base-url-select")
+    base_url_select.select_option("azure-openai")
+    
+    # Wait for the change to take effect
+    page.wait_for_timeout(500)
     
     # Verify that Azure OpenAI settings are displayed
     expect(page.locator("#azure-settings-group")).to_be_visible()
@@ -134,7 +193,11 @@ def test_azure_openai_provider_switch(page, serve_hacka_re):
     expect(page.locator("#reload-models-btn")).not_to_be_visible()
     
     # Switch to OpenAI provider
-    page.select_option("#base-url-select", "openai")
+    base_url_select = page.locator("#base-url-select")
+    base_url_select.select_option("openai")
+    
+    # Wait for the change to take effect
+    page.wait_for_timeout(500)
     
     # Verify that Azure OpenAI settings are not displayed
     expect(page.locator("#azure-settings-group")).not_to_be_visible()
@@ -144,7 +207,11 @@ def test_azure_openai_provider_switch(page, serve_hacka_re):
     expect(page.locator("#reload-models-btn")).to_be_visible()
     
     # Switch back to Azure OpenAI provider
-    page.select_option("#base-url-select", "azure-openai")
+    base_url_select = page.locator("#base-url-select")
+    base_url_select.select_option("azure-openai")
+    
+    # Wait for the change to take effect
+    page.wait_for_timeout(500)
     
     # Verify that Azure OpenAI settings are displayed again
     expect(page.locator("#azure-settings-group")).to_be_visible()

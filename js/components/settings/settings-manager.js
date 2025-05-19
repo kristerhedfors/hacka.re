@@ -286,7 +286,7 @@ window.SettingsManager = (function() {
             }
             
             // Load Azure OpenAI settings if the provider is Azure OpenAI
-            const currentProvider = StorageService.getBaseUrlProvider();
+            const currentProvider = DataService.getBaseUrlProvider();
             if (currentProvider === 'azure-openai') {
                 // Show Azure OpenAI settings
                 if (elements.azureSettingsGroup) {
@@ -294,22 +294,25 @@ window.SettingsManager = (function() {
                     
                     // Load saved Azure settings
                     if (elements.azureApiBase) {
-                        elements.azureApiBase.value = StorageService.getAzureApiBase() || '';
+                        elements.azureApiBase.value = DataService.getAzureApiBase() || '';
                     }
                     if (elements.azureApiVersion) {
-                        elements.azureApiVersion.value = StorageService.getAzureApiVersion() || '2024-03-01-preview';
+                        elements.azureApiVersion.value = DataService.getAzureApiVersion() || '2024-03-01-preview';
                     }
                     if (elements.azureDeploymentName) {
-                        elements.azureDeploymentName.value = StorageService.getAzureDeploymentName() || '';
+                        elements.azureDeploymentName.value = DataService.getAzureDeploymentName() || '';
                     }
                     if (elements.azureModelName) {
-                        elements.azureModelName.value = StorageService.getAzureModelName() || '';
+                        elements.azureModelName.value = DataService.getAzureModelName() || '';
                     }
                 }
                 
                 // Hide model dropdown and reload button for Azure OpenAI
                 if (elements.modelSelect && elements.modelSelect.parentNode) {
                     elements.modelSelect.parentNode.style.display = 'none';
+                }
+                if (elements.modelReloadBtn) {
+                    elements.modelReloadBtn.style.display = 'none';
                 }
             } else {
                 // Hide Azure OpenAI settings
@@ -333,7 +336,7 @@ window.SettingsManager = (function() {
                         elements.customBaseUrlGroup.style.display = 'block';
                     }
                     if (elements.baseUrl) {
-                        elements.baseUrl.value = StorageService.getBaseUrl() || '';
+                        elements.baseUrl.value = DataService.getBaseUrl() || '';
                     }
                 } else {
                     if (elements.customBaseUrlGroup) {
@@ -425,10 +428,10 @@ window.SettingsManager = (function() {
                 const azureModelName = elements.azureModelName ? elements.azureModelName.value.trim() : '';
                 
                 // Save Azure OpenAI settings
-                StorageService.saveAzureApiBase(azureApiBase);
-                StorageService.saveAzureApiVersion(azureApiVersion);
-                StorageService.saveAzureDeploymentName(azureDeploymentName);
-                StorageService.saveAzureModelName(azureModelName);
+                DataService.saveAzureApiBase(azureApiBase);
+                DataService.saveAzureApiVersion(azureApiVersion);
+                DataService.saveAzureDeploymentName(azureDeploymentName);
+                DataService.saveAzureModelName(azureModelName);
                 
                 // Log the saved settings
                 console.log('Saved Azure OpenAI settings:', {
