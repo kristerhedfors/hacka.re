@@ -285,6 +285,50 @@ window.SettingsManager = (function() {
                 elements.modelSelect.value = currentModel;
             }
             
+            // Load Azure OpenAI settings if the provider is Azure OpenAI
+            const currentProvider = StorageService.getBaseUrlProvider();
+            if (currentProvider === 'azure-openai') {
+                // Show Azure OpenAI settings
+                if (elements.azureSettingsGroup) {
+                    elements.azureSettingsGroup.style.display = 'block';
+                    
+                    // Load saved Azure settings
+                    if (elements.azureApiBase) {
+                        elements.azureApiBase.value = StorageService.getAzureApiBase() || '';
+                    }
+                    if (elements.azureApiVersion) {
+                        elements.azureApiVersion.value = StorageService.getAzureApiVersion() || '2023-05-15';
+                    }
+                    if (elements.azureDeploymentName) {
+                        elements.azureDeploymentName.value = StorageService.getAzureDeploymentName() || '';
+                    }
+                }
+            } else {
+                // Hide Azure OpenAI settings
+                if (elements.azureSettingsGroup) {
+                    elements.azureSettingsGroup.style.display = 'none';
+                }
+            }
+            
+            // Set the provider dropdown
+            if (elements.baseUrlSelect) {
+                elements.baseUrlSelect.value = currentProvider;
+                
+                // Show/hide custom URL field based on selection
+                if (currentProvider === 'custom') {
+                    if (elements.customBaseUrlGroup) {
+                        elements.customBaseUrlGroup.style.display = 'block';
+                    }
+                    if (elements.baseUrl) {
+                        elements.baseUrl.value = StorageService.getBaseUrl() || '';
+                    }
+                } else {
+                    if (elements.customBaseUrlGroup) {
+                        elements.customBaseUrlGroup.style.display = 'none';
+                    }
+                }
+            }
+            
             // System prompt is now handled by the system-prompt-manager.js
             // No need to set it here as it's displayed on demand when the user clicks "Show System Prompt"
             
@@ -358,6 +402,26 @@ window.SettingsManager = (function() {
             
             // Save the provider selection and base URL
             baseUrlManager.saveBaseUrl(newBaseUrl, selectedProvider);
+            
+            // Save Azure OpenAI settings if the provider is Azure OpenAI
+            if (selectedProvider === 'azure-openai') {
+                // Get Azure OpenAI settings from UI
+                const azureApiBase = elements.azureApiBase ? elements.azureApiBase.value.trim() : '';
+                const azureApiVersion = elements.azureApiVersion ? elements.azureApiVersion.value.trim() : '2023-05-15';
+                const azureDeploymentName = elements.azureDeploymentName ? elements.azureDeploymentName.value.trim() : '';
+                
+                // Save Azure OpenAI settings
+                StorageService.saveAzureApiBase(azureApiBase);
+                StorageService.saveAzureApiVersion(azureApiVersion);
+                StorageService.saveAzureDeploymentName(azureDeploymentName);
+                
+                // Log the saved settings
+                console.log('Saved Azure OpenAI settings:', {
+                    azureApiBase,
+                    azureApiVersion,
+                    azureDeploymentName
+                });
+            }
             
             // We'll use these values to fetch models with updateStorage=true
             // This ensures the values are saved and used for future API calls
@@ -498,6 +562,11 @@ window.SettingsManager = (function() {
             localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.SHARE_OPTIONS));
             localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.BASE_URL));
             localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.BASE_URL_PROVIDER));
+            
+            // Remove Azure OpenAI settings
+            localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.AZURE_API_BASE));
+            localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.AZURE_API_VERSION));
+            localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.AZURE_DEPLOYMENT_NAME));
             
             // Clear chat history from current namespace
             localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.HISTORY));

@@ -20,12 +20,42 @@ window.ApiService = (function() {
         MODELS: 'models'
     };
     
+    // Check if the current provider is Azure OpenAI
+    function isAzureOpenAI() {
+        return StorageService.getBaseUrlProvider() === 'azure-openai';
+    }
+    
     // Get full endpoint URL
     function getEndpointUrl(endpoint) {
-        const baseUrl = getBaseUrl();
-        // Ensure the base URL ends with a slash and the endpoint path doesn't start with a slash
-        const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
-        return `${normalizedBaseUrl}${ENDPOINT_PATHS[endpoint]}`;
+        // Handle Azure OpenAI differently
+        if (isAzureOpenAI()) {
+            const apiBase = StorageService.getAzureApiBase();
+            const apiVersion = StorageService.getAzureApiVersion();
+            const deploymentName = StorageService.getAzureDeploymentName();
+            
+            if (!apiBase || !deploymentName) {
+                console.error('Azure OpenAI API base or deployment name is missing');
+                return ''; // Return empty string to cause an error when used
+            }
+            
+            // Azure OpenAI endpoint format:
+            // For chat: https://{resource-name}.openai.azure.com/openai/deployments/{deployment-name}/chat/completions?api-version={api-version}
+            // For models: https://{resource-name}.openai.azure.com/openai/models?api-version={api-version}
+            
+            const normalizedApiBase = apiBase.endsWith('/') ? apiBase.slice(0, -1) : apiBase;
+            
+            if (endpoint === 'CHAT') {
+                return `${normalizedApiBase}/openai/deployments/${deploymentName}/chat/completions?api-version=${apiVersion}`;
+            } else if (endpoint === 'MODELS') {
+                return `${normalizedApiBase}/openai/models?api-version=${apiVersion}`;
+            }
+        } else {
+            // Standard OpenAI-compatible API
+            const baseUrl = getBaseUrl();
+            // Ensure the base URL ends with a slash and the endpoint path doesn't start with a slash
+            const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+            return `${normalizedBaseUrl}${ENDPOINT_PATHS[endpoint]}`;
+        }
     }
 
     /**
@@ -39,12 +69,22 @@ window.ApiService = (function() {
             throw new Error('API key is required');
         }
         
+        // Check if we're using Azure OpenAI
+        const isAzure = isAzureOpenAI() || (customBaseUrl && StorageService.getBaseUrlProvider() === 'azure-openai');
+        
         // Determine which base URL to use
         let endpointUrl;
         if (customBaseUrl && customBaseUrl !== 'null' && customBaseUrl !== 'undefined') {
-            // Use the custom base URL if provided and valid
-            const normalizedBaseUrl = customBaseUrl.endsWith('/') ? customBaseUrl : `${customBaseUrl}/`;
-            endpointUrl = `${normalizedBaseUrl}${ENDPOINT_PATHS.MODELS}`;
+            if (isAzure) {
+                // For Azure OpenAI with custom base URL
+                const apiVersion = StorageService.getAzureApiVersion();
+                const normalizedBaseUrl = customBaseUrl.endsWith('/') ? customBaseUrl.slice(0, -1) : customBaseUrl;
+                endpointUrl = `${normalizedBaseUrl}/openai/models?api-version=${apiVersion}`;
+            } else {
+                // For standard OpenAI-compatible API with custom base URL
+                const normalizedBaseUrl = customBaseUrl.endsWith('/') ? customBaseUrl : `${customBaseUrl}/`;
+                endpointUrl = `${normalizedBaseUrl}${ENDPOINT_PATHS.MODELS}`;
+            }
         } else {
             // Otherwise use the default endpoint URL
             endpointUrl = getEndpointUrl('MODELS');
@@ -63,7 +103,29 @@ window.ApiService = (function() {
         }
         
         const data = await response.json();
-        const models = data.data;
+        
+        // Handle different response formats
+        let models;
+        if (isAzure) {
+            // Azure OpenAI returns models directly in the response
+            models = data;
+            
+            // Transform Azure models to match OpenAI format if needed
+            if (models && Array.isArray(models)) {
+                models = models.map(model => {
+                    return {
+                        id: model.id || model.model,
+                        object: 'model',
+                        created: model.created || Date.now(),
+                        owned_by: 'azure',
+                        ...model
+                    };
+                });
+            }
+        } else {
+            // Standard OpenAI-compatible API returns models in data.data
+            models = data.data;
+        }
         
         // Store model information in ModelInfoService
         if (window.ModelInfoService && models && Array.isArray(models)) {
@@ -112,10 +174,15 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
     
     // Prepare request body
     const requestBody = {
-        model: model,
         messages: apiMessages,
         stream: true
     };
+    
+    // Only include model in the request body for non-Azure providers
+    // For Azure, the deployment name is already in the URL
+    if (!isAzureOpenAI()) {
+        requestBody.model = model;
+    }
     
     // Add tools if tool calling is enabled and apiToolsManager is provided
     if (apiToolsManager) {
@@ -484,6 +551,17 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
                     }
                 }
                 
+                // Prepare follow-up request body
+                const followUpRequestBody = {
+                    messages: apiMessages,
+                    stream: true
+                };
+                
+                // Only include model in the request body for non-Azure providers
+                if (!isAzureOpenAI()) {
+                    followUpRequestBody.model = model;
+                }
+                
                 // Make a follow-up request to get the final response
                 const followUpResponse = await fetch(getEndpointUrl('CHAT'), {
                     method: 'POST',
@@ -491,11 +569,7 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${apiKey}`
                     },
-                    body: JSON.stringify({
-                        model: model,
-                        messages: apiMessages,
-                        stream: true
-                    }),
+                    body: JSON.stringify(followUpRequestBody),
                     signal: signal
                 });
                 

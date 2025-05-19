@@ -398,12 +398,31 @@ async function getCurrentTimeInBerlin() {
                             <option value="groq">Groq Cloud (api.groq.com/openai/v1)</option>
                             <option value="openai">OpenAI (api.openai.com/v1)</option>
                             <option value="ollama">Ollama (localhost:11434/v1)</option>
+                            <option value="azure-openai">Azure OpenAI</option>
                             <option value="custom">User-defined</option>
                         </select>
                     </div>
                     <div class="form-group" id="custom-base-url-group" style="display: none;">
                         <label for="base-url">Custom Base URL</label>
                         <input type="text" id="base-url" placeholder="Enter custom API base URL">
+                    </div>
+                    <div class="form-group" id="azure-settings-group" style="display: none;">
+                        <label for="azure-api-base">Azure OpenAI Settings</label>
+                        <div class="form-help">
+                            Configure your Azure OpenAI service settings. You'll need your API base URL, API version, and deployment name.
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <label for="azure-api-base">API Base URL</label>
+                            <input type="text" id="azure-api-base" placeholder="https://your-resource-name.openai.azure.com">
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <label for="azure-api-version">API Version</label>
+                            <input type="text" id="azure-api-version" placeholder="2024-03-01-preview" value="2024-03-01-preview">
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <label for="azure-deployment-name">Deployment Name</label>
+                            <input type="text" id="azure-deployment-name" placeholder="Enter your deployment name">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="api-key-update">API Key</label>
