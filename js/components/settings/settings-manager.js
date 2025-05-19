@@ -297,16 +297,29 @@ window.SettingsManager = (function() {
                         elements.azureApiBase.value = StorageService.getAzureApiBase() || '';
                     }
                     if (elements.azureApiVersion) {
-                        elements.azureApiVersion.value = StorageService.getAzureApiVersion() || '2023-05-15';
+                        elements.azureApiVersion.value = StorageService.getAzureApiVersion() || '2024-03-01-preview';
                     }
                     if (elements.azureDeploymentName) {
                         elements.azureDeploymentName.value = StorageService.getAzureDeploymentName() || '';
                     }
+                    if (elements.azureModelName) {
+                        elements.azureModelName.value = StorageService.getAzureModelName() || '';
+                    }
+                }
+                
+                // Hide model dropdown and reload button for Azure OpenAI
+                if (elements.modelSelect && elements.modelSelect.parentNode) {
+                    elements.modelSelect.parentNode.style.display = 'none';
                 }
             } else {
                 // Hide Azure OpenAI settings
                 if (elements.azureSettingsGroup) {
                     elements.azureSettingsGroup.style.display = 'none';
+                }
+                
+                // Show model dropdown and reload button for other providers
+                if (elements.modelSelect && elements.modelSelect.parentNode) {
+                    elements.modelSelect.parentNode.style.display = 'flex';
                 }
             }
             
@@ -407,19 +420,22 @@ window.SettingsManager = (function() {
             if (selectedProvider === 'azure-openai') {
                 // Get Azure OpenAI settings from UI
                 const azureApiBase = elements.azureApiBase ? elements.azureApiBase.value.trim() : '';
-                const azureApiVersion = elements.azureApiVersion ? elements.azureApiVersion.value.trim() : '2023-05-15';
+                const azureApiVersion = elements.azureApiVersion ? elements.azureApiVersion.value.trim() : '2024-03-01-preview';
                 const azureDeploymentName = elements.azureDeploymentName ? elements.azureDeploymentName.value.trim() : '';
+                const azureModelName = elements.azureModelName ? elements.azureModelName.value.trim() : '';
                 
                 // Save Azure OpenAI settings
                 StorageService.saveAzureApiBase(azureApiBase);
                 StorageService.saveAzureApiVersion(azureApiVersion);
                 StorageService.saveAzureDeploymentName(azureDeploymentName);
+                StorageService.saveAzureModelName(azureModelName);
                 
                 // Log the saved settings
                 console.log('Saved Azure OpenAI settings:', {
                     azureApiBase,
                     azureApiVersion,
-                    azureDeploymentName
+                    azureDeploymentName,
+                    azureModelName
                 });
             }
             
@@ -567,6 +583,7 @@ window.SettingsManager = (function() {
             localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.AZURE_API_BASE));
             localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.AZURE_API_VERSION));
             localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.AZURE_DEPLOYMENT_NAME));
+            localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.AZURE_MODEL_NAME));
             
             // Clear chat history from current namespace
             localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.HISTORY));

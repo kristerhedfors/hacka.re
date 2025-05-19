@@ -242,6 +242,26 @@ window.DataService = (function() {
             saveAzureDeploymentName
         );
     }
+    
+    /**
+     * Save Azure OpenAI model name to local storage
+     * @param {string} modelName - The Azure OpenAI model name to save
+     */
+    function saveAzureModelName(modelName) {
+        CoreStorageService.setValue(STORAGE_KEYS.AZURE_MODEL_NAME, modelName);
+    }
+    
+    /**
+     * Get Azure OpenAI model name from local storage
+     * @returns {string|null} The stored Azure OpenAI model name or null if not found
+     */
+    function getAzureModelName() {
+        return CoreStorageService.getValue(
+            STORAGE_KEYS.AZURE_MODEL_NAME,
+            STORAGE_KEYS.AZURE_MODEL_NAME,
+            saveAzureModelName
+        );
+    }
 
     /**
      * Save title to local storage
@@ -341,6 +361,8 @@ window.DataService = (function() {
         saveAzureApiVersion: saveAzureApiVersion,
         getAzureApiVersion: getAzureApiVersion,
         saveAzureDeploymentName: saveAzureDeploymentName,
-        getAzureDeploymentName: getAzureDeploymentName
+        getAzureDeploymentName: getAzureDeploymentName,
+        saveAzureModelName: saveAzureModelName,
+        getAzureModelName: getAzureModelName
     };
 })();
