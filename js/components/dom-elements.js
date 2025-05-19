@@ -95,6 +95,7 @@ window.DOMElements = (function() {
             azureApiBase: document.getElementById('azure-api-base'),
             azureApiVersion: document.getElementById('azure-api-version'),
             azureDeploymentName: document.getElementById('azure-deployment-name'),
+            azureModelName: document.getElementById('azure-model-name'),
             // System prompt elements
             openPromptsConfigBtn: document.getElementById('open-prompts-config'),
             systemPromptPreview: document.getElementById('system-prompt-preview'),

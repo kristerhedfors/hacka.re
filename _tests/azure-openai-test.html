@@ -85,6 +85,10 @@
             <label for="deployment-name">Deployment Name</label>
             <input type="text" id="deployment-name" placeholder="Enter your deployment name">
         </div>
+        <div class="form-group">
+            <label for="model-name">Model Name</label>
+            <input type="text" id="model-name" placeholder="Enter the model name (e.g., gpt-4, gpt-35-turbo)">
+        </div>
         <button id="test-settings-btn">Test Settings</button>
         <div id="settings-result" class="result" style="display: none;"></div>
     </div>
@@ -145,11 +149,12 @@
             const apiBase = document.getElementById('api-base').value.trim();
             const apiVersion = document.getElementById('api-version').value.trim();
             const deploymentName = document.getElementById('deployment-name').value.trim();
+            const modelName = document.getElementById('model-name').value.trim();
             
             const resultElement = document.getElementById('settings-result');
             
             if (!apiKey || !apiBase || !apiVersion || !deploymentName) {
-                resultElement.textContent = 'Error: All fields are required';
+                resultElement.textContent = 'Error: API Key, API Base, API Version, and Deployment Name are required';
                 resultElement.classList.add('error');
                 resultElement.style.display = 'block';
                 return;
@@ -163,6 +168,7 @@
                 StorageService.saveAzureApiBase(apiBase);
                 StorageService.saveAzureApiVersion(apiVersion);
                 StorageService.saveAzureDeploymentName(deploymentName);
+                StorageService.saveAzureModelName(modelName);
                 
                 // Verify settings were saved correctly
                 const savedApiKey = StorageService.getApiKey();
@@ -170,12 +176,14 @@
                 const savedApiBase = StorageService.getAzureApiBase();
                 const savedApiVersion = StorageService.getAzureApiVersion();
                 const savedDeploymentName = StorageService.getAzureDeploymentName();
+                const savedModelName = StorageService.getAzureModelName();
                 
                 if (savedApiKey === apiKey && 
                     savedProvider === 'azure-openai' && 
                     savedApiBase === apiBase && 
                     savedApiVersion === apiVersion && 
-                    savedDeploymentName === deploymentName) {
+                    savedDeploymentName === deploymentName &&
+                    savedModelName === modelName) {
                     
                     resultElement.textContent = 'Settings saved successfully!';
                     resultElement.classList.remove('error');
@@ -229,6 +237,9 @@
                 const onChunk = (content) => {
                     resultElement.textContent = `Response: ${content}`;
                 };
+                
+                // Get the Azure model name from storage
+                const azureModelName = StorageService.getAzureModelName();
                 
                 // Call the API
                 const response = await ApiService.generateChatCompletion(

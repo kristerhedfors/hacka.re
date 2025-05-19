@@ -19,7 +19,8 @@ window.NamespaceService = (function() {
         // Azure OpenAI specific keys
         AZURE_API_BASE: 'azure_api_base',
         AZURE_API_VERSION: 'azure_api_version',
-        AZURE_DEPLOYMENT_NAME: 'azure_deployment_name'
+        AZURE_DEPLOYMENT_NAME: 'azure_deployment_name',
+        AZURE_MODEL_NAME: 'azure_model_name'
     };
     
     // Special keys that don't get namespaced (to avoid circular dependency)

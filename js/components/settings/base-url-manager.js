@@ -63,16 +63,29 @@ window.BaseUrlManager = (function() {
                                 elements.azureApiBase.value = StorageService.getAzureApiBase() || '';
                             }
                             if (elements.azureApiVersion) {
-                                elements.azureApiVersion.value = StorageService.getAzureApiVersion() || '2023-05-15';
+                                elements.azureApiVersion.value = StorageService.getAzureApiVersion() || '2024-03-01-preview';
                             }
                             if (elements.azureDeploymentName) {
                                 elements.azureDeploymentName.value = StorageService.getAzureDeploymentName() || '';
                             }
+                            if (elements.azureModelName) {
+                                elements.azureModelName.value = StorageService.getAzureModelName() || '';
+                            }
+                        }
+                        
+                        // Hide model dropdown and reload button for Azure OpenAI
+                        if (elements.modelSelect && elements.modelSelect.parentNode) {
+                            elements.modelSelect.parentNode.style.display = 'none';
                         }
                     } else {
                         // Hide Azure OpenAI settings
                         if (elements.azureSettingsGroup) {
                             elements.azureSettingsGroup.style.display = 'none';
+                        }
+                        
+                        // Show model dropdown and reload button for other providers
+                        if (elements.modelSelect && elements.modelSelect.parentNode) {
+                            elements.modelSelect.parentNode.style.display = 'flex';
                         }
                     }
                 });

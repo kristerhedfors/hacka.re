@@ -178,9 +178,16 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
         stream: true
     };
     
-    // Only include model in the request body for non-Azure providers
-    // For Azure, the deployment name is already in the URL
-    if (!isAzureOpenAI()) {
+    // Handle model for different providers
+    if (isAzureOpenAI()) {
+        // For Azure OpenAI, use the model name from settings if available
+        const azureModelName = StorageService.getAzureModelName();
+        if (azureModelName) {
+            requestBody.model = azureModelName;
+        }
+        // Note: The deployment name is already in the URL
+    } else {
+        // For other providers, use the model parameter
         requestBody.model = model;
     }
     
@@ -557,8 +564,16 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
                     stream: true
                 };
                 
-                // Only include model in the request body for non-Azure providers
-                if (!isAzureOpenAI()) {
+                // Handle model for different providers
+                if (isAzureOpenAI()) {
+                    // For Azure OpenAI, use the model name from settings if available
+                    const azureModelName = StorageService.getAzureModelName();
+                    if (azureModelName) {
+                        followUpRequestBody.model = azureModelName;
+                    }
+                    // Note: The deployment name is already in the URL
+                } else {
+                    // For other providers, use the model parameter
                     followUpRequestBody.model = model;
                 }
                 
