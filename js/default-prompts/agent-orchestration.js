@@ -4,7 +4,7 @@
  */
 
 window.AgentOrchestrationPrompt = {
-    id: 'agent_orchestration',
+    id: 'agent-orchestration',
     name: 'Agent orchestration example',
     content: `# Agent Orchestration Example
 
