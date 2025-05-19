@@ -513,14 +513,11 @@ function addDefaultPromptsSection() {
         const promptName = document.createElement('div');
         promptName.className = 'prompt-item-name';
         promptName.textContent = prompt.name || 'Unnamed Default Prompt';
-        promptItem.appendChild(promptName);
+        promptName.style.cursor = 'pointer'; // Add pointer cursor to indicate it's clickable
+        promptName.title = 'Click to view prompt content';
         
-        // Add info icon instead of delete (default prompts can't be deleted)
-        const infoIcon = document.createElement('button');
-        infoIcon.className = 'prompt-item-info';
-        infoIcon.innerHTML = '<i class="fas fa-info-circle"></i>';
-        infoIcon.title = 'View default prompt content';
-        infoIcon.addEventListener('click', (e) => {
+        // Add click event to the prompt name to load the prompt into the editor
+        promptName.addEventListener('click', (e) => {
             e.stopPropagation(); // Prevent triggering the prompt item click
             
             // Show content in a read-only way (using the editor fields)
@@ -532,7 +529,7 @@ function addDefaultPromptsSection() {
                 
                 // For the Function Library prompt, re-evaluate the content function to get the current state
                 let contentValue = '';
-                if (prompt.id === 'function_library' && window.FunctionLibraryPrompt && typeof window.FunctionLibraryPrompt.content === 'function') {
+                if (prompt.id === 'function-library' && window.FunctionLibraryPrompt && typeof window.FunctionLibraryPrompt.content === 'function') {
                     // Re-evaluate the function to get the current content
                     contentValue = window.FunctionLibraryPrompt.content();
                 } else {
@@ -556,6 +553,110 @@ function addDefaultPromptsSection() {
                         }
                     });
                 }, 100);
+            }
+        });
+        
+        promptItem.appendChild(promptName);
+        
+        // Add info icon instead of delete (default prompts can't be deleted)
+        const infoIcon = document.createElement('button');
+        infoIcon.className = 'prompt-item-info';
+        infoIcon.innerHTML = '<i class="fas fa-info-circle"></i>';
+        infoIcon.title = 'About this prompt';
+        infoIcon.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent triggering the prompt item click
+            
+            // Create and show a popup with information about the prompt
+            const popup = document.createElement('div');
+            popup.className = 'prompt-info-popup';
+            
+            // Get description based on prompt ID
+            let description = '';
+            switch(prompt.id) {
+                case 'hacka-re-project':
+                    description = 'Information about the hacka.re project, including architecture. Markdown format.';
+                    break;
+                case 'interpretability-urgency':
+                    description = 'Discusses the importance of AI interpretability research and its urgency for safe AI development.';
+                    break;
+                case 'function-library':
+                    description = 'All JavaScript functions currently stored in <a href="#" class="function-library-link">Function Library</a>, for convenient LLM-assisted function updates.';
+                    break;
+                case 'agent-orchestration':
+                    description = 'Demonstrates a pattern for creating multi-agent systems with function calling capabilities.';
+                    break;
+                case 'owasp-llm-top10':
+                    description = 'The entire OWASP Top 10 for LLM applications as of May 2025. Markdown format, about 60 pages printed.';
+                    break;
+                case 'mcp-sdk-readme':
+                    description = 'Documentation for the Model Context Protocol SDK, which enables communication between AI models and external tools.';
+                    break;
+                default:
+                    description = 'A default system prompt component for the hacka.re chat interface.';
+            }
+            
+            // Create popup content
+            popup.innerHTML = `
+                <div class="prompt-info-header">
+                    <h3>${prompt.name}</h3>
+                    <button class="prompt-info-close"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="prompt-info-content">
+                    <p>${description}</p>
+                    <p class="prompt-info-hint">Click on the prompt name to view its content in the editor.</p>
+                </div>
+            `;
+            
+            // Add close button functionality
+            const closeBtn = popup.querySelector('.prompt-info-close');
+            closeBtn.addEventListener('click', () => {
+                document.body.removeChild(popup);
+            });
+            
+            // Add click outside to close
+            document.addEventListener('click', function closePopup(event) {
+                if (!popup.contains(event.target) && event.target !== infoIcon) {
+                    if (document.body.contains(popup)) {
+                        document.body.removeChild(popup);
+                    }
+                    document.removeEventListener('click', closePopup);
+                }
+            });
+            
+            // Position the popup near the info icon
+            const rect = infoIcon.getBoundingClientRect();
+            popup.style.position = 'absolute';
+            popup.style.top = `${rect.bottom + window.scrollY + 10}px`;
+            popup.style.left = `${rect.left + window.scrollX - 200}px`; // Offset to center
+            
+            // Add to body
+            document.body.appendChild(popup);
+            
+            // Add event listener for Function Library link if present
+            const functionLibraryLink = popup.querySelector('.function-library-link');
+            if (functionLibraryLink) {
+                functionLibraryLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    
+                    // Close the popup
+                    if (document.body.contains(popup)) {
+                        document.body.removeChild(popup);
+                    }
+                    
+                    // Close the prompts modal
+                    hidePromptsModal();
+                    
+                    // Open the function modal
+                    if (window.aiHackare && window.aiHackare.functionCallingManager) {
+                        window.aiHackare.functionCallingManager.showFunctionModal();
+                    } else {
+                        // Fallback if the function calling manager is not available
+                        const functionBtn = document.getElementById('function-btn');
+                        if (functionBtn) {
+                            functionBtn.click();
+                        }
+                    }
+                });
             }
         });
         promptItem.appendChild(infoIcon);

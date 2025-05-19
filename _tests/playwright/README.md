@@ -224,12 +224,14 @@ To prevent tests from hanging indefinitely and ensure reliable test execution, f
        element.click()
    ```
 
-6. **Use the timed_test Decorator Correctly**:
+6. **Avoid Using the timed_test Decorator for New Tests**:
    ```python
-   @timed_test
+   # DO NOT use the timed_test decorator for new tests
+   # It causes issues with test execution and parameter passing
+   
+   # Instead, create tests without the decorator:
    def test_my_function(page: Page, serve_hacka_re):
-       # The page parameter must be the first argument
-       # ...
+       # Test implementation...
    ```
 
 7. **Add Comprehensive Debug Information**:
