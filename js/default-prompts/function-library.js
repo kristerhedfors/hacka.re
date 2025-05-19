@@ -4,7 +4,7 @@
  */
 
 window.FunctionLibraryPrompt = {
-    id: 'function_library',
+    id: 'function-library',
     name: 'Function library',
     content: function() {
         // Get all functions from the Function Tools Service

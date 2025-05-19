@@ -82,7 +82,7 @@ def test_user_prompts_before_default_prompts(page: Page, serve_hacka_re):
     expect(prompts_modal).not_to_be_visible()
 
 def test_function_library_default_prompt(page: Page, serve_hacka_re):
-    """Test that the 'All Javascript functions in Function Library' default prompt is available and works correctly."""
+    """Test that the 'Function library' default prompt is available and works correctly."""
     # Navigate to the application
     page.goto(serve_hacka_re)
     
@@ -124,7 +124,7 @@ function test_function(input) {
     page.locator("#function-editor-form button[type='submit']").click()
     
     # Wait for the function to be saved
-    page.wait_for_timeout(500)
+    page.wait_for_timeout(1000)
     
     # Take a screenshot after creating the function
     screenshot_with_markdown(page, "function_created.png", {
@@ -136,6 +136,25 @@ function test_function(input) {
     # Close the function modal
     page.locator("#close-function-modal").click()
     expect(function_modal).not_to_be_visible()
+    
+    # Reload the page to ensure the function is properly saved and loaded
+    page.reload()
+    
+    # Dismiss welcome modal if present
+    dismiss_welcome_modal(page)
+    
+    # Check if settings modal is open and close it if needed
+    settings_modal = page.locator("#settings-modal")
+    if settings_modal.is_visible():
+        # Try to find the close button
+        close_settings_button = page.locator("#close-settings-modal")
+        if close_settings_button.is_visible():
+            close_settings_button.click()
+            expect(settings_modal).not_to_be_visible()
+        else:
+            # If the close button is not visible, try clicking outside the modal
+            page.mouse.click(10, 10)
+            page.wait_for_timeout(500)
     
     # Open the prompts modal
     page.locator("#prompts-btn").click()
@@ -151,20 +170,20 @@ function test_function(input) {
     default_prompts_list = page.locator(".default-prompts-list")
     expect(default_prompts_list).to_be_visible()
     
-    # Check if the "All Javascript functions in Function Library" prompt exists
-    function_library_prompt = page.locator(".default-prompt-item:has-text('All Javascript functions in Function Library')")
+    # Check if the "Function Library" prompt exists
+    function_library_prompt = page.locator(".default-prompt-item:has-text('Function library')")
     expect(function_library_prompt).to_be_visible()
     
     # Take a screenshot showing the function library prompt
     screenshot_with_markdown(page, "function_library_prompt_exists.png", {
         "Status": "Function Library prompt found",
-        "Prompt Name": "All Javascript functions in Function Library",
+        "Prompt Name": "Function library",
         "Test Name": "Function Library Default Prompt"
     })
     
-    # Click the info icon to view the prompt content
-    info_icon = function_library_prompt.locator(".prompt-item-info")
-    info_icon.click()
+    # Click the prompt name to view the prompt content
+    prompt_name = function_library_prompt.locator(".prompt-item-name")
+    prompt_name.click()
     
     # Check if the prompt content contains the function we added
     content_field = page.locator("#new-prompt-content")

@@ -56,3 +56,85 @@
 .prompt-item-info:hover {
     color: var(--accent-color);
 }
+
+/* Prompt info popup styles */
+.prompt-info-popup {
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    width: 300px;
+    max-width: 90vw;
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.prompt-info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: var(--bg-color-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.prompt-info-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.prompt-info-close {
+    background: none;
+    border: none;
+    color: var(--text-color-secondary);
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.prompt-info-close:hover {
+    color: var(--accent-color);
+}
+
+.prompt-info-content {
+    padding: 15px;
+}
+
+.prompt-info-content p {
+    margin: 0 0 10px 0;
+    line-height: 1.5;
+}
+
+.prompt-info-hint {
+    font-style: italic;
+    color: var(--text-color-secondary);
+    font-size: 0.9em;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border-color);
+}
+
+/* Function Library link in popup */
+.function-library-link {
+    color: var(--accent-color);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s ease;
+}
+
+.function-library-link:hover {
+    text-decoration: underline;
+    color: var(--accent-color-hover, var(--accent-color));
+}
+
+/* Make prompt name clickable */
+.default-prompt-item .prompt-item-name {
+    cursor: pointer;
+}
+
+.default-prompt-item .prompt-item-name:hover {
+    color: var(--accent-color);
+}

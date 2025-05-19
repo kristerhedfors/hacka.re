@@ -136,7 +136,7 @@ window.DefaultPromptsService = (function() {
         
         // Re-evaluate Function Library prompt content if it's selected
         selectedDefaultPrompts = selectedDefaultPrompts.map(prompt => {
-            if (prompt.id === 'function_library' && window.FunctionLibraryPrompt && typeof window.FunctionLibraryPrompt.content === 'function') {
+            if (prompt.id === 'function-library' && window.FunctionLibraryPrompt && typeof window.FunctionLibraryPrompt.content === 'function') {
                 // Create a copy with the re-evaluated content
                 return {
                     ...prompt,
