@@ -5,6 +5,7 @@ A simple, serverless chat interface for OpenAI-compatible APIs.
 ## Features
 
 - Access to ultra-fast inference for models like Llama 3.1, Mixtral, and more
+- Multiple provider support: Groq, OpenAI, Azure OpenAI, Ollama, and custom endpoints
 - Privacy-focused & Serverless: Your API key and conversations stay in your browser; no backend server involved.
 - Context window visualization: Real-time display of token usage within model's context limit
 - Markdown support: Rich formatting for AI responses

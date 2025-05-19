@@ -39,6 +39,7 @@ window.BaseUrlManager = (function() {
                 elements.baseUrlSelect.addEventListener('change', function() {
                     const selectedProvider = this.value;
                     
+                    // Handle custom URL field visibility
                     if (selectedProvider === 'custom') {
                         // Show custom URL field
                         elements.customBaseUrlGroup.style.display = 'block';
@@ -48,6 +49,30 @@ window.BaseUrlManager = (function() {
                         const defaultUrl = StorageService.getDefaultBaseUrlForProvider(selectedProvider);
                         if (elements.baseUrl) {
                             elements.baseUrl.value = defaultUrl;
+                        }
+                    }
+                    
+                    // Handle Azure OpenAI settings visibility
+                    if (selectedProvider === 'azure-openai') {
+                        // Show Azure OpenAI settings
+                        if (elements.azureSettingsGroup) {
+                            elements.azureSettingsGroup.style.display = 'block';
+                            
+                            // Load saved Azure settings
+                            if (elements.azureApiBase) {
+                                elements.azureApiBase.value = StorageService.getAzureApiBase() || '';
+                            }
+                            if (elements.azureApiVersion) {
+                                elements.azureApiVersion.value = StorageService.getAzureApiVersion() || '2023-05-15';
+                            }
+                            if (elements.azureDeploymentName) {
+                                elements.azureDeploymentName.value = StorageService.getAzureDeploymentName() || '';
+                            }
+                        }
+                    } else {
+                        // Hide Azure OpenAI settings
+                        if (elements.azureSettingsGroup) {
+                            elements.azureSettingsGroup.style.display = 'none';
                         }
                     }
                 });
@@ -100,6 +125,11 @@ window.BaseUrlManager = (function() {
          */
         function determineBaseUrl(selectedProvider, customUrl) {
             if (selectedProvider === 'custom') {
+                return customUrl.trim();
+            } else if (selectedProvider === 'azure-openai') {
+                // For Azure OpenAI, we need to store the API base URL as is
+                // The actual endpoint URL will be constructed in the ApiService
+                // based on the API base, API version, and deployment name
                 return customUrl.trim();
             } else {
                 return StorageService.getDefaultBaseUrlForProvider(selectedProvider);
