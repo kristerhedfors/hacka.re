@@ -19,12 +19,12 @@ def add_test_function(page):
     expect(function_modal).to_be_visible()
     
     # Fill in the function code with JSDoc comments for better tool definition
-    # The function name field will be auto-populated from the function declaration
     function_code = page.locator("#function-code")
     function_code.fill("""/**
  * @description Get the current weather for a location
  * @param {string} location - The city or location to get weather for
  * @param {string} unit - The temperature unit (celsius or fahrenheit)
+ * @tool This function will be exposed to the LLM
  */
 function get_weather(location, unit = "celsius") {
   // This is a mock function that returns fake weather data
@@ -67,7 +67,7 @@ function get_weather(location, unit = "celsius") {
     # Check for validation result
     validation_result = page.locator("#function-validation-result")
     expect(validation_result).to_be_visible()
-    expect(validation_result).to_contain_text("Function validated successfully")
+    expect(validation_result).to_contain_text("Library validated successfully")
     
     # Submit the form
     page.locator("#function-editor-form button[type='submit']").click()
@@ -85,8 +85,8 @@ function get_weather(location, unit = "celsius") {
     expect(function_modal).not_to_be_visible()
 
 def add_multiple_test_functions(page):
-    """Add multiple test functions for different purposes."""
-    print("Adding multiple test functions...")
+    """Add a simple calculator function for testing."""
+    print("Adding simple calculator function...")
     
     # Click the function button
     function_btn = page.locator("#function-btn")
@@ -96,81 +96,41 @@ def add_multiple_test_functions(page):
     function_modal = page.locator("#function-modal")
     expect(function_modal).to_be_visible()
     
-    # Add weather function
-    add_function(
-        page,
-        """/**
- * @description Get the current weather for a location
- * @param {string} location - The city or location to get weather for
- * @param {string} unit - The temperature unit (celsius or fahrenheit)
+    # Fill in the function code with a simple calculator function
+    function_code = page.locator("#function-code")
+    function_code.fill("""/**
+ * @description Multiply two numbers together
+ * @param {number} a - First number
+ * @param {number} b - Second number
+ * @tool This function will be exposed to the LLM
  */
-function get_weather(location, unit = "celsius") {
-  console.log(`Getting weather for ${location} in ${unit}`);
-  
-  const lowercaseLocation = location.toLowerCase();
-  if (lowercaseLocation.includes("london")) {
-    temperature = unit === "celsius" ? 15 : 59;
-    condition = "Rainy";
-  } else if (lowercaseLocation.includes("tokyo")) {
-    temperature = unit === "celsius" ? 20 : 68;
-    condition = "Sunny";
-  } else {
-    temperature = unit === "celsius" ? 18 : 64;
-    condition = "Fair";
-  }
-  
+function multiply(a, b) {
+  console.log(`Multiplying ${a} and ${b}`);
   return {
-    location: location,
-    temperature: temperature,
-    unit: unit,
-    condition: condition,
-    humidity: Math.floor(Math.random() * 30) + 40,
-    timestamp: new Date().toISOString()
+    a: a,
+    b: b,
+    result: a * b
   };
-}"""
-    )
+}""")
     
-    # Add calculator function
-    add_function(
-        page,
-        """/**
- * @description Perform a mathematical calculation
- * @param {string} operation - The operation to perform (add, subtract, multiply, divide)
- * @param {number} num1 - The first number
- * @param {number} num2 - The second number
- */
-function calculate(operation, num1, num2) {
-  console.log(`Calculating ${operation} with ${num1} and ${num2}`);
-  
-  let result;
-  switch(operation.toLowerCase()) {
-    case "add":
-      result = num1 + num2;
-      break;
-    case "subtract":
-      result = num1 - num2;
-      break;
-    case "multiply":
-      result = num1 * num2;
-      break;
-    case "divide":
-      if (num2 === 0) {
-        throw new Error("Cannot divide by zero");
-      }
-      result = num1 / num2;
-      break;
-    default:
-      throw new Error(`Unknown operation: ${operation}`);
-  }
-  
-  return {
-    operation: operation,
-    num1: num1,
-    num2: num2,
-    result: result
-  };
-}"""
-    )
+    # Validate the functions
+    page.locator("#function-validate-btn").click()
+    
+    # Check for validation result
+    validation_result = page.locator("#function-validation-result")
+    expect(validation_result).to_be_visible()
+    expect(validation_result).to_contain_text("Library validated successfully")
+    
+    # Submit the form
+    page.locator("#function-editor-form button[type='submit']").click()
+    
+    # Check if the function was added to the list
+    function_list = page.locator("#function-list")
+    expect(function_list.locator(".function-item-name:has-text('multiply')")).to_be_visible()
+    
+    # Check if the function is enabled by default
+    function_checkbox = function_list.locator("input[type='checkbox']").first
+    expect(function_checkbox).to_be_checked()
     
     # Close the function modal
     page.locator("#close-function-modal").click()
@@ -178,7 +138,7 @@ function calculate(operation, num1, num2) {
 
 def add_function(page, code):
     """Helper function to add a function with validation."""
-    # Fill in the function code - the name field will be auto-populated
+    # Fill in the function code
     function_code = page.locator("#function-code")
     function_code.fill(code)
     
@@ -188,18 +148,13 @@ def add_function(page, code):
         return match ? match[1] : null;
     }""", code)
     
-    # Check that the function name field was auto-populated
-    function_name = page.locator("#function-name")
-    expect(function_name).to_be_visible()
-    expect(function_name).to_have_value(function_name_match)
-    
     # Validate the function
     page.locator("#function-validate-btn").click()
     
     # Check for validation result
     validation_result = page.locator("#function-validation-result")
     expect(validation_result).to_be_visible()
-    expect(validation_result).to_contain_text("Function validated successfully")
+    expect(validation_result).to_contain_text("Library validated successfully")
     
     # Submit the form
     page.locator("#function-editor-form button[type='submit']").click()

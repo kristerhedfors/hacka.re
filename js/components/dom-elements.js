@@ -90,6 +90,12 @@ window.DOMElements = (function() {
             baseUrlSelect: document.getElementById('base-url-select'),
             baseUrl: document.getElementById('base-url'),
             customBaseUrlGroup: document.getElementById('custom-base-url-group'),
+            // Azure OpenAI settings elements
+            azureSettingsGroup: document.getElementById('azure-settings-group'),
+            azureApiBase: document.getElementById('azure-api-base'),
+            azureApiVersion: document.getElementById('azure-api-version'),
+            azureDeploymentName: document.getElementById('azure-deployment-name'),
+            azureModelName: document.getElementById('azure-model-name'),
             // System prompt elements
             openPromptsConfigBtn: document.getElementById('open-prompts-config'),
             systemPromptPreview: document.getElementById('system-prompt-preview'),

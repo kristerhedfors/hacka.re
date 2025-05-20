@@ -11,7 +11,6 @@ load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
 # Get API key from environment variables
 API_KEY = os.getenv("OPENAI_API_KEY")
 
-@timed_test
 def test_api_key_configuration(page, serve_hacka_re):
     """Test the API key configuration functionality."""
     # Navigate to the application
@@ -107,7 +106,6 @@ def test_api_key_configuration(page, serve_hacka_re):
         print("WARNING: No items found in localStorage")
         assert False, "No items found in localStorage"
 
-@timed_test
 def test_model_selection(page, serve_hacka_re):
     """Test the model selection functionality."""
     # Navigate to the application

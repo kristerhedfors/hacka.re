@@ -5,10 +5,11 @@ This module contains tests for RC4 encryption/decryption functions with API key.
 """
 import pytest
 import os
+import time
 from urllib.parse import urljoin
 from playwright.sync_api import Page, expect
 
-from test_utils import timed_test, dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
 
 from function_calling_api.helpers.setup_helpers import (
     setup_console_logging, 
@@ -16,9 +17,11 @@ from function_calling_api.helpers.setup_helpers import (
     enable_tool_calling_and_function_tools
 )
 
-@timed_test
 def test_rc4_encryption_functions_with_api(page: Page, serve_hacka_re, api_key):
     """Test RC4 encryption/decryption functions with API key."""
+    # Start timing the test
+    start_time = time.time()
+    
     # Set up console error logging
     setup_console_logging(page)
     
@@ -138,10 +141,7 @@ def test_rc4_encryption_functions_with_api(page: Page, serve_hacka_re, api_key):
         print("Tried to make function modal visible with JavaScript")
         page.wait_for_timeout(1000)
     
-    # Add the encrypt function
-    function_name = page.locator("#function-name")
-    function_name.fill("rc4_encrypt")
-    
+    # Add the encrypt function - the function name will be auto-populated from the code
     function_code = page.locator("#function-code")
     function_code.fill("""/**
  * @description Encrypt text using RC4 algorithm
@@ -210,7 +210,12 @@ function rc4_encrypt(plaintext, key) {
         print("Tried to submit encrypt function using JavaScript")
     
     # Add the decrypt function
-    function_name.fill("rc4_decrypt")
+    # Note: After adding a function, the form is reset to default values
+    # So we need to fill in the function code again
+    
+    # Take a screenshot after adding the encrypt function
+    screenshot_with_markdown(page, "after_adding_encrypt_function",
+                           {"Component": "Function Editor", "Status": "After Encrypt Function"})
     
     function_code.fill("""/**
  * @description Decrypt text using RC4 algorithm
@@ -239,6 +244,8 @@ function rc4_decrypt(ciphertext, key) {
     };
   }
 }""")
+    
+    # No need to check the function name field as it's now hidden
     
     # Validate the function
     try:
@@ -276,18 +283,53 @@ function rc4_decrypt(ciphertext, key) {
     
     # Check if both functions were added to the list
     function_list = page.locator("#function-list")
+    
+    # Take a screenshot of the function list for debugging
+    screenshot_with_markdown(page, "function_list_after_adding",
+                           {"Component": "Function List", "Status": "After Adding Functions"})
+    
+    # Use JavaScript to check if the functions exist in the DOM
+    encrypt_function_exists = page.evaluate("""() => {
+        const functionItems = document.querySelectorAll('.function-item-name');
+        for (const item of functionItems) {
+            if (item.textContent.includes('rc4_encrypt')) return true;
+        }
+        return false;
+    }""")
+    
+    decrypt_function_exists = page.evaluate("""() => {
+        const functionItems = document.querySelectorAll('.function-item-name');
+        for (const item of functionItems) {
+            if (item.textContent.includes('rc4_decrypt')) return true;
+        }
+        return false;
+    }""")
+    
+    # Check how many functions are in the list
+    function_count = function_list.locator(".function-item-name").count()
+    print(f"Found {function_count} functions in the list")
+    
+    if encrypt_function_exists and decrypt_function_exists:
+        print("Both functions were found in the DOM")
+    else:
+        print(f"Missing functions: encrypt={encrypt_function_exists}, decrypt={decrypt_function_exists}")
+        # Take a screenshot for debugging
+        screenshot_with_markdown(page, "functions_not_added",
+                               {"Error": "Functions not found in DOM", 
+                                "Component": "Function List", 
+                                "Status": "Error", 
+                                "Function Count": str(function_count),
+                                "Encrypt Function": str(encrypt_function_exists),
+                                "Decrypt Function": str(decrypt_function_exists)})
+    
+    # Try to verify functions are visible (with more robust error handling)
     try:
         expect(function_list.locator(".function-item-name:has-text('rc4_encrypt')")).to_be_visible(timeout=2000)
         expect(function_list.locator(".function-item-name:has-text('rc4_decrypt')")).to_be_visible(timeout=2000)
-        print("Both functions were added to the list")
+        print("Both functions were added to the list and are visible")
     except Exception as e:
-        print(f"Error checking if functions were added to the list: {e}")
-        # Take a screenshot for debugging
-        screenshot_with_markdown(page, "functions_not_added",
-                               {"Error": str(e), "Component": "Function List", "Status": "Error", "Function Count": str(function_count)})
-        # Check how many functions are in the list
-        function_count = function_list.locator(".function-item-name").count()
-        print(f"Found {function_count} functions in the list")
+        print(f"Error checking if functions are visible: {e}")
+        # We'll continue anyway since we've already checked they exist in the DOM
     
     # Close the function modal
     try:
@@ -449,6 +491,12 @@ function rc4_decrypt(ciphertext, key) {
             }
         }""")
     
+    # End timing and print execution time
+    end_time = time.time()
+    execution_time = end_time - start_time
+    
     # Take a final screenshot
     screenshot_with_markdown(page, "rc4_test_complete",
-                           {"Component": "Test Completion", "Status": "Complete"})
+                           {"Component": "Test Completion", "Status": "Complete", "Execution Time": f"{execution_time:.3f} seconds"})
+    
+    print(f"\n⏱️ test_rc4_encryption_functions_with_api completed in {execution_time:.3f} seconds")

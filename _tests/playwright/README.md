@@ -59,6 +59,34 @@ Options:
 - `-k "<expression>"`: Filter tests by expression (e.g., `-k "not function_calling_api"`)
 - `--help`, `-h`: Show help message
 
+### Running Live API Tests
+
+To run only the tests that make real API calls to OpenAI (particularly for function calling tests), use the following command:
+
+```bash
+./run_tests.sh -k "function_calling_api or test_api or test_function_calling_with_api or test_azure_openai"
+```
+
+This command will run:
+- All tests in the `function_calling_api` directory
+- The `test_api.py` file
+- The `test_function_calling_with_api.py` file
+- The `test_azure_openai.py` file
+
+These tests use the `o4-mini` model by default (configured in `conftest.py`) to minimize token costs while still testing real API functionality.
+
+You can combine this with other options:
+
+```bash
+# Run live API tests in headless mode
+./run_tests.sh -k "function_calling_api or test_api" --headless
+
+# Run live API tests with verbose output
+./run_tests.sh -k "function_calling_api or test_api" -v
+```
+
+Remember that these tests require a valid API key in your `.env` file and will consume API tokens.
+
 ### Using pytest Directly
 
 You can also run tests directly with pytest:
@@ -108,6 +136,7 @@ The tests are organized into the following files:
 - `test_clear_chat_button.py`: Tests related to the clear chat button (trash icon) functionality, ensuring it works correctly across all browsers including Safari and Firefox Focus
 - `test_function_library_sharing.py`: Tests related to sharing function libraries through the share menu, verifying that functions can be shared and loaded from a shared link
 - `test_function_library_multi.py`: Tests related to the multi-function library feature, verifying that multiple functions can be defined in one editor with some marked as callable using the @callable_function tag
+- `test_swe_transcript.py`: Tests related to the SWE Transcript page, verifying that the page loads correctly, navigation works, and the content structure is as expected
 
 ## Testing MCP Functionality
 
