@@ -5,10 +5,11 @@ This module contains tests for multiple functions with API key.
 """
 import pytest
 import os
+import time
 from urllib.parse import urljoin
 from playwright.sync_api import Page, expect
 
-from test_utils import timed_test, dismiss_welcome_modal, dismiss_settings_modal
+from test_utils import dismiss_welcome_modal, dismiss_settings_modal
 
 from function_calling_api.helpers.setup_helpers import (
     setup_console_logging, 
@@ -21,9 +22,11 @@ from function_calling_api.helpers.function_helpers import (
 )
 from function_calling_api.helpers.chat_helpers import multiple_function_invocation
 
-@timed_test
 def test_multiple_functions_with_api_key(page: Page, serve_hacka_re, api_key):
     """Test multiple functions with a configured API key."""
+    # Start timing the test
+    start_time = time.time()
+    
     # Set up console error logging
     setup_console_logging(page)
     
@@ -159,3 +162,8 @@ def test_multiple_functions_with_api_key(page: Page, serve_hacka_re, api_key):
         print(f"Error cleaning up functions: {e}")
         # Take a screenshot for debugging
         page.screenshot(path="_tests/playwright/videos/cleanup_functions_error_multiple.png")
+    
+    # End timing and print execution time
+    end_time = time.time()
+    execution_time = end_time - start_time
+    print(f"\n⏱️ test_multiple_functions_with_api_key completed in {execution_time:.3f} seconds")

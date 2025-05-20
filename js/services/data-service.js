@@ -160,7 +160,7 @@ window.DataService = (function() {
             STORAGE_KEYS.BASE_URL_PROVIDER, 
             STORAGE_KEYS.BASE_URL_PROVIDER, 
             saveBaseUrlProvider
-        ) || 'groq';
+        ) || 'openai';
     }
     
     /**
@@ -176,9 +176,91 @@ window.DataService = (function() {
                 return 'https://api.openai.com/v1';
             case 'ollama':
                 return 'http://localhost:11434/v1';
+            case 'azure-openai':
+                return ''; // Azure OpenAI requires a custom endpoint
             default:
                 return '';
         }
+    }
+    
+    /**
+     * Save Azure OpenAI API base URL to local storage
+     * @param {string} apiBase - The Azure OpenAI API base URL to save
+     */
+    function saveAzureApiBase(apiBase) {
+        CoreStorageService.setValue(STORAGE_KEYS.AZURE_API_BASE, apiBase);
+    }
+    
+    /**
+     * Get Azure OpenAI API base URL from local storage
+     * @returns {string|null} The stored Azure OpenAI API base URL or null if not found
+     */
+    function getAzureApiBase() {
+        return CoreStorageService.getValue(
+            STORAGE_KEYS.AZURE_API_BASE,
+            STORAGE_KEYS.AZURE_API_BASE,
+            saveAzureApiBase
+        );
+    }
+    
+    /**
+     * Save Azure OpenAI API version to local storage
+     * @param {string} apiVersion - The Azure OpenAI API version to save
+     */
+    function saveAzureApiVersion(apiVersion) {
+        CoreStorageService.setValue(STORAGE_KEYS.AZURE_API_VERSION, apiVersion);
+    }
+    
+    /**
+     * Get Azure OpenAI API version from local storage
+     * @returns {string} The stored Azure OpenAI API version or '2024-03-01-preview' if not found
+     */
+    function getAzureApiVersion() {
+        return CoreStorageService.getValue(
+            STORAGE_KEYS.AZURE_API_VERSION,
+            STORAGE_KEYS.AZURE_API_VERSION,
+            saveAzureApiVersion
+        ) || '2024-03-01-preview';
+    }
+    
+    /**
+     * Save Azure OpenAI deployment name to local storage
+     * @param {string} deploymentName - The Azure OpenAI deployment name to save
+     */
+    function saveAzureDeploymentName(deploymentName) {
+        CoreStorageService.setValue(STORAGE_KEYS.AZURE_DEPLOYMENT_NAME, deploymentName);
+    }
+    
+    /**
+     * Get Azure OpenAI deployment name from local storage
+     * @returns {string|null} The stored Azure OpenAI deployment name or null if not found
+     */
+    function getAzureDeploymentName() {
+        return CoreStorageService.getValue(
+            STORAGE_KEYS.AZURE_DEPLOYMENT_NAME,
+            STORAGE_KEYS.AZURE_DEPLOYMENT_NAME,
+            saveAzureDeploymentName
+        );
+    }
+    
+    /**
+     * Save Azure OpenAI model name to local storage
+     * @param {string} modelName - The Azure OpenAI model name to save
+     */
+    function saveAzureModelName(modelName) {
+        CoreStorageService.setValue(STORAGE_KEYS.AZURE_MODEL_NAME, modelName);
+    }
+    
+    /**
+     * Get Azure OpenAI model name from local storage
+     * @returns {string|null} The stored Azure OpenAI model name or null if not found
+     */
+    function getAzureModelName() {
+        return CoreStorageService.getValue(
+            STORAGE_KEYS.AZURE_MODEL_NAME,
+            STORAGE_KEYS.AZURE_MODEL_NAME,
+            saveAzureModelName
+        );
     }
 
     /**
@@ -272,6 +354,15 @@ window.DataService = (function() {
         saveSubtitle: saveSubtitle,
         getSubtitle: getSubtitle,
         saveDebugMode: saveDebugMode,
-        getDebugMode: getDebugMode
+        getDebugMode: getDebugMode,
+        // Azure OpenAI specific methods
+        saveAzureApiBase: saveAzureApiBase,
+        getAzureApiBase: getAzureApiBase,
+        saveAzureApiVersion: saveAzureApiVersion,
+        getAzureApiVersion: getAzureApiVersion,
+        saveAzureDeploymentName: saveAzureDeploymentName,
+        getAzureDeploymentName: getAzureDeploymentName,
+        saveAzureModelName: saveAzureModelName,
+        getAzureModelName: getAzureModelName
     };
 })();

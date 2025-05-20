@@ -15,7 +15,12 @@ window.NamespaceService = (function() {
         BASE_URL_PROVIDER: 'base_url_provider',
         TITLE: 'hackare_title',
         SUBTITLE: 'hackare_subtitle',
-        DEBUG_MODE: 'debug_mode'
+        DEBUG_MODE: 'debug_mode',
+        // Azure OpenAI specific keys
+        AZURE_API_BASE: 'azure_api_base',
+        AZURE_API_VERSION: 'azure_api_version',
+        AZURE_DEPLOYMENT_NAME: 'azure_deployment_name',
+        AZURE_MODEL_NAME: 'azure_model_name'
     };
     
     // Special keys that don't get namespaced (to avoid circular dependency)

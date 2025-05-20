@@ -18,8 +18,8 @@ window.BaseUrlManager = (function() {
          */
         function init() {
             // Load saved base URL and provider
-            baseUrl = StorageService.getBaseUrl();
-            const baseUrlProvider = StorageService.getBaseUrlProvider();
+            baseUrl = DataService.getBaseUrl();
+            const baseUrlProvider = DataService.getBaseUrlProvider();
             
             // Set the provider dropdown
             if (elements.baseUrlSelect) {
@@ -39,15 +39,53 @@ window.BaseUrlManager = (function() {
                 elements.baseUrlSelect.addEventListener('change', function() {
                     const selectedProvider = this.value;
                     
+                    // Handle custom URL field visibility
                     if (selectedProvider === 'custom') {
                         // Show custom URL field
                         elements.customBaseUrlGroup.style.display = 'block';
                     } else {
                         // Hide custom URL field and set to default URL for the provider
                         elements.customBaseUrlGroup.style.display = 'none';
-                        const defaultUrl = StorageService.getDefaultBaseUrlForProvider(selectedProvider);
+                        const defaultUrl = DataService.getDefaultBaseUrlForProvider(selectedProvider);
                         if (elements.baseUrl) {
                             elements.baseUrl.value = defaultUrl;
+                        }
+                    }
+                    
+                    // Handle Azure OpenAI settings visibility
+                    if (selectedProvider === 'azure-openai') {
+                        // Show Azure OpenAI settings
+                        if (elements.azureSettingsGroup) {
+                            elements.azureSettingsGroup.style.display = 'block';
+                            
+                            // Load saved Azure settings
+                            if (elements.azureApiBase) {
+                                elements.azureApiBase.value = DataService.getAzureApiBase() || '';
+                            }
+                            if (elements.azureApiVersion) {
+                                elements.azureApiVersion.value = DataService.getAzureApiVersion() || '2024-03-01-preview';
+                            }
+                            if (elements.azureDeploymentName) {
+                                elements.azureDeploymentName.value = DataService.getAzureDeploymentName() || '';
+                            }
+                            if (elements.azureModelName) {
+                                elements.azureModelName.value = DataService.getAzureModelName() || '';
+                            }
+                        }
+                        
+                        // Hide model dropdown and reload button for Azure OpenAI
+                        if (elements.modelSelect && elements.modelSelect.parentNode) {
+                            elements.modelSelect.parentNode.style.display = 'none';
+                        }
+                    } else {
+                        // Hide Azure OpenAI settings
+                        if (elements.azureSettingsGroup) {
+                            elements.azureSettingsGroup.style.display = 'none';
+                        }
+                        
+                        // Show model dropdown and reload button for other providers
+                        if (elements.modelSelect && elements.modelSelect.parentNode) {
+                            elements.modelSelect.parentNode.style.display = 'flex';
                         }
                     }
                 });
@@ -61,7 +99,7 @@ window.BaseUrlManager = (function() {
         function getBaseUrl() {
             // Always get the base URL from storage to ensure we have the latest value
             // This is especially important when the namespace changes due to title/subtitle changes
-            return StorageService.getBaseUrl();
+            return DataService.getBaseUrl();
         }
         
         /**
@@ -70,8 +108,8 @@ window.BaseUrlManager = (function() {
          * @param {string} provider - The provider to save
          */
         function saveBaseUrl(url, provider) {
-            StorageService.saveBaseUrl(url);
-            StorageService.saveBaseUrlProvider(provider);
+            DataService.saveBaseUrl(url);
+            DataService.saveBaseUrlProvider(provider);
             baseUrl = url;
         }
         
@@ -80,7 +118,7 @@ window.BaseUrlManager = (function() {
          * @returns {string} Current base URL provider
          */
         function getBaseUrlProvider() {
-            return StorageService.getBaseUrlProvider();
+            return DataService.getBaseUrlProvider();
         }
         
         /**
@@ -89,7 +127,7 @@ window.BaseUrlManager = (function() {
          * @returns {string} The default base URL for the provider
          */
         function getDefaultBaseUrlForProvider(provider) {
-            return StorageService.getDefaultBaseUrlForProvider(provider);
+            return DataService.getDefaultBaseUrlForProvider(provider);
         }
         
         /**
@@ -101,8 +139,15 @@ window.BaseUrlManager = (function() {
         function determineBaseUrl(selectedProvider, customUrl) {
             if (selectedProvider === 'custom') {
                 return customUrl.trim();
+            } else if (selectedProvider === 'azure-openai') {
+                // For Azure OpenAI, we need to store the API base URL as is
+                // The actual endpoint URL will be constructed in the ApiService
+                // based on the API base, API version, and deployment name
+                // We should use the Azure API base URL, not the custom URL field
+                const azureApiBase = elements.azureApiBase ? elements.azureApiBase.value.trim() : '';
+                return azureApiBase;
             } else {
-                return StorageService.getDefaultBaseUrlForProvider(selectedProvider);
+                return DataService.getDefaultBaseUrlForProvider(selectedProvider);
             }
         }
         
