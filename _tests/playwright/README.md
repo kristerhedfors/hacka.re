@@ -136,6 +136,7 @@ The tests are organized into the following files:
 - `test_clear_chat_button.py`: Tests related to the clear chat button (trash icon) functionality, ensuring it works correctly across all browsers including Safari and Firefox Focus
 - `test_function_library_sharing.py`: Tests related to sharing function libraries through the share menu, verifying that functions can be shared and loaded from a shared link
 - `test_function_library_multi.py`: Tests related to the multi-function library feature, verifying that multiple functions can be defined in one editor with some marked as callable using the @callable_function tag
+- `test_swe_transcript.py`: Tests related to the SWE Transcript page, verifying that the page loads correctly, navigation works, and the content structure is as expected
 
 ## Testing MCP Functionality
 
