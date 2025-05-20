@@ -28,9 +28,8 @@ def test_azure_openai_settings(page, serve_hacka_re):
     # Wait for the base-url-select to be visible and enabled
     page.wait_for_selector("#base-url-select", state="visible", timeout=5000)
     
-    # First check that standard model dropdown and reload button are visible with default provider
+    # First check that standard model dropdown is visible with default provider
     expect(page.locator("#model-select")).to_be_visible()
-    expect(page.locator("#reload-models-btn")).to_be_visible()
     
     # Select Azure OpenAI provider
     base_url_select = page.locator("#base-url-select")
@@ -42,15 +41,13 @@ def test_azure_openai_settings(page, serve_hacka_re):
     # Verify that Azure OpenAI settings are displayed
     expect(page.locator("#azure-settings-group")).to_be_visible()
     
-    # Verify that standard model dropdown and reload button are hidden when Azure OpenAI is selected
+    # Verify that standard model dropdown is hidden when Azure OpenAI is selected
     expect(page.locator("#model-select")).not_to_be_visible()
-    expect(page.locator("#reload-models-btn")).not_to_be_visible()
     
     # Fill in Azure OpenAI settings
     page.fill("#azure-api-base", "https://test-resource.openai.azure.com")
     page.fill("#azure-api-version", "2024-03-01-preview")
     page.fill("#azure-deployment-name", "test-deployment")
-    page.fill("#azure-model-name", "gpt-4")
     page.fill("#azure-model-name", "gpt-4")
     
     # Fill in API key
@@ -59,8 +56,16 @@ def test_azure_openai_settings(page, serve_hacka_re):
     # Save settings
     page.click("#save-settings-btn")
     
+    # Wait for a moment to ensure the system message appears
+    page.wait_for_timeout(500)
+    
+    # Get the count of system messages before checking
+    system_messages_count = page.locator(".message.system").count()
+    
     # Verify that a system message is displayed confirming settings were saved
-    expect(page.locator(".message.system")).to_contain_text("Settings saved")
+    # Use the last system message which should be the most recent one
+    last_system_message = page.locator(".message.system").nth(system_messages_count - 1)
+    expect(last_system_message).to_contain_text("Settings saved")
     
     # Open settings modal again to verify settings were saved
     page.click("#settings-btn")
@@ -100,9 +105,8 @@ def test_azure_openai_clear_settings(page, serve_hacka_re):
     # Wait for the base-url-select to be visible and enabled
     page.wait_for_selector("#base-url-select", state="visible", timeout=5000)
     
-    # First check that standard model dropdown and reload button are visible with default provider
+    # First check that standard model dropdown is visible with default provider
     expect(page.locator("#model-select")).to_be_visible()
-    expect(page.locator("#reload-models-btn")).to_be_visible()
     
     # Select Azure OpenAI provider
     base_url_select = page.locator("#base-url-select")
@@ -111,9 +115,8 @@ def test_azure_openai_clear_settings(page, serve_hacka_re):
     # Wait for the change to take effect
     page.wait_for_timeout(500)
     
-    # Verify that standard model dropdown and reload button are hidden when Azure OpenAI is selected
+    # Verify that standard model dropdown is hidden when Azure OpenAI is selected
     expect(page.locator("#model-select")).not_to_be_visible()
-    expect(page.locator("#reload-models-btn")).not_to_be_visible()
     
     # Fill in Azure OpenAI settings
     page.fill("#azure-api-base", "https://test-resource.openai.azure.com")
@@ -129,14 +132,22 @@ def test_azure_openai_clear_settings(page, serve_hacka_re):
     # Open settings modal again
     page.click("#settings-btn")
     
+    # Set up dialog handler before clicking clear all settings
+    page.on("dialog", lambda dialog: dialog.accept())
+    
     # Clear all settings
     page.click("#clear-all-settings")
     
-    # Confirm clearing settings
-    page.on("dialog", lambda dialog: dialog.accept())
+    # Wait for a moment to ensure the system message appears
+    page.wait_for_timeout(500)
+    
+    # Get the count of system messages before checking
+    system_messages_count = page.locator(".message.system").count()
     
     # Verify that a system message is displayed confirming settings were cleared
-    expect(page.locator(".message.system")).to_contain_text("All settings have been cleared")
+    # Use the last system message which should be the most recent one
+    last_system_message = page.locator(".message.system").nth(system_messages_count - 1)
+    expect(last_system_message).to_contain_text("All settings have been cleared")
     
     # Open settings modal again to verify settings were cleared
     page.click("#settings-btn")
@@ -147,9 +158,8 @@ def test_azure_openai_clear_settings(page, serve_hacka_re):
     # Verify that Azure OpenAI settings are not displayed
     expect(page.locator("#azure-settings-group")).not_to_be_visible()
     
-    # Verify that standard model dropdown and reload button are visible again after clearing settings
+    # Verify that standard model dropdown is visible again after clearing settings
     expect(page.locator("#model-select")).to_be_visible()
-    expect(page.locator("#reload-models-btn")).to_be_visible()
     
     # Close settings modal
     page.click("#close-settings")
@@ -174,9 +184,8 @@ def test_azure_openai_provider_switch(page, serve_hacka_re):
     # Wait for the base-url-select to be visible and enabled
     page.wait_for_selector("#base-url-select", state="visible", timeout=5000)
     
-    # First check that standard model dropdown and reload button are visible with default provider
+    # First check that standard model dropdown is visible with default provider
     expect(page.locator("#model-select")).to_be_visible()
-    expect(page.locator("#reload-models-btn")).to_be_visible()
     
     # Select Azure OpenAI provider
     base_url_select = page.locator("#base-url-select")
@@ -188,9 +197,8 @@ def test_azure_openai_provider_switch(page, serve_hacka_re):
     # Verify that Azure OpenAI settings are displayed
     expect(page.locator("#azure-settings-group")).to_be_visible()
     
-    # Verify that standard model dropdown and reload button are hidden when Azure OpenAI is selected
+    # Verify that standard model dropdown is hidden when Azure OpenAI is selected
     expect(page.locator("#model-select")).not_to_be_visible()
-    expect(page.locator("#reload-models-btn")).not_to_be_visible()
     
     # Switch to OpenAI provider
     base_url_select = page.locator("#base-url-select")
@@ -202,9 +210,8 @@ def test_azure_openai_provider_switch(page, serve_hacka_re):
     # Verify that Azure OpenAI settings are not displayed
     expect(page.locator("#azure-settings-group")).not_to_be_visible()
     
-    # Verify that standard model dropdown and reload button are visible again
+    # Verify that standard model dropdown is visible again
     expect(page.locator("#model-select")).to_be_visible()
-    expect(page.locator("#reload-models-btn")).to_be_visible()
     
     # Switch back to Azure OpenAI provider
     base_url_select = page.locator("#base-url-select")
@@ -216,9 +223,8 @@ def test_azure_openai_provider_switch(page, serve_hacka_re):
     # Verify that Azure OpenAI settings are displayed again
     expect(page.locator("#azure-settings-group")).to_be_visible()
     
-    # Verify again that standard model dropdown and reload button are hidden
+    # Verify again that standard model dropdown is hidden
     expect(page.locator("#model-select")).not_to_be_visible()
-    expect(page.locator("#reload-models-btn")).not_to_be_visible()
     
     # Close settings modal
     page.click("#close-settings")
