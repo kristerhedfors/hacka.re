@@ -5,10 +5,11 @@ This module contains tests for function validation errors with API key.
 """
 import pytest
 import os
+import time
 from urllib.parse import urljoin
 from playwright.sync_api import Page, expect
 
-from test_utils import timed_test, dismiss_welcome_modal, dismiss_settings_modal
+from test_utils import dismiss_welcome_modal, dismiss_settings_modal
 
 from function_calling_api.helpers.setup_helpers import (
     setup_console_logging, 
@@ -16,9 +17,11 @@ from function_calling_api.helpers.setup_helpers import (
     enable_tool_calling_and_function_tools
 )
 
-@timed_test
 def test_function_validation_errors_with_api(page: Page, serve_hacka_re, api_key):
     """Test validation errors for function calling with API key."""
+    # Start timing the test
+    start_time = time.time()
+    
     # Set up console error logging
     setup_console_logging(page)
     
@@ -134,19 +137,18 @@ def test_function_validation_errors_with_api(page: Page, serve_hacka_re, api_key
         else:
             pytest.fail("Function modal not found in DOM")
     
-    # Test case 1: Empty function name
+    # Get references to the function name and code fields
     function_name = page.locator("#function-name")
-    function_name.fill("")
-    
     function_code = page.locator("#function-code")
-    function_code.fill("""function test_function() {
-  return { success: true };
-}""")
+    validation_result = page.locator("#function-validation-result")
+    
+    # Test case 1: Empty function code
+    function_code.fill("")
     
     # Validate the function
     try:
         page.locator("#function-validate-btn").click()
-        print("Clicked validate button for empty name test")
+        print("Clicked validate button for empty code test")
     except Exception as e:
         print(f"Error clicking validate button: {e}")
         # Take a screenshot for debugging
@@ -159,57 +161,8 @@ def test_function_validation_errors_with_api(page: Page, serve_hacka_re, api_key
         print("Tried to click validate button using JavaScript")
     
     # Check for validation error
-    validation_result = page.locator("#function-validation-result")
     try:
         expect(validation_result).to_be_visible(timeout=2000)
-        expect(validation_result).to_have_class("error")
-        expect(validation_result).to_contain_text("Function name is required")
-        print("Empty name validation error displayed correctly")
-    except Exception as e:
-        print(f"Error checking validation result for empty name: {e}")
-        # Take a screenshot for debugging
-        page.screenshot(path="_tests/playwright/videos/validation_result_empty_name_error.png")
-    
-    # Take a screenshot of the validation error
-    page.screenshot(path="_tests/playwright/videos/validation_error_empty_name.png")
-    
-    # Test case 2: Invalid function name format
-    function_name.fill("123-invalid-name")
-    
-    # Validate the function
-    try:
-        page.locator("#function-validate-btn").click()
-        print("Clicked validate button for invalid name test")
-    except Exception as e:
-        print(f"Error clicking validate button: {e}")
-        # Try JavaScript as a fallback
-        page.evaluate("""() => {
-            const validateBtn = document.querySelector('#function-validate-btn');
-            if (validateBtn) validateBtn.click();
-        }""")
-    
-    # Check for validation error
-    try:
-        expect(validation_result).to_have_class("error")
-        expect(validation_result).to_contain_text("Invalid function name")
-        print("Invalid name validation error displayed correctly")
-    except Exception as e:
-        print(f"Error checking validation result for invalid name: {e}")
-        # Take a screenshot for debugging
-        page.screenshot(path="_tests/playwright/videos/validation_result_invalid_name_error.png")
-    
-    # Take a screenshot of the validation error
-    page.screenshot(path="_tests/playwright/videos/validation_error_invalid_name.png")
-    
-    # Test case 3: Empty function code
-    function_name.fill("valid_name")
-    function_code.fill("")
-    
-    # Validate the function
-    page.locator("#function-validate-btn").click()
-    
-    # Check for validation error
-    try:
         expect(validation_result).to_have_class("error")
         expect(validation_result).to_contain_text("Function code is required")
         print("Empty code validation error displayed correctly")
@@ -218,7 +171,10 @@ def test_function_validation_errors_with_api(page: Page, serve_hacka_re, api_key
         # Take a screenshot for debugging
         page.screenshot(path="_tests/playwright/videos/validation_result_empty_code_error.png")
     
-    # Test case 4: Invalid function format
+    # Take a screenshot of the validation error
+    page.screenshot(path="_tests/playwright/videos/validation_error_empty_code.png")
+    
+    # Test case 2: Invalid function format
     function_code.fill("""const myFunction = () => {
   return { success: true };
 }""")
@@ -236,9 +192,11 @@ def test_function_validation_errors_with_api(page: Page, serve_hacka_re, api_key
         # Take a screenshot for debugging
         page.screenshot(path="_tests/playwright/videos/validation_result_invalid_format_error.png")
     
-    # Test case 5: Function name mismatch
-    function_name.fill("one_name")
-    function_code.fill("""function different_name() {
+    # Take a screenshot of the validation error
+    page.screenshot(path="_tests/playwright/videos/validation_error_invalid_format.png")
+    
+    # Test case 3: Invalid function name format in code
+    function_code.fill("""function 123-invalid-name() {
   return { success: true };
 }""")
     
@@ -248,16 +206,17 @@ def test_function_validation_errors_with_api(page: Page, serve_hacka_re, api_key
     # Check for validation error
     try:
         expect(validation_result).to_have_class("error")
-        expect(validation_result).to_contain_text("Function name in code")
-        expect(validation_result).to_contain_text("does not match")
-        print("Name mismatch validation error displayed correctly")
+        expect(validation_result).to_contain_text("Invalid function name")
+        print("Invalid name validation error displayed correctly")
     except Exception as e:
-        print(f"Error checking validation result for name mismatch: {e}")
+        print(f"Error checking validation result for invalid name: {e}")
         # Take a screenshot for debugging
-        page.screenshot(path="_tests/playwright/videos/validation_result_name_mismatch_error.png")
+        page.screenshot(path="_tests/playwright/videos/validation_result_invalid_name_error.png")
     
-    # Test case 6: Syntax error in function
-    function_name.fill("test_function")
+    # Take a screenshot of the validation error
+    page.screenshot(path="_tests/playwright/videos/validation_error_invalid_name.png")
+    
+    # Test case 4: Syntax error in function
     function_code.fill("""function test_function() {
   return { success: true;
 }""")
@@ -275,8 +234,10 @@ def test_function_validation_errors_with_api(page: Page, serve_hacka_re, api_key
         # Take a screenshot for debugging
         page.screenshot(path="_tests/playwright/videos/validation_result_syntax_error.png")
     
-    # Test case 7: Valid function with JSDoc comments
-    function_name.fill("test_function")
+    # Take a screenshot of the validation error
+    page.screenshot(path="_tests/playwright/videos/validation_error_syntax_error.png")
+    
+    # Test case 5: Valid function with JSDoc comments
     function_code.fill("""/**
  * @description Test function with JSDoc comments
  * @param {string} param1 - First parameter
@@ -292,6 +253,16 @@ function test_function(param1, param2) {
     
     # Validate the function
     page.locator("#function-validate-btn").click()
+    
+    # Check that the function name field was auto-populated correctly
+    try:
+        expect(function_name).to_be_visible()
+        expect(function_name).to_have_value("test_function")
+        print("Function name auto-populated correctly")
+    except Exception as e:
+        print(f"Error checking function name auto-population: {e}")
+        # Take a screenshot for debugging
+        page.screenshot(path="_tests/playwright/videos/function_name_auto_population_error.png")
     
     # Check for validation success
     try:
@@ -340,3 +311,8 @@ function test_function(param1, param2) {
     
     # Take a final screenshot
     page.screenshot(path="_tests/playwright/videos/validation_test_complete.png")
+    
+    # End timing and print execution time
+    end_time = time.time()
+    execution_time = end_time - start_time
+    print(f"\n⏱️ test_function_validation_errors_with_api completed in {execution_time:.3f} seconds")
