@@ -6,11 +6,36 @@
 window.ApiService = (function() {
     // Get base URL from settings
     function getBaseUrl() {
+        // Debug logging for provider
+        const provider = StorageService.getBaseUrlProvider();
+        console.log('[API Debug] getBaseUrl called, provider:', provider);
+        
+        // Check if the current provider is Azure OpenAI
+        if (isAzureOpenAI()) {
+            // For Azure OpenAI, use the Azure API base URL
+            const azureApiBase = StorageService.getAzureApiBase();
+            console.log('[Azure OpenAI Debug] Azure API base:', azureApiBase);
+            
+            if (azureApiBase) {
+                console.log('[Azure OpenAI Debug] Using Azure API base URL:', azureApiBase);
+                return azureApiBase;
+            } else {
+                console.warn('[Azure OpenAI Debug] Azure API base is empty, falling back to standard base URL');
+            }
+        }
+        
+        // For other providers, use the standard base URL
         const baseUrl = StorageService.getBaseUrl();
+        console.log('[API Debug] Standard base URL from storage:', baseUrl);
+        
         // Ensure we never return null or undefined
         if (!baseUrl || baseUrl === 'null' || baseUrl === 'undefined') {
-            return StorageService.getDefaultBaseUrlForProvider('groq'); // Default to Groq if no base URL is set
+            const defaultUrl = StorageService.getDefaultBaseUrlForProvider('groq');
+            console.log('[API Debug] Using default Groq URL:', defaultUrl);
+            return defaultUrl; // Default to Groq if no base URL is set
         }
+        
+        console.log('[API Debug] Using base URL:', baseUrl);
         return baseUrl;
     }
     
@@ -33,6 +58,14 @@ window.ApiService = (function() {
             const apiVersion = StorageService.getAzureApiVersion();
             const deploymentName = StorageService.getAzureDeploymentName();
             
+            // Debug logging for Azure OpenAI settings
+            console.log('[Azure OpenAI Debug] Settings:', {
+                provider: 'azure-openai',
+                apiBase: apiBase,
+                apiVersion: apiVersion,
+                deploymentName: deploymentName
+            });
+            
             if (!apiBase || !deploymentName) {
                 console.error('Azure OpenAI API base or deployment name is missing');
                 return ''; // Return empty string to cause an error when used
@@ -44,17 +77,28 @@ window.ApiService = (function() {
             
             const normalizedApiBase = apiBase.endsWith('/') ? apiBase.slice(0, -1) : apiBase;
             
+            let url;
             if (endpoint === 'CHAT') {
-                return `${normalizedApiBase}/openai/deployments/${deploymentName}/chat/completions?api-version=${apiVersion}`;
+                url = `${normalizedApiBase}/openai/deployments/${deploymentName}/chat/completions?api-version=${apiVersion}`;
             } else if (endpoint === 'MODELS') {
-                return `${normalizedApiBase}/openai/models?api-version=${apiVersion}`;
+                url = `${normalizedApiBase}/openai/models?api-version=${apiVersion}`;
             }
+            
+            // Debug logging for constructed URL
+            console.log(`[Azure OpenAI Debug] Constructed ${endpoint} URL: ${url}`);
+            
+            return url;
         } else {
             // Standard OpenAI-compatible API
             const baseUrl = getBaseUrl();
             // Ensure the base URL ends with a slash and the endpoint path doesn't start with a slash
             const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
-            return `${normalizedBaseUrl}${ENDPOINT_PATHS[endpoint]}`;
+            const url = `${normalizedBaseUrl}${ENDPOINT_PATHS[endpoint]}`;
+            
+            // Debug logging for standard API URL
+            console.log(`[API Debug] Constructed ${endpoint} URL: ${url}`);
+            
+            return url;
         }
     }
 
@@ -69,26 +113,37 @@ window.ApiService = (function() {
             throw new Error('API key is required');
         }
         
+        // Debug logging for input parameters
+        console.log('[API Debug] fetchAvailableModels called with:', {
+            apiKey: apiKey ? '***' : null, // Don't log the actual API key
+            customBaseUrl: customBaseUrl,
+            provider: StorageService.getBaseUrlProvider(),
+            isAzureOpenAI: isAzureOpenAI()
+        });
+        
         // Check if we're using Azure OpenAI
-        const isAzure = isAzureOpenAI() || (customBaseUrl && StorageService.getBaseUrlProvider() === 'azure-openai');
+        const isAzure = isAzureOpenAI();
         
         // Determine which base URL to use
         let endpointUrl;
-        if (customBaseUrl && customBaseUrl !== 'null' && customBaseUrl !== 'undefined') {
-            if (isAzure) {
-                // For Azure OpenAI with custom base URL
-                const apiVersion = StorageService.getAzureApiVersion();
-                const normalizedBaseUrl = customBaseUrl.endsWith('/') ? customBaseUrl.slice(0, -1) : customBaseUrl;
-                endpointUrl = `${normalizedBaseUrl}/openai/models?api-version=${apiVersion}`;
-            } else {
-                // For standard OpenAI-compatible API with custom base URL
-                const normalizedBaseUrl = customBaseUrl.endsWith('/') ? customBaseUrl : `${customBaseUrl}/`;
-                endpointUrl = `${normalizedBaseUrl}${ENDPOINT_PATHS.MODELS}`;
-            }
+        if (isAzure) {
+            // For Azure OpenAI, always use the getEndpointUrl function
+            // which will use the Azure API base URL from storage
+            endpointUrl = getEndpointUrl('MODELS');
+            console.log('[Azure OpenAI Debug] Using Azure OpenAI endpoint URL from getEndpointUrl');
+        } else if (customBaseUrl && customBaseUrl !== 'null' && customBaseUrl !== 'undefined') {
+            // For standard OpenAI-compatible API with custom base URL
+            const normalizedBaseUrl = customBaseUrl.endsWith('/') ? customBaseUrl : `${customBaseUrl}/`;
+            endpointUrl = `${normalizedBaseUrl}${ENDPOINT_PATHS.MODELS}`;
+            console.log('[API Debug] Using custom base URL:', customBaseUrl);
         } else {
             // Otherwise use the default endpoint URL
             endpointUrl = getEndpointUrl('MODELS');
+            console.log('[API Debug] Using default endpoint URL from getEndpointUrl');
         }
+        
+        // Debug logging for final endpoint URL
+        console.log('[API Debug] Final models endpoint URL:', endpointUrl);
         
         const response = await fetch(endpointUrl, {
             method: 'GET',
