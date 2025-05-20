@@ -16,7 +16,7 @@ from function_calling_api.helpers.setup_helpers import (
     configure_api_key_and_model, 
     enable_tool_calling_and_function_tools
 )
-from function_calling_api.helpers.function_helpers_fixed import (
+from function_calling_api.helpers.function_helpers import (
     add_test_function, 
     cleanup_functions
 )
