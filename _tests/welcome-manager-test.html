@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome Manager Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .test-button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+        }
+        .success {
+            color: green;
+        }
+        .failure {
+            color: red;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .modal.active {
+            display: block;
+        }
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 5px;
+            width: 70%;
+            max-width: 500px;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .primary-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .secondary-btn {
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .form-actions {
+            margin-top: 20px;
+            text-align: right;
+        }
+        .important-notice {
+            background-color: #f8f9fa;
+            border-left: 4px solid #4CAF50;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+        }
+        .system-msg-bg {
+            background-color: #f8f9fa;
+        }
+        .accent-color {
+            color: #4CAF50;
+        }
+        :root {
+            --system-msg-bg: #f8f9fa;
+            --accent-color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome Manager Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Setup</h2>
+        <button id="clear-storage" class="test-button">Clear localStorage</button>
+        <button id="add-dummy-var" class="test-button">Add Dummy hacka_re Variable</button>
+        <div id="storage-status" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Welcome Manager</h2>
+        <button id="test-welcome" class="test-button">Test Welcome Modal</button>
+        <div id="welcome-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test hasVisitedBefore Function</h2>
+        <button id="test-has-visited" class="test-button">Test hasVisitedBefore()</button>
+        <div id="has-visited-result" class="result"></div>
+    </div>
+    
+    <script>
+        // Mock ChatManager for system messages
+        window.ChatManager = {
+            addSystemMessage: function(message) {
+                console.log("System Message:", message);
+            }
+        };
+        
+        // Mock NamespaceService
+        window.NamespaceService = {
+            BASE_STORAGE_KEYS: {
+                TITLE: 'hackare_title',
+                SUBTITLE: 'hackare_subtitle'
+            }
+        };
+        
+        // Mock CryptoUtils
+        window.CryptoUtils = {
+            getMasterKeyStorageKey: function() { return "mock_key"; },
+            generateNamespaceHash: function() { return "mock_hash"; },
+            createNamespaceEntry: function() { 
+                return {
+                    namespaceId: "12345678",
+                    namespaceHash: "mock_hash",
+                    masterKey: "mock_master_key"
+                };
+            }
+        };
+        
+        // Mock EncryptionService
+        window.EncryptionService = {
+            initEncryption: function() {},
+            encrypt: function(value) { return "encrypted_" + value; },
+            decrypt: function(value) { return value.replace("encrypted_", ""); }
+        };
+        
+        // Load the welcome manager script
+        function loadScript(url) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = url;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+        
+        // Update storage status display
+        function updateStorageStatus() {
+            const statusDiv = document.getElementById('storage-status');
+            let content = '<h3>Current localStorage:</h3><ul>';
+            
+            if (localStorage.length === 0) {
+                content += '<li>No items in localStorage</li>';
+            } else {
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    content += `<li>${key} = ${localStorage.getItem(key)}</li>`;
+                }
+            }
+            
+            content += '</ul>';
+            statusDiv.innerHTML = content;
+        }
+        
+        // Event listeners
+        document.getElementById('clear-storage').addEventListener('click', function() {
+            localStorage.clear();
+            updateStorageStatus();
+            document.getElementById('welcome-result').innerHTML = '';
+            document.getElementById('has-visited-result').innerHTML = '';
+        });
+        
+        document.getElementById('add-dummy-var').addEventListener('click', function() {
+            localStorage.setItem('hacka_re_test', 'dummy_value');
+            updateStorageStatus();
+        });
+        
+        document.getElementById('test-welcome').addEventListener('click', function() {
+            const resultDiv = document.getElementById('welcome-result');
+            
+            // Create a welcome manager instance
+            const welcomeManager = window.WelcomeManager.createWelcomeManager({});
+            
+            // Test showing the welcome modal
+            const modalShown = welcomeManager.showWelcomeModalIfFirstTime(() => {
+                resultDiv.innerHTML += '<p class="success">Continue callback executed</p>';
+            });
+            
+            if (modalShown) {
+                resultDiv.innerHTML = '<p class="success">Welcome modal was shown</p>';
+            } else {
+                resultDiv.innerHTML = '<p class="failure">Welcome modal was NOT shown (user has visited before)</p>';
+            }
+            
+            updateStorageStatus();
+        });
+        
+        document.getElementById('test-has-visited').addEventListener('click', function() {
+            const resultDiv = document.getElementById('has-visited-result');
+            
+            // Create a welcome manager instance
+            const welcomeManager = window.WelcomeManager.createWelcomeManager({});
+            
+            // Test hasVisitedBefore function
+            const hasVisited = welcomeManager.hasVisitedBefore();
+            
+            if (hasVisited) {
+                resultDiv.innerHTML = '<p class="success">hasVisitedBefore() returned TRUE</p>';
+            } else {
+                resultDiv.innerHTML = '<p class="failure">hasVisitedBefore() returned FALSE</p>';
+            }
+        });
+        
+        // Initialize
+        async function init() {
+            try {
+                await loadScript('/js/components/settings/welcome-manager.js');
+                console.log('Welcome Manager script loaded');
+                updateStorageStatus();
+            } catch (error) {
+                console.error('Error loading script:', error);
+                document.body.innerHTML = '<h1>Error loading scripts</h1><p>' + error + '</p>';
+            }
+        }
+        
+        init();
+    </script>
+</body>
+</html>

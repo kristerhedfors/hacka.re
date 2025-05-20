@@ -15,12 +15,11 @@ window.WelcomeManager = (function() {
          * @param {Function} onContinue - Function to call when the user clicks continue
          */
         function showWelcomeModalIfFirstTime(onContinue) {
-            // Check if this is the first visit
-            const hasVisitedBefore = localStorage.getItem('hacka_re_visited');
+            // Check if this is the first visit by looking for any hacka_re localStorage variables
+            const userHasVisitedBefore = hasVisitedBefore();
             
-            if (!hasVisitedBefore) {
-                // Mark as visited
-                localStorage.setItem('hacka_re_visited', 'true');
+            if (!userHasVisitedBefore) {
+                // No need to mark as visited - any localStorage operations will create hacka_re variables
                 
                 // Create a welcome modal
                 const welcomeModal = document.createElement('div');
@@ -114,18 +113,28 @@ window.WelcomeManager = (function() {
         }
         
         /**
-         * Check if the user has visited before
+         * Check if the user has visited before by looking for any hacka_re localStorage variables
          * @returns {boolean} True if the user has visited before
          */
         function hasVisitedBefore() {
-            return localStorage.getItem('hacka_re_visited') === 'true';
+            // Check if there's at least one hacka_re localStorage variable
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('hacka_re')) {
+                    return true;
+                }
+            }
+            return false;
         }
         
         /**
          * Mark the user as having visited before
+         * Note: This is kept for API compatibility but is no longer needed
+         * as any localStorage operation will create hacka_re variables
          */
         function markAsVisited() {
-            localStorage.setItem('hacka_re_visited', 'true');
+            // No longer needed - any localStorage operations will create hacka_re variables
+            // This function is kept for API compatibility
         }
         
         // Public API
