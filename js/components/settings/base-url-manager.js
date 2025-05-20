@@ -143,7 +143,9 @@ window.BaseUrlManager = (function() {
                 // For Azure OpenAI, we need to store the API base URL as is
                 // The actual endpoint URL will be constructed in the ApiService
                 // based on the API base, API version, and deployment name
-                return customUrl.trim();
+                // We should use the Azure API base URL, not the custom URL field
+                const azureApiBase = elements.azureApiBase ? elements.azureApiBase.value.trim() : '';
+                return azureApiBase;
             } else {
                 return DataService.getDefaultBaseUrlForProvider(selectedProvider);
             }

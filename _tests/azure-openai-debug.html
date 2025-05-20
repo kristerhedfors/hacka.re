@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure OpenAI Debug Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+            white-space: pre-wrap;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        .log-entry.azure {
+            background-color: #e6f7ff;
+        }
+        .log-entry.error {
+            background-color: #ffebee;
+            color: #d32f2f;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Azure OpenAI Debug Test</h1>
+        
+        <div class="form-group">
+            <label for="azure-api-base">Azure API Base URL:</label>
+            <input type="text" id="azure-api-base" placeholder="https://your-resource-name.openai.azure.com">
+        </div>
+        
+        <div class="form-group">
+            <label for="azure-api-version">API Version:</label>
+            <input type="text" id="azure-api-version" value="2024-03-01-preview">
+        </div>
+        
+        <div class="form-group">
+            <label for="azure-deployment-name">Deployment Name:</label>
+            <input type="text" id="azure-deployment-name" placeholder="Enter your deployment name">
+        </div>
+        
+        <div class="form-group">
+            <label for="azure-model-name">Model Name:</label>
+            <input type="text" id="azure-model-name" placeholder="e.g., gpt-4, gpt-35-turbo">
+        </div>
+        
+        <div class="form-group">
+            <label for="api-key">API Key:</label>
+            <input type="password" id="api-key" placeholder="Enter your API key">
+        </div>
+        
+        <button id="save-settings">Save Settings</button>
+        <button id="fetch-models">Fetch Models</button>
+        <button id="clear-logs">Clear Logs</button>
+        
+        <h2>Console Logs:</h2>
+        <div id="console-logs"></div>
+        
+        <h2>API Response:</h2>
+        <div id="result"></div>
+    </div>
+
+    <!-- Include required libraries -->
+    <script src="../js/utils/crypto-utils.js"></script>
+    <script src="../js/utils/rc4-utils.js"></script>
+    <script src="../js/services/model-info.js"></script>
+    <script src="../js/services/encryption-service.js"></script>
+    <script src="../js/services/namespace-service.js"></script>
+    <script src="../js/services/core-storage-service.js"></script>
+    <script src="../js/services/data-service.js"></script>
+    <script src="../js/services/storage-service.js"></script>
+    <script src="../js/services/debug-service.js"></script>
+    <script src="../js/services/api-service.js"></script>
+
+    <script>
+        // Override console.log to capture logs
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
+        const originalConsoleWarn = console.warn;
+        
+        console.log = function() {
+            // Call the original console.log
+            originalConsoleLog.apply(console, arguments);
+            
+            // Add to our log display
+            const message = Array.from(arguments).map(arg => {
+                if (typeof arg === 'object') {
+                    return JSON.stringify(arg, null, 2);
+                }
+                return arg;
+            }).join(' ');
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.textContent = message;
+            
+            // Highlight Azure OpenAI logs
+            if (message.includes('[Azure OpenAI Debug]')) {
+                logEntry.className += ' azure';
+            }
+            
+            document.getElementById('console-logs').appendChild(logEntry);
+        };
+        
+        console.error = function() {
+            // Call the original console.error
+            originalConsoleError.apply(console, arguments);
+            
+            // Add to our log display
+            const message = Array.from(arguments).map(arg => {
+                if (typeof arg === 'object') {
+                    return JSON.stringify(arg, null, 2);
+                }
+                return arg;
+            }).join(' ');
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry error';
+            logEntry.textContent = message;
+            
+            document.getElementById('console-logs').appendChild(logEntry);
+        };
+        
+        console.warn = function() {
+            // Call the original console.warn
+            originalConsoleWarn.apply(console, arguments);
+            
+            // Add to our log display
+            const message = Array.from(arguments).map(arg => {
+                if (typeof arg === 'object') {
+                    return JSON.stringify(arg, null, 2);
+                }
+                return arg;
+            }).join(' ');
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry warning';
+            logEntry.textContent = message;
+            
+            document.getElementById('console-logs').appendChild(logEntry);
+        };
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load saved settings
+            document.getElementById('azure-api-base').value = StorageService.getAzureApiBase() || '';
+            document.getElementById('azure-api-version').value = StorageService.getAzureApiVersion() || '2024-03-01-preview';
+            document.getElementById('azure-deployment-name').value = StorageService.getAzureDeploymentName() || '';
+            document.getElementById('azure-model-name').value = StorageService.getAzureModelName() || '';
+            document.getElementById('api-key').value = StorageService.getApiKey() || '';
+            
+            // Set provider to Azure OpenAI
+            StorageService.saveBaseUrlProvider('azure-openai');
+            
+            // Save settings button
+            document.getElementById('save-settings').addEventListener('click', function() {
+                const azureApiBase = document.getElementById('azure-api-base').value.trim();
+                const azureApiVersion = document.getElementById('azure-api-version').value.trim();
+                const azureDeploymentName = document.getElementById('azure-deployment-name').value.trim();
+                const azureModelName = document.getElementById('azure-model-name').value.trim();
+                const apiKey = document.getElementById('api-key').value.trim();
+                
+                // Save settings
+                StorageService.saveAzureApiBase(azureApiBase);
+                StorageService.saveAzureApiVersion(azureApiVersion);
+                StorageService.saveAzureDeploymentName(azureDeploymentName);
+                StorageService.saveAzureModelName(azureModelName);
+                StorageService.saveApiKey(apiKey);
+                
+                // Log the saved settings
+                console.log('Saved Azure OpenAI settings:', {
+                    azureApiBase,
+                    azureApiVersion,
+                    azureDeploymentName,
+                    azureModelName,
+                    apiKey: apiKey ? '***' : null
+                });
+                
+                // Also save the Azure API base as the base URL
+                StorageService.saveBaseUrl(azureApiBase);
+                
+                alert('Settings saved!');
+            });
+            
+            // Fetch models button
+            document.getElementById('fetch-models').addEventListener('click', async function() {
+                const apiKey = document.getElementById('api-key').value.trim();
+                
+                if (!apiKey) {
+                    alert('API key is required');
+                    return;
+                }
+                
+                try {
+                    document.getElementById('result').textContent = 'Fetching models...';
+                    
+                    // Fetch models
+                    const models = await ApiService.fetchAvailableModels(apiKey);
+                    
+                    // Display models
+                    document.getElementById('result').textContent = JSON.stringify(models, null, 2);
+                } catch (error) {
+                    console.error('Error fetching models:', error);
+                    document.getElementById('result').textContent = 'Error: ' + error.message;
+                }
+            });
+            
+            // Clear logs button
+            document.getElementById('clear-logs').addEventListener('click', function() {
+                document.getElementById('console-logs').innerHTML = '';
+            });
+        });
+    </script>
+</body>
+</html>
