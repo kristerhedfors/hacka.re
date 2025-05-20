@@ -137,6 +137,7 @@ The tests are organized into the following files:
 - `test_function_library_sharing.py`: Tests related to sharing function libraries through the share menu, verifying that functions can be shared and loaded from a shared link
 - `test_function_library_multi.py`: Tests related to the multi-function library feature, verifying that multiple functions can be defined in one editor with some marked as callable using the @callable_function tag
 - `test_swe_transcript.py`: Tests related to the SWE Transcript page, verifying that the page loads correctly, navigation works, and the content structure is as expected
+- `test_welcome_manager.py`: Tests related to the welcome modal functionality, verifying that it appears on first visit and doesn't appear when any hacka_re localStorage variable exists
 
 ## Testing MCP Functionality
 
