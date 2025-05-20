@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en" class="theme-modern">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>hacka.re - SWE Transcript</title>
+    <meta name="description" content="Software Engineering Transcript showcasing complete Cline software engineering tasks">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="css/themes.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- Font Awesome for icons (local) -->
+    <link rel="stylesheet" href="../lib/font-awesome/all.min.css">
+    <!-- Markdown parser (local) -->
+    <script src="../lib/marked/marked.min.js"></script>
+    <script src="../lib/dompurify/purify.min.js"></script>
+    <style>
+        .feature-section {
+            margin: 40px 0;
+        }
+
+        .feature-section h3 {
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+
+        .transcript-card {
+            background-color: var(--ai-msg-bg);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: var(--box-shadow);
+            margin-bottom: 30px;
+        }
+
+        .transcript-card h4 {
+            margin-bottom: 10px;
+            color: var(--dark-color);
+        }
+
+        .transcript-card .meta {
+            font-size: 0.9em;
+            color: var(--text-color);
+            opacity: 0.8;
+            margin-bottom: 15px;
+        }
+
+        .transcript-card .description {
+            margin-bottom: 15px;
+        }
+
+        .transcript-card .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .transcript-card .tag {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8em;
+        }
+
+        .transcript-card .prompt {
+            background-color: rgba(0, 0, 0, 0.05);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            margin: 15px 0;
+            font-style: italic;
+        }
+
+        .transcript-card .actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .transcript-card .actions a {
+            display: inline-block;
+            padding: 8px 15px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            transition: background-color 0.3s;
+            font-size: 0.9em;
+        }
+
+        .transcript-card .actions a:hover {
+            background-color: var(--primary-dark);
+            text-decoration: none;
+        }
+
+        .page-nav {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .page-nav a {
+            padding: 8px 15px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+
+        .page-nav a:hover {
+            background-color: var(--primary-dark);
+            text-decoration: none;
+        }
+
+        .important-notice {
+            background-color: var(--system-msg-bg);
+            border-left: 4px solid var(--accent-color);
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: var(--border-radius);
+        }
+
+        /* Additional mobile-specific styles */
+        @media (max-width: 480px) {
+            main {
+                padding: 1rem !important;
+            }
+
+            .container {
+                padding: 0 10px;
+            }
+
+            .transcript-card {
+                padding: 15px;
+            }
+
+            /* Ensure proper text wrapping on small screens */
+            p, li, a, h1, h2, h3, h4, h5, h6 {
+                word-break: break-word;
+                max-width: 100%;
+            }
+
+            /* Adjust font sizes for better readability on small screens */
+            p, li {
+                font-size: 0.95rem;
+            }
+
+            h2 {
+                font-size: 1.4rem;
+            }
+
+            h3 {
+                font-size: 1.2rem;
+            }
+
+            h4 {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container" style="max-width: none; width: 100%;">
+        <div class="beta-tag">BETA</div>
+        <header>
+            <div class="logo">
+                <h1><a href="../index.html" style="text-decoration: none; color: inherit;">hacka.re</a><span style="font-size: 92%;">: serverless GPTs</span></h1>
+                <p class="tagline">Free, open, för hackare av hackare.</p>
+            </div>
+            <div class="settings">
+                <a href="../index.html" class="btn secondary-btn" style="margin-right: 10px; color: #ffffff; background-color: rgba(0, 0, 0, 0.2); border: 1px solid #ffffff;">Back to Chat</a>
+            </div>
+        </header>
+
+        <main style="overflow-y: auto; overflow-x: auto; padding: 2rem;">
+            <div class="container" style="max-width: 1000px; margin: 0 auto; word-wrap: break-word; overflow-wrap: break-word; width: 100%;">
+                <h2>Software Engineering Transcript</h2>
+                
+                <div class="page-nav">
+                    <a href="index.html">About</a>
+                    <a href="architecture.html">Architecture</a>
+                    <a href="development.html">Development</a>
+                    <a href="research-report.html">Research Report</a>
+                    <a href="swe-transcript.html">SWE Transcript</a>
+                    <a href="disclaimer.html">Disclaimer</a>
+                </div>
+
+                <div class="feature-section">
+                    <h3>Overview</h3>
+                    <p>
+                        This page showcases complete software engineering tasks performed by Cline, an AI assistant with extensive programming knowledge. 
+                        Each transcript represents a start-to-finish software engineering task initiated with a single prompt, demonstrating how AI can 
+                        assist in real-world development scenarios.
+                    </p>
+                    
+                    <p class="important-notice">
+                        <strong>Note:</strong> These transcripts showcase the capabilities of AI-assisted software engineering. Each task was completed 
+                        with minimal human intervention, starting from a single prompt. The transcripts provide valuable insights into problem-solving 
+                        approaches, code organization, and best practices.
+                    </p>
+                </div>
+
+                <div class="feature-section">
+                    <h3>Featured Transcripts</h3>
+                    <p>
+                        Below are selected software engineering tasks that demonstrate interesting problem-solving approaches, 
+                        technical implementations, or educational value. Each transcript includes the initial prompt and a summary 
+                        of the task completed.
+                    </p>
+
+                    <div class="transcript-card">
+                        <h4>Coming Soon</h4>
+                        <div class="meta">Transcript will be added soon</div>
+                        <div class="description">
+                            <p>
+                                We're currently preparing complete Cline software engineering task transcripts to showcase here. 
+                                Check back soon to see examples of start-to-finish software engineering tasks performed by Cline.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Template for future transcripts -->
+                    <!--
+                    <div class="transcript-card">
+                        <h4>Building a React Component Library</h4>
+                        <div class="meta">Date: May 15, 2025 | Duration: 45 minutes</div>
+                        <div class="description">
+                            <p>
+                                In this transcript, Cline builds a complete React component library from scratch, 
+                                including button, card, modal, and form components with proper TypeScript typing 
+                                and comprehensive documentation.
+                            </p>
+                        </div>
+                        <div class="prompt">
+                            "Create a React component library with TypeScript that includes common UI components 
+                            like buttons, cards, modals, and form elements. Include proper typing, styling with 
+                            CSS-in-JS, and documentation."
+                        </div>
+                        <div class="tags">
+                            <span class="tag">React</span>
+                            <span class="tag">TypeScript</span>
+                            <span class="tag">Component Library</span>
+                            <span class="tag">UI/UX</span>
+                        </div>
+                        <div class="actions">
+                            <a href="#">View Full Transcript</a>
+                            <a href="#">View Code</a>
+                        </div>
+                    </div>
+                    -->
+                </div>
+
+                <div class="feature-section">
+                    <h3>Benefits of AI-Assisted Software Engineering</h3>
+                    <p>
+                        AI assistants like Cline can significantly enhance the software development process in several ways:
+                    </p>
+                    <ul>
+                        <li><strong>Rapid Prototyping:</strong> Quickly generate working prototypes from high-level descriptions</li>
+                        <li><strong>Knowledge Augmentation:</strong> Access to extensive programming knowledge and best practices</li>
+                        <li><strong>Consistent Documentation:</strong> Automatically generate comprehensive documentation</li>
+                        <li><strong>Code Quality:</strong> Suggestions for improvements and adherence to best practices</li>
+                        <li><strong>Learning Resource:</strong> Educational explanations of complex concepts and implementations</li>
+                    </ul>
+                </div>
+
+                <div class="page-nav">
+                    <a href="index.html">About</a>
+                    <a href="architecture.html">Architecture</a>
+                    <a href="development.html">Development</a>
+                    <a href="research-report.html">Research Report</a>
+                    <a href="swe-transcript.html">SWE Transcript</a>
+                    <a href="disclaimer.html">Disclaimer</a>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p><a href="https://hacka.re/" target="_blank">hacka.re</a> | <a href="../index.html">Back to Chat</a> | <a href="disclaimer.html">Disclaimer</a></p>
+        </footer>
+    </div>
+
+    <script src="js/themes.js"></script>
+    <script src="js/script.js"></script>
+</body>
+</html>
