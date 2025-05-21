@@ -32,6 +32,7 @@ PYTEST_ARGS=""
 BROWSER="chromium"
 HEADLESS="--headed"
 TIMEOUT="5000"
+SKIP_SERVER_MANAGEMENT="false"
 
 # Process command line arguments
 while [[ $# -gt 0 ]]; do
@@ -64,6 +65,10 @@ while [[ $# -gt 0 ]]; do
             K_EXPR="$2"
             shift 2
             ;;
+        --skip-server)
+            SKIP_SERVER_MANAGEMENT="true"
+            shift
+            ;;
         --help|-h)
             echo "Usage: $0 [options]"
             echo ""
@@ -75,6 +80,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --test-file     Specify a test file to run"
             echo "  --timeout       Set timeout in milliseconds (default: 5000)"
             echo "  -k              Filter tests by expression (e.g., -k \"not function_calling_api\")"
+            echo "  --skip-server   Skip starting/stopping the HTTP server"
             echo "  --help, -h      Show this help message"
             exit 0
             ;;
@@ -88,6 +94,16 @@ done
 # Prepare pytest arguments
 if [ -n "$K_EXPR" ]; then
     PYTEST_ARGS="$PYTEST_ARGS -k \"$K_EXPR\""
+fi
+
+# Start the HTTP server if not skipped
+if [ "$SKIP_SERVER_MANAGEMENT" = "false" ]; then
+    echo "Starting HTTP server for tests..."
+    ./start_server.sh
+    
+    # Set up trap to stop the server on exit
+    # We need to preserve the existing trap for Ctrl+C
+    trap 'echo "Stopping HTTP server..."; ./stop_server.sh; echo "Server stopped."' EXIT
 fi
 
 # Run the tests
