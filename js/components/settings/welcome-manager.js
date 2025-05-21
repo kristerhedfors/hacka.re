@@ -114,17 +114,33 @@ window.WelcomeManager = (function() {
         
         /**
          * Check if the user has visited before by looking for any hacka_re localStorage variables
+         * Also alerts if there are any localStorage variables without "hacka_re" in their names
          * @returns {boolean} True if the user has visited before
          */
         function hasVisitedBefore() {
             // Check if there's at least one hacka_re localStorage variable
+            let hasHackaReVar = false;
+            let nonHackaReVars = [];
+            
+            // Check all localStorage variables
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
-                if (key && key.startsWith('hacka_re')) {
-                    return true;
+                if (key) {
+                    if (key.includes('hacka_re')) {
+                        hasHackaReVar = true;
+                    } else {
+                        nonHackaReVars.push(key);
+                    }
                 }
             }
-            return false;
+            
+            // Alert if there are any localStorage variables without "hacka_re" in their names
+            if (nonHackaReVars.length > 0) {
+                console.error('ALERT: Found localStorage variables without "hacka_re" in their names:', nonHackaReVars);
+                alert('ALERT: Found localStorage variables without "hacka_re" in their names: ' + nonHackaReVars.join(', '));
+            }
+            
+            return hasHackaReVar;
         }
         
         /**
