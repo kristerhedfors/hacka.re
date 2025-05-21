@@ -4,7 +4,7 @@
  */
 
 window.ThemeService = (function() {
-    const THEME_STORAGE_KEY = 'aihackare_theme_mode';
+    const THEME_STORAGE_KEY = 'hackare_theme_mode';
     let darkModeToggleBtn;
     
     // Define the theme cycle order - include light and dark modes
