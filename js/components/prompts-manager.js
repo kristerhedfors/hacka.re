@@ -179,7 +179,13 @@ function loadPromptsList() {
     // Clear the list
     elements.promptsList.innerHTML = '';
     
-    // Add token usage bar
+    // Remove any existing token usage container
+    const existingTokenUsageContainer = elements.promptsModal.querySelector('.prompts-token-usage-container');
+    if (existingTokenUsageContainer) {
+        existingTokenUsageContainer.remove();
+    }
+    
+    // Create token usage container
     const tokenUsageContainer = document.createElement('div');
     tokenUsageContainer.className = 'prompts-token-usage-container';
     tokenUsageContainer.innerHTML = `
@@ -190,7 +196,12 @@ function loadPromptsList() {
             <div class="prompts-usage-fill" style="width: 0%"></div>
         </div>
     `;
-    elements.promptsList.appendChild(tokenUsageContainer);
+    
+    // Insert token usage container after the form-help paragraph but before the prompts-list
+    const formHelpElement = elements.promptsModal.querySelector('.form-help');
+    if (formHelpElement) {
+        formHelpElement.insertAdjacentElement('afterend', tokenUsageContainer);
+    }
     
     // Store references to the usage elements
     promptsUsageFill = tokenUsageContainer.querySelector('.prompts-usage-fill');
