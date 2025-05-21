@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deterministic Crypto Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+        .column {
+            flex: 1;
+        }
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Deterministic Crypto Demo</h1>
+    <p>This demo shows how the deterministic crypto system works. It generates deterministic key pairs, encrypts messages, and decrypts them.</p>
+
+    <div class="container">
+        <div class="column">
+            <h2>Configuration</h2>
+            <div>
+                <label for="masterKey">Master Key:</label>
+                <input type="text" id="masterKey" value="example-master-key-12345">
+            </div>
+            <div>
+                <label for="namespace">Namespace:</label>
+                <input type="text" id="namespace" value="example-namespace">
+            </div>
+            <div>
+                <label for="serverProgram">Server Program Name:</label>
+                <input type="text" id="serverProgram" value="example-server">
+            </div>
+            <div>
+                <label for="clientProgram">Client Program Name:</label>
+                <input type="text" id="clientProgram" value="example-client">
+            </div>
+            <button id="generateKeys">Generate Keys</button>
+            
+            <h3>Server Key Pair</h3>
+            <pre id="serverKeyPair">Not generated yet</pre>
+            
+            <h3>Client Key Pair</h3>
+            <pre id="clientKeyPair">Not generated yet</pre>
+        </div>
+        
+        <div class="column">
+            <h2>Encryption</h2>
+            <div>
+                <label for="message">Message to Encrypt:</label>
+                <textarea id="message" rows="5">{"text": "Hello, this is a secret message!", "timestamp": "2025-05-22T00:00:00.000Z"}</textarea>
+            </div>
+            <button id="encrypt">Encrypt Message</button>
+            
+            <h3>Encrypted Message</h3>
+            <pre id="encryptedMessage">Not encrypted yet</pre>
+            
+            <h2>Decryption</h2>
+            <div>
+                <label for="encryptedInput">Encrypted Message to Decrypt:</label>
+                <textarea id="encryptedInput" rows="5" placeholder="Paste encrypted message here"></textarea>
+            </div>
+            <button id="decrypt">Decrypt Message</button>
+            
+            <h3>Decrypted Message</h3>
+            <pre id="decryptedMessage">Not decrypted yet</pre>
+            
+            <div id="decryptionResult"></div>
+        </div>
+    </div>
+
+    <h2>Verification</h2>
+    <div>
+        <button id="verifyDeterminism">Verify Deterministic Keys</button>
+        <div id="verificationResult"></div>
+    </div>
+
+    <script src="../lib/tweetnacl/nacl-fast.min.js"></script>
+    <script src="../lib/tweetnacl/nacl-util.min.js"></script>
+    <script src="../js/utils/deterministic-crypto.js"></script>
+    <script>
+        // DOM Elements
+        const masterKeyInput = document.getElementById('masterKey');
+        const namespaceInput = document.getElementById('namespace');
+        const serverProgramInput = document.getElementById('serverProgram');
+        const clientProgramInput = document.getElementById('clientProgram');
+        const generateKeysButton = document.getElementById('generateKeys');
+        const serverKeyPairOutput = document.getElementById('serverKeyPair');
+        const clientKeyPairOutput = document.getElementById('clientKeyPair');
+        const messageInput = document.getElementById('message');
+        const encryptButton = document.getElementById('encrypt');
+        const encryptedMessageOutput = document.getElementById('encryptedMessage');
+        const encryptedInput = document.getElementById('encryptedInput');
+        const decryptButton = document.getElementById('decrypt');
+        const decryptedMessageOutput = document.getElementById('decryptedMessage');
+        const decryptionResultOutput = document.getElementById('decryptionResult');
+        const verifyDeterminismButton = document.getElementById('verifyDeterminism');
+        const verificationResultOutput = document.getElementById('verificationResult');
+
+        // Global variables to store key pairs
+        let serverKeyPair = null;
+        let clientKeyPair = null;
+
+        // Generate Keys
+        generateKeysButton.addEventListener('click', () => {
+            const masterKey = masterKeyInput.value;
+            const namespace = namespaceInput.value;
+            const serverProgram = serverProgramInput.value;
+            const clientProgram = clientProgramInput.value;
+
+            // Generate server key pair
+            serverKeyPair = DeterministicCrypto.generateKeyPair(
+                masterKey,
+                namespace,
+                serverProgram
+            );
+
+            // Generate client key pair
+            clientKeyPair = DeterministicCrypto.generateKeyPair(
+                masterKey,
+                namespace,
+                clientProgram
+            );
+
+            // Display key pairs
+            serverKeyPairOutput.textContent = JSON.stringify({
+                publicKey: nacl.util.encodeBase64(serverKeyPair.publicKey),
+                secretKey: nacl.util.encodeBase64(serverKeyPair.secretKey).substring(0, 10) + '...'
+            }, null, 2);
+
+            clientKeyPairOutput.textContent = JSON.stringify({
+                publicKey: nacl.util.encodeBase64(clientKeyPair.publicKey),
+                secretKey: nacl.util.encodeBase64(clientKeyPair.secretKey).substring(0, 10) + '...'
+            }, null, 2);
+        });
+
+        // Encrypt Message
+        encryptButton.addEventListener('click', () => {
+            if (!serverKeyPair || !clientKeyPair) {
+                alert('Please generate keys first');
+                return;
+            }
+
+            try {
+                // Parse message as JSON
+                const message = JSON.parse(messageInput.value);
+
+                // Encrypt message
+                const encrypted = DeterministicCrypto.encrypt(
+                    message,
+                    clientKeyPair.publicKey,
+                    serverKeyPair.secretKey
+                );
+
+                // Display encrypted message
+                encryptedMessageOutput.textContent = encrypted;
+                encryptedInput.value = encrypted;
+            } catch (error) {
+                encryptedMessageOutput.textContent = 'Error: ' + error.message;
+            }
+        });
+
+        // Decrypt Message
+        decryptButton.addEventListener('click', () => {
+            if (!serverKeyPair || !clientKeyPair) {
+                alert('Please generate keys first');
+                return;
+            }
+
+            try {
+                // Get encrypted message
+                const encrypted = encryptedInput.value;
+
+                // Decrypt message
+                const decrypted = DeterministicCrypto.decrypt(
+                    encrypted,
+                    serverKeyPair.publicKey,
+                    clientKeyPair.secretKey
+                );
+
+                // Display decrypted message
+                if (decrypted) {
+                    decryptedMessageOutput.textContent = JSON.stringify(decrypted, null, 2);
+                    decryptionResultOutput.innerHTML = '<p class="success">Decryption successful!</p>';
+                } else {
+                    decryptedMessageOutput.textContent = 'Decryption failed';
+                    decryptionResultOutput.innerHTML = '<p class="error">Decryption failed. The message may be corrupted or not intended for this recipient.</p>';
+                }
+            } catch (error) {
+                decryptedMessageOutput.textContent = 'Error: ' + error.message;
+                decryptionResultOutput.innerHTML = '<p class="error">Error: ' + error.message + '</p>';
+            }
+        });
+
+        // Verify Deterministic Keys
+        verifyDeterminismButton.addEventListener('click', () => {
+            const masterKey = masterKeyInput.value;
+            const namespace = namespaceInput.value;
+            const serverProgram = serverProgramInput.value;
+            const clientProgram = clientProgramInput.value;
+
+            // Generate key pairs again
+            const serverKeyPair2 = DeterministicCrypto.generateKeyPair(
+                masterKey,
+                namespace,
+                serverProgram
+            );
+
+            const clientKeyPair2 = DeterministicCrypto.generateKeyPair(
+                masterKey,
+                namespace,
+                clientProgram
+            );
+
+            // Check if keys match
+            const serverKeysMatch = nacl.util.encodeBase64(serverKeyPair.publicKey) === 
+                                   nacl.util.encodeBase64(serverKeyPair2.publicKey) &&
+                                   nacl.util.encodeBase64(serverKeyPair.secretKey) === 
+                                   nacl.util.encodeBase64(serverKeyPair2.secretKey);
+                                   
+            const clientKeysMatch = nacl.util.encodeBase64(clientKeyPair.publicKey) === 
+                                   nacl.util.encodeBase64(clientKeyPair2.publicKey) &&
+                                   nacl.util.encodeBase64(clientKeyPair.secretKey) === 
+                                   nacl.util.encodeBase64(clientKeyPair2.secretKey);
+
+            // Display results
+            if (serverKeysMatch && clientKeysMatch) {
+                verificationResultOutput.innerHTML = '<p class="success">Verification successful! The same inputs produce the same keys.</p>';
+            } else {
+                verificationResultOutput.innerHTML = '<p class="error">Verification failed! The keys do not match.</p>';
+            }
+        });
+
+        // Initialize by generating keys on page load
+        window.addEventListener('load', () => {
+            generateKeysButton.click();
+        });
+    </script>
+</body>
+</html>
