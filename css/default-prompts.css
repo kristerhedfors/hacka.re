@@ -173,7 +173,7 @@
 .function-library-link {
     color: var(--accent-color);
     text-decoration: none;
-    font-weight: 600;
+    font-weight: normal;
     transition: color 0.2s ease;
 }
 
@@ -189,4 +189,45 @@
 
 .default-prompt-item .prompt-item-name:hover {
     color: var(--accent-color);
+}
+
+/* Token usage display styles */
+.prompts-token-usage-container {
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: var(--bg-color-secondary);
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+}
+
+.prompts-token-usage-label {
+    margin-bottom: 5px;
+    font-size: 14px;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+}
+
+.prompts-usage-tokens {
+    margin: 0 5px;
+    font-weight: normal;
+    color: var(--text-color);
+}
+
+.prompts-usage-text {
+    font-weight: normal;
+}
+
+.prompts-usage-bar {
+    height: 8px;
+    background-color: var(--bg-color);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.prompts-usage-fill {
+    height: 100%;
+    background-color: var(--accent-color);
+    border-radius: 4px;
+    transition: width 0.3s ease;
 }
