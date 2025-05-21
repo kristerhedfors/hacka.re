@@ -30,9 +30,11 @@ window.ApiService = (function() {
         
         // Ensure we never return null or undefined
         if (!baseUrl || baseUrl === 'null' || baseUrl === 'undefined') {
-            const defaultUrl = StorageService.getDefaultBaseUrlForProvider('groq');
-            console.log('[API Debug] Using default Groq URL:', defaultUrl);
-            return defaultUrl; // Default to Groq if no base URL is set
+            // Get the current provider and use its default URL
+            const currentProvider = StorageService.getBaseUrlProvider();
+            const defaultUrl = StorageService.getDefaultBaseUrlForProvider(currentProvider);
+            console.log(`[API Debug] Using default URL for ${currentProvider}:`, defaultUrl);
+            return defaultUrl;
         }
         
         console.log('[API Debug] Using base URL:', baseUrl);

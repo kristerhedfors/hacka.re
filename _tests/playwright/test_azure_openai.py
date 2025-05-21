@@ -150,7 +150,7 @@ def test_azure_openai_clear_settings(page, serve_hacka_re):
     # Verify that a system message is displayed confirming settings were cleared
     # Use the last system message which should be the most recent one
     last_system_message = page.locator(".message.system").nth(system_messages_count - 1)
-    expect(last_system_message).to_contain_text("All settings have been cleared")
+    expect(last_system_message).to_contain_text("All settings for the current GPT namespace have been deleted")
     
     # Open settings modal again to verify settings were cleared
     page.click("#settings-btn")

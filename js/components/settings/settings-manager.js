@@ -566,23 +566,24 @@ window.SettingsManager = (function() {
         }
         
         /**
-         * Clear all settings from localStorage or reset to default values
+         * Delete all saved settings for the current GPT namespace
          * @param {Function} hideSettingsModal - Function to hide settings modal
          * @param {Function} addSystemMessage - Function to add system message
          */
         function clearAllSettings(hideSettingsModal, addSystemMessage) {
-            // Save the current namespace before clearing title/subtitle
+            // Save the current namespace before clearing settings
             const currentNamespace = StorageService.getNamespace();
             
-            // Remove all settings from localStorage
+            // Remove all settings from localStorage for the current namespace
             localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.API_KEY));
             localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.MODEL));
             localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.SYSTEM_PROMPT));
             localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.SHARE_OPTIONS));
             localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.BASE_URL));
             localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.BASE_URL_PROVIDER));
+            localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.DEBUG_MODE));
             
-            // Remove Azure OpenAI settings
+            // Remove Azure OpenAI settings for the current namespace
             localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.AZURE_API_BASE));
             localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.AZURE_API_VERSION));
             localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.AZURE_DEPLOYMENT_NAME));
@@ -591,17 +592,17 @@ window.SettingsManager = (function() {
             // Clear chat history from current namespace
             localStorage.removeItem(StorageService.getNamespacedKey(StorageService.STORAGE_KEYS.HISTORY));
             
-            // Now clear the title and subtitle (which will change the namespace)
-            localStorage.removeItem(StorageService.STORAGE_KEYS.TITLE);
-            localStorage.removeItem(StorageService.STORAGE_KEYS.SUBTITLE);
+            // Remove tool calling settings
+            localStorage.removeItem(`hackare_${currentNamespace}_tool_calling_enabled`);
+            
+            // Remove namespace-related entries
+            localStorage.removeItem(`hackare_${currentNamespace}_namespace`);
+            localStorage.removeItem(`hackare_${currentNamespace}_master_key`);
             
             // Reset the session key if ShareManager is available
             if (window.aiHackare && window.aiHackare.shareManager) {
                 window.aiHackare.shareManager.setSessionKey(null);
             }
-            
-            // Update the title and subtitle in the UI
-            titleSubtitleManager.updateTitleAndSubtitle(true);
             
             // Update UI elements
             if (elements.baseUrl) {
@@ -621,7 +622,7 @@ window.SettingsManager = (function() {
             
             // Add confirmation message
             if (addSystemMessage) {
-                addSystemMessage('All settings have been cleared.');
+                addSystemMessage('All settings for the current GPT namespace have been deleted.');
             }
             
             return true;
