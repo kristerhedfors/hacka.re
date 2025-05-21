@@ -42,6 +42,7 @@ This script offers several advantages:
 - Automatically generates markdown reports with test results and screenshots
 - Makes test output available as context for LLM-assisted coding
 - Sets up the virtual environment automatically if it doesn't exist
+- Automatically starts and stops the HTTP server in the correct folder for testing
 
 #### Command Line Options
 
@@ -57,6 +58,7 @@ Options:
 - `--test-file <file>`: Specify a test file to run
 - `--timeout <ms>`: Set timeout in milliseconds (default: 5000)
 - `-k "<expression>"`: Filter tests by expression (e.g., `-k "not function_calling_api"`)
+- `--skip-server`: Skip starting/stopping the HTTP server
 - `--help`, `-h`: Show help message
 
 ### Running Live API Tests
@@ -138,6 +140,7 @@ The tests are organized into the following files:
 - `test_function_library_multi.py`: Tests related to the multi-function library feature, verifying that multiple functions can be defined in one editor with some marked as callable using the @callable_function tag
 - `test_swe_transcript.py`: Tests related to the SWE Transcript page, verifying that the page loads correctly, navigation works, and the content structure is as expected
 - `test_welcome_manager.py`: Tests related to the welcome modal functionality, verifying that it appears on first visit and doesn't appear when any hacka_re localStorage variable exists
+- `test_clear_namespace_settings.py`: Tests related to the "Delete all saved settings for current GPT namespace" functionality, verifying that the button text has been updated and that clicking it clears only the settings for the current namespace
 
 ## Testing MCP Functionality
 
@@ -551,6 +554,42 @@ To add new tests:
 - We use `o4-mini` from OpenAI during tests due to its lower token costs and faster response times.
 - The `.env` file should contain a valid API key for the LLM provider you're testing with (currently OpenAI).
 - Do not add any mocking code to the tests, as this defeats the purpose of testing against real APIs.
+
+## HTTP Server Management
+
+The tests require a local HTTP server to serve the application. The `run_tests.sh` script automatically manages this server for you, but you can also manage it manually if needed.
+
+### Server Management Scripts
+
+Two scripts are provided to manage the HTTP server:
+
+1. **start_server.sh**: Starts the HTTP server in the project root directory
+   ```bash
+   ./start_server.sh
+   ```
+   This script:
+   - Kills any existing Python HTTP server processes on port 8000
+   - Starts a new HTTP server in the project root directory
+   - Saves the server PID to a file for later cleanup
+
+2. **stop_server.sh**: Stops the HTTP server
+   ```bash
+   ./stop_server.sh
+   ```
+   This script:
+   - Reads the server PID from the file
+   - Kills the server process
+   - Removes the PID file
+
+### Skipping Server Management
+
+If you already have a server running or want to manage it manually, you can use the `--skip-server` option with `run_tests.sh`:
+
+```bash
+./run_tests.sh --skip-server
+```
+
+This will run the tests without starting or stopping the HTTP server.
 
 ## API Configuration
 
