@@ -94,8 +94,49 @@ window.PromptsManager = (function() {
         function updatePromptsTokenUsage() {
             if (!promptsUsageFill || !promptsUsageText) return;
             
-            const percentage = estimatePromptsTokenUsage();
+            // Get token usage information
+            const selectedPrompts = PromptsService.getSelectedPrompts();
+            const selectedDefaultPrompts = window.DefaultPromptsService ? 
+                window.DefaultPromptsService.getSelectedDefaultPrompts() : [];
+            const allSelectedPrompts = [...selectedDefaultPrompts, ...selectedPrompts];
+            
+            // Combine all selected prompts content
+            const combinedContent = allSelectedPrompts
+                .map(prompt => {
+                    // For Function Library prompt, ensure we get the latest content
+                    if (prompt.id === 'function-library' && 
+                        window.FunctionLibraryPrompt && 
+                        typeof window.FunctionLibraryPrompt.content === 'function') {
+                        return window.FunctionLibraryPrompt.content();
+                    }
+                    return prompt.content;
+                })
+                .join('\n\n---\n\n');
+            
+            // Estimate token count (4 chars per token is a rough approximation)
+            const totalChars = combinedContent.length;
+            const estimatedTokens = Math.ceil(totalChars / 4);
+            
+            // Get context window size for the current model
+            const currentModel = StorageService.getModel();
+            let contextSize = window.ModelInfoService.getContextSize(currentModel);
+            
+            // Default to 8K if not specified
+            if (!contextSize) {
+                contextSize = 8192;
+            }
+            
+            // Calculate percentage
+            const percentage = Math.min(Math.round((estimatedTokens / contextSize) * 100), 100);
+            
+            // Update the percentage display
             UIUtils.updateContextUsage(promptsUsageFill, promptsUsageText, percentage);
+            
+            // Update the token count display
+            const promptsUsageTokens = document.querySelector('.prompts-usage-tokens');
+            if (promptsUsageTokens) {
+                promptsUsageTokens.textContent = `${estimatedTokens}/${contextSize} tokens`;
+            }
         }
         
         /**
@@ -143,7 +184,7 @@ function loadPromptsList() {
     tokenUsageContainer.className = 'prompts-token-usage-container';
     tokenUsageContainer.innerHTML = `
         <div class="prompts-token-usage-label">
-            Context usage: <span class="prompts-usage-text">0%</span>
+            Context usage: <span class="prompts-usage-tokens">0/0 tokens</span> <span class="prompts-usage-text">0%</span>
         </div>
         <div class="prompts-usage-bar">
             <div class="prompts-usage-fill" style="width: 0%"></div>
