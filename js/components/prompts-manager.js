@@ -667,6 +667,9 @@ function createPromptItem(prompt, selectedIds) {
             case 'mcp-sdk-readme':
                 description = 'Documentation for the Model Context Protocol SDK, which enables communication between AI models and external tools.';
                 break;
+            case 'openai-api-proxy':
+                description = 'A lightweight, dependency-free Python implementation of an OpenAI API proxy without external dependencies.';
+                break;
             default:
                 description = prompt.description || 'A default system prompt component for the hacka.re chat interface.';
         }

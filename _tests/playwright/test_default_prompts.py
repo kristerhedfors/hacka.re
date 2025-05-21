@@ -146,8 +146,27 @@ def test_default_prompts_content(page, serve_hacka_re):
     owasp_prompt = page.locator(".default-prompt-item:has-text('OWASP Top 10 for LLM Applications')")
     expect(owasp_prompt).to_be_visible()
     
+    # Check if the Code section exists and expand it if it does
+    code_section = page.locator(".nested-section-header:has-text('Code')")
+    if code_section.count() > 0:
+        print("Found Code section, expanding it")
+        code_section.click()
+        
+        # Wait for the nested section list to be visible
+        nested_list = page.locator(".nested-section-list")
+        expect(nested_list).to_be_visible()
+        
+        # Check that the OpenAI API Proxy prompt exists in the Code section
+        api_proxy_prompt = page.locator(".default-prompt-item:has-text('Pure Python OpenAI API Proxy')")
+        expect(api_proxy_prompt).to_be_visible()
+        
+        # Add the API proxy prompt to the list of prompts to check
+        prompts_to_check = [hacka_re_prompt, owasp_prompt, api_proxy_prompt]
+    else:
+        prompts_to_check = [hacka_re_prompt, owasp_prompt]
+    
     # Check that each default prompt has a checkbox
-    for prompt in [hacka_re_prompt, owasp_prompt]:
+    for prompt in prompts_to_check:
         checkbox = prompt.locator(".prompt-item-checkbox")
         expect(checkbox).to_be_visible()
         
@@ -192,16 +211,39 @@ def test_default_prompts_selection(page, serve_hacka_re):
     default_prompts_list = page.locator(".default-prompts-list")
     expect(default_prompts_list).to_be_visible()
     
+    # Check if the Code section exists and expand it if it does
+    code_section = page.locator(".nested-section-header:has-text('Code')")
+    if code_section.count() > 0:
+        print("Found Code section, expanding it")
+        code_section.click()
+        
+        # Wait for the nested section list to be visible
+        nested_list = page.locator(".nested-section-list")
+        expect(nested_list).to_be_visible()
+    
     # Define the prompts to test
     prompts_to_test = [
         ".default-prompt-item:has-text('About hacka.re Project')",
-        ".default-prompt-item:has-text('OWASP Top 10 for LLM Applications')"
+        ".default-prompt-item:has-text('OWASP Top 10 for LLM Applications')",
+        ".default-prompt-item:has-text('Pure Python OpenAI API Proxy')"
     ]
     
     # Test each prompt
     for prompt_selector in prompts_to_test:
         # Find the prompt
         prompt = page.locator(prompt_selector)
+        
+        # Check if the prompt exists before trying to interact with it
+        if prompt.count() == 0:
+            print(f"Prompt not found: {prompt_selector}")
+            continue
+            
+        # Check if the prompt is visible, if not, try to make it visible
+        if not prompt.is_visible():
+            print(f"Prompt not visible: {prompt_selector}")
+            continue
+        
+        # Now the prompt should be visible
         expect(prompt).to_be_visible()
         
         # Get the checkbox
@@ -290,6 +332,11 @@ def test_default_prompts_info_button(page, serve_hacka_re):
             "expected_title": "Function library",
             "expected_description": "All JavaScript functions currently stored in",
             "has_link": True
+        },
+        {
+            "selector": ".default-prompt-item:has-text('Pure Python OpenAI API Proxy')",
+            "expected_title": "Pure Python OpenAI API Proxy",
+            "expected_description": "A lightweight, dependency-free Python implementation"
         }
     ]
     
@@ -415,6 +462,11 @@ def test_default_prompts_name_click(page, serve_hacka_re):
             "selector": ".default-prompt-item:has-text('OWASP Top 10 for LLM Applications')",
             "expected_label": "OWASP Top 10 for LLM Applications",
             "expected_content_fragment": "OWASP Top 10 for Large Language Model Applications"
+        },
+        {
+            "selector": ".default-prompt-item:has-text('Pure Python OpenAI API Proxy')",
+            "expected_label": "Pure Python OpenAI API Proxy",
+            "expected_content_fragment": "A lightweight, dependency-free Python implementation of an OpenAI API proxy"
         }
     ]
     

@@ -46,6 +46,11 @@ function initializeDefaultPrompts() {
             codeSectionPrompt.items.push(window.AgentOrchestrationPrompt);
         }
         
+        // Add OpenAI API Proxy example to the Code section
+        if (window.OpenAIApiProxyPrompt) {
+            codeSectionPrompt.items.push(window.OpenAIApiProxyPrompt);
+        }
+        
         // Add the Code section to the default prompts
         DEFAULT_PROMPTS.push(codeSectionPrompt);
     } else {
@@ -68,6 +73,11 @@ function initializeDefaultPrompts() {
         // Agent orchestration example
         if (window.AgentOrchestrationPrompt) {
             DEFAULT_PROMPTS.push(window.AgentOrchestrationPrompt);
+        }
+        
+        // OpenAI API Proxy example
+        if (window.OpenAIApiProxyPrompt) {
+            DEFAULT_PROMPTS.push(window.OpenAIApiProxyPrompt);
         }
     }
     
