@@ -20,7 +20,22 @@ function initializeDefaultPrompts() {
     
     // Add prompts from individual files if they exist in the specified order
     
-    // 1. Code section with Function Library and Agent Orchestration
+    // 1. About hacka.re Project
+    if (window.HackaReProjectPrompt) {
+        DEFAULT_PROMPTS.push(window.HackaReProjectPrompt);
+    }
+    
+    // 2. The urgency of interpretability
+    if (window.InterpretabilityUrgencyPrompt) {
+        DEFAULT_PROMPTS.push(window.InterpretabilityUrgencyPrompt);
+    }
+    
+    // 3. OWASP Top 10 for LLM Applications
+    if (window.OwaspLlmTop10Prompt) {
+        DEFAULT_PROMPTS.push(window.OwaspLlmTop10Prompt);
+    }
+    
+    // 4. Code section with Function Library and Agent Orchestration
     if (window.CodeSectionPrompt) {
         // Create a copy of the Code section prompt
         const codeSectionPrompt = { ...window.CodeSectionPrompt };
@@ -79,21 +94,6 @@ function initializeDefaultPrompts() {
         if (window.OpenAIApiProxyPrompt) {
             DEFAULT_PROMPTS.push(window.OpenAIApiProxyPrompt);
         }
-    }
-    
-    // 2. About hacka.re Project
-    if (window.HackaReProjectPrompt) {
-        DEFAULT_PROMPTS.push(window.HackaReProjectPrompt);
-    }
-    
-    // 3. The urgency of interpretability
-    if (window.InterpretabilityUrgencyPrompt) {
-        DEFAULT_PROMPTS.push(window.InterpretabilityUrgencyPrompt);
-    }
-    
-    // 4. OWASP Top 10 for LLM Applications
-    if (window.OwaspLlmTop10Prompt) {
-        DEFAULT_PROMPTS.push(window.OwaspLlmTop10Prompt);
     }
     
     // Add MCP SDK README prompt if it exists
