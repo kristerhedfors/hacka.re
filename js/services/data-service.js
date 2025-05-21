@@ -153,7 +153,7 @@ window.DataService = (function() {
     
     /**
      * Get base URL provider from local storage
-     * @returns {string} The stored provider or 'groq' if not found
+     * @returns {string} The stored provider or 'openai' if not found
      */
     function getBaseUrlProvider() {
         return CoreStorageService.getValue(

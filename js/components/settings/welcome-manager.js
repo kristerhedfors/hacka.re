@@ -15,11 +15,11 @@ window.WelcomeManager = (function() {
          * @param {Function} onContinue - Function to call when the user clicks continue
          */
         function showWelcomeModalIfFirstTime(onContinue) {
-            // Check if this is the first visit by looking for any hacka_re localStorage variables
+            // Check if this is the first visit by looking for any hackare_ localStorage variables
             const userHasVisitedBefore = hasVisitedBefore();
             
             if (!userHasVisitedBefore) {
-                // No need to mark as visited - any localStorage operations will create hacka_re variables
+                // No need to mark as visited - any localStorage operations will create hackare_ variables
                 
                 // Create a welcome modal
                 const welcomeModal = document.createElement('div');
@@ -113,43 +113,43 @@ window.WelcomeManager = (function() {
         }
         
         /**
-         * Check if the user has visited before by looking for any hacka_re localStorage variables
-         * Also alerts if there are any localStorage variables without "hacka_re" in their names
+         * Check if the user has visited before by looking for any hackare_ localStorage variables
+         * Also alerts if there are any localStorage variables without "hackare_" in their names
          * @returns {boolean} True if the user has visited before
          */
         function hasVisitedBefore() {
-            // Check if there's at least one hacka_re localStorage variable
-            let hasHackaReVar = false;
-            let nonHackaReVars = [];
+            // Check if there's at least one hackare_ localStorage variable
+            let hasHackareVar = false;
+            let nonHackareVars = [];
             
             // Check all localStorage variables
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key) {
-                    if (key.includes('hacka_re')) {
-                        hasHackaReVar = true;
+                    if (key.includes('hackare_')) {
+                        hasHackareVar = true;
                     } else {
-                        nonHackaReVars.push(key);
+                        nonHackareVars.push(key);
                     }
                 }
             }
             
-            // Alert if there are any localStorage variables without "hacka_re" in their names
-            if (nonHackaReVars.length > 0) {
-                console.error('ALERT: Found localStorage variables without "hacka_re" in their names:', nonHackaReVars);
-                alert('ALERT: Found localStorage variables without "hacka_re" in their names: ' + nonHackaReVars.join(', '));
+            // Alert if there are any localStorage variables without "hackare_" in their names
+            if (nonHackareVars.length > 0) {
+                console.error('ALERT: Found localStorage variables without "hackare_" in their names:', nonHackareVars);
+                alert('ALERT: Found localStorage variables without "hackare_" in their names: ' + nonHackareVars.join(', '));
             }
             
-            return hasHackaReVar;
+            return hasHackareVar;
         }
         
         /**
          * Mark the user as having visited before
          * Note: This is kept for API compatibility but is no longer needed
-         * as any localStorage operation will create hacka_re variables
+         * as any localStorage operation will create hackare_ variables
          */
         function markAsVisited() {
-            // No longer needed - any localStorage operations will create hacka_re variables
+            // No longer needed - any localStorage operations will create hackare_ variables
             // This function is kept for API compatibility
         }
         
