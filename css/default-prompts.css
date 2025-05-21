@@ -55,8 +55,8 @@
 
 .nested-section-header h4 {
     margin: 0 0 0 8px;
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 16px; /* Match the parent section font size */
+    font-weight: 700; /* Match the parent section font weight */
 }
 
 .nested-section-header i {
@@ -68,6 +68,16 @@
     padding: 8px;
     background-color: var(--bg-color);
     border-top: 1px solid var(--border-color);
+}
+
+/* Ensure nested items use the same font size as parent items */
+.nested-section-list .prompt-item-name {
+    font-size: 14px !important; /* Explicit size to match parent items */
+}
+
+/* Make sure all prompt items have consistent font size */
+.prompt-item-name {
+    font-size: 14px !important;
 }
 
 .default-prompt-item {
