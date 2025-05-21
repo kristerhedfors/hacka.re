@@ -1,0 +1,51 @@
+/**
+ * Checkbox Fix CSS
+ * Makes all checkboxes smaller across the application
+ */
+
+/* Base styles for all checkboxes */
+input[type="checkbox"] {
+    width: 14px !important;
+    height: 14px !important;
+    margin-right: 8px !important;
+    min-height: 14px !important; /* Override mobile.css min-height */
+    min-width: 14px !important;  /* Override mobile.css min-width */
+    margin: 0 8px 0 0 !important; /* Override mobile.css margin */
+}
+
+/* Specific override for checkbox-group checkboxes */
+.checkbox-group input[type="checkbox"] {
+    width: 14px !important;
+    height: 14px !important;
+    min-height: 14px !important;
+    min-width: 14px !important;
+    margin: 0 8px 0 0 !important;
+}
+
+/* Specific override for prompt-item-checkbox */
+.prompt-item-checkbox,
+.default-prompt-item .prompt-item-checkbox {
+    width: 14px !important;
+    height: 14px !important;
+    min-height: 14px !important;
+    min-width: 14px !important;
+    margin: 0 8px 0 0 !important;
+}
+
+/* Specific override for function-item-checkbox */
+.function-item-checkbox {
+    width: 14px !important;
+    height: 14px !important;
+    min-height: 14px !important;
+    min-width: 14px !important;
+    margin: 0 8px 0 0 !important;
+}
+
+/* Ensure debug mode checkbox is also fixed */
+#debug-mode {
+    width: 14px !important;
+    height: 14px !important;
+    min-height: 14px !important;
+    min-width: 14px !important;
+    margin: 0 8px 0 0 !important;
+}

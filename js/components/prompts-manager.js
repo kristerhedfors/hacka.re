@@ -40,6 +40,8 @@ window.PromptsManager = (function() {
          */
         function estimatePromptsTokenUsage() {
             const selectedPrompts = PromptsService.getSelectedPrompts();
+            
+            // Get selected default prompts - this now correctly handles nested prompts
             const selectedDefaultPrompts = window.DefaultPromptsService ? 
                 window.DefaultPromptsService.getSelectedDefaultPrompts() : [];
             
@@ -52,7 +54,15 @@ window.PromptsManager = (function() {
             
             // Combine all selected prompts content
             const combinedContent = allSelectedPrompts
-                .map(prompt => prompt.content)
+                .map(prompt => {
+                    // For Function Library prompt, ensure we get the latest content
+                    if (prompt.id === 'function-library' && 
+                        window.FunctionLibraryPrompt && 
+                        typeof window.FunctionLibraryPrompt.content === 'function') {
+                        return window.FunctionLibraryPrompt.content();
+                    }
+                    return prompt.content;
+                })
                 .join('\n\n---\n\n');
             
             // Estimate token count (4 chars per token is a rough approximation)
@@ -101,6 +111,9 @@ window.PromptsManager = (function() {
             // Show the modal
             if (elements.promptsModal) {
                 elements.promptsModal.classList.add('active');
+                
+                // Update the main context usage display
+                updateMainContextUsage();
             }
         }
         
@@ -183,48 +196,18 @@ function loadPromptsList() {
         checkbox.addEventListener('click', (e) => {
             e.stopPropagation(); // Prevent triggering the prompt item click
             console.log("Regular prompt checkbox clicked:", prompt.id);
+            
+            // Toggle the prompt selection in the service
             PromptsService.togglePromptSelection(prompt.id);
+            
+            // Apply selected prompts as system prompt
             PromptsService.applySelectedPromptsAsSystem();
-            updatePromptsTokenUsage(); // Update token usage bar
             
-            // Get all selected prompts
-            const selectedDefaultPrompts = DefaultPromptsService.getSelectedDefaultPrompts();
-            const selectedPrompts = PromptsService.getSelectedPrompts();
-            const allSelectedPrompts = [...selectedDefaultPrompts, ...selectedPrompts];
+            // Update token usage bar in the prompts modal
+            updatePromptsTokenUsage();
             
-            // Combine all selected prompts
-            const combinedContent = allSelectedPrompts
-                .map(prompt => prompt.content)
-                .join('\n\n---\n\n');
-            
-            // Get current messages
-            const messages = window.aiHackare && window.aiHackare.chatManager ? 
-                window.aiHackare.chatManager.getMessages() || [] : [];
-            
-            // Get current model
-            const currentModel = window.aiHackare && window.aiHackare.settingsManager ? 
-                window.aiHackare.settingsManager.getCurrentModel() : '';
-            
-            // Calculate usage info directly
-            const usageInfo = UIUtils.estimateContextUsage(
-                messages, 
-                ModelInfoService.modelInfo, 
-                currentModel,
-                combinedContent
-            );
-            
-            console.log("Direct calculation - percentage:", usageInfo.percentage);
-            
-            // Update the UI directly
-            const usageFill = document.querySelector('.usage-fill');
-            const usageText = document.querySelector('.usage-text');
-            
-            if (usageFill && usageText) {
-                console.log("Directly updating main UI elements from checkbox handler");
-                UIUtils.updateContextUsage(usageFill, usageText, usageInfo.percentage);
-            } else {
-                console.log("Could not find main UI elements");
-            }
+            // Update the main context usage display
+            updateMainContextUsage();
         });
         promptItem.appendChild(checkbox);
         
@@ -380,13 +363,8 @@ function loadPromptsList() {
             // Apply selected prompts as system prompt
             PromptsService.applySelectedPromptsAsSystem();
             
-            // Update main context usage display if aiHackare is available
-            if (window.aiHackare && window.aiHackare.chatManager) {
-                window.aiHackare.chatManager.estimateContextUsage(
-                    window.aiHackare.uiManager.updateContextUsage.bind(window.aiHackare.uiManager),
-                    window.aiHackare.settingsManager.getCurrentModel()
-                );
-            }
+            // Update the main context usage display
+            updateMainContextUsage();
             });
             
             // Add elements to the section
@@ -437,6 +415,11 @@ function addDefaultPromptsSection() {
         isExpanded = !isExpanded;
         expandIcon.className = isExpanded ? 'fas fa-chevron-down' : 'fas fa-chevron-right';
         defaultPromptsList.style.display = isExpanded ? 'block' : 'none';
+        
+        // Update the main context usage display when expanding the Default Prompts section
+        if (isExpanded) {
+            updateMainContextUsage();
+        }
     });
     
     defaultPromptsSection.appendChild(sectionHeader);
@@ -452,22 +435,274 @@ function addDefaultPromptsSection() {
     
     // Add each default prompt to the list
     defaultPrompts.forEach(prompt => {
-        const promptItem = document.createElement('div');
-        promptItem.className = 'prompt-item default-prompt-item';
-        promptItem.dataset.id = prompt.id;
-        
-        // Create checkbox for selecting the prompt
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.className = 'prompt-item-checkbox';
-        checkbox.checked = selectedDefaultPromptIds.includes(prompt.id);
-        checkbox.addEventListener('click', (e) => {
-            e.stopPropagation(); // Prevent triggering the prompt item click
-            console.log("Default prompt checkbox clicked:", prompt.id);
-            DefaultPromptsService.toggleDefaultPromptSelection(prompt.id);
-            PromptsService.applySelectedPromptsAsSystem();
-            updatePromptsTokenUsage(); // Update token usage bar
+        // Check if this is a section with nested items
+        if (prompt.isSection && prompt.items && prompt.items.length > 0) {
+            // Create a nested section
+            const nestedSection = document.createElement('div');
+            nestedSection.className = 'nested-section';
             
+            // Create nested section header
+            const nestedHeader = document.createElement('div');
+            nestedHeader.className = 'nested-section-header';
+            
+            // Add expand/collapse icon for nested section
+            const nestedExpandIcon = document.createElement('i');
+            nestedExpandIcon.className = 'fas fa-chevron-right';
+            nestedHeader.appendChild(nestedExpandIcon);
+            
+            // Add nested section title
+            const nestedTitle = document.createElement('h4');
+            nestedTitle.textContent = prompt.name || 'Unnamed Section';
+            nestedHeader.appendChild(nestedTitle);
+            
+            // Add click event to expand/collapse nested section
+            let isNestedExpanded = false;
+            nestedHeader.addEventListener('click', () => {
+                isNestedExpanded = !isNestedExpanded;
+                nestedExpandIcon.className = isNestedExpanded ? 'fas fa-chevron-down' : 'fas fa-chevron-right';
+                nestedList.style.display = isNestedExpanded ? 'block' : 'none';
+                
+                // Update the main context usage display when expanding a section
+                // This ensures the context usage is updated when the Code section is expanded
+                if (isNestedExpanded && prompt.id === 'code-section') {
+                    updateMainContextUsage();
+                }
+            });
+            
+            nestedSection.appendChild(nestedHeader);
+            
+            // Create container for nested items
+            const nestedList = document.createElement('div');
+            nestedList.className = 'nested-section-list';
+            nestedList.style.display = 'none'; // Initially collapsed
+            
+            // Add each nested item
+            prompt.items.forEach(nestedPrompt => {
+                const nestedItem = createPromptItem(nestedPrompt, selectedDefaultPromptIds);
+                nestedList.appendChild(nestedItem);
+            });
+            
+            nestedSection.appendChild(nestedList);
+            defaultPromptsList.appendChild(nestedSection);
+        } else {
+            // Regular prompt item
+            const promptItem = createPromptItem(prompt, selectedDefaultPromptIds);
+            defaultPromptsList.appendChild(promptItem);
+        }
+    });
+    
+    defaultPromptsSection.appendChild(defaultPromptsList);
+    elements.promptsList.appendChild(defaultPromptsSection);
+}
+
+/**
+ * Create a prompt item element
+ * @param {Object} prompt - The prompt object
+ * @param {Array} selectedIds - Array of selected prompt IDs
+ * @returns {HTMLElement} The created prompt item element
+ */
+function createPromptItem(prompt, selectedIds) {
+    const promptItem = document.createElement('div');
+    promptItem.className = 'prompt-item default-prompt-item';
+    promptItem.dataset.id = prompt.id;
+    
+    // Create checkbox for selecting the prompt
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = 'prompt-item-checkbox';
+    checkbox.checked = selectedIds.includes(prompt.id);
+    checkbox.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent triggering the prompt item click
+        console.log("Default prompt checkbox clicked:", prompt.id);
+        
+        // Toggle the prompt selection in the service
+        DefaultPromptsService.toggleDefaultPromptSelection(prompt.id);
+        
+        // Apply selected prompts as system prompt
+        PromptsService.applySelectedPromptsAsSystem();
+        
+        // Update token usage bar in the prompts modal
+        updatePromptsTokenUsage();
+        
+        // Update the main context usage display
+        updateMainContextUsage();
+    });
+    promptItem.appendChild(checkbox);
+    
+    // Create prompt name element
+    const promptName = document.createElement('div');
+    promptName.className = 'prompt-item-name';
+    promptName.textContent = prompt.name || 'Unnamed Default Prompt';
+    promptName.style.cursor = 'pointer'; // Add pointer cursor to indicate it's clickable
+    promptName.title = 'Click to view prompt content';
+    
+    // Add click event to the prompt name to load the prompt into the editor
+    promptName.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent triggering the prompt item click
+        
+        // Show content in a read-only way (using the editor fields)
+        const labelField = document.getElementById('new-prompt-label');
+        const contentField = document.getElementById('new-prompt-content');
+        
+        if (labelField && contentField) {
+            labelField.value = prompt.name || '';
+            
+            // For the Function Library prompt, re-evaluate the content function to get the current state
+            let contentValue = '';
+            if (prompt.id === 'function-library' && window.FunctionLibraryPrompt && typeof window.FunctionLibraryPrompt.content === 'function') {
+                // Re-evaluate the function to get the current content
+                contentValue = window.FunctionLibraryPrompt.content();
+            } else {
+                // For other prompts, use the stored content
+                contentValue = prompt.content || '';
+            }
+            
+            contentField.value = contentValue;
+            
+            // Make it clear these are read-only for default prompts
+            labelField.setAttribute('readonly', 'readonly');
+            contentField.setAttribute('readonly', 'readonly');
+            
+            // Update the main context usage display when viewing a prompt's content
+            // This ensures the context usage is updated when a nested prompt is clicked
+            updateMainContextUsage();
+            
+            // Remove readonly after a short delay when clicking elsewhere
+            setTimeout(() => {
+                document.addEventListener('click', function removeReadonly(e) {
+                    if (!e.target.closest('.new-prompt-section')) {
+                        labelField.removeAttribute('readonly');
+                        contentField.removeAttribute('readonly');
+                        document.removeEventListener('click', removeReadonly);
+                    }
+                });
+            }, 100);
+        }
+    });
+    
+    promptItem.appendChild(promptName);
+    
+    // Add info icon instead of delete (default prompts can't be deleted)
+    const infoIcon = document.createElement('button');
+    infoIcon.className = 'prompt-item-info';
+    infoIcon.innerHTML = '<i class="fas fa-info-circle"></i>';
+    infoIcon.title = 'About this prompt';
+    infoIcon.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent triggering the prompt item click
+        
+        // Create and show a popup with information about the prompt
+        const popup = document.createElement('div');
+        popup.className = 'prompt-info-popup';
+        
+        // Get description based on prompt ID
+        let description = '';
+        switch(prompt.id) {
+            case 'hacka-re-project':
+                description = 'Information about the hacka.re project, including architecture. Markdown format.';
+                break;
+            case 'interpretability-urgency':
+                description = 'Discusses the importance of AI interpretability research and its urgency for safe AI development.';
+                break;
+            case 'function-library':
+                description = 'All JavaScript functions currently stored in <a href="#" class="function-library-link">Function Library</a>, for convenient LLM-assisted function updates.';
+                break;
+            case 'agent-orchestration':
+                description = 'Demonstrates a pattern for creating multi-agent systems with function calling capabilities.';
+                break;
+            case 'owasp-llm-top10':
+                description = 'The entire OWASP Top 10 for LLM applications as of May 2025. Markdown format, about 60 pages printed.';
+                break;
+            case 'mcp-sdk-readme':
+                description = 'Documentation for the Model Context Protocol SDK, which enables communication between AI models and external tools.';
+                break;
+            default:
+                description = prompt.description || 'A default system prompt component for the hacka.re chat interface.';
+        }
+        
+        // Create popup content
+        popup.innerHTML = `
+            <div class="prompt-info-header">
+                <h3>${prompt.name}</h3>
+                <button class="prompt-info-close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="prompt-info-content">
+                <p>${description}</p>
+                <p class="prompt-info-hint">Click on the prompt name to view its content in the editor.</p>
+            </div>
+        `;
+        
+        // Add close button functionality
+        const closeBtn = popup.querySelector('.prompt-info-close');
+        closeBtn.addEventListener('click', () => {
+            document.body.removeChild(popup);
+        });
+        
+        // Add click outside to close
+        document.addEventListener('click', function closePopup(event) {
+            if (!popup.contains(event.target) && event.target !== infoIcon) {
+                if (document.body.contains(popup)) {
+                    document.body.removeChild(popup);
+                }
+                document.removeEventListener('click', closePopup);
+            }
+        });
+        
+        // Position the popup near the info icon
+        const rect = infoIcon.getBoundingClientRect();
+        popup.style.position = 'absolute';
+        popup.style.top = `${rect.bottom + window.scrollY + 10}px`;
+        popup.style.left = `${rect.left + window.scrollX - 200}px`; // Offset to center
+        
+        // Add to body
+        document.body.appendChild(popup);
+        
+        // Add event listener for Function Library link if present
+        const functionLibraryLink = popup.querySelector('.function-library-link');
+        if (functionLibraryLink) {
+            functionLibraryLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                // Close the popup
+                if (document.body.contains(popup)) {
+                    document.body.removeChild(popup);
+                }
+                
+                // Close the prompts modal
+                hidePromptsModal();
+                
+                // Open the function modal
+                if (window.aiHackare && window.aiHackare.functionCallingManager) {
+                    window.aiHackare.functionCallingManager.showFunctionModal();
+                } else {
+                    // Fallback if the function calling manager is not available
+                    const functionBtn = document.getElementById('function-btn');
+                    if (functionBtn) {
+                        functionBtn.click();
+                    }
+                }
+            });
+        }
+    });
+    promptItem.appendChild(infoIcon);
+    
+    return promptItem;
+}
+        
+        /**
+         * Create a new prompt
+         */
+        function createNewPrompt() {
+            // Focus the new prompt label field
+            const labelField = document.getElementById('new-prompt-label');
+            if (labelField) {
+                labelField.focus();
+            }
+        }
+        
+        /**
+         * Update the main context usage display in the header
+         */
+        function updateMainContextUsage() {
             // Get all selected prompts
             const selectedDefaultPrompts = DefaultPromptsService.getSelectedDefaultPrompts();
             const selectedPrompts = PromptsService.getSelectedPrompts();
@@ -475,7 +710,15 @@ function addDefaultPromptsSection() {
             
             // Combine all selected prompts
             const combinedContent = allSelectedPrompts
-                .map(prompt => prompt.content)
+                .map(prompt => {
+                    // For Function Library prompt, ensure we get the latest content
+                    if (prompt.id === 'function-library' && 
+                        window.FunctionLibraryPrompt && 
+                        typeof window.FunctionLibraryPrompt.content === 'function') {
+                        return window.FunctionLibraryPrompt.content();
+                    }
+                    return prompt.content;
+                })
                 .join('\n\n---\n\n');
             
             // Get current messages
@@ -494,188 +737,17 @@ function addDefaultPromptsSection() {
                 combinedContent
             );
             
-            console.log("Direct calculation - percentage:", usageInfo.percentage);
+            console.log("Main context usage update - percentage:", usageInfo.percentage);
             
             // Update the UI directly
             const usageFill = document.querySelector('.usage-fill');
             const usageText = document.querySelector('.usage-text');
             
             if (usageFill && usageText) {
-                console.log("Directly updating main UI elements from checkbox handler");
+                console.log("Updating main UI elements from updateMainContextUsage");
                 UIUtils.updateContextUsage(usageFill, usageText, usageInfo.percentage);
             } else {
                 console.log("Could not find main UI elements");
-            }
-        });
-        promptItem.appendChild(checkbox);
-        
-        // Create prompt name element
-        const promptName = document.createElement('div');
-        promptName.className = 'prompt-item-name';
-        promptName.textContent = prompt.name || 'Unnamed Default Prompt';
-        promptName.style.cursor = 'pointer'; // Add pointer cursor to indicate it's clickable
-        promptName.title = 'Click to view prompt content';
-        
-        // Add click event to the prompt name to load the prompt into the editor
-        promptName.addEventListener('click', (e) => {
-            e.stopPropagation(); // Prevent triggering the prompt item click
-            
-            // Show content in a read-only way (using the editor fields)
-            const labelField = document.getElementById('new-prompt-label');
-            const contentField = document.getElementById('new-prompt-content');
-            
-            if (labelField && contentField) {
-                labelField.value = prompt.name || '';
-                
-                // For the Function Library prompt, re-evaluate the content function to get the current state
-                let contentValue = '';
-                if (prompt.id === 'function-library' && window.FunctionLibraryPrompt && typeof window.FunctionLibraryPrompt.content === 'function') {
-                    // Re-evaluate the function to get the current content
-                    contentValue = window.FunctionLibraryPrompt.content();
-                } else {
-                    // For other prompts, use the stored content
-                    contentValue = prompt.content || '';
-                }
-                
-                contentField.value = contentValue;
-                
-                // Make it clear these are read-only for default prompts
-                labelField.setAttribute('readonly', 'readonly');
-                contentField.setAttribute('readonly', 'readonly');
-                
-                // Remove readonly after a short delay when clicking elsewhere
-                setTimeout(() => {
-                    document.addEventListener('click', function removeReadonly(e) {
-                        if (!e.target.closest('.new-prompt-section')) {
-                            labelField.removeAttribute('readonly');
-                            contentField.removeAttribute('readonly');
-                            document.removeEventListener('click', removeReadonly);
-                        }
-                    });
-                }, 100);
-            }
-        });
-        
-        promptItem.appendChild(promptName);
-        
-        // Add info icon instead of delete (default prompts can't be deleted)
-        const infoIcon = document.createElement('button');
-        infoIcon.className = 'prompt-item-info';
-        infoIcon.innerHTML = '<i class="fas fa-info-circle"></i>';
-        infoIcon.title = 'About this prompt';
-        infoIcon.addEventListener('click', (e) => {
-            e.stopPropagation(); // Prevent triggering the prompt item click
-            
-            // Create and show a popup with information about the prompt
-            const popup = document.createElement('div');
-            popup.className = 'prompt-info-popup';
-            
-            // Get description based on prompt ID
-            let description = '';
-            switch(prompt.id) {
-                case 'hacka-re-project':
-                    description = 'Information about the hacka.re project, including architecture. Markdown format.';
-                    break;
-                case 'interpretability-urgency':
-                    description = 'Discusses the importance of AI interpretability research and its urgency for safe AI development.';
-                    break;
-                case 'function-library':
-                    description = 'All JavaScript functions currently stored in <a href="#" class="function-library-link">Function Library</a>, for convenient LLM-assisted function updates.';
-                    break;
-                case 'agent-orchestration':
-                    description = 'Demonstrates a pattern for creating multi-agent systems with function calling capabilities.';
-                    break;
-                case 'owasp-llm-top10':
-                    description = 'The entire OWASP Top 10 for LLM applications as of May 2025. Markdown format, about 60 pages printed.';
-                    break;
-                case 'mcp-sdk-readme':
-                    description = 'Documentation for the Model Context Protocol SDK, which enables communication between AI models and external tools.';
-                    break;
-                default:
-                    description = 'A default system prompt component for the hacka.re chat interface.';
-            }
-            
-            // Create popup content
-            popup.innerHTML = `
-                <div class="prompt-info-header">
-                    <h3>${prompt.name}</h3>
-                    <button class="prompt-info-close"><i class="fas fa-times"></i></button>
-                </div>
-                <div class="prompt-info-content">
-                    <p>${description}</p>
-                    <p class="prompt-info-hint">Click on the prompt name to view its content in the editor.</p>
-                </div>
-            `;
-            
-            // Add close button functionality
-            const closeBtn = popup.querySelector('.prompt-info-close');
-            closeBtn.addEventListener('click', () => {
-                document.body.removeChild(popup);
-            });
-            
-            // Add click outside to close
-            document.addEventListener('click', function closePopup(event) {
-                if (!popup.contains(event.target) && event.target !== infoIcon) {
-                    if (document.body.contains(popup)) {
-                        document.body.removeChild(popup);
-                    }
-                    document.removeEventListener('click', closePopup);
-                }
-            });
-            
-            // Position the popup near the info icon
-            const rect = infoIcon.getBoundingClientRect();
-            popup.style.position = 'absolute';
-            popup.style.top = `${rect.bottom + window.scrollY + 10}px`;
-            popup.style.left = `${rect.left + window.scrollX - 200}px`; // Offset to center
-            
-            // Add to body
-            document.body.appendChild(popup);
-            
-            // Add event listener for Function Library link if present
-            const functionLibraryLink = popup.querySelector('.function-library-link');
-            if (functionLibraryLink) {
-                functionLibraryLink.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    
-                    // Close the popup
-                    if (document.body.contains(popup)) {
-                        document.body.removeChild(popup);
-                    }
-                    
-                    // Close the prompts modal
-                    hidePromptsModal();
-                    
-                    // Open the function modal
-                    if (window.aiHackare && window.aiHackare.functionCallingManager) {
-                        window.aiHackare.functionCallingManager.showFunctionModal();
-                    } else {
-                        // Fallback if the function calling manager is not available
-                        const functionBtn = document.getElementById('function-btn');
-                        if (functionBtn) {
-                            functionBtn.click();
-                        }
-                    }
-                });
-            }
-        });
-        promptItem.appendChild(infoIcon);
-        
-        defaultPromptsList.appendChild(promptItem);
-    });
-    
-    defaultPromptsSection.appendChild(defaultPromptsList);
-    elements.promptsList.appendChild(defaultPromptsSection);
-}
-        
-        /**
-         * Create a new prompt
-         */
-        function createNewPrompt() {
-            // Focus the new prompt label field
-            const labelField = document.getElementById('new-prompt-label');
-            if (labelField) {
-                labelField.focus();
             }
         }
         

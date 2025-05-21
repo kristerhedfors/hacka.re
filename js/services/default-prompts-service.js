@@ -10,27 +10,47 @@ window.DefaultPromptsService = (function() {
     // Default prompts data - these are loaded from individual files
     let DEFAULT_PROMPTS = [];
     
-    /**
-     * Initialize the default prompts
-     * This function loads all registered default prompts
-     */
-    function initializeDefaultPrompts() {
-        // Clear the array first
-        DEFAULT_PROMPTS = [];
+/**
+ * Initialize the default prompts
+ * This function loads all registered default prompts
+ */
+function initializeDefaultPrompts() {
+    // Clear the array first
+    DEFAULT_PROMPTS = [];
+    
+    // Add prompts from individual files if they exist in the specified order
+    
+    // 1. Code section with Function Library and Agent Orchestration
+    if (window.CodeSectionPrompt) {
+        // Create a copy of the Code section prompt
+        const codeSectionPrompt = { ...window.CodeSectionPrompt };
+        codeSectionPrompt.items = [];
         
-        // Add prompts from individual files if they exist in the specified order
-        
-        // 1. About hacka.re Project
-        if (window.HackaReProjectPrompt) {
-            DEFAULT_PROMPTS.push(window.HackaReProjectPrompt);
+        // Add Function Library to the Code section
+        if (window.FunctionLibraryPrompt) {
+            // If the content is a function, we need to evaluate it
+            if (typeof window.FunctionLibraryPrompt.content === 'function') {
+                // Create a copy of the prompt with the evaluated content
+                const evaluatedPrompt = {
+                    ...window.FunctionLibraryPrompt,
+                    content: window.FunctionLibraryPrompt.content()
+                };
+                codeSectionPrompt.items.push(evaluatedPrompt);
+            } else {
+                codeSectionPrompt.items.push(window.FunctionLibraryPrompt);
+            }
         }
         
-        // 2. The urgency of interpretability
-        if (window.InterpretabilityUrgencyPrompt) {
-            DEFAULT_PROMPTS.push(window.InterpretabilityUrgencyPrompt);
+        // Add Agent orchestration example to the Code section
+        if (window.AgentOrchestrationPrompt) {
+            codeSectionPrompt.items.push(window.AgentOrchestrationPrompt);
         }
         
-        // 3. Function Library
+        // Add the Code section to the default prompts
+        DEFAULT_PROMPTS.push(codeSectionPrompt);
+    } else {
+        // Fallback if Code section is not available
+        // Function Library
         if (window.FunctionLibraryPrompt) {
             // If the content is a function, we need to evaluate it
             if (typeof window.FunctionLibraryPrompt.content === 'function') {
@@ -45,25 +65,36 @@ window.DefaultPromptsService = (function() {
             }
         }
         
-        // 4. Agent orchestration example
+        // Agent orchestration example
         if (window.AgentOrchestrationPrompt) {
             DEFAULT_PROMPTS.push(window.AgentOrchestrationPrompt);
         }
-        
-        // 5. OWASP Top 10 for LLM Applications
-        if (window.OwaspLlmTop10Prompt) {
-            DEFAULT_PROMPTS.push(window.OwaspLlmTop10Prompt);
-        }
-        
-        // Add MCP SDK README prompt if it exists
-        if (window.McpSdkReadmePrompt) {
-            DEFAULT_PROMPTS.push(window.McpSdkReadmePrompt);
-        }
-        
-        // Additional prompts can be added here in the future
-        
-        console.log(`Loaded ${DEFAULT_PROMPTS.length} default prompts`);
     }
+    
+    // 2. About hacka.re Project
+    if (window.HackaReProjectPrompt) {
+        DEFAULT_PROMPTS.push(window.HackaReProjectPrompt);
+    }
+    
+    // 3. The urgency of interpretability
+    if (window.InterpretabilityUrgencyPrompt) {
+        DEFAULT_PROMPTS.push(window.InterpretabilityUrgencyPrompt);
+    }
+    
+    // 4. OWASP Top 10 for LLM Applications
+    if (window.OwaspLlmTop10Prompt) {
+        DEFAULT_PROMPTS.push(window.OwaspLlmTop10Prompt);
+    }
+    
+    // Add MCP SDK README prompt if it exists
+    if (window.McpSdkReadmePrompt) {
+        DEFAULT_PROMPTS.push(window.McpSdkReadmePrompt);
+    }
+    
+    // Additional prompts can be added here in the future
+    
+    console.log(`Loaded ${DEFAULT_PROMPTS.length} default prompts`);
+}
     
     // Initialize prompts when the service is loaded
     initializeDefaultPrompts();
@@ -129,22 +160,11 @@ window.DefaultPromptsService = (function() {
             result = true;
         }
         
-        // Get all selected prompts
-        let selectedDefaultPrompts = getSelectedDefaultPrompts();
+        // Get all selected prompts - getSelectedDefaultPrompts now handles nested prompts
+        // and re-evaluates Function Library content automatically
+        const selectedDefaultPrompts = getSelectedDefaultPrompts();
         const selectedPrompts = window.PromptsService ? 
             window.PromptsService.getSelectedPrompts() : [];
-        
-        // Re-evaluate Function Library prompt content if it's selected
-        selectedDefaultPrompts = selectedDefaultPrompts.map(prompt => {
-            if (prompt.id === 'function-library' && window.FunctionLibraryPrompt && typeof window.FunctionLibraryPrompt.content === 'function') {
-                // Create a copy with the re-evaluated content
-                return {
-                    ...prompt,
-                    content: window.FunctionLibraryPrompt.content()
-                };
-            }
-            return prompt;
-        });
         
         const allSelectedPrompts = [...selectedDefaultPrompts, ...selectedPrompts];
         console.log("Selected prompts count:", allSelectedPrompts.length);
@@ -237,7 +257,38 @@ window.DefaultPromptsService = (function() {
      */
     function getSelectedDefaultPrompts() {
         const selectedIds = getSelectedDefaultPromptIds();
-        return DEFAULT_PROMPTS.filter(prompt => selectedIds.includes(prompt.id));
+        const selectedPrompts = [];
+        
+        // Iterate through all prompts, including nested ones
+        DEFAULT_PROMPTS.forEach(prompt => {
+            // Check if this prompt is selected
+            if (selectedIds.includes(prompt.id)) {
+                selectedPrompts.push(prompt);
+            }
+            
+            // Check if this is a section with nested items
+            if (prompt.isSection && prompt.items && prompt.items.length > 0) {
+                // Check each nested item
+                prompt.items.forEach(nestedPrompt => {
+                    if (selectedIds.includes(nestedPrompt.id)) {
+                        // If the content is a function, we need to evaluate it
+                        if (nestedPrompt.id === 'function-library' && 
+                            window.FunctionLibraryPrompt && 
+                            typeof window.FunctionLibraryPrompt.content === 'function') {
+                            // Create a copy with the re-evaluated content
+                            selectedPrompts.push({
+                                ...nestedPrompt,
+                                content: window.FunctionLibraryPrompt.content()
+                            });
+                        } else {
+                            selectedPrompts.push(nestedPrompt);
+                        }
+                    }
+                });
+            }
+        });
+        
+        return selectedPrompts;
     }
     
     // Public API

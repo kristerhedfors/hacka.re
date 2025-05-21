@@ -36,9 +36,51 @@
     border-top: 1px solid var(--border-color);
 }
 
+/* Nested section styles */
+.nested-section {
+    margin: 10px 0;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.nested-section-header {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    background-color: var(--bg-color-secondary);
+    cursor: pointer;
+    user-select: none;
+}
+
+.nested-section-header h4 {
+    margin: 0 0 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.nested-section-header i {
+    font-size: 12px;
+    transition: transform 0.2s ease;
+}
+
+.nested-section-list {
+    padding: 8px;
+    background-color: var(--bg-color);
+    border-top: 1px solid var(--border-color);
+}
+
 .default-prompt-item {
     background-color: var(--bg-color-secondary);
     border-left: 3px solid var(--accent-color);
+}
+
+/* Make all checkboxes smaller */
+.prompt-item-checkbox,
+.default-prompt-item .prompt-item-checkbox {
+    width: 14px;
+    height: 14px;
+    margin-right: 8px;
 }
 
 .prompt-item-info {
