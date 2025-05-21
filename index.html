@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="css/copy-code.css">
     <link rel="stylesheet" href="css/default-prompts.css">
     <link rel="stylesheet" href="css/function-calling.css">
+    <link rel="stylesheet" href="css/checkbox-fix.css">
     <!-- Font Awesome for icons (local) -->
     <link rel="stylesheet" href="lib/font-awesome/all.min.css">
     <!-- Markdown parser (local) -->
@@ -443,15 +444,15 @@ async function getCurrentTimeInBerlin() {
                     </div>
                     <div class="form-group">
                         <label>System Prompt</label>
-                        <div class="form-help">
-                            The system prompt is composed of the checked prompts in the prompt library of the <a href="#" id="open-prompts-config" style="color: blue; text-decoration: underline;">System Prompt Menu</a>.
-                        </div>
+            <div class="form-help">
+                The system prompt is composed of the checked prompts in the prompt library of the <a href="#" id="open-prompts-config" class="function-library-link">System Prompt Menu</a>.
+            </div>
                         <div id="system-prompt-preview" style="background-color: var(--bg-color-secondary); padding: 10px; border-radius: 5px; max-height: 100px; overflow-y: auto; display: none;">
                             <p style="margin: 0; font-style: italic; color: var(--text-color-secondary);">Current system prompt preview</p>
                         </div>
                     </div>
                     <div class="form-actions">
-                        <a href="#" id="clear-all-settings" style="color: blue; margin-right: auto;">Delete GPT namespace and settings</a>
+                        <a href="#" id="clear-all-settings" class="function-library-link" style="margin-right: auto;">Delete GPT namespace and settings</a>
                         <button type="submit" class="btn primary-btn" id="save-settings-btn" name="save-settings-btn" aria-label="Save Settings Button">Save Settings</button>
                         <button type="button" class="btn secondary-btn" id="close-settings" name="close-settings" aria-label="Cancel Button">Cancel</button>
                     </div>
@@ -511,6 +512,7 @@ async function getCurrentTimeInBerlin() {
     <script src="js/default-prompts/function-library.js"></script>
     <script src="js/default-prompts/agent-orchestration.js"></script>
     <script src="js/default-prompts/interpretability-urgency.js"></script>
+    <script src="js/default-prompts/code-section.js"></script>
     <script src="js/services/default-prompts-service.js"></script>
     <script src="js/services/prompts-service.js"></script>
     <script src="js/utils/ui-utils.js"></script>
