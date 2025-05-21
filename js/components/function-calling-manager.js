@@ -819,7 +819,8 @@ function get_weather(location, units = "metric") {
                 // Find all function declarations in the code
                 // This regex captures the JSDoc comment (if any), any single-line comment before the function, and the function declaration
                 // The improved regex better handles multiple functions with JSDoc comments
-                const functionRegex = /(\/\*\*[\s\S]*?\*\/\s*)?(\/\/.*?(?:\n\s*|$))?(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(([^)]*)\)[\s\S]*?(?=\/\*\*|\s*\/\/|\s*function\s+[a-zA-Z_$]|\s*$)/g;
+                // Modified to better handle closely packed functions by ensuring we capture the entire function body
+                const functionRegex = /(\/\*\*[\s\S]*?\*\/\s*)?(\/\/.*?(?:\n\s*|$))?(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(([^)]*)\)[\s\S]*?(?=\/\*\*|\s*\/\/|\s*function\s+[a-zA-Z_$]|\s*$|$)/g;
                 
                 console.log('Extracting functions with regex:', functionRegex.source);
                 

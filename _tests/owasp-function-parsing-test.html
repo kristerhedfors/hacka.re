@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OWASP Function Parsing Test</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/function-calling.css">
+    <style>
+        body {
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        #results {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .failure {
+            color: red;
+            font-weight: bold;
+        }
+        .function-list {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>OWASP Function Parsing Test</h1>
+    <p>This test checks if all OWASP LLM agent transfer functions are correctly parsed.</p>
+    
+    <button id="run-test">Run Test</button>
+    <button id="show-code">Show/Hide Code</button>
+    
+    <div id="code-container" style="display: none; margin-top: 20px;">
+        <h2>OWASP LLM Agent Code</h2>
+        <pre id="code-display">/**
+ * Agent Module – Defines triage and vulnerability agents
+ * @callable
+ */
+const AgentModule = (function() {
+  /**
+   * @typedef {Object} Agent
+   * @property {string} name
+   * @property {string} instructions
+   */
+
+  /** @type {Agent} */
+  const triageAgent = {
+    name: "LLM Triage Agent",
+    instructions: [
+      "You are TRIAGE. Greet briefly and ask the user to describe their LLM security concern.",
+      "Based on the description, call one of transferToLLM01() … transferToLLM10().",
+      "If unclear, ask follow-up questions."
+    ].join(" ")
+  };
+
+  function makeLLMAgent(id, title) {
+    return {
+      name: `LLM Vulnerability ${id}`,
+      instructions:
+        `You are ${id}. The user has a potential ${title} issue from the OWASP LLM Top 10. ` +
+        `Analyze their details. If this applies, call recordVuln("${id}", details) and remediateVuln("${id}"). ` +
+        `If it doesn't match, call transferBackToTriage().`
+    };
+  }
+
+  /** @type {Agent} */
+  const llm01 = makeLLMAgent("LLM01", "Prompt Injection");
+  const llm02 = makeLLMAgent("LLM02", "Sensitive Information Disclosure");
+  const llm03 = makeLLMAgent("LLM03", "Supply Chain");
+  const llm04 = makeLLMAgent("LLM04", "Data and Model Poisoning");
+  const llm05 = makeLLMAgent("LLM05", "Improper Output Handling");
+  const llm06 = makeLLMAgent("LLM06", "Excessive Agency");
+  const llm07 = makeLLMAgent("LLM07", "System Prompt Leakage");
+  const llm08 = makeLLMAgent("LLM08", "Vector and Embedding Weaknesses");
+  const llm09 = makeLLMAgent("LLM09", "Misinformation");
+  const llm10 = makeLLMAgent("LLM10", "Unbounded Consumption");
+
+  return {
+    getTriageAgent:    () => triageAgent,
+    getLLM01Agent:     () => llm01,
+    getLLM02Agent:     () => llm02,
+    getLLM03Agent:     () => llm03,
+    getLLM04Agent:     () => llm04,
+    getLLM05Agent:     () => llm05,
+    getLLM06Agent:     () => llm06,
+    getLLM07Agent:     () => llm07,
+    getLLM08Agent:     () => llm08,
+    getLLM09Agent:     () => llm09,
+    getLLM10Agent:     () => llm10
+  };
+})();
+
+/* ============================================================
+ *  HANDOFF FUNCTIONS (return an Agent)
+ * ============================================================ */
+function transferToLLM01() { return AgentModule.getLLM01Agent(); }
+function transferToLLM02() { return AgentModule.getLLM02Agent(); }
+function transferToLLM03() { return AgentModule.getLLM03Agent(); }
+function transferToLLM04() { return AgentModule.getLLM04Agent(); }
+function transferToLLM05() { return AgentModule.getLLM05Agent(); }
+function transferToLLM06() { return AgentModule.getLLM06Agent(); }
+function transferToLLM07() { return AgentModule.getLLM07Agent(); }
+function transferToLLM08() { return AgentModule.getLLM08Agent(); }
+function transferToLLM09() { return AgentModule.getLLM09Agent(); }
+function transferToLLM10() { return AgentModule.getLLM10Agent(); }
+
+/**
+ * Return control to triage
+ * @callable
+ */
+function transferBackToTriage() {
+  return AgentModule.getTriageAgent();
+}
+
+/* ============================================================
+ *  FINDINGS & REMEDIATION
+ * ============================================================ */
+const FindingsModule = (function() {
+  const findings = [];
+  return {
+    record: (id, details) => {
+      findings.push({ id, details });
+      return `Recorded ${id}: ${details}`;
+    },
+    list: () => findings.slice()
+  };
+})();
+
+/**
+ * Record a found vulnerability
+ * @param {string} owaspId
+ * @param {string} details
+ * @returns {string}
+ * @callable
+ */
+function recordVuln(owaspId, details) {
+  return FindingsModule.record(owaspId, details);
+}
+
+/**
+ * Return mitigation steps for a vulnerability
+ * @param {string} owaspId
+ * @returns {string}
+ * @callable
+ */
+function remediateVuln(owaspId) {
+  const R = {
+    LLM01: [
+      "Constrain model behavior via strict system prompts",
+      "Validate and sanitize user inputs/outputs",
+      "Use output schemas and format checks",
+      "Enforce least-privilege access for callable functions"
+    ],
+    LLM02: [
+      "Sanitize and mask PII before use",
+      "Enforce strict access controls",
+      "Apply differential privacy or encryption",
+      "Limit exposure in model outputs"
+    ],
+    LLM03: [
+      "Vet and monitor third-party models/data",
+      "Maintain SBOM and model-provenance records",
+      "Perform AI red-teaming and integrity checks",
+      "Use signed model artifacts and adapters"
+    ],
+    LLM04: [
+      "Track data lineage and use DVC",
+      "Validate and sanitize training/fine-tuning data",
+      "Sandbox untrusted data sources",
+      "Conduct adversarial poisoning tests"
+    ],
+    LLM05: [
+      "Treat LLM output as untrusted",
+      "Apply context-aware encoding (HTML, SQL, shell)",
+      "Use parameterized queries and CSP",
+      "Implement monitoring and anomaly detection"
+    ],
+    LLM06: [
+      "Grant only minimal extensions and functions",
+      "Limit extension permissions (least privilege)",
+      "Avoid open-ended toolkits; use specific APIs",
+      "Require human approval for high-impact actions"
+    ],
+    LLM07: [
+      "Keep secrets out of system prompts",
+      "Enforce controls outside the LLM",
+      "Audit and filter outputs for prompt leakage",
+      "Use multiple agents with isolated privileges"
+    ],
+    LLM08: [
+      "Implement permission-aware vector stores",
+      "Validate and authenticate data sources",
+      "Segment tenants and enforce access partitions",
+      "Monitor for embedding inversion and poisoning"
+    ],
+    LLM09: [
+      "Use Retrieval-Augmented Generation (RAG)",
+      "Fine-tune and chain-of-thought prompt",
+      "Cross-verify outputs and human oversight",
+      "Label AI content and educate users on limits"
+    ],
+    LLM10: [
+      "Enforce rate limiting and quotas",
+      "Validate input sizes and throttle heavy queries",
+      "Use timeouts, sandboxing, and resource controls",
+      "Monitor usage, watermark outputs, and limit queued jobs"
+    ]
+  };
+  const steps = R[owaspId] || ["Unknown vulnerability"];
+  return `Mitigation for ${owaspId}:\n- ` + steps.join("\n- ");
+}</pre>
+    </div>
+    
+    <div id="results">
+        <p>Click "Run Test" to check function parsing.</p>
+    </div>
+
+    <!-- Load required scripts -->
+    <script src="../js/services/storage-service.js"></script>
+    <script src="../js/components/function-calling-manager.js"></script>
+    
+    <script>
+        // Mock the FunctionToolsService if it doesn't exist
+        if (!window.FunctionToolsService) {
+            window.FunctionToolsService = {
+                addJsFunction: function(name, code, toolDefinition, groupId) {
+                    console.log(`Added function: ${name}`);
+                    return true;
+                },
+                enableJsFunction: function(name) {
+                    console.log(`Enabled function: ${name}`);
+                },
+                getJsFunctions: function() {
+                    return {};
+                },
+                getFunctionsInSameGroup: function(name) {
+                    return [name];
+                },
+                isJsFunctionEnabled: function(name) {
+                    return true;
+                },
+                removeJsFunction: function(name) {
+                    console.log(`Removed function: ${name}`);
+                },
+                getToolDefinitions: function() {
+                    return [];
+                }
+            };
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const runTestButton = document.getElementById('run-test');
+            const showCodeButton = document.getElementById('show-code');
+            const codeContainer = document.getElementById('code-container');
+            const resultsDiv = document.getElementById('results');
+            const codeDisplay = document.getElementById('code-display');
+            
+            // Get the OWASP LLM agent code
+            const owaspCode = codeDisplay.textContent;
+            
+            // Toggle code display
+            showCodeButton.addEventListener('click', function() {
+                codeContainer.style.display = codeContainer.style.display === 'none' ? 'block' : 'none';
+            });
+            
+            // Run the test
+            runTestButton.addEventListener('click', function() {
+                // Create a mock elements object for the function calling manager
+                const mockElements = {
+                    functionCode: { value: owaspCode },
+                    functionValidationResult: document.createElement('div')
+                };
+                
+                // Create a function calling manager instance
+                const manager = window.FunctionCallingManager.createFunctionCallingManager(mockElements, console.log);
+                
+                // Run the validation function
+                const validationResult = manager.validateFunction();
+                
+                // Display the results
+                resultsDiv.innerHTML = '';
+                
+                if (validationResult.success) {
+                    const allFunctions = validationResult.functions || [];
+                    const callableFunctions = validationResult.callableFunctions || [];
+                    
+                    // Check if all transfer functions are found
+                    const transferFunctions = allFunctions.filter(func => 
+                        func.name.startsWith('transferToLLM') || 
+                        func.name === 'transferBackToTriage'
+                    );
+                    
+                    const expectedTransferFunctions = [
+                        'transferToLLM01', 'transferToLLM02', 'transferToLLM03', 
+                        'transferToLLM04', 'transferToLLM05', 'transferToLLM06', 
+                        'transferToLLM07', 'transferToLLM08', 'transferToLLM09', 
+                        'transferToLLM10', 'transferBackToTriage'
+                    ];
+                    
+                    const foundFunctionNames = transferFunctions.map(func => func.name);
+                    const missingFunctions = expectedTransferFunctions.filter(name => 
+                        !foundFunctionNames.includes(name)
+                    );
+                    
+                    if (missingFunctions.length === 0) {
+                        resultsDiv.innerHTML += `
+                            <p class="success">✅ SUCCESS: All transfer functions were correctly parsed!</p>
+                            <p>Total functions found: ${allFunctions.length}</p>
+                            <p>Callable functions found: ${callableFunctions.length}</p>
+                            <p>Transfer functions found: ${transferFunctions.length}</p>
+                            <div class="function-list">
+                                <h3>Transfer Functions:</h3>
+                                <ul>
+                                    ${transferFunctions.map(func => 
+                                        `<li>${func.name} (callable: ${func.isCallable})</li>`
+                                    ).join('')}
+                                </ul>
+                            </div>
+                        `;
+                    } else {
+                        resultsDiv.innerHTML += `
+                            <p class="failure">❌ FAILURE: Some transfer functions are missing!</p>
+                            <p>Total functions found: ${allFunctions.length}</p>
+                            <p>Callable functions found: ${callableFunctions.length}</p>
+                            <p>Transfer functions found: ${transferFunctions.length}</p>
+                            <p>Missing functions: ${missingFunctions.join(', ')}</p>
+                            <div class="function-list">
+                                <h3>Found Transfer Functions:</h3>
+                                <ul>
+                                    ${transferFunctions.map(func => 
+                                        `<li>${func.name} (callable: ${func.isCallable})</li>`
+                                    ).join('')}
+                                </ul>
+                            </div>
+                        `;
+                    }
+                    
+                    // Show all functions for debugging
+                    resultsDiv.innerHTML += `
+                        <div class="function-list">
+                            <h3>All Functions:</h3>
+                            <ul>
+                                ${allFunctions.map(func => 
+                                    `<li>${func.name} (callable: ${func.isCallable})</li>`
+                                ).join('')}
+                            </ul>
+                        </div>
+                    `;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <p class="failure">❌ FAILURE: Function validation failed!</p>
+                        <p>Error: ${mockElements.functionValidationResult.textContent}</p>
+                    `;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
