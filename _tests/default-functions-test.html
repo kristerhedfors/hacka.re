@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Default Functions Test</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/function-calling.css">
+    <style>
+        body {
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .test-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .test-result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: #065f46;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        .error {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: #b91c1c;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+        .info {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: #1e40af;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+        #function-list-container {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        #function-result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>Default Functions Test</h1>
+    
+    <div class="test-section">
+        <div class="test-title">Test 1: Check if default functions are available</div>
+        <button id="check-default-functions">Run Test</button>
+        <div id="default-functions-result" class="test-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <div class="test-title">Test 2: Render function list with default functions</div>
+        <button id="render-function-list">Render Function List</button>
+        <div id="function-list-container"></div>
+    </div>
+    
+    <div class="test-section">
+        <div class="test-title">Test 3: Test getProgramPrivateKey function</div>
+        <div>
+            <label for="program-name">Program Name:</label>
+            <input type="text" id="program-name" value="testProgram">
+        </div>
+        <button id="test-function">Test Function</button>
+        <div id="function-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <div class="test-title">Test 4: Test enabling/disabling default functions</div>
+        <button id="test-enable-disable">Run Test</button>
+        <div id="enable-disable-result" class="test-result"></div>
+    </div>
+
+    <!-- Load required libraries -->
+    <script src="../lib/tweetnacl/nacl.min.js"></script>
+    <script src="../lib/tweetnacl/nacl-util.min.js"></script>
+    
+    <!-- Load core services -->
+    <script src="../js/services/core-storage-service.js"></script>
+    <script src="../js/services/namespace-service.js"></script>
+    <script src="../js/services/encryption-service.js"></script>
+    <script src="../js/utils/crypto-utils.js"></script>
+    <script src="../js/utils/deterministic-crypto.js"></script>
+    
+    <!-- Load function tools service -->
+    <script src="../js/services/function-tools-service.js"></script>
+    
+    <script>
+        // Initialize services
+        window.CoreStorageService.init();
+        
+        // Test 1: Check if default functions are available
+        document.getElementById('check-default-functions').addEventListener('click', function() {
+            const resultElement = document.getElementById('default-functions-result');
+            
+            try {
+                // Get default functions
+                const defaultFunctions = FunctionToolsService.getDefaultFunctions();
+                const defaultFunctionNames = Object.keys(defaultFunctions);
+                
+                if (defaultFunctionNames.length === 0) {
+                    resultElement.className = 'test-result error';
+                    resultElement.textContent = 'No default functions found';
+                    return;
+                }
+                
+                // Check if getProgramPrivateKey is available
+                if (!defaultFunctions.getProgramPrivateKey) {
+                    resultElement.className = 'test-result error';
+                    resultElement.textContent = 'getProgramPrivateKey function not found in default functions';
+                    return;
+                }
+                
+                // Check if the function is enabled
+                const isEnabled = FunctionToolsService.isJsFunctionEnabled('getProgramPrivateKey');
+                if (!isEnabled) {
+                    resultElement.className = 'test-result error';
+                    resultElement.textContent = 'getProgramPrivateKey function is not enabled';
+                    return;
+                }
+                
+                // Check if the function is marked as a default function
+                const isDefault = FunctionToolsService.isDefaultFunction('getProgramPrivateKey');
+                if (!isDefault) {
+                    resultElement.className = 'test-result error';
+                    resultElement.textContent = 'getProgramPrivateKey is not marked as a default function';
+                    return;
+                }
+                
+                // Success
+                resultElement.className = 'test-result success';
+                resultElement.textContent = `Default functions found: ${defaultFunctionNames.join(', ')}. getProgramPrivateKey is available and enabled.`;
+            } catch (error) {
+                resultElement.className = 'test-result error';
+                resultElement.textContent = `Error: ${error.message}`;
+            }
+        });
+        
+        // Test 2: Render function list with default functions
+        document.getElementById('render-function-list').addEventListener('click', function() {
+            const containerElement = document.getElementById('function-list-container');
+            
+            try {
+                // Create a simple function list
+                containerElement.innerHTML = '';
+                
+                // Get all functions
+                const functions = FunctionToolsService.getJsFunctions();
+                const functionNames = Object.keys(functions);
+                
+                // Create a list of functions
+                const functionList = document.createElement('div');
+                functionList.className = 'function-list';
+                
+                // Add user-defined functions
+                const userFunctions = functionNames.filter(name => !FunctionToolsService.isDefaultFunction(name));
+                
+                if (userFunctions.length > 0) {
+                    const userFunctionsHeader = document.createElement('div');
+                    userFunctionsHeader.textContent = 'User-Defined Functions';
+                    userFunctionsHeader.style.fontWeight = 'bold';
+                    userFunctionsHeader.style.marginBottom = '10px';
+                    functionList.appendChild(userFunctionsHeader);
+                    
+                    userFunctions.forEach(name => {
+                        const functionItem = document.createElement('div');
+                        functionItem.className = 'function-item';
+                        functionItem.textContent = name;
+                        functionList.appendChild(functionItem);
+                    });
+                } else {
+                    const noUserFunctions = document.createElement('div');
+                    noUserFunctions.textContent = 'No user-defined functions';
+                    noUserFunctions.style.fontStyle = 'italic';
+                    noUserFunctions.style.marginBottom = '20px';
+                    functionList.appendChild(noUserFunctions);
+                }
+                
+                // Add default functions section
+                const defaultFunctions = Object.keys(FunctionToolsService.getDefaultFunctions());
+                
+                if (defaultFunctions.length > 0) {
+                    // Create default functions section
+                    const defaultFunctionsSection = document.createElement('div');
+                    defaultFunctionsSection.className = 'default-functions-section';
+                    
+                    // Create header with expand/collapse functionality
+                    const sectionHeader = document.createElement('div');
+                    sectionHeader.className = 'default-functions-header';
+                    
+                    // Add expand/collapse icon
+                    const expandIcon = document.createElement('i');
+                    expandIcon.className = 'fas fa-chevron-right';
+                    expandIcon.textContent = '▶'; // Fallback for font-awesome
+                    sectionHeader.appendChild(expandIcon);
+                    
+                    // Add section title
+                    const sectionTitle = document.createElement('h4');
+                    sectionTitle.textContent = 'Default Functions';
+                    sectionHeader.appendChild(sectionTitle);
+                    
+                    // Add click event to expand/collapse
+                    let isExpanded = false;
+                    sectionHeader.addEventListener('click', () => {
+                        isExpanded = !isExpanded;
+                        expandIcon.className = isExpanded ? 'fas fa-chevron-down' : 'fas fa-chevron-right';
+                        expandIcon.textContent = isExpanded ? '▼' : '▶'; // Fallback for font-awesome
+                        defaultFunctionsList.style.display = isExpanded ? 'block' : 'none';
+                    });
+                    
+                    defaultFunctionsSection.appendChild(sectionHeader);
+                    
+                    // Create container for default functions
+                    const defaultFunctionsList = document.createElement('div');
+                    defaultFunctionsList.className = 'default-functions-list';
+                    defaultFunctionsList.style.display = 'none'; // Initially collapsed
+                    
+                    // Add each default function to the list
+                    defaultFunctions.forEach(name => {
+                        const functionItem = document.createElement('div');
+                        functionItem.className = 'function-item default-function-item';
+                        
+                        // Check if the function is enabled
+                        const isEnabled = FunctionToolsService.isJsFunctionEnabled(name);
+                        
+                        // Create checkbox
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.className = 'function-item-checkbox';
+                        checkbox.checked = isEnabled;
+                        checkbox.addEventListener('change', () => {
+                            if (checkbox.checked) {
+                                FunctionToolsService.enableJsFunction(name);
+                            } else {
+                                FunctionToolsService.disableJsFunction(name);
+                            }
+                        });
+                        functionItem.appendChild(checkbox);
+                        
+                        // Create content container
+                        const contentContainer = document.createElement('div');
+                        contentContainer.style.flex = '1';
+                        contentContainer.style.cursor = 'pointer';
+                        contentContainer.title = 'Click to view function';
+                        
+                        // Create name element
+                        const nameElement = document.createElement('div');
+                        nameElement.className = 'function-item-name';
+                        nameElement.textContent = name;
+                        
+                        // Create description element
+                        const descriptionElement = document.createElement('div');
+                        descriptionElement.className = 'function-item-description';
+                        descriptionElement.textContent = 'Retrieves the private key for a specific program to decrypt messages';
+                        
+                        // Add info icon
+                        const infoIcon = document.createElement('button');
+                        infoIcon.className = 'function-item-info';
+                        infoIcon.innerHTML = '<span style="font-size: 14px;">ⓘ</span>'; // Info icon fallback
+                        infoIcon.title = 'About this function';
+                        
+                        // Assemble function item
+                        contentContainer.appendChild(nameElement);
+                        contentContainer.appendChild(descriptionElement);
+                        functionItem.appendChild(contentContainer);
+                        functionItem.appendChild(infoIcon);
+                        
+                        defaultFunctionsList.appendChild(functionItem);
+                    });
+                    
+                    defaultFunctionsSection.appendChild(defaultFunctionsList);
+                    functionList.appendChild(defaultFunctionsSection);
+                }
+                
+                containerElement.appendChild(functionList);
+            } catch (error) {
+                containerElement.innerHTML = `<div class="test-result error">Error: ${error.message}</div>`;
+            }
+        });
+        
+        // Test 3: Test getProgramPrivateKey function
+        document.getElementById('test-function').addEventListener('click', async function() {
+            const resultElement = document.getElementById('function-result');
+            const programName = document.getElementById('program-name').value;
+            
+            if (!programName) {
+                resultElement.textContent = 'Please enter a program name';
+                return;
+            }
+            
+            try {
+                // Execute the function
+                const result = await FunctionToolsService.executeJsFunction('getProgramPrivateKey', programName);
+                
+                // Display the result
+                resultElement.textContent = JSON.stringify(result, null, 2);
+                
+                // Highlight success or error
+                if (result.success) {
+                    resultElement.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+                } else {
+                    resultElement.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                }
+            } catch (error) {
+                resultElement.textContent = `Error: ${error.message}`;
+                resultElement.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+            }
+        });
+        
+        // Test 4: Test enabling/disabling default functions
+        document.getElementById('test-enable-disable').addEventListener('click', function() {
+            const resultElement = document.getElementById('enable-disable-result');
+            
+            try {
+                // Get the default function name
+                const defaultFunctionName = 'getProgramPrivateKey';
+                
+                // Check initial state (should be enabled by default)
+                let isEnabled = FunctionToolsService.isJsFunctionEnabled(defaultFunctionName);
+                
+                if (!isEnabled) {
+                    // If not enabled, enable it first
+                    FunctionToolsService.enableJsFunction(defaultFunctionName);
+                    isEnabled = FunctionToolsService.isJsFunctionEnabled(defaultFunctionName);
+                    
+                    if (!isEnabled) {
+                        resultElement.className = 'test-result error';
+                        resultElement.textContent = `Failed to enable ${defaultFunctionName}`;
+                        return;
+                    }
+                }
+                
+                // Now disable the function
+                FunctionToolsService.disableJsFunction(defaultFunctionName);
+                isEnabled = FunctionToolsService.isJsFunctionEnabled(defaultFunctionName);
+                
+                if (isEnabled) {
+                    resultElement.className = 'test-result error';
+                    resultElement.textContent = `Failed to disable ${defaultFunctionName}`;
+                    return;
+                }
+                
+                // Now enable it again
+                FunctionToolsService.enableJsFunction(defaultFunctionName);
+                isEnabled = FunctionToolsService.isJsFunctionEnabled(defaultFunctionName);
+                
+                if (!isEnabled) {
+                    resultElement.className = 'test-result error';
+                    resultElement.textContent = `Failed to re-enable ${defaultFunctionName}`;
+                    return;
+                }
+                
+                // Success
+                resultElement.className = 'test-result success';
+                resultElement.textContent = `Successfully tested enabling and disabling ${defaultFunctionName}`;
+                
+                // Check if the function is in the enabled functions list
+                const enabledFunctions = FunctionToolsService.getEnabledFunctionNames();
+                if (!enabledFunctions.includes(defaultFunctionName)) {
+                    resultElement.className = 'test-result error';
+                    resultElement.textContent = `${defaultFunctionName} is not in the enabled functions list`;
+                    return;
+                }
+                
+                // Check if the function's tool definition is included in the API request
+                const toolDefinitions = FunctionToolsService.getEnabledToolDefinitions();
+                const hasFunctionToolDef = toolDefinitions.some(tool => 
+                    tool.function && tool.function.name === defaultFunctionName
+                );
+                
+                if (!hasFunctionToolDef) {
+                    resultElement.className = 'test-result error';
+                    resultElement.textContent = `${defaultFunctionName} tool definition is not included in API requests`;
+                    return;
+                }
+                
+                // Add additional information to the success message
+                resultElement.textContent += `\nThe function is properly included in the enabled functions list and its tool definition is included in API requests.`;
+            } catch (error) {
+                resultElement.className = 'test-result error';
+                resultElement.textContent = `Error: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>

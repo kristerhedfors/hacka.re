@@ -177,8 +177,8 @@ function get_weather(location, units = "metric") {
             const functions = FunctionToolsService.getJsFunctions();
             const functionNames = Object.keys(functions);
             
-            // Show empty state if no functions
-            if (functionNames.length === 0) {
+            // Show empty state if no functions and no default functions
+            if (functionNames.length === 0 && !getDefaultFunctions().length) {
                 if (elements.emptyFunctionState) {
                     elements.emptyFunctionState.style.display = 'block';
                     
@@ -213,8 +213,13 @@ function get_weather(location, units = "metric") {
                 }
             });
             
-            // Create function items - only show callable functions
+            // Create function items - only show callable functions that are not default functions
             functionNames.forEach(name => {
+                // Skip default functions - they will be shown in their own section
+                if (FunctionToolsService.isDefaultFunction(name)) {
+                    return;
+                }
+                
                 const functionSpec = functions[name];
                 
                 // Skip auxiliary functions (those with description indicating they're not exposed to LLM)
@@ -338,6 +343,246 @@ function get_weather(location, units = "metric") {
                 // Add to list
                 elements.functionList.appendChild(functionItem);
             });
+            
+            // Add default functions section
+            renderDefaultFunctions();
+        }
+        
+        /**
+         * Get default functions
+         * @returns {Array} Array of default function objects
+         */
+        function getDefaultFunctions() {
+            // Define default functions here
+            return [
+                {
+                    name: 'getProgramPrivateKey',
+                    description: 'Retrieves the private key for a specific program to decrypt messages',
+                    code: `/**
+ * Gets the program's private key for decrypting messages from DeterministicCrypto
+ * This function is intended to be invoked during code generation time, to be hard-coded in LLM proxies
+ * @description Retrieves the private key for a specific program to decrypt messages
+ * @param {string} masterKey - The master key used for key generation
+ * @param {string} namespace - The namespace (e.g., GPT namespace)
+ * @param {string} programName - The unique name of the program
+ * @returns {Object} Object containing the base64-encoded private key
+ * @tool This function will be exposed to the LLM for tool calling
+ */
+function getProgramPrivateKey(masterKey, namespace, programName) {
+  if (!masterKey || !namespace || !programName) {
+    return {
+      error: "All parameters (masterKey, namespace, programName) are required",
+      success: false
+    };
+  }
+  
+  try {
+    // Generate the deterministic key pair using the DeterministicCrypto utility
+    const keyPair = DeterministicCrypto.generateKeyPair(
+      masterKey,
+      namespace,
+      programName
+    );
+    
+    // Convert the secret key to base64 for easier handling
+    const secretKeyBase64 = nacl.util.encodeBase64(keyPair.secretKey);
+    
+    return {
+      secretKey: secretKeyBase64,
+      programName: programName,
+      success: true
+    };
+  } catch (error) {
+    return {
+      error: "Failed to generate key pair: " + error.message,
+      success: false
+    };
+  }
+}`
+                }
+            ];
+        }
+        
+        /**
+         * Render default functions section
+         */
+        function renderDefaultFunctions() {
+            const defaultFunctions = getDefaultFunctions();
+            
+            if (defaultFunctions.length === 0) {
+                return;
+            }
+            
+            // Create default functions section
+            const defaultFunctionsSection = document.createElement('div');
+            defaultFunctionsSection.className = 'default-functions-section';
+            
+            // Create header with expand/collapse functionality
+            const sectionHeader = document.createElement('div');
+            sectionHeader.className = 'default-functions-header';
+            
+            // Add expand/collapse icon
+            const expandIcon = document.createElement('i');
+            expandIcon.className = 'fas fa-chevron-right';
+            sectionHeader.appendChild(expandIcon);
+            
+            // Add section title
+            const sectionTitle = document.createElement('h4');
+            sectionTitle.textContent = 'Default Functions';
+            sectionHeader.appendChild(sectionTitle);
+            
+            // Add click event to expand/collapse
+            let isExpanded = false;
+            sectionHeader.addEventListener('click', () => {
+                isExpanded = !isExpanded;
+                expandIcon.className = isExpanded ? 'fas fa-chevron-down' : 'fas fa-chevron-right';
+                defaultFunctionsList.style.display = isExpanded ? 'block' : 'none';
+            });
+            
+            defaultFunctionsSection.appendChild(sectionHeader);
+            
+            // Create container for default functions
+            const defaultFunctionsList = document.createElement('div');
+            defaultFunctionsList.className = 'default-functions-list';
+            defaultFunctionsList.style.display = 'none'; // Initially collapsed
+            
+            // Add each default function to the list
+            defaultFunctions.forEach(func => {
+                const functionItem = createDefaultFunctionItem(func);
+                defaultFunctionsList.appendChild(functionItem);
+            });
+            
+            defaultFunctionsSection.appendChild(defaultFunctionsList);
+            elements.functionList.appendChild(defaultFunctionsSection);
+        }
+        
+        /**
+         * Create a default function item element
+         * @param {Object} func - The function object
+         * @returns {HTMLElement} The created function item element
+         */
+        function createDefaultFunctionItem(func) {
+            const functionItem = document.createElement('div');
+            functionItem.className = 'function-item default-function-item';
+            
+            // Check if the function is enabled
+            const isEnabled = FunctionToolsService.isJsFunctionEnabled(func.name);
+            
+            // Create checkbox
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'function-item-checkbox';
+            checkbox.checked = isEnabled;
+            checkbox.addEventListener('change', () => {
+                if (checkbox.checked) {
+                    FunctionToolsService.enableJsFunction(func.name);
+                } else {
+                    FunctionToolsService.disableJsFunction(func.name);
+                }
+                
+                // Add system message about the change
+                if (addSystemMessage) {
+                    const status = checkbox.checked ? 'enabled' : 'disabled';
+                    addSystemMessage(`Function "${func.name}" ${status} for tool calling.`);
+                }
+            });
+            functionItem.appendChild(checkbox);
+            
+            // Create content container
+            const contentContainer = document.createElement('div');
+            contentContainer.style.flex = '1';
+            contentContainer.style.cursor = 'pointer';
+            contentContainer.title = 'Click to view function';
+            
+            // Create name element
+            const nameElement = document.createElement('div');
+            nameElement.className = 'function-item-name';
+            nameElement.textContent = func.name;
+            
+            // Create description element
+            const descriptionElement = document.createElement('div');
+            descriptionElement.className = 'function-item-description';
+            descriptionElement.textContent = func.description;
+            
+            // Add click event to view function code
+            contentContainer.addEventListener('click', () => {
+                // Create a temporary function spec object
+                const functionSpec = {
+                    code: func.code,
+                    toolDefinition: generateToolDefinition(func.name, func.code)
+                };
+                
+                // Load the function into the editor (read-only)
+                loadFunctionIntoEditor(func.name, functionSpec, true);
+            });
+            
+            // Add info icon
+            const infoIcon = document.createElement('button');
+            infoIcon.className = 'function-item-info';
+            infoIcon.innerHTML = '<i class="fas fa-info-circle"></i>';
+            infoIcon.title = 'About this function';
+            infoIcon.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent triggering the function item click
+                
+                // Create and show a popup with information about the function
+                const popup = document.createElement('div');
+                popup.className = 'function-info-popup';
+                
+                // Get description based on function name
+                let description = '';
+                switch(func.name) {
+                    case 'getProgramPrivateKey':
+                        description = 'Retrieves the private key for a specific program to decrypt messages. This function is used with the DeterministicCrypto utility.';
+                        break;
+                    default:
+                        description = func.description || 'A default function for the hacka.re chat interface.';
+                }
+                
+                // Create popup content
+                popup.innerHTML = `
+                    <div class="function-info-header">
+                        <h3>${func.name}</h3>
+                        <button class="function-info-close"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="function-info-content">
+                        <p>${description}</p>
+                        <p class="function-info-hint">Click on the function name to view its code in the editor.</p>
+                    </div>
+                `;
+                
+                // Add close button functionality
+                const closeBtn = popup.querySelector('.function-info-close');
+                closeBtn.addEventListener('click', () => {
+                    document.body.removeChild(popup);
+                });
+                
+                // Add click outside to close
+                document.addEventListener('click', function closePopup(event) {
+                    if (!popup.contains(event.target) && event.target !== infoIcon) {
+                        if (document.body.contains(popup)) {
+                            document.body.removeChild(popup);
+                        }
+                        document.removeEventListener('click', closePopup);
+                    }
+                });
+                
+                // Position the popup near the info icon
+                const rect = infoIcon.getBoundingClientRect();
+                popup.style.position = 'absolute';
+                popup.style.top = `${rect.bottom + window.scrollY + 10}px`;
+                popup.style.left = `${rect.left + window.scrollX - 200}px`; // Offset to center
+                
+                // Add to body
+                document.body.appendChild(popup);
+            });
+            
+            // Assemble function item
+            contentContainer.appendChild(nameElement);
+            contentContainer.appendChild(descriptionElement);
+            functionItem.appendChild(contentContainer);
+            functionItem.appendChild(infoIcon);
+            
+            return functionItem;
         }
         
         /**
@@ -512,10 +757,11 @@ function get_weather(location, units = "metric") {
          * Load a function into the editor for editing
          * @param {string} name - Function name
          * @param {Object} functionSpec - Function specification
+         * @param {boolean} isDefaultFunction - Whether this is a default function (read-only)
          */
-        function loadFunctionIntoEditor(name, functionSpec) {
-            // Set the editing flag
-            editingFunctionName = name;
+        function loadFunctionIntoEditor(name, functionSpec, isDefaultFunction = false) {
+            // Set the editing flag (only for user-defined functions)
+            editingFunctionName = isDefaultFunction ? null : name;
             
             // Set the function name
             if (elements.functionName) {
@@ -529,6 +775,26 @@ function get_weather(location, units = "metric") {
             if (elements.functionCode && functionSpec.code) {
                 elements.functionCode.value = functionSpec.code;
                 
+                // For default functions, make the code editor read-only
+                if (isDefaultFunction) {
+                    elements.functionCode.setAttribute('readonly', 'readonly');
+                    
+                    // Show a message that this is a default function
+                    showValidationResult('This is a default function and cannot be edited. You can copy the code if needed.', 'info');
+                    
+                    // Show the tool definition
+                    if (functionSpec.toolDefinition) {
+                        showToolDefinition(functionSpec.toolDefinition);
+                    } else {
+                        // Generate tool definition if not provided
+                        const toolDef = generateToolDefinition(name, functionSpec.code);
+                        showToolDefinition(toolDef);
+                    }
+                } else {
+                    // For user functions, make sure it's editable
+                    elements.functionCode.removeAttribute('readonly');
+                }
+                
                 // Trigger any event listeners that might be attached to the code editor
                 const event = new Event('input', { bubbles: true });
                 elements.functionCode.dispatchEvent(event);
@@ -539,11 +805,13 @@ function get_weather(location, units = "metric") {
                 elements.functionEditorForm.scrollIntoView({ behavior: 'smooth' });
             }
             
-            // Hide validation result and tool definition
-            hideValidationResult();
-            hideToolDefinition();
+            // Hide validation result and tool definition for user functions
+            if (!isDefaultFunction) {
+                hideValidationResult();
+                hideToolDefinition();
+            }
             
-            console.log(`Loaded function "${name}" into editor for editing`);
+            console.log(`Loaded function "${name}" into editor ${isDefaultFunction ? '(read-only)' : 'for editing'}`);
         }
         
         /**

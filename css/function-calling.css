@@ -31,6 +31,7 @@
     --function-color-3: #ec4899; /* Pink */
     --function-color-4: #f43f5e; /* Rose */
     --function-color-5: #f97316; /* Orange */
+    --function-color-default: #2563eb; /* Blue for default functions */
 }
 
 /* Different colors for multiple function calls */
@@ -278,6 +279,121 @@
     /* Removed max-height and overflow-y to prevent double scrolling */
 }
 
+/* Default functions section */
+.default-functions-section {
+    margin-bottom: 20px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.default-functions-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: var(--bg-color-secondary);
+    cursor: pointer;
+    user-select: none;
+}
+
+.default-functions-header h4 {
+    margin: 0 0 0 10px;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.default-functions-header i {
+    font-size: 14px;
+    transition: transform 0.2s ease;
+}
+
+.default-functions-list {
+    padding: 10px;
+    background-color: var(--bg-color);
+    border-top: 1px solid var(--border-color);
+}
+
+.default-function-item {
+    background-color: var(--bg-color-secondary);
+    border-left: 3px solid var(--function-color-default) !important;
+}
+
+.function-item-info {
+    background: none;
+    border: none;
+    color: var(--text-color-secondary);
+    cursor: pointer;
+    padding: 5px;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.function-item-info:hover {
+    color: var(--accent-color);
+}
+
+/* Function info popup styles */
+.function-info-popup {
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    width: 300px;
+    max-width: 90vw;
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.function-info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: var(--bg-color-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.function-info-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.function-info-close {
+    background: none;
+    border: none;
+    color: var(--text-color-secondary);
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.function-info-close:hover {
+    color: var(--accent-color);
+}
+
+.function-info-content {
+    padding: 15px;
+}
+
+.function-info-content p {
+    margin: 0 0 10px 0;
+    line-height: 1.5;
+}
+
+.function-info-hint {
+    font-style: italic;
+    color: var(--text-color-secondary);
+    font-size: 0.9em;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border-color);
+}
+
 .function-list {
     max-height: 300px;
     overflow-y: auto;
@@ -499,6 +615,13 @@
     background-color: rgba(245, 158, 11, 0.1);
     color: #92400e;
     border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.function-validation-result.info {
+    display: block;
+    background-color: rgba(59, 130, 246, 0.1);
+    color: #1e40af;
+    border: 1px solid rgba(59, 130, 246, 0.2);
 }
 
 .empty-function-state {

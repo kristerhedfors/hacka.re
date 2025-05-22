@@ -15,6 +15,86 @@ window.FunctionToolsService = (function() {
     let enabledFunctions = [];
     let functionGroups = {}; // Maps function names to group IDs
     
+    // Default functions that are always available
+    const defaultFunctions = {
+        getProgramPrivateKey: {
+            code: `/**
+ * Gets the program's private key for decrypting messages from DeterministicCrypto
+ * This function is intended to be invoked during code generation time, to be hard-coded in LLM proxies
+ * @description Retrieves the private key for a specific program to decrypt messages
+ * @param {string} programName - The unique name of the program
+ * @returns {Object} Object containing the base64-encoded private key
+ * @tool This function will be exposed to the LLM for tool calling
+ */
+function getProgramPrivateKey(programName) {
+  if (!programName) {
+    return {
+      error: "Program name is required",
+      success: false
+    };
+  }
+  
+  try {
+    // Get the current namespace from the NamespaceService
+    const namespace = NamespaceService.getNamespace();
+    
+    // Get the namespace key from the NamespaceService
+    const namespaceKey = NamespaceService.getNamespaceKey();
+    
+    if (!namespace || !namespaceKey) {
+      return {
+        error: "Could not retrieve namespace or namespace key",
+        success: false
+      };
+    }
+    
+    // Generate the deterministic key pair using the DeterministicCrypto utility
+    const keyPair = DeterministicCrypto.generateKeyPair(
+      namespaceKey,
+      namespace,
+      programName
+    );
+    
+    // Convert the secret key to base64 for easier handling
+    const secretKeyBase64 = nacl.util.encodeBase64(keyPair.secretKey);
+    
+    return {
+      secretKey: secretKeyBase64,
+      programName: programName,
+      namespace: namespace,
+      success: true
+    };
+  } catch (error) {
+    return {
+      error: "Failed to generate key pair: " + error.message,
+      success: false
+    };
+  }
+}`,
+            toolDefinition: {
+                type: 'function',
+                function: {
+                    name: 'getProgramPrivateKey',
+                    description: 'Retrieves the private key for a specific program to decrypt messages. The namespace key and namespace are automatically populated from the current environment.',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            programName: {
+                                type: 'string',
+                                description: 'The unique name of the program for which to generate a key pair'
+                            }
+                        },
+                        required: ['programName']
+                    }
+                }
+            },
+            isDefault: true
+        }
+    };
+    
+    // Default enabled functions
+    const defaultEnabledFunctions = ['getProgramPrivateKey'];
+    
     /**
      * Check if function tools are enabled
      * @returns {boolean} Whether function tools are enabled
@@ -76,6 +156,21 @@ window.FunctionToolsService = (function() {
         if (storedFunctionGroups) {
             functionGroups = storedFunctionGroups;
         }
+        
+        // Add default functions to the registry
+        // These are not saved to storage as they're built-in
+        Object.keys(defaultFunctions).forEach(name => {
+            if (!jsFunctions[name]) {
+                jsFunctions[name] = defaultFunctions[name];
+            }
+        });
+        
+        // Ensure default functions are enabled
+        defaultEnabledFunctions.forEach(name => {
+            if (!enabledFunctions.includes(name)) {
+                enabledFunctions.push(name);
+            }
+        });
     }
     
     /**
@@ -127,6 +222,12 @@ window.FunctionToolsService = (function() {
      * @returns {boolean} Whether the function was removed successfully
      */
     function removeJsFunction(name) {
+        // Prevent removing default functions
+        if (isDefaultFunction(name)) {
+            console.warn(`Cannot remove default function "${name}"`);
+            return false;
+        }
+        
         if (jsFunctions[name]) {
             // Get the group ID for this function
             const groupId = functionGroups[name];
@@ -137,13 +238,15 @@ window.FunctionToolsService = (function() {
                     funcName => functionGroups[funcName] === groupId
                 );
                 
-                // Remove all functions in the group
+                // Remove all functions in the group (except default functions)
                 functionsInGroup.forEach(funcName => {
-                    delete jsFunctions[funcName];
-                    delete functionGroups[funcName];
-                    
-                    // Also remove from enabled functions if present
-                    enabledFunctions = enabledFunctions.filter(fn => fn !== funcName);
+                    if (!isDefaultFunction(funcName)) {
+                        delete jsFunctions[funcName];
+                        delete functionGroups[funcName];
+                        
+                        // Also remove from enabled functions if present
+                        enabledFunctions = enabledFunctions.filter(fn => fn !== funcName);
+                    }
                 });
             } else {
                 // If no group ID (legacy data), just remove this function
@@ -192,6 +295,12 @@ window.FunctionToolsService = (function() {
      * @returns {boolean} Whether the function was disabled successfully
      */
     function disableJsFunction(name) {
+        // Prevent disabling default functions
+        if (isDefaultFunction(name)) {
+            console.warn(`Cannot disable default function "${name}"`);
+            return false;
+        }
+        
         const index = enabledFunctions.indexOf(name);
         if (index !== -1) {
             enabledFunctions.splice(index, 1);
@@ -653,6 +762,23 @@ window.FunctionToolsService = (function() {
         );
     }
     
+    /**
+     * Get all default functions
+     * @returns {Object} The default functions
+     */
+    function getDefaultFunctions() {
+        return defaultFunctions;
+    }
+    
+    /**
+     * Check if a function is a default function
+     * @param {string} name - The name of the function to check
+     * @returns {boolean} Whether the function is a default function
+     */
+    function isDefaultFunction(name) {
+        return defaultFunctions.hasOwnProperty(name);
+    }
+    
     // Public API
     return {
         isFunctionToolsEnabled,
@@ -670,6 +796,8 @@ window.FunctionToolsService = (function() {
         executeJsFunction,
         processToolCalls,
         generateToolDefinition,
-        getFunctionsInSameGroup
+        getFunctionsInSameGroup,
+        getDefaultFunctions,
+        isDefaultFunction
     };
 })();
