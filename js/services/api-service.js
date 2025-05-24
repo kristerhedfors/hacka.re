@@ -147,17 +147,17 @@ window.ApiService = (function() {
         // Debug logging for final endpoint URL
         console.log('[API Debug] Final models endpoint URL:', endpointUrl);
         
-        const response = await fetch(endpointUrl, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error('Failed to fetch models');
-        }
+        const response = await ErrorHandler.fetchWithErrorHandling(
+            endpointUrl, 
+            {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
+                }
+            },
+            'Models API'
+        );
         
         const data = await response.json();
         
@@ -307,20 +307,19 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
         }
     }
     
-    const response = await fetch(getEndpointUrl('CHAT'), {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
+    const response = await ErrorHandler.fetchWithErrorHandling(
+        getEndpointUrl('CHAT'),
+        {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify(requestBody),
+            signal: signal
         },
-        body: JSON.stringify(requestBody),
-        signal: signal
-    });
-    
-    if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error?.message || 'Error connecting to API');
-    }
+        'Chat Completions API'
+    );
     
     // Set up streaming response processing
     // Use a more efficient approach that processes chunks immediately
@@ -635,20 +634,19 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
                 }
                 
                 // Make a follow-up request to get the final response
-                const followUpResponse = await fetch(getEndpointUrl('CHAT'), {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`
+                const followUpResponse = await ErrorHandler.fetchWithErrorHandling(
+                    getEndpointUrl('CHAT'),
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}`
+                        },
+                        body: JSON.stringify(followUpRequestBody),
+                        signal: signal
                     },
-                    body: JSON.stringify(followUpRequestBody),
-                    signal: signal
-                });
-                
-                if (!followUpResponse.ok) {
-                    const error = await followUpResponse.json();
-                    throw new Error(error.error?.message || 'Error connecting to API for follow-up');
-                }
+                    'Chat Completions Follow-up API'
+                );
                 
                 // Process the follow-up stream
                 const followUpReader = followUpResponse.body.getReader();

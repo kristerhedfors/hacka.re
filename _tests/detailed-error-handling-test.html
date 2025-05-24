@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detailed Error Handling Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .error-container {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f8f8f8;
+            border-left: 4px solid #e74c3c;
+        }
+        .error-message {
+            white-space: pre-wrap;
+            font-family: monospace;
+            background-color: #f1f1f1;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .error-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .comparison {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .comparison-column {
+            flex: 1;
+            min-width: 300px;
+        }
+        code {
+            background-color: #f1f1f1;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Detailed Error Handling Test</h1>
+    <p>This page demonstrates the difference between generic fetch error messages and the enhanced error messages provided by the ErrorHandler utility in hacka.re.</p>
+    <p>The enhanced error messages include HTTP status codes, detailed error information, and request details for better debugging.</p>
+
+    <div class="comparison">
+        <div class="comparison-column">
+            <h2>Standard Error Handling</h2>
+            <p>Using the standard fetch API with basic error handling (what most applications show):</p>
+            <button id="standard-error-btn">Trigger Standard Error</button>
+            <div class="error-container" id="standard-error-container" style="display: none;">
+                <div class="error-title">Error Message:</div>
+                <div class="error-message" id="standard-error-message"></div>
+            </div>
+        </div>
+
+        <div class="comparison-column">
+            <h2>Enhanced Error Handling</h2>
+            <p>Using the ErrorHandler utility for comprehensive error information:</p>
+            <button id="detailed-error-btn">Trigger Detailed Error</button>
+            <div class="error-container" id="detailed-error-container" style="display: none;">
+                <div class="error-title">Error Message:</div>
+                <div class="error-message" id="detailed-error-message"></div>
+            </div>
+        </div>
+    </div>
+
+    <h2>Test Different Error Scenarios</h2>
+    <p>Click the buttons below to simulate different types of API errors and see how they're handled:</p>
+    <button id="404-error-btn">404 Not Found</button>
+    <button id="401-error-btn">401 Unauthorized</button>
+    <button id="network-error-btn">Network Error</button>
+    <button id="timeout-error-btn">Timeout Error</button>
+
+    <h2>Technical Information Included</h2>
+    <p>The ErrorHandler utility provides comprehensive technical error information including:</p>
+    <ul>
+        <li><strong>HTTP Status Information:</strong> Status code, text, and explanation</li>
+        <li><strong>API Error Details:</strong> Error messages, codes, and types from the API response</li>
+        <li><strong>Request Context:</strong> Endpoint, method, URL, and timing information</li>
+        <li><strong>Environment Details:</strong> Browser information, network status, and timestamp</li>
+        <li><strong>Error Type Information:</strong> Specific details based on error type (network, timeout, etc.)</li>
+        <li><strong>Response Body:</strong> Raw response data when available</li>
+    </ul>
+
+    <script src="../js/utils/error-handler.js"></script>
+    <script>
+        // DOM Elements
+        const standardErrorBtn = document.getElementById('standard-error-btn');
+        const detailedErrorBtn = document.getElementById('detailed-error-btn');
+        const standardErrorContainer = document.getElementById('standard-error-container');
+        const detailedErrorContainer = document.getElementById('detailed-error-container');
+        const standardErrorMessage = document.getElementById('standard-error-message');
+        const detailedErrorMessage = document.getElementById('detailed-error-message');
+        
+        // Error scenario buttons
+        const notFoundBtn = document.getElementById('404-error-btn');
+        const unauthorizedBtn = document.getElementById('401-error-btn');
+        const networkErrorBtn = document.getElementById('network-error-btn');
+        const timeoutErrorBtn = document.getElementById('timeout-error-btn');
+
+        // Standard fetch with basic error handling
+        async function fetchWithStandardError(url, options = {}) {
+            try {
+                const response = await fetch(url, options);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch');
+                }
+                return response;
+            } catch (error) {
+                console.error('Standard fetch error:', error);
+                throw error;
+            }
+        }
+
+        // Test functions
+        async function testStandardError(url = 'https://api.example.com/nonexistent') {
+            try {
+                standardErrorContainer.style.display = 'block';
+                standardErrorMessage.textContent = 'Loading...';
+                await fetchWithStandardError(url);
+            } catch (error) {
+                standardErrorMessage.textContent = error.message;
+            }
+        }
+
+        async function testDetailedError(url = 'https://api.example.com/nonexistent', options = {}, endpointName = 'Test API') {
+            try {
+                detailedErrorContainer.style.display = 'block';
+                detailedErrorMessage.textContent = 'Loading...';
+                await ErrorHandler.fetchWithErrorHandling(url, options, endpointName);
+            } catch (error) {
+                detailedErrorMessage.textContent = error.message;
+                
+                // Log the full error object to console for inspection
+                console.log('Full error object:', error);
+            }
+        }
+
+        // Event listeners
+        standardErrorBtn.addEventListener('click', () => testStandardError());
+        detailedErrorBtn.addEventListener('click', () => testDetailedError());
+
+        // Error scenario event listeners
+        notFoundBtn.addEventListener('click', () => {
+            testStandardError('https://api.example.com/nonexistent');
+            testDetailedError('https://api.example.com/nonexistent', {}, 'Not Found Test');
+        });
+
+        unauthorizedBtn.addEventListener('click', () => {
+            // Using a real API that will return 401 without a valid key
+            testStandardError('https://api.openai.com/v1/models');
+            testDetailedError('https://api.openai.com/v1/models', {}, 'Unauthorized Test');
+        });
+
+        networkErrorBtn.addEventListener('click', () => {
+            // Using a non-existent domain to trigger network error
+            testStandardError('https://non-existent-domain-12345.com');
+            testDetailedError('https://non-existent-domain-12345.com', {}, 'Network Error Test');
+        });
+
+        timeoutErrorBtn.addEventListener('click', async () => {
+            // Simulate timeout with AbortController
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 100);
+            
+            try {
+                await fetchWithStandardError('https://httpbin.org/delay/5', { 
+                    signal: controller.signal 
+                });
+            } catch (error) {
+                standardErrorContainer.style.display = 'block';
+                standardErrorMessage.textContent = error.message;
+            }
+            
+            const controller2 = new AbortController();
+            const timeoutId2 = setTimeout(() => controller2.abort(), 100);
+            
+            try {
+                await ErrorHandler.fetchWithErrorHandling('https://httpbin.org/delay/5', { 
+                    signal: controller2.signal 
+                }, 'Timeout Test');
+            } catch (error) {
+                detailedErrorContainer.style.display = 'block';
+                detailedErrorMessage.textContent = error.message;
+            }
+        });
+    </script>
+</body>
+</html>
