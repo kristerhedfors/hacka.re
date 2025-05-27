@@ -84,6 +84,27 @@ Your API key and conversations will be saved locally in your browser for future 
 
 hacka.re is designed to be easily extensible and modifiable. The codebase is structured to be maintainable and follows modern web development practices.
 
+### Python Environment Setup
+
+The project includes Python components for testing and code verification. To set up the complete Python environment:
+
+```bash
+./setup_environment.sh
+```
+
+This script will:
+- Check Python 3.11+ installation
+- Create/activate a virtual environment in `_venv/`
+- Install all required packages from `requirements.txt`
+- Install Playwright browsers
+- Create environment configuration templates
+- Verify the installation
+
+After setup, activate the environment in new terminals with:
+```bash
+source _venv/bin/activate
+```
+
 ### Function Calling
 
 The function calling feature allows you to create JavaScript functions that can be called by AI models through the OpenAI-compatible API. By default, all functions are callable. If any function is tagged with `@callable` or `@tool`, then only tagged functions will be callable.
@@ -118,6 +139,14 @@ The project includes a comprehensive test suite using Playwright and pytest. The
 To run the tests:
 
 ```bash
+# First, set up the Python environment (one-time setup)
+./setup_environment.sh
+
+# Configure your API key
+cp .env.example _tests/playwright/.env
+# Edit _tests/playwright/.env and add your API key
+
+# Run tests
 cd _tests/playwright
 ./run_tests.sh
 ```
