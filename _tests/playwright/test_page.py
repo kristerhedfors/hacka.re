@@ -12,7 +12,7 @@ def test_page_loads(page: Page, serve_hacka_re):
     dismiss_welcome_modal(page)
     
     # Check that the page title is correct
-    expect(page).to_have_title("hacka.re - För hackare av hackare")
+    expect(page).to_have_title("hacka.re - Free, open, för hackare av hackare")
     
     # Check that the logo is visible
     logo = page.locator(".logo-text")
@@ -22,7 +22,7 @@ def test_page_loads(page: Page, serve_hacka_re):
     # Check that the tagline is visible
     tagline = page.locator(".tagline")
     expect(tagline).to_be_visible()
-    expect(tagline).to_contain_text("För hackare av hackare")
+    expect(tagline).to_contain_text("Free, open, för hackare av hackare")
 
 def test_chat_interface_elements(page: Page, serve_hacka_re):
     """Test that the chat interface elements are present."""

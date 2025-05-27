@@ -52,41 +52,9 @@ window.BaseUrlManager = (function() {
                         }
                     }
                     
-                    // Handle Azure OpenAI settings visibility
-                    if (selectedProvider === 'azure-openai') {
-                        // Show Azure OpenAI settings
-                        if (elements.azureSettingsGroup) {
-                            elements.azureSettingsGroup.style.display = 'block';
-                            
-                            // Load saved Azure settings
-                            if (elements.azureApiBase) {
-                                elements.azureApiBase.value = DataService.getAzureApiBase() || '';
-                            }
-                            if (elements.azureApiVersion) {
-                                elements.azureApiVersion.value = DataService.getAzureApiVersion() || '2024-03-01-preview';
-                            }
-                            if (elements.azureDeploymentName) {
-                                elements.azureDeploymentName.value = DataService.getAzureDeploymentName() || '';
-                            }
-                            if (elements.azureModelName) {
-                                elements.azureModelName.value = DataService.getAzureModelName() || '';
-                            }
-                        }
-                        
-                        // Hide model dropdown and reload button for Azure OpenAI
-                        if (elements.modelSelect && elements.modelSelect.parentNode) {
-                            elements.modelSelect.parentNode.style.display = 'none';
-                        }
-                    } else {
-                        // Hide Azure OpenAI settings
-                        if (elements.azureSettingsGroup) {
-                            elements.azureSettingsGroup.style.display = 'none';
-                        }
-                        
-                        // Show model dropdown and reload button for other providers
-                        if (elements.modelSelect && elements.modelSelect.parentNode) {
-                            elements.modelSelect.parentNode.style.display = 'flex';
-                        }
+                    // Show model dropdown and reload button for all providers
+                    if (elements.modelSelect && elements.modelSelect.parentNode) {
+                        elements.modelSelect.parentNode.style.display = 'flex';
                     }
                 });
             }
@@ -139,13 +107,6 @@ window.BaseUrlManager = (function() {
         function determineBaseUrl(selectedProvider, customUrl) {
             if (selectedProvider === 'custom') {
                 return customUrl.trim();
-            } else if (selectedProvider === 'azure-openai') {
-                // For Azure OpenAI, we need to store the API base URL as is
-                // The actual endpoint URL will be constructed in the ApiService
-                // based on the API base, API version, and deployment name
-                // We should use the Azure API base URL, not the custom URL field
-                const azureApiBase = elements.azureApiBase ? elements.azureApiBase.value.trim() : '';
-                return azureApiBase;
             } else {
                 return DataService.getDefaultBaseUrlForProvider(selectedProvider);
             }

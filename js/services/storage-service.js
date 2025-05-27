@@ -40,16 +40,6 @@ window.StorageService = (function() {
         saveSubtitle: DataService.saveSubtitle,
         getSubtitle: DataService.getSubtitle,
         saveDebugMode: DataService.saveDebugMode,
-        getDebugMode: DataService.getDebugMode,
-        
-        // Azure OpenAI specific methods
-        saveAzureApiBase: DataService.saveAzureApiBase,
-        getAzureApiBase: DataService.getAzureApiBase,
-        saveAzureApiVersion: DataService.saveAzureApiVersion,
-        getAzureApiVersion: DataService.getAzureApiVersion,
-        saveAzureDeploymentName: DataService.saveAzureDeploymentName,
-        getAzureDeploymentName: DataService.getAzureDeploymentName,
-        saveAzureModelName: DataService.saveAzureModelName,
-        getAzureModelName: DataService.getAzureModelName
+        getDebugMode: DataService.getDebugMode
     };
 })();
