@@ -115,22 +115,21 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
         controller = new AbortController();
         const signal = controller.signal;
         
-        // Combine tools from API tools manager, Function tools manager, MCP manager, and function calling manager
+        // Combine tools from API tools manager and function calling manager
+        // Note: functionCallingManager already includes FunctionToolsService functions, so we don't need to include them separately
         const combinedToolsManager = {
             getToolDefinitions: () => {
                 const apiTools = apiToolsManager ? apiToolsManager.getToolDefinitions() : [];
-                const functionTools = FunctionToolsService ? FunctionToolsService.getToolDefinitions() : [];
                 const functionCallingTools = functionCallingManager ? functionCallingManager.getFunctionDefinitions() : [];
                 
                 // Debug logging
                 console.log("combinedToolsManager.getToolDefinitions called");
                 console.log("- apiTools:", apiTools.length, apiTools.map(t => t.function?.name));
-                console.log("- functionTools:", functionTools.length, functionTools.map(t => t.function?.name));
                 console.log("- functionCallingTools:", functionCallingTools.length, functionCallingTools.map(t => t.function?.name));
                 console.log("- FunctionToolsService enabled:", FunctionToolsService ? FunctionToolsService.isFunctionToolsEnabled() : false);
                 console.log("- FunctionToolsService enabled functions:", FunctionToolsService ? FunctionToolsService.getEnabledFunctionNames() : []);
                 
-                const allTools = [...apiTools, ...functionTools, ...functionCallingTools];
+                const allTools = [...apiTools, ...functionCallingTools];
                 console.log("- Combined tools:", allTools.length, allTools.map(t => t.function?.name));
                 
                 return allTools;
