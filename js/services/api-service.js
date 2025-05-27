@@ -10,21 +10,7 @@ window.ApiService = (function() {
         const provider = StorageService.getBaseUrlProvider();
         console.log('[API Debug] getBaseUrl called, provider:', provider);
         
-        // Check if the current provider is Azure OpenAI
-        if (isAzureOpenAI()) {
-            // For Azure OpenAI, use the Azure API base URL
-            const azureApiBase = StorageService.getAzureApiBase();
-            console.log('[Azure OpenAI Debug] Azure API base:', azureApiBase);
-            
-            if (azureApiBase) {
-                console.log('[Azure OpenAI Debug] Using Azure API base URL:', azureApiBase);
-                return azureApiBase;
-            } else {
-                console.warn('[Azure OpenAI Debug] Azure API base is empty, falling back to standard base URL');
-            }
-        }
-        
-        // For other providers, use the standard base URL
+        // For all providers, use the standard base URL
         const baseUrl = StorageService.getBaseUrl();
         console.log('[API Debug] Standard base URL from storage:', baseUrl);
         
@@ -47,61 +33,19 @@ window.ApiService = (function() {
         MODELS: 'models'
     };
     
-    // Check if the current provider is Azure OpenAI
-    function isAzureOpenAI() {
-        return StorageService.getBaseUrlProvider() === 'azure-openai';
-    }
     
     // Get full endpoint URL
     function getEndpointUrl(endpoint) {
-        // Handle Azure OpenAI differently
-        if (isAzureOpenAI()) {
-            const apiBase = StorageService.getAzureApiBase();
-            const apiVersion = StorageService.getAzureApiVersion();
-            const deploymentName = StorageService.getAzureDeploymentName();
-            
-            // Debug logging for Azure OpenAI settings
-            console.log('[Azure OpenAI Debug] Settings:', {
-                provider: 'azure-openai',
-                apiBase: apiBase,
-                apiVersion: apiVersion,
-                deploymentName: deploymentName
-            });
-            
-            if (!apiBase || !deploymentName) {
-                console.error('Azure OpenAI API base or deployment name is missing');
-                return ''; // Return empty string to cause an error when used
-            }
-            
-            // Azure OpenAI endpoint format:
-            // For chat: https://{resource-name}.openai.azure.com/openai/deployments/{deployment-name}/chat/completions?api-version={api-version}
-            // For models: https://{resource-name}.openai.azure.com/openai/models?api-version={api-version}
-            
-            const normalizedApiBase = apiBase.endsWith('/') ? apiBase.slice(0, -1) : apiBase;
-            
-            let url;
-            if (endpoint === 'CHAT') {
-                url = `${normalizedApiBase}/openai/deployments/${deploymentName}/chat/completions?api-version=${apiVersion}`;
-            } else if (endpoint === 'MODELS') {
-                url = `${normalizedApiBase}/openai/models?api-version=${apiVersion}`;
-            }
-            
-            // Debug logging for constructed URL
-            console.log(`[Azure OpenAI Debug] Constructed ${endpoint} URL: ${url}`);
-            
-            return url;
-        } else {
-            // Standard OpenAI-compatible API
-            const baseUrl = getBaseUrl();
-            // Ensure the base URL ends with a slash and the endpoint path doesn't start with a slash
-            const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
-            const url = `${normalizedBaseUrl}${ENDPOINT_PATHS[endpoint]}`;
-            
-            // Debug logging for standard API URL
-            console.log(`[API Debug] Constructed ${endpoint} URL: ${url}`);
-            
-            return url;
-        }
+        // Standard OpenAI-compatible API
+        const baseUrl = getBaseUrl();
+        // Ensure the base URL ends with a slash and the endpoint path doesn't start with a slash
+        const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+        const url = `${normalizedBaseUrl}${ENDPOINT_PATHS[endpoint]}`;
+        
+        // Debug logging for standard API URL
+        console.log(`[API Debug] Constructed ${endpoint} URL: ${url}`);
+        
+        return url;
     }
 
     /**
@@ -119,21 +63,12 @@ window.ApiService = (function() {
         console.log('[API Debug] fetchAvailableModels called with:', {
             apiKey: apiKey ? '***' : null, // Don't log the actual API key
             customBaseUrl: customBaseUrl,
-            provider: StorageService.getBaseUrlProvider(),
-            isAzureOpenAI: isAzureOpenAI()
+            provider: StorageService.getBaseUrlProvider()
         });
-        
-        // Check if we're using Azure OpenAI
-        const isAzure = isAzureOpenAI();
         
         // Determine which base URL to use
         let endpointUrl;
-        if (isAzure) {
-            // For Azure OpenAI, always use the getEndpointUrl function
-            // which will use the Azure API base URL from storage
-            endpointUrl = getEndpointUrl('MODELS');
-            console.log('[Azure OpenAI Debug] Using Azure OpenAI endpoint URL from getEndpointUrl');
-        } else if (customBaseUrl && customBaseUrl !== 'null' && customBaseUrl !== 'undefined') {
+        if (customBaseUrl && customBaseUrl !== 'null' && customBaseUrl !== 'undefined') {
             // For standard OpenAI-compatible API with custom base URL
             const normalizedBaseUrl = customBaseUrl.endsWith('/') ? customBaseUrl : `${customBaseUrl}/`;
             endpointUrl = `${normalizedBaseUrl}${ENDPOINT_PATHS.MODELS}`;
@@ -161,28 +96,8 @@ window.ApiService = (function() {
         
         const data = await response.json();
         
-        // Handle different response formats
-        let models;
-        if (isAzure) {
-            // Azure OpenAI returns models directly in the response
-            models = data;
-            
-            // Transform Azure models to match OpenAI format if needed
-            if (models && Array.isArray(models)) {
-                models = models.map(model => {
-                    return {
-                        id: model.id || model.model,
-                        object: 'model',
-                        created: model.created || Date.now(),
-                        owned_by: 'azure',
-                        ...model
-                    };
-                });
-            }
-        } else {
-            // Standard OpenAI-compatible API returns models in data.data
-            models = data.data;
-        }
+        // Standard OpenAI-compatible API returns models in data.data
+        const models = data.data;
         
         // Store model information in ModelInfoService
         if (window.ModelInfoService && models && Array.isArray(models)) {
@@ -232,21 +147,9 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
     // Prepare request body
     const requestBody = {
         messages: apiMessages,
-        stream: true
+        stream: true,
+        model: model
     };
-    
-    // Handle model for different providers
-    if (isAzureOpenAI()) {
-        // For Azure OpenAI, use the model name from settings if available
-        const azureModelName = StorageService.getAzureModelName();
-        if (azureModelName) {
-            requestBody.model = azureModelName;
-        }
-        // Note: The deployment name is already in the URL
-    } else {
-        // For other providers, use the model parameter
-        requestBody.model = model;
-    }
     
     // Add tools if tool calling is enabled and apiToolsManager is provided
     if (apiToolsManager) {
@@ -618,21 +521,9 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
                 // Prepare follow-up request body
                 const followUpRequestBody = {
                     messages: apiMessages,
-                    stream: true
+                    stream: true,
+                    model: model
                 };
-                
-                // Handle model for different providers
-                if (isAzureOpenAI()) {
-                    // For Azure OpenAI, use the model name from settings if available
-                    const azureModelName = StorageService.getAzureModelName();
-                    if (azureModelName) {
-                        followUpRequestBody.model = azureModelName;
-                    }
-                    // Note: The deployment name is already in the URL
-                } else {
-                    // For other providers, use the model parameter
-                    followUpRequestBody.model = model;
-                }
                 
                 // Make a follow-up request to get the final response
                 const followUpResponse = await fetch(getEndpointUrl('CHAT'), {
