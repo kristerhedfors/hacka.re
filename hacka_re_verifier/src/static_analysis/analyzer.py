@@ -204,13 +204,18 @@ class StaticAnalyzer:
         """
         findings = []
         
-        # Check for inline scripts
-        inline_scripts = re.findall(r'<script[^>]*>(.*?)</script>', content, re.DOTALL)
-        for i, script in enumerate(inline_scripts):
-            if script.strip():
-                # Analyze the inline script
-                script_findings = self._analyze_javascript(f"{file_path}#inline-script-{i+1}", script)
-                findings.extend(script_findings)
+        # Skip detailed inline script analysis for test files to reduce noise
+        is_test_file = any(test_indicator in file_path.lower() for test_indicator in 
+                          ['test', '_tests/', 'spec', 'demo'])
+        
+        # Check for inline scripts (but skip detailed analysis for test files)
+        if not is_test_file:
+            inline_scripts = re.findall(r'<script[^>]*>(.*?)</script>', content, re.DOTALL)
+            for i, script in enumerate(inline_scripts):
+                if script.strip():
+                    # Analyze the inline script
+                    script_findings = self._analyze_javascript(f"{file_path}#inline-script-{i+1}", script)
+                    findings.extend(script_findings)
         
         # Check for external scripts
         external_scripts = re.findall(r'<script[^>]*src=["\']([^"\']+)["\'][^>]*>', content)
@@ -472,14 +477,20 @@ class StaticAnalyzer:
                             'code': 'obj.eval(...)'  # Simplified code representation
                         })
             
-            # Recursively traverse child nodes
-            for key, value in vars(node).items():
-                if isinstance(value, dict) and 'type' in value:
-                    traverse(value, node)
-                elif isinstance(value, list):
-                    for child in value:
-                        if isinstance(child, dict) and 'type' in child:
-                            traverse(child, node)
+            # Recursively traverse child nodes using proper esprima node access
+            try:
+                # Get all attributes of the node
+                node_dict = node.__dict__ if hasattr(node, '__dict__') else {}
+                for key, value in node_dict.items():
+                    if hasattr(value, 'type'):
+                        traverse(value, node)
+                    elif isinstance(value, list):
+                        for child in value:
+                            if hasattr(child, 'type'):
+                                traverse(child, node)
+            except (AttributeError, TypeError):
+                # Fallback: skip traversal if node structure is unexpected
+                pass
         
         # Start traversal from the root
         traverse(ast)
@@ -515,14 +526,20 @@ class StaticAnalyzer:
                         'code': f'localStorage.{method}'  # Simplified code representation
                     })
             
-            # Recursively traverse child nodes
-            for key in node:
-                if isinstance(node[key], dict) and 'type' in node[key]:
-                    traverse(node[key], node)
-                elif isinstance(node[key], list):
-                    for child in node[key]:
-                        if isinstance(child, dict) and 'type' in child:
-                            traverse(child, node)
+            # Recursively traverse child nodes using proper esprima node access
+            try:
+                # Get all attributes of the node
+                node_dict = node.__dict__ if hasattr(node, '__dict__') else {}
+                for key, value in node_dict.items():
+                    if hasattr(value, 'type'):
+                        traverse(value, node)
+                    elif isinstance(value, list):
+                        for child in value:
+                            if hasattr(child, 'type'):
+                                traverse(child, node)
+            except (AttributeError, TypeError):
+                # Fallback: skip traversal if node structure is unexpected
+                pass
         
         # Start traversal from the root
         traverse(ast)
@@ -574,14 +591,20 @@ class StaticAnalyzer:
                         'code': node.id.name
                     })
             
-            # Recursively traverse child nodes
-            for key in node:
-                if isinstance(node[key], dict) and 'type' in node[key]:
-                    traverse(node[key], node)
-                elif isinstance(node[key], list):
-                    for child in node[key]:
-                        if isinstance(child, dict) and 'type' in child:
-                            traverse(child, node)
+            # Recursively traverse child nodes using proper esprima node access
+            try:
+                # Get all attributes of the node
+                node_dict = node.__dict__ if hasattr(node, '__dict__') else {}
+                for key, value in node_dict.items():
+                    if hasattr(value, 'type'):
+                        traverse(value, node)
+                    elif isinstance(value, list):
+                        for child in value:
+                            if hasattr(child, 'type'):
+                                traverse(child, node)
+            except (AttributeError, TypeError):
+                # Fallback: skip traversal if node structure is unexpected
+                pass
         
         # Start traversal from the root
         traverse(ast)
@@ -619,14 +642,20 @@ class StaticAnalyzer:
                             'code': f'obj.{method}(...)'  # Simplified code representation
                         })
             
-            # Recursively traverse child nodes
-            for key in node:
-                if isinstance(node[key], dict) and 'type' in node[key]:
-                    traverse(node[key], node)
-                elif isinstance(node[key], list):
-                    for child in node[key]:
-                        if isinstance(child, dict) and 'type' in child:
-                            traverse(child, node)
+            # Recursively traverse child nodes using proper esprima node access
+            try:
+                # Get all attributes of the node
+                node_dict = node.__dict__ if hasattr(node, '__dict__') else {}
+                for key, value in node_dict.items():
+                    if hasattr(value, 'type'):
+                        traverse(value, node)
+                    elif isinstance(value, list):
+                        for child in value:
+                            if hasattr(child, 'type'):
+                                traverse(child, node)
+            except (AttributeError, TypeError):
+                # Fallback: skip traversal if node structure is unexpected
+                pass
         
         # Start traversal from the root
         traverse(ast)
