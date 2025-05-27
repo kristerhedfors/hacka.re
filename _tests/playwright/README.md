@@ -29,16 +29,58 @@ The tests are set up to run in a Python virtual environment. The environment and
 
 ## Running Tests
 
-### Using the run_tests.sh Script
+### Test Script Options
 
-The recommended way to run tests is using the `run_tests.sh` script, which provides enhanced logging and output capture:
+There are three main ways to run tests, depending on your needs:
+
+#### 1. Core Functionality Tests (`run_core_tests.sh`)
+
+For quick validation of fundamental chat application functionality:
+
+```bash
+./run_core_tests.sh
+```
+
+**Tests included:**
+- Page loading & basic UI (`test_page.py`)
+- API configuration (`test_api.py`)
+- Basic chat functionality (`test_chat.py`)
+- Settings modal (`test_modals.py`)
+- Welcome modal (`test_welcome_manager.py`)
+
+#### 2. Advanced Feature Tests (`run_feature_tests.sh`)
+
+For testing advanced features and tools (excludes core tests):
+
+```bash
+./run_feature_tests.sh
+```
+
+**Tests included:**
+- Function calling (`test_function_calling_with_api.py`)
+- Share functionality (`test_sharing.py`)
+- System prompts (`test_default_prompts.py`)
+- Theme switching (`test_themes.py`)
+- Clear chat (`test_clear_chat.py`)
+- Model selection (`test_model_selection_*.py`)
+- Copy chat (`test_copy_chat.py`)
+- Button tooltips (`test_button_tooltips.py`)
+- Function library features (`test_function_library_*.py`)
+- Context window features (`test_context_window_*.py`)
+- And other advanced functionality
+
+#### 3. All Tests (`run_tests.sh`)
+
+For comprehensive testing of all functionality:
 
 ```bash
 ./run_tests.sh
 ```
 
-This script offers several advantages:
-- Captures all output, including Ctrl+C interruptions, to a file called `run_tests.out`
+### Script Advantages
+
+All test scripts offer several advantages:
+- Captures all output, including Ctrl+C interruptions, to output files
 - Automatically generates markdown reports with test results and screenshots
 - Makes test output available as context for LLM-assisted coding
 - Sets up the virtual environment automatically if it doesn't exist
@@ -46,7 +88,11 @@ This script offers several advantages:
 
 #### Command Line Options
 
+All scripts support the same command line options:
+
 ```bash
+./run_core_tests.sh [options]
+./run_feature_tests.sh [options]
 ./run_tests.sh [options]
 ```
 
@@ -55,9 +101,9 @@ Options:
 - `--firefox`: Run tests in Firefox (default is Chromium)
 - `--webkit`: Run tests in WebKit
 - `--verbose`, `-v`: Run tests with verbose output
-- `--test-file <file>`: Specify a test file to run
+- `--test-file <file>`: Specify a test file to run (only for `run_tests.sh`)
 - `--timeout <ms>`: Set timeout in milliseconds (default: 5000)
-- `-k "<expression>"`: Filter tests by expression (e.g., `-k "not function_calling_api"`)
+- `-k "<expression>"`: Filter tests by expression (only for `run_tests.sh`)
 - `--skip-server`: Skip starting/stopping the HTTP server
 - `--help`, `-h`: Show help message
 
@@ -115,7 +161,7 @@ To run tests with more verbose output:
 pytest -v
 ```
 
-However, using pytest directly won't capture output in the same way as `run_tests.sh`, which is important for LLM-assisted coding.
+However, using pytest directly won't capture output in the same way as the test scripts, which is important for LLM-assisted coding.
 
 ## Test Structure
 
@@ -288,12 +334,12 @@ Following these practices will help prevent tests from hanging indefinitely and 
 
 ## Test Output Logging and LLM-Assisted Coding
 
-The `run_tests.sh` script is designed to capture comprehensive test output that can be used as context for LLM-assisted coding, even when tests are interrupted or when terminal output is not directly available in an integrated development environment.
+The test scripts are designed to capture comprehensive test output that can be used as context for LLM-assisted coding, even when tests are interrupted or when terminal output is not directly available in an integrated development environment.
 
 ### How Test Output Logging Works
 
 1. **Complete Output Capture**: 
-   - All stdout and stderr output is captured to `run_tests.out` using `tee`
+   - All stdout and stderr output is captured to output files using `tee`
    - This includes pytest output, console logs, and error messages
    - Even if tests are interrupted with Ctrl+C, the output up to that point is preserved
    - Stack traces from interruptions are also captured
@@ -302,10 +348,10 @@ The `run_tests.sh` script is designed to capture comprehensive test output that 
    - After tests complete (or are interrupted), `bundle_test_results.sh` is automatically called
    - This script generates two markdown reports:
      - `test_results.md`: Contains test output from `test_output.log` plus screenshots
-     - `run_tests.out_bundle.md`: Contains all captured output from `run_tests.out` plus screenshots
+     - `run_tests.out_bundle.md`: Contains all captured output from output files plus screenshots
 
 3. **Output Files**:
-   - `run_tests.out`: Raw terminal output including any interruptions
+   - `run_tests.out` / `run_core_tests.out` / `run_feature_tests.out`: Raw terminal output including any interruptions
    - `test_output.log`: Direct pytest output
    - `run_tests.out_bundle.md`: Formatted markdown with test output and screenshots
    - `test_results.md`: Alternative formatted markdown report
@@ -319,9 +365,9 @@ These output files are particularly valuable when:
 - You want to analyze test failures with additional context
 
 To use the test output with an LLM:
-1. Run tests with `./run_tests.sh`
+1. Run tests with one of the test scripts
 2. If tests fail or are interrupted, the output is still captured
-3. Provide `run_tests.out` or `run_tests.out_bundle.md` as context to the LLM
+3. Provide the output files or bundle markdown as context to the LLM
 4. The LLM can analyze the test output, including any errors or failures
 
 ### Viewing Test Reports
@@ -371,7 +417,7 @@ Two scripts are provided to view screenshots and their associated debug informat
    - Test output results and stack traces in chronological order
    - Screenshots and their associated debug information
    
-   This report is automatically generated after running tests with `run_tests.sh`.
+   This report is automatically generated after running tests with any test script.
 
 ### Adding Screenshots to Your Tests
 
@@ -557,7 +603,7 @@ To add new tests:
 
 ## HTTP Server Management
 
-The tests require a local HTTP server to serve the application. The `run_tests.sh` script automatically manages this server for you, but you can also manage it manually if needed.
+The tests require a local HTTP server to serve the application. All test scripts automatically manage this server for you, but you can also manage it manually if needed.
 
 ### Server Management Scripts
 
@@ -583,9 +629,11 @@ Two scripts are provided to manage the HTTP server:
 
 ### Skipping Server Management
 
-If you already have a server running or want to manage it manually, you can use the `--skip-server` option with `run_tests.sh`:
+If you already have a server running or want to manage it manually, you can use the `--skip-server` option with any test script:
 
 ```bash
+./run_core_tests.sh --skip-server
+./run_feature_tests.sh --skip-server
 ./run_tests.sh --skip-server
 ```
 

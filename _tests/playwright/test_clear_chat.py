@@ -18,11 +18,11 @@ def test_clear_chat_button_exists(page: Page, serve_hacka_re):
     
     # Check if the clear chat button exists
     clear_chat_btn = page.locator("#clear-chat-btn")
-    expect(clear_chat_btn).to_be_visible()
+    expect(clear_chat_btn).to_be_visible(timeout=2000)
     
     # Check if the button has the trash icon
     trash_icon = clear_chat_btn.locator("i.fa-trash")
-    expect(trash_icon).to_be_visible()
+    expect(trash_icon).to_be_visible(timeout=2000)
     
     # Take a screenshot with debug info
     screenshot_with_markdown(page, "clear_chat_button.png", {
@@ -46,7 +46,7 @@ def test_clear_chat_confirmation_dialog(page: Page, serve_hacka_re, api_key):
     # Configure API key directly without using the helper function
     # Click the settings button
     settings_button = page.locator("#settings-btn")
-    settings_button.click(timeout=1000)
+    settings_button.click(timeout=2000)
     
     # Wait for the settings modal to become visible
     page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
@@ -94,14 +94,14 @@ def test_clear_chat_confirmation_dialog(page: Page, serve_hacka_re, api_key):
         time.sleep(1)
         
         # Check if message appeared
-        if not page.locator(".message.user .message-content").is_visible(timeout=1000):
+        if not page.locator(".message.user .message-content").is_visible(timeout=2000):
             # Method 2: Click the send button
             send_button = page.locator("#send-btn")
             send_button.click()
             time.sleep(1)
             
             # Check again
-            if not page.locator(".message.user .message-content").is_visible(timeout=1000):
+            if not page.locator(".message.user .message-content").is_visible(timeout=2000):
                 # Method 3: Use JavaScript to submit the form
                 page.evaluate("""() => {
                     const form = document.getElementById('chat-form');
@@ -115,7 +115,7 @@ def test_clear_chat_confirmation_dialog(page: Page, serve_hacka_re, api_key):
     
     # Check if the message is visible now
     user_message = page.locator(".message.user .message-content")
-    if not user_message.is_visible(timeout=1000):
+    if not user_message.is_visible(timeout=2000):
         # If we still can't see the message, add a system message for testing
         page.evaluate("""() => {
             // Create a user message for testing
@@ -166,7 +166,7 @@ def test_clear_chat_confirmation_dialog(page: Page, serve_hacka_re, api_key):
     
     # Since we dismissed the dialog, the message should still be visible
     user_message = page.locator(".message.user")
-    expect(user_message).to_be_visible()
+    expect(user_message).to_be_visible(timeout=2000)
     
     # Take a screenshot after dismissing the dialog
     screenshot_with_markdown(page, "after_dismiss_clear_dialog.png", {
@@ -203,7 +203,7 @@ def test_clear_chat_confirmation_dialog(page: Page, serve_hacka_re, api_key):
     # Try to wait for the system message
     try:
         page.wait_for_selector(".message.system .message-content", state="visible", timeout=2000)
-        expect(system_message).to_contain_text("Chat history cleared")
+        expect(system_message).to_contain_text("Chat history cleared", timeout=2000)
     except Exception as e:
         print(f"Error waiting for system message: {e}")
         # Check if there's any system message
