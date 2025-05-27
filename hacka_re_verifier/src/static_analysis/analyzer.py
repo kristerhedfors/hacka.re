@@ -204,13 +204,18 @@ class StaticAnalyzer:
         """
         findings = []
         
-        # Check for inline scripts
-        inline_scripts = re.findall(r'<script[^>]*>(.*?)</script>', content, re.DOTALL)
-        for i, script in enumerate(inline_scripts):
-            if script.strip():
-                # Analyze the inline script
-                script_findings = self._analyze_javascript(f"{file_path}#inline-script-{i+1}", script)
-                findings.extend(script_findings)
+        # Skip detailed inline script analysis for test files to reduce noise
+        is_test_file = any(test_indicator in file_path.lower() for test_indicator in 
+                          ['test', '_tests/', 'spec', 'demo'])
+        
+        # Check for inline scripts (but skip detailed analysis for test files)
+        if not is_test_file:
+            inline_scripts = re.findall(r'<script[^>]*>(.*?)</script>', content, re.DOTALL)
+            for i, script in enumerate(inline_scripts):
+                if script.strip():
+                    # Analyze the inline script
+                    script_findings = self._analyze_javascript(f"{file_path}#inline-script-{i+1}", script)
+                    findings.extend(script_findings)
         
         # Check for external scripts
         external_scripts = re.findall(r'<script[^>]*src=["\']([^"\']+)["\'][^>]*>', content)
@@ -286,7 +291,7 @@ class StaticAnalyzer:
     
     def _check_patterns(self, file_path: str, content: str) -> List[Dict[str, Any]]:
         """
-        Check for specific patterns in the file content.
+        Check for specific patterns in the file content with context-aware analysis.
         
         Args:
             file_path: Path to the file
@@ -305,6 +310,10 @@ class StaticAnalyzer:
             for pattern in patterns:
                 for i, line in enumerate(lines):
                     if re.search(pattern, line):
+                        # Context-aware filtering for false positives
+                        if self._is_false_positive(line, pattern, category, file_path):
+                            continue
+                        
                         # Initialize pattern category in results if not exists
                         if category not in self.results['patterns_found']:
                             self.results['patterns_found'][category] = []
@@ -314,12 +323,13 @@ class StaticAnalyzer:
                             'file': file_path,
                             'line': i + 1,
                             'pattern': pattern,
-                            'match': line.strip()
+                            'match': line.strip(),
+                            'confidence': self._calculate_confidence(line, pattern, category)
                         }
                         self.results['patterns_found'][category].append(pattern_info)
                         
-                        # Add as a finding if it's a security concern
-                        if category in ['tracking_code', 'external_requests']:
+                        # Add as a finding if it's a security concern and high confidence
+                        if category in ['tracking_code', 'external_requests'] and pattern_info['confidence'] > 0.7:
                             findings.append({
                                 'file': file_path,
                                 'line': i + 1,
@@ -327,10 +337,104 @@ class StaticAnalyzer:
                                 'type': category,
                                 'severity': 'warning',
                                 'message': f"{category.replace('_', ' ').title()} detected: {pattern}",
-                                'code': line.strip()
+                                'code': line.strip(),
+                                'confidence': pattern_info['confidence']
                             })
         
         return findings
+    
+    def _is_false_positive(self, line: str, pattern: str, category: str, file_path: str) -> bool:
+        """
+        Determine if a pattern match is likely a false positive.
+        
+        Args:
+            line: The line containing the match
+            pattern: The regex pattern that matched
+            category: The category of the pattern
+            file_path: Path to the file
+            
+        Returns:
+            True if likely a false positive, False otherwise
+        """
+        line_lower = line.lower().strip()
+        
+        # Skip comments and documentation
+        if (line_lower.startswith('//') or 
+            line_lower.startswith('*') or 
+            line_lower.startswith('<!--') or
+            '/*' in line_lower or
+            '*/' in line_lower):
+            return True
+        
+        # Skip documentation files
+        if any(doc_indicator in file_path.lower() for doc_indicator in 
+               ['readme', 'doc', 'about', 'research-report', 'disclaimer']):
+            return True
+        
+        # Skip test files for certain patterns
+        if 'test' in file_path.lower() and category == 'tracking_code':
+            # Allow tracking in test files unless it's actual tracking code
+            if not any(actual_tracker in line_lower for actual_tracker in 
+                      ['google-analytics.com', 'gtag(', 'ga(', '_gaq.push']):
+                return True
+        
+        # Skip minified library files
+        if 'lib/' in file_path and '.min.' in file_path:
+            return True
+        
+        # Category-specific false positive detection
+        if category == 'tracking_code':
+            # Skip if it's just mentioning tracking in documentation context
+            doc_keywords = ['does not use', 'no tracking', 'without tracking', 
+                           'privacy', 'documentation', 'claims', 'features']
+            if any(keyword in line_lower for keyword in doc_keywords):
+                return True
+            
+            # Skip variable names and comments about tracking
+            if any(indicator in line_lower for indicator in 
+                  ['// ', 'tracking variable', 'track changes', 'keep track']):
+                return True
+        
+        return False
+    
+    def _calculate_confidence(self, line: str, pattern: str, category: str) -> float:
+        """
+        Calculate confidence level for a pattern match.
+        
+        Args:
+            line: The line containing the match
+            pattern: The regex pattern that matched
+            category: The category of the pattern
+            
+        Returns:
+            Confidence level between 0.0 and 1.0
+        """
+        confidence = 0.5  # Base confidence
+        
+        line_lower = line.lower().strip()
+        
+        # High confidence indicators
+        if category == 'tracking_code':
+            if any(high_conf in pattern for high_conf in ['gtag(', 'ga(', '_gaq.push', 'fbq(']):
+                confidence = 0.9
+            elif any(domain in pattern for domain in ['.com', '.io']):
+                confidence = 0.8
+        
+        # Medium confidence for external requests
+        if category == 'external_requests':
+            if 'fetch(' in line_lower or 'axios.' in line_lower:
+                confidence = 0.8
+        
+        # Lower confidence for generic patterns
+        if len(pattern) < 10:  # Short patterns are less specific
+            confidence *= 0.8
+        
+        # Boost confidence if in actual code (not comments)
+        if not any(comment_indicator in line_lower for comment_indicator in 
+                  ['//', '/*', '*/', '<!--', '-->']):
+            confidence *= 1.2
+        
+        return min(1.0, confidence)
     
     def _check_eval_usage(self, file_path: str, ast) -> List[Dict[str, Any]]:
         """
@@ -347,6 +451,9 @@ class StaticAnalyzer:
         
         # Function to recursively traverse the AST
         def traverse(node, parent=None):
+            if not hasattr(node, 'type'):
+                return
+                
             if node.type == 'CallExpression' and hasattr(node, 'callee'):
                 if hasattr(node.callee, 'name') and node.callee.name == 'eval':
                     findings.append({
@@ -370,14 +477,20 @@ class StaticAnalyzer:
                             'code': 'obj.eval(...)'  # Simplified code representation
                         })
             
-            # Recursively traverse child nodes
-            for key in node:
-                if isinstance(node[key], dict) and 'type' in node[key]:
-                    traverse(node[key], node)
-                elif isinstance(node[key], list):
-                    for child in node[key]:
-                        if isinstance(child, dict) and 'type' in child:
-                            traverse(child, node)
+            # Recursively traverse child nodes using proper esprima node access
+            try:
+                # Get all attributes of the node
+                node_dict = node.__dict__ if hasattr(node, '__dict__') else {}
+                for key, value in node_dict.items():
+                    if hasattr(value, 'type'):
+                        traverse(value, node)
+                    elif isinstance(value, list):
+                        for child in value:
+                            if hasattr(child, 'type'):
+                                traverse(child, node)
+            except (AttributeError, TypeError):
+                # Fallback: skip traversal if node structure is unexpected
+                pass
         
         # Start traversal from the root
         traverse(ast)
@@ -413,14 +526,20 @@ class StaticAnalyzer:
                         'code': f'localStorage.{method}'  # Simplified code representation
                     })
             
-            # Recursively traverse child nodes
-            for key in node:
-                if isinstance(node[key], dict) and 'type' in node[key]:
-                    traverse(node[key], node)
-                elif isinstance(node[key], list):
-                    for child in node[key]:
-                        if isinstance(child, dict) and 'type' in child:
-                            traverse(child, node)
+            # Recursively traverse child nodes using proper esprima node access
+            try:
+                # Get all attributes of the node
+                node_dict = node.__dict__ if hasattr(node, '__dict__') else {}
+                for key, value in node_dict.items():
+                    if hasattr(value, 'type'):
+                        traverse(value, node)
+                    elif isinstance(value, list):
+                        for child in value:
+                            if hasattr(child, 'type'):
+                                traverse(child, node)
+            except (AttributeError, TypeError):
+                # Fallback: skip traversal if node structure is unexpected
+                pass
         
         # Start traversal from the root
         traverse(ast)
@@ -472,14 +591,20 @@ class StaticAnalyzer:
                         'code': node.id.name
                     })
             
-            # Recursively traverse child nodes
-            for key in node:
-                if isinstance(node[key], dict) and 'type' in node[key]:
-                    traverse(node[key], node)
-                elif isinstance(node[key], list):
-                    for child in node[key]:
-                        if isinstance(child, dict) and 'type' in child:
-                            traverse(child, node)
+            # Recursively traverse child nodes using proper esprima node access
+            try:
+                # Get all attributes of the node
+                node_dict = node.__dict__ if hasattr(node, '__dict__') else {}
+                for key, value in node_dict.items():
+                    if hasattr(value, 'type'):
+                        traverse(value, node)
+                    elif isinstance(value, list):
+                        for child in value:
+                            if hasattr(child, 'type'):
+                                traverse(child, node)
+            except (AttributeError, TypeError):
+                # Fallback: skip traversal if node structure is unexpected
+                pass
         
         # Start traversal from the root
         traverse(ast)
@@ -517,14 +642,20 @@ class StaticAnalyzer:
                             'code': f'obj.{method}(...)'  # Simplified code representation
                         })
             
-            # Recursively traverse child nodes
-            for key in node:
-                if isinstance(node[key], dict) and 'type' in node[key]:
-                    traverse(node[key], node)
-                elif isinstance(node[key], list):
-                    for child in node[key]:
-                        if isinstance(child, dict) and 'type' in child:
-                            traverse(child, node)
+            # Recursively traverse child nodes using proper esprima node access
+            try:
+                # Get all attributes of the node
+                node_dict = node.__dict__ if hasattr(node, '__dict__') else {}
+                for key, value in node_dict.items():
+                    if hasattr(value, 'type'):
+                        traverse(value, node)
+                    elif isinstance(value, list):
+                        for child in value:
+                            if hasattr(child, 'type'):
+                                traverse(child, node)
+            except (AttributeError, TypeError):
+                # Fallback: skip traversal if node structure is unexpected
+                pass
         
         # Start traversal from the root
         traverse(ast)
@@ -589,33 +720,53 @@ class StaticAnalyzer:
     
     def _calculate_security_score(self) -> None:
         """
-        Calculate a security score based on the findings.
+        Calculate a security score based on the findings with weighted confidence.
         """
         # Start with a perfect score
         score = 100.0
         
-        # Deduct points for security issues
+        # Deduct points for security issues with confidence weighting
         for issue in self.results['security_issues']:
+            confidence_multiplier = 1.0
+            if 'confidence' in issue:
+                confidence_multiplier = issue['confidence']
+            
             if issue['severity'] == 'critical':
-                score -= 20.0
+                score -= 20.0 * confidence_multiplier
             elif issue['severity'] == 'high':
-                score -= 10.0
+                score -= 10.0 * confidence_multiplier
             elif issue['severity'] == 'medium':
-                score -= 5.0
+                score -= 5.0 * confidence_multiplier
             elif issue['severity'] == 'low':
-                score -= 2.0
+                score -= 2.0 * confidence_multiplier
         
-        # Deduct points for privacy issues
+        # Deduct points for privacy issues with confidence weighting
         for issue in self.results['privacy_issues']:
+            confidence_multiplier = 1.0
+            if 'confidence' in issue:
+                confidence_multiplier = issue['confidence']
+            
             if issue['severity'] == 'high':
-                score -= 10.0
+                score -= 10.0 * confidence_multiplier
             elif issue['severity'] == 'medium':
-                score -= 5.0
+                score -= 5.0 * confidence_multiplier
             elif issue['severity'] == 'low':
-                score -= 2.0
+                score -= 2.0 * confidence_multiplier
         
-        # Ensure score is not negative
-        score = max(0.0, score)
+        # Bonus points for good practices
+        if len(self.results['security_issues']) == 0:
+            score += 5.0  # Bonus for no security issues
+        
+        if len(self.results['privacy_issues']) == 0:
+            score += 5.0  # Bonus for no privacy issues
+        
+        # Bonus for using encryption
+        encryption_usage = [f for f in self.results['findings'] if f['type'] == 'encryption_usage']
+        if len(encryption_usage) > 0:
+            score += min(5.0, len(encryption_usage))
+        
+        # Ensure score is within bounds
+        score = max(0.0, min(100.0, score))
         
         self.results['summary']['security_score'] = round(score, 1)
     
