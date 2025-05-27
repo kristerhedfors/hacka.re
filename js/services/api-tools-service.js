@@ -69,38 +69,13 @@ window.ApiToolsService = (function() {
      * @returns {Array} Array of enabled tool definitions in OpenAI format
      */
     function getEnabledToolDefinitions() {
-        // Get built-in tool definitions
+        // Only return built-in tool definitions
+        // User functions are handled by the function calling manager to avoid duplication
         const builtInToolDefinitions = Object.entries(builtInTools).map(([name, tool]) => {
             return tool.definition;
         });
         
-        // Add enabled JavaScript functions from FunctionToolsService if available
-        let userFunctionDefinitions = [];
-        if (window.FunctionToolsService && typeof FunctionToolsService.getEnabledToolDefinitions === 'function') {
-            userFunctionDefinitions = FunctionToolsService.getEnabledToolDefinitions();
-        } else if (window.FunctionToolsService && typeof FunctionToolsService.getToolDefinitions === 'function') {
-            // Fallback for backward compatibility
-            userFunctionDefinitions = FunctionToolsService.getToolDefinitions();
-        }
-        
-        // Combine and deduplicate tool definitions
-        const allDefinitions = [...builtInToolDefinitions, ...userFunctionDefinitions];
-        
-        // Deduplicate by function name
-        const uniqueDefinitions = [];
-        const seenNames = new Set();
-        
-        for (const def of allDefinitions) {
-            if (def && def.function && def.function.name) {
-                const name = def.function.name;
-                if (!seenNames.has(name)) {
-                    seenNames.add(name);
-                    uniqueDefinitions.push(def);
-                }
-            }
-        }
-        
-        return uniqueDefinitions;
+        return builtInToolDefinitions;
     }
     
     /**
