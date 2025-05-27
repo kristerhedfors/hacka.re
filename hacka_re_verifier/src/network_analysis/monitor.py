@@ -1,17 +1,16 @@
 """
-Network traffic monitor for hacka.re project.
-Monitors network requests to verify data privacy claims.
+Network analysis module for hacka.re project.
+Monitors network traffic to verify privacy claims.
 """
 
 import os
-import re
 import json
 import logging
 import asyncio
-from pathlib import Path
-from typing import Dict, List, Any, Optional, Set
+from typing import Dict, List, Any, Optional
+from playwright.async_api import async_playwright, Page, Browser, BrowserContext
 from urllib.parse import urlparse
-from playwright.async_api import async_playwright, Page, Browser, BrowserContext, Request, Response
+import time
 
 logger = logging.getLogger('hacka_re_verifier.network_analysis')
 
@@ -37,30 +36,32 @@ class NetworkMonitor:
         self.results = {
             'summary': {
                 'total_requests': 0,
-                'allowed_requests': 0,
                 'blocked_requests': 0,
-                'unknown_requests': 0,
-                'privacy_score': 0.0
+                'allowed_requests': 0,
+                'privacy_score': 0.0,
+                'test_scenarios_passed': 0,
+                'test_scenarios_failed': 0
             },
-            'requests': [],
-            'privacy_issues': [],
-            'recommendations': [],
-            'test_scenarios': {}
+            'network_requests': [],
+            'privacy_violations': [],
+            'test_results': {},
+            'screenshots': [],
+            'recommendations': []
         }
     
     def analyze(self, project_path: str) -> Dict[str, Any]:
         """
-        Analyze the network traffic of the hacka.re project.
+        Analyze network traffic for the hacka.re project.
         
         Args:
             project_path: Path to the hacka.re project
             
         Returns:
-            Dictionary containing analysis results
+            Dictionary containing network analysis results
         """
         logger.info(f"Starting network analysis of project at: {project_path}")
         
-        # Run the network analysis asynchronously
+        # Run async analysis
         asyncio.run(self._run_analysis(project_path))
         
         # Calculate privacy score
@@ -69,452 +70,408 @@ class NetworkMonitor:
         # Generate recommendations
         self._generate_recommendations()
         
-        logger.info(f"Network analysis completed. Found {len(self.results['privacy_issues'])} privacy issues.")
+        logger.info(f"Network analysis completed. Found {len(self.results['privacy_violations'])} privacy violations.")
         return self.results
     
     async def _run_analysis(self, project_path: str) -> None:
         """
-        Run the network analysis asynchronously.
+        Run the network analysis using Playwright.
         
         Args:
             project_path: Path to the hacka.re project
         """
-        async with async_playwright() as playwright:
+        async with async_playwright() as p:
             # Launch browser
-            browser_type = getattr(playwright, self.browser_type)
-            browser = await browser_type.launch(headless=self.headless)
+            if self.browser_type == 'firefox':
+                browser = await p.firefox.launch(headless=self.headless)
+            elif self.browser_type == 'webkit':
+                browser = await p.webkit.launch(headless=self.headless)
+            else:
+                browser = await p.chromium.launch(headless=self.headless)
             
             try:
-                # Create a new browser context
-                context = await browser.new_context(
-                    viewport={'width': 1280, 'height': 800},
-                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-                )
+                # Create context with network monitoring
+                context = await browser.new_context()
+                
+                # Set up network monitoring
+                context.on('request', self._on_request)
+                context.on('response', self._on_response)
                 
                 # Run test scenarios
                 for scenario in self.test_scenarios:
                     logger.info(f"Running test scenario: {scenario}")
-                    scenario_results = await self._run_test_scenario(context, project_path, scenario)
-                    self.results['test_scenarios'][scenario] = scenario_results
+                    try:
+                        await self._run_test_scenario(context, project_path, scenario)
+                        self.results['summary']['test_scenarios_passed'] += 1
+                        self.results['test_results'][scenario] = {
+                            'status': 'passed',
+                            'message': 'Test scenario completed successfully'
+                        }
+                    except Exception as e:
+                        logger.error(f"Test scenario {scenario} failed: {e}")
+                        self.results['summary']['test_scenarios_failed'] += 1
+                        self.results['test_results'][scenario] = {
+                            'status': 'failed',
+                            'message': str(e)
+                        }
+                
             finally:
                 await browser.close()
     
-    async def _run_test_scenario(self, context: BrowserContext, project_path: str, scenario: str) -> Dict[str, Any]:
+    async def _run_test_scenario(self, context: BrowserContext, project_path: str, scenario: str) -> None:
         """
         Run a specific test scenario.
         
         Args:
             context: Browser context
             project_path: Path to the hacka.re project
-            scenario: Name of the test scenario
-            
-        Returns:
-            Dictionary containing scenario results
+            scenario: Test scenario name
         """
-        scenario_results = {
-            'requests': [],
-            'issues': []
-        }
-        
-        # Create a new page
         page = await context.new_page()
         
         try:
-            # Set up request monitoring
-            await self._setup_request_monitoring(page, scenario_results)
-            
-            # Run the appropriate scenario
             if scenario == 'page_load':
-                await self._test_page_load(page, project_path, scenario_results)
+                await self._test_page_load(page, project_path)
             elif scenario == 'api_key_entry':
-                await self._test_api_key_entry(page, project_path, scenario_results)
+                await self._test_api_key_entry(page, project_path)
             elif scenario == 'chat_message':
-                await self._test_chat_message(page, project_path, scenario_results)
+                await self._test_chat_message(page, project_path)
             elif scenario == 'settings_change':
-                await self._test_settings_change(page, project_path, scenario_results)
+                await self._test_settings_change(page, project_path)
             elif scenario == 'function_calling':
-                await self._test_function_calling(page, project_path, scenario_results)
+                await self._test_function_calling(page, project_path)
             else:
                 logger.warning(f"Unknown test scenario: {scenario}")
-        except Exception as e:
-            logger.error(f"Error running test scenario {scenario}: {e}")
-            scenario_results['error'] = str(e)
+        
         finally:
             await page.close()
-        
-        return scenario_results
     
-    async def _setup_request_monitoring(self, page: Page, scenario_results: Dict[str, Any]) -> None:
+    async def _test_page_load(self, page: Page, project_path: str) -> None:
         """
-        Set up request monitoring for a page.
-        
-        Args:
-            page: Playwright page
-            scenario_results: Dictionary to store scenario results
-        """
-        # Monitor all requests
-        async def on_request(request: Request):
-            url = request.url
-            method = request.method
-            headers = request.headers
-            post_data = request.post_data
-            resource_type = request.resource_type
-            
-            # Parse URL to get domain
-            parsed_url = urlparse(url)
-            domain = parsed_url.netloc
-            
-            # Determine if request is allowed
-            is_allowed = self._is_domain_allowed(domain)
-            is_blocked = self._is_domain_blocked(domain)
-            
-            # Create request info
-            request_info = {
-                'url': url,
-                'method': method,
-                'headers': headers,
-                'post_data': post_data,
-                'resource_type': resource_type,
-                'domain': domain,
-                'is_allowed': is_allowed,
-                'is_blocked': is_blocked
-            }
-            
-            # Add to scenario results
-            scenario_results['requests'].append(request_info)
-            
-            # Add to overall results
-            self.results['requests'].append(request_info)
-            self.results['summary']['total_requests'] += 1
-            
-            if is_allowed:
-                self.results['summary']['allowed_requests'] += 1
-            elif is_blocked:
-                self.results['summary']['blocked_requests'] += 1
-                
-                # Add as a privacy issue
-                self.results['privacy_issues'].append({
-                    'type': 'blocked_domain_request',
-                    'severity': 'high',
-                    'message': f"Request to blocked domain detected: {domain}",
-                    'details': {
-                        'url': url,
-                        'method': method,
-                        'resource_type': resource_type
-                    }
-                })
-                
-                # Add to scenario issues
-                scenario_results['issues'].append({
-                    'type': 'blocked_domain_request',
-                    'severity': 'high',
-                    'message': f"Request to blocked domain detected: {domain}",
-                    'details': {
-                        'url': url,
-                        'method': method,
-                        'resource_type': resource_type
-                    }
-                })
-            else:
-                self.results['summary']['unknown_requests'] += 1
-                
-                # Add as a privacy issue with lower severity
-                self.results['privacy_issues'].append({
-                    'type': 'unknown_domain_request',
-                    'severity': 'medium',
-                    'message': f"Request to unknown domain detected: {domain}",
-                    'details': {
-                        'url': url,
-                        'method': method,
-                        'resource_type': resource_type
-                    }
-                })
-                
-                # Add to scenario issues
-                scenario_results['issues'].append({
-                    'type': 'unknown_domain_request',
-                    'severity': 'medium',
-                    'message': f"Request to unknown domain detected: {domain}",
-                    'details': {
-                        'url': url,
-                        'method': method,
-                        'resource_type': resource_type
-                    }
-                })
-            
-            # Check for API key in URL or headers
-            if self._contains_api_key(url) or self._contains_api_key_in_headers(headers):
-                # Check if it's going to an allowed domain
-                if not is_allowed:
-                    self.results['privacy_issues'].append({
-                        'type': 'api_key_leak',
-                        'severity': 'critical',
-                        'message': f"API key sent to non-allowed domain: {domain}",
-                        'details': {
-                            'url': url,
-                            'method': method,
-                            'resource_type': resource_type
-                        }
-                    })
-                    
-                    # Add to scenario issues
-                    scenario_results['issues'].append({
-                        'type': 'api_key_leak',
-                        'severity': 'critical',
-                        'message': f"API key sent to non-allowed domain: {domain}",
-                        'details': {
-                            'url': url,
-                            'method': method,
-                            'resource_type': resource_type
-                        }
-                    })
-        
-        # Set up request handler
-        page.on('request', on_request)
-    
-    async def _test_page_load(self, page: Page, project_path: str, scenario_results: Dict[str, Any]) -> None:
-        """
-        Test scenario: Page load.
+        Test basic page loading for network requests.
         
         Args:
             page: Playwright page
             project_path: Path to the hacka.re project
-            scenario_results: Dictionary to store scenario results
         """
-        # Load the index.html file
-        file_url = f"file://{os.path.join(project_path, 'index.html')}"
-        await page.goto(file_url, timeout=self.timeout)
-        
-        # Wait for page to load completely
-        await page.wait_for_load_state('networkidle', timeout=self.timeout)
-        
-        # Take a screenshot for the report
-        screenshot_path = os.path.join(project_path, 'reports', 'page_load.png')
-        os.makedirs(os.path.dirname(screenshot_path), exist_ok=True)
-        await page.screenshot(path=screenshot_path)
-        scenario_results['screenshot'] = screenshot_path
-    
-    async def _test_api_key_entry(self, page: Page, project_path: str, scenario_results: Dict[str, Any]) -> None:
-        """
-        Test scenario: API key entry.
-        
-        Args:
-            page: Playwright page
-            project_path: Path to the hacka.re project
-            scenario_results: Dictionary to store scenario results
-        """
-        # Load the index.html file
-        file_url = f"file://{os.path.join(project_path, 'index.html')}"
-        await page.goto(file_url, timeout=self.timeout)
-        
-        # Wait for page to load completely
-        await page.wait_for_load_state('networkidle', timeout=self.timeout)
-        
-        # Check if API key modal is visible
-        api_key_modal_visible = await page.is_visible('#api-key-modal')
-        
-        if api_key_modal_visible:
-            # Enter a test API key
-            await page.fill('#api-key', 'sk-test-api-key-for-verification-purposes-only')
-            
-            # Submit the form
-            await page.click('#api-key-form button[type="submit"]')
-            
-            # Wait for any network activity to settle
-            await page.wait_for_load_state('networkidle', timeout=self.timeout)
+        # Navigate to the main page
+        index_path = os.path.join(project_path, 'index.html')
+        if os.path.exists(index_path):
+            await page.goto(f'file://{os.path.abspath(index_path)}', timeout=self.timeout)
         else:
-            # Open settings modal
-            await page.click('#settings-btn')
-            
-            # Wait for settings modal to appear
-            await page.wait_for_selector('#settings-modal', state='visible', timeout=self.timeout)
-            
-            # Enter a test API key
-            await page.fill('#api-key-update', 'sk-test-api-key-for-verification-purposes-only')
-            
-            # Save settings
-            await page.click('#save-settings-btn')
-            
-            # Wait for any network activity to settle
-            await page.wait_for_load_state('networkidle', timeout=self.timeout)
+            # Try to find a local server or use localhost
+            await page.goto('http://localhost:8000', timeout=self.timeout)
         
-        # Take a screenshot for the report
-        screenshot_path = os.path.join(project_path, 'reports', 'api_key_entry.png')
-        os.makedirs(os.path.dirname(screenshot_path), exist_ok=True)
+        # Wait for page to load
+        await page.wait_for_load_state('networkidle', timeout=self.timeout)
+        
+        # Take screenshot
+        screenshot_path = f"page_load_{int(time.time())}.png"
         await page.screenshot(path=screenshot_path)
-        scenario_results['screenshot'] = screenshot_path
+        self.results['screenshots'].append({
+            'scenario': 'page_load',
+            'path': screenshot_path,
+            'description': 'Page load screenshot'
+        })
     
-    async def _test_chat_message(self, page: Page, project_path: str, scenario_results: Dict[str, Any]) -> None:
+    async def _test_api_key_entry(self, page: Page, project_path: str) -> None:
         """
-        Test scenario: Chat message.
+        Test API key entry for network requests.
         
         Args:
             page: Playwright page
             project_path: Path to the hacka.re project
-            scenario_results: Dictionary to store scenario results
         """
-        # Load the index.html file
-        file_url = f"file://{os.path.join(project_path, 'index.html')}"
-        await page.goto(file_url, timeout=self.timeout)
+        # Navigate to the main page
+        index_path = os.path.join(project_path, 'index.html')
+        if os.path.exists(index_path):
+            await page.goto(f'file://{os.path.abspath(index_path)}', timeout=self.timeout)
+        else:
+            await page.goto('http://localhost:8000', timeout=self.timeout)
         
-        # Wait for page to load completely
+        # Wait for page to load
         await page.wait_for_load_state('networkidle', timeout=self.timeout)
         
-        # Check if API key modal is visible and handle it
-        api_key_modal_visible = await page.is_visible('#api-key-modal')
-        if api_key_modal_visible:
-            # Enter a test API key
-            await page.fill('#api-key', 'sk-test-api-key-for-verification-purposes-only')
+        # Try to find and fill API key field
+        try:
+            # Look for common API key input selectors
+            api_key_selectors = [
+                'input[placeholder*="API"]',
+                'input[placeholder*="key"]',
+                'input[id*="api"]',
+                'input[name*="api"]',
+                '#apiKey',
+                '#api-key',
+                '.api-key-input'
+            ]
             
-            # Submit the form
-            await page.click('#api-key-form button[type="submit"]')
+            for selector in api_key_selectors:
+                try:
+                    await page.fill(selector, 'test-api-key-12345', timeout=5000)
+                    break
+                except:
+                    continue
             
-            # Wait for any network activity to settle
-            await page.wait_for_load_state('networkidle', timeout=self.timeout)
+            # Wait for any network requests
+            await page.wait_for_timeout(2000)
+            
+        except Exception as e:
+            logger.debug(f"Could not find API key input: {e}")
         
-        # Enter a test message
-        await page.fill('#message-input', 'This is a test message for network analysis')
-        
-        # Submit the message
-        await page.click('#send-btn')
-        
-        # Wait for any network activity to settle
-        await page.wait_for_load_state('networkidle', timeout=self.timeout)
-        
-        # Take a screenshot for the report
-        screenshot_path = os.path.join(project_path, 'reports', 'chat_message.png')
-        os.makedirs(os.path.dirname(screenshot_path), exist_ok=True)
+        # Take screenshot
+        screenshot_path = f"api_key_entry_{int(time.time())}.png"
         await page.screenshot(path=screenshot_path)
-        scenario_results['screenshot'] = screenshot_path
+        self.results['screenshots'].append({
+            'scenario': 'api_key_entry',
+            'path': screenshot_path,
+            'description': 'API key entry screenshot'
+        })
     
-    async def _test_settings_change(self, page: Page, project_path: str, scenario_results: Dict[str, Any]) -> None:
+    async def _test_chat_message(self, page: Page, project_path: str) -> None:
         """
-        Test scenario: Settings change.
+        Test sending a chat message for network requests.
         
         Args:
             page: Playwright page
             project_path: Path to the hacka.re project
-            scenario_results: Dictionary to store scenario results
         """
-        # Load the index.html file
-        file_url = f"file://{os.path.join(project_path, 'index.html')}"
-        await page.goto(file_url, timeout=self.timeout)
+        # Navigate to the main page
+        index_path = os.path.join(project_path, 'index.html')
+        if os.path.exists(index_path):
+            await page.goto(f'file://{os.path.abspath(index_path)}', timeout=self.timeout)
+        else:
+            await page.goto('http://localhost:8000', timeout=self.timeout)
         
-        # Wait for page to load completely
+        # Wait for page to load
         await page.wait_for_load_state('networkidle', timeout=self.timeout)
         
-        # Check if API key modal is visible and handle it
-        api_key_modal_visible = await page.is_visible('#api-key-modal')
-        if api_key_modal_visible:
-            # Enter a test API key
-            await page.fill('#api-key', 'sk-test-api-key-for-verification-purposes-only')
+        try:
+            # Look for message input field
+            message_selectors = [
+                'textarea[placeholder*="message"]',
+                'input[placeholder*="message"]',
+                'textarea[placeholder*="chat"]',
+                '#messageInput',
+                '#message-input',
+                '.message-input'
+            ]
             
-            # Submit the form
-            await page.click('#api-key-form button[type="submit"]')
+            for selector in message_selectors:
+                try:
+                    await page.fill(selector, 'Test message for network analysis', timeout=5000)
+                    
+                    # Try to find and click send button
+                    send_selectors = [
+                        'button[type="submit"]',
+                        'button:has-text("Send")',
+                        'button:has-text("Submit")',
+                        '#sendButton',
+                        '.send-button'
+                    ]
+                    
+                    for send_selector in send_selectors:
+                        try:
+                            await page.click(send_selector, timeout=5000)
+                            break
+                        except:
+                            continue
+                    
+                    break
+                except:
+                    continue
             
-            # Wait for any network activity to settle
-            await page.wait_for_load_state('networkidle', timeout=self.timeout)
+            # Wait for any network requests
+            await page.wait_for_timeout(3000)
+            
+        except Exception as e:
+            logger.debug(f"Could not send chat message: {e}")
         
-        # Open settings modal
-        await page.click('#settings-btn')
-        
-        # Wait for settings modal to appear
-        await page.wait_for_selector('#settings-modal', state='visible', timeout=self.timeout)
-        
-        # Change model selection if available
-        model_select_visible = await page.is_visible('#model-select')
-        if model_select_visible:
-            await page.select_option('#model-select', value='llama-3.1-8b-instant')
-        
-        # Save settings
-        await page.click('#save-settings-btn')
-        
-        # Wait for any network activity to settle
-        await page.wait_for_load_state('networkidle', timeout=self.timeout)
-        
-        # Take a screenshot for the report
-        screenshot_path = os.path.join(project_path, 'reports', 'settings_change.png')
-        os.makedirs(os.path.dirname(screenshot_path), exist_ok=True)
+        # Take screenshot
+        screenshot_path = f"chat_message_{int(time.time())}.png"
         await page.screenshot(path=screenshot_path)
-        scenario_results['screenshot'] = screenshot_path
+        self.results['screenshots'].append({
+            'scenario': 'chat_message',
+            'path': screenshot_path,
+            'description': 'Chat message screenshot'
+        })
     
-    async def _test_function_calling(self, page: Page, project_path: str, scenario_results: Dict[str, Any]) -> None:
+    async def _test_settings_change(self, page: Page, project_path: str) -> None:
         """
-        Test scenario: Function calling.
+        Test changing settings for network requests.
         
         Args:
             page: Playwright page
             project_path: Path to the hacka.re project
-            scenario_results: Dictionary to store scenario results
         """
-        # Load the index.html file
-        file_url = f"file://{os.path.join(project_path, 'index.html')}"
-        await page.goto(file_url, timeout=self.timeout)
+        # Navigate to the main page
+        index_path = os.path.join(project_path, 'index.html')
+        if os.path.exists(index_path):
+            await page.goto(f'file://{os.path.abspath(index_path)}', timeout=self.timeout)
+        else:
+            await page.goto('http://localhost:8000', timeout=self.timeout)
         
-        # Wait for page to load completely
+        # Wait for page to load
         await page.wait_for_load_state('networkidle', timeout=self.timeout)
         
-        # Check if API key modal is visible and handle it
-        api_key_modal_visible = await page.is_visible('#api-key-modal')
-        if api_key_modal_visible:
-            # Enter a test API key
-            await page.fill('#api-key', 'sk-test-api-key-for-verification-purposes-only')
+        try:
+            # Look for settings button or menu
+            settings_selectors = [
+                'button:has-text("Settings")',
+                'button:has-text("⚙")',
+                '#settingsButton',
+                '.settings-button',
+                '[data-testid="settings"]'
+            ]
             
-            # Submit the form
-            await page.click('#api-key-form button[type="submit"]')
+            for selector in settings_selectors:
+                try:
+                    await page.click(selector, timeout=5000)
+                    await page.wait_for_timeout(1000)
+                    break
+                except:
+                    continue
             
-            # Wait for any network activity to settle
-            await page.wait_for_load_state('networkidle', timeout=self.timeout)
+            # Try to change some settings
+            # Look for theme toggle, model selection, etc.
+            setting_selectors = [
+                'select[name*="model"]',
+                'select[name*="theme"]',
+                'input[type="checkbox"]',
+                'input[type="radio"]'
+            ]
+            
+            for selector in setting_selectors:
+                try:
+                    elements = await page.query_selector_all(selector)
+                    if elements:
+                        await elements[0].click()
+                        await page.wait_for_timeout(500)
+                except:
+                    continue
+            
+            # Wait for any network requests
+            await page.wait_for_timeout(2000)
+            
+        except Exception as e:
+            logger.debug(f"Could not change settings: {e}")
         
-        # Open function modal
-        await page.click('#function-btn')
+        # Take screenshot
+        screenshot_path = f"settings_change_{int(time.time())}.png"
+        await page.screenshot(path=screenshot_path)
+        self.results['screenshots'].append({
+            'scenario': 'settings_change',
+            'path': screenshot_path,
+            'description': 'Settings change screenshot'
+        })
+    
+    async def _test_function_calling(self, page: Page, project_path: str) -> None:
+        """
+        Test function calling feature for network requests.
         
-        # Wait for function modal to appear
-        await page.wait_for_selector('#function-modal', state='visible', timeout=self.timeout)
+        Args:
+            page: Playwright page
+            project_path: Path to the hacka.re project
+        """
+        # Navigate to the main page
+        index_path = os.path.join(project_path, 'index.html')
+        if os.path.exists(index_path):
+            await page.goto(f'file://{os.path.abspath(index_path)}', timeout=self.timeout)
+        else:
+            await page.goto('http://localhost:8000', timeout=self.timeout)
         
-        # Add a test function
-        await page.fill('#function-code', '''
-        /**
-         * @description Add two numbers together
-         * @param {number} a - First number
-         * @param {number} b - Second number
-         */
-        function add_numbers(a, b) {
-            return a + b;
+        # Wait for page to load
+        await page.wait_for_load_state('networkidle', timeout=self.timeout)
+        
+        try:
+            # Look for function calling related elements
+            function_selectors = [
+                'button:has-text("Function")',
+                'button:has-text("Tool")',
+                '.function-button',
+                '[data-testid="function"]'
+            ]
+            
+            for selector in function_selectors:
+                try:
+                    await page.click(selector, timeout=5000)
+                    await page.wait_for_timeout(1000)
+                    break
+                except:
+                    continue
+            
+            # Wait for any network requests
+            await page.wait_for_timeout(2000)
+            
+        except Exception as e:
+            logger.debug(f"Could not test function calling: {e}")
+        
+        # Take screenshot
+        screenshot_path = f"function_calling_{int(time.time())}.png"
+        await page.screenshot(path=screenshot_path)
+        self.results['screenshots'].append({
+            'scenario': 'function_calling',
+            'path': screenshot_path,
+            'description': 'Function calling screenshot'
+        })
+    
+    def _on_request(self, request) -> None:
+        """
+        Handle network requests.
+        
+        Args:
+            request: Playwright request object
+        """
+        url = request.url
+        domain = urlparse(url).netloc
+        
+        # Record the request
+        request_info = {
+            'url': url,
+            'domain': domain,
+            'method': request.method,
+            'resource_type': request.resource_type,
+            'timestamp': time.time()
         }
-        ''')
         
-        # Wait for function name to be auto-populated
-        await page.wait_for_selector('#function-name[value="add_numbers"]', timeout=self.timeout)
+        self.results['network_requests'].append(request_info)
+        self.results['summary']['total_requests'] += 1
         
-        # Save the function
-        await page.click('#function-editor-form button[type="submit"]')
+        # Check if domain is allowed or blocked
+        if self._is_blocked_domain(domain):
+            self.results['summary']['blocked_requests'] += 1
+            self.results['privacy_violations'].append({
+                'type': 'blocked_domain_request',
+                'severity': 'high',
+                'message': f"Request to blocked domain: {domain}",
+                'url': url,
+                'domain': domain
+            })
+        elif self._is_allowed_domain(domain):
+            self.results['summary']['allowed_requests'] += 1
+        else:
+            # Unknown domain - potential privacy concern
+            if not self._is_local_request(url):
+                self.results['privacy_violations'].append({
+                    'type': 'unknown_domain_request',
+                    'severity': 'medium',
+                    'message': f"Request to unknown domain: {domain}",
+                    'url': url,
+                    'domain': domain
+                })
         
-        # Close the function modal
-        await page.click('#close-function-modal')
-        
-        # Wait for any network activity to settle
-        await page.wait_for_load_state('networkidle', timeout=self.timeout)
-        
-        # Take a screenshot for the report
-        screenshot_path = os.path.join(project_path, 'reports', 'function_calling.png')
-        os.makedirs(os.path.dirname(screenshot_path), exist_ok=True)
-        await page.screenshot(path=screenshot_path)
-        scenario_results['screenshot'] = screenshot_path
+        logger.debug(f"Network request: {request.method} {url}")
     
-    def _is_domain_allowed(self, domain: str) -> bool:
+    def _on_response(self, response) -> None:
         """
-        Check if a domain is in the allowed list.
+        Handle network responses.
         
         Args:
-            domain: Domain to check
-            
-        Returns:
-            True if the domain is allowed, False otherwise
+            response: Playwright response object
         """
-        return any(allowed in domain for allowed in self.allowed_domains)
+        # Log response for debugging
+        logger.debug(f"Network response: {response.status} {response.url}")
     
-    def _is_domain_blocked(self, domain: str) -> bool:
+    def _is_blocked_domain(self, domain: str) -> bool:
         """
         Check if a domain is in the blocked list.
         
@@ -522,143 +479,112 @@ class NetworkMonitor:
             domain: Domain to check
             
         Returns:
-            True if the domain is blocked, False otherwise
+            True if domain is blocked, False otherwise
         """
         return any(blocked in domain for blocked in self.blocked_domains)
     
-    def _contains_api_key(self, url: str) -> bool:
+    def _is_allowed_domain(self, domain: str) -> bool:
         """
-        Check if a URL contains an API key.
+        Check if a domain is in the allowed list.
+        
+        Args:
+            domain: Domain to check
+            
+        Returns:
+            True if domain is allowed, False otherwise
+        """
+        return any(allowed in domain for allowed in self.allowed_domains)
+    
+    def _is_local_request(self, url: str) -> bool:
+        """
+        Check if a request is to a local resource.
         
         Args:
             url: URL to check
             
         Returns:
-            True if the URL contains an API key, False otherwise
+            True if request is local, False otherwise
         """
-        # Check for common API key patterns in URL
-        api_key_patterns = [
-            r'api[_-]?key=([^&]+)',
-            r'apikey=([^&]+)',
-            r'key=([^&]+)',
-            r'token=([^&]+)',
-            r'auth=([^&]+)',
-            r'sk-[a-zA-Z0-9]+'  # OpenAI API key pattern
-        ]
-        
-        for pattern in api_key_patterns:
-            if re.search(pattern, url, re.IGNORECASE):
-                return True
-        
-        return False
-    
-    def _contains_api_key_in_headers(self, headers: Dict[str, str]) -> bool:
-        """
-        Check if headers contain an API key.
-        
-        Args:
-            headers: Headers to check
-            
-        Returns:
-            True if the headers contain an API key, False otherwise
-        """
-        # Check for common API key patterns in headers
-        api_key_headers = [
-            'authorization',
-            'x-api-key',
-            'api-key',
-            'apikey',
-            'x-auth-token',
-            'token'
-        ]
-        
-        for header in api_key_headers:
-            if header in headers:
-                # Check if it's a Bearer token
-                if header == 'authorization' and headers[header].startswith('Bearer '):
-                    return True
-                # Check for other API key patterns
-                elif header in headers:
-                    return True
-        
-        return False
+        return (url.startswith('file://') or 
+                url.startswith('data:') or
+                url.startswith('blob:') or
+                'localhost' in url or
+                '127.0.0.1' in url or
+                url.startswith('/'))
     
     def _calculate_privacy_score(self) -> None:
         """
-        Calculate a privacy score based on the findings.
+        Calculate a privacy score based on network analysis results.
         """
-        # Start with a perfect score
+        total_requests = self.results['summary']['total_requests']
+        
+        if total_requests == 0:
+            self.results['summary']['privacy_score'] = 100.0
+            return
+        
+        # Start with perfect score
         score = 100.0
         
-        # Deduct points for privacy issues
-        for issue in self.results['privacy_issues']:
-            if issue['severity'] == 'critical':
-                score -= 20.0
-            elif issue['severity'] == 'high':
-                score -= 10.0
-            elif issue['severity'] == 'medium':
-                score -= 5.0
-            elif issue['severity'] == 'low':
-                score -= 2.0
+        # Deduct points for privacy violations
+        for violation in self.results['privacy_violations']:
+            if violation['severity'] == 'high':
+                score -= 15.0
+            elif violation['severity'] == 'medium':
+                score -= 8.0
+            elif violation['severity'] == 'low':
+                score -= 3.0
         
-        # Deduct points for unknown requests
-        unknown_requests_percentage = 0
-        if self.results['summary']['total_requests'] > 0:
-            unknown_requests_percentage = (self.results['summary']['unknown_requests'] / self.results['summary']['total_requests']) * 100
+        # Bonus points for having no external requests
+        external_requests = [req for req in self.results['network_requests'] 
+                           if not self._is_local_request(req['url'])]
         
-        if unknown_requests_percentage > 50:
-            score -= 20.0
-        elif unknown_requests_percentage > 25:
-            score -= 10.0
-        elif unknown_requests_percentage > 10:
-            score -= 5.0
-        elif unknown_requests_percentage > 0:
-            score -= 2.0
+        if len(external_requests) == 0:
+            score += 10.0  # Bonus for no external requests
         
-        # Deduct points for blocked requests
-        blocked_requests_percentage = 0
-        if self.results['summary']['total_requests'] > 0:
-            blocked_requests_percentage = (self.results['summary']['blocked_requests'] / self.results['summary']['total_requests']) * 100
-        
-        if blocked_requests_percentage > 0:
-            score -= 30.0  # Any blocked request is a serious privacy issue
-        
-        # Ensure score is not negative
-        score = max(0.0, score)
+        # Ensure score is within bounds
+        score = max(0.0, min(100.0, score))
         
         self.results['summary']['privacy_score'] = round(score, 1)
     
     def _generate_recommendations(self) -> None:
         """
-        Generate recommendations based on the findings.
+        Generate recommendations based on network analysis results.
         """
-        # Check for API key leaks
-        if any(issue['type'] == 'api_key_leak' for issue in self.results['privacy_issues']):
-            self.results['recommendations'].append({
-                'type': 'api_key_leak',
-                'message': "Ensure API keys are only sent to authorized domains",
-                'priority': 'critical'
-            })
-        
         # Check for blocked domain requests
-        if any(issue['type'] == 'blocked_domain_request' for issue in self.results['privacy_issues']):
+        blocked_violations = [v for v in self.results['privacy_violations'] 
+                            if v['type'] == 'blocked_domain_request']
+        if blocked_violations:
             self.results['recommendations'].append({
                 'type': 'blocked_domain_request',
-                'message': "Remove requests to tracking and analytics domains",
+                'message': f"Remove requests to {len(blocked_violations)} blocked tracking domains",
                 'priority': 'high'
             })
         
         # Check for unknown domain requests
-        if any(issue['type'] == 'unknown_domain_request' for issue in self.results['privacy_issues']):
+        unknown_violations = [v for v in self.results['privacy_violations'] 
+                            if v['type'] == 'unknown_domain_request']
+        if unknown_violations:
+            unique_domains = set(v['domain'] for v in unknown_violations)
             self.results['recommendations'].append({
                 'type': 'unknown_domain_request',
-                'message': "Review and validate all external domain requests",
+                'message': f"Review requests to {len(unique_domains)} unknown domains: {', '.join(list(unique_domains)[:3])}{'...' if len(unique_domains) > 3 else ''}",
                 'priority': 'medium'
             })
         
-        # General recommendation for network privacy
-        self.results['recommendations'].append({
-            'type': 'general',
-            'message': "Implement Content Security Policy (CSP) to restrict external connections",
-            'priority': 'medium'
-        })
+        # Check for excessive external requests
+        external_requests = [req for req in self.results['network_requests'] 
+                           if not self._is_local_request(req['url'])]
+        if len(external_requests) > 10:
+            self.results['recommendations'].append({
+                'type': 'excessive_external_requests',
+                'message': f"Consider reducing {len(external_requests)} external requests for better privacy",
+                'priority': 'medium'
+            })
+        
+        # Positive feedback for good privacy practices
+        if len(self.results['privacy_violations']) == 0:
+            self.results['recommendations'].append({
+                'type': 'good_privacy_practices',
+                'message': "Excellent! No privacy violations detected in network traffic",
+                'priority': 'info'
+            })

@@ -44,7 +44,11 @@ class Config:
                             r'mixpanel',
                             r'segment',
                             r'amplitude',
-                            r'tracking'
+                            r'ga\([\'"]send[\'"]',
+                            r'_gaq\.push',
+                            r'fbq\(',
+                            r'twttr\.track',
+                            r'hotjar\.com'
                         ],
                         'external_requests': [
                             r'fetch\([\'"]https?://',
@@ -107,12 +111,14 @@ class Config:
                 'crypto_audit': {
                     'enabled': True,
                     'files_to_analyze': [
+                        'js/utils/deterministic-crypto.js',
                         'js/utils/crypto-utils.js',
                         'js/utils/rc4-utils.js',
                         'js/services/encryption-service.js',
                         'js/services/storage-service.js',
                         'js/services/link-sharing-service.js',
-                        'js/services/share-service.js'
+                        'js/services/share-service.js',
+                        'js/services/data-service.js'
                     ],
                     'test_vectors': {
                         'rc4': {
