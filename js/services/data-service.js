@@ -140,7 +140,7 @@ window.DataService = (function() {
             STORAGE_KEYS.BASE_URL, 
             STORAGE_KEYS.BASE_URL, 
             saveBaseUrl
-        ) || 'https://api.groq.com/openai/v1';
+        ) || 'https://api.openai.com/v1';
     }
     
     /**
