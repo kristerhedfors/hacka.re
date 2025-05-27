@@ -13,9 +13,9 @@
     <!-- Markdown parser (local) -->
     <script src="../lib/marked/marked.min.js"></script>
     <script src="../lib/dompurify/purify.min.js"></script>
-    <!-- Highlight.js for syntax highlighting -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <!-- Highlight.js for syntax highlighting (local) -->
+    <link rel="stylesheet" href="../lib/highlight.js/github.min.css">
+    <script src="../lib/highlight.js/highlight.min.js"></script>
     <!-- Code popup script -->
     <script src="js/code-popup.js"></script>
     <style>
@@ -274,8 +274,8 @@
 
                 <p>
                     Few dependencies limits the attack surface and thus increases the resilince to various attacks. We only depend on `marked` for rendering markdown,
-                    `dompurify` to prevent cross-site scripting, `tweetnacl` for mininmal-complexity strong in-browser encryption, and `qrcode` to make qr codes
-                    out of these self-contained GPTs links. Everything else including all of the UI components and logic have been 99%+ vibe-coded using
+                    `dompurify` to prevent cross-site scripting, `tweetnacl` for mininmal-complexity strong in-browser encryption, `qrcode` to make qr codes
+                    out of these self-contained GPTs links, and `highlight.js` for syntax highlighting of code blocks. Everything else including all of the UI components and logic have been 99%+ vibe-coded using
                     the Claude 3.7 Sonnet model. hacka.re is by design pretty bare-bones but allows for arbitrary expansion of purpose-specific features through further
                     LLM-assisted development with limited time and effort investments.</p>
 

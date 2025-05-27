@@ -18,9 +18,12 @@
     <script src="lib/dompurify/purify.min.js"></script>
     <!-- TweetNaCl for encryption (local) -->
     <script src="lib/tweetnacl/nacl-fast.min.js"></script>
-    <script src="lib/tweetnacl/nacl-util.min.js"></script
+    <script src="lib/tweetnacl/nacl-util.min.js"></script>
     <!-- QRCode.js for QR code generation (local) -->
     <script src="lib/qrcode/qrcode.min.js"></script>
+    <!-- Highlight.js for syntax highlighting (local) -->
+    <link rel="stylesheet" href="lib/highlight.js/github.min.css">
+    <script src="lib/highlight.js/highlight.min.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -522,5 +525,23 @@ async function getCurrentTimeInBerlin() {
     <script src="js/button-tooltips.js"></script>
     <script src="js/mobile-utils.js"></script>
     <script src="js/modal-effects.js"></script>
+    <script>
+        // Initialize highlight.js when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof hljs !== 'undefined') {
+                // Configure highlight.js
+                hljs.configure({
+                    ignoreUnescapedHTML: true
+                });
+                
+                // Highlight any existing code blocks
+                hljs.highlightAll();
+                
+                console.log('Highlight.js initialized successfully');
+            } else {
+                console.warn('Highlight.js not loaded');
+            }
+        });
+    </script>
 </body>
 </html>
