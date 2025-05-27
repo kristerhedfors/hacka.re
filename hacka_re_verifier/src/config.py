@@ -34,7 +34,7 @@ class Config:
                 'static_analysis': {
                     'enabled': True,
                     'files_to_analyze': ['*.js', '*.html', '*.css'],
-                    'exclude_dirs': ['node_modules', 'dist', 'build', '_venv'],
+                    'exclude_dirs': ['node_modules', 'dist', 'build', '_venv', 'lib', 'hacka_re_verifier/reports', 'hacka_re_verifier/test_reports'],
                     'patterns': {
                         'tracking_code': [
                             r'google-analytics',
