@@ -32,7 +32,25 @@ window.UIUtils = (function() {
             
             // Uses marked.js to render markdown
             // DOMPurify is used to sanitize the HTML
-            return DOMPurify.sanitize(marked.parse(text));
+            const htmlContent = DOMPurify.sanitize(marked.parse(text));
+            
+            // Apply syntax highlighting if highlight.js is available
+            if (typeof hljs !== 'undefined') {
+                // Create a temporary container to apply highlighting
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = htmlContent;
+                
+                // Find all code blocks and apply syntax highlighting
+                const codeBlocks = tempDiv.querySelectorAll('pre code');
+                codeBlocks.forEach(block => {
+                    // Apply syntax highlighting
+                    hljs.highlightElement(block);
+                });
+                
+                return tempDiv.innerHTML;
+            }
+            
+            return htmlContent;
         } catch (e) {
             console.error('Error rendering markdown:', e);
             // Fallback to simple HTML escaping if markdown rendering fails

@@ -217,15 +217,17 @@ The static analysis module examines JavaScript code for security vulnerabilities
 
 | Feature | Status | Description |
 |---------|--------|-------------|
-| JavaScript Code Analysis | ✅ Implemented | Parses and analyzes JavaScript code using esprima |
-| HTML Analysis | ✅ Implemented | Examines HTML files for script and link tags |
+| JavaScript Code Analysis | ✅ Implemented | Parses and analyzes JavaScript code using esprima with improved AST traversal |
+| HTML Analysis | ✅ Implemented | Examines HTML files for script and link tags, excludes test files |
 | CSS Analysis | ✅ Implemented | Checks CSS files for external resources |
-| Eval Usage Detection | ✅ Implemented | Identifies potentially dangerous eval() calls |
-| External API Call Detection | ✅ Implemented | Finds calls to external APIs and services |
+| Eval Usage Detection | ✅ Implemented | Identifies potentially dangerous eval() calls via AST analysis |
+| External API Call Detection | ✅ Implemented | Finds calls to external APIs and services with context filtering |
 | Hardcoded Secrets Detection | ✅ Implemented | Locates hardcoded API keys and secrets |
-| Pattern Matching | ✅ Implemented | Uses regex patterns to identify security issues |
-| Security Scoring | ✅ Implemented | Calculates a security score based on findings |
+| Pattern Matching | ✅ Implemented | Uses regex patterns with confidence scoring |
+| Security Scoring | ✅ Implemented | Calculates weighted security score based on findings and confidence |
 | Recommendation Generation | ✅ Implemented | Provides actionable recommendations |
+| Error Handling | ✅ Implemented | Graceful handling of JavaScript parsing failures |
+| False Positive Filtering | ✅ Implemented | Context-aware filtering to reduce irrelevant warnings |
 
 ### Network Analysis
 
