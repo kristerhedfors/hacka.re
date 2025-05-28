@@ -59,15 +59,15 @@ window.NamespaceService = (function() {
                 usingFallbackForMasterKey = true;
             }
             
-            // Debug logging
-            console.log('[CRYPTO DEBUG] Storing namespace data:', {
-                namespaceId: namespaceId,
-                usingSessionKey: !!sessionKey,
-                encryptionKeyType: sessionKey ? 'SESSION_KEY' : 'NAMESPACE_HASH',
-                encryptionKeyLength: encryptionKey.length,
-                namespaceHashLength: namespaceHash.length,
-                usingFallbackForMasterKey: usingFallbackForMasterKey
-            });
+            // Debug logging disabled
+            // console.log('[CRYPTO DEBUG] Storing namespace data:', {
+            //     namespaceId: namespaceId,
+            //     usingSessionKey: !!sessionKey,
+            //     encryptionKeyType: sessionKey ? 'SESSION_KEY' : 'NAMESPACE_HASH',
+            //     encryptionKeyLength: encryptionKey.length,
+            //     namespaceHashLength: namespaceHash.length,
+            //     usingFallbackForMasterKey: usingFallbackForMasterKey
+            // });
             
             // Add a system message if available
             if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
@@ -86,12 +86,12 @@ window.NamespaceService = (function() {
             // Store the master key in a separate entry
             const masterKeyStorageKey = CryptoUtils.getMasterKeyStorageKey(namespaceId);
             
-            // Debug logging for master key encryption
-            console.log('[CRYPTO DEBUG] Storing master key:', {
-                masterKeyStorageKey: masterKeyStorageKey,
-                usingSessionKey: !!sessionKey,
-                encryptionKeyType: sessionKey ? 'SESSION_KEY' : 'NAMESPACE_HASH'
-            });
+            // Debug logging for master key encryption disabled
+            // console.log('[CRYPTO DEBUG] Storing master key:', {
+            //     masterKeyStorageKey: masterKeyStorageKey,
+            //     usingSessionKey: !!sessionKey,
+            //     encryptionKeyType: sessionKey ? 'SESSION_KEY' : 'NAMESPACE_HASH'
+            // });
             
             // Add a system message for master key encryption
             if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
@@ -120,15 +120,15 @@ window.NamespaceService = (function() {
             const masterKeyStorageKey = CryptoUtils.getMasterKeyStorageKey(namespaceId);
             const encryptedMasterKey = localStorage.getItem(masterKeyStorageKey);
             
-            // Debug logging
-            console.log('[CRYPTO DEBUG] Getting namespace master key:', {
-                namespaceId: namespaceId,
-                masterKeyStorageKey: masterKeyStorageKey,
-                hasEncryptedMasterKey: !!encryptedMasterKey
-            });
+            // Debug logging disabled
+            // console.log('[CRYPTO DEBUG] Getting namespace master key:', {
+            //     namespaceId: namespaceId,
+            //     masterKeyStorageKey: masterKeyStorageKey,
+            //     hasEncryptedMasterKey: !!encryptedMasterKey
+            // });
             
             if (!encryptedMasterKey) {
-                console.log(`[CRYPTO DEBUG] No encrypted master key found for ${namespaceId}`);
+                // console.log(`[CRYPTO DEBUG] No encrypted master key found for ${namespaceId}`);
                 
                 // Add a system message if available
                 if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
@@ -144,12 +144,12 @@ window.NamespaceService = (function() {
                 sessionKey = window.ShareManager.getSessionKey();
             }
             
-            // Debug logging
-            console.log('[CRYPTO DEBUG] Decrypting master key:', {
-                hasSessionKey: !!sessionKey,
-                sessionKeyLength: sessionKey ? sessionKey.length : 0,
-                namespaceHashLength: namespaceHash.length
-            });
+            // Debug logging disabled
+            // console.log('[CRYPTO DEBUG] Decrypting master key:', {
+            //     hasSessionKey: !!sessionKey,
+            //     sessionKeyLength: sessionKey ? sessionKey.length : 0,
+            //     namespaceHashLength: namespaceHash.length
+            // });
             
             let masterKey = null;
             let decryptionMethod = null;
@@ -165,11 +165,11 @@ window.NamespaceService = (function() {
                     masterKey = EncryptionService.decrypt(encryptedMasterKey, sessionKey);
                     if (masterKey) {
                         decryptionMethod = 'SESSION_KEY';
-                        console.log('[CRYPTO DEBUG] Successfully decrypted master key with session key');
+                        // console.log('[CRYPTO DEBUG] Successfully decrypted master key with session key');
                     }
                 } catch (e) {
                     // Session key didn't work, will try namespace hash next
-                    console.log('[CRYPTO DEBUG] Session key decryption failed:', e.message);
+                    // console.log('[CRYPTO DEBUG] Session key decryption failed:', e.message);
                     
                     // Add a system message if available
                     if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
@@ -189,10 +189,10 @@ window.NamespaceService = (function() {
                     masterKey = EncryptionService.decrypt(encryptedMasterKey, namespaceHash);
                     if (masterKey) {
                         decryptionMethod = 'NAMESPACE_HASH';
-                        console.log('[CRYPTO DEBUG] Successfully decrypted master key with namespace hash');
+                        // console.log('[CRYPTO DEBUG] Successfully decrypted master key with namespace hash');
                     }
                 } catch (e) {
-                    console.log('[CRYPTO DEBUG] Namespace hash decryption failed:', e.message);
+                    // console.log('[CRYPTO DEBUG] Namespace hash decryption failed:', e.message);
                     
                     // Add a system message if available
                     if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
@@ -233,14 +233,14 @@ window.NamespaceService = (function() {
             sessionKey = window.ShareManager.getSessionKey();
         }
         
-        // Debug logging
-        console.log('[CRYPTO DEBUG] Finding existing namespace:', {
-            title: title,
-            subtitle: subtitle,
-            targetHashLength: targetHash.length,
-            hasSessionKey: !!sessionKey,
-            sessionKeyLength: sessionKey ? sessionKey.length : 0
-        });
+        // Debug logging disabled
+        // console.log('[CRYPTO DEBUG] Finding existing namespace:', {
+        //     title: title,
+        //     subtitle: subtitle,
+        //     targetHashLength: targetHash.length,
+        //     hasSessionKey: !!sessionKey,
+        //     sessionKeyLength: sessionKey ? sessionKey.length : 0
+        // });
         
         // Add a system message if available
         if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
@@ -262,11 +262,11 @@ window.NamespaceService = (function() {
             }
         }
         
-        // Debug logging
-        console.log('[CRYPTO DEBUG] Found namespace keys:', {
-            count: namespaceKeys.length,
-            keys: namespaceKeys
-        });
+        // Debug logging disabled
+        // console.log('[CRYPTO DEBUG] Found namespace keys:', {
+        //     count: namespaceKeys.length,
+        //     keys: namespaceKeys
+        // });
         
         // Try to decrypt each namespace entry
         for (const namespaceId of namespaceKeys) {
@@ -274,7 +274,7 @@ window.NamespaceService = (function() {
                 const namespaceStorageKey = `hackare_${namespaceId}_namespace`;
                 const encryptedData = localStorage.getItem(namespaceStorageKey);
                 if (!encryptedData) {
-                    console.log(`[CRYPTO DEBUG] No encrypted data for ${namespaceId}`);
+                    // console.log(`[CRYPTO DEBUG] No encrypted data for ${namespaceId}`);
                     continue;
                 }
                 
@@ -290,7 +290,7 @@ window.NamespaceService = (function() {
                         }
                     } catch (e) {
                         // Session key didn't work, will try namespace hash next
-                        console.log(`[CRYPTO DEBUG] Session key decryption failed for ${namespaceId}:`, e.message);
+                        // console.log(`[CRYPTO DEBUG] Session key decryption failed for ${namespaceId}:`, e.message);
                     }
                 }
                 
@@ -303,18 +303,18 @@ window.NamespaceService = (function() {
                         }
                     } catch (e) {
                         // Namespace hash didn't work either
-                        console.log(`[CRYPTO DEBUG] Namespace hash decryption failed for ${namespaceId}:`, e.message);
+                        // console.log(`[CRYPTO DEBUG] Namespace hash decryption failed for ${namespaceId}:`, e.message);
                         continue;
                     }
                 }
                 
                 // If decryption succeeds and the hash matches, we found our namespace
                 if (decryptedHash === targetHash) {
-                    // Debug logging
-                    console.log('[CRYPTO DEBUG] Found matching namespace:', {
-                        namespaceId: namespaceId,
-                        decryptionMethod: decryptionMethod
-                    });
+                    // Debug logging disabled
+                    // console.log('[CRYPTO DEBUG] Found matching namespace:', {
+                    //     namespaceId: namespaceId,
+                    //     decryptionMethod: decryptionMethod
+                    // });
                     
                     // Add a system message if available
                     if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
@@ -325,7 +325,7 @@ window.NamespaceService = (function() {
                     const masterKey = getMasterKey(namespaceId, targetHash);
                     
                     if (!masterKey) {
-                        console.error('[CRYPTO DEBUG] Found namespace but master key is missing');
+                        // console.error('[CRYPTO DEBUG] Found namespace but master key is missing');
                         
                         // Add a system message if available
                         if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
@@ -343,13 +343,13 @@ window.NamespaceService = (function() {
                 }
             } catch (error) {
                 // Decryption failed, try the next namespace
-                console.log(`[CRYPTO DEBUG] Error processing namespace ${namespaceId}:`, error.message);
+                // console.log(`[CRYPTO DEBUG] Error processing namespace ${namespaceId}:`, error.message);
                 continue;
             }
         }
         
         // No matching namespace found
-        console.log('[CRYPTO DEBUG] No matching namespace found');
+        // console.log('[CRYPTO DEBUG] No matching namespace found');
         
         // Add a system message if available
         if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
@@ -364,16 +364,16 @@ window.NamespaceService = (function() {
      * @returns {Object} Object with namespaceId, namespaceHash, and masterKey
      */
     function getOrCreateNamespace() {
-        // Debug logging
-        console.log('[CRYPTO DEBUG] Getting or creating namespace');
+        // Debug logging disabled
+        // console.log('[CRYPTO DEBUG] Getting or creating namespace');
         
         // If we already have a namespace, return it
         if (currentNamespaceId && currentNamespaceKey && currentNamespaceHash) {
-            console.log('[CRYPTO DEBUG] Using cached namespace:', {
-                namespaceId: currentNamespaceId,
-                namespaceHashLength: currentNamespaceHash.length,
-                masterKeyLength: currentNamespaceKey.length
-            });
+            // console.log('[CRYPTO DEBUG] Using cached namespace:', {
+            //     namespaceId: currentNamespaceId,
+            //     namespaceHashLength: currentNamespaceHash.length,
+            //     masterKeyLength: currentNamespaceKey.length
+            // });
             
             return {
                 namespaceId: currentNamespaceId,
@@ -386,10 +386,10 @@ window.NamespaceService = (function() {
         const title = sessionStorage.getItem(BASE_STORAGE_KEYS.TITLE) || "hacka.re";
         const subtitle = sessionStorage.getItem(BASE_STORAGE_KEYS.SUBTITLE) || "Free, open, för hackare av hackare";
         
-        console.log('[CRYPTO DEBUG] Looking up namespace for:', {
-            title: title,
-            subtitle: subtitle
-        });
+        // console.log('[CRYPTO DEBUG] Looking up namespace for:', {
+        //     title: title,
+        //     subtitle: subtitle
+        // });
         
         // Add a system message if available
         if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
@@ -404,11 +404,11 @@ window.NamespaceService = (function() {
             currentNamespaceHash = existingNamespace.namespaceHash;
             currentNamespaceKey = existingNamespace.masterKey;
             
-            console.log('[CRYPTO DEBUG] Using existing namespace:', {
-                namespaceId: currentNamespaceId,
-                namespaceHashLength: currentNamespaceHash.length,
-                masterKeyLength: currentNamespaceKey.length
-            });
+            // console.log('[CRYPTO DEBUG] Using existing namespace:', {
+            //     namespaceId: currentNamespaceId,
+            //     namespaceHashLength: currentNamespaceHash.length,
+            //     masterKeyLength: currentNamespaceKey.length
+            // });
             
             // Add a system message if available
             if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
@@ -416,7 +416,7 @@ window.NamespaceService = (function() {
             }
         } else {
             // Create a new namespace
-            console.log('[CRYPTO DEBUG] No existing namespace found, creating new one');
+            // console.log('[CRYPTO DEBUG] No existing namespace found, creating new one');
             
             // Add a system message if available
             if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
@@ -428,11 +428,11 @@ window.NamespaceService = (function() {
             currentNamespaceHash = newNamespace.namespaceHash;
             currentNamespaceKey = newNamespace.masterKey;
             
-            console.log('[CRYPTO DEBUG] Created new namespace:', {
-                namespaceId: currentNamespaceId,
-                namespaceHashLength: currentNamespaceHash.length,
-                masterKeyLength: currentNamespaceKey.length
-            });
+            // console.log('[CRYPTO DEBUG] Created new namespace:', {
+            //     namespaceId: currentNamespaceId,
+            //     namespaceHashLength: currentNamespaceHash.length,
+            //     masterKeyLength: currentNamespaceKey.length
+            // });
             
             // Store the new namespace data
             storeNamespaceData(currentNamespaceId, currentNamespaceHash, currentNamespaceKey);
@@ -479,15 +479,15 @@ window.NamespaceService = (function() {
      * Reset the namespace cache when title or subtitle changes
      */
     function resetNamespaceCache() {
-        console.log('[CRYPTO DEBUG] Resetting namespace cache');
+        // console.log('[CRYPTO DEBUG] Resetting namespace cache');
         
         // Store the current namespace before resetting
         if (currentNamespaceId && currentNamespaceKey && currentNamespaceHash) {
-            console.log('[CRYPTO DEBUG] Storing previous namespace:', {
-                namespaceId: currentNamespaceId,
-                namespaceHashLength: currentNamespaceHash.length,
-                masterKeyLength: currentNamespaceKey.length
-            });
+            // console.log('[CRYPTO DEBUG] Storing previous namespace:', {
+            //     namespaceId: currentNamespaceId,
+            //     namespaceHashLength: currentNamespaceHash.length,
+            //     masterKeyLength: currentNamespaceKey.length
+            // });
             
             previousNamespaceId = currentNamespaceId;
             previousNamespaceKey = currentNamespaceKey;
@@ -498,7 +498,7 @@ window.NamespaceService = (function() {
                 window.ChatManager.addSystemMessage(`[CRYPTO] Storing previous namespace: ${currentNamespaceId}`);
             }
         } else {
-            console.log('[CRYPTO DEBUG] No current namespace to store as previous');
+            // console.log('[CRYPTO DEBUG] No current namespace to store as previous');
         }
         
         // Reset current namespace
@@ -506,7 +506,7 @@ window.NamespaceService = (function() {
         currentNamespaceKey = null;
         currentNamespaceHash = null;
         
-        console.log('[CRYPTO DEBUG] Namespace cache reset');
+        // console.log('[CRYPTO DEBUG] Namespace cache reset');
         
         // Add a system message if available
         if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
