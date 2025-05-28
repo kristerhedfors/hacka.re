@@ -307,6 +307,30 @@ window.FunctionToolsService = (function() {
             // Then add the function we're calling
             allFunctionsCode += functionData.code;
             
+            // Extract function signature to determine how to call it
+            const functionCode = functionData.code;
+            const functionMatch = functionCode.match(/^\s*(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(([^)]*)\)/);
+            
+            let functionCallCode;
+            if (functionMatch) {
+                const paramsString = functionMatch[2];
+                
+                if (paramsString.trim()) {
+                    // Function has parameters - extract parameter names
+                    const params = paramsString.split(',').map(p => p.trim().split('=')[0].trim());
+                    
+                    // Create function call with individual parameters extracted from args object
+                    const paramExtractions = params.map(param => `args.${param}`).join(', ');
+                    functionCallCode = `return ${name}(${paramExtractions});`;
+                } else {
+                    // Function has no parameters
+                    functionCallCode = `return ${name}();`;
+                }
+            } else {
+                // Fallback to original method if we can't parse the function signature
+                functionCallCode = `return ${name}(args);`;
+            }
+            
             // Create the function with the sandbox as its scope
             const func = new AsyncFunction(
                 ...Object.keys(sandbox),
@@ -314,9 +338,8 @@ window.FunctionToolsService = (function() {
                 // Include all functions in the execution environment
                 ${allFunctionsCode}
                 
-                // Since we already know the function name (it's the 'name' parameter),
-                // we can directly call it without trying to extract it from the code
-                return ${name}(args);
+                // Call the function with properly extracted parameters
+                ${functionCallCode}
                 `
             );
             
