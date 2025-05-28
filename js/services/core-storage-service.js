@@ -48,10 +48,11 @@ window.CoreStorageService = (function() {
                     window.ChatManager.addSystemMessage(`[CRYPTO] WARNING: Encrypting data for key "${key}" using a master key that was decrypted with the fallback namespace hash of GPT title and subtitle`);
                 }
                 
-                console.log('[CRYPTO DEBUG] Using master key decrypted with fallback namespace hash for encryption:', {
-                    key: key,
-                    valueType: typeof value
-                });
+                // Debug logging disabled
+                // console.log('[CRYPTO DEBUG] Using master key decrypted with fallback namespace hash for encryption:', {
+                //     key: key,
+                //     valueType: typeof value
+                // });
             }
             
             const encryptedValue = EncryptionService.encrypt(value, passphrase);
@@ -112,10 +113,11 @@ window.CoreStorageService = (function() {
                     window.ChatManager.addSystemMessage(`[CRYPTO] WARNING: Decrypting data for key "${key}" using a master key that was decrypted with the fallback namespace hash of GPT title and subtitle`);
                 }
                 
-                console.log('[CRYPTO DEBUG] Using master key decrypted with fallback namespace hash for decryption:', {
-                    key: key,
-                    encryptedValueLength: encryptedValue ? encryptedValue.length : 0
-                });
+                // Debug logging disabled
+                // console.log('[CRYPTO DEBUG] Using master key decrypted with fallback namespace hash for decryption:', {
+                //     key: key,
+                //     encryptedValueLength: encryptedValue ? encryptedValue.length : 0
+                // });
             }
             
             return EncryptionService.decrypt(encryptedValue, passphrase);

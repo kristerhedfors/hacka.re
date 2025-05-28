@@ -1,29 +1,23 @@
 /**
- * Function Tools Service
- * Handles JavaScript function to tool declaration conversion for OpenAI-compatible API tool calling
+ * Function Tools Service (Refactored)
+ * Main orchestrator for the function tools system
+ * Coordinates between all the smaller specialized modules
  */
 
 window.FunctionToolsService = (function() {
-    // Storage keys
-    const FUNCTION_TOOLS_ENABLED_KEY = 'function_tools_enabled';
-    const JS_FUNCTIONS_KEY = 'js_functions';
-    const ENABLED_FUNCTIONS_KEY = 'enabled_functions';
-    const FUNCTION_GROUPS_KEY = 'function_groups';
-    
-    // Registry of JavaScript functions
-    let jsFunctions = {};
-    let enabledFunctions = [];
-    let functionGroups = {}; // Maps function names to group IDs
+    const Logger = FunctionToolsLogger;
+    const Storage = FunctionToolsStorage;
+    const Registry = FunctionToolsRegistry;
+    const Executor = FunctionToolsExecutor;
+    const Processor = FunctionToolsProcessor;
+    const { ToolDefinitionGenerator } = FunctionToolsParser;
     
     /**
      * Check if function tools are enabled
      * @returns {boolean} Whether function tools are enabled
      */
     function isFunctionToolsEnabled() {
-        const enabled = CoreStorageService.getValue(FUNCTION_TOOLS_ENABLED_KEY) === true;
-        console.log("FunctionToolsService.isFunctionToolsEnabled called, returning:", enabled);
-        console.log("- FUNCTION_TOOLS_ENABLED_KEY value:", CoreStorageService.getValue(FUNCTION_TOOLS_ENABLED_KEY));
-        return enabled;
+        return Storage.isEnabled();
     }
     
     /**
@@ -32,19 +26,18 @@ window.FunctionToolsService = (function() {
      * @param {Function} addSystemMessage - Optional callback to add a system message
      */
     function setFunctionToolsEnabled(enabled, addSystemMessage) {
-        const previousState = isFunctionToolsEnabled();
+        const previousState = Storage.isEnabled();
         console.log("FunctionToolsService.setFunctionToolsEnabled called with:", enabled);
         console.log("- Previous state:", previousState);
         
-        CoreStorageService.setValue(FUNCTION_TOOLS_ENABLED_KEY, enabled);
+        Storage.setEnabled(enabled);
         console.log("- New state set in storage:", enabled);
-        console.log("- Verifying new state:", CoreStorageService.getValue(FUNCTION_TOOLS_ENABLED_KEY));
+        console.log("- Verifying new state:", Storage.isEnabled());
         
         // Display status message if the state has changed and a callback is provided
         if (addSystemMessage && previousState !== enabled) {
             if (enabled) {
-                // Get list of available functions
-                const functions = Object.keys(jsFunctions);
+                const functions = Object.keys(Storage.getJsFunctions());
                 const functionsMessage = functions.length > 0 
                     ? `Available functions: ${functions.join(', ')}`
                     : 'No functions currently defined';
@@ -59,35 +52,6 @@ window.FunctionToolsService = (function() {
     }
     
     /**
-     * Load JavaScript functions from storage
-     */
-    function loadJsFunctions() {
-        const storedFunctions = CoreStorageService.getValue(JS_FUNCTIONS_KEY);
-        if (storedFunctions) {
-            jsFunctions = storedFunctions;
-        }
-        
-        const storedEnabledFunctions = CoreStorageService.getValue(ENABLED_FUNCTIONS_KEY);
-        if (storedEnabledFunctions) {
-            enabledFunctions = storedEnabledFunctions;
-        }
-        
-        const storedFunctionGroups = CoreStorageService.getValue(FUNCTION_GROUPS_KEY);
-        if (storedFunctionGroups) {
-            functionGroups = storedFunctionGroups;
-        }
-    }
-    
-    /**
-     * Save JavaScript functions to storage
-     */
-    function saveJsFunctions() {
-        CoreStorageService.setValue(JS_FUNCTIONS_KEY, jsFunctions);
-        CoreStorageService.setValue(ENABLED_FUNCTIONS_KEY, enabledFunctions);
-        CoreStorageService.setValue(FUNCTION_GROUPS_KEY, functionGroups);
-    }
-    
-    /**
      * Add a JavaScript function
      * @param {string} name - The name of the function
      * @param {string} code - The JavaScript function code
@@ -96,29 +60,7 @@ window.FunctionToolsService = (function() {
      * @returns {boolean} Whether the function was added successfully
      */
     function addJsFunction(name, code, toolDefinition, groupId) {
-        // Validate inputs
-        if (!name || !code || !toolDefinition) {
-            return false;
-        }
-        
-        // Generate a group ID if not provided
-        if (!groupId) {
-            groupId = 'group_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        }
-        
-        // Add the function to the registry
-        jsFunctions[name] = {
-            code: code,
-            toolDefinition: toolDefinition
-        };
-        
-        // Associate the function with its group
-        functionGroups[name] = groupId;
-        
-        // Save to storage
-        saveJsFunctions();
-        
-        return true;
+        return Registry.addJsFunction(name, code, toolDefinition, groupId);
     }
     
     /**
@@ -127,40 +69,7 @@ window.FunctionToolsService = (function() {
      * @returns {boolean} Whether the function was removed successfully
      */
     function removeJsFunction(name) {
-        if (jsFunctions[name]) {
-            // Get the group ID for this function
-            const groupId = functionGroups[name];
-            
-            if (groupId) {
-                // Find all functions in the same group
-                const functionsInGroup = Object.keys(functionGroups).filter(
-                    funcName => functionGroups[funcName] === groupId
-                );
-                
-                // Remove all functions in the group
-                functionsInGroup.forEach(funcName => {
-                    delete jsFunctions[funcName];
-                    delete functionGroups[funcName];
-                    
-                    // Also remove from enabled functions if present
-                    enabledFunctions = enabledFunctions.filter(fn => fn !== funcName);
-                });
-            } else {
-                // If no group ID (legacy data), just remove this function
-                delete jsFunctions[name];
-                delete functionGroups[name];
-                
-                // Also remove from enabled functions if present
-                enabledFunctions = enabledFunctions.filter(funcName => funcName !== name);
-            }
-            
-            // Save to storage
-            saveJsFunctions();
-            
-            return true;
-        }
-        
-        return false;
+        return Registry.removeJsFunction(name);
     }
     
     /**
@@ -168,7 +77,7 @@ window.FunctionToolsService = (function() {
      * @returns {Object} The JavaScript function registry
      */
     function getJsFunctions() {
-        return jsFunctions;
+        return Registry.getJsFunctions();
     }
     
     /**
@@ -177,13 +86,7 @@ window.FunctionToolsService = (function() {
      * @returns {boolean} Whether the function was enabled successfully
      */
     function enableJsFunction(name) {
-        if (jsFunctions[name] && !enabledFunctions.includes(name)) {
-            enabledFunctions.push(name);
-            saveJsFunctions();
-            return true;
-        }
-        
-        return false;
+        return Registry.enableJsFunction(name);
     }
     
     /**
@@ -192,14 +95,7 @@ window.FunctionToolsService = (function() {
      * @returns {boolean} Whether the function was disabled successfully
      */
     function disableJsFunction(name) {
-        const index = enabledFunctions.indexOf(name);
-        if (index !== -1) {
-            enabledFunctions.splice(index, 1);
-            saveJsFunctions();
-            return true;
-        }
-        
-        return false;
+        return Registry.disableJsFunction(name);
     }
     
     /**
@@ -208,7 +104,7 @@ window.FunctionToolsService = (function() {
      * @returns {boolean} Whether the function is enabled
      */
     function isJsFunctionEnabled(name) {
-        return enabledFunctions.includes(name);
+        return Registry.isJsFunctionEnabled(name);
     }
     
     /**
@@ -216,9 +112,7 @@ window.FunctionToolsService = (function() {
      * @returns {Array} Array of enabled JavaScript function objects
      */
     function getEnabledJsFunctions() {
-        return enabledFunctions
-            .filter(name => jsFunctions[name])
-            .map(name => jsFunctions[name]);
+        return Registry.getEnabledJsFunctions();
     }
     
     /**
@@ -226,7 +120,7 @@ window.FunctionToolsService = (function() {
      * @returns {Array} Array of enabled function names
      */
     function getEnabledFunctionNames() {
-        return enabledFunctions;
+        return Registry.getEnabledFunctionNames();
     }
     
     /**
@@ -234,17 +128,7 @@ window.FunctionToolsService = (function() {
      * @returns {Array} Array of enabled tool definitions in OpenAI format
      */
     function getEnabledToolDefinitions() {
-        console.log("FunctionToolsService.getEnabledToolDefinitions called");
-        console.log("- Enabled functions:", enabledFunctions);
-        console.log("- Available functions:", Object.keys(jsFunctions));
-        
-        // Always return enabled functions, regardless of the global switch state
-        const toolDefinitions = enabledFunctions
-            .filter(name => jsFunctions[name] && jsFunctions[name].toolDefinition)
-            .map(name => jsFunctions[name].toolDefinition);
-        
-        console.log("- Returning tool definitions:", toolDefinitions.length, toolDefinitions.map(t => t.function?.name));
-        return toolDefinitions;
+        return Registry.getEnabledToolDefinitions();
     }
     
     /**
@@ -264,103 +148,7 @@ window.FunctionToolsService = (function() {
      * @returns {Promise<any>} The result of the function execution
      */
     async function executeJsFunction(name, args) {
-        // Validate function exists
-        const functionData = jsFunctions[name];
-        if (!functionData || !functionData.code) {
-            throw new Error(`Function "${name}" not found or has no code`);
-        }
-        
-        // Validate arguments
-        if (args === undefined || args === null) {
-            throw new Error(`Invalid arguments provided to function "${name}"`);
-        }
-        
-        // Set execution timeout (30 seconds)
-        const EXECUTION_TIMEOUT = 30000;
-        let timeoutId;
-        
-        try {
-            // Create a safe execution environment with limited capabilities
-            const sandbox = {
-                fetch: window.fetch.bind(window),
-                console: console,
-                setTimeout: setTimeout.bind(window),
-                clearTimeout: clearTimeout.bind(window),
-                JSON: JSON,
-                Error: Error,
-                args: args
-            };
-            
-            // Create a function constructor with limited scope
-            const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
-            
-            // Include all functions in the execution environment
-            let allFunctionsCode = '';
-            
-            // First add all non-callable functions (auxiliary functions)
-            for (const funcName in jsFunctions) {
-                if (funcName !== name) {  // Skip the function we're calling, we'll add it last
-                    allFunctionsCode += jsFunctions[funcName].code + '\n\n';
-                }
-            }
-            
-            // Then add the function we're calling
-            allFunctionsCode += functionData.code;
-            
-            // Create the function with the sandbox as its scope
-            const func = new AsyncFunction(
-                ...Object.keys(sandbox),
-                `
-                // Include all functions in the execution environment
-                ${allFunctionsCode}
-                
-                // Since we already know the function name (it's the 'name' parameter),
-                // we can directly call it without trying to extract it from the code
-                return ${name}(args);
-                `
-            );
-            
-            // Create a promise that rejects after timeout
-            const timeoutPromise = new Promise((_, reject) => {
-                timeoutId = setTimeout(() => {
-                    reject(new Error(`Function "${name}" execution timed out after ${EXECUTION_TIMEOUT/1000} seconds`));
-                }, EXECUTION_TIMEOUT);
-            });
-            
-            // Race the function execution against the timeout
-            const result = await Promise.race([
-                func(...Object.values(sandbox)),
-                timeoutPromise
-            ]);
-            
-            // Clear the timeout if function completed successfully
-            clearTimeout(timeoutId);
-            
-            // Validate result is serializable
-            try {
-                JSON.stringify(result);
-            } catch (jsonError) {
-                throw new Error(`Function "${name}" returned a non-serializable result: ${jsonError.message}`);
-            }
-            
-            return result;
-        } catch (error) {
-            // Clear timeout if it exists
-            if (timeoutId) clearTimeout(timeoutId);
-            
-            console.error(`Error executing function "${name}":`, error);
-            
-            // Provide more specific error messages based on error type
-            if (error instanceof TypeError) {
-                throw new Error(`Type error in function "${name}": ${error.message}`);
-            } else if (error instanceof ReferenceError) {
-                throw new Error(`Reference error in function "${name}": ${error.message}`);
-            } else if (error instanceof SyntaxError) {
-                throw new Error(`Syntax error in function "${name}": ${error.message}`);
-            } else {
-                throw error;
-            }
-        }
+        return Executor.execute(name, args);
     }
     
     /**
@@ -370,167 +158,7 @@ window.FunctionToolsService = (function() {
      * @returns {Promise<Array>} Array of tool results
      */
     async function processToolCalls(toolCalls, addSystemMessage) {
-        if (!toolCalls || toolCalls.length === 0) {
-            return [];
-        }
-        
-        const toolResults = [];
-        
-        for (const toolCall of toolCalls) {
-            try {
-                if (!toolCall.function) {
-                    throw new Error('Invalid tool call format: missing function property');
-                }
-                
-                const { name, arguments: argsString } = toolCall.function;
-                
-                if (!name) {
-                    throw new Error('Invalid tool call format: missing function name');
-                }
-                
-                // Check if function exists
-                if (!jsFunctions[name]) {
-                    const errorMsg = `Function "${name}" not found`;
-                    if (addSystemMessage) {
-                        addSystemMessage(`Error: ${errorMsg}`);
-                    }
-                    throw new Error(errorMsg);
-                }
-                
-                // Check if function is enabled
-                if (!enabledFunctions.includes(name)) {
-                    const errorMsg = `Function "${name}" is disabled`;
-                    if (addSystemMessage) {
-                        addSystemMessage(`Error: ${errorMsg}`);
-                    }
-                    throw new Error(errorMsg);
-                }
-                
-                // Parse arguments from string to object
-                let args;
-                try {
-                    // First try to parse as JSON
-                    args = JSON.parse(argsString);
-                } catch (parseError) {
-                    // If JSON parsing fails, try to parse as space-separated arguments
-                    try {
-                        console.log(`JSON parsing failed for ${name} arguments: ${argsString}. Trying alternative parsing.`);
-                        
-                        // Get the parameter names from the function definition
-                        const functionDef = jsFunctions[name];
-                        const paramNames = [];
-                        
-                        if (functionDef && functionDef.toolDefinition && 
-                            functionDef.toolDefinition.function && 
-                            functionDef.toolDefinition.function.parameters && 
-                            functionDef.toolDefinition.function.parameters.properties) {
-                            
-                            // Get parameter names from the tool definition
-                            Object.keys(functionDef.toolDefinition.function.parameters.properties).forEach(paramName => {
-                                paramNames.push(paramName);
-                            });
-                            
-                            // If we have parameter names, try to parse space-separated values
-                            if (paramNames.length > 0) {
-                                // Split by spaces, but respect quoted strings
-                                const argValues = argsString.match(/(?:[^\s"]+|"[^"]*")+/g) || [];
-                                
-                                // Create an object with parameter names and values
-                                args = {};
-                                paramNames.forEach((paramName, index) => {
-                                    if (index < argValues.length) {
-                                        let value = argValues[index];
-                                        // Remove quotes if present
-                                        if (value.startsWith('"') && value.endsWith('"')) {
-                                            value = value.substring(1, value.length - 1);
-                                        }
-                                        args[paramName] = value;
-                                    }
-                                });
-                                
-                                console.log(`Alternative parsing result for ${name}:`, args);
-                            } else {
-                                throw new Error(`No parameter names found for function "${name}"`);
-                            }
-                        } else {
-                            throw new Error(`No parameter definitions found for function "${name}"`);
-                        }
-                    } catch (alternativeParseError) {
-                        // If both parsing methods fail, throw the original error
-                        const errorMsg = `Invalid arguments format for function "${name}": ${parseError.message}`;
-                        if (addSystemMessage) {
-                            addSystemMessage(`Error: ${errorMsg}`);
-                            addSystemMessage(`Note: Alternative parsing also failed: ${alternativeParseError.message}`);
-                        }
-                        throw new Error(errorMsg);
-                    }
-                }
-                
-                // Log function execution
-                if (addSystemMessage && window.DebugService && DebugService.getDebugMode()) {
-                    // Format the arguments as JSON on a single line
-                    try {
-                        const args = JSON.parse(argsString);
-                        const formattedArgs = JSON.stringify(args);
-                        
-                        // Add function call in the requested format
-                        addSystemMessage(`Function call requested by model: ${name}(${formattedArgs})`);
-                        
-                        // Add execution message
-                        addSystemMessage(`Executing function "${name}"`);
-                    } catch (e) {
-                        // If parsing fails, just show the raw arguments
-                        addSystemMessage(`Function call requested by model: ${name}(${argsString})`);
-                        addSystemMessage(`Executing function "${name}"`);
-                    }
-                }
-                
-                // Execute the JavaScript function
-                const result = await executeJsFunction(name, args);
-                
-                // Log successful execution
-                if (addSystemMessage && window.DebugService && DebugService.getDebugMode()) {
-                    addSystemMessage(`Function "${name}" executed successfully`);
-                }
-                
-                toolResults.push({
-                    tool_call_id: toolCall.id,
-                    role: "tool",
-                    name: name,
-                    content: JSON.stringify(result)
-                });
-            } catch (error) {
-                console.error('Error processing tool call:', error);
-                
-                // Log error to user if callback provided
-                if (addSystemMessage) {
-                    // Add header message
-                    addSystemMessage(`Error executing function:`);
-                    
-                    // Use the debug service to display the error message
-                    if (window.DebugService && typeof DebugService.displayMultilineDebug === 'function') {
-                        DebugService.displayMultilineDebug(error.message, addSystemMessage);
-                    } else {
-                        // Fallback if debug service is not available
-                        addSystemMessage(`  ${error.message}`);
-                    }
-                }
-                
-                // Add error result
-                toolResults.push({
-                    tool_call_id: toolCall.id,
-                    role: "tool",
-                    name: toolCall.function?.name || 'unknown',
-                    content: JSON.stringify({ 
-                        error: error.message,
-                        status: 'error',
-                        timestamp: new Date().toISOString()
-                    })
-                });
-            }
-        }
-        
-        return toolResults;
+        return Processor.process(toolCalls, addSystemMessage);
     }
     
     /**
@@ -539,103 +167,8 @@ window.FunctionToolsService = (function() {
      * @returns {Object} The generated tool definition, or null if generation failed
      */
     function generateToolDefinition(code) {
-        try {
-            // Extract function name and parameters
-            const functionMatch = code.match(/^\s*(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(([^)]*)\)/);
-            if (!functionMatch) {
-                return null;
-            }
-            
-            const functionName = functionMatch[1];
-            const paramsString = functionMatch[2];
-            
-            // Create a basic tool definition
-            const toolDefinition = {
-                type: 'function',
-                function: {
-                    name: functionName,
-                    description: `Function ${functionName} for tool calling`,
-                    parameters: {
-                        type: 'object',
-                        properties: {},
-                        required: []
-                    }
-                }
-            };
-            
-            // Extract parameters
-            if (paramsString.trim()) {
-                const params = paramsString.split(',').map(p => p.trim());
-                
-                params.forEach(param => {
-                    // Check for default values
-                    const hasDefault = param.includes('=');
-                    const paramName = hasDefault ? param.split('=')[0].trim() : param;
-                    
-                    toolDefinition.function.parameters.properties[paramName] = {
-                        type: 'string', // Default to string type
-                        description: `Parameter ${paramName} for function ${functionName}`
-                    };
-                    
-                    // If no default value, consider it required
-                    if (!hasDefault) {
-                        toolDefinition.function.parameters.required.push(paramName);
-                    }
-                });
-            }
-            
-            // Try to extract JSDoc comments for description and param types
-            const jsDocMatch = code.match(/\/\*\*\s*([\s\S]*?)\s*\*\//);
-            if (jsDocMatch) {
-                const jsDoc = jsDocMatch[1];
-                
-                // Extract function description
-                const descMatch = jsDoc.match(/@description\s+(.*?)(?=\s*@|\s*\*\/|$)/s);
-                if (descMatch) {
-                    toolDefinition.function.description = descMatch[1].replace(/\s*\*\s*/g, ' ').trim();
-                }
-                
-                // Extract param descriptions and types
-                const paramMatches = jsDoc.matchAll(/@param\s+{([^}]+)}\s+([^\s]+)\s+(.*?)(?=\s*@|\s*\*\/|$)/gs);
-                for (const match of paramMatches) {
-                    const [, type, name, description] = match;
-                    
-                    if (toolDefinition.function.parameters.properties[name]) {
-                        toolDefinition.function.parameters.properties[name].type = mapJSTypeToJSONType(type);
-                        toolDefinition.function.parameters.properties[name].description = description.replace(/\s*\*\s*/g, ' ').trim();
-                    }
-                }
-            }
-            
-            return toolDefinition;
-        } catch (error) {
-            console.error('Error generating tool definition:', error);
-            return null;
-        }
+        return ToolDefinitionGenerator.generate(code);
     }
-    
-    /**
-     * Map JavaScript types to JSON Schema types
-     * @param {string} jsType - JavaScript type
-     * @returns {string} JSON Schema type
-     */
-    function mapJSTypeToJSONType(jsType) {
-        const typeMap = {
-            'string': 'string',
-            'number': 'number',
-            'boolean': 'boolean',
-            'object': 'object',
-            'array': 'array',
-            'null': 'null',
-            'undefined': 'null',
-            'any': 'string'
-        };
-        
-        return typeMap[jsType.toLowerCase()] || 'string';
-    }
-    
-    // Initialize
-    loadJsFunctions();
     
     /**
      * Get all functions in the same group as the specified function
@@ -643,14 +176,7 @@ window.FunctionToolsService = (function() {
      * @returns {Array} Array of function names in the same group
      */
     function getFunctionsInSameGroup(name) {
-        if (!functionGroups[name]) {
-            return [name]; // Return just this function if no group info
-        }
-        
-        const groupId = functionGroups[name];
-        return Object.keys(functionGroups).filter(
-            funcName => functionGroups[funcName] === groupId
-        );
+        return Registry.getFunctionsInSameGroup(name);
     }
     
     // Public API
