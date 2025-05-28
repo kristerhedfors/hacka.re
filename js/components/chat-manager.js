@@ -135,57 +135,94 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
                 return allTools;
             },
             processToolCalls: async (toolCalls, addSystemMessage) => {
-        // Process tool calls based on their names
-        const apiToolCalls = [];
-        const functionToolCalls = [];
-        
-        // Validate toolCalls is an array
-        if (!Array.isArray(toolCalls)) {
-            console.error('Invalid tool calls format: not an array', toolCalls);
-            if (addSystemMessage) {
-                addSystemMessage('Error: Invalid tool calls format received from API');
-            }
-            return [];
-        }
-        
-        // Separate tool calls by type
-        for (const toolCall of toolCalls) {
-            try {
-                // Validate toolCall has the expected structure
-                if (!toolCall || !toolCall.function || typeof toolCall.function.name !== 'string') {
-                    console.error('Invalid tool call format:', toolCall);
-                    continue;
+                console.log("[ChatManager Debug] processToolCalls called");
+                console.log("[ChatManager Debug] - Tool calls input:", toolCalls);
+                console.log("[ChatManager Debug] - Tool calls type:", typeof toolCalls);
+                console.log("[ChatManager Debug] - Tool calls length:", toolCalls ? toolCalls.length : "N/A");
+                console.log("[ChatManager Debug] - addSystemMessage callback:", typeof addSystemMessage);
+                
+                // Process tool calls based on their names
+                const apiToolCalls = [];
+                const functionToolCalls = [];
+                
+                // Validate toolCalls is an array
+                if (!Array.isArray(toolCalls)) {
+                    console.error('[ChatManager Debug] Invalid tool calls format: not an array', toolCalls);
+                    if (addSystemMessage) {
+                        addSystemMessage('Error: Invalid tool calls format received from API');
+                    }
+                    return [];
                 }
                 
-                const toolName = toolCall.function.name;
+                console.log("[ChatManager Debug] - Starting tool call separation");
                 
-                // Check if it's a function tool (must exist and be enabled)
-                if (FunctionToolsService && 
-                    FunctionToolsService.getJsFunctions()[toolName] && 
-                    FunctionToolsService.isJsFunctionEnabled(toolName)) {
-                    functionToolCalls.push(toolCall);
-                } else {
-                    apiToolCalls.push(toolCall);
+                // Separate tool calls by type
+                for (let i = 0; i < toolCalls.length; i++) {
+                    const toolCall = toolCalls[i];
+                    console.log(`[ChatManager Debug] - Processing tool call ${i + 1}/${toolCalls.length}:`, toolCall);
+                    
+                    try {
+                        // Validate toolCall has the expected structure
+                        if (!toolCall || !toolCall.function || typeof toolCall.function.name !== 'string') {
+                            console.error(`[ChatManager Debug] - Invalid tool call ${i + 1} format:`, toolCall);
+                            continue;
+                        }
+                        
+                        const toolName = toolCall.function.name;
+                        console.log(`[ChatManager Debug] - Tool call ${i + 1} name:`, toolName);
+                        
+                        // Check if it's a function tool (must exist and be enabled)
+                        const isFunctionTool = FunctionToolsService && 
+                            FunctionToolsService.getJsFunctions()[toolName] && 
+                            FunctionToolsService.isJsFunctionEnabled(toolName);
+                        
+                        console.log(`[ChatManager Debug] - Tool "${toolName}" is function tool:`, isFunctionTool);
+                        console.log(`[ChatManager Debug] - FunctionToolsService available:`, !!FunctionToolsService);
+                        
+                        if (FunctionToolsService) {
+                            console.log(`[ChatManager Debug] - Available JS functions:`, Object.keys(FunctionToolsService.getJsFunctions()));
+                            console.log(`[ChatManager Debug] - Enabled JS functions:`, FunctionToolsService.getEnabledFunctionNames());
+                            console.log(`[ChatManager Debug] - Tool "${toolName}" exists in registry:`, !!FunctionToolsService.getJsFunctions()[toolName]);
+                            console.log(`[ChatManager Debug] - Tool "${toolName}" is enabled:`, FunctionToolsService.isJsFunctionEnabled(toolName));
+                        }
+                        
+                        if (isFunctionTool) {
+                            functionToolCalls.push(toolCall);
+                            console.log(`[ChatManager Debug] - Added tool "${toolName}" to function tool calls`);
+                        } else {
+                            apiToolCalls.push(toolCall);
+                            console.log(`[ChatManager Debug] - Added tool "${toolName}" to API tool calls`);
+                        }
+                    } catch (error) {
+                        console.error(`[ChatManager Debug] - Error processing tool call ${i + 1}:`, error, toolCall);
+                        if (addSystemMessage) {
+                            addSystemMessage(`Error processing tool call: ${error.message}`);
+                        }
+                    }
                 }
-            } catch (error) {
-                console.error('Error processing tool call:', error, toolCall);
-                if (addSystemMessage) {
-                    addSystemMessage(`Error processing tool call: ${error.message}`);
-                }
-            }
-        }
-        
-        // Process each type of tool calls
-        const apiResults = apiToolCalls.length > 0 && apiToolsManager 
-            ? await apiToolsManager.processToolCalls(apiToolCalls, addSystemMessage) 
-            : [];
-        
-        const functionResults = functionToolCalls.length > 0 && FunctionToolsService
-            ? await FunctionToolsService.processToolCalls(functionToolCalls, addSystemMessage)
-            : [];
-        
+                
+                console.log("[ChatManager Debug] - Tool call separation complete");
+                console.log("[ChatManager Debug] - API tool calls:", apiToolCalls.length, apiToolCalls.map(tc => tc.function?.name));
+                console.log("[ChatManager Debug] - Function tool calls:", functionToolCalls.length, functionToolCalls.map(tc => tc.function?.name));
+                
+                // Process each type of tool calls
+                console.log("[ChatManager Debug] - Starting API tool calls processing");
+                const apiResults = apiToolCalls.length > 0 && apiToolsManager 
+                    ? await apiToolsManager.processToolCalls(apiToolCalls, addSystemMessage) 
+                    : [];
+                console.log("[ChatManager Debug] - API tool calls results:", apiResults.length, apiResults);
+                
+                console.log("[ChatManager Debug] - Starting function tool calls processing");
+                const functionResults = functionToolCalls.length > 0 && FunctionToolsService
+                    ? await FunctionToolsService.processToolCalls(functionToolCalls, addSystemMessage)
+                    : [];
+                console.log("[ChatManager Debug] - Function tool calls results:", functionResults.length, functionResults);
+                
                 // Combine results
-                return [...apiResults, ...functionResults];
+                const combinedResults = [...apiResults, ...functionResults];
+                console.log("[ChatManager Debug] - Combined tool call results:", combinedResults.length, combinedResults);
+                
+                return combinedResults;
             }
         };
         
