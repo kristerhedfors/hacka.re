@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Function Calling Debug Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .code-block {
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            background: #f9f9f9;
+            border-left: 3px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <h1>Function Calling Debug Test</h1>
+    
+    <div class="container">
+        <h2>Test Function Definition</h2>
+        <div class="code-block" id="functionCode"></div>
+    </div>
+    
+    <div class="container">
+        <h2>Test Controls</h2>
+        <button onclick="testDirectExecution()">Test Direct Execution</button>
+        <button onclick="testToolCallExecution()">Test Tool Call Execution</button>
+        <button onclick="testArgumentParsing()">Test Argument Parsing</button>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+    
+    <div class="container">
+        <h2>Test Results</h2>
+        <div id="results"></div>
+    </div>
+    
+    <div class="container">
+        <h2>Debug Log</h2>
+        <div id="debugLog"></div>
+    </div>
+
+    <script>
+        // Mock storage service
+        window.CoreStorageService = {
+            getValue: function(key) {
+                return localStorage.getItem(key) ? JSON.parse(localStorage.getItem(key)) : null;
+            },
+            setValue: function(key, value) {
+                localStorage.setItem(key, JSON.stringify(value));
+            }
+        };
+
+        // Load the actual function tools modules
+        const scripts = [
+            '../js/services/function-tools-config.js',
+            '../js/services/function-tools-logger.js',
+            '../js/services/function-tools-storage.js',
+            '../js/services/function-tools-parser.js',
+            '../js/services/function-tools-executor.js',
+            '../js/services/function-tools-processor.js',
+            '../js/services/function-tools-registry.js',
+            '../js/services/function-tools-service.js'
+        ];
+
+        // Load scripts sequentially
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
+        async function loadAllScripts() {
+            for (const script of scripts) {
+                await loadScript(script);
+            }
+        }
+
+        // Test function definition
+        const testFunctionCode = `/**
+ * Schedule a grooming appointment.
+ * @param {string} customerName   – Name of the pet owner
+ * @param {string} date           – Desired appointment date (YYYY-MM-DD)
+ * @param {string} petName        – Name of the pet
+ * @returns {string}              – Confirmation message
+ * @callable
+ */
+function scheduleGrooming(customerName, date, petName) {
+  return \`✅ Grooming appointment booked for \${petName} (owner: \${customerName}) on \${date}.\`;
+}`;
+
+        // Display function code
+        document.getElementById('functionCode').textContent = testFunctionCode;
+
+        // Logging functions
+        function log(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const entry = document.createElement('div');
+            entry.className = `test-result ${type}`;
+            entry.textContent = message;
+            resultsDiv.appendChild(entry);
+        }
+
+        function debugLog(message) {
+            const debugDiv = document.getElementById('debugLog');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            debugDiv.appendChild(entry);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('debugLog').innerHTML = '';
+        }
+
+        // Override console.log to capture debug output
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            debugLog(args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : arg).join(' '));
+        };
+
+        // Test functions
+        async function testDirectExecution() {
+            log('Testing direct function execution...', 'info');
+            
+            try {
+                // First, add the function to the registry
+                const toolDef = FunctionToolsParser.ToolDefinitionGenerator.generate(testFunctionCode);
+                log(`Generated tool definition: ${JSON.stringify(toolDef, null, 2)}`, 'info');
+                
+                FunctionToolsService.addJsFunction('scheduleGrooming', testFunctionCode, toolDef, 'test-group');
+                FunctionToolsService.enableJsFunction('scheduleGrooming');
+                
+                // Test with correct arguments
+                const args = {
+                    customerName: "Krister",
+                    date: "2023-12-24",
+                    petName: "Perkele"
+                };
+                
+                log(`Executing with args: ${JSON.stringify(args)}`, 'info');
+                const result = await FunctionToolsExecutor.execute('scheduleGrooming', args);
+                log(`Success: ${result}`, 'success');
+                
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+                console.error(error);
+            }
+        }
+
+        async function testToolCallExecution() {
+            log('Testing tool call execution...', 'info');
+            
+            try {
+                // Simulate a tool call from the API
+                const toolCall = {
+                    id: "call_test123",
+                    type: "function",
+                    function: {
+                        name: "scheduleGrooming",
+                        arguments: JSON.stringify({
+                            customerName: "Krister",
+                            date: "2023-12-24",
+                            petName: "Perkele"
+                        })
+                    }
+                };
+                
+                log(`Tool call: ${JSON.stringify(toolCall, null, 2)}`, 'info');
+                
+                const results = await FunctionToolsProcessor.process([toolCall]);
+                log(`Tool call results: ${JSON.stringify(results, null, 2)}`, 'success');
+                
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+                console.error(error);
+            }
+        }
+
+        async function testArgumentParsing() {
+            log('Testing argument parsing variations...', 'info');
+            
+            const testCases = [
+                {
+                    name: "Correct JSON object",
+                    args: JSON.stringify({
+                        customerName: "Krister",
+                        date: "2023-12-24",
+                        petName: "Perkele"
+                    })
+                },
+                {
+                    name: "Object with wrong parameter names",
+                    args: JSON.stringify({
+                        name: "Krister",
+                        pet: "Perkele",
+                        date: "2023-12-24"
+                    })
+                },
+                {
+                    name: "Array instead of object",
+                    args: JSON.stringify(["Krister", "2023-12-24", "Perkele"])
+                },
+                {
+                    name: "Nested object",
+                    args: JSON.stringify({
+                        customerName: { name: "Krister" },
+                        date: "2023-12-24",
+                        petName: "Perkele"
+                    })
+                }
+            ];
+            
+            for (const testCase of testCases) {
+                log(`\nTesting: ${testCase.name}`, 'info');
+                log(`Input: ${testCase.args}`, 'info');
+                
+                try {
+                    const parsed = FunctionToolsParser.ArgumentParser.parse(testCase.args, 'scheduleGrooming');
+                    log(`Parsed: ${JSON.stringify(parsed)}`, 'success');
+                    
+                    // Try to execute with parsed args
+                    const result = await FunctionToolsExecutor.execute('scheduleGrooming', parsed);
+                    log(`Execution result: ${result}`, 'success');
+                    
+                } catch (error) {
+                    log(`Error: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', async () => {
+            await loadAllScripts();
+            log('Function tools modules loaded', 'success');
+            
+            // Enable function tools
+            FunctionToolsService.setFunctionToolsEnabled(true);
+            
+            // Add the test function
+            const toolDef = FunctionToolsParser.ToolDefinitionGenerator.generate(testFunctionCode);
+            FunctionToolsService.addJsFunction('scheduleGrooming', testFunctionCode, toolDef, 'test-group');
+            FunctionToolsService.enableJsFunction('scheduleGrooming');
+            
+            log('Test function registered and enabled', 'success');
+        });
+    </script>
+</body>
+</html>
