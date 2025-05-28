@@ -346,72 +346,106 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
     
     // Process tool calls if any were received and apiToolsManager is provided
     if (toolCalls.length > 0 && apiToolsManager) {
+        console.log("[API Debug] Processing tool calls");
+        console.log("[API Debug] - Tool calls count:", toolCalls.length);
+        console.log("[API Debug] - Tool calls data:", toolCalls);
+        console.log("[API Debug] - apiToolsManager available:", !!apiToolsManager);
+        console.log("[API Debug] - addSystemMessage callback:", typeof addSystemMessage);
+        
         try {
-                // Notify user that tool calls were received with detailed information
-                if (addSystemMessage) {
-                    // Only show system messages in debug mode
-                    if (window.DebugService && DebugService.getDebugMode()) {
-                        // Add header message
-                        addSystemMessage(`Received ${toolCalls.length} tool call(s) from the AI`);
-                        
-                        addSystemMessage(`(Debug mode: Showing detailed tool call information)`);
+                // Only show function call information in debug mode
+                if (addSystemMessage && window.DebugService && DebugService.getDebugMode()) {
+                    console.log("[API Debug] - addSystemMessage callback available, checking debug mode");
+                    console.log("[API Debug] - DebugService available:", !!window.DebugService);
+                    console.log("[API Debug] - Debug mode enabled:", window.DebugService ? DebugService.getDebugMode() : false);
                     
-                        // Add details for each tool call as separate messages
-                        toolCalls.forEach((toolCall, index) => {
-                            let toolCallMessage = `Tool #${index + 1}:\n`;
-                            toolCallMessage += `- Name: ${toolCall.function.name}\n`;
-                            toolCallMessage += `- ID: ${toolCall.id}\n`;
+                    console.log("[API Debug] - Adding debug system messages for tool calls");
+                    
+                    // Add header message
+                    addSystemMessage(`Received ${toolCalls.length} tool call(s) from the AI`);
+                    
+                    addSystemMessage(`(Debug mode: Showing detailed tool call information)`);
+                
+                    // Add details for each tool call as separate messages
+                    toolCalls.forEach((toolCall, index) => {
+                        console.log(`[API Debug] - Processing tool call ${index + 1} for debug display:`, toolCall);
+                        
+                        let toolCallMessage = `Tool #${index + 1}:\n`;
+                        toolCallMessage += `- Name: ${toolCall.function.name}\n`;
+                        toolCallMessage += `- ID: ${toolCall.id}\n`;
+                        
+                        // Format the arguments as JSON on a single line
+                        try {
+                            const args = JSON.parse(toolCall.function.arguments);
+                            const formattedArgs = JSON.stringify(args);
                             
-                            // Format the arguments as JSON on a single line
-                            try {
-                                const args = JSON.parse(toolCall.function.arguments);
-                                const formattedArgs = JSON.stringify(args);
-                                
-                                // Add function call in the requested format
-                                addSystemMessage(`Function call requested by model: ${toolCall.function.name}(${formattedArgs})`);
+                            console.log(`[API Debug] - Tool call ${index + 1} parsed arguments:`, args);
+                            console.log(`[API Debug] - Tool call ${index + 1} formatted arguments:`, formattedArgs);
                             
-                            // Add the tool info
-                            if (typeof DebugService.displayMultilineDebug === 'function') {
-                                DebugService.displayMultilineDebug(toolCallMessage, addSystemMessage);
-                            } else {
-                                // Fallback if displayMultilineDebug is not available
-                                toolCallMessage += `- Arguments: ${formattedArgs}`;
-                                addSystemMessage(toolCallMessage);
-                            }
-                        } catch (e) {
-                            // If parsing fails, just show the raw arguments
-                            toolCallMessage += `- Arguments: ${toolCall.function.arguments}`;
-                            
-                            // Use the debug service
-                            if (typeof DebugService.displayMultilineDebug === 'function') {
-                                DebugService.displayMultilineDebug(toolCallMessage, addSystemMessage);
-                            } else {
-                                // Fallback if displayMultilineDebug is not available
-                                addSystemMessage(toolCallMessage);
-                            }
+                            // Add function call in the requested format
+                            addSystemMessage(`Function call requested by model: ${toolCall.function.name}(${formattedArgs})`);
+                        
+                        // Add the tool info
+                        if (typeof DebugService.displayMultilineDebug === 'function') {
+                            console.log(`[API Debug] - Using DebugService.displayMultilineDebug for tool call ${index + 1}`);
+                            DebugService.displayMultilineDebug(toolCallMessage, addSystemMessage);
+                        } else {
+                            console.log(`[API Debug] - Using fallback display for tool call ${index + 1}`);
+                            // Fallback if displayMultilineDebug is not available
+                            toolCallMessage += `- Arguments: ${formattedArgs}`;
+                            addSystemMessage(toolCallMessage);
                         }
-                    });
-                }
+                    } catch (e) {
+                        console.error(`[API Debug] - Error parsing tool call ${index + 1} arguments:`, e);
+                        
+                        // If parsing fails, just show the raw arguments
+                        toolCallMessage += `- Arguments: ${toolCall.function.arguments}`;
+                        
+                        // Use the debug service
+                        if (typeof DebugService.displayMultilineDebug === 'function') {
+                            DebugService.displayMultilineDebug(toolCallMessage, addSystemMessage);
+                        } else {
+                            // Fallback if displayMultilineDebug is not available
+                            addSystemMessage(toolCallMessage);
+                        }
+                    }
+                });
+            } else {
+                console.log("[API Debug] - Not showing function call details (debug mode disabled or callback unavailable)");
             }
+            
+            console.log("[API Debug] - Starting tool call argument fixing");
             
             // Before processing, try to fix any issues with the tool call arguments
             for (let i = 0; i < toolCalls.length; i++) {
                 const toolCall = toolCalls[i];
+                console.log(`[API Debug] - Checking tool call ${i + 1} for argument fixes:`, toolCall);
+                
                 if (toolCall.function && toolCall.function.arguments) {
+                    console.log(`[API Debug] - Tool call ${i + 1} has function and arguments`);
+                    console.log(`[API Debug] - Tool call ${i + 1} function name:`, toolCall.function.name);
+                    console.log(`[API Debug] - Tool call ${i + 1} raw arguments:`, toolCall.function.arguments);
+                    
                     try {
                         // Try to parse the arguments as JSON
                         const args = JSON.parse(toolCall.function.arguments);
+                        console.log(`[API Debug] - Tool call ${i + 1} parsed arguments:`, args);
                         
                         // Check if this is the math_addition_tool and if the arguments are strings
                         if (toolCall.function.name === 'math_addition_tool') {
+                            console.log(`[API Debug] - Tool call ${i + 1} is math_addition_tool, checking for fixes`);
+                            
                             // Save the original arguments for comparison
                             const originalArgs = JSON.parse(JSON.stringify(args));
+                            console.log(`[API Debug] - Tool call ${i + 1} original arguments:`, originalArgs);
                             
                             // Convert string numbers to actual numbers
                             if (args.a && typeof args.a === 'string') {
+                                console.log(`[API Debug] - Converting 'a' from string "${args.a}" to number`);
                                 args.a = parseFloat(args.a);
                             }
                             if (args.b && typeof args.b === 'string') {
+                                console.log(`[API Debug] - Converting 'b' from string "${args.b}" to number`);
                                 args.b = parseFloat(args.b);
                             }
                             
@@ -419,17 +453,20 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
                             const validKeys = ['a', 'b'];
                             Object.keys(args).forEach(key => {
                                 if (!validKeys.includes(key)) {
-                                    console.log(`Removing unexpected argument '${key}' from math_addition_tool`);
+                                    console.log(`[API Debug] - Removing unexpected argument '${key}' from math_addition_tool`);
                                     delete args[key];
                                 }
                             });
                             
                             // Update the tool call arguments with the fixed version
                             toolCall.function.arguments = JSON.stringify(args);
-                            console.log(`Fixed arguments for math_addition_tool:`, args);
+                            console.log(`[API Debug] - Fixed arguments for math_addition_tool:`, args);
+                            console.log(`[API Debug] - Updated tool call arguments string:`, toolCall.function.arguments);
                             
                             // Add a system message to show that we've fixed the arguments
                             if (addSystemMessage && window.DebugService && DebugService.getDebugMode()) {
+                                console.log(`[API Debug] - Adding debug messages for argument fixes`);
+                                
                                 // Add header message
                                 addSystemMessage(`Fixed arguments for math_addition_tool:`);
                                 
@@ -466,15 +503,26 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
                                     addSystemMessage(`No changes were needed`);
                                 }
                             }
+                        } else {
+                            console.log(`[API Debug] - Tool call ${i + 1} is not math_addition_tool, no fixes needed`);
                         }
                     } catch (e) {
-                        console.error(`Error fixing tool call arguments for index ${i}:`, e);
+                        console.error(`[API Debug] - Error fixing tool call arguments for index ${i}:`, e);
                     }
+                } else {
+                    console.log(`[API Debug] - Tool call ${i + 1} missing function or arguments`);
                 }
             }
             
+            console.log("[API Debug] - Starting tool call processing with apiToolsManager");
+            console.log("[API Debug] - Final tool calls to process:", toolCalls);
+            
             // Process the tool calls with the fixed arguments and system message callback
             const toolResults = await apiToolsManager.processToolCalls(toolCalls, addSystemMessage);
+            
+            console.log("[API Debug] - Tool call processing completed");
+            console.log("[API Debug] - Tool results:", toolResults);
+            console.log("[API Debug] - Tool results count:", toolResults ? toolResults.length : 0);
             
             if (toolResults && toolResults.length > 0) {
                 // Add tool results to messages

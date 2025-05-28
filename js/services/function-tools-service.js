@@ -21,8 +21,11 @@ window.FunctionToolsService = (function() {
      */
     function isFunctionToolsEnabled() {
         const enabled = CoreStorageService.getValue(FUNCTION_TOOLS_ENABLED_KEY) === true;
-        console.log("FunctionToolsService.isFunctionToolsEnabled called, returning:", enabled);
-        console.log("- FUNCTION_TOOLS_ENABLED_KEY value:", CoreStorageService.getValue(FUNCTION_TOOLS_ENABLED_KEY));
+        console.log("[FunctionTools Debug] isFunctionToolsEnabled called");
+        console.log("[FunctionTools Debug] - Storage key:", FUNCTION_TOOLS_ENABLED_KEY);
+        console.log("[FunctionTools Debug] - Raw storage value:", CoreStorageService.getValue(FUNCTION_TOOLS_ENABLED_KEY));
+        console.log("[FunctionTools Debug] - Parsed enabled state:", enabled);
+        console.log("[FunctionTools Debug] - Return value:", enabled);
         return enabled;
     }
     
@@ -264,20 +267,38 @@ window.FunctionToolsService = (function() {
      * @returns {Promise<any>} The result of the function execution
      */
     async function executeJsFunction(name, args) {
+        console.log("[FunctionTools Debug] executeJsFunction called");
+        console.log("[FunctionTools Debug] - Function name:", name);
+        console.log("[FunctionTools Debug] - Arguments:", args);
+        console.log("[FunctionTools Debug] - Arguments type:", typeof args);
+        console.log("[FunctionTools Debug] - Arguments JSON:", JSON.stringify(args));
+        
         // Validate function exists
         const functionData = jsFunctions[name];
+        console.log("[FunctionTools Debug] - Function exists in registry:", !!functionData);
+        console.log("[FunctionTools Debug] - Function data:", functionData ? "present" : "missing");
+        
         if (!functionData || !functionData.code) {
+            console.error("[FunctionTools Debug] - Function validation failed");
+            console.error("[FunctionTools Debug] - Available functions:", Object.keys(jsFunctions));
             throw new Error(`Function "${name}" not found or has no code`);
         }
         
         // Validate arguments
         if (args === undefined || args === null) {
+            console.error("[FunctionTools Debug] - Arguments validation failed");
+            console.error("[FunctionTools Debug] - Args value:", args);
             throw new Error(`Invalid arguments provided to function "${name}"`);
         }
         
         // Set execution timeout (30 seconds)
         const EXECUTION_TIMEOUT = 30000;
         let timeoutId;
+        const executionStartTime = Date.now();
+        
+        console.log("[FunctionTools Debug] - Starting function execution");
+        console.log("[FunctionTools Debug] - Execution timeout:", EXECUTION_TIMEOUT, "ms");
+        console.log("[FunctionTools Debug] - Start time:", executionStartTime);
         
         try {
             // Create a safe execution environment with limited capabilities
@@ -291,25 +312,39 @@ window.FunctionToolsService = (function() {
                 args: args
             };
             
+            console.log("[FunctionTools Debug] - Sandbox created with keys:", Object.keys(sandbox));
+            
             // Create a function constructor with limited scope
             const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
+            console.log("[FunctionTools Debug] - AsyncFunction constructor ready");
             
             // Include all functions in the execution environment
             let allFunctionsCode = '';
+            const allFunctionNames = Object.keys(jsFunctions);
+            console.log("[FunctionTools Debug] - All available functions:", allFunctionNames);
             
             // First add all non-callable functions (auxiliary functions)
             for (const funcName in jsFunctions) {
                 if (funcName !== name) {  // Skip the function we're calling, we'll add it last
                     allFunctionsCode += jsFunctions[funcName].code + '\n\n';
+                    console.log("[FunctionTools Debug] - Added auxiliary function:", funcName);
                 }
             }
             
             // Then add the function we're calling
             allFunctionsCode += functionData.code;
+            console.log("[FunctionTools Debug] - Added target function:", name);
+            console.log("[FunctionTools Debug] - Total code length:", allFunctionsCode.length, "characters");
             
             // Extract function signature to determine how to call it
             const functionCode = functionData.code;
             const functionMatch = functionCode.match(/^\s*(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(([^)]*)\)/);
+            
+            console.log("[FunctionTools Debug] - Function signature match:", !!functionMatch);
+            if (functionMatch) {
+                console.log("[FunctionTools Debug] - Matched function name:", functionMatch[1]);
+                console.log("[FunctionTools Debug] - Matched parameters:", functionMatch[2]);
+            }
             
             let functionCallCode;
             if (functionMatch) {
@@ -317,38 +352,57 @@ window.FunctionToolsService = (function() {
                 
                 if (paramsString.trim()) {
                     // Function has parameters - extract parameter names
-                    const params = paramsString.split(',').map(p => p.trim().split('=')[0].trim());
+                    const params = paramsString.split(',').map(p => {
+                        // Handle parameters with default values (e.g., "quantity = 1")
+                        const paramName = p.trim().split('=')[0].trim();
+                        // Remove any type annotations or destructuring
+                        return paramName.replace(/^\{|\}$/g, '').split(':')[0].trim();
+                    });
+                    console.log("[FunctionTools Debug] - Extracted parameters:", params);
                     
                     // Create function call with individual parameters extracted from args object
                     const paramExtractions = params.map(param => `args.${param}`).join(', ');
                     functionCallCode = `return ${name}(${paramExtractions});`;
+                    console.log("[FunctionTools Debug] - Function call code (with params):", functionCallCode);
                 } else {
                     // Function has no parameters
                     functionCallCode = `return ${name}();`;
+                    console.log("[FunctionTools Debug] - Function call code (no params):", functionCallCode);
                 }
             } else {
                 // Fallback to original method if we can't parse the function signature
                 functionCallCode = `return ${name}(args);`;
+                console.log("[FunctionTools Debug] - Function call code (fallback):", functionCallCode);
             }
             
             // Create the function with the sandbox as its scope
-            const func = new AsyncFunction(
-                ...Object.keys(sandbox),
-                `
+            const fullExecutionCode = `
                 // Include all functions in the execution environment
                 ${allFunctionsCode}
                 
                 // Call the function with properly extracted parameters
                 ${functionCallCode}
-                `
+            `;
+            
+            console.log("[FunctionTools Debug] - Creating AsyncFunction with sandbox keys:", Object.keys(sandbox));
+            console.log("[FunctionTools Debug] - Full execution code preview:", fullExecutionCode.substring(0, 200) + "...");
+            
+            const func = new AsyncFunction(
+                ...Object.keys(sandbox),
+                fullExecutionCode
             );
+            
+            console.log("[FunctionTools Debug] - AsyncFunction created successfully");
             
             // Create a promise that rejects after timeout
             const timeoutPromise = new Promise((_, reject) => {
                 timeoutId = setTimeout(() => {
+                    console.error("[FunctionTools Debug] - Function execution timed out");
                     reject(new Error(`Function "${name}" execution timed out after ${EXECUTION_TIMEOUT/1000} seconds`));
                 }, EXECUTION_TIMEOUT);
             });
+            
+            console.log("[FunctionTools Debug] - Starting function execution race");
             
             // Race the function execution against the timeout
             const result = await Promise.race([
@@ -356,31 +410,55 @@ window.FunctionToolsService = (function() {
                 timeoutPromise
             ]);
             
+            const executionEndTime = Date.now();
+            const executionDuration = executionEndTime - executionStartTime;
+            
+            console.log("[FunctionTools Debug] - Function execution completed");
+            console.log("[FunctionTools Debug] - Execution duration:", executionDuration, "ms");
+            console.log("[FunctionTools Debug] - Result type:", typeof result);
+            console.log("[FunctionTools Debug] - Result value:", result);
+            
             // Clear the timeout if function completed successfully
             clearTimeout(timeoutId);
             
             // Validate result is serializable
             try {
-                JSON.stringify(result);
+                const serializedResult = JSON.stringify(result);
+                console.log("[FunctionTools Debug] - Result serialization successful");
+                console.log("[FunctionTools Debug] - Serialized result length:", serializedResult.length, "characters");
+                console.log("[FunctionTools Debug] - Serialized result preview:", serializedResult.substring(0, 200) + (serializedResult.length > 200 ? "..." : ""));
             } catch (jsonError) {
+                console.error("[FunctionTools Debug] - Result serialization failed:", jsonError);
                 throw new Error(`Function "${name}" returned a non-serializable result: ${jsonError.message}`);
             }
             
+            console.log("[FunctionTools Debug] - Function execution successful, returning result");
             return result;
         } catch (error) {
             // Clear timeout if it exists
             if (timeoutId) clearTimeout(timeoutId);
             
-            console.error(`Error executing function "${name}":`, error);
+            const executionEndTime = Date.now();
+            const executionDuration = executionEndTime - executionStartTime;
+            
+            console.error("[FunctionTools Debug] - Function execution failed");
+            console.error("[FunctionTools Debug] - Execution duration before error:", executionDuration, "ms");
+            console.error("[FunctionTools Debug] - Error type:", error.constructor.name);
+            console.error("[FunctionTools Debug] - Error message:", error.message);
+            console.error("[FunctionTools Debug] - Error stack:", error.stack);
             
             // Provide more specific error messages based on error type
             if (error instanceof TypeError) {
+                console.error("[FunctionTools Debug] - TypeError details:", error);
                 throw new Error(`Type error in function "${name}": ${error.message}`);
             } else if (error instanceof ReferenceError) {
+                console.error("[FunctionTools Debug] - ReferenceError details:", error);
                 throw new Error(`Reference error in function "${name}": ${error.message}`);
             } else if (error instanceof SyntaxError) {
+                console.error("[FunctionTools Debug] - SyntaxError details:", error);
                 throw new Error(`Syntax error in function "${name}": ${error.message}`);
             } else {
+                console.error("[FunctionTools Debug] - Other error details:", error);
                 throw error;
             }
         }
@@ -393,27 +471,50 @@ window.FunctionToolsService = (function() {
      * @returns {Promise<Array>} Array of tool results
      */
     async function processToolCalls(toolCalls, addSystemMessage) {
+        console.log("[FunctionTools Debug] processToolCalls called");
+        console.log("[FunctionTools Debug] - Tool calls input:", toolCalls);
+        console.log("[FunctionTools Debug] - Tool calls type:", typeof toolCalls);
+        console.log("[FunctionTools Debug] - Tool calls length:", toolCalls ? toolCalls.length : "N/A");
+        console.log("[FunctionTools Debug] - addSystemMessage callback:", typeof addSystemMessage);
+        
         if (!toolCalls || toolCalls.length === 0) {
+            console.log("[FunctionTools Debug] - No tool calls to process, returning empty array");
             return [];
         }
         
         const toolResults = [];
+        console.log("[FunctionTools Debug] - Processing", toolCalls.length, "tool calls");
         
-        for (const toolCall of toolCalls) {
+        for (let i = 0; i < toolCalls.length; i++) {
+            const toolCall = toolCalls[i];
+            console.log(`[FunctionTools Debug] - Processing tool call ${i + 1}/${toolCalls.length}`);
+            console.log(`[FunctionTools Debug] - Tool call ${i + 1} data:`, toolCall);
+            
             try {
                 if (!toolCall.function) {
+                    console.error(`[FunctionTools Debug] - Tool call ${i + 1} missing function property`);
                     throw new Error('Invalid tool call format: missing function property');
                 }
                 
                 const { name, arguments: argsString } = toolCall.function;
+                console.log(`[FunctionTools Debug] - Tool call ${i + 1} function name:`, name);
+                console.log(`[FunctionTools Debug] - Tool call ${i + 1} arguments string:`, argsString);
+                console.log(`[FunctionTools Debug] - Tool call ${i + 1} arguments type:`, typeof argsString);
+                console.log(`[FunctionTools Debug] - Tool call ${i + 1} ID:`, toolCall.id);
                 
                 if (!name) {
+                    console.error(`[FunctionTools Debug] - Tool call ${i + 1} missing function name`);
                     throw new Error('Invalid tool call format: missing function name');
                 }
                 
                 // Check if function exists
+                console.log(`[FunctionTools Debug] - Checking if function "${name}" exists in registry`);
+                console.log(`[FunctionTools Debug] - Available functions:`, Object.keys(jsFunctions));
+                console.log(`[FunctionTools Debug] - Function exists:`, !!jsFunctions[name]);
+                
                 if (!jsFunctions[name]) {
                     const errorMsg = `Function "${name}" not found`;
+                    console.error(`[FunctionTools Debug] - ${errorMsg}`);
                     if (addSystemMessage) {
                         addSystemMessage(`Error: ${errorMsg}`);
                     }
@@ -421,8 +522,13 @@ window.FunctionToolsService = (function() {
                 }
                 
                 // Check if function is enabled
+                console.log(`[FunctionTools Debug] - Checking if function "${name}" is enabled`);
+                console.log(`[FunctionTools Debug] - Enabled functions:`, enabledFunctions);
+                console.log(`[FunctionTools Debug] - Function is enabled:`, enabledFunctions.includes(name));
+                
                 if (!enabledFunctions.includes(name)) {
                     const errorMsg = `Function "${name}" is disabled`;
+                    console.error(`[FunctionTools Debug] - ${errorMsg}`);
                     if (addSystemMessage) {
                         addSystemMessage(`Error: ${errorMsg}`);
                     }
@@ -431,17 +537,27 @@ window.FunctionToolsService = (function() {
                 
                 // Parse arguments from string to object
                 let args;
+                console.log(`[FunctionTools Debug] - Parsing arguments for function "${name}"`);
+                console.log(`[FunctionTools Debug] - Raw arguments string:`, argsString);
+                
                 try {
                     // First try to parse as JSON
                     args = JSON.parse(argsString);
+                    console.log(`[FunctionTools Debug] - JSON parsing successful for "${name}"`);
+                    console.log(`[FunctionTools Debug] - Parsed arguments:`, args);
+                    console.log(`[FunctionTools Debug] - Parsed arguments type:`, typeof args);
                 } catch (parseError) {
+                    console.log(`[FunctionTools Debug] - JSON parsing failed for "${name}":`, parseError.message);
+                    
                     // If JSON parsing fails, try to parse as space-separated arguments
                     try {
-                        console.log(`JSON parsing failed for ${name} arguments: ${argsString}. Trying alternative parsing.`);
+                        console.log(`[FunctionTools Debug] - Attempting alternative parsing for "${name}"`);
                         
                         // Get the parameter names from the function definition
                         const functionDef = jsFunctions[name];
                         const paramNames = [];
+                        
+                        console.log(`[FunctionTools Debug] - Function definition:`, functionDef);
                         
                         if (functionDef && functionDef.toolDefinition && 
                             functionDef.toolDefinition.function && 
@@ -453,10 +569,13 @@ window.FunctionToolsService = (function() {
                                 paramNames.push(paramName);
                             });
                             
+                            console.log(`[FunctionTools Debug] - Extracted parameter names:`, paramNames);
+                            
                             // If we have parameter names, try to parse space-separated values
                             if (paramNames.length > 0) {
                                 // Split by spaces, but respect quoted strings
                                 const argValues = argsString.match(/(?:[^\s"]+|"[^"]*")+/g) || [];
+                                console.log(`[FunctionTools Debug] - Split argument values:`, argValues);
                                 
                                 // Create an object with parameter names and values
                                 args = {};
@@ -468,17 +587,22 @@ window.FunctionToolsService = (function() {
                                             value = value.substring(1, value.length - 1);
                                         }
                                         args[paramName] = value;
+                                        console.log(`[FunctionTools Debug] - Mapped parameter "${paramName}" to value:`, value);
                                     }
                                 });
                                 
-                                console.log(`Alternative parsing result for ${name}:`, args);
+                                console.log(`[FunctionTools Debug] - Alternative parsing result for "${name}":`, args);
                             } else {
+                                console.error(`[FunctionTools Debug] - No parameter names found for function "${name}"`);
                                 throw new Error(`No parameter names found for function "${name}"`);
                             }
                         } else {
+                            console.error(`[FunctionTools Debug] - No parameter definitions found for function "${name}"`);
                             throw new Error(`No parameter definitions found for function "${name}"`);
                         }
                     } catch (alternativeParseError) {
+                        console.error(`[FunctionTools Debug] - Alternative parsing also failed:`, alternativeParseError.message);
+                        
                         // If both parsing methods fail, throw the original error
                         const errorMsg = `Invalid arguments format for function "${name}": ${parseError.message}`;
                         if (addSystemMessage) {
@@ -490,11 +614,14 @@ window.FunctionToolsService = (function() {
                 }
                 
                 // Log function execution
+                console.log(`[FunctionTools Debug] - About to execute function "${name}" with args:`, args);
+                
+                // Only show function execution details in debug mode
                 if (addSystemMessage && window.DebugService && DebugService.getDebugMode()) {
                     // Format the arguments as JSON on a single line
                     try {
-                        const args = JSON.parse(argsString);
-                        const formattedArgs = JSON.stringify(args);
+                        const parsedArgs = JSON.parse(argsString);
+                        const formattedArgs = JSON.stringify(parsedArgs);
                         
                         // Add function call in the requested format
                         addSystemMessage(`Function call requested by model: ${name}(${formattedArgs})`);
@@ -509,21 +636,41 @@ window.FunctionToolsService = (function() {
                 }
                 
                 // Execute the JavaScript function
+                const executionStartTime = Date.now();
+                console.log(`[FunctionTools Debug] - Starting execution of function "${name}" at:`, executionStartTime);
+                
                 const result = await executeJsFunction(name, args);
+                
+                const executionEndTime = Date.now();
+                const executionDuration = executionEndTime - executionStartTime;
+                console.log(`[FunctionTools Debug] - Function "${name}" execution completed in:`, executionDuration, "ms");
+                console.log(`[FunctionTools Debug] - Function "${name}" result:`, result);
+                console.log(`[FunctionTools Debug] - Function "${name}" result type:`, typeof result);
                 
                 // Log successful execution
                 if (addSystemMessage && window.DebugService && DebugService.getDebugMode()) {
                     addSystemMessage(`Function "${name}" executed successfully`);
                 }
                 
-                toolResults.push({
+                // Create tool result
+                const toolResult = {
                     tool_call_id: toolCall.id,
                     role: "tool",
                     name: name,
                     content: JSON.stringify(result)
-                });
+                };
+                
+                console.log(`[FunctionTools Debug] - Created tool result for "${name}":`, toolResult);
+                console.log(`[FunctionTools Debug] - Tool result content length:`, toolResult.content.length, "characters");
+                
+                toolResults.push(toolResult);
+                console.log(`[FunctionTools Debug] - Added tool result ${toolResults.length} to results array`);
+                
             } catch (error) {
-                console.error('Error processing tool call:', error);
+                console.error(`[FunctionTools Debug] - Error processing tool call ${i + 1}:`, error);
+                console.error(`[FunctionTools Debug] - Error type:`, error.constructor.name);
+                console.error(`[FunctionTools Debug] - Error message:`, error.message);
+                console.error(`[FunctionTools Debug] - Error stack:`, error.stack);
                 
                 // Log error to user if callback provided
                 if (addSystemMessage) {
@@ -540,7 +687,7 @@ window.FunctionToolsService = (function() {
                 }
                 
                 // Add error result
-                toolResults.push({
+                const errorResult = {
                     tool_call_id: toolCall.id,
                     role: "tool",
                     name: toolCall.function?.name || 'unknown',
@@ -549,9 +696,17 @@ window.FunctionToolsService = (function() {
                         status: 'error',
                         timestamp: new Date().toISOString()
                     })
-                });
+                };
+                
+                console.log(`[FunctionTools Debug] - Created error result for tool call ${i + 1}:`, errorResult);
+                toolResults.push(errorResult);
+                console.log(`[FunctionTools Debug] - Added error result ${toolResults.length} to results array`);
             }
         }
+        
+        console.log(`[FunctionTools Debug] - Finished processing all tool calls`);
+        console.log(`[FunctionTools Debug] - Total results:`, toolResults.length);
+        console.log(`[FunctionTools Debug] - Final tool results:`, toolResults);
         
         return toolResults;
     }
