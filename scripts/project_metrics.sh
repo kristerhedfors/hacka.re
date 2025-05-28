@@ -25,7 +25,7 @@ echo ""
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_ROOT"
 
-# Define common directories to exclude (based on .gitignore)
+# Define common directories to exclude (based on .gitignore and 3rd party libraries)
 EXCLUDE_DIRS=(
     ".git"
     "node_modules"
@@ -62,6 +62,10 @@ EXCLUDE_DIRS=(
     "_tests/playwright/screenshots"
     "_tests/playwright/screenshots_data"
     "_tests/playwright/videos"
+    "lib"
+    "reports"
+    "custom_reports"
+    "videos"
 )
 
 # Additional find exclusions for patterns that need special handling
