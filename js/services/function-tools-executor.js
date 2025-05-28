@@ -72,25 +72,48 @@ window.FunctionToolsExecutor = (function() {
                 }, CONFIG.EXECUTION_TIMEOUT);
             });
             
-            const executionPromise = this._executeInSandbox(name, args);
+            const executionPromise = this._executeDirectly(name, args);
             
             return Promise.race([executionPromise, timeoutPromise]);
         },
         
-        async _executeInSandbox(name, args) {
-            const sandbox = this._createSandbox(args);
-            const executionCode = this._buildExecutionCode(name);
+        async _executeDirectly(name, args) {
+            Logger.debug(`Executing function ${name} directly with args:`, args);
             
-            Logger.debug("Creating AsyncFunction with sandbox keys:", Object.keys(sandbox));
+            // Get the function code
+            const jsFunctions = Storage.getJsFunctions();
+            const functionCode = jsFunctions[name].code;
             
-            const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
-            const func = new AsyncFunction(
-                ...Object.keys(sandbox),
-                executionCode
-            );
+            Logger.debug(`Function code:`, functionCode);
             
-            Logger.debug("AsyncFunction created successfully");
-            return func(...Object.values(sandbox));
+            // Extract the function body and parameters
+            const functionMatch = functionCode.match(/function\s+\w+\s*\(([^)]*)\)\s*\{([\s\S]*)\}/);
+            if (!functionMatch) {
+                throw new Error(`Could not parse function "${name}"`);
+            }
+            
+            const params = functionMatch[1].split(',').map(p => p.trim()).filter(p => p);
+            const body = functionMatch[2];
+            
+            Logger.debug(`Extracted params:`, params);
+            Logger.debug(`Extracted body:`, body);
+            
+            // Create the function using Function constructor
+            let targetFunction;
+            try {
+                targetFunction = new Function(...params, body);
+            } catch (constructorError) {
+                Logger.error("Error creating function:", constructorError);
+                throw new Error(`Failed to create function: ${constructorError.message}`);
+            }
+            
+            Logger.debug(`Calling function ${name} with arguments:`, args);
+            
+            // Call the function directly with the arguments
+            const result = await targetFunction(args.a, args.b);
+            
+            Logger.debug(`Function ${name} returned:`, result);
+            return result;
         },
         
         _createSandbox: function(args) {
@@ -156,15 +179,29 @@ window.FunctionToolsExecutor = (function() {
                 return `return ${name}();`;
             }
             
-            // Extract parameter names
+            // Extract parameter names more carefully
             const params = paramsString.split(',').map(p => {
-                const paramName = p.trim().split('=')[0].trim();
-                return paramName.replace(/^\{|\}$/g, '').split(':')[0].trim();
+                let paramName = p.trim();
+                // Handle default values (e.g., "param = defaultValue")
+                if (paramName.includes('=')) {
+                    paramName = paramName.split('=')[0].trim();
+                }
+                // Handle destructuring (e.g., "{prop}")
+                paramName = paramName.replace(/^\{|\}$/g, '');
+                // Handle type annotations (e.g., "param: type")
+                if (paramName.includes(':')) {
+                    paramName = paramName.split(':')[0].trim();
+                }
+                return paramName;
             });
             
             Logger.debug(`Extracted parameters:`, params);
             
-            const paramExtractions = params.map(param => `args.${param}`).join(', ');
+            // Generate function call with more robust argument access
+            const paramExtractions = params.map(param => {
+                return `args["${param}"]`;
+            }).join(', ');
+            
             return `return ${name}(${paramExtractions});`;
         },
         
