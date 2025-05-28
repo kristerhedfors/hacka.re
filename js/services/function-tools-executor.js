@@ -80,37 +80,28 @@ window.FunctionToolsExecutor = (function() {
         async _executeDirectly(name, args) {
             Logger.debug(`Executing function ${name} directly with args:`, args);
             
-            // Get the function code
-            const jsFunctions = Storage.getJsFunctions();
-            const functionCode = jsFunctions[name].code;
+            // Build execution code that includes all functions
+            const executionCode = this._buildExecutionCode(name);
+            Logger.debug(`Execution code:`, executionCode);
             
-            Logger.debug(`Function code:`, functionCode);
+            // Create sandbox environment
+            const sandbox = this._createSandbox(args);
             
-            // Extract the function body and parameters
-            const functionMatch = functionCode.match(/function\s+\w+\s*\(([^)]*)\)\s*\{([\s\S]*)\}/);
-            if (!functionMatch) {
-                throw new Error(`Could not parse function "${name}"`);
-            }
-            
-            const params = functionMatch[1].split(',').map(p => p.trim()).filter(p => p);
-            const body = functionMatch[2];
-            
-            Logger.debug(`Extracted params:`, params);
-            Logger.debug(`Extracted body:`, body);
-            
-            // Create the function using Function constructor
-            let targetFunction;
+            // Create the function using Function constructor with all functions included
+            let executionFunction;
             try {
-                targetFunction = new Function(...params, body);
+                const sandboxKeys = Object.keys(sandbox);
+                const sandboxValues = Object.values(sandbox);
+                executionFunction = new Function(...sandboxKeys, executionCode);
             } catch (constructorError) {
-                Logger.error("Error creating function:", constructorError);
-                throw new Error(`Failed to create function: ${constructorError.message}`);
+                Logger.error("Error creating execution function:", constructorError);
+                throw new Error(`Failed to create execution function: ${constructorError.message}`);
             }
             
             Logger.debug(`Calling function ${name} with arguments:`, args);
             
-            // Call the function directly with the arguments
-            const result = await targetFunction(args.a, args.b);
+            // Execute the function with sandbox
+            const result = await executionFunction(...Object.values(sandbox));
             
             Logger.debug(`Function ${name} returned:`, result);
             return result;
