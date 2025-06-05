@@ -97,12 +97,13 @@ _tests/playwright/.venv/
 
 # Playwright test files
 _tests/playwright/*.out
-_tests/playwright/*.md
 _tests/playwright/*.log
 _tests/playwright/screenshots/
 _tests/playwright/screenshots_data/
 _tests/playwright/videos/
 _tests/playwright/**/*.png
+# Keep documentation files tracked
+!_tests/playwright/*README*.md
 
 # Project root test files
 run_tests.out

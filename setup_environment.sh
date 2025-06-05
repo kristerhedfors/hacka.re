@@ -127,11 +127,6 @@ OPENAI_API_KEY=your_api_key_here
 OPENAI_API_MODEL=o4-mini
 OPENAI_API_BASE=https://api.openai.com/v1
 
-# Azure OpenAI Configuration (alternative)
-# AZURE_OPENAI_API_KEY=your_azure_api_key_here
-# AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
-# AZURE_OPENAI_API_VERSION=2024-02-15-preview
-# AZURE_OPENAI_DEPLOYMENT_NAME=your-deployment-name
 EOF
     print_success "Created .env.example template"
 fi

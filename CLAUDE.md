@@ -95,7 +95,7 @@ js/
 - No analytics or tracking
 
 ### Multi-Provider Support
-- OpenAI, Azure OpenAI, Groq, Ollama, custom endpoints
+- OpenAI, Groq, Ollama, custom endpoints
 - Real-time context window visualization
 - Token counting and usage tracking
 

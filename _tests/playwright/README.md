@@ -112,14 +112,13 @@ Options:
 To run only the tests that make real API calls to OpenAI (particularly for function calling tests), use the following command:
 
 ```bash
-./run_tests.sh -k "function_calling_api or test_api or test_function_calling_with_api or test_azure_openai"
+./run_tests.sh -k "function_calling_api or test_api or test_function_calling_with_api"
 ```
 
 This command will run:
 - All tests in the `function_calling_api` directory
 - The `test_api.py` file
 - The `test_function_calling_with_api.py` file
-- The `test_azure_openai.py` file
 
 These tests use the `gpt-4o-mini` model by default (configured in `conftest.py`) to minimize token costs while still testing real API functionality.
 
