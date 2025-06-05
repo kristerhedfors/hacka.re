@@ -211,9 +211,11 @@ def screenshot_with_markdown(page, name, debug_info=None):
     Returns:
         tuple: (screenshot_path, markdown_path) - Paths to the created files
     """
-    # Construct paths using the screenshots and screenshots_data directories
-    screenshot_dir = "screenshots"
-    screenshot_data_dir = "screenshots_data"
+    # Construct paths using the screenshots and screenshots_data directories in the correct location
+    # Get the directory where this test_utils.py file is located (_tests/playwright/)
+    test_dir = os.path.dirname(__file__)
+    screenshot_dir = os.path.join(test_dir, "screenshots")
+    screenshot_data_dir = os.path.join(test_dir, "screenshots_data")
     
     # Ensure the name doesn't have an extension
     name = name.replace('.png', '')

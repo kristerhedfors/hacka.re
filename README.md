@@ -8,8 +8,7 @@ hacka.re is a lightweight, static web UI built with pure HTML, CSS, and JavaScri
 
 ## Key Features
 
-- **Multiple Provider Support**: Compatible with Groq, OpenAI, Azure OpenAI, Ollama, and custom endpoints
-  - **Azure OpenAI Integration**: Full support for Azure OpenAI API with custom endpoints, API versions, and deployment names
+- **Multiple Provider Support**: Compatible with Groq, OpenAI, Ollama, and custom endpoints
 - **Privacy-Focused & Serverless**: Your API key and conversations stay in your browser; no backend server involved
 - **Context Window Visualization**: Real-time display of token usage within model's context limit
 - **Markdown Support**: Rich formatting for AI responses including code blocks with syntax highlighting
@@ -109,28 +108,6 @@ source _venv/bin/activate
 
 The function calling feature allows you to create JavaScript functions that can be called by AI models through the OpenAI-compatible API. By default, all functions are callable. If any function is tagged with `@callable` or `@tool`, then only tagged functions will be callable.
 
-### Azure OpenAI Integration
-
-The Azure OpenAI integration allows you to use Azure OpenAI API endpoints with hacka.re. The integration supports:
-
-- Custom API base URLs (e.g., `https://your-resource-name.openai.azure.com`)
-- API versions (e.g., `2024-03-01-preview`)
-- Deployment names
-- Model names
-
-To use Azure OpenAI:
-
-1. Open settings
-2. Select "Azure OpenAI" from the provider dropdown
-3. Enter your Azure OpenAI settings:
-   - API Base URL
-   - API Version
-   - Deployment Name
-   - Model Name
-4. Enter your API key
-5. Save settings
-
-For debugging Azure OpenAI integration issues, you can use the debug test page at `_tests/azure-openai-debug.html`.
 
 ### Testing
 

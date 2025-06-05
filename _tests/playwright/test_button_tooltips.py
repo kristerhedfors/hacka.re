@@ -1,6 +1,6 @@
 import pytest
 from playwright.sync_api import Page, expect
-from test_utils import screenshot_with_markdown, dismiss_welcome_modal
+from test_utils import screenshot_with_markdown, dismiss_welcome_modal, dismiss_settings_modal
 
 def test_button_tooltips(page: Page, serve_hacka_re):
     """Test that mini-tooltips appear when hovering over buttons in the upper right bar."""
@@ -9,6 +9,9 @@ def test_button_tooltips(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
+    
+    # Also dismiss settings modal if present (to prevent interference with button hovers)
+    dismiss_settings_modal(page)
     
     # Take a screenshot of the initial state
     screenshot_with_markdown(page, "button_tooltips_initial", {

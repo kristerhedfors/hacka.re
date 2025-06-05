@@ -4,16 +4,15 @@ import os
 from dotenv import load_dotenv
 from playwright.sync_api import Page, expect
 
-from test_utils import timed_test, dismiss_welcome_modal, dismiss_settings_modal, check_system_messages
+from test_utils import dismiss_welcome_modal, dismiss_settings_modal, check_system_messages
 
 # Load environment variables from .env file in the current directory
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
 # Get API key from environment variables
 API_KEY = os.getenv("OPENAI_API_KEY")
 
-@timed_test
 @pytest.mark.skip(reason="Model selection menu not appearing when clicking model-info-btn")
-def test_model_context_window_display(page, serve_hacka_re):
+def test_model_context_window_display(page: Page, serve_hacka_re):
     """Test that the context window size is displayed in the model selection menu."""
     # Navigate to the application
     page.goto(serve_hacka_re)

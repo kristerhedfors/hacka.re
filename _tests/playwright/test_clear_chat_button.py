@@ -15,26 +15,43 @@ def test_clear_chat_button(page: Page, serve_hacka_re, api_key):
     # Dismiss settings modal if already open
     dismiss_settings_modal(page)
     
-    # Configure API key directly using JavaScript to bypass the modal
-    page.evaluate("""(apiKey) => {
-        // Set API key in storage
-        localStorage.setItem('apiKey', apiKey);
-        // Set a default model
-        localStorage.setItem('model', 'gpt-3.5-turbo');
-        // Set base URL
-        localStorage.setItem('baseUrl', 'https://api.openai.com/v1');
-        // Reload the page to apply settings
-        window.location.reload();
-    }""", api_key)
+    # Configure API key via the settings modal instead of JavaScript
+    # Click the settings button
+    settings_button = page.locator("#settings-btn")
+    settings_button.click(timeout=1000)
     
-    # Wait for page to reload
-    page.wait_for_load_state("networkidle")
+    # Wait for the settings modal to become visible
+    page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
     
-    # Dismiss welcome modal if present after reload
-    dismiss_welcome_modal(page)
+    # Enter the API key
+    api_key_input = page.locator("#api-key-update")
+    api_key_input.fill(api_key)
     
-    # Dismiss settings modal if already open after reload
-    dismiss_settings_modal(page)
+    # Select OpenAI as the API provider
+    base_url_select = page.locator("#base-url-select")
+    base_url_select.select_option("openai")
+    
+    # Select a model (first available)
+    model_select = page.locator("#model-select")
+    
+    # Get available options
+    options = page.evaluate("""() => {
+        const select = document.getElementById('model-select');
+        if (!select) return [];
+        return Array.from(select.options)
+            .filter(opt => !opt.disabled)
+            .map(opt => opt.value);
+    }""")
+    
+    if options and len(options) > 0:
+        model_select.select_option(options[0])
+    
+    # Save the settings
+    save_button = page.locator("#save-settings-btn")
+    save_button.click(force=True)
+    
+    # Wait for the settings modal to be closed
+    page.wait_for_selector("#settings-modal", state="hidden", timeout=2000)
     
     # Take a screenshot after configuring API
     screenshot_with_markdown(page, "after_api_config", {
@@ -42,12 +59,16 @@ def test_clear_chat_button(page: Page, serve_hacka_re, api_key):
         "Status": "After API configuration"
     })
     
-    # Add a message to the chat
-    page.fill("#message-input", "Test message")
-    page.click("#send-btn")
+    # Add a message to the chat history directly (without API call)
+    page.evaluate("""() => {
+        // Add a test message directly to the chat history
+        if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addUserMessage) {
+            window.aiHackare.chatManager.addUserMessage('Test message');
+        }
+    }""")
     
     # Wait for the message to appear
-    page.wait_for_selector(".message.user")
+    page.wait_for_selector(".message.user", timeout=5000)
     
     # Verify the message is visible
     expect(page.locator(".message.user .message-content")).to_contain_text("Test message")
@@ -127,12 +148,16 @@ def test_clear_chat_button_cancel(page: Page, serve_hacka_re, api_key):
     # Wait for the settings modal to be closed
     page.wait_for_selector("#settings-modal", state="hidden", timeout=2000)
     
-    # Add a message to the chat
-    page.fill("#message-input", "Test message")
-    page.click("#send-btn")
+    # Add a message to the chat history directly (without API call)
+    page.evaluate("""() => {
+        // Add a test message directly to the chat history
+        if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addUserMessage) {
+            window.aiHackare.chatManager.addUserMessage('Test message');
+        }
+    }""")
     
     # Wait for the message to appear
-    page.wait_for_selector(".message.user")
+    page.wait_for_selector(".message.user", timeout=5000)
     
     # Verify the message is visible
     expect(page.locator(".message.user .message-content")).to_contain_text("Test message")
