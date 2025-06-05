@@ -1,6 +1,6 @@
 import pytest
 from playwright.sync_api import Page, expect
-from test_utils import timed_test, screenshot_with_markdown, dismiss_welcome_modal
+from test_utils import screenshot_with_markdown, dismiss_welcome_modal
 
 def test_heart_logo_tooltip(page: Page, serve_hacka_re):
     """Test that the heart logo tooltip appears when clicking on various elements."""

@@ -4,15 +4,14 @@ import os
 from dotenv import load_dotenv
 from playwright.sync_api import Page, expect
 
-from test_utils import timed_test, dismiss_welcome_modal, dismiss_settings_modal, check_system_messages, select_recommended_test_model
+from test_utils import dismiss_welcome_modal, dismiss_settings_modal, check_system_messages, select_recommended_test_model
 
 # Load environment variables from .env file in the current directory
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
 # Get API key from environment variables
 API_KEY = os.getenv("OPENAI_API_KEY")
 
-@timed_test
-def test_context_window_updates_on_model_selection(page, serve_hacka_re):
+def test_context_window_updates_on_model_selection(page: Page, serve_hacka_re):
     """Test that the context window size updates when selecting a model from the settings menu."""
     # Navigate to the application
     page.goto(serve_hacka_re)
