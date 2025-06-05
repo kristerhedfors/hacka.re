@@ -121,7 +121,7 @@ This command will run:
 - The `test_function_calling_with_api.py` file
 - The `test_azure_openai.py` file
 
-These tests use the `o4-mini` model by default (configured in `conftest.py`) to minimize token costs while still testing real API functionality.
+These tests use the `gpt-4o-mini` model by default (configured in `conftest.py`) to minimize token costs while still testing real API functionality.
 
 You can combine this with other options:
 
@@ -597,7 +597,7 @@ To add new tests:
 - The tests use Playwright's `expect` assertions to verify the state of the application
 - **Important**: Unlike many test suites, we do NOT mock ANY API calls. All tests go against the real OpenAI API with the API key in the `.env` file. This ensures the application works correctly with actual LLM providers.
 - Be mindful of token usage in tests. Tests should be designed to minimize the number of API calls and token usage while still providing adequate test coverage.
-- We use `o4-mini` from OpenAI during tests due to its lower token costs and faster response times.
+- We use `gpt-4o-mini` from OpenAI during tests due to its lower token costs and faster response times.
 - The `.env` file should contain a valid API key for the LLM provider you're testing with (currently OpenAI).
 - Do not add any mocking code to the tests, as this defeats the purpose of testing against real APIs.
 
@@ -646,7 +646,7 @@ The tests use environment variables from a `.env` file in the `_tests/playwright
 ```
 # OpenAI configuration
 OPENAI_API_KEY=your_api_key_here
-OPENAI_API_MODEL=o4-mini
+OPENAI_API_MODEL=gpt-4o-mini
 OPENAI_API_BASE=https://api.openai.com/v1
 ```
 
