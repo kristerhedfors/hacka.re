@@ -1,11 +1,10 @@
 import time
 import pytest
-from playwright.sync_api import expect
+from playwright.sync_api import Page, expect
 
-from test_utils import timed_test, dismiss_welcome_modal, dismiss_settings_modal
+from test_utils import dismiss_welcome_modal, dismiss_settings_modal
 
-@timed_test
-def test_token_counter_debounce(page, serve_hacka_re):
+def test_token_counter_debounce(page: Page, serve_hacka_re):
     """Test that the token counter is debounced when typing and pasting text."""
     # Navigate to the main page
     page.goto(serve_hacka_re)

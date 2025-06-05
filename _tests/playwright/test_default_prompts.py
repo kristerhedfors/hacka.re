@@ -1,7 +1,7 @@
 import pytest
 from playwright.sync_api import Page, expect
 
-from test_utils import timed_test, dismiss_welcome_modal, dismiss_settings_modal
+from test_utils import dismiss_welcome_modal, dismiss_settings_modal
 
 def test_default_prompts_section_exists(page, serve_hacka_re):
     """Test that the default prompts section exists in the prompts modal."""

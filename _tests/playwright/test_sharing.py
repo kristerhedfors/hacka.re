@@ -6,16 +6,15 @@ import json
 from dotenv import load_dotenv
 from playwright.sync_api import Page, expect
 
-from test_utils import timed_test, dismiss_welcome_modal, dismiss_settings_modal, check_system_messages
+from test_utils import dismiss_welcome_modal, dismiss_settings_modal, check_system_messages
 
 # Load environment variables from .env file in the current directory
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
 # Get API key from environment variables
 API_KEY = os.getenv("OPENAI_API_KEY", "sk-test-key-for-model-sharing-tests")
 
-@timed_test
 @pytest.mark.skip(reason="Generated link element not visible after clicking generate button")
-def test_model_sharing_link_creation(page, serve_hacka_re):
+def test_model_sharing_link_creation(page: Page, serve_hacka_re):
     """Test creating a share link with a specific model."""
     # Navigate to the application
     page.goto(serve_hacka_re)
@@ -99,9 +98,8 @@ def test_model_sharing_link_creation(page, serve_hacka_re):
     
     print("Model sharing link creation test passed")
 
-@timed_test
 @pytest.mark.skip(reason="Model info element not visible after loading shared link")
-def test_model_sharing_link_loading(page, serve_hacka_re):
+def test_model_sharing_link_loading(page: Page, serve_hacka_re):
     """Test loading a share link with a specific model."""
     # First, create a share link with a specific model and session key
     # This is done by constructing a URL with the encrypted data
