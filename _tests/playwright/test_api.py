@@ -31,7 +31,7 @@ def test_api_key_configuration(page, serve_hacka_re):
     # Wait for the settings modal to become visible
     page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
     
-    # Enter the Groq Cloud API key from .env
+    # Enter the OpenAI API key from .env
     api_key_input = page.locator("#api-key-update")
     api_key_input.fill(API_KEY)
     
@@ -126,13 +126,13 @@ def test_model_selection(page, serve_hacka_re):
     # Wait for the settings modal to become visible
     page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
     
-    # Enter the Groq Cloud API key from .env
+    # Enter the OpenAI API key from .env
     api_key_input = page.locator("#api-key-update")
     api_key_input.fill(API_KEY)
     
-    # Select Groq Cloud as the API provider
+    # Select OpenAI as the API provider
     base_url_select = page.locator("#base-url-select")
-    base_url_select.select_option("groq")
+    base_url_select.select_option("openai")
     
     # Click the reload models button
     reload_button = page.locator("#model-reload-btn")
