@@ -105,6 +105,10 @@ _tests/playwright/**/*.png
 # Keep documentation files tracked
 !_tests/playwright/*README*.md
 
+# Screenshot files that may be created in wrong location
+screenshots/
+screenshots_data/
+
 # Project root test files
 run_tests.out
 run_tests.out_bundle.md
