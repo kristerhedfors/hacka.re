@@ -90,8 +90,8 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Define the core tests filter - exclude problematic tests with @timed_test decorator
-CORE_TESTS_FILTER="test_page or test_api or test_chat"
+# Define the core tests filter - quick validation tests
+CORE_TESTS_FILTER="test_page or test_api or test_chat or test_welcome_modal"
 
 # Start the HTTP server if not skipped
 if [ "$SKIP_SERVER_MANAGEMENT" = "false" ]; then
