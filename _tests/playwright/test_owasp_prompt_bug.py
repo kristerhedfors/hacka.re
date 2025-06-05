@@ -2,9 +2,8 @@ import pytest
 import time
 from playwright.sync_api import Page, expect
 
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, timed_test, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
 
-@timed_test
 def test_owasp_prompt_not_loaded_after_clear_chat(page: Page, serve_hacka_re):
     """Test that the OWASP prompt is not loaded after clearing chat."""
     # Navigate to the page

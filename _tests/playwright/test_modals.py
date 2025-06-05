@@ -1,10 +1,9 @@
 import pytest
 from playwright.sync_api import Page, expect
 
-from test_utils import timed_test, dismiss_welcome_modal, dismiss_settings_modal
+from test_utils import dismiss_welcome_modal, dismiss_settings_modal
 
-@timed_test
-def test_settings_modal(page, serve_hacka_re):
+def test_settings_modal(page: Page, serve_hacka_re):
     """Test that the settings modal opens and contains expected elements."""
     # Navigate to the application
     page.goto(serve_hacka_re)
@@ -46,14 +45,16 @@ def test_settings_modal(page, serve_hacka_re):
     # Check that the settings modal is no longer visible
     expect(settings_modal).not_to_be_visible()
 
-@timed_test
-def test_prompts_modal(page, serve_hacka_re):
+def test_prompts_modal(page: Page, serve_hacka_re):
     """Test that the prompts modal opens and contains expected elements."""
     # Navigate to the application
     page.goto(serve_hacka_re)
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
+    
+    # Also dismiss settings modal if present (to prevent interference with button clicks)
+    dismiss_settings_modal(page)
     
     # Click the prompts button
     prompts_button = page.locator("#prompts-btn")
@@ -74,14 +75,16 @@ def test_prompts_modal(page, serve_hacka_re):
     # Check that the prompts modal is no longer visible
     expect(prompts_modal).not_to_be_visible()
 
-@timed_test
-def test_share_modal(page, serve_hacka_re):
+def test_share_modal(page: Page, serve_hacka_re):
     """Test that the share modal opens and contains expected elements."""
     # Navigate to the application
     page.goto(serve_hacka_re)
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
+    
+    # Also dismiss settings modal if present (to prevent interference with button clicks)
+    dismiss_settings_modal(page)
     
     # Click the share button
     share_button = page.locator("#share-btn")

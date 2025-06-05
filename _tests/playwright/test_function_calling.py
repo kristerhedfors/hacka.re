@@ -1,7 +1,111 @@
 import pytest
 from playwright.sync_api import Page, expect
 import time
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, timed_test, screenshot_with_markdown
+import functools
+from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+
+# Maximum allowed time for key operations (in seconds)
+MAX_ELEMENT_WAIT_TIME = 10.0
+MAX_TEST_TIME = 120.0
+
+def log_timing(operation_name):
+    """Decorator to log timing for specific operations and catch slow tests."""
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            start_time = time.time()
+            print(f"🕐 Starting {operation_name}")
+            try:
+                result = func(*args, **kwargs)
+                end_time = time.time()
+                duration = end_time - start_time
+                print(f"✅ {operation_name} completed in {duration:.3f}s")
+                if duration > MAX_ELEMENT_WAIT_TIME:
+                    print(f"⚠️  WARNING: {operation_name} took {duration:.3f}s (> {MAX_ELEMENT_WAIT_TIME}s threshold)")
+                return result
+            except Exception as e:
+                end_time = time.time()
+                duration = end_time - start_time
+                print(f"❌ {operation_name} failed after {duration:.3f}s: {str(e)}")
+                raise
+        return wrapper
+    return decorator
+
+def timed_wait_for_element(page, selector, operation_name, timeout=5000):
+    """Wait for element with timing logs."""
+    start_time = time.time()
+    print(f"🔍 Waiting for element: {selector} ({operation_name})")
+    
+    try:
+        element = page.locator(selector)
+        element.wait_for(state="visible", timeout=timeout)
+        end_time = time.time()
+        duration = end_time - start_time
+        print(f"✅ Found element {selector} in {duration:.3f}s")
+        if duration > 3.0:
+            print(f"⚠️  WARNING: Element {selector} took {duration:.3f}s to appear (> 3s threshold)")
+        return element
+    except Exception as e:
+        end_time = time.time()
+        duration = end_time - start_time
+        print(f"❌ Element {selector} not found after {duration:.3f}s: {str(e)}")
+        # Additional debugging for missing elements
+        print(f"🔍 DEBUG: Checking if element exists in DOM...")
+        exists = page.evaluate(f"document.querySelector('{selector}') !== null")
+        print(f"🔍 DEBUG: Element exists in DOM: {exists}")
+        if exists:
+            is_visible = page.evaluate(f"""
+                const el = document.querySelector('{selector}');
+                return el && getComputedStyle(el).display !== 'none' && getComputedStyle(el).visibility !== 'hidden';
+            """)
+            print(f"🔍 DEBUG: Element is visible: {is_visible}")
+        raise
+
+def check_for_missing_labels(page, expected_selectors, operation_name):
+    """Check for commonly missing labels/elements that cause tests to hang."""
+    print(f"🏷️  Checking for missing labels in {operation_name}...")
+    missing_elements = []
+    
+    for selector in expected_selectors:
+        start_time = time.time()
+        try:
+            element = page.locator(selector)
+            element.wait_for(state="attached", timeout=1000)  # Quick check
+            duration = time.time() - start_time
+            print(f"✅ Found {selector} in {duration:.3f}s")
+        except:
+            duration = time.time() - start_time
+            missing_elements.append(selector)
+            print(f"❌ Missing {selector} after {duration:.3f}s")
+    
+    if missing_elements:
+        print(f"⚠️  WARNING: {len(missing_elements)} elements missing in {operation_name}: {missing_elements}")
+        print(f"🚨 This could cause the test to hang when waiting for these elements!")
+    
+    return missing_elements
+
+def timed_test_wrapper(test_name):
+    """Decorator to time entire tests and catch those that run too long."""
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            start_time = time.time()
+            print(f"\n🚀 Starting test: {test_name}")
+            try:
+                result = func(*args, **kwargs)
+                end_time = time.time()
+                duration = end_time - start_time
+                print(f"✅ Test {test_name} completed successfully in {duration:.3f}s")
+                if duration > MAX_TEST_TIME:
+                    print(f"⚠️  WARNING: Test {test_name} took {duration:.3f}s (> {MAX_TEST_TIME}s threshold)")
+                return result
+            except Exception as e:
+                end_time = time.time()
+                duration = end_time - start_time
+                print(f"❌ Test {test_name} failed after {duration:.3f}s: {str(e)}")
+                raise
+        return wrapper
+    return decorator
 
 from function_calling_api.helpers.setup_helpers import (
     setup_console_logging, 
@@ -13,13 +117,17 @@ from function_calling_api.helpers.function_helpers import (
     cleanup_functions
 )
 
+@timed_test_wrapper("Function Calling UI Test")
 def test_function_calling_ui(page: Page, serve_hacka_re, api_key):
     """Test the function calling UI elements and interactions."""
     # Set up console error logging
     setup_console_logging(page)
     
     # Navigate to the page
+    start_time = time.time()
+    print("🔗 Navigating to page...")
     page.goto(serve_hacka_re)
+    print(f"✅ Page navigation completed in {time.time() - start_time:.3f}s")
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
@@ -30,23 +138,38 @@ def test_function_calling_ui(page: Page, serve_hacka_re, api_key):
     # Configure API key and model
     configure_api_key_and_model(page, api_key)
     
-    # Check if the function calling button exists
-    function_btn = page.locator("#function-btn")
+    # Check for commonly missing elements that could cause hangs
+    expected_elements = [
+        "#function-btn",
+        "#function-modal", 
+        "#function-editor-form",
+        "#function-code",
+        "#function-validate-btn",
+        "#function-validation-result"
+    ]
+    missing = check_for_missing_labels(page, expected_elements, "Function UI Test")
+    
+    # Check if the function calling button exists (with timing)
+    function_btn = timed_wait_for_element(page, "#function-btn", "Function button")
     expect(function_btn).to_be_visible()
     
     # Click the function calling button
+    print("🖱️  Clicking function button...")
+    click_start = time.time()
     function_btn.click()
+    print(f"✅ Function button clicked in {time.time() - click_start:.3f}s")
     
-    # Check if the function modal is visible
-    function_modal = page.locator("#function-modal")
-    expect(function_modal).to_be_visible()
+    # Check if the function modal is visible (with timing)
+    function_modal = timed_wait_for_element(page, "#function-modal", "Function modal")
     
-    # Check if the function editor form exists
-    function_editor_form = page.locator("#function-editor-form")
+    # Check if the function editor form exists (with timing)
+    function_editor_form = timed_wait_for_element(page, "#function-editor-form", "Function editor form")
     expect(function_editor_form).to_be_visible()
     
     # Fill in the function code with a properly formatted function
-    function_code = page.locator("#function-code")
+    function_code = timed_wait_for_element(page, "#function-code", "Function code textarea")
+    print("⌨️  Filling function code...")
+    fill_start = time.time()
     function_code.fill("""/**
  * Test function for function calling
  * @description A simple test function that returns a message
@@ -61,12 +184,17 @@ function test_function(param1, param2) {
     success: true
   };
 }""")
+    print(f"✅ Function code filled in {time.time() - fill_start:.3f}s")
     
     # Validate the function first
-    page.locator("#function-validate-btn").click()
+    validate_btn = timed_wait_for_element(page, "#function-validate-btn", "Validate button")
+    print("🔍 Clicking validate button...")
+    validate_start = time.time()
+    validate_btn.click()
+    print(f"✅ Validate button clicked in {time.time() - validate_start:.3f}s")
     
-    # Check for validation result
-    validation_result = page.locator("#function-validation-result")
+    # Check for validation result (with timing)
+    validation_result = timed_wait_for_element(page, "#function-validation-result", "Validation result")
     expect(validation_result).to_be_visible()
     expect(validation_result).to_contain_text("Library validated successfully")
     
@@ -104,6 +232,7 @@ function test_function(param1, param2) {
     page.locator("#close-function-modal").click()
     expect(function_modal).not_to_be_visible()
 
+@timed_test_wrapper("Function Validation Errors Test") 
 def test_function_validation_errors(page: Page, serve_hacka_re, api_key):
     """Test validation errors for function calling."""
     # Set up console error logging
@@ -121,20 +250,25 @@ def test_function_validation_errors(page: Page, serve_hacka_re, api_key):
     # Configure API key and model
     configure_api_key_and_model(page, api_key)
     
-    # Open function modal
-    page.locator("#function-btn").click()
-    function_modal = page.locator("#function-modal")
+    # Open function modal (with timing)
+    function_btn = timed_wait_for_element(page, "#function-btn", "Function button")
+    function_btn.click()
+    function_modal = timed_wait_for_element(page, "#function-modal", "Function modal")
     expect(function_modal).to_be_visible()
     
     # Test case 1: Empty function code
-    function_code = page.locator("#function-code")
+    function_code = timed_wait_for_element(page, "#function-code", "Function code textarea")
     function_code.fill("")
     
-    # Validate the function
-    page.locator("#function-validate-btn").click()
+    # Validate the function (with timing)
+    validate_btn = timed_wait_for_element(page, "#function-validate-btn", "Validate button")
+    print("🔍 Testing empty code validation...")
+    validate_start = time.time()
+    validate_btn.click()
+    print(f"✅ Validation completed in {time.time() - validate_start:.3f}s")
     
-    # Check for validation error
-    validation_result = page.locator("#function-validation-result")
+    # Check for validation error (with timing)
+    validation_result = timed_wait_for_element(page, "#function-validation-result", "Validation result", timeout=3000)
     expect(validation_result).to_be_visible()
     expect(validation_result).to_contain_text("Function code is required")
     
@@ -164,6 +298,7 @@ def test_function_validation_errors(page: Page, serve_hacka_re, api_key):
     page.locator("#close-function-modal").click()
     expect(function_modal).not_to_be_visible()
 
+@timed_test_wrapper("Function Calling Integration Test")
 def test_function_calling_integration(page: Page, serve_hacka_re, api_key):
     """Test the integration of function calling with the chat interface."""
     # This test requires a valid API key and a model that supports function calling
@@ -267,6 +402,7 @@ function get_weather(location, unit = "celsius") {
     # Close the function modal
     page.locator("#close-function-modal").click()
 
+@timed_test_wrapper("Function Error Handling Test")
 def test_function_error_handling(page: Page, serve_hacka_re, api_key):
     """Test error handling for function execution."""
     # Set up console error logging
@@ -392,6 +528,7 @@ function non_serializable() {
     # Close the function modal
     page.locator("#close-function-modal").click()
 
+@timed_test_wrapper("RC4 Encryption Functions Test")
 def test_rc4_encryption_functions(page: Page, serve_hacka_re, api_key):
     """Test RC4 encryption/decryption functions."""
     # Set up console error logging
@@ -529,6 +666,7 @@ function rc4_test() {
     # Close the function modal
     page.locator("#close-function-modal").click()
 
+@timed_test_wrapper("Function Enable/Disable Test")
 def test_function_enable_disable(page: Page, serve_hacka_re, api_key):
     """Test enabling and disabling functions."""
     # Set up console error logging
