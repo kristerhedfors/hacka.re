@@ -25,7 +25,11 @@ window.FunctionToolsExecutor = (function() {
                 Logger.logExecutionResult(name, result, executionDuration);
                 this._validateResult(result, name);
                 
-                return result;
+                // Return both result and execution time
+                return {
+                    result: result,
+                    executionTime: executionDuration
+                };
             } catch (error) {
                 const executionDuration = Date.now() - executionStartTime;
                 Logger.error(`Function execution failed after ${executionDuration}ms:`, error);
