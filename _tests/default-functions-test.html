@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Default Functions Test</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/themes.css">
+    <link rel="stylesheet" href="../css/function-calling.css">
+    <link rel="stylesheet" href="../css/default-functions.css">
+    <link rel="stylesheet" href="../lib/font-awesome/all.min.css">
+    <style>
+        body {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+        .test-result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .test-result.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .test-result.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>Default Functions Test</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Default Functions Service</h2>
+        <button onclick="testDefaultFunctionsService()">Run Test</button>
+        <div id="test1-result" class="test-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 2: RC4 Encryption Functions</h2>
+        <button onclick="testRC4Functions()">Run Test</button>
+        <div id="test2-result" class="test-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 3: Function Selection and Loading</h2>
+        <button onclick="testFunctionSelection()">Run Test</button>
+        <div id="test3-result" class="test-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 4: UI Integration</h2>
+        <p>Open the Function Calling modal to see the Default Functions section.</p>
+        <button id="function-btn" class="btn primary-btn">Open Function Modal</button>
+        <div id="function-list" style="margin-top: 20px;"></div>
+    </div>
+
+    <!-- Mock elements for testing -->
+    <div id="function-modal" class="modal" style="display: none;"></div>
+
+    <!-- Include all necessary scripts -->
+    <script src="../js/services/core-storage-service.js"></script>
+    <script src="../js/services/namespace-service.js"></script>
+    <script src="../js/services/encryption-service.js"></script>
+    <script src="../js/services/storage-service.js"></script>
+    <script src="../js/services/function-tools-config.js"></script>
+    <script src="../js/services/function-tools-logger.js"></script>
+    <script src="../js/services/function-tools-storage.js"></script>
+    <script src="../js/services/function-tools-registry.js"></script>
+    <script src="../js/services/function-tools-parser.js"></script>
+    <script src="../js/services/function-tools-executor.js"></script>
+    <script src="../js/services/function-tools-processor.js"></script>
+    <script src="../js/services/function-tools-service.js"></script>
+    <script src="../js/utils/rc4-utils.js"></script>
+    <script src="../js/default-functions/rc4-encryption.js"></script>
+    <script src="../js/services/default-functions-service.js"></script>
+    
+    <script>
+        function testDefaultFunctionsService() {
+            const result = document.getElementById('test1-result');
+            try {
+                // Test getting default function groups
+                const groups = DefaultFunctionsService.getDefaultFunctionGroups();
+                let output = `Found ${groups.length} default function groups:\n`;
+                
+                groups.forEach(group => {
+                    output += `\n- ${group.name} (ID: ${group.id})`;
+                    output += `\n  Description: ${group.description}`;
+                    output += `\n  Functions: ${group.functions ? group.functions.length : 0}`;
+                    if (group.functions) {
+                        group.functions.forEach(func => {
+                            output += `\n    - ${func.name}`;
+                        });
+                    }
+                });
+                
+                result.textContent = output;
+                result.className = 'test-result success';
+            } catch (error) {
+                result.textContent = `Error: ${error.message}`;
+                result.className = 'test-result error';
+            }
+        }
+        
+        function testRC4Functions() {
+            const result = document.getElementById('test2-result');
+            try {
+                let output = 'Testing RC4 encryption/decryption:\n';
+                
+                // Test using RC4Utils directly
+                const plaintext = 'Hello, World!';
+                const key = 'secretkey';
+                
+                output += `\nPlaintext: "${plaintext}"`;
+                output += `\nKey: "${key}"`;
+                
+                const encrypted = RC4Utils.encrypt(plaintext, key);
+                output += `\nEncrypted (hex): ${encrypted}`;
+                
+                const decrypted = RC4Utils.decrypt(encrypted, key);
+                output += `\nDecrypted: "${decrypted}"`;
+                
+                output += `\n\nTest ${decrypted === plaintext ? 'PASSED' : 'FAILED'}`;
+                
+                result.textContent = output;
+                result.className = 'test-result success';
+            } catch (error) {
+                result.textContent = `Error: ${error.message}`;
+                result.className = 'test-result error';
+            }
+        }
+        
+        function testFunctionSelection() {
+            const result = document.getElementById('test3-result');
+            try {
+                let output = 'Testing function selection and loading:\n';
+                
+                // Get RC4 encryption group
+                const rc4Group = DefaultFunctionsService.getDefaultFunctionGroupById('rc4-encryption');
+                if (!rc4Group) {
+                    throw new Error('RC4 encryption group not found');
+                }
+                
+                output += `\nFound group: ${rc4Group.name}`;
+                
+                // Check if it's selected
+                const isSelected = DefaultFunctionsService.isDefaultFunctionGroupSelected('rc4-encryption');
+                output += `\nCurrently selected: ${isSelected}`;
+                
+                // Toggle selection
+                output += '\n\nToggling selection...';
+                const newState = DefaultFunctionsService.toggleDefaultFunctionGroupSelection('rc4-encryption');
+                output += `\nNew state: ${newState ? 'selected' : 'unselected'}`;
+                
+                // Check if functions were added to FunctionToolsService
+                if (window.FunctionToolsService) {
+                    const functions = FunctionToolsService.getJsFunctions();
+                    const functionNames = Object.keys(functions);
+                    output += `\n\nFunctions in FunctionToolsService: ${functionNames.length}`;
+                    functionNames.forEach(name => {
+                        output += `\n  - ${name}`;
+                    });
+                }
+                
+                result.textContent = output;
+                result.className = 'test-result success';
+            } catch (error) {
+                result.textContent = `Error: ${error.message}`;
+                result.className = 'test-result error';
+            }
+        }
+        
+        // Simple UI test
+        document.getElementById('function-btn').addEventListener('click', function() {
+            const functionList = document.getElementById('function-list');
+            functionList.innerHTML = '<h3>Function List Mock</h3>';
+            
+            // Create a mock default functions section
+            const section = document.createElement('div');
+            section.className = 'default-functions-section';
+            
+            const header = document.createElement('div');
+            header.className = 'default-functions-header';
+            header.innerHTML = '<i class="fas fa-chevron-right"></i><h4>Default Functions</h4>';
+            section.appendChild(header);
+            
+            const list = document.createElement('div');
+            list.className = 'default-functions-list';
+            list.style.display = 'none';
+            
+            const groups = DefaultFunctionsService.getDefaultFunctionGroups();
+            groups.forEach(group => {
+                const item = document.createElement('div');
+                item.className = 'function-group-item default-function-group-item';
+                item.innerHTML = `
+                    <input type="checkbox" class="function-group-checkbox">
+                    <div class="function-group-content">
+                        <div class="function-group-name">${group.name}</div>
+                        <div class="function-group-description">${group.description}</div>
+                    </div>
+                    <button class="function-group-info"><i class="fas fa-info-circle"></i></button>
+                `;
+                list.appendChild(item);
+            });
+            
+            section.appendChild(list);
+            functionList.appendChild(section);
+            
+            // Toggle functionality
+            header.addEventListener('click', function() {
+                const icon = header.querySelector('i');
+                if (list.style.display === 'none') {
+                    list.style.display = 'block';
+                    icon.className = 'fas fa-chevron-down';
+                } else {
+                    list.style.display = 'none';
+                    icon.className = 'fas fa-chevron-right';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

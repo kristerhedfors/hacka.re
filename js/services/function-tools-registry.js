@@ -181,11 +181,19 @@ window.FunctionToolsRegistry = (function() {
         getEnabledToolDefinitions: function() {
             console.log("FunctionToolsRegistry.getEnabledToolDefinitions called");
             
+            // Force reload from storage to ensure we have latest data
+            Storage.load();
+            
             const jsFunctions = Storage.getJsFunctions();
             const enabledFunctions = Storage.getEnabledFunctions();
             
             console.log("- Enabled functions:", enabledFunctions);
             console.log("- Available functions:", Object.keys(jsFunctions));
+            
+            // Debug each enabled function
+            enabledFunctions.forEach(name => {
+                console.log(`  - Function ${name}: exists=${!!jsFunctions[name]}, hasToolDef=${!!jsFunctions[name]?.toolDefinition}`);
+            });
             
             const toolDefinitions = enabledFunctions
                 .filter(name => jsFunctions[name] && jsFunctions[name].toolDefinition)

@@ -115,8 +115,14 @@ function applyExecutorFix() {
         // Override the method
         window.FunctionToolsExecutor._generateFunctionCall = function(name) {
             const jsFunctions = FunctionToolsStorage.getJsFunctions();
-            const functionCode = jsFunctions[name].code;
-            const functionMatch = functionCode.match(/^\s*(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(([^)]*)\)/);
+            let functionCode = jsFunctions[name] ? jsFunctions[name].code : null;
+            
+            // If not found in user-defined functions, check default functions
+            if (!functionCode && window.DefaultFunctionsService) {
+                const enabledDefaultFunctions = window.DefaultFunctionsService.getEnabledDefaultFunctions();
+                functionCode = enabledDefaultFunctions[name] ? enabledDefaultFunctions[name].code : null;
+            }
+            const functionMatch = functionCode.match(/(?:^|\s|\/\*\*[\s\S]*?\*\/\s*)(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(([^)]*)\)/);
             
             console.log(`[Executor Fix] Function signature match: ${!!functionMatch}`);
             

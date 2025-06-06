@@ -64,8 +64,14 @@ window.FunctionCallingManager = (function() {
                 setTimeout(extractFunctionName, 100);
             }
             
-            // Load functions from storage and render them
-            renderFunctionList();
+            // Load functions from storage but don't render them until modal is opened
+            // renderFunctionList() will be called when the modal is shown
+            
+            // Load selected default functions if available
+            if (window.DefaultFunctionsService) {
+                DefaultFunctionsService.loadSelectedDefaultFunctions();
+                console.log('Default functions loaded');
+            }
             
             console.log('Function Calling Manager initialized');
         }
@@ -165,36 +171,63 @@ function get_weather(location, units = "metric") {
         }
         
         /**
-         * Render the list of functions
+         * Render only the main (user-defined + selected default) functions without affecting the default functions tree
          */
-        function renderFunctionList() {
-            if (!elements.functionList) return;
+        function renderMainFunctionList() {
+            if (!elements.functionList) {
+                console.warn('renderMainFunctionList called but elements.functionList is not available');
+                return;
+            }
             
-            // Clear the list
+            // Note: Removed overly restrictive modal active check that was preventing rendering
+            
+            // Find and preserve the default functions section
+            const defaultFunctionsSection = elements.functionList.querySelector('.default-functions-section');
+            
+            // Clear the list but preserve the default functions section
             elements.functionList.innerHTML = '';
+            
+            // Re-add the default functions section if it existed
+            if (defaultFunctionsSection) {
+                elements.functionList.appendChild(defaultFunctionsSection);
+            }
             
             // Get all functions
             const functions = FunctionToolsService.getJsFunctions();
             const functionNames = Object.keys(functions);
             
-            // Show empty state if no functions
+            // Show empty state if no functions, but position it before default functions
             if (functionNames.length === 0) {
                 if (elements.emptyFunctionState) {
                     elements.emptyFunctionState.style.display = 'block';
                     
-                    // Make sure the empty state is in the function list
-                    if (elements.emptyFunctionState.parentElement !== elements.functionList) {
+                    // Insert before default functions section if it exists
+                    if (defaultFunctionsSection) {
+                        elements.functionList.insertBefore(elements.emptyFunctionState, defaultFunctionsSection);
+                    } else {
                         elements.functionList.appendChild(elements.emptyFunctionState);
                     }
                 }
-                return;
+            } else {
+                // Hide empty state if we have functions
+                if (elements.emptyFunctionState) {
+                    elements.emptyFunctionState.style.display = 'none';
+                }
+                
+                // Render user-defined functions (same logic as before)
+                renderUserDefinedFunctions(functions, functionNames, defaultFunctionsSection);
             }
             
-            // Hide empty state
-            if (elements.emptyFunctionState) {
-                elements.emptyFunctionState.style.display = 'none';
+            // Add default functions section if it doesn't exist and DefaultFunctionsService is available
+            if (!defaultFunctionsSection && window.DefaultFunctionsService) {
+                addDefaultFunctionsSection();
             }
-            
+        }
+        
+        /**
+         * Render user-defined functions
+         */
+        function renderUserDefinedFunctions(functions, functionNames, insertBeforeElement) {
             // Group functions by their group ID
             const groupedFunctions = {};
             const groupColors = {};
@@ -311,7 +344,7 @@ function get_weather(location, units = "metric") {
                     
                     if (confirm(confirmMessage)) {
                         FunctionToolsService.removeJsFunction(name);
-                        renderFunctionList();
+                        renderMainFunctionList(); // Use renderMainFunctionList instead of renderFunctionList
                         
                         // Add system message about the deletion
                         if (addSystemMessage) {
@@ -335,9 +368,317 @@ function get_weather(location, units = "metric") {
                 
                 functionItem.appendChild(deleteButton);
                 
-                // Add to list
-                elements.functionList.appendChild(functionItem);
+                // Add to list, inserting before the default functions section if it exists
+                if (insertBeforeElement) {
+                    elements.functionList.insertBefore(functionItem, insertBeforeElement);
+                } else {
+                    elements.functionList.appendChild(functionItem);
+                }
             });
+        }
+        
+        /**
+         * Render the list of functions (full re-render)
+         */
+        function renderFunctionList() {
+            if (!elements.functionList) {
+                console.warn('renderFunctionList called but elements.functionList is not available');
+                return;
+            }
+            
+            // Note: Removed overly restrictive modal active check that was preventing rendering
+            
+            // Clear the list
+            elements.functionList.innerHTML = '';
+            
+            // Get all functions
+            const functions = FunctionToolsService.getJsFunctions();
+            const functionNames = Object.keys(functions);
+            
+            // Show empty state if no functions
+            if (functionNames.length === 0) {
+                if (elements.emptyFunctionState) {
+                    elements.emptyFunctionState.style.display = 'block';
+                    
+                    // Make sure the empty state is in the function list
+                    if (elements.emptyFunctionState.parentElement !== elements.functionList) {
+                        elements.functionList.appendChild(elements.emptyFunctionState);
+                    }
+                }
+                // Don't return early - still add default functions section
+            } else {
+                // Hide empty state if we have functions
+                if (elements.emptyFunctionState) {
+                    elements.emptyFunctionState.style.display = 'none';
+                }
+            }
+            
+            // Render user-defined functions if any exist
+            if (functionNames.length > 0) {
+                renderUserDefinedFunctions(functions, functionNames, null);
+            }
+            
+            // Add default functions section if DefaultFunctionsService is available
+            if (window.DefaultFunctionsService) {
+                addDefaultFunctionsSection();
+            }
+        }
+        
+        /**
+         * Add the default functions section to the function list
+         */
+        function addDefaultFunctionsSection() {
+            console.log('addDefaultFunctionsSection called');
+            // Create default functions section
+            const defaultFunctionsSection = document.createElement('div');
+            defaultFunctionsSection.className = 'default-functions-section';
+            
+            // Create header with expand/collapse functionality
+            const sectionHeader = document.createElement('div');
+            sectionHeader.className = 'default-functions-header';
+            
+            // Add expand/collapse icon
+            const expandIcon = document.createElement('i');
+            expandIcon.className = 'fas fa-chevron-right';
+            sectionHeader.appendChild(expandIcon);
+            
+            // Add section title
+            const sectionTitle = document.createElement('h4');
+            sectionTitle.textContent = 'Default Functions';
+            sectionHeader.appendChild(sectionTitle);
+            
+            // Add click event to expand/collapse
+            let isExpanded = false;
+            sectionHeader.addEventListener('click', () => {
+                isExpanded = !isExpanded;
+                expandIcon.className = isExpanded ? 'fas fa-chevron-down' : 'fas fa-chevron-right';
+                defaultFunctionsList.style.display = isExpanded ? 'block' : 'none';
+            });
+            
+            defaultFunctionsSection.appendChild(sectionHeader);
+            
+            // Create container for default functions
+            const defaultFunctionsList = document.createElement('div');
+            defaultFunctionsList.className = 'default-functions-list';
+            defaultFunctionsList.style.display = 'none'; // Initially collapsed
+            
+            // Get default function groups
+            const defaultFunctionGroups = DefaultFunctionsService.getDefaultFunctionGroups();
+            
+            // Add each default function group to the list
+            defaultFunctionGroups.forEach(group => {
+                const groupItem = createDefaultFunctionGroupItem(group, []);
+                defaultFunctionsList.appendChild(groupItem);
+            });
+            
+            defaultFunctionsSection.appendChild(defaultFunctionsList);
+            console.log('About to append default functions section to function list');
+            console.log('elements.functionList:', !!elements.functionList);
+            console.log('defaultFunctionsSection:', !!defaultFunctionsSection);
+            elements.functionList.appendChild(defaultFunctionsSection);
+            console.log('Default functions section appended successfully');
+        }
+        
+        /**
+         * Create a default function group item element
+         * @param {Object} group - The function group object
+         * @param {Array} selectedIds - Array of selected function group IDs
+         * @returns {HTMLElement} The created function group item element
+         */
+        function createDefaultFunctionGroupItem(group, selectedIds) {
+            const groupItem = document.createElement('div');
+            groupItem.className = 'function-group-item default-function-group-item';
+            groupItem.dataset.id = group.id;
+            
+            // Create header container
+            const headerContainer = document.createElement('div');
+            headerContainer.className = 'function-group-header';
+            
+            // Add expand/collapse icon
+            const expandIcon = document.createElement('i');
+            expandIcon.className = 'fas fa-chevron-right';
+            headerContainer.appendChild(expandIcon);
+            
+            // Create group name element
+            const groupName = document.createElement('div');
+            groupName.className = 'function-group-name';
+            groupName.textContent = group.name || 'Unnamed Function Group';
+            groupName.style.cursor = 'pointer';
+            groupName.title = 'Click to expand/collapse';
+            headerContainer.appendChild(groupName);
+            
+            // Add info icon
+            const infoIcon = document.createElement('button');
+            infoIcon.className = 'function-group-info';
+            infoIcon.innerHTML = '<i class="fas fa-info-circle"></i>';
+            infoIcon.title = 'About this function group';
+            infoIcon.addEventListener('click', (e) => {
+                e.stopPropagation();
+                showFunctionGroupInfo(group, infoIcon);
+            });
+            headerContainer.appendChild(infoIcon);
+            
+            groupItem.appendChild(headerContainer);
+            
+            // Create container for individual functions
+            const functionsList = document.createElement('div');
+            functionsList.className = 'group-functions-list';
+            functionsList.style.display = 'none'; // Initially collapsed
+            
+            // Add individual functions
+            if (group.functions && group.functions.length > 0) {
+                group.functions.forEach(func => {
+                    const functionItem = createIndividualFunctionItem(group, func);
+                    functionsList.appendChild(functionItem);
+                });
+            }
+            
+            // Add click event to expand/collapse
+            let isExpanded = false;
+            headerContainer.addEventListener('click', (e) => {
+                if (e.target === infoIcon || e.target.closest('.function-group-info')) {
+                    return; // Don't expand/collapse when clicking info icon
+                }
+                isExpanded = !isExpanded;
+                expandIcon.className = isExpanded ? 'fas fa-chevron-down' : 'fas fa-chevron-right';
+                functionsList.style.display = isExpanded ? 'block' : 'none';
+            });
+            
+            groupItem.appendChild(functionsList);
+            
+            return groupItem;
+        }
+        
+        /**
+         * Create an individual function item element
+         * @param {Object} group - The function group object
+         * @param {Object} func - The function object
+         * @returns {HTMLElement} The created function item element
+         */
+        function createIndividualFunctionItem(group, func) {
+            const functionItem = document.createElement('div');
+            functionItem.className = 'individual-function-item';
+            
+            // Create checkbox for selecting the individual function
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'function-item-checkbox';
+            const functionId = `${group.id}:${func.name}`;
+            checkbox.checked = DefaultFunctionsService.isIndividualFunctionSelected(functionId);
+            checkbox.addEventListener('click', (e) => {
+                e.stopPropagation();
+                console.log("Individual function checkbox clicked:", functionId);
+                
+                // Toggle the individual function selection
+                const wasSelected = DefaultFunctionsService.toggleIndividualFunctionSelection(functionId);
+                
+                // Update only the main function list without affecting the default functions tree
+                renderMainFunctionList();
+                
+                // Add system message
+                if (addSystemMessage) {
+                    if (wasSelected) {
+                        addSystemMessage(`Default function "${func.name}" enabled.`);
+                    } else {
+                        addSystemMessage(`Default function "${func.name}" disabled.`);
+                    }
+                }
+            });
+            functionItem.appendChild(checkbox);
+            
+            // Create function name element
+            const functionName = document.createElement('div');
+            functionName.className = 'function-item-name';
+            functionName.textContent = func.name;
+            functionName.style.cursor = 'pointer';
+            functionName.title = 'Click to view function code';
+            
+            // Add click event to show function code
+            functionName.addEventListener('click', (e) => {
+                e.stopPropagation();
+                
+                // Show function code in the editor (read-only)
+                if (elements.functionCode) {
+                    elements.functionCode.value = func.code;
+                    elements.functionCode.setAttribute('readonly', 'readonly');
+                    
+                    // Clear the readonly attribute after a short delay when clicking elsewhere
+                    setTimeout(() => {
+                        document.addEventListener('click', function removeReadonly(e) {
+                            if (!e.target.closest('.function-editor')) {
+                                elements.functionCode.removeAttribute('readonly');
+                                document.removeEventListener('click', removeReadonly);
+                            }
+                        });
+                    }, 100);
+                }
+            });
+            
+            functionItem.appendChild(functionName);
+            
+            // Add function description if available
+            if (func.description) {
+                const functionDesc = document.createElement('div');
+                functionDesc.className = 'function-item-description';
+                functionDesc.textContent = func.description;
+                functionItem.appendChild(functionDesc);
+            }
+            
+            return functionItem;
+        }
+        
+        /**
+         * Show function group info popup
+         * @param {Object} group - The function group object
+         * @param {HTMLElement} infoIcon - The info icon element
+         */
+        function showFunctionGroupInfo(group, infoIcon) {
+            // Create and show a popup with information about the function group
+            const popup = document.createElement('div');
+            popup.className = 'function-info-popup';
+            
+            // Get function names
+            const functionNames = group.functions ? 
+                group.functions.map(f => f.name).join(', ') : 
+                'No functions';
+            
+            // Create popup content
+            popup.innerHTML = `
+                <div class="function-info-header">
+                    <h3>${group.name}</h3>
+                    <button class="function-info-close"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="function-info-content">
+                    <p>${group.description || 'A collection of default functions for the hacka.re function calling system.'}</p>
+                    <p class="function-info-details"><strong>Functions:</strong> ${functionNames}</p>
+                    <p class="function-info-hint">Click on individual function names to view their code in the editor.</p>
+                </div>
+            `;
+            
+            // Add close button functionality
+            const closeBtn = popup.querySelector('.function-info-close');
+            closeBtn.addEventListener('click', () => {
+                document.body.removeChild(popup);
+            });
+            
+            // Add click outside to close
+            document.addEventListener('click', function closePopup(event) {
+                if (!popup.contains(event.target) && event.target !== infoIcon) {
+                    if (document.body.contains(popup)) {
+                        document.body.removeChild(popup);
+                    }
+                    document.removeEventListener('click', closePopup);
+                }
+            });
+            
+            // Position the popup near the info icon
+            const rect = infoIcon.getBoundingClientRect();
+            popup.style.position = 'absolute';
+            popup.style.top = `${rect.bottom + window.scrollY + 10}px`;
+            popup.style.left = `${rect.left + window.scrollX - 200}px`; // Offset to center
+            
+            // Add to body
+            document.body.appendChild(popup);
         }
         
         /**
@@ -1139,7 +1480,20 @@ function get_weather(location, units = "metric") {
          * @returns {Array} Array of function definitions
          */
         function getFunctionDefinitions() {
-            return FunctionToolsService.getToolDefinitions();
+            const userDefinedToolDefinitions = FunctionToolsService.getToolDefinitions();
+            
+            // Get default function tool definitions
+            let defaultFunctionToolDefinitions = [];
+            if (window.DefaultFunctionsService && typeof window.DefaultFunctionsService.getEnabledDefaultFunctionToolDefinitions === 'function') {
+                defaultFunctionToolDefinitions = window.DefaultFunctionsService.getEnabledDefaultFunctionToolDefinitions();
+            }
+            
+            // Combine both user-defined and default function tool definitions
+            const allToolDefinitions = [...userDefinedToolDefinitions, ...defaultFunctionToolDefinitions];
+            
+            console.log(`Combined tool definitions: ${userDefinedToolDefinitions.length} user-defined + ${defaultFunctionToolDefinitions.length} default = ${allToolDefinitions.length} total`);
+            
+            return allToolDefinitions;
         }
         
         // Public API

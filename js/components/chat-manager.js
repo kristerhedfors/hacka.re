@@ -172,10 +172,22 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
                         console.log(`[ChatManager Debug] - Tool call ${i + 1} name:`, toolName);
                         
                         // Check if it's a function tool (must exist and be enabled)
-                        const isFunctionTool = FunctionToolsService && 
+                        // Check if it's a user-defined function tool
+                        const isUserDefinedFunctionTool = FunctionToolsService && 
                             FunctionToolsService.getJsFunctions()[toolName] && 
                             FunctionToolsService.isJsFunctionEnabled(toolName);
                         
+                        // Check if it's a default function tool
+                        let isDefaultFunctionTool = false;
+                        if (window.DefaultFunctionsService && typeof window.DefaultFunctionsService.getEnabledDefaultFunctions === 'function') {
+                            const enabledDefaultFunctions = window.DefaultFunctionsService.getEnabledDefaultFunctions();
+                            isDefaultFunctionTool = !!enabledDefaultFunctions[toolName];
+                        }
+                        
+                        const isFunctionTool = isUserDefinedFunctionTool || isDefaultFunctionTool;
+                        
+                        console.log(`[ChatManager Debug] - Tool "${toolName}" is user-defined function tool:`, isUserDefinedFunctionTool);
+                        console.log(`[ChatManager Debug] - Tool "${toolName}" is default function tool:`, isDefaultFunctionTool);
                         console.log(`[ChatManager Debug] - Tool "${toolName}" is function tool:`, isFunctionTool);
                         console.log(`[ChatManager Debug] - FunctionToolsService available:`, !!FunctionToolsService);
                         
@@ -184,6 +196,12 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
                             console.log(`[ChatManager Debug] - Enabled JS functions:`, FunctionToolsService.getEnabledFunctionNames());
                             console.log(`[ChatManager Debug] - Tool "${toolName}" exists in registry:`, !!FunctionToolsService.getJsFunctions()[toolName]);
                             console.log(`[ChatManager Debug] - Tool "${toolName}" is enabled:`, FunctionToolsService.isJsFunctionEnabled(toolName));
+                        }
+                        
+                        if (window.DefaultFunctionsService) {
+                            const enabledDefaultFunctions = window.DefaultFunctionsService.getEnabledDefaultFunctions();
+                            console.log(`[ChatManager Debug] - Available default functions:`, Object.keys(enabledDefaultFunctions));
+                            console.log(`[ChatManager Debug] - Tool "${toolName}" exists in default functions:`, !!enabledDefaultFunctions[toolName]);
                         }
                         
                         if (isFunctionTool) {
