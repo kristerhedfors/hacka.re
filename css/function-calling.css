@@ -7,20 +7,18 @@
 .function-call-icon,
 .function-result-icon {
     display: inline-block;
-    margin: 0 5px; /* Increased margin to prevent overlap */
-    font-size: 0.9em;
+    margin: 0 2px;
     vertical-align: middle;
     position: relative;
-    font-style: normal;
-    font-weight: 900;
-    text-shadow: 0.5px 0 0 currentColor;
-    cursor: pointer; /* Add pointer cursor to indicate clickable */
+    cursor: pointer;
+    min-width: 14px;
+    min-height: 14px;
 }
 
-/* Base color for function icons */
+/* Base color for function icons - use theme primary color */
 .function-call-icon,
 .function-result-icon {
-    color: #6366f1; /* Default color (indigo) */
+    color: var(--primary-color, #6366f1); /* Use theme primary color with fallback */
 }
 
 /* Function group colors - used for both function calls and function items */
@@ -54,17 +52,75 @@
     color: var(--function-color-5);
 }
 
-/* Function call icon (f) */
-.function-call-icon::after {
-    content: "𝑓";
+/* Function call icon styling (content added via HTML) */
+.function-call-icon {
+    font-style: italic;
+    font-weight: 900;
+    font-size: 1.3em;
+    text-shadow: 0.5px 0 0 currentColor;
     position: relative;
+    font-family: "Times New Roman", serif;
+    animation: textSweep 3s infinite alternate;
+    background: linear-gradient(90deg, var(--function-icon-color-start, var(--primary-color)), var(--function-icon-color-mid, #ffffff), var(--function-icon-color-end, var(--primary-color)));
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
-/* Function result icon (thick right arrow) */
-.function-result-icon::after {
-    content: "➔"; /* Thick right-pointing arrow */
+/* Add a duplicate character with slight offset to create a bolder appearance */
+.function-call-icon::after {
+    content: "f";
+    position: absolute;
+    left: 0.5px;
+    top: 0;
+    text-shadow: none;
+    font-style: italic;
+    font-family: "Times New Roman", serif;
+    animation: textSweep 3s infinite alternate;
+    background: linear-gradient(90deg, var(--function-icon-color-start, var(--primary-color)), var(--function-icon-color-mid, #ffffff), var(--function-icon-color-end, var(--primary-color)));
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Function result icon styling - create CSS arrow */
+.function-result-icon {
     position: relative;
-    font-weight: bold;
+    display: inline-block;
+    width: 16px;
+    height: 12px;
+    margin: 0 2px;
+}
+
+/* Create arrow using CSS borders with animated color */
+.function-result-icon::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-left: 10px solid var(--function-icon-color-start, var(--primary-color));
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    animation: arrowColorSweep 3s infinite alternate;
+}
+
+/* Create arrow shaft with animated color */
+.function-result-icon::after {
+    content: "";
+    position: absolute;
+    left: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 10px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--function-icon-color-start, var(--primary-color)), var(--function-icon-color-mid, #ffffff), var(--function-icon-color-end, var(--primary-color)));
+    background-size: 200% auto;
+    animation: backgroundSweep 3s infinite alternate;
 }
 
 /* Tooltip for function icons */
@@ -219,24 +275,7 @@
     opacity: 1;
 }
 
-/* Add a duplicate character with slight offset to create a bolder appearance for function call icon */
-.function-call-icon::before {
-    content: "𝑓";
-    position: absolute;
-    left: 0.5px;
-    top: 0;
-    text-shadow: none;
-}
-
-/* For the result icon, add a duplicate arrow with slight offset */
-.function-result-icon::before {
-    content: "➔";
-    position: absolute;
-    left: 0.5px;
-    top: 0;
-    text-shadow: none;
-    font-weight: bold;
-}
+/* Remove the duplicate pseudo-elements that were causing conflicts */
 
 /* Function calling menu item */
 .function-icon {
@@ -526,4 +565,35 @@
 
 .function-tool-definition.active {
     display: block;
+}
+
+/* Animation keyframes for function icons */
+@keyframes arrowColorSweep {
+    0% {
+        border-left-color: var(--function-icon-color-start, var(--primary-color));
+    }
+    50% {
+        border-left-color: var(--function-icon-color-mid, #ffffff);
+    }
+    100% {
+        border-left-color: var(--function-icon-color-end, var(--primary-color));
+    }
+}
+
+@keyframes backgroundSweep {
+    0% {
+        background-position: 0% center;
+    }
+    100% {
+        background-position: 100% center;
+    }
+}
+
+@keyframes textSweep {
+    0% {
+        background-position: 0% center;
+    }
+    100% {
+        background-position: 100% center;
+    }
 }

@@ -1,0 +1,460 @@
+/**
+ * Default Functions Service
+ * Handles storage and management of default functions for the function calling system
+ */
+
+window.DefaultFunctionsService = (function() {
+    // Storage key for selected default functions
+    const SELECTED_DEFAULT_FUNCTIONS_KEY = 'selected_default_functions';
+    // Storage key for individual function selections
+    const SELECTED_INDIVIDUAL_FUNCTIONS_KEY = 'selected_individual_functions';
+    // Storage key for enabled default functions
+    const ENABLED_DEFAULT_FUNCTIONS_KEY = 'enabled_default_functions';
+    
+    // Default functions data - these are loaded from individual files
+    let DEFAULT_FUNCTIONS = [];
+    
+    /**
+     * Initialize the default functions
+     * This function loads all registered default functions
+     */
+    function initializeDefaultFunctions() {
+        // Clear the array first
+        DEFAULT_FUNCTIONS = [];
+        
+        // Add RC4 encryption functions if they exist
+        if (window.RC4EncryptionFunctions) {
+            DEFAULT_FUNCTIONS.push(window.RC4EncryptionFunctions);
+        }
+        
+        // Add Math utilities functions if they exist
+        if (window.MathUtilitiesFunctions) {
+            DEFAULT_FUNCTIONS.push(window.MathUtilitiesFunctions);
+        }
+        
+        // Additional default function groups can be added here in the future
+        
+        console.log(`Loaded ${DEFAULT_FUNCTIONS.length} default function groups:`, DEFAULT_FUNCTIONS.map(g => g.name));
+    }
+    
+    // Initialize functions when the service is loaded
+    initializeDefaultFunctions();
+    
+    /**
+     * Get all default function groups
+     * @returns {Array} Array of default function group objects
+     */
+    function getDefaultFunctionGroups() {
+        return DEFAULT_FUNCTIONS;
+    }
+    
+    /**
+     * Get a default function group by ID
+     * @param {string} id - The default function group ID
+     * @returns {Object|null} The default function group object or null if not found
+     */
+    function getDefaultFunctionGroupById(id) {
+        return DEFAULT_FUNCTIONS.find(g => g.id === id) || null;
+    }
+    
+    /**
+     * Get the selected default function group IDs
+     * @returns {Array} Array of selected default function group IDs
+     */
+    function getSelectedDefaultFunctionIds() {
+        const selectedIds = CoreStorageService.getValue(SELECTED_DEFAULT_FUNCTIONS_KEY);
+        return selectedIds || [];
+    }
+    
+    /**
+     * Get the selected individual function IDs
+     * @returns {Array} Array of selected individual function IDs
+     */
+    function getSelectedIndividualFunctionIds() {
+        const selectedIds = CoreStorageService.getValue(SELECTED_INDIVIDUAL_FUNCTIONS_KEY);
+        return selectedIds || [];
+    }
+    
+    /**
+     * Set the selected default function group IDs
+     * @param {Array} ids - Array of default function group IDs to set as selected
+     */
+    function setSelectedDefaultFunctionIds(ids) {
+        if (Array.isArray(ids) && ids.length > 0) {
+            CoreStorageService.setValue(SELECTED_DEFAULT_FUNCTIONS_KEY, ids);
+        } else {
+            CoreStorageService.removeValue(SELECTED_DEFAULT_FUNCTIONS_KEY);
+        }
+    }
+    
+    /**
+     * Set the selected individual function IDs
+     * @param {Array} ids - Array of individual function IDs to set as selected
+     */
+    function setSelectedIndividualFunctionIds(ids) {
+        if (Array.isArray(ids) && ids.length > 0) {
+            CoreStorageService.setValue(SELECTED_INDIVIDUAL_FUNCTIONS_KEY, ids);
+        } else {
+            CoreStorageService.removeValue(SELECTED_INDIVIDUAL_FUNCTIONS_KEY);
+        }
+    }
+    
+    /**
+     * Get the enabled default functions
+     * @returns {Object} Object containing enabled default functions
+     */
+    function getEnabledDefaultFunctions() {
+        const enabled = CoreStorageService.getValue(ENABLED_DEFAULT_FUNCTIONS_KEY);
+        return enabled || {};
+    }
+    
+    /**
+     * Set the enabled default functions
+     * @param {Object} functions - Object containing enabled default functions
+     */
+    function setEnabledDefaultFunctions(functions) {
+        if (functions && Object.keys(functions).length > 0) {
+            CoreStorageService.setValue(ENABLED_DEFAULT_FUNCTIONS_KEY, functions);
+        } else {
+            CoreStorageService.removeValue(ENABLED_DEFAULT_FUNCTIONS_KEY);
+        }
+    }
+    
+    /**
+     * Get tool definitions for enabled default functions
+     * @returns {Array} Array of tool definitions for API requests
+     */
+    function getEnabledDefaultFunctionToolDefinitions() {
+        const enabledDefaultFunctions = getEnabledDefaultFunctions();
+        const toolDefinitions = [];
+        
+        for (const [name, func] of Object.entries(enabledDefaultFunctions)) {
+            if (func.toolDefinition) {
+                toolDefinitions.push(func.toolDefinition);
+            }
+        }
+        
+        return toolDefinitions;
+    }
+    
+    /**
+     * Check if a default function group is selected
+     * @param {string} id - The default function group ID to check
+     * @returns {boolean} True if the function group is selected
+     */
+    function isDefaultFunctionGroupSelected(id) {
+        const selectedIds = getSelectedDefaultFunctionIds();
+        return selectedIds.includes(id);
+    }
+    
+    /**
+     * Toggle a default function group's selection status
+     * @param {string} id - The default function group ID to toggle
+     * @returns {boolean} True if the function group is now selected, false if unselected
+     */
+    function toggleDefaultFunctionGroupSelection(id) {
+        console.log("DefaultFunctionsService.toggleDefaultFunctionGroupSelection called for id:", id);
+        const selectedIds = getSelectedDefaultFunctionIds();
+        const index = selectedIds.indexOf(id);
+        let result;
+        
+        if (index >= 0) {
+            // Remove from selected
+            selectedIds.splice(index, 1);
+            setSelectedDefaultFunctionIds(selectedIds);
+            result = false;
+            
+            // Remove the functions from the function calling system
+            const functionGroup = getDefaultFunctionGroupById(id);
+            if (functionGroup && functionGroup.functions) {
+                functionGroup.functions.forEach(func => {
+                    if (window.FunctionToolsService) {
+                        window.FunctionToolsService.removeJsFunction(func.name);
+                    }
+                });
+            }
+        } else {
+            // Add to selected
+            selectedIds.push(id);
+            setSelectedDefaultFunctionIds(selectedIds);
+            result = true;
+            
+            // Add the functions to the function calling system
+            const functionGroup = getDefaultFunctionGroupById(id);
+            if (functionGroup && functionGroup.functions && window.FunctionToolsService) {
+                // Parse all functions in the group first
+                const parsedFunctions = [];
+                
+                functionGroup.functions.forEach(func => {
+                    try {
+                        // Generate tool definition for the function
+                        const toolDefinition = window.FunctionToolsParser.ToolDefinitionGenerator.generate(func.name, func.code);
+                        
+                        parsedFunctions.push({
+                            name: func.name,
+                            code: func.code,
+                            toolDefinition: toolDefinition
+                        });
+                    } catch (error) {
+                        console.error(`Error parsing default function ${func.name}:`, error);
+                    }
+                });
+                
+                // Add all functions with the same group ID
+                parsedFunctions.forEach(parsedFunc => {
+                    window.FunctionToolsService.addJsFunction(
+                        parsedFunc.name,
+                        parsedFunc.code,
+                        parsedFunc.toolDefinition,
+                        functionGroup.groupId || functionGroup.id
+                    );
+                });
+                
+                console.log(`Added ${parsedFunctions.length} default functions from group: ${id}`);
+            }
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Get all selected default function groups
+     * @returns {Array} Array of selected default function group objects
+     */
+    function getSelectedDefaultFunctionGroups() {
+        const selectedIds = getSelectedDefaultFunctionIds();
+        return DEFAULT_FUNCTIONS.filter(group => selectedIds.includes(group.id));
+    }
+    
+    /**
+     * Check if an individual function is selected
+     * @param {string} functionId - The function ID to check (format: groupId:functionName)
+     * @returns {boolean} True if the function is selected
+     */
+    function isIndividualFunctionSelected(functionId) {
+        const selectedIds = getSelectedIndividualFunctionIds();
+        return selectedIds.includes(functionId);
+    }
+    
+    /**
+     * Toggle an individual function's selection status
+     * @param {string} functionId - The function ID to toggle (format: groupId:functionName)
+     * @returns {boolean} True if the function is now selected, false if unselected
+     */
+    function toggleIndividualFunctionSelection(functionId) {
+        console.log("DefaultFunctionsService.toggleIndividualFunctionSelection called for id:", functionId);
+        
+        // Check if function tools are enabled globally
+        const globallyEnabled = window.FunctionToolsService ? window.FunctionToolsService.isFunctionToolsEnabled() : false;
+        console.log("Function tools globally enabled:", globallyEnabled);
+        
+        const selectedIds = getSelectedIndividualFunctionIds();
+        const index = selectedIds.indexOf(functionId);
+        let result;
+        
+        const [groupId, functionName] = functionId.split(':');
+        const group = getDefaultFunctionGroupById(groupId);
+        const func = group?.functions?.find(f => f.name === functionName);
+        
+        if (index >= 0) {
+            // Remove from selected
+            selectedIds.splice(index, 1);
+            setSelectedIndividualFunctionIds(selectedIds);
+            result = false;
+            
+            // Remove the function from default functions storage
+            if (func) {
+                const enabledDefaultFunctions = getEnabledDefaultFunctions();
+                delete enabledDefaultFunctions[func.name];
+                setEnabledDefaultFunctions(enabledDefaultFunctions);
+                console.log(`Removed default function ${func.name} from separate storage`);
+            }
+        } else {
+            // Add to selected
+            selectedIds.push(functionId);
+            setSelectedIndividualFunctionIds(selectedIds);
+            result = true;
+            
+            // Add the function to the default functions storage (not user functions)
+            if (func && window.FunctionToolsService) {
+                try {
+                    // Generate tool definition for the function
+                    const toolDefinition = window.FunctionToolsParser.ToolDefinitionGenerator.generate(func.code);
+                    console.log(`Generated tool definition for ${func.name}:`, toolDefinition);
+                    
+                    if (toolDefinition) {
+                        // Store the default function separately - don't add to user functions registry
+                        const enabledDefaultFunctions = getEnabledDefaultFunctions();
+                        enabledDefaultFunctions[func.name] = {
+                            code: func.code,
+                            toolDefinition: toolDefinition,
+                            groupId: group.groupId || group.id
+                        };
+                        setEnabledDefaultFunctions(enabledDefaultFunctions);
+                        
+                        console.log(`Added default function ${func.name} to separate storage`);
+                    }
+                    
+                    // Ensure function tools are enabled globally
+                    if (!window.FunctionToolsService.isFunctionToolsEnabled()) {
+                        console.log(`Enabling function tools globally because default function ${func.name} was selected`);
+                        window.FunctionToolsService.setFunctionToolsEnabled(true);
+                    }
+                    
+                    // Verify the function is actually enabled
+                    const isEnabled = window.FunctionToolsService.isJsFunctionEnabled(func.name);
+                    console.log(`Function ${func.name} enabled status:`, isEnabled);
+                    
+                    // Check if it appears in the enabled function names list
+                    const enabledNames = window.FunctionToolsService.getEnabledFunctionNames();
+                    console.log(`All enabled functions:`, enabledNames);
+                    
+                    // Check if it appears in the tool definitions
+                    const toolDefs = window.FunctionToolsService.getEnabledToolDefinitions();
+                    console.log(`Tool definitions count:`, toolDefs.length);
+                    console.log(`Tool definition names:`, toolDefs.map(t => t.function?.name));
+                    
+                    console.log(`Added and enabled default function: ${func.name}`);
+                    
+                    // Force a save to ensure persistence
+                    if (window.FunctionToolsStorage) {
+                        window.FunctionToolsStorage.save();
+                        
+                        // Verify the function was saved
+                        console.log(`Verifying saved state for ${func.name}:`);
+                        window.FunctionToolsStorage.load();
+                        const savedFunctions = window.FunctionToolsStorage.getJsFunctions();
+                        const savedEnabled = window.FunctionToolsStorage.getEnabledFunctions();
+                        console.log(`  - In jsFunctions: ${!!savedFunctions[func.name]}`);
+                        console.log(`  - In enabledFunctions: ${savedEnabled.includes(func.name)}`);
+                        console.log(`  - Has tool definition: ${!!savedFunctions[func.name]?.toolDefinition}`);
+                    }
+                } catch (error) {
+                    console.error(`Error parsing default function ${func.name}:`, error);
+                }
+            }
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Load default functions into the function calling system
+     * This should be called after the function calling system is initialized
+     */
+    function loadSelectedDefaultFunctions() {
+        console.log('=== Loading selected default functions ===');
+        
+        // Load individually selected functions
+        const selectedFunctionIds = getSelectedIndividualFunctionIds();
+        console.log('Selected function IDs from storage:', selectedFunctionIds);
+        
+        selectedFunctionIds.forEach(functionId => {
+            const [groupId, functionName] = functionId.split(':');
+            const group = getDefaultFunctionGroupById(groupId);
+            const func = group?.functions?.find(f => f.name === functionName);
+            
+            console.log(`Processing function ${functionId}: found=${!!func}`);
+            
+            if (func && window.FunctionToolsService) {
+                try {
+                    // Generate tool definition for the function
+                    const toolDefinition = window.FunctionToolsParser.ToolDefinitionGenerator.generate(func.code);
+                    console.log(`Generated tool definition for ${func.name}:`, toolDefinition);
+                    
+                    if (toolDefinition) {
+                        // Store the default function separately - don't add to user functions registry
+                        const enabledDefaultFunctions = getEnabledDefaultFunctions();
+                        enabledDefaultFunctions[func.name] = {
+                            code: func.code,
+                            toolDefinition: toolDefinition,
+                            groupId: group.groupId || group.id
+                        };
+                        setEnabledDefaultFunctions(enabledDefaultFunctions);
+                        
+                        console.log(`Loaded default function ${func.name} to separate storage`);
+                        
+                        // Ensure function tools are enabled globally
+                        if (!window.FunctionToolsService.isFunctionToolsEnabled()) {
+                            console.log(`Enabling function tools globally for loaded default function ${func.name}`);
+                            window.FunctionToolsService.setFunctionToolsEnabled(true);
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Error parsing default function ${func.name}:`, error);
+                }
+            }
+        });
+        
+        console.log(`Loaded ${selectedFunctionIds.length} individual default functions`);
+        
+        // Debug: Check final state
+        if (window.FunctionToolsService) {
+            const enabledNames = window.FunctionToolsService.getEnabledFunctionNames();
+            console.log('All enabled functions after loading default functions:', enabledNames);
+        }
+    }
+    
+    /**
+     * Debug function to check current state
+     */
+    function debugCurrentState() {
+        console.log('=== DEFAULT FUNCTIONS DEBUG ===');
+        const selectedIds = getSelectedIndividualFunctionIds();
+        console.log('Selected individual function IDs:', selectedIds);
+        
+        if (window.FunctionToolsService) {
+            // Check global function tools state
+            const globallyEnabled = window.FunctionToolsService.isFunctionToolsEnabled();
+            console.log('Function tools globally enabled:', globallyEnabled);
+            
+            const allFunctions = window.FunctionToolsService.getJsFunctions();
+            const enabledFunctions = window.FunctionToolsService.getEnabledFunctionNames();
+            const toolDefinitions = window.FunctionToolsService.getEnabledToolDefinitions();
+            
+            console.log('All registered functions:', Object.keys(allFunctions));
+            console.log('Enabled function names:', enabledFunctions);
+            console.log('Tool definitions for API:', toolDefinitions.map(t => t.function?.name));
+            
+            // Check specifically for default functions
+            selectedIds.forEach(functionId => {
+                const [groupId, functionName] = functionId.split(':');
+                console.log(`Default function ${functionName}:`);
+                console.log('  - Registered:', !!allFunctions[functionName]);
+                console.log('  - Enabled:', enabledFunctions.includes(functionName));
+                console.log('  - Has tool definition:', !!allFunctions[functionName]?.toolDefinition);
+                console.log('  - Tool definition valid:', !!allFunctions[functionName]?.toolDefinition?.function?.name);
+            });
+            
+            // Check what function calling manager returns
+            if (window.aiHackare && window.aiHackare.functionCallingManager) {
+                const fcmDefinitions = window.aiHackare.functionCallingManager.getFunctionDefinitions();
+                console.log('Function calling manager tool definitions:', fcmDefinitions.length, fcmDefinitions.map(t => t.function?.name));
+            }
+        }
+        console.log('=== END DEBUG ===');
+    }
+    
+    // Make debug function available globally for testing
+    window.debugDefaultFunctions = debugCurrentState;
+
+    // Public API
+    return {
+        getDefaultFunctionGroups,
+        getDefaultFunctionGroupById,
+        getSelectedDefaultFunctionIds,
+        setSelectedDefaultFunctionIds,
+        toggleDefaultFunctionGroupSelection,
+        isDefaultFunctionGroupSelected,
+        getSelectedDefaultFunctionGroups,
+        getSelectedIndividualFunctionIds,
+        setSelectedIndividualFunctionIds,
+        isIndividualFunctionSelected,
+        toggleIndividualFunctionSelection,
+        loadSelectedDefaultFunctions,
+        initializeDefaultFunctions,
+        debugCurrentState,
+        getEnabledDefaultFunctions,
+        getEnabledDefaultFunctionToolDefinitions
+    };
+})();

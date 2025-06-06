@@ -12,8 +12,12 @@ from function_calling_api.helpers.function_helpers import (
     cleanup_functions
 )
 
-def test_function_deletion_removes_helper_functions(page: Page, serve_hacka_re, api_key):
-    """Test that deleting a function also removes its helper functions."""
+def test_function_deletion_removes_entire_bundle(page: Page, serve_hacka_re, api_key):
+    """Test that deleting a function removes the entire function bundle (all functions defined together).
+    
+    Functions are now imported as bundles - when multiple functions are defined together in the editor
+    and saved, they form a bundle. Deleting any function from a bundle removes the entire bundle.
+    """
     # Set up console error logging
     setup_console_logging(page)
     
@@ -37,10 +41,11 @@ def test_function_deletion_removes_helper_functions(page: Page, serve_hacka_re, 
     function_modal = page.locator("#function-modal")
     expect(function_modal).to_be_visible()
     
-    # Add multiple functions with helper functions
+    # Add a function bundle with multiple functions (helper and callable)
+    # All functions defined together in one submission form a single bundle
     function_code = page.locator("#function-code")
     function_code.fill("""/**
- * Helper function that formats data (not exposed to LLM)
+ * Helper function that formats data
  * @param {Object} data - The data to format
  * @returns {string} Formatted data
  */
@@ -78,6 +83,30 @@ async function getCurrentTimeInBerlin() {
   } catch (error) {
     return { error: error.message };
   }
+}
+
+/**
+ * Another callable function in the same bundle
+ * @description Multiplies two numbers together
+ * @param {number} a - The first number to multiply
+ * @param {number} b - The second number to multiply
+ * @returns {Object} The result of the multiplication
+ * @tool This function will be exposed to the LLM
+ */
+function multiply_numbers(a, b) {
+  if (typeof a !== 'number' || typeof b !== 'number') {
+    return { 
+      error: "Both inputs must be numbers",
+      success: false
+    };
+  }
+  
+  const result = a * b;
+  return {
+    result: result,
+    formattedResult: formatData({result: result}),
+    success: true
+  };
 }""")
     
     # Validate the function
@@ -91,18 +120,19 @@ async function getCurrentTimeInBerlin() {
     # Submit the form
     page.locator("#function-editor-form button[type='submit']").click()
     
-    # Check if the callable function was added to the list
+    # Check if both callable functions were added to the list (they're in the same bundle)
     function_list = page.locator("#function-list")
     expect(function_list.locator(".function-item-name:has-text('getCurrentTimeInBerlin')")).to_be_visible()
+    expect(function_list.locator(".function-item-name:has-text('multiply_numbers')")).to_be_visible()
     
     # Verify the helper functions are not in the list (they're not callable)
     expect(function_list.locator(".function-item-name:has-text('formatData')")).not_to_be_visible()
     expect(function_list.locator(".function-item-name:has-text('processString')")).not_to_be_visible()
     
     # Take a screenshot showing the function list
-    screenshot_with_markdown(page, "function_deletion_before", {
-        "step": "Before deletion - only callable function is visible in the list",
-        "function_visible": "getCurrentTimeInBerlin",
+    screenshot_with_markdown(page, "function_bundle_before_deletion", {
+        "step": "Before deletion - both callable functions from the bundle are visible",
+        "functions_visible": "getCurrentTimeInBerlin, multiply_numbers",
         "functions_not_visible": "formatData, processString (helper functions)"
     })
     
@@ -112,30 +142,33 @@ async function getCurrentTimeInBerlin() {
     # Click the Reset button to load all functions
     page.locator("#function-clear-btn").click()
     
-    # Verify that the editor now contains all functions
+    # Verify that the editor now contains all functions from the bundle
     code_content = function_code.input_value()
     assert "getCurrentTimeInBerlin" in code_content, "getCurrentTimeInBerlin function not found in editor"
+    assert "multiply_numbers" in code_content, "multiply_numbers function not found in editor"
     assert "formatData" in code_content, "formatData function not found in editor"
     assert "processString" in code_content, "processString function not found in editor"
     
     # Take a screenshot showing all functions in the editor
-    screenshot_with_markdown(page, "function_deletion_reset", {
-        "step": "After Reset - all functions are loaded in the editor",
-        "functions_in_editor": "getCurrentTimeInBerlin, formatData, processString"
+    screenshot_with_markdown(page, "function_bundle_reset", {
+        "step": "After Reset - all functions from the bundle are loaded in the editor",
+        "functions_in_editor": "getCurrentTimeInBerlin, multiply_numbers, formatData, processString"
     })
     
-    # Now delete the callable function
-    # Handle the confirmation dialog
+    # Now delete one function from the bundle (this should delete the entire bundle)
+    # Handle the confirmation dialog (which should warn about deleting related functions)
     page.on("dialog", lambda dialog: dialog.accept())
     
-    # Delete the function
-    function_list.locator(".function-item-delete").first.click()
+    # Delete the first function (getCurrentTimeInBerlin)
+    delete_button = function_list.locator(".function-item:has-text('getCurrentTimeInBerlin') .function-item-delete")
+    delete_button.click()
     
     # Wait for the function to be deleted
     page.wait_for_timeout(100)
     
-    # Verify the function list is empty
-    expect(function_list.locator(".function-item-name")).not_to_be_visible()
+    # Verify both callable functions are removed from the list (entire bundle deleted)
+    expect(function_list.locator(".function-item-name:has-text('getCurrentTimeInBerlin')")).not_to_be_visible()
+    expect(function_list.locator(".function-item-name:has-text('multiply_numbers')")).not_to_be_visible()
     
     # Clear the editor again
     function_code.fill("")
@@ -144,16 +177,18 @@ async function getCurrentTimeInBerlin() {
     page.locator("#function-clear-btn").click()
     
     # Verify that the editor now contains the default function code
-    # and NOT the previously deleted functions
+    # and NOT any of the functions from the deleted bundle
     code_content = function_code.input_value()
     assert "getCurrentTimeInBerlin" not in code_content, "getCurrentTimeInBerlin function should not be in editor"
+    assert "multiply_numbers" not in code_content, "multiply_numbers function should not be in editor"
     assert "formatData" not in code_content, "formatData function should not be in editor"
     assert "processString" not in code_content, "processString function should not be in editor"
     
-    # Take a screenshot showing the editor after deletion
-    screenshot_with_markdown(page, "function_deletion_after", {
-        "step": "After deletion - all functions (including helpers) are removed",
-        "functions_not_in_editor": "getCurrentTimeInBerlin, formatData, processString"
+    # Take a screenshot showing the editor after bundle deletion
+    screenshot_with_markdown(page, "function_bundle_after_deletion", {
+        "step": "After deleting one function - entire bundle is removed",
+        "functions_not_in_editor": "getCurrentTimeInBerlin, multiply_numbers, formatData, processString",
+        "behavior": "Deleting any function removes the entire bundle (all functions defined together)"
     })
     
     # Close the function modal
@@ -161,7 +196,11 @@ async function getCurrentTimeInBerlin() {
     expect(function_modal).not_to_be_visible()
 
 def test_multiple_function_groups(page: Page, serve_hacka_re, api_key):
-    """Test that multiple function groups are handled correctly."""
+    """Test that multiple function groups (bundles) are handled correctly.
+    
+    When functions are defined in separate submissions to the editor, they form separate bundles.
+    Each bundle can be deleted independently without affecting other bundles.
+    """
     # Set up console error logging
     setup_console_logging(page)
     
@@ -185,7 +224,7 @@ def test_multiple_function_groups(page: Page, serve_hacka_re, api_key):
     function_modal = page.locator("#function-modal")
     expect(function_modal).to_be_visible()
     
-    # Add first function group
+    # Add first function bundle (group)
     function_code = page.locator("#function-code")
     function_code.fill("""/**
  * Helper function that formats data (not exposed to LLM)
@@ -226,7 +265,7 @@ async function getCurrentTimeInBerlin() {
     function_list = page.locator("#function-list")
     expect(function_list.locator(".function-item-name:has-text('getCurrentTimeInBerlin')")).to_be_visible()
     
-    # Add second function group
+    # Add second function bundle (group) - separate submission creates new bundle
     function_code.fill("""/**
  * Helper function for string operations
  * @param {string} str - The string to process
@@ -315,7 +354,7 @@ function multiply_numbers(a, b) {
     # Click the Reset button again
     page.locator("#function-clear-btn").click()
     
-    # Verify that the editor now contains only the second function group
+    # Verify that the editor now contains only the second function bundle
     code_content = function_code.input_value()
     assert "getCurrentTimeInBerlin" not in code_content, "getCurrentTimeInBerlin function should not be in editor"
     assert "formatData" not in code_content, "formatData function should not be in editor"

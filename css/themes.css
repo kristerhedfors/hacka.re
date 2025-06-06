@@ -23,31 +23,41 @@
     --user-msg-bg: #e0e7ff;        /* Indigo 100 */
     --ai-msg-bg: #f3f4f6;          /* Gray 100 */
     --system-msg-bg: #FFFDF0;      /* Very whitish yellow */
+    
+    /* Function icon colors - primary colors for light theme */
+    --function-icon-color-start: var(--primary-color);
+    --function-icon-color-mid: #ffffff;
+    --function-icon-color-end: var(--primary-color);
 }
 
 /* Modern Theme - Dark Mode */
 .theme-modern.dark-mode {
-    --primary-color: #1e88e5;      /* Brighter blue for dark mode */
-    --primary-dark: #1565c0;       /* Darker blue for dark mode */
-    --secondary-color: #10b981;    /* Emerald */
-    --dark-color: #f9fafb;         /* Inverted - Gray 50 */
-    --light-color: #1f2937;        /* Inverted - Gray 800 */
-    --text-color: #e5e7eb;         /* Gray 200 */
+    --primary-color: #3b82f6;      /* Modern blue - vibrant but not harsh */
+    --primary-dark: #2563eb;       /* Deeper modern blue */
+    --secondary-color: #06d6a0;    /* Modern teal/mint - fresh and clean */
+    --dark-color: #f8fafc;         /* Very light slate for contrast */
+    --light-color: #0f172a;        /* Deep slate - rich and sophisticated */
+    --text-color: #e2e8f0;         /* Soft light slate - easy on eyes */
     --light-text: #ffffff;
-    --accent-color: #f59e0b;       /* Amber */
+    --accent-color: #f59e0b;       /* Warm amber for highlights */
     --border-radius: 8px;
     --box-shadow: none;
     --transition: all 0.3s ease;
     
-    /* Chat message colors */
-    --user-msg-bg: #3730a3;        /* Indigo 800 */
-    --ai-msg-bg: #374151;          /* Gray 700 */
-    --system-msg-bg: #4b5563;      /* Gray 600 */
+    /* Chat message colors - modern and distinct */
+    --user-msg-bg: #1e293b;        /* Rich slate - sophisticated user messages */
+    --ai-msg-bg: #0f172a;          /* Deep slate - elegant AI responses */
+    --system-msg-bg: #164e63;      /* Deep cyan - distinctive system messages */
+    
+    /* Function icon colors - off-white for dark theme */
+    --function-icon-color-start: #c2c2c2;
+    --function-icon-color-mid: #ffffff;
+    --function-icon-color-end: #c2c2c2;
     
     /* Additional dark mode specific variables */
-    --bg-color: #111827;           /* Gray 900 */
-    --bg-color-secondary: #1f2937; /* Gray 800 */
-    --border-color: #374151;       /* Gray 700 */
+    --bg-color: #020617;           /* Ultra deep slate - premium feel */
+    --bg-color-secondary: #0f172a; /* Deep slate for cards/modals */
+    --border-color: #334155;       /* Medium slate for subtle borders */
 }
 
 /* Sunset Theme - Based on the provided image */

@@ -25,7 +25,11 @@ window.FunctionToolsExecutor = (function() {
                 Logger.logExecutionResult(name, result, executionDuration);
                 this._validateResult(result, name);
                 
-                return result;
+                // Return both result and execution time
+                return {
+                    result: result,
+                    executionTime: executionDuration
+                };
             } catch (error) {
                 const executionDuration = Date.now() - executionStartTime;
                 Logger.error(`Function execution failed after ${executionDuration}ms:`, error);
@@ -35,12 +39,24 @@ window.FunctionToolsExecutor = (function() {
         
         _validateFunction: function(name) {
             const jsFunctions = Storage.getJsFunctions();
-            const functionData = jsFunctions[name];
-            Logger.debug(`Function exists in registry: ${!!functionData}`);
+            let functionData = jsFunctions[name];
+            let isUserDefinedFunction = !!functionData;
+            
+            // If not found in user-defined functions, check default functions
+            if (!isUserDefinedFunction && window.DefaultFunctionsService) {
+                const enabledDefaultFunctions = window.DefaultFunctionsService.getEnabledDefaultFunctions();
+                functionData = enabledDefaultFunctions[name];
+            }
+            
+            Logger.debug(`Function exists in ${isUserDefinedFunction ? 'user-defined' : 'default'} functions: ${!!functionData}`);
             
             if (!functionData || !functionData.code) {
                 Logger.error("Function validation failed");
-                Logger.error(`Available functions: ${Object.keys(jsFunctions)}`);
+                Logger.error(`Available user-defined functions: ${Object.keys(jsFunctions)}`);
+                if (window.DefaultFunctionsService) {
+                    const enabledDefaultFunctions = window.DefaultFunctionsService.getEnabledDefaultFunctions();
+                    Logger.error(`Available default functions: ${Object.keys(enabledDefaultFunctions)}`);
+                }
                 throw new Error(`Function "${name}" not found or has no code`);
             }
         },
@@ -136,17 +152,37 @@ window.FunctionToolsExecutor = (function() {
             const jsFunctions = Storage.getJsFunctions();
             let allFunctionsCode = '';
             
-            // Add all auxiliary functions first
+            // Get default functions if available
+            let enabledDefaultFunctions = {};
+            if (window.DefaultFunctionsService) {
+                enabledDefaultFunctions = window.DefaultFunctionsService.getEnabledDefaultFunctions();
+            }
+            
+            // Add all auxiliary user-defined functions first
             for (const funcName in jsFunctions) {
                 if (funcName !== targetName) {
                     allFunctionsCode += jsFunctions[funcName].code + '\n\n';
-                    Logger.debug(`Added auxiliary function: ${funcName}`);
+                    Logger.debug(`Added auxiliary user-defined function: ${funcName}`);
                 }
             }
             
-            // Add the target function last
-            allFunctionsCode += jsFunctions[targetName].code;
-            Logger.debug(`Added target function: ${targetName}`);
+            // Add all auxiliary default functions
+            for (const funcName in enabledDefaultFunctions) {
+                if (funcName !== targetName) {
+                    allFunctionsCode += enabledDefaultFunctions[funcName].code + '\n\n';
+                    Logger.debug(`Added auxiliary default function: ${funcName}`);
+                }
+            }
+            
+            // Add the target function last (check both sources)
+            if (jsFunctions[targetName]) {
+                allFunctionsCode += jsFunctions[targetName].code;
+                Logger.debug(`Added target user-defined function: ${targetName}`);
+            } else if (enabledDefaultFunctions[targetName]) {
+                allFunctionsCode += enabledDefaultFunctions[targetName].code;
+                Logger.debug(`Added target default function: ${targetName}`);
+            }
+            
             Logger.debug(`Total code length: ${allFunctionsCode.length} characters`);
             
             return allFunctionsCode;
@@ -154,8 +190,14 @@ window.FunctionToolsExecutor = (function() {
         
         _generateFunctionCall: function(name) {
             const jsFunctions = Storage.getJsFunctions();
-            const functionCode = jsFunctions[name].code;
-            const functionMatch = functionCode.match(/^\s*(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(([^)]*)\)/);
+            let functionCode = jsFunctions[name] ? jsFunctions[name].code : null;
+            
+            // If not found in user-defined functions, check default functions
+            if (!functionCode && window.DefaultFunctionsService) {
+                const enabledDefaultFunctions = window.DefaultFunctionsService.getEnabledDefaultFunctions();
+                functionCode = enabledDefaultFunctions[name] ? enabledDefaultFunctions[name].code : null;
+            }
+            const functionMatch = functionCode.match(/(?:^|\s|\/\*\*[\s\S]*?\*\/\s*)(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(([^)]*)\)/);
             
             Logger.debug(`Function signature match: ${!!functionMatch}`);
             
