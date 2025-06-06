@@ -14,26 +14,53 @@ window.FunctionToolsStorage = (function() {
     
     const StorageManager = {
         load: function() {
+            console.log("FunctionToolsStorage.load() called");
+            
+            // Debug namespace info
+            if (window.NamespaceService) {
+                const namespace = window.NamespaceService.getNamespace();
+                const namespaceId = window.NamespaceService.getNamespaceId();
+                console.log(`- Current namespace: "${namespace}", ID: ${namespaceId}`);
+                console.log(`- JS_FUNCTIONS key: ${window.NamespaceService.getNamespacedKey(STORAGE_KEYS.JS_FUNCTIONS)}`);
+                console.log(`- ENABLED_FUNCTIONS key: ${window.NamespaceService.getNamespacedKey(STORAGE_KEYS.ENABLED_FUNCTIONS)}`);
+            }
+            
             const storedFunctions = CoreStorageService.getValue(STORAGE_KEYS.JS_FUNCTIONS);
             if (storedFunctions) {
                 jsFunctions = storedFunctions;
+                console.log("- Loaded jsFunctions:", Object.keys(jsFunctions));
+            } else {
+                console.log("- No stored jsFunctions found");
             }
             
             const storedEnabledFunctions = CoreStorageService.getValue(STORAGE_KEYS.ENABLED_FUNCTIONS);
             if (storedEnabledFunctions) {
                 enabledFunctions = storedEnabledFunctions;
+                console.log("- Loaded enabledFunctions:", enabledFunctions);
+            } else {
+                console.log("- No stored enabledFunctions found");
             }
             
             const storedFunctionGroups = CoreStorageService.getValue(STORAGE_KEYS.FUNCTION_GROUPS);
             if (storedFunctionGroups) {
                 functionGroups = storedFunctionGroups;
+                console.log("- Loaded functionGroups:", Object.keys(functionGroups));
+            } else {
+                console.log("- No stored functionGroups found");
             }
         },
         
         save: function() {
+            console.log("FunctionToolsStorage.save() called");
+            console.log("- Saving jsFunctions:", Object.keys(jsFunctions));
+            console.log("- Saving enabledFunctions:", enabledFunctions);
+            console.log("- Saving functionGroups:", Object.keys(functionGroups));
+            
             CoreStorageService.setValue(STORAGE_KEYS.JS_FUNCTIONS, jsFunctions);
             CoreStorageService.setValue(STORAGE_KEYS.ENABLED_FUNCTIONS, enabledFunctions);
             CoreStorageService.setValue(STORAGE_KEYS.FUNCTION_GROUPS, functionGroups);
+            
+            console.log("- Save complete");
         },
         
         isEnabled: function() {

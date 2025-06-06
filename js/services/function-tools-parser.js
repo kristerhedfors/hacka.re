@@ -161,7 +161,7 @@ window.FunctionToolsParser = (function() {
     const ToolDefinitionGenerator = {
         generate: function(code) {
             try {
-                const functionMatch = code.match(/^\s*(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(([^)]*)\)/);
+                const functionMatch = code.match(/(?:^|\s|\/\*\*[\s\S]*?\*\/\s*)(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(([^)]*)\)/);
                 if (!functionMatch) {
                     return null;
                 }

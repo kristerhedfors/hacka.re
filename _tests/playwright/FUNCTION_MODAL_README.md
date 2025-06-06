@@ -284,6 +284,181 @@ When a function is called by the AI:
 2. The function is executed in a sandboxed environment
 3. The result is returned to the AI as a tool response
 
+## Default Functions System
+
+### Overview
+
+The Function Modal now includes a **Default Functions** system that provides pre-built, ready-to-use functions organized in an expandable tree structure. This feature allows users to quickly enable common functions without having to write them from scratch.
+
+### Key Components
+
+#### Default Functions Section
+
+- **Expandable Header**: Click to expand/collapse the entire default functions section
+- **Function Groups**: Organized collections of related functions (e.g., RC4 Encryption, Math Utilities)
+- **Individual Functions**: Each function within a group can be selected independently
+- **Info Tooltips**: Hover over info icons to see descriptions of function groups
+
+#### Important DOM Elements for Default Functions
+
+| Element Class/ID | Description | Notes |
+|------------------|-------------|-------|
+| `.default-functions-section` | Container for all default functions | |
+| `.default-functions-header` | Header with expand/collapse functionality | |
+| `.default-functions-list` | Container for function groups | |
+| `.function-group-item` | Individual function group container | |
+| `.function-group-header` | Clickable header to expand/collapse group | |
+| `.function-group-name` | Display name of the function group | |
+| `.function-group-info` | Info button with tooltip | |
+| `.group-functions-list` | Container for individual functions in a group | |
+| `.individual-function-item` | Individual function item | |
+| `.function-item-checkbox` | Checkbox to enable/disable individual function | |
+| `.function-item-name` | Display name of the individual function | |
+
+### Default Functions Behavior
+
+#### Expandable Tree Structure
+
+1. **Section Level**: 
+   - Click the "Default Functions" header to expand/collapse the entire section
+   - Chevron icon indicates expansion state
+
+2. **Group Level**:
+   - Click function group headers to expand/collapse individual groups
+   - Each group contains multiple related functions
+   - Groups are organized by functionality (e.g., encryption, math utilities)
+
+3. **Function Level**:
+   - Individual functions within groups can be selected independently
+   - Click function names to view their code in the editor
+   - Checkboxes allow enabling/disabling specific functions
+
+#### Function Selection and Management
+
+1. **Individual Selection**:
+   - Each function has its own checkbox for selection
+   - Selected functions are immediately available for AI tool calling
+   - Selection state persists across browser sessions
+
+2. **Code Viewing**:
+   - Click on function names to view their code in the editor
+   - Code appears in read-only mode with gray background
+   - Click elsewhere to return to normal edit mode
+
+3. **Function Groups Available**:
+   - **RC4 Encryption**: `rc4_encrypt` and `rc4_decrypt` functions for testing encryption
+   - **Math Utilities**: `calculate_factorial`, `calculate_fibonacci`, and `check_prime` functions
+
+### Testing Default Functions
+
+#### Opening and Expanding Default Functions
+
+```python
+# Open function modal
+page.locator("#function-btn").click()
+function_modal = page.locator("#function-modal")
+expect(function_modal).to_be_visible()
+
+# Expand default functions section
+default_functions_header = page.locator(".default-functions-header")
+expect(default_functions_header).to_be_visible()
+default_functions_header.click()
+
+# Verify default functions list is visible
+default_functions_list = page.locator(".default-functions-list")
+expect(default_functions_list).to_be_visible()
+```
+
+#### Testing Function Group Expansion
+
+```python
+# Expand a specific function group (e.g., RC4 Encryption)
+rc4_group_header = page.locator(".function-group-header:has-text('RC4 Encryption')")
+expect(rc4_group_header).to_be_visible()
+rc4_group_header.click()
+
+# Verify individual functions are visible
+rc4_functions_list = page.locator(".function-group-item:has-text('RC4 Encryption') .group-functions-list")
+expect(rc4_functions_list).to_be_visible()
+
+# Check for individual functions
+expect(page.locator(".individual-function-item:has-text('rc4_encrypt')")).to_be_visible()
+expect(page.locator(".individual-function-item:has-text('rc4_decrypt')")).to_be_visible()
+```
+
+#### Testing Individual Function Selection
+
+```python
+# Select an individual function
+encrypt_checkbox = page.locator(".individual-function-item:has-text('rc4_encrypt') .function-item-checkbox")
+expect(encrypt_checkbox).to_be_visible()
+encrypt_checkbox.check()
+
+# Verify the function is selected
+expect(encrypt_checkbox).to_be_checked()
+
+# Verify the function appears in the main function list
+main_function_list = page.locator("#function-list")
+expect(main_function_list.locator(".function-item-name:has-text('rc4_encrypt')")).to_be_visible()
+```
+
+#### Testing Function Code Viewing
+
+```python
+# Click on function name to view code
+function_name = page.locator(".individual-function-item:has-text('rc4_encrypt') .function-item-name")
+function_name.click()
+
+# Verify code appears in editor
+function_code = page.locator("#function-code")
+expect(function_code).to_have_attribute("readonly")
+expect(function_code).to_contain_text("rc4_encrypt")
+
+# Click elsewhere to exit read-only mode
+page.locator("body").click()
+expect(function_code).not_to_have_attribute("readonly")
+```
+
+#### Testing Info Tooltips
+
+```python
+# Click info button to show tooltip
+info_button = page.locator(".function-group-item:has-text('RC4 Encryption') .function-group-info")
+info_button.click()
+
+# Verify info popup appears
+info_popup = page.locator(".function-info-popup")
+expect(info_popup).to_be_visible()
+expect(info_popup).to_contain_text("RC4 Encryption")
+
+# Close the popup
+close_button = page.locator(".function-info-popup .function-info-close")
+close_button.click()
+expect(info_popup).not_to_be_visible()
+```
+
+### Default Functions Implementation Details
+
+#### Function ID Format
+
+Individual functions are identified using the format: `{groupId}:{functionName}`
+- Example: `rc4-encryption:rc4_encrypt`
+- This allows for precise selection and management of individual functions
+
+#### Storage
+
+Default function selections are stored separately from user-defined functions:
+- `selected_individual_functions`: Array of selected default function IDs
+- Selections persist across browser sessions
+
+#### Integration with Function Calling System
+
+Selected default functions are automatically:
+1. Parsed for tool definitions
+2. Added to the function calling system
+3. Enabled for AI tool calling
+4. Displayed in the main function list alongside user-defined functions
+
 ## Conclusion
 
-The Function Modal is a powerful feature that allows users to define custom JavaScript functions for the AI to use. By following the guidelines in this document, you can write robust tests that accurately verify the functionality of this feature.
+The Function Modal is a comprehensive feature that allows users to both define custom JavaScript functions and utilize pre-built default functions for AI interaction. The expandable tree structure for default functions provides an organized, user-friendly way to discover and enable commonly-needed functionality. By following the guidelines in this document, you can write robust tests that accurately verify all aspects of this feature.
