@@ -52,11 +52,11 @@ window.FunctionToolsProcessor = (function() {
                 
                 this._logFunctionExecution(name, argsString, addSystemMessage);
                 
-                const result = await Executor.execute(name, args);
+                const executionResult = await Executor.execute(name, args);
                 
-                this._logSuccessfulExecution(name, addSystemMessage);
+                this._logSuccessfulExecution(name, executionResult.result, addSystemMessage);
                 
-                return this._createSuccessResult(toolCall, name, result);
+                return this._createSuccessResult(toolCall, name, executionResult.result, executionResult.executionTime);
                 
             } catch (error) {
                 Logger.error(`Error processing tool call ${index}:`, error);
@@ -80,10 +80,23 @@ window.FunctionToolsProcessor = (function() {
             const enabledFunctions = Storage.getEnabledFunctions();
             
             Logger.debug(`Checking if function "${name}" exists in registry`);
-            Logger.debug(`Available functions: ${Object.keys(jsFunctions)}`);
+            Logger.debug(`Available user-defined functions: ${Object.keys(jsFunctions)}`);
             
-            if (!jsFunctions[name]) {
-                const errorMsg = `Function "${name}" not found`;
+            // Check if it's a user-defined function
+            let isUserDefinedFunction = !!jsFunctions[name];
+            
+            // Check if it's a default function
+            let isDefaultFunction = false;
+            let defaultFunctionData = null;
+            if (window.DefaultFunctionsService && typeof window.DefaultFunctionsService.getEnabledDefaultFunctions === 'function') {
+                const enabledDefaultFunctions = window.DefaultFunctionsService.getEnabledDefaultFunctions();
+                isDefaultFunction = !!enabledDefaultFunctions[name];
+                defaultFunctionData = enabledDefaultFunctions[name];
+                Logger.debug(`Available default functions: ${Object.keys(enabledDefaultFunctions)}`);
+            }
+            
+            if (!isUserDefinedFunction && !isDefaultFunction) {
+                const errorMsg = `Function "${name}" not found in user-defined or default functions`;
                 Logger.error(errorMsg);
                 if (addSystemMessage) {
                     addSystemMessage(`Error: ${errorMsg}`);
@@ -91,10 +104,16 @@ window.FunctionToolsProcessor = (function() {
                 throw new Error(errorMsg);
             }
             
-            Logger.debug(`Checking if function "${name}" is enabled`);
-            Logger.debug(`Enabled functions: ${enabledFunctions}`);
+            Logger.debug(`Function "${name}" found as ${isUserDefinedFunction ? 'user-defined' : 'default'} function`);
             
-            if (!enabledFunctions.includes(name)) {
+            Logger.debug(`Checking if function "${name}" is enabled`);
+            Logger.debug(`Enabled user-defined functions: ${enabledFunctions}`);
+            
+            // For user-defined functions, check if they're in the enabled list
+            // For default functions, they're enabled by virtue of being in the enabled default functions storage
+            const isEnabled = isUserDefinedFunction ? enabledFunctions.includes(name) : isDefaultFunction;
+            
+            if (!isEnabled) {
                 const errorMsg = `Function "${name}" is disabled`;
                 Logger.error(errorMsg);
                 if (addSystemMessage) {
@@ -119,9 +138,21 @@ window.FunctionToolsProcessor = (function() {
             }
         },
         
-        _logSuccessfulExecution: function(name, addSystemMessage) {
+        _logSuccessfulExecution: function(name, result, addSystemMessage) {
             if (addSystemMessage && window.DebugService && DebugService.getDebugMode()) {
-                addSystemMessage(`Function "${name}" executed successfully`);
+                let resultText = '';
+                try {
+                    // Pretty-print the result
+                    if (typeof result === 'object' && result !== null) {
+                        resultText = '\n\nResult:\n' + JSON.stringify(result, null, 2);
+                    } else {
+                        resultText = '\n\nResult: ' + String(result);
+                    }
+                } catch (e) {
+                    resultText = '\n\nResult: ' + String(result);
+                }
+                
+                addSystemMessage(`Function "${name}" executed successfully${resultText}`);
             }
         },
         
@@ -137,15 +168,16 @@ window.FunctionToolsProcessor = (function() {
             }
         },
         
-        _createSuccessResult: function(toolCall, name, result) {
+        _createSuccessResult: function(toolCall, name, result, executionTime) {
             const toolResult = {
                 tool_call_id: toolCall.id,
                 role: "tool",
                 name: name,
-                content: JSON.stringify(result)
+                content: JSON.stringify(result),
+                executionTime: executionTime // Add execution time to the result
             };
             
-            Logger.debug(`Created tool result for "${name}":`, toolResult);
+            Logger.debug(`Created tool result for "${name}" (${executionTime}ms):`, toolResult);
             return toolResult;
         },
         

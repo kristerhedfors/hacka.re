@@ -115,6 +115,10 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
         controller = new AbortController();
         const signal = controller.signal;
         
+        // Declare variables to track function calls and results for later use
+        let functionToolCalls = [];
+        let functionResults = [];
+        
         // Combine tools from API tools manager and function calling manager
         // Note: functionCallingManager already includes FunctionToolsService functions, so we don't need to include them separately
         const combinedToolsManager = {
@@ -143,7 +147,7 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
                 
                 // Process tool calls based on their names
                 const apiToolCalls = [];
-                const functionToolCalls = [];
+                functionToolCalls = []; // Reset the outer scope variable
                 
                 // Validate toolCalls is an array
                 if (!Array.isArray(toolCalls)) {
@@ -172,10 +176,22 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
                         console.log(`[ChatManager Debug] - Tool call ${i + 1} name:`, toolName);
                         
                         // Check if it's a function tool (must exist and be enabled)
-                        const isFunctionTool = FunctionToolsService && 
+                        // Check if it's a user-defined function tool
+                        const isUserDefinedFunctionTool = FunctionToolsService && 
                             FunctionToolsService.getJsFunctions()[toolName] && 
                             FunctionToolsService.isJsFunctionEnabled(toolName);
                         
+                        // Check if it's a default function tool
+                        let isDefaultFunctionTool = false;
+                        if (window.DefaultFunctionsService && typeof window.DefaultFunctionsService.getEnabledDefaultFunctions === 'function') {
+                            const enabledDefaultFunctions = window.DefaultFunctionsService.getEnabledDefaultFunctions();
+                            isDefaultFunctionTool = !!enabledDefaultFunctions[toolName];
+                        }
+                        
+                        const isFunctionTool = isUserDefinedFunctionTool || isDefaultFunctionTool;
+                        
+                        console.log(`[ChatManager Debug] - Tool "${toolName}" is user-defined function tool:`, isUserDefinedFunctionTool);
+                        console.log(`[ChatManager Debug] - Tool "${toolName}" is default function tool:`, isDefaultFunctionTool);
                         console.log(`[ChatManager Debug] - Tool "${toolName}" is function tool:`, isFunctionTool);
                         console.log(`[ChatManager Debug] - FunctionToolsService available:`, !!FunctionToolsService);
                         
@@ -184,6 +200,12 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
                             console.log(`[ChatManager Debug] - Enabled JS functions:`, FunctionToolsService.getEnabledFunctionNames());
                             console.log(`[ChatManager Debug] - Tool "${toolName}" exists in registry:`, !!FunctionToolsService.getJsFunctions()[toolName]);
                             console.log(`[ChatManager Debug] - Tool "${toolName}" is enabled:`, FunctionToolsService.isJsFunctionEnabled(toolName));
+                        }
+                        
+                        if (window.DefaultFunctionsService) {
+                            const enabledDefaultFunctions = window.DefaultFunctionsService.getEnabledDefaultFunctions();
+                            console.log(`[ChatManager Debug] - Available default functions:`, Object.keys(enabledDefaultFunctions));
+                            console.log(`[ChatManager Debug] - Tool "${toolName}" exists in default functions:`, !!enabledDefaultFunctions[toolName]);
                         }
                         
                         if (isFunctionTool) {
@@ -213,10 +235,11 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
                 console.log("[ChatManager Debug] - API tool calls results:", apiResults.length, apiResults);
                 
                 console.log("[ChatManager Debug] - Starting function tool calls processing");
-                const functionResults = functionToolCalls.length > 0 && FunctionToolsService
+                functionResults = functionToolCalls.length > 0 && FunctionToolsService
                     ? await FunctionToolsService.processToolCalls(functionToolCalls, addSystemMessage)
                     : [];
                 console.log("[ChatManager Debug] - Function tool calls results:", functionResults.length, functionResults);
+                
                 
                 // Combine results
                 const combinedResults = [...apiResults, ...functionResults];
@@ -242,7 +265,57 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
         typingIndicator.remove();
         
         // Update messages array with complete AI response
-        messages[messages.length - 1].content = aiResponse;
+        let finalContent = aiResponse;
+        
+        // Add function markers to the final AI response if there were function tool calls
+        if (functionToolCalls.length > 0 && functionResults.length > 0) {
+            console.log('[ChatManager Debug] Adding function markers to final AI response');
+            console.log('[ChatManager Debug] Original AI response:', finalContent);
+            
+            // For each function call, add markers inline with the response
+            for (let i = 0; i < functionToolCalls.length && i < functionResults.length; i++) {
+                const toolCall = functionToolCalls[i];
+                const result = functionResults[i];
+                
+                if (toolCall.function && toolCall.function.name && result && result.name) {
+                    const functionName = toolCall.function.name;
+                    const encodedArgs = encodeURIComponent(toolCall.function.arguments || '{}');
+                    const functionCallMarker = `[FUNCTION_CALL:${functionName}:${encodedArgs}]`;
+                    
+                    // Get the result content and determine its type
+                    let resultContent = result.content;
+                    let resultType;
+                    
+                    try {
+                        const resultValue = JSON.parse(resultContent);
+                        resultType = Array.isArray(resultValue) ? 'array' : typeof resultValue;
+                    } catch (e) {
+                        // If parsing fails, use the raw content
+                        resultType = 'string';
+                    }
+                    
+                    // Create the result marker
+                    const encodedResult = encodeURIComponent(resultContent);
+                    const executionTime = result.executionTime || 0;
+                    const functionResultMarker = `[FUNCTION_RESULT:${result.name}:${resultType}:${encodedResult}:${executionTime}]`;
+                    
+                    // Add both markers together at the end (for now - can be improved to insert inline)
+                    finalContent += functionCallMarker + functionResultMarker;
+                }
+            }
+            
+            console.log('[ChatManager Debug] Final content with markers:', finalContent);
+            
+            // Update the UI with the markers
+            const aiMessageElement = document.querySelector(`.message[data-id="${aiMessageId}"]`);
+            if (aiMessageElement) {
+                const contentElement = aiMessageElement.querySelector('.message-content');
+                contentElement.innerHTML = UIUtils.renderMarkdown(finalContent);
+                UIUtils.scrollToBottom(elements.chatMessages);
+            }
+        }
+        
+        messages[messages.length - 1].content = finalContent;
         
         // Save chat history
         StorageService.saveChatHistory(messages);
