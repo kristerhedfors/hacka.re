@@ -52,11 +52,11 @@ window.FunctionToolsProcessor = (function() {
                 
                 this._logFunctionExecution(name, argsString, addSystemMessage);
                 
-                const result = await Executor.execute(name, args);
+                const executionResult = await Executor.execute(name, args);
                 
                 this._logSuccessfulExecution(name, addSystemMessage);
                 
-                return this._createSuccessResult(toolCall, name, result);
+                return this._createSuccessResult(toolCall, name, executionResult.result, executionResult.executionTime);
                 
             } catch (error) {
                 Logger.error(`Error processing tool call ${index}:`, error);
@@ -156,15 +156,16 @@ window.FunctionToolsProcessor = (function() {
             }
         },
         
-        _createSuccessResult: function(toolCall, name, result) {
+        _createSuccessResult: function(toolCall, name, result, executionTime) {
             const toolResult = {
                 tool_call_id: toolCall.id,
                 role: "tool",
                 name: name,
-                content: JSON.stringify(result)
+                content: JSON.stringify(result),
+                executionTime: executionTime // Add execution time to the result
             };
             
-            Logger.debug(`Created tool result for "${name}":`, toolResult);
+            Logger.debug(`Created tool result for "${name}" (${executionTime}ms):`, toolResult);
             return toolResult;
         },
         

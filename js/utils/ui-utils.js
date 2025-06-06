@@ -31,8 +31,14 @@ window.UIUtils = (function() {
             });
             
             // Uses marked.js to render markdown
+            const markdownOutput = marked.parse(text);
+            
             // DOMPurify is used to sanitize the HTML
-            const htmlContent = DOMPurify.sanitize(marked.parse(text));
+            const htmlContent = DOMPurify.sanitize(markdownOutput, {
+                ADD_TAGS: ['span', 'br', 'strong'],
+                ADD_ATTR: ['class'],
+                ALLOW_DATA_ATTR: false
+            });
             
             // Apply syntax highlighting if highlight.js is available
             if (typeof hljs !== 'undefined') {
@@ -67,6 +73,11 @@ window.UIUtils = (function() {
      * @returns {string} - Text with markers replaced by HTML
      */
     function processFunctionMarkers(text) {
+        // Debug: log if we're processing any text with markers
+        if (text.includes('[FUNCTION_CALL:') || text.includes('[FUNCTION_RESULT:')) {
+            console.log('[UI Debug] Processing text with markers');
+        }
+        
         // Reset function call counts if this is a new message
         // We can detect this by checking if there are no function call markers in the text
         if (!text.includes('[FUNCTION_CALL:') && !text.includes('[FUNCTION_RESULT:')) {
@@ -77,7 +88,9 @@ window.UIUtils = (function() {
         
         // Replace function call markers with icons
         // Handle potential whitespace around the marker
-        text = text.replace(/\s*\[FUNCTION_CALL:([^\]]+)\]\s*/g, (match, functionName) => {
+        // New format: [FUNCTION_CALL:functionName:encodedArgs]
+        // Old format: [FUNCTION_CALL:functionName] (for backward compatibility)
+        text = text.replace(/\s*\[FUNCTION_CALL:([^:\]]+)(?::([^\]]+))?\]\s*/g, (match, functionName, encodedArgs) => {
             // Increment the count for this function name
             functionCallCounts[functionName] = (functionCallCounts[functionName] || 0) + 1;
             
@@ -85,23 +98,27 @@ window.UIUtils = (function() {
             const colorIndex = (functionCallCounts[functionName] % 5) || 5;
             const colorClass = `color-${colorIndex}`;
             
-            // Create tooltip with function name and copy button
-            const escapedFunctionName = escapeHTML(functionName).replace(/'/g, "\\'");
+            // Decode and format the arguments
+            let formattedArgs = '{}';
+            if (encodedArgs) {
+                try {
+                    const decodedArgs = decodeURIComponent(encodedArgs);
+                    const argsObj = JSON.parse(decodedArgs);
+                    formattedArgs = JSON.stringify(argsObj, null, 2);
+                } catch (e) {
+                    formattedArgs = decodeURIComponent(encodedArgs);
+                }
+            }
             
-            return `<span class="function-call-icon ${colorClass}">
-                <span class="function-icon-tooltip">
-                    <div>
-                        Function call: <strong>${escapeHTML(functionName)}</strong><br>
-                        <button class="tooltip-copy-btn" data-copy-text="${escapedFunctionName}" data-copy-message="Function name copied to clipboard">Copy</button>
-                    </div>
-                </span>
-            </span>`;
+            const iconHtml = `<span class="function-call-icon ${colorClass}">f<span class="function-icon-tooltip"><strong>Function:</strong> ${escapeHTML(functionName)}<br><strong>Parameters:</strong> ${escapeHTML(formattedArgs)}</span></span>`;
+            return iconHtml;
         });
         
         // Replace function result markers with icons
         // Handle potential newlines around the marker
-        // New format: [FUNCTION_RESULT:name:type:encodedValue]
-        text = text.replace(/\s*\[FUNCTION_RESULT:([^:]+):([^:]+):([^\]]+)\]\s*/g, (match, functionName, resultType, encodedResult) => {
+        // New format: [FUNCTION_RESULT:name:type:encodedValue:executionTime]
+        // Old format: [FUNCTION_RESULT:name:type:encodedValue] (for backward compatibility)
+        text = text.replace(/\s*\[FUNCTION_RESULT:([^:]+):([^:]+):([^:]+)(?::([^\]]+))?\]\s*/g, (match, functionName, resultType, encodedResult, executionTime) => {
             // Use the same color as the corresponding function call
             const colorIndex = (functionCallCounts[functionName] % 5) || 5;
             const colorClass = `color-${colorIndex}`;
@@ -200,17 +217,19 @@ window.UIUtils = (function() {
                 }
             }
             
-            return `<span class="function-result-icon ${colorClass}">
-                <span class="function-icon-tooltip" style="max-width: 400px;">
-                    <div>Function result: ${escapeHTML(functionName)}</div>
-                    <div>Type: ${escapeHTML(resultType)}</div>
-                    <div>
-                        Value: <strong>${displayValueHtml}</strong><br>
-                        ${copyButtonHtml}
-                    </div>
-                </span>
-            </span>`;
+            // Format execution time (if available)
+            let executionTimeFormatted = 'N/A';
+            if (executionTime) {
+                const executionTimeMs = parseInt(executionTime) || 0;
+                executionTimeFormatted = executionTimeMs < 1000 
+                    ? `${executionTimeMs}ms`
+                    : `${(executionTimeMs / 1000).toFixed(2)}s`;
+            }
+            
+            const resultIconHtml = `<span class="function-result-icon ${colorClass}"><span class="function-icon-tooltip"><strong>Result:</strong> ${escapeHTML(functionName)}<br><strong>Type:</strong> ${escapeHTML(resultType)}<br><strong>Time:</strong> ${executionTimeFormatted}<br><strong>Value:</strong> ${escapeHTML(displayValue)}</span></span>`;
+            return resultIconHtml;
         });
+        
         
         return text;
     }

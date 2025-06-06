@@ -298,17 +298,7 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
                                         toolCalls[index].function.name = 
                                             (toolCalls[index].function.name || '') + funcDelta.name;
                                         
-                                        // If this is the first time we're seeing the name, insert a function call marker
-                                        if (toolCalls[index].function.name === funcDelta.name) {
-                                            // Insert a marker in the response to indicate a function call
-                                            const functionCallMarker = `[FUNCTION_CALL:${funcDelta.name}]`;
-                                            completeResponse += functionCallMarker;
-                                            if (onChunk) {
-                                                window.requestAnimationFrame(() => {
-                                                    onChunk(completeResponse);
-                                                });
-                                            }
-                                        }
+                                        // Don't insert marker here anymore - we'll do it when tool calls are complete
                                     }
                                     
                                     if (funcDelta.arguments) {
@@ -517,6 +507,26 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
             console.log("[API Debug] - Starting tool call processing with apiToolsManager");
             console.log("[API Debug] - Final tool calls to process:", toolCalls);
             
+            // Insert function call markers for each tool call before processing
+            for (const toolCall of toolCalls) {
+                if (toolCall.function && toolCall.function.name) {
+                    const functionName = toolCall.function.name;
+                    const encodedArgs = encodeURIComponent(toolCall.function.arguments || '{}');
+                    const functionCallMarker = `[FUNCTION_CALL:${functionName}:${encodedArgs}]`;
+                        completeResponse += functionCallMarker;
+                    
+                    // Update the UI with the marker
+                    if (onChunk) {
+                        await new Promise(resolve => {
+                            window.requestAnimationFrame(() => {
+                                onChunk(completeResponse);
+                                resolve();
+                            });
+                        });
+                    }
+                }
+            }
+            
             // Process the tool calls with the fixed arguments and system message callback
             const toolResults = await apiToolsManager.processToolCalls(toolCalls, addSystemMessage);
             
@@ -555,10 +565,11 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
                         resultType = 'string';
                     }
                     
-                    // Create the marker with function name and encoded result
+                    // Create the marker with function name, encoded result, and execution time
                     const encodedResult = encodeURIComponent(resultContent);
-                    const functionResultMarker = `[FUNCTION_RESULT:${result.name}:${resultType}:${encodedResult}]`;
-                    completeResponse += functionResultMarker;
+                    const executionTime = result.executionTime || 0; // Default to 0 if not available
+                    const functionResultMarker = `[FUNCTION_RESULT:${result.name}:${resultType}:${encodedResult}:${executionTime}]`;
+                        completeResponse += functionResultMarker;
                     if (onChunk) {
                         window.requestAnimationFrame(() => {
                             onChunk(completeResponse);
