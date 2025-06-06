@@ -61,7 +61,7 @@
     position: relative;
     font-family: "Times New Roman", serif;
     animation: textSweep 3s infinite alternate;
-    background: linear-gradient(90deg, var(--primary-color, #6366f1), #ffffff, var(--primary-color, #6366f1));
+    background: linear-gradient(90deg, var(--function-icon-color-start, var(--primary-color)), var(--function-icon-color-mid, #ffffff), var(--function-icon-color-end, var(--primary-color)));
     background-size: 200% auto;
     -webkit-background-clip: text;
     background-clip: text;
@@ -78,7 +78,7 @@
     font-style: italic;
     font-family: "Times New Roman", serif;
     animation: textSweep 3s infinite alternate;
-    background: linear-gradient(90deg, var(--primary-color, #6366f1), #ffffff, var(--primary-color, #6366f1));
+    background: linear-gradient(90deg, var(--function-icon-color-start, var(--primary-color)), var(--function-icon-color-mid, #ffffff), var(--function-icon-color-end, var(--primary-color)));
     background-size: 200% auto;
     -webkit-background-clip: text;
     background-clip: text;
@@ -103,7 +103,7 @@
     transform: translateY(-50%);
     width: 0;
     height: 0;
-    border-left: 10px solid var(--primary-color, #6366f1);
+    border-left: 10px solid var(--function-icon-color-start, var(--primary-color));
     border-top: 5px solid transparent;
     border-bottom: 5px solid transparent;
     animation: arrowColorSweep 3s infinite alternate;
@@ -118,7 +118,7 @@
     transform: translateY(-50%);
     width: 10px;
     height: 3px;
-    background: linear-gradient(90deg, var(--primary-color, #6366f1), #ffffff, var(--primary-color, #6366f1));
+    background: linear-gradient(90deg, var(--function-icon-color-start, var(--primary-color)), var(--function-icon-color-mid, #ffffff), var(--function-icon-color-end, var(--primary-color)));
     background-size: 200% auto;
     animation: backgroundSweep 3s infinite alternate;
 }
@@ -570,13 +570,13 @@
 /* Animation keyframes for function icons */
 @keyframes arrowColorSweep {
     0% {
-        border-left-color: var(--primary-color, #6366f1);
+        border-left-color: var(--function-icon-color-start, var(--primary-color));
     }
     50% {
-        border-left-color: #ffffff;
+        border-left-color: var(--function-icon-color-mid, #ffffff);
     }
     100% {
-        border-left-color: var(--primary-color, #6366f1);
+        border-left-color: var(--function-icon-color-end, var(--primary-color));
     }
 }
 

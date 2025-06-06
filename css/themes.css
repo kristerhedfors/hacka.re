@@ -23,6 +23,11 @@
     --user-msg-bg: #e0e7ff;        /* Indigo 100 */
     --ai-msg-bg: #f3f4f6;          /* Gray 100 */
     --system-msg-bg: #FFFDF0;      /* Very whitish yellow */
+    
+    /* Function icon colors - primary colors for light theme */
+    --function-icon-color-start: var(--primary-color);
+    --function-icon-color-mid: #ffffff;
+    --function-icon-color-end: var(--primary-color);
 }
 
 /* Modern Theme - Dark Mode */
@@ -43,6 +48,11 @@
     --user-msg-bg: #1e293b;        /* Rich slate - sophisticated user messages */
     --ai-msg-bg: #0f172a;          /* Deep slate - elegant AI responses */
     --system-msg-bg: #164e63;      /* Deep cyan - distinctive system messages */
+    
+    /* Function icon colors - off-white for dark theme */
+    --function-icon-color-start: #c2c2c2;
+    --function-icon-color-mid: #ffffff;
+    --function-icon-color-end: #c2c2c2;
     
     /* Additional dark mode specific variables */
     --bg-color: #020617;           /* Ultra deep slate - premium feel */
