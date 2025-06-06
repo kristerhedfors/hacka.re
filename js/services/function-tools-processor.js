@@ -54,7 +54,7 @@ window.FunctionToolsProcessor = (function() {
                 
                 const executionResult = await Executor.execute(name, args);
                 
-                this._logSuccessfulExecution(name, addSystemMessage);
+                this._logSuccessfulExecution(name, executionResult.result, addSystemMessage);
                 
                 return this._createSuccessResult(toolCall, name, executionResult.result, executionResult.executionTime);
                 
@@ -138,9 +138,21 @@ window.FunctionToolsProcessor = (function() {
             }
         },
         
-        _logSuccessfulExecution: function(name, addSystemMessage) {
+        _logSuccessfulExecution: function(name, result, addSystemMessage) {
             if (addSystemMessage && window.DebugService && DebugService.getDebugMode()) {
-                addSystemMessage(`Function "${name}" executed successfully`);
+                let resultText = '';
+                try {
+                    // Pretty-print the result
+                    if (typeof result === 'object' && result !== null) {
+                        resultText = '\n\nResult:\n' + JSON.stringify(result, null, 2);
+                    } else {
+                        resultText = '\n\nResult: ' + String(result);
+                    }
+                } catch (e) {
+                    resultText = '\n\nResult: ' + String(result);
+                }
+                
+                addSystemMessage(`Function "${name}" executed successfully${resultText}`);
             }
         },
         
