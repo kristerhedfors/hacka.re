@@ -14,6 +14,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const aiHackare = new AIHackareComponent.AIHackare();
     aiHackare.init();
     
+    // Initialize MCP Manager if available
+    if (window.MCPManager) {
+        MCPManager.init();
+        DebugService.log('MCP Manager initialized');
+    }
+    
     // Initialize title and subtitle from localStorage if available
     if (window.StorageService) {
         // Update title and subtitle on page load

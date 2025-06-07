@@ -32,6 +32,11 @@ window.DefaultFunctionsService = (function() {
             DEFAULT_FUNCTIONS.push(window.MathUtilitiesFunctions);
         }
         
+        // Add MCP example functions if they exist
+        if (window.MCPExampleFunctions) {
+            DEFAULT_FUNCTIONS.push(window.MCPExampleFunctions);
+        }
+        
         // Additional default function groups can be added here in the future
         
         console.log(`Loaded ${DEFAULT_FUNCTIONS.length} default function groups:`, DEFAULT_FUNCTIONS.map(g => g.name));
