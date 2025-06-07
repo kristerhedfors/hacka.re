@@ -61,12 +61,20 @@ async def authenticated_endpoint(request):
             'documentation': 'Use crypto_auth.sign_request() to generate headers'
         }, status_code=401)
     
-    # Verify HMAC signature using libsodium Blake2b
-    if not verify_signature(body, timestamp, signature, SHARED_SECRET):
+    # Extract request components for comprehensive verification
+    method = request.method
+    path = request.url.path
+    query_params = dict(request.query_params)
+    headers = dict(request.headers)
+    
+    # Verify HMAC signature using libsodium Blake2b WITH INTEGRITY PROTECTION
+    if not verify_signature(body, timestamp, signature, SHARED_SECRET, 
+                           method=method, path=path, query_params=query_params, headers=headers):
         return JSONResponse({
             'error': 'Invalid or expired HMAC signature',
             'crypto': 'libsodium Blake2b verification failed',
-            'max_age': '300 seconds (5 minutes)'
+            'max_age': '300 seconds (5 minutes)',
+            'integrity_protection': 'All request components verified (method, path, query, headers, body)'
         }, status_code=401)
     
     # Parse request body if JSON

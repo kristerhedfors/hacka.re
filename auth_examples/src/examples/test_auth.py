@@ -56,20 +56,31 @@ def test_hmac_auth(server_url="http://127.0.0.1:8000", shared_secret_hex=None):
     
     request_body = json.dumps(test_payload).encode()
     
-    # Sign request using libsodium
-    timestamp, signature = sign_request(request_body, shared_secret)
+    # Sign request using libsodium WITH INTEGRITY PROTECTION
+    # Extract request components for comprehensive signing
+    method = "POST"
+    path = "/api/protected"
+    query_params = {}  # No query params in this example, but they would be signed
+    headers = {
+        'Content-Type': 'application/json',
+        'User-Agent': 'auth-examples-client/1.0'
+    }
+    
+    timestamp, signature = sign_request(request_body, shared_secret, 
+                                       method=method, path=path, 
+                                       query_params=query_params, headers=headers)
     
     print(f"📝 Request signed:")
     print(f"   Timestamp: {timestamp}")
     print(f"   Signature: {signature[:32]}...")
     print(f"   Body size: {len(request_body)} bytes")
     
-    # Make authenticated request
-    headers = {
-        'Content-Type': 'application/json',
+    # Make authenticated request (add auth headers to existing headers)
+    request_headers = headers.copy()  # Start with headers used in signing
+    request_headers.update({
         'X-Timestamp': timestamp,
         'X-Signature': signature
-    }
+    })
     
     try:
         with httpx.Client() as client:
@@ -87,7 +98,7 @@ def test_hmac_auth(server_url="http://127.0.0.1:8000", shared_secret_hex=None):
             auth_response = client.post(
                 f"{server_url}/api/protected",
                 content=request_body,
-                headers=headers
+                headers=request_headers
             )
             
             print(f"   Status: {auth_response.status_code}")
@@ -143,20 +154,31 @@ def test_ed25519_auth(server_url="http://127.0.0.1:8001", private_key_hex=None):
     
     request_body = json.dumps(test_payload).encode()
     
-    # Sign request using libsodium Ed25519
-    timestamp, signature = sign_ed25519_request(request_body, private_key_hex)
+    # Sign request using libsodium Ed25519 WITH INTEGRITY PROTECTION
+    # Extract request components for comprehensive signing
+    method = "POST"
+    path = "/api/ed25519"
+    query_params = {}  # No query params in this example, but they would be signed
+    headers = {
+        'Content-Type': 'application/json',
+        'User-Agent': 'auth-examples-client/1.0'
+    }
+    
+    timestamp, signature = sign_ed25519_request(request_body, private_key_hex,
+                                               method=method, path=path,
+                                               query_params=query_params, headers=headers)
     
     print(f"📝 Request signed with Ed25519:")
     print(f"   Timestamp: {timestamp}")
     print(f"   Signature: {signature[:32]}...")
     print(f"   Body size: {len(request_body)} bytes")
     
-    # Make authenticated request
-    headers = {
-        'Content-Type': 'application/json',
+    # Make authenticated request (add auth headers to existing headers)
+    request_headers = headers.copy()  # Start with headers used in signing
+    request_headers.update({
         'X-Timestamp': timestamp,
         'X-Ed25519-Signature': signature
-    }
+    })
     
     try:
         with httpx.Client() as client:
@@ -175,7 +197,7 @@ def test_ed25519_auth(server_url="http://127.0.0.1:8001", private_key_hex=None):
             auth_response = client.post(
                 f"{server_url}/api/ed25519",
                 content=request_body,
-                headers=headers
+                headers=request_headers
             )
             
             print(f"   Status: {auth_response.status_code}")
