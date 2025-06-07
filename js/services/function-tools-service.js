@@ -179,6 +179,14 @@ window.FunctionToolsService = (function() {
         return Registry.getFunctionsInSameGroup(name);
     }
     
+    /**
+     * Get function groups mapping
+     * @returns {Object} Object mapping function names to group IDs
+     */
+    function getFunctionGroups() {
+        return Storage.getFunctionGroups();
+    }
+    
     // Public API
     return {
         isFunctionToolsEnabled,
@@ -196,6 +204,7 @@ window.FunctionToolsService = (function() {
         executeJsFunction,
         processToolCalls,
         generateToolDefinition,
-        getFunctionsInSameGroup
+        getFunctionsInSameGroup,
+        getFunctionGroups
     };
 })();
