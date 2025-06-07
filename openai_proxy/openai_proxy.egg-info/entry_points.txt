@@ -1,2 +1,0 @@
-[console_scripts]
-openai-proxy = openai_proxy.src.main:main

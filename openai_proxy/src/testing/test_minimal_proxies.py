@@ -48,11 +48,10 @@ def test_proxy_basic_functionality(proxy_url: str, proxy_name: str) -> bool:
         return False
 
 def test_wsgi_proxy() -> bool:
-    """Test WSGI proxy (requires gunicorn)"""
-    print("\n--- Testing WSGI Proxy ---")
-    print("Note: WSGI proxy requires manual testing with gunicorn")
-    print("Command: gunicorn openai_proxy.src.proxies.minimal.wsgi_proxy:application --bind 127.0.0.1:8001")
-    return True  # Skip automated test for WSGI
+    """Test WSGI proxy (removed)"""
+    print("\n--- WSGI Proxy Removed ---")
+    print("Note: WSGI proxy has been removed for simplification")
+    return True  # Skip test - proxy removed
 
 def test_starlette_proxy() -> bool:
     """Test Starlette proxy"""
@@ -69,26 +68,22 @@ def test_flask_proxy() -> bool:
     return True  # Skip automated test for Flask
 
 def test_authenticated_proxy() -> bool:
-    """Test authenticated proxy"""
-    print("\n--- Testing Authenticated Proxy ---")
-    print("Note: Authenticated proxy requires manual testing with uvicorn")
-    print("Command: uvicorn openai_proxy.src.proxies.minimal.authenticated_proxy:app --host 127.0.0.1 --port 8004")
-    print("Environment: PROXY_SHARED_SECRET=test_secret_32_bytes_long_key_123")
-    return True  # Skip automated test for authenticated proxy
+    """Test authenticated proxy (removed)"""
+    print("\n--- Authenticated Proxy Removed ---")
+    print("Note: Authenticated proxy has been removed for simplification")
+    return True  # Skip test - proxy removed
 
 def test_ed25519_proxy() -> bool:
-    """Test Ed25519 proxy"""
-    print("\n--- Testing Ed25519 Proxy ---")
-    print("Note: Ed25519 proxy requires manual testing with uvicorn")
-    print("Command: uvicorn openai_proxy.src.proxies.minimal.ed25519_proxy:app --host 127.0.0.1 --port 8005")
-    print("Environment: CLIENT_PUBLIC_KEY=<generated_public_key>")
-    return True  # Skip automated test for Ed25519 proxy
+    """Test Ed25519 proxy (removed)"""
+    print("\n--- Ed25519 Proxy Removed ---")
+    print("Note: Ed25519 proxy has been removed for simplification")
+    return True  # Skip test - proxy removed
 
 def test_proxy_endpoints() -> bool:
     """Test that proxy endpoints are correctly configured"""
     from ..proxies.minimal import get_proxy_app
     
-    proxy_types = ['wsgi', 'starlette', 'flask', 'authenticated', 'ed25519']
+    proxy_types = ['starlette', 'flask']
     
     for proxy_type in proxy_types:
         try:
@@ -106,11 +101,8 @@ def run_tests(proxy_url: str = None) -> bool:
     
     tests = [
         ("Proxy App Loading", test_proxy_endpoints),
-        ("WSGI Proxy", test_wsgi_proxy),
         ("Starlette Proxy", test_starlette_proxy),
         ("Flask Proxy", test_flask_proxy),
-        ("Authenticated Proxy", test_authenticated_proxy),
-        ("Ed25519 Proxy", test_ed25519_proxy),
     ]
     
     results = []
@@ -133,11 +125,8 @@ def run_tests(proxy_url: str = None) -> bool:
     
     print(f"\n=== Manual Testing Instructions ===")
     print(f"To test the proxies manually, run each proxy on a different port:")
-    print(f"1. WSGI: gunicorn openai_proxy.src.proxies.minimal.wsgi_proxy:application --bind 127.0.0.1:8001")
-    print(f"2. Starlette: uvicorn openai_proxy.src.proxies.minimal.starlette_proxy:app --host 127.0.0.1 --port 8002")
-    print(f"3. Flask: python -m openai_proxy.src.proxies.minimal.flask_proxy")
-    print(f"4. Authenticated: PROXY_SHARED_SECRET=test_secret_32_bytes_long_key_123 uvicorn openai_proxy.src.proxies.minimal.authenticated_proxy:app --host 127.0.0.1 --port 8004")
-    print(f"5. Ed25519: CLIENT_PUBLIC_KEY=<key> uvicorn openai_proxy.src.proxies.minimal.ed25519_proxy:app --host 127.0.0.1 --port 8005")
+    print(f"1. Starlette: uvicorn openai_proxy.src.proxies.minimal.starlette_proxy:app --host 127.0.0.1 --port 8002")
+    print(f"2. Flask: python -m openai_proxy.src.proxies.minimal.flask_proxy")
     print(f"\nThen test each with:")
     print(f"python -m openai_proxy.src.testing.test_pure_python http://localhost:<port>")
     

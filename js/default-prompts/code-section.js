@@ -3,6 +3,7 @@
  * Contains code-related prompts like Function Library and Agent Orchestration
  */
 
+console.log("Loading Code Section prompt...");
 window.CodeSectionPrompt = {
     id: 'code-section',
     name: 'Code',
