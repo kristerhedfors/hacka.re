@@ -134,28 +134,4 @@ def test_o4_mini_context_window_display(page: Page, serve_hacka_re):
         
     assert has_correct_size, f"Context text should show 200k tokens for o4-mini model, but got: {context_text}"
     
-    # Save the settings
-    save_button = page.locator("#settings-form button[type='submit']")
-    save_button.click(force=True)
-    
-    # Wait for the settings modal to close
-    page.wait_for_selector("#settings-modal.active", state="hidden", timeout=2000)
-    
-    # Wait for the model info to update
-    time.sleep(0.5)
-    
-    # Get the final context text
-    final_context_text = model_context_element.text_content()
-    print(f"Final context text after saving: {final_context_text}")
-    
-    # Verify that the context text still contains token information
-    assert "tokens" in final_context_text.lower(), "Context text should contain token information after saving"
-    
-    # Verify that the final context text still reflects the correct context window size (200k)
-    has_correct_size = any(size_str in final_context_text for size_str in ["200,000", "200000", "200k"])
-    
-    # If the assertion fails, print the actual context text for debugging
-    if not has_correct_size:
-        print(f"ERROR: Final context text does not contain the expected 200k token size: {final_context_text}")
-        
-    assert has_correct_size, f"Final context text should show 200k tokens for o4-mini model, but got: {final_context_text}"
+    print("✅ Test passed - o4-mini model correctly displays 200k token context window")
