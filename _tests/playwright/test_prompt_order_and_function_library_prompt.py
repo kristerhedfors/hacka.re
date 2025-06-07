@@ -1,4 +1,5 @@
 import pytest
+import time
 from playwright.sync_api import Page, expect
 
 from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
@@ -10,6 +11,14 @@ def test_user_prompts_before_default_prompts(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
+    
+    # Check if settings modal is already open and dismiss it
+    settings_modal = page.locator("#settings-modal")
+    if settings_modal.is_visible():
+        print("Settings modal is already open, dismissing it first")
+        dismiss_settings_modal(page)
+        # Wait a moment to ensure the modal is fully closed
+        time.sleep(0.5)
     
     # Take a screenshot at the start
     screenshot_with_markdown(page, "prompt_order_test_start.png", {
@@ -89,6 +98,14 @@ def test_function_library_default_prompt(page: Page, serve_hacka_re):
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
     
+    # Check if settings modal is already open and dismiss it
+    settings_modal = page.locator("#settings-modal")
+    if settings_modal.is_visible():
+        print("Settings modal is already open, dismissing it first")
+        dismiss_settings_modal(page)
+        # Wait a moment to ensure the modal is fully closed
+        time.sleep(0.5)
+    
     # Take a screenshot at the start
     screenshot_with_markdown(page, "function_library_prompt_test_start.png", {
         "Status": "Test started",
@@ -143,18 +160,13 @@ function test_function(input) {
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
     
-    # Check if settings modal is open and close it if needed
+    # Check if settings modal is already open and dismiss it
     settings_modal = page.locator("#settings-modal")
     if settings_modal.is_visible():
-        # Try to find the close button
-        close_settings_button = page.locator("#close-settings-modal")
-        if close_settings_button.is_visible():
-            close_settings_button.click()
-            expect(settings_modal).not_to_be_visible()
-        else:
-            # If the close button is not visible, try clicking outside the modal
-            page.mouse.click(10, 10)
-            page.wait_for_timeout(500)
+        print("Settings modal is already open after reload, dismissing it")
+        dismiss_settings_modal(page)
+        # Wait a moment to ensure the modal is fully closed
+        time.sleep(0.5)
     
     # Open the prompts modal
     page.locator("#prompts-btn").click()
@@ -169,6 +181,16 @@ function test_function(input) {
     # Wait for the default prompts list to be visible
     default_prompts_list = page.locator(".default-prompts-list")
     expect(default_prompts_list).to_be_visible()
+    
+    # Check if the Code section exists and expand it if it does
+    code_section = page.locator(".nested-section-header:has-text('Code')")
+    if code_section.count() > 0:
+        print("Found Code section, expanding it")
+        code_section.click()
+        
+        # Wait for the nested section list to be visible
+        nested_list = page.locator(".nested-section-list")
+        expect(nested_list).to_be_visible()
     
     # Check if the "Function Library" prompt exists
     function_library_prompt = page.locator(".default-prompt-item:has-text('Function library')")

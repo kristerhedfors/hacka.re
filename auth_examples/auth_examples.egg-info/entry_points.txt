@@ -1,0 +1,3 @@
+[console_scripts]
+auth-keygen = auth_examples.src.keygen:main
+auth-server = auth_examples.src.examples.hmac_server:main
