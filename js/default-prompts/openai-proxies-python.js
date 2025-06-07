@@ -68,6 +68,32 @@ async def proxy_chat_completions(request):
                        status_code=500,
                        headers={'Content-Type': 'application/json'})
 
+async def proxy_models(request):
+    try:
+        # Filter headers (remove problematic ones)
+        headers = {k: v for k, v in request.headers.items()
+                  if k.lower() not in ('host', 'content-length', 'accept-encoding', 'connection')}
+        
+        # Make request to OpenAI API
+        response = await client.get('/v1/models', headers=headers)
+        
+        # Get response data
+        data = await response.aread()
+        
+        # Filter response headers
+        response_headers = {k: v for k, v in response.headers.items()
+                          if k.lower() not in ('content-length', 'transfer-encoding', 
+                                             'connection', 'host', 'content-encoding')}
+        
+        return Response(data, 
+                       status_code=response.status_code, 
+                       headers=response_headers)
+        
+    except Exception as e:
+        return Response(f'{{"error": {{"message": "Models proxy error: {str(e)}", "type": "proxy_error"}}}}',
+                       status_code=500,
+                       headers={'Content-Type': 'application/json'})
+
 async def health_check(request):
     return Response('{"status": "healthy", "service": "openai-proxy"}',
                    headers={'Content-Type': 'application/json'})
@@ -85,6 +111,7 @@ middleware = [
 # Define routes
 routes = [
     Route('/v1/chat/completions', proxy_chat_completions, methods=['POST', 'OPTIONS']),
+    Route('/v1/models', proxy_models, methods=['GET', 'OPTIONS']),
     Route('/health', health_check, methods=['GET']),
 ]
 
