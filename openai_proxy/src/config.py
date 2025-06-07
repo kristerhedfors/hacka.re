@@ -34,4 +34,4 @@ def validate_config():
 
 # Test configuration
 DEFAULT_MAX_TOKENS = 50
-DEFAULT_TIMEOUT = 30
+DEFAULT_TIMEOUT = 5
