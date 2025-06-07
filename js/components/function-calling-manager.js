@@ -866,9 +866,27 @@ function get_weather(location, units = "metric") {
                 elements.functionName.setAttribute('readonly', 'readonly');
             }
             
+            // Get all functions in the same group to preserve the bundle
+            const relatedFunctions = FunctionToolsService.getFunctionsInSameGroup(name);
+            const functions = FunctionToolsService.getJsFunctions();
+            
             // Set the function code
-            if (elements.functionCode && functionSpec.code) {
-                elements.functionCode.value = functionSpec.code;
+            if (elements.functionCode) {
+                let codeToLoad = functionSpec.code;
+                
+                // If there are multiple functions in the same group, load them all
+                if (relatedFunctions.length > 1) {
+                    // Sort the functions to ensure consistent order
+                    relatedFunctions.sort();
+                    
+                    // Combine the code of all related functions
+                    codeToLoad = relatedFunctions
+                        .filter(funcName => functions[funcName]) // Ensure the function exists
+                        .map(funcName => functions[funcName].code)
+                        .join('\n\n');
+                }
+                
+                elements.functionCode.value = codeToLoad;
                 
                 // Trigger any event listeners that might be attached to the code editor
                 const event = new Event('input', { bubbles: true });
@@ -903,9 +921,15 @@ function get_weather(location, units = "metric") {
             
             const code = elements.functionCode.value.trim();
             
+            let groupId;
+            
             // If we're in edit mode, handle it differently
             if (editingFunctionName) {
-                // Remove the old function
+                // Get the original group ID to preserve it
+                const functionGroups = FunctionToolsService.getFunctionGroups();
+                groupId = functionGroups[editingFunctionName];
+                
+                // Remove the old function group
                 FunctionToolsService.removeJsFunction(editingFunctionName);
                 
                 // Reset editing flag
@@ -917,8 +941,10 @@ function get_weather(location, units = "metric") {
                 // Keep track of added callable functions
                 const addedFunctions = [];
                 
-                // Generate a unique group ID for this set of functions
-                const groupId = 'group_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                // Generate a unique group ID for this set of functions (or use existing one if editing)
+                if (!groupId) {
+                    groupId = 'group_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                }
                 
                 // First, add all auxiliary functions (non-callable)
                 const auxiliaryFunctions = validation.functions.filter(func => !func.isCallable);
