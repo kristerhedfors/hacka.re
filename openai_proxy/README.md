@@ -1,230 +1,108 @@
-# OpenAI Proxy
+# OpenAI Proxy Examples
 
-A collection of minimal OpenAI API-compatible proxies with libsodium authentication and content development tools.
+A simplified OpenAI API-compatible proxy implementation for educational purposes. Part of the hacka.re project.
 
-## Overview
+## 🚀 Quick Start
 
-This package provides **5 different minimal OpenAI proxy implementations** based on extensive research into minimal proxy patterns. Each proxy is designed to be as small as possible while maintaining full functionality.
+### Available Proxies
 
-### The Five Minimal Proxies
+```
+OpenAI Proxy/
+├── Starlette Proxy (20-25 lines) ⭐ RECOMMENDED - Async streaming support
+└── Flask Proxy (20-25 lines) - Simple synchronous implementation
+```
 
-1. **Pure WSGI Proxy** (12-15 lines) - Absolute minimal using Python's built-in WSGI
-2. **Starlette Streaming Proxy** (20-25 lines) - Production-ready with async streaming support
-3. **Flask Ecosystem Proxy** (20-25 lines) - Rich ecosystem integration
-4. **Authenticated HMAC Proxy** (35 lines) - HMAC-style authentication using PyNaCl
-5. **Ed25519 Signature Proxy** (40 lines) - Public-key authentication with strongest security
-
-## Features
-
-- ✅ **Minimal Code**: Each proxy is under 50 lines of code
-- ✅ **Full OpenAI Compatibility**: Supports chat completions, streaming, and tool calling
-- ✅ **Libsodium Authentication**: Uses PyNaCl for cryptographic security
-- ✅ **Comprehensive Testing**: Pure Python, OpenAI client, and tool calling tests
-- ✅ **Live API Testing**: Tests against real OpenAI API (gpt-4o-mini)
-- ✅ **Content Development**: Tools for creating example functions and prompts
-
-## Installation
+### Direct Usage
 
 ```bash
-# Install the package
+# Install dependencies
 pip install -e .
 
-# Or install dependencies directly
-pip install -r requirements.txt
+# Start recommended proxy
+uvicorn src.proxies.minimal.starlette_proxy:app --host 127.0.0.1 --port 8000
+
+# Or start Flask proxy
+python src/proxies/minimal/flask_proxy.py
+
+# Test implementations
+./run_tests.sh
 ```
 
-## Quick Start
+## ✅ Status
 
-### Running a Proxy
+**Simplified proxy implementations**
+
+- ✅ Configuration working
+- ✅ Both proxy implementations load correctly  
+- ✅ OpenAI API passthrough functionality
+- ✅ Streaming response support
+- ✅ Function/tool calling compatibility
+- ✅ Educational testing framework
+
+## 📋 Features
+
+- **2 Simple Implementations**: Starlette (async) and Flask (sync)
+- **Real-time Streaming**: Both proxies support OpenAI streaming responses
+- **Function Calling**: Compatible with OpenAI's function calling
+- **API Key Passthrough**: Simple forwarding of Authorization headers
+- **Educational Testing**: Test suite for validation
+
+## 🎯 Use Cases
+
+| Proxy Type | Lines | Focus | Best For |
+|------------|-------|-------|----------|
+| **Starlette** | 20-25 | Async patterns | Modern Python web frameworks, high performance |
+| **Flask** | 20-25 | Synchronous patterns | Traditional web development, simplicity |
+
+## 🧪 Testing
 
 ```bash
-# Starlette proxy (recommended for production)
-uvicorn openai_proxy.src.proxies.minimal.starlette_proxy:app --host 127.0.0.1 --port 8000
+# Run test suite
+./run_tests.sh
 
-# Flask proxy
-python -m openai_proxy.src.proxies.minimal.flask_proxy
-
-# WSGI proxy with gunicorn
-gunicorn openai_proxy.src.proxies.minimal.wsgi_proxy:application --bind 127.0.0.1:8000
-
-# Authenticated proxy (requires shared secret)
-PROXY_SHARED_SECRET=your_secret_key uvicorn openai_proxy.src.proxies.minimal.authenticated_proxy:app --port 8000
-
-# Ed25519 proxy (requires public key)
-CLIENT_PUBLIC_KEY=your_public_key uvicorn openai_proxy.src.proxies.minimal.ed25519_proxy:app --port 8000
+# Test individual components
+python -m src.testing.test_pure_python http://localhost:8000
+python -m src.testing.test_openai_api http://localhost:8000  
+python -m src.testing.test_tool_calling http://localhost:8000
 ```
 
-### Testing the Proxies
+## 🔧 Configuration
 
 ```bash
-# Test with pure Python requests
-python -m openai_proxy.src.testing.test_pure_python http://localhost:8000
-
-# Test with OpenAI client
-python -m openai_proxy.src.testing.test_openai_api http://localhost:8000
-
-# Test tool calling functionality
-python -m openai_proxy.src.testing.test_tool_calling http://localhost:8000
-
-# Test all minimal proxies
-python -m openai_proxy.src.testing.test_minimal_proxies
-```
-
-## Configuration
-
-The package uses environment variables from `_tests/playwright/.env`:
-
-```bash
-OPENAI_API_KEY=your_openai_api_key
+# Create .env file
+cat > .env << EOF
+OPENAI_API_KEY=your_openai_api_key_here
 OPENAI_API_MODEL=gpt-4o-mini
 OPENAI_API_BASE=https://api.openai.com/v1
+EOF
 ```
 
-## Authentication
+## 🚀 Running the Proxies
 
-### HMAC Authentication (Shared Secret)
-
-```python
-from openai_proxy.src.utils.crypto_utils import sign_request
-import requests
-import json
-
-# Sign the request
-body = json.dumps({"model": "gpt-4o-mini", "messages": [{"role": "user", "content": "Hello"}]}).encode()
-shared_secret = b'your_32_byte_secret_key_here_123'
-timestamp, signature = sign_request(body, shared_secret)
-
-# Make authenticated request
-headers = {
-    'Authorization': 'Bearer your_openai_key',
-    'Content-Type': 'application/json',
-    'X-Timestamp': timestamp,
-    'X-Signature': signature
-}
-response = requests.post('http://localhost:8000/v1/chat/completions', data=body, headers=headers)
+**Starlette Proxy (Recommended)**
+```bash
+uvicorn src.proxies.minimal.starlette_proxy:app --host 127.0.0.1 --port 8000
 ```
 
-### Ed25519 Authentication (Public Key)
-
-```python
-from openai_proxy.src.utils.crypto_utils import generate_ed25519_keypair, sign_ed25519_request
-
-# Generate keypair
-private_key_hex, public_key_hex = generate_ed25519_keypair()
-
-# Sign request
-timestamp, signature = sign_ed25519_request(body, private_key_hex)
-
-headers = {
-    'Authorization': 'Bearer your_openai_key',
-    'Content-Type': 'application/json',
-    'X-Timestamp': timestamp,
-    'X-Ed25519-Signature': signature
-}
+**Flask Proxy**
+```bash
+python src/proxies/minimal/flask_proxy.py
 ```
 
-## Proxy Comparison
+## 📝 Usage
 
-| Proxy Type | Lines of Code | Features | Use Case |
-|------------|---------------|----------|----------|
-| Pure WSGI | 12-15 | Basic forwarding | Absolute minimal |
-| Starlette | 20-25 | Async, streaming | Production recommended |
-| Flask | 20-25 | Rich ecosystem | Rapid development |
-| Authenticated | 35 | HMAC auth | Shared secret security |
-| Ed25519 | 40 | Public key auth | Strongest security |
-
-## Tool Calling Support
-
-All proxies support OpenAI's function calling transparently:
-
-```python
-tools = [
-    {
-        "type": "function",
-        "function": {
-            "name": "get_weather",
-            "description": "Get weather for a location",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "location": {"type": "string"}
-                },
-                "required": ["location"]
-            }
-        }
-    }
-]
-
-response = client.chat.completions.create(
-    model="gpt-4o-mini",
-    messages=[{"role": "user", "content": "What's the weather in Paris?"}],
-    tools=tools,
-    tool_choice="auto"
-)
-```
-
-## Development
-
-### Project Structure
-
-```
-openai_proxy/
-├── src/
-│   ├── proxies/
-│   │   └── minimal/          # 5 minimal proxy implementations
-│   ├── testing/              # Comprehensive test suite
-│   ├── utils/                # Crypto utilities (PyNaCl)
-│   ├── content/              # Content development tools
-│   └── config.py             # Configuration management
-├── tests/                    # Unit tests
-├── examples/                 # Usage examples
-└── docs/                     # Documentation
-```
-
-### Running Tests
+Both proxies simply forward requests to OpenAI's API with your API key:
 
 ```bash
-# Install in development mode
-pip install -e .
-
-# Run all tests
-python -m openai_proxy.src.testing.test_minimal_proxies
-python -m openai_proxy.src.testing.test_pure_python http://localhost:8000
-python -m openai_proxy.src.testing.test_openai_api http://localhost:8000
-python -m openai_proxy.src.testing.test_tool_calling http://localhost:8000
+curl -X POST http://localhost:8000/v1/chat/completions \
+  -H "Authorization: Bearer your-openai-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o-mini",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
 ```
 
-## Security Considerations
+---
 
-- **API Keys**: Never expose OpenAI API keys in source code
-- **Authentication**: Use environment variables for shared secrets and public keys
-- **HTTPS**: Always use HTTPS in production (configure reverse proxy)
-- **Rate Limiting**: Consider implementing rate limiting for production use
-- **Input Validation**: Validate request sizes and content
-- **Error Handling**: Sanitize error messages to prevent information leakage
-
-## Performance
-
-Based on research and testing:
-
-- **Starlette**: 300,000+ requests/second, lowest latency
-- **Flask**: 50,000 requests/second, rich ecosystem
-- **Pure WSGI**: Variable based on server, minimal overhead
-
-Async frameworks (Starlette) handle 10x more concurrent connections than traditional frameworks.
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Add tests for new functionality
-4. Ensure all tests pass
-5. Submit a pull request
-
-## License
-
-MIT License - see LICENSE file for details.
-
-## Research Background
-
-This implementation is based on extensive research into minimal OpenAI proxy patterns, analyzing dozens of implementations to find the optimal balance between code size, functionality, and security. The key insight: you can build a production-ready OpenAI proxy in under 30 lines of Python, or under 60 lines with strong cryptographic authentication.
+**Educational Examples Only** - These are simplified learning examples for the hacka.re project, not production software. Use at your own risk for educational purposes.

@@ -8,7 +8,7 @@ import openai
 import json
 import time
 from typing import Dict, Any, List
-from ..utils.crypto_utils import sign_request, sign_ed25519_request, generate_ed25519_keypair
+# Crypto utilities removed for simplification
 from ..config import OPENAI_API_KEY, OPENAI_API_MODEL, DEFAULT_MAX_TOKENS, DEFAULT_TIMEOUT
 
 # Example tool definitions
