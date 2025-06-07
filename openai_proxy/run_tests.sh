@@ -97,10 +97,7 @@ start_proxy_server() {
             uvicorn src.proxies.minimal.starlette_proxy:app --host 127.0.0.1 --port "$port" &
             ;;
         "flask")
-            python -m src.proxies.minimal.flask_proxy --port "$port" &
-            ;;
-        "wsgi")
-            gunicorn src.proxies.minimal.wsgi_proxy:application --bind "127.0.0.1:$port" --workers 1 &
+            python src/proxies/minimal/flask_proxy.py &
             ;;
         *)
             echo -e "${RED}Unknown proxy type: $proxy_type${NC}"
@@ -150,12 +147,10 @@ trap 'stop_proxy_server' EXIT
 main() {
     print_header "${ROCKET} OpenAI Proxy Test Suite - Comprehensive Validation"
     
-    echo -e "${CYAN}This test suite validates all 5 minimal OpenAI proxy implementations:${NC}"
-    echo -e "  ${CHECKMARK} WSGI Proxy (12-15 lines) - Absolute minimal using Python's built-in WSGI"
+    echo -e "${CYAN}This test suite validates the simplified OpenAI proxy implementations:${NC}"
     echo -e "  ${CHECKMARK} Starlette Proxy (20-25 lines) - Production-ready with async streaming"
-    echo -e "  ${CHECKMARK} Flask Proxy (20-25 lines) - Rich ecosystem integration"
-    echo -e "  ${CHECKMARK} Authenticated HMAC Proxy (35 lines) - HMAC-style authentication"
-    echo -e "  ${CHECKMARK} Ed25519 Proxy (40 lines) - Public-key authentication\n"
+    echo -e "  ${CHECKMARK} Flask Proxy (20-25 lines) - Simple synchronous implementation"
+    echo -e "\nNote: Authentication examples have been removed for simplification\n"
     
     # Test 1: Configuration and Environment
     print_subsection "Configuration Validation"
@@ -165,10 +160,6 @@ main() {
     
     # Test 2: Proxy App Loading
     print_subsection "Proxy Application Loading"
-    run_test "WSGI Proxy Loading" \
-        "python -c 'from src.proxies.minimal import get_proxy_app; get_proxy_app(\"wsgi\")'" \
-        "Tests that WSGI proxy application can be instantiated"
-    
     run_test "Starlette Proxy Loading" \
         "python -c 'from src.proxies.minimal import get_proxy_app; get_proxy_app(\"starlette\")'" \
         "Tests that Starlette proxy application can be instantiated"
@@ -177,23 +168,7 @@ main() {
         "python -c 'from src.proxies.minimal import get_proxy_app; get_proxy_app(\"flask\")'" \
         "Tests that Flask proxy application can be instantiated"
     
-    run_test "Authenticated Proxy Loading" \
-        "python -c 'from src.proxies.minimal import get_proxy_app; get_proxy_app(\"authenticated\")'" \
-        "Tests that HMAC authenticated proxy application can be instantiated"
-    
-    run_test "Ed25519 Proxy Loading" \
-        "python -c 'from src.proxies.minimal import get_proxy_app; get_proxy_app(\"ed25519\")'" \
-        "Tests that Ed25519 authenticated proxy application can be instantiated"
-    
-    # Test 3: Cryptographic Utilities
-    print_subsection "Cryptographic Utilities"
-    run_test "Ed25519 Keypair Generation" \
-        "python -c 'from src.utils.crypto_utils import generate_ed25519_keypair; generate_ed25519_keypair()'" \
-        "Tests Ed25519 public-key cryptography functions"
-    
-    run_test "HMAC Signature Generation" \
-        "python -c 'from src.utils.crypto_utils import sign_request; sign_request(b\"test\", b\"key\" * 8)'" \
-        "Tests HMAC-style request signing with Blake2b"
+    # Test 3: Skipping Cryptographic Utilities (removed for simplification)
     
     # Test 4: Live Proxy Testing with Starlette
     print_subsection "Live Proxy Testing (Starlette Implementation)"
@@ -245,15 +220,7 @@ main() {
         "python src/main.py --version 2>/dev/null || echo '0.1.0'" \
         "Tests that CLI script works correctly"
     
-    # Test 7: Security Features
-    print_subsection "Security and Authentication Features"
-    run_test "Signature Verification" \
-        "python -c 'from src.utils.crypto_utils import sign_request, verify_signature; body=b\"test\"; secret=b\"key\"*8; ts, sig = sign_request(body, secret); print(verify_signature(body, ts, sig, secret))'" \
-        "Tests cryptographic signature verification functionality"
-    
-    run_test "Ed25519 Signature Verification" \
-        "python -c 'from src.utils.crypto_utils import generate_ed25519_keypair, sign_ed25519_request, verify_ed25519_signature; priv, pub = generate_ed25519_keypair(); body=b\"test\"; ts, sig = sign_ed25519_request(body, priv); print(verify_ed25519_signature(body, ts, sig, pub))'" \
-        "Tests Ed25519 digital signature verification"
+    # Test 7: Security Features (removed for simplification)
     
     # Final Results
     print_results

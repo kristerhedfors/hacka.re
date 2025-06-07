@@ -7,7 +7,7 @@ import openai
 import json
 import time
 from typing import Dict, Any
-from ..utils.crypto_utils import sign_request, sign_ed25519_request, generate_ed25519_keypair
+# Crypto utilities removed for simplification
 from ..config import OPENAI_API_KEY, OPENAI_API_MODEL, DEFAULT_MAX_TOKENS, DEFAULT_TIMEOUT
 
 def test_openai_client_basic(proxy_url: str) -> bool:
@@ -70,54 +70,7 @@ def test_openai_client_streaming(proxy_url: str) -> bool:
         print(f"OpenAI streaming test failed: {e}")
         return False
 
-def test_openai_client_with_custom_headers(proxy_url: str, shared_secret: bytes) -> bool:
-    """Test OpenAI client with custom authentication headers"""
-    # Create a custom HTTP client with authentication headers
-    import httpx
-    
-    payload = {
-        "model": OPENAI_API_MODEL,
-        "messages": [
-            {"role": "user", "content": "Hello, this is an authenticated test using OpenAI client."}
-        ],
-        "max_tokens": DEFAULT_MAX_TOKENS
-    }
-    
-    body = json.dumps(payload).encode()
-    timestamp, signature = sign_request(body, shared_secret)
-    
-    # Create custom HTTP client with authentication
-    http_client = httpx.Client(
-        headers={
-            'X-Timestamp': timestamp,
-            'X-Signature': signature
-        }
-    )
-    
-    client = openai.OpenAI(
-        api_key=OPENAI_API_KEY,
-        base_url=f"{proxy_url}/v1",
-        http_client=http_client
-    )
-    
-    try:
-        response = client.chat.completions.create(
-            model=OPENAI_API_MODEL,
-            messages=[
-                {"role": "user", "content": "Hello, this is an authenticated test using OpenAI client."}
-            ],
-            max_tokens=DEFAULT_MAX_TOKENS
-        )
-        
-        print(f"OpenAI authenticated test - Success")
-        print(f"Response: {response.choices[0].message.content[:100]}...")
-        return True
-        
-    except Exception as e:
-        print(f"OpenAI authenticated test failed: {e}")
-        return False
-    finally:
-        http_client.close()
+# Authentication test function removed for simplification
 
 def test_openai_client_error_handling(proxy_url: str) -> bool:
     """Test error handling with OpenAI client"""
@@ -165,13 +118,9 @@ def run_tests(proxy_url: str) -> bool:
     """Run all OpenAI API client tests"""
     print(f"\n=== OpenAI API Client Tests for {proxy_url} ===")
     
-    # Generate test keys for authenticated tests
-    shared_secret = b'test_secret_32_bytes_long_key_123'
-    
     tests = [
         ("Basic Chat Completion", lambda: test_openai_client_basic(proxy_url)),
         ("Streaming Response", lambda: test_openai_client_streaming(proxy_url)),
-        ("Custom Headers (Auth)", lambda: test_openai_client_with_custom_headers(proxy_url, shared_secret)),
         ("Error Handling", lambda: test_openai_client_error_handling(proxy_url)),
         ("Model List", lambda: test_openai_client_model_list(proxy_url)),
     ]

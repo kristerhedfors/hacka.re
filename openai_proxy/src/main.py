@@ -16,7 +16,7 @@ def main():
     
     # Proxy commands
     proxy_parser = subparsers.add_parser('proxy', help='Run a proxy server')
-    proxy_parser.add_argument('--type', choices=['wsgi', 'starlette', 'flask', 'authenticated', 'ed25519'], 
+    proxy_parser.add_argument('--type', choices=['flask', 'starlette'], 
                              required=True, help='Type of proxy to run')
     proxy_parser.add_argument('--host', default='127.0.0.1', help='Host to bind to (default: 127.0.0.1)')
     proxy_parser.add_argument('--port', type=int, default=8000, help='Port to bind to (default: 8000)')
@@ -69,17 +69,7 @@ def run_proxy(args):
     
     app = get_proxy_app(args.type)
     
-    if args.type == 'wsgi':
-        # Use gunicorn for WSGI
-        import subprocess
-        cmd = [
-            'gunicorn', 
-            'openai_proxy.src.proxies.minimal.wsgi_proxy:application',
-            '--bind', f'{args.host}:{args.port}',
-            '--workers', '1'
-        ]
-        return subprocess.call(cmd)
-    elif args.type in ['starlette', 'authenticated', 'ed25519']:
+    if args.type == 'starlette':
         # Use uvicorn for ASGI
         import uvicorn
         uvicorn.run(app, host=args.host, port=args.port)

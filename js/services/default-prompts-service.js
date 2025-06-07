@@ -46,6 +46,28 @@ function initializeDefaultPrompts() {
             codeSectionPrompt.items.push(window.AgentOrchestrationPrompt);
         }
         
+        // Add API auth using libsodium to the Code section
+        if (window.defaultPrompts && window.defaultPrompts['API auth using libsodium']) {
+            codeSectionPrompt.items.push({
+                id: 'api-auth-libsodium',
+                name: 'API auth using libsodium',
+                content: window.defaultPrompts['API auth using libsodium'].content
+            });
+        }
+        
+        // Add OpenAI Proxies as a single comprehensive prompt to the Code section
+        if (window.OpenAIProxiesPythonPrompt) {
+            console.log("Adding OpenAI Proxies Python prompt to Code section:", window.OpenAIProxiesPythonPrompt);
+            codeSectionPrompt.items.push(window.OpenAIProxiesPythonPrompt);
+        } else {
+            console.log("OpenAI Proxies Python prompt not found!");
+        }
+        
+        // Add MCP SDK README to the Code section
+        if (window.McpSdkReadmePrompt) {
+            codeSectionPrompt.items.push(window.McpSdkReadmePrompt);
+        }
+        
         // Add the Code section to the default prompts
         DEFAULT_PROMPTS.push(codeSectionPrompt);
     } else {
@@ -69,6 +91,25 @@ function initializeDefaultPrompts() {
         if (window.AgentOrchestrationPrompt) {
             DEFAULT_PROMPTS.push(window.AgentOrchestrationPrompt);
         }
+        
+        // API auth using libsodium
+        if (window.defaultPrompts && window.defaultPrompts['API auth using libsodium']) {
+            DEFAULT_PROMPTS.push({
+                id: 'api-auth-libsodium',
+                name: 'API auth using libsodium',
+                content: window.defaultPrompts['API auth using libsodium'].content
+            });
+        }
+        
+        // OpenAI Proxies (fallback)
+        if (window.OpenAIProxiesPythonPrompt) {
+            DEFAULT_PROMPTS.push(window.OpenAIProxiesPythonPrompt);
+        }
+        
+        // MCP SDK README (fallback)
+        if (window.McpSdkReadmePrompt) {
+            DEFAULT_PROMPTS.push(window.McpSdkReadmePrompt);
+        }
     }
     
     // 2. About hacka.re Project
@@ -86,14 +127,20 @@ function initializeDefaultPrompts() {
         DEFAULT_PROMPTS.push(window.OwaspLlmTop10Prompt);
     }
     
-    // Add MCP SDK README prompt if it exists
-    if (window.McpSdkReadmePrompt) {
-        DEFAULT_PROMPTS.push(window.McpSdkReadmePrompt);
-    }
     
     // Additional prompts can be added here in the future
     
     console.log(`Loaded ${DEFAULT_PROMPTS.length} default prompts`);
+    console.log("Default prompts structure:", DEFAULT_PROMPTS);
+    
+    // Debug the Code section specifically
+    const codeSection = DEFAULT_PROMPTS.find(p => p.id === 'code-section');
+    if (codeSection) {
+        console.log("Code section found with items:", codeSection.items);
+        console.log("Code section items count:", codeSection.items ? codeSection.items.length : 0);
+    } else {
+        console.log("Code section not found in DEFAULT_PROMPTS");
+    }
 }
     
     // Initialize prompts when the service is loaded
