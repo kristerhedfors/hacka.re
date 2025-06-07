@@ -7,8 +7,11 @@ def test_debug_mode_checkbox_exists(page, serve_hacka_re):
     page.goto(serve_hacka_re)
     
     # Dismiss welcome modal if present
-    from test_utils import dismiss_welcome_modal
+    from test_utils import dismiss_welcome_modal, dismiss_settings_modal
     dismiss_welcome_modal(page)
+    
+    # Dismiss settings modal if already open
+    dismiss_settings_modal(page)
     
     # Open settings modal
     page.click("#settings-btn")
@@ -19,9 +22,9 @@ def test_debug_mode_checkbox_exists(page, serve_hacka_re):
     # Scroll to the system prompt section to ensure the debug checkbox is in view
     page.locator("#open-prompts-config").scroll_into_view_if_needed()
     
-    # Check if debug mode checkbox exists
+    # Wait for debug mode checkbox to be added dynamically
     debug_checkbox = page.locator("#debug-mode")
-    expect(debug_checkbox).to_be_visible()
+    debug_checkbox.wait_for(state="visible", timeout=5000)
     
     # Check if the label text is correct
     debug_label = page.locator("label[for='debug-mode']")
@@ -34,8 +37,11 @@ def test_debug_mode_toggle(page, serve_hacka_re):
     page.goto(serve_hacka_re)
     
     # Dismiss welcome modal if present
-    from test_utils import dismiss_welcome_modal
+    from test_utils import dismiss_welcome_modal, dismiss_settings_modal
     dismiss_welcome_modal(page)
+    
+    # Dismiss settings modal if already open
+    dismiss_settings_modal(page)
     
     # Open settings modal
     page.click("#settings-btn")
@@ -46,8 +52,9 @@ def test_debug_mode_toggle(page, serve_hacka_re):
     # Scroll to the system prompt section to ensure the debug checkbox is in view
     page.locator("#open-prompts-config").scroll_into_view_if_needed()
     
-    # Get the debug mode checkbox
+    # Wait for and get the debug mode checkbox
     debug_checkbox = page.locator("#debug-mode")
+    debug_checkbox.wait_for(state="visible", timeout=5000)
     
     # Check initial state (should be unchecked by default)
     initial_checked = debug_checkbox.is_checked()
@@ -70,8 +77,11 @@ def test_debug_mode_persistence(page, serve_hacka_re):
     page.goto(serve_hacka_re)
     
     # Dismiss welcome modal if present
-    from test_utils import dismiss_welcome_modal
+    from test_utils import dismiss_welcome_modal, dismiss_settings_modal
     dismiss_welcome_modal(page)
+    
+    # Dismiss settings modal if already open
+    dismiss_settings_modal(page)
     
     # Open settings modal
     page.click("#settings-btn")
@@ -82,8 +92,9 @@ def test_debug_mode_persistence(page, serve_hacka_re):
     # Scroll to the system prompt section to ensure the debug checkbox is in view
     page.locator("#open-prompts-config").scroll_into_view_if_needed()
     
-    # Get the debug mode checkbox
+    # Wait for and get the debug mode checkbox
     debug_checkbox = page.locator("#debug-mode")
+    debug_checkbox.wait_for(state="visible", timeout=5000)
     
     # Set to a known state (checked)
     if not debug_checkbox.is_checked():
@@ -102,11 +113,11 @@ def test_debug_mode_persistence(page, serve_hacka_re):
     # Dismiss welcome modal if present after reload
     dismiss_welcome_modal(page)
     
-    # Check if settings modal is still visible after reload and dismiss it if it is
-    settings_modal = page.locator("#settings-modal")
-    if settings_modal.is_visible():
-        from test_utils import dismiss_settings_modal
-        dismiss_settings_modal(page)
+    # Dismiss settings modal if already open after reload
+    dismiss_settings_modal(page)
+    
+    # Wait for any modals to be dismissed
+    expect(page.locator("#settings-modal")).not_to_be_visible()
     
     # Open settings modal again
     page.click("#settings-btn")

@@ -4,11 +4,11 @@ from playwright.sync_api import expect
 def test_welcome_modal_first_visit(page):
     """Test that welcome modal appears on first visit and not on subsequent visits."""
     
+    # Navigate to the test page first
+    page.goto("http://localhost:8000/_tests/welcome-manager-test.html")
+    
     # Clear localStorage to simulate first visit
     page.evaluate("localStorage.clear()")
-    
-    # Navigate to the test page
-    page.goto("http://localhost:8000/_tests/welcome-manager-test.html")
     
     # Verify localStorage is empty
     storage_items = page.evaluate("Object.keys(localStorage)")
@@ -39,11 +39,11 @@ def test_welcome_modal_first_visit(page):
 def test_has_visited_before_with_hacka_re_variable(page):
     """Test that hasVisitedBefore returns true when any hacka_re variable exists."""
     
+    # Navigate to the test page first
+    page.goto("http://localhost:8000/_tests/welcome-manager-test.html")
+    
     # Clear localStorage
     page.evaluate("localStorage.clear()")
-    
-    # Navigate to the test page
-    page.goto("http://localhost:8000/_tests/welcome-manager-test.html")
     
     # Test hasVisitedBefore - should be false with empty localStorage
     page.click("#test-has-visited")
@@ -61,14 +61,14 @@ def test_has_visited_before_with_hacka_re_variable(page):
 def test_welcome_modal_with_existing_hacka_re_variable(page):
     """Test that welcome modal doesn't appear when any hacka_re variable exists."""
     
+    # Navigate to the test page first
+    page.goto("http://localhost:8000/_tests/welcome-manager-test.html")
+    
     # Clear localStorage
     page.evaluate("localStorage.clear()")
     
     # Add a hacka_re variable
     page.evaluate("localStorage.setItem('hacka_re_test', 'dummy_value')")
-    
-    # Navigate to the test page
-    page.goto("http://localhost:8000/_tests/welcome-manager-test.html")
     
     # Test the welcome modal
     page.click("#test-welcome")
