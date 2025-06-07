@@ -30,7 +30,7 @@ def test_basic_chat_completion(proxy_url: str) -> bool:
             f"{proxy_url}/v1/chat/completions",
             json=payload,
             headers=headers,
-            timeout=30
+            timeout=5
         )
         
         print(f"Basic test - Status: {response.status_code}")
@@ -71,7 +71,7 @@ def test_authenticated_chat_completion(proxy_url: str, shared_secret: bytes) -> 
             f"{proxy_url}/v1/chat/completions",
             data=body,
             headers=headers,
-            timeout=30
+            timeout=5
         )
         
         print(f"Authenticated test - Status: {response.status_code}")
@@ -112,7 +112,7 @@ def test_ed25519_chat_completion(proxy_url: str, private_key_hex: str) -> bool:
             f"{proxy_url}/v1/chat/completions",
             data=body,
             headers=headers,
-            timeout=30
+            timeout=5
         )
         
         print(f"Ed25519 test - Status: {response.status_code}")
@@ -150,7 +150,7 @@ def test_streaming_response(proxy_url: str) -> bool:
             json=payload,
             headers=headers,
             stream=True,
-            timeout=30
+            timeout=5
         )
         
         print(f"Streaming test - Status: {response.status_code}")
