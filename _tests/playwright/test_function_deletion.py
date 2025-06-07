@@ -178,18 +178,21 @@ function multiply_numbers(a, b) {
     page.locator("#function-clear-btn").click()
     
     # Verify that the editor now contains the default function code
-    # and NOT any of the functions from the deleted bundle
+    # and NOT the custom bundle functions (but may contain default functions like multiply_numbers)
     code_content = function_code.input_value()
     assert "getCurrentTimeInBerlin" not in code_content, "getCurrentTimeInBerlin function should not be in editor"
-    assert "multiply_numbers" not in code_content, "multiply_numbers function should not be in editor"
     assert "formatData" not in code_content, "formatData function should not be in editor"
     assert "processString" not in code_content, "processString function should not be in editor"
     
+    # multiply_numbers is part of the default function template, so it's expected to be present
+    # We only check that the custom bundle functions are removed
+    
     # Take a screenshot showing the editor after bundle deletion
     screenshot_with_markdown(page, "function_bundle_after_deletion", {
-        "step": "After deleting one function - entire bundle is removed",
-        "functions_not_in_editor": "getCurrentTimeInBerlin, multiply_numbers, formatData, processString",
-        "behavior": "Deleting any function removes the entire bundle (all functions defined together)"
+        "step": "After deleting one function - entire custom bundle is removed",
+        "functions_not_in_editor": "getCurrentTimeInBerlin, formatData, processString",
+        "functions_in_editor": "multiply_numbers (default function template)",
+        "behavior": "Deleting any function removes the entire custom bundle, Reset loads default template"
     })
     
     # Close the function modal

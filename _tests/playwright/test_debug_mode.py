@@ -7,8 +7,11 @@ def test_debug_mode_checkbox_exists(page, serve_hacka_re):
     page.goto(serve_hacka_re)
     
     # Dismiss welcome modal if present
-    from test_utils import dismiss_welcome_modal
+    from test_utils import dismiss_welcome_modal, dismiss_settings_modal
     dismiss_welcome_modal(page)
+    
+    # Dismiss settings modal if already open
+    dismiss_settings_modal(page)
     
     # Open settings modal
     page.click("#settings-btn")
@@ -34,8 +37,11 @@ def test_debug_mode_toggle(page, serve_hacka_re):
     page.goto(serve_hacka_re)
     
     # Dismiss welcome modal if present
-    from test_utils import dismiss_welcome_modal
+    from test_utils import dismiss_welcome_modal, dismiss_settings_modal
     dismiss_welcome_modal(page)
+    
+    # Dismiss settings modal if already open
+    dismiss_settings_modal(page)
     
     # Open settings modal
     page.click("#settings-btn")
@@ -71,8 +77,11 @@ def test_debug_mode_persistence(page, serve_hacka_re):
     page.goto(serve_hacka_re)
     
     # Dismiss welcome modal if present
-    from test_utils import dismiss_welcome_modal
+    from test_utils import dismiss_welcome_modal, dismiss_settings_modal
     dismiss_welcome_modal(page)
+    
+    # Dismiss settings modal if already open
+    dismiss_settings_modal(page)
     
     # Open settings modal
     page.click("#settings-btn")
@@ -104,11 +113,11 @@ def test_debug_mode_persistence(page, serve_hacka_re):
     # Dismiss welcome modal if present after reload
     dismiss_welcome_modal(page)
     
-    # Check if settings modal is still visible after reload and dismiss it if it is
-    settings_modal = page.locator("#settings-modal")
-    if settings_modal.is_visible():
-        from test_utils import dismiss_settings_modal
-        dismiss_settings_modal(page)
+    # Dismiss settings modal if already open after reload
+    dismiss_settings_modal(page)
+    
+    # Wait for any modals to be dismissed
+    expect(page.locator("#settings-modal")).not_to_be_visible()
     
     # Open settings modal again
     page.click("#settings-btn")
