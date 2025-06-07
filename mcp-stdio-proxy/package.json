@@ -1,0 +1,15 @@
+{
+  "name": "mcp-stdio-proxy",
+  "version": "1.0.0",
+  "description": "Local proxy to bridge browser-based MCP clients to stdio-based MCP servers",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js 3001"
+  },
+  "keywords": ["mcp", "model-context-protocol", "proxy", "stdio"],
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

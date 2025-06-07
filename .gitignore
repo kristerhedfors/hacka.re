@@ -113,3 +113,6 @@ screenshots_data/
 run_tests.out
 run_tests.out_bundle.md
 test_results.md
+
+# MCP client plugin example (detached reference)
+mcp-client-plugin/

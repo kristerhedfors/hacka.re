@@ -75,6 +75,9 @@
                 <button id="copy-chat-btn" class="icon-btn" title="Copy Chat Content">
                     <i class="fas fa-copy"></i>
                 </button>
+                <button id="mcp-servers-btn" class="icon-btn" title="MCP Servers">
+                    <span class="mcp-icon">MCP</span>
+                </button>
                 <button id="function-btn" class="icon-btn" title="Function Calling">
                     <span class="function-icon">𝑓</span>
                 </button>
@@ -375,6 +378,69 @@ async function getCurrentTimeInBerlin() {
             </div>
         </div>
         
+        <div id="mcp-servers-modal" class="modal">
+            <div class="modal-content">
+                <div class="settings-header">
+                    <h2>MCP Servers</h2>
+                    <span class="info-icon" id="mcp-servers-info-icon">
+                        <i class="fas fa-info-circle"></i>
+                        <div class="tooltip">
+                            <div class="tooltip-content">
+                                <div class="important-notice">
+                                    <p><strong>MCP Servers</strong>: Load tool bundles from Model Context Protocol (MCP) servers to extend function calling capabilities.</p>
+                                </div>
+                                <div class="important-notice">
+                                    <p><strong>Named Servers</strong>: Connect to MCP servers by name to access their available tools and functions.</p>
+                                </div>
+                                <div class="important-notice">
+                                    <p><strong>Tool Bundles</strong>: Import and manage collections of tools from external MCP server implementations.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </span>
+                </div>
+                <div class="mcp-servers-container">
+                    <div class="mcp-servers-list-section">
+                        <h3>Connected Servers</h3>
+                        <p class="form-help">Manage your connected MCP servers and their available tools.</p>
+                        <div id="mcp-servers-list">
+                            <div class="empty-mcp-servers-state" id="empty-mcp-servers-state">
+                                <p>No MCP servers connected. Add a server below.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mcp-server-config">
+                        <div class="mcp-server-config-header">
+                            <h4>Add MCP Server</h4>
+                        </div>
+                        <form id="mcp-server-form">
+                            <div class="form-group">
+                                <label for="mcp-server-name">Server Name</label>
+                                <input type="text" id="mcp-server-name" placeholder="Enter MCP server name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="mcp-server-url">Server URL</label>
+                                <input type="url" id="mcp-server-url" placeholder="Enter MCP server URL" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="mcp-server-description">Description (Optional)</label>
+                                <textarea id="mcp-server-description" placeholder="Brief description of this MCP server" rows="2"></textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn primary-btn">Connect Server</button>
+                                <button type="button" id="mcp-server-test-btn" class="btn secondary-btn">Test Connection</button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" id="close-mcp-servers-modal" class="btn secondary-btn">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <div id="settings-modal" class="modal">
             <div class="modal-content">
                 <div class="settings-header">
@@ -496,6 +562,7 @@ async function getCurrentTimeInBerlin() {
     <script src="js/services/function-tools-registry.js"></script>
     <script src="js/services/function-tools-processor.js"></script>
     <script src="js/services/function-tools-service.js"></script>
+    <script src="js/services/mcp-client-service.js"></script>
     <script src="js/services/link-sharing-service.js"></script>
     <script src="js/services/share-service.js"></script>
     <!-- Default prompts -->
@@ -513,6 +580,7 @@ async function getCurrentTimeInBerlin() {
     <!-- Default functions -->
     <script src="js/default-functions/rc4-encryption.js"></script>
     <script src="js/default-functions/math-utilities.js"></script>
+    <script src="js/default-functions/mcp-example.js"></script>
     <script src="js/default-functions/api-auth-client.js"></script>
     <script src="js/services/default-functions-service.js"></script>
     <script src="js/services/prompts-service.js"></script>
@@ -521,6 +589,7 @@ async function getCurrentTimeInBerlin() {
     <script src="js/components/dom-elements.js"></script>
     <script src="js/components/ui-manager.js"></script>
     <script src="js/components/function-calling-manager.js"></script>
+    <script src="js/components/mcp-manager.js"></script>
     <script src="js/components/chat-manager.js"></script>
     <!-- Settings Manager Components -->
     <script src="js/components/settings/api-key-manager.js"></script>
