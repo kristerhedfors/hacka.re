@@ -65,7 +65,7 @@ window.ModelInfoService = (function() {
         'o1-pro': 200000,
         'o3': 128000,
         'o3-mini': 200000,
-        'o4-mini': 128000,
+        'o4-mini': 200000,
         'text-embedding-ada-002': 8191,
         'text-embedding-3-small': 8192,
         'text-embedding-3-large': 8192,
