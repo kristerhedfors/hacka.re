@@ -32,6 +32,7 @@ setup(
         'openai>=1.0.0',
         'gunicorn>=20.1.0',
         'werkzeug>=2.3.0',
+        'python-dotenv>=1.0.0',
     ],
     extras_require={
         'dev': ['pytest>=7.0.0', 'pytest-asyncio>=0.21.0'],
@@ -39,7 +40,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'openai-proxy=openai_proxy.src:main',
+            'openai-proxy=openai_proxy.src.main:main',
         ],
     },
     classifiers=[

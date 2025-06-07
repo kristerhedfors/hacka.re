@@ -15,20 +15,39 @@ async def proxy_endpoint(request):
     body = await request.body()
     headers = dict(request.headers)
     
-    # Remove host header to avoid conflicts
+    # Remove headers that should not be forwarded
     headers.pop('host', None)
+    headers.pop('content-length', None)  # Let httpx handle this
+    headers.pop('accept-encoding', None)  # Avoid compression issues
     
-    response = await client.post(
-        "/v1/chat/completions",
-        headers=headers,
-        content=body
-    )
-    
-    return StreamingResponse(
-        response.aiter_raw(),
-        status_code=response.status_code,
-        headers=response.headers
-    )
+    try:
+        response = await client.post(
+            "/v1/chat/completions",
+            headers=headers,
+            content=body
+        )
+        
+        # Read the full response content
+        content = await response.aread()
+        
+        # Filter headers to avoid conflicts
+        filtered_headers = {}
+        for key, value in response.headers.items():
+            if key.lower() not in ['content-length', 'transfer-encoding', 'connection', 'host', 'content-encoding']:
+                filtered_headers[key] = value
+        
+        from starlette.responses import Response
+        return Response(
+            content=content,
+            status_code=response.status_code,
+            headers=filtered_headers
+        )
+    except Exception as e:
+        from starlette.responses import JSONResponse
+        return JSONResponse(
+            {"error": f"Proxy error: {str(e)}"},
+            status_code=500
+        )
 
 app = Starlette(routes=[
     Route("/v1/chat/completions", proxy_endpoint, methods=["POST"])

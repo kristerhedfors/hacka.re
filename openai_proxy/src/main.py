@@ -60,11 +60,12 @@ def run_proxy(args):
     """Run a proxy server"""
     print(f"Starting {args.type} proxy on {args.host}:{args.port}")
     
+    # Rate-limited proxies not yet implemented
     if args.rate_limited:
-        print("Using rate-limited version")
-        from .proxies.rate_limited import get_proxy_app
-    else:
-        from .proxies.minimal import get_proxy_app
+        print("Rate-limited proxies not yet implemented")
+        return 1
+    
+    from .proxies.minimal import get_proxy_app
     
     app = get_proxy_app(args.type)
     
@@ -73,7 +74,7 @@ def run_proxy(args):
         import subprocess
         cmd = [
             'gunicorn', 
-            f'openai_proxy.src.proxies.{"rate_limited" if args.rate_limited else "minimal"}.wsgi_proxy:application',
+            'openai_proxy.src.proxies.minimal.wsgi_proxy:application',
             '--bind', f'{args.host}:{args.port}',
             '--workers', '1'
         ]
@@ -93,14 +94,14 @@ def run_tests(args):
     print(f"Running {args.type} tests against {args.proxy_url}")
     
     if args.type == 'all':
-        from .testing import test_minimal_proxies, test_rate_limited_proxies, test_pure_python, test_openai_api, test_tool_calling
-        modules = [test_minimal_proxies, test_rate_limited_proxies, test_pure_python, test_openai_api, test_tool_calling]
+        from .testing import test_minimal_proxies, test_pure_python, test_openai_api, test_tool_calling
+        modules = [test_minimal_proxies, test_pure_python, test_openai_api, test_tool_calling]
     elif args.type == 'minimal':
         from .testing import test_minimal_proxies
         modules = [test_minimal_proxies]
     elif args.type == 'rate-limited':
-        from .testing import test_rate_limited_proxies
-        modules = [test_rate_limited_proxies]
+        print("Rate-limited proxy tests not yet implemented")
+        return 1
     elif args.type == 'pure-python':
         from .testing import test_pure_python
         modules = [test_pure_python]
@@ -126,17 +127,12 @@ def run_tests(args):
 def run_content_tools(args):
     """Run content development tools"""
     if args.generate:
-        print(f"Generating example {args.generate}")
-        if args.generate == 'functions':
-            from .content.default_functions import examples
-            examples.generate_examples()
-        elif args.generate == 'prompts':
-            from .content.default_prompts import examples
-            examples.generate_examples()
+        print(f"Content generation for {args.generate} not yet implemented")
+        print("TODO: Implement content generation functionality")
     
     if args.export:
-        print("Exporting to hacka.re format")
-        # TODO: Implement export functionality
+        print("Export functionality not yet implemented")
+        print("TODO: Implement export to hacka.re format")
     
     return 0
 
