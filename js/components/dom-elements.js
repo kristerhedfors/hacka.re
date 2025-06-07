@@ -59,6 +59,7 @@ window.DOMElements = (function() {
             promptsModal: document.getElementById('prompts-modal'),
             promptsList: document.getElementById('prompts-list'),
             closePromptsModal: document.getElementById('close-prompts-modal'),
+            copySystemPromptBtn: document.getElementById('copy-system-prompt-btn'),
             
             // Copy chat button
             copyChatBtn: document.getElementById('copy-chat-btn'),

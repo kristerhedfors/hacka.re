@@ -30,6 +30,10 @@ window.PromptsManager = (function() {
                 elements.closePromptsModal.addEventListener('click', hidePromptsModal);
             }
             
+            if (elements.copySystemPromptBtn) {
+                elements.copySystemPromptBtn.addEventListener('click', copySystemPromptToClipboard);
+            }
+            
             // Apply selected prompts as system prompt on initialization
             PromptsService.applySelectedPromptsAsSystem();
         }
@@ -800,6 +804,62 @@ function createPromptItem(prompt, selectedIds) {
                 UIUtils.updateContextUsage(usageFill, usageText, usageInfo.percentage);
             } else {
                 console.log("Could not find main UI elements");
+            }
+        }
+        
+        /**
+         * Copy the current system prompt to clipboard
+         */
+        function copySystemPromptToClipboard() {
+            try {
+                // Get all selected prompts
+                const selectedPrompts = PromptsService.getSelectedPrompts();
+                const selectedDefaultPrompts = window.DefaultPromptsService ? 
+                    window.DefaultPromptsService.getSelectedDefaultPrompts() : [];
+                
+                const allSelectedPrompts = [...selectedDefaultPrompts, ...selectedPrompts];
+                
+                if (allSelectedPrompts.length === 0) {
+                    alert('No prompts are currently selected. Select some prompts to copy the system prompt.');
+                    return;
+                }
+                
+                // Combine all selected prompts to get the current system prompt
+                const systemPrompt = allSelectedPrompts
+                    .map(prompt => {
+                        // For Function Library prompt, ensure we get the latest content
+                        if (prompt.id === 'function-library' && 
+                            window.FunctionLibraryPrompt && 
+                            typeof window.FunctionLibraryPrompt.content === 'function') {
+                            return window.FunctionLibraryPrompt.content();
+                        }
+                        return prompt.content;
+                    })
+                    .join('\n\n---\n\n');
+                
+                // Copy to clipboard
+                navigator.clipboard.writeText(systemPrompt).then(() => {
+                    // Show success feedback
+                    const btn = elements.copySystemPromptBtn;
+                    if (btn) {
+                        const originalIcon = btn.innerHTML;
+                        btn.innerHTML = '<i class="fas fa-check"></i>';
+                        btn.classList.add('success');
+                        
+                        setTimeout(() => {
+                            btn.innerHTML = originalIcon;
+                            btn.classList.remove('success');
+                        }, 2000);
+                    }
+                    
+                    console.log('System prompt copied to clipboard');
+                }).catch(err => {
+                    console.error('Failed to copy system prompt to clipboard:', err);
+                    alert('Failed to copy to clipboard. Please try again.');
+                });
+            } catch (error) {
+                console.error('Error copying system prompt:', error);
+                alert('Failed to copy to clipboard. Please try again.');
             }
         }
         
