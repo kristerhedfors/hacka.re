@@ -44,8 +44,8 @@ def test_function_library_multi(page: Page, serve_hacka_re, api_key):
     # Check if the function code editor has the multi-function placeholder
     function_code = page.locator("#function-code")
     placeholder = function_code.get_attribute("placeholder")
-    expect(placeholder).to_contain("Helper function that formats data (not exposed to LLM)")
-    expect(placeholder).to_contain("@tool")
+    assert "Helper function that formats data (not exposed to LLM)" in placeholder, f"Expected placeholder to contain helper function text, got: {placeholder}"
+    assert "@tool" in placeholder, f"Expected placeholder to contain @tool, got: {placeholder}"
     
     # Fill in the function code with multiple functions
     function_code.fill("""/**
@@ -153,8 +153,8 @@ function multiply_numbers(a, b) {
     
     # Verify that the editor now contains both functions
     code_content = function_code.input_value()
-    expect(code_content).to_contain("getCurrentTimeInBerlin")
-    expect(code_content).to_contain("multiply_numbers")
+    assert "getCurrentTimeInBerlin" in code_content, f"Expected getCurrentTimeInBerlin in code, got: {code_content}"
+    assert "multiply_numbers" in code_content, f"Expected multiply_numbers in code, got: {code_content}"
     
     # Clean up - delete the functions
     # Handle the confirmation dialog

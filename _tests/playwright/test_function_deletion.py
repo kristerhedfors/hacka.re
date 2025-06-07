@@ -112,9 +112,9 @@ function multiply_numbers(a, b) {
     # Validate the function
     page.locator("#function-validate-btn").click()
     
-    # Check for validation result
+    # Wait for validation result with timeout
     validation_result = page.locator("#function-validation-result")
-    expect(validation_result).to_be_visible()
+    validation_result.wait_for(state="visible", timeout=5000)
     expect(validation_result).to_contain_text("Library validated successfully")
     
     # Submit the form
@@ -161,6 +161,7 @@ function multiply_numbers(a, b) {
     
     # Delete the first function (getCurrentTimeInBerlin)
     delete_button = function_list.locator(".function-item:has-text('getCurrentTimeInBerlin') .function-item-delete")
+    delete_button.wait_for(state="visible", timeout=5000)
     delete_button.click()
     
     # Wait for the function to be deleted
@@ -177,18 +178,21 @@ function multiply_numbers(a, b) {
     page.locator("#function-clear-btn").click()
     
     # Verify that the editor now contains the default function code
-    # and NOT any of the functions from the deleted bundle
+    # and NOT the custom bundle functions (but may contain default functions like multiply_numbers)
     code_content = function_code.input_value()
     assert "getCurrentTimeInBerlin" not in code_content, "getCurrentTimeInBerlin function should not be in editor"
-    assert "multiply_numbers" not in code_content, "multiply_numbers function should not be in editor"
     assert "formatData" not in code_content, "formatData function should not be in editor"
     assert "processString" not in code_content, "processString function should not be in editor"
     
+    # multiply_numbers is part of the default function template, so it's expected to be present
+    # We only check that the custom bundle functions are removed
+    
     # Take a screenshot showing the editor after bundle deletion
     screenshot_with_markdown(page, "function_bundle_after_deletion", {
-        "step": "After deleting one function - entire bundle is removed",
-        "functions_not_in_editor": "getCurrentTimeInBerlin, multiply_numbers, formatData, processString",
-        "behavior": "Deleting any function removes the entire bundle (all functions defined together)"
+        "step": "After deleting one function - entire custom bundle is removed",
+        "functions_not_in_editor": "getCurrentTimeInBerlin, formatData, processString",
+        "functions_in_editor": "multiply_numbers (default function template)",
+        "behavior": "Deleting any function removes the entire custom bundle, Reset loads default template"
     })
     
     # Close the function modal
@@ -259,6 +263,8 @@ async function getCurrentTimeInBerlin() {
     
     # Validate and submit the first function group
     page.locator("#function-validate-btn").click()
+    validation_result = page.locator("#function-validation-result")
+    validation_result.wait_for(state="visible", timeout=5000)
     page.locator("#function-editor-form button[type='submit']").click()
     
     # Check if the first callable function was added to the list
@@ -307,6 +313,8 @@ function multiply_numbers(a, b) {
     
     # Validate and submit the second function group
     page.locator("#function-validate-btn").click()
+    validation_result = page.locator("#function-validation-result")
+    validation_result.wait_for(state="visible", timeout=5000)
     page.locator("#function-editor-form button[type='submit']").click()
     
     # Check if both callable functions are in the list
