@@ -23,15 +23,29 @@ def test_hmac():
     secret = generate_shared_secret()
     body = b'{"test": "message"}'
     
-    timestamp, signature = sign_request(body, secret)
-    is_valid = verify_signature(body, timestamp, signature, secret)
+    # Test comprehensive signing with query params and headers
+    query_params = {"action": "test", "version": "1.0"}
+    headers = {"content-type": "application/json", "user-agent": "test-client"}
+    
+    timestamp, signature = sign_request(body, secret, method="POST", path="/api/test",
+                                      query_params=query_params, headers=headers)
+    is_valid = verify_signature(body, timestamp, signature, secret, method="POST", path="/api/test",
+                               query_params=query_params, headers=headers)
     
     print(f"   Secret: {secret.hex()[:16]}...")
     print(f"   Timestamp: {timestamp}")
     print(f"   Signature: {signature[:16]}...")
+    print(f"   Query params: {query_params}")
+    print(f"   Headers signed: {len(headers)} essential headers")
     print(f"   Valid: {'✅' if is_valid else '❌'}")
     
-    return is_valid
+    # Test that signature fails if query params are tampered with
+    tampered_query = {"action": "hack", "version": "1.0"}  # Changed action
+    is_invalid = verify_signature(body, timestamp, signature, secret, method="POST", path="/api/test",
+                                 query_params=tampered_query, headers=headers)
+    print(f"   Query tampering detected: {'✅' if not is_invalid else '❌'}")
+    
+    return is_valid and not is_invalid
 
 def test_ed25519():
     print("\n🔐 Testing Ed25519 Authentication (libsodium digital signatures)")
@@ -39,16 +53,29 @@ def test_ed25519():
     private_key, public_key = generate_ed25519_keypair()
     body = b'{"test": "message"}'
     
-    timestamp, signature = sign_ed25519_request(body, private_key)
-    is_valid = verify_ed25519_signature(body, timestamp, signature, public_key)
+    # Test comprehensive signing with query params and headers
+    query_params = {"action": "test", "version": "1.0"}
+    headers = {"content-type": "application/json", "user-agent": "test-client"}
+    
+    timestamp, signature = sign_ed25519_request(body, private_key, method="POST", path="/api/test",
+                                               query_params=query_params, headers=headers)
+    is_valid = verify_ed25519_signature(body, timestamp, signature, public_key, method="POST", path="/api/test",
+                                       query_params=query_params, headers=headers)
     
     print(f"   Private key: {private_key[:16]}...")
     print(f"   Public key: {public_key[:16]}...")
     print(f"   Timestamp: {timestamp}")
     print(f"   Signature: {signature[:16]}...")
+    print(f"   Query params: {query_params}")
+    print(f"   Headers signed: {len(headers)} essential headers")
     print(f"   Valid: {'✅' if is_valid else '❌'}")
     
-    return is_valid
+    # Test that signature fails if path is tampered with
+    is_invalid = verify_ed25519_signature(body, timestamp, signature, public_key, method="POST", path="/api/hack",
+                                         query_params=query_params, headers=headers)
+    print(f"   Path tampering detected: {'✅' if not is_invalid else '❌'}")
+    
+    return is_valid and not is_invalid
 
 def main():
     print("🧪 Simple Authentication Test")

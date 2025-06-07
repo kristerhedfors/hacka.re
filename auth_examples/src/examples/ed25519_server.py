@@ -71,13 +71,21 @@ async def ed25519_authenticated_endpoint(request):
             'documentation': 'Use crypto_auth.sign_ed25519_request() to generate headers'
         }, status_code=401)
     
-    # Verify Ed25519 signature using libsodium
-    if not verify_ed25519_signature(body, timestamp, signature, CLIENT_PUBLIC_KEY):
+    # Extract request components for comprehensive verification
+    method = request.method
+    path = request.url.path
+    query_params = dict(request.query_params)
+    headers = dict(request.headers)
+    
+    # Verify Ed25519 signature using libsodium WITH INTEGRITY PROTECTION
+    if not verify_ed25519_signature(body, timestamp, signature, CLIENT_PUBLIC_KEY,
+                                   method=method, path=path, query_params=query_params, headers=headers):
         return JSONResponse({
             'error': 'Invalid or expired Ed25519 signature',
             'crypto': 'libsodium Ed25519 verification failed',
             'max_age': '300 seconds (5 minutes)',
-            'public_key': CLIENT_PUBLIC_KEY[:16] + '...'  # Show first 16 chars for debugging
+            'public_key': CLIENT_PUBLIC_KEY[:16] + '...',  # Show first 16 chars for debugging
+            'integrity_protection': 'All request components verified (method, path, query, headers, body)'
         }, status_code=401)
     
     # Parse request body if JSON

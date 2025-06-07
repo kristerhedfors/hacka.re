@@ -33,14 +33,21 @@ def generate_ed25519_keypair() -> Tuple[str, str]:
     return private_key_hex, public_key_hex
 
 
-def sign_request(body: bytes, shared_secret: bytes, timestamp: Optional[str] = None) -> Tuple[str, str]:
+def sign_request(body: bytes, shared_secret: bytes, timestamp: Optional[str] = None, 
+                method: str = "POST", path: str = "", query_params: Optional[Dict[str, Any]] = None,
+                headers: Optional[Dict[str, str]] = None) -> Tuple[str, str]:
     """
     Sign a request using HMAC-style authentication with Blake2b
+    NOW WITH INTEGRITY PROTECTION FOR ALL REQUEST COMPONENTS
     
     Args:
         body: Request body as bytes
         shared_secret: 32-byte shared secret (use generate_shared_secret())
         timestamp: Optional timestamp (will generate current time if not provided)
+        method: HTTP method (GET, POST, etc.) - SIGNED for integrity
+        path: Request path - SIGNED for integrity  
+        query_params: Query parameters dict - SIGNED for integrity
+        headers: Request headers dict - SIGNED for integrity (essential headers only)
     
     Returns:
         (timestamp, signature_hex) - Use these in X-Timestamp and X-Signature headers
@@ -48,12 +55,28 @@ def sign_request(body: bytes, shared_secret: bytes, timestamp: Optional[str] = N
     if timestamp is None:
         timestamp = str(int(time.time()))
     
-    # Create message: timestamp + body for replay protection
-    message = f"{timestamp}:".encode() + body
+    if query_params is None:
+        query_params = {}
+    if headers is None:
+        headers = {}
+    
+    # Create comprehensive canonical request including ALL parameters
+    # This prevents tampering with ANY part of the request
+    sorted_params = "&".join(f"{k}={urllib.parse.quote(str(v))}" 
+                            for k, v in sorted(query_params.items()))
+    
+    # Include essential headers that affect request processing
+    essential_headers = ['content-type', 'authorization', 'user-agent', 'host']
+    sorted_headers = "&".join(f"{k.lower()}:{v}" for k, v in sorted(headers.items()) 
+                             if k.lower() in essential_headers)
+    
+    # Canonical request format for tamper-proof signing
+    canonical = f"{method.upper()}\n{path}\n{sorted_params}\n{sorted_headers}\n{timestamp}\n"
+    canonical_request = canonical.encode() + body
     
     # Compute signature using Blake2b with shared secret as key
     signature = nacl.hash.blake2b(
-        message, 
+        canonical_request, 
         key=shared_secret, 
         digest_size=32, 
         encoder=nacl.encoding.HexEncoder
@@ -63,9 +86,12 @@ def sign_request(body: bytes, shared_secret: bytes, timestamp: Optional[str] = N
 
 
 def verify_signature(body: bytes, timestamp: str, signature: str, shared_secret: bytes, 
-                    max_age_seconds: int = 300) -> bool:
+                    max_age_seconds: int = 300, method: str = "POST", path: str = "",
+                    query_params: Optional[Dict[str, Any]] = None, 
+                    headers: Optional[Dict[str, str]] = None) -> bool:
     """
     Verify a request signature using HMAC-style authentication
+    NOW WITH INTEGRITY PROTECTION FOR ALL REQUEST COMPONENTS
     
     Args:
         body: Request body as bytes
@@ -73,6 +99,10 @@ def verify_signature(body: bytes, timestamp: str, signature: str, shared_secret:
         signature: Signature from X-Signature header
         shared_secret: 32-byte shared secret
         max_age_seconds: Maximum age of request in seconds (default: 5 minutes)
+        method: HTTP method (GET, POST, etc.) - VERIFIED for integrity
+        path: Request path - VERIFIED for integrity
+        query_params: Query parameters dict - VERIFIED for integrity  
+        headers: Request headers dict - VERIFIED for integrity (essential headers only)
     
     Returns:
         True if signature is valid and request is not expired
@@ -85,10 +115,27 @@ def verify_signature(body: bytes, timestamp: str, signature: str, shared_secret:
         if abs(current_time - request_time) > max_age_seconds:
             return False
         
+        if query_params is None:
+            query_params = {}
+        if headers is None:
+            headers = {}
+        
+        # Recreate the same canonical request format used in signing
+        sorted_params = "&".join(f"{k}={urllib.parse.quote(str(v))}" 
+                                for k, v in sorted(query_params.items()))
+        
+        # Include same essential headers as in signing
+        essential_headers = ['content-type', 'authorization', 'user-agent', 'host']
+        sorted_headers = "&".join(f"{k.lower()}:{v}" for k, v in sorted(headers.items()) 
+                                 if k.lower() in essential_headers)
+        
+        # Recreate canonical request - must match signing exactly
+        canonical = f"{method.upper()}\n{path}\n{sorted_params}\n{sorted_headers}\n{timestamp}\n"
+        canonical_request = canonical.encode() + body
+        
         # Verify signature
-        message = f"{timestamp}:".encode() + body
         expected = nacl.hash.blake2b(
-            message, 
+            canonical_request, 
             key=shared_secret, 
             digest_size=32, 
             encoder=nacl.encoding.HexEncoder
@@ -99,14 +146,21 @@ def verify_signature(body: bytes, timestamp: str, signature: str, shared_secret:
         return False
 
 
-def sign_ed25519_request(body: bytes, private_key_hex: str, timestamp: Optional[str] = None) -> Tuple[str, str]:
+def sign_ed25519_request(body: bytes, private_key_hex: str, timestamp: Optional[str] = None,
+                        method: str = "POST", path: str = "", query_params: Optional[Dict[str, Any]] = None,
+                        headers: Optional[Dict[str, str]] = None) -> Tuple[str, str]:
     """
     Sign a request using Ed25519 digital signatures
+    NOW WITH INTEGRITY PROTECTION FOR ALL REQUEST COMPONENTS
     
     Args:
         body: Request body as bytes
         private_key_hex: Private key as hex string (from generate_ed25519_keypair())
         timestamp: Optional timestamp (will generate current time if not provided)
+        method: HTTP method (GET, POST, etc.) - SIGNED for integrity
+        path: Request path - SIGNED for integrity
+        query_params: Query parameters dict - SIGNED for integrity
+        headers: Request headers dict - SIGNED for integrity (essential headers only)
     
     Returns:
         (timestamp, signature_hex) - Use these in X-Timestamp and X-Ed25519-Signature headers
@@ -114,23 +168,41 @@ def sign_ed25519_request(body: bytes, private_key_hex: str, timestamp: Optional[
     if timestamp is None:
         timestamp = str(int(time.time()))
     
+    if query_params is None:
+        query_params = {}
+    if headers is None:
+        headers = {}
+    
     # Create signing key from hex
     signing_key = nacl.signing.SigningKey(private_key_hex, encoder=nacl.encoding.HexEncoder)
     
-    # Create message: timestamp + body for replay protection
-    message = f"{timestamp}:".encode() + body
+    # Create comprehensive canonical request including ALL parameters
+    sorted_params = "&".join(f"{k}={urllib.parse.quote(str(v))}" 
+                            for k, v in sorted(query_params.items()))
     
-    # Sign message with Ed25519
-    signed = signing_key.sign(message)
+    # Include essential headers that affect request processing
+    essential_headers = ['content-type', 'authorization', 'user-agent', 'host']
+    sorted_headers = "&".join(f"{k.lower()}:{v}" for k, v in sorted(headers.items()) 
+                             if k.lower() in essential_headers)
+    
+    # Canonical request format for tamper-proof signing
+    canonical = f"{method.upper()}\n{path}\n{sorted_params}\n{sorted_headers}\n{timestamp}\n"
+    canonical_request = canonical.encode() + body
+    
+    # Sign canonical request with Ed25519
+    signed = signing_key.sign(canonical_request)
     signature_hex = signed.signature.hex()
     
     return timestamp, signature_hex
 
 
 def verify_ed25519_signature(body: bytes, timestamp: str, signature: str, public_key_hex: str,
-                           max_age_seconds: int = 300) -> bool:
+                           max_age_seconds: int = 300, method: str = "POST", path: str = "",
+                           query_params: Optional[Dict[str, Any]] = None,
+                           headers: Optional[Dict[str, str]] = None) -> bool:
     """
     Verify an Ed25519 digital signature
+    NOW WITH INTEGRITY PROTECTION FOR ALL REQUEST COMPONENTS
     
     Args:
         body: Request body as bytes
@@ -138,6 +210,10 @@ def verify_ed25519_signature(body: bytes, timestamp: str, signature: str, public
         signature: Signature from X-Ed25519-Signature header as hex string
         public_key_hex: Public key as hex string (from generate_ed25519_keypair())
         max_age_seconds: Maximum age of request in seconds (default: 5 minutes)
+        method: HTTP method (GET, POST, etc.) - VERIFIED for integrity
+        path: Request path - VERIFIED for integrity
+        query_params: Query parameters dict - VERIFIED for integrity
+        headers: Request headers dict - VERIFIED for integrity (essential headers only)
     
     Returns:
         True if signature is valid and request is not expired
@@ -150,15 +226,30 @@ def verify_ed25519_signature(body: bytes, timestamp: str, signature: str, public
         if abs(current_time - request_time) > max_age_seconds:
             return False
         
+        if query_params is None:
+            query_params = {}
+        if headers is None:
+            headers = {}
+        
         # Create verify key from hex
         verify_key = nacl.signing.VerifyKey(public_key_hex, encoder=nacl.encoding.HexEncoder)
         
-        # Create message: timestamp + body
-        message = f"{timestamp}:".encode() + body
+        # Recreate the same canonical request format used in signing
+        sorted_params = "&".join(f"{k}={urllib.parse.quote(str(v))}" 
+                                for k, v in sorted(query_params.items()))
+        
+        # Include same essential headers as in signing
+        essential_headers = ['content-type', 'authorization', 'user-agent', 'host']
+        sorted_headers = "&".join(f"{k.lower()}:{v}" for k, v in sorted(headers.items()) 
+                                 if k.lower() in essential_headers)
+        
+        # Recreate canonical request - must match signing exactly
+        canonical = f"{method.upper()}\n{path}\n{sorted_params}\n{sorted_headers}\n{timestamp}\n"
+        canonical_request = canonical.encode() + body
         
         # Verify signature - convert hex string to bytes first
         signature_bytes = bytes.fromhex(signature)
-        verify_key.verify(message, signature_bytes)
+        verify_key.verify(canonical_request, signature_bytes)
         return True
     except (nacl.exceptions.BadSignatureError, ValueError, TypeError):
         return False
