@@ -1161,6 +1161,10 @@ footer a:hover {
     color: var(--primary-dark);
 }
 
+.settings-header .icon-btn.success {
+    color: #065f46 !important;
+}
+
 /* Settings and Share info modal styling */
 #settings-info-modal .modal-content,
 [id^="share-info-modal-"] .modal-content {
