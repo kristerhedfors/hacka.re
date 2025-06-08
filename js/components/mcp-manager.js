@@ -16,6 +16,7 @@ window.MCPManager = (function() {
     let testProxyBtn = null;
     let proxyUrlInput = null;
     let proxyStatus = null;
+    let commandHistoryList = null;
     
     // State
     let proxyConnected = false;
@@ -45,8 +46,9 @@ window.MCPManager = (function() {
         mcpModal = document.getElementById('mcp-servers-modal');
         serversList = document.getElementById('mcp-servers-list');
         addServerForm = document.getElementById('mcp-server-form');
+        commandHistoryList = document.getElementById('mcp-command-history');
         
-        if (!mcpButton || !mcpModal || !serversList || !addServerForm) {
+        if (!mcpButton || !mcpModal || !serversList || !addServerForm || !commandHistoryList) {
             console.error('[MCPManager] Could not find existing MCP elements');
             return false;
         }
@@ -78,52 +80,68 @@ window.MCPManager = (function() {
             return;
         }
         
-        // Create proxy connection section
+        // Create proxy connection section - using standard modal patterns
         const proxySection = document.createElement('div');
-        proxySection.className = 'mcp-proxy-section';
         proxySection.innerHTML = `
             <h3>MCP Stdio Proxy Connection</h3>
-            <div class="proxy-connection">
+            <div class="form-group">
+                <label for="mcp-proxy-url">Proxy URL</label>
+                <div style="display: flex; gap: 0.5rem; align-items: stretch;">
+                    <input type="url" id="mcp-proxy-url" value="http://localhost:3001" placeholder="http://localhost:3001" style="flex: 1;">
+                    <button type="button" id="test-proxy-btn" class="btn secondary-btn">Test Connection</button>
+                </div>
+            </div>
+            <div id="proxy-status" class="proxy-status disconnected">
+                Not connected to proxy
+            </div>
+            <div id="server-instructions" style="display: none;">
+                <h4>✅ Proxy Connected - Start MCP Servers!</h4>
+                <p class="form-help">You can now start <strong>stdio-based MCP servers</strong> as processes. Choose between simple command or JSON config format.</p>
+                
                 <div class="form-group">
-                    <label for="mcp-proxy-url">Proxy URL</label>
-                    <div class="proxy-url-container">
-                        <input type="url" id="mcp-proxy-url" value="http://localhost:3001" placeholder="http://localhost:3001">
-                        <button type="button" id="test-proxy-btn" class="btn secondary-btn">Test Connection</button>
+                    <label>Input Mode</label>
+                    <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal;">
+                            <input type="radio" name="input-mode" value="command" checked> Simple Command
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal;">
+                            <input type="radio" name="input-mode" value="json"> JSON Config
+                        </label>
                     </div>
                 </div>
-                <div id="proxy-status" class="proxy-status disconnected">
-                    Not connected to proxy
+                
+                <div id="command-examples">
+                    <p class="form-help"><strong>Example commands:</strong></p>
+                    <div style="background-color: var(--ai-msg-bg); padding: 0.75rem; border-radius: var(--border-radius); margin-bottom: 0.5rem; position: relative;">
+                        <strong>Filesystem (npx):</strong>
+                        <button class="btn secondary-btn" onclick="MCPManager.copyExampleCommand('npx -y @modelcontextprotocol/server-filesystem /Users/username/Desktop')" 
+                                style="position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.25rem 0.5rem; font-size: 0.8rem;" 
+                                title="Copy command">
+                            <i class="fas fa-copy"></i>
+                        </button><br>
+                        <code style="font-size: 0.85rem;">npx -y @modelcontextprotocol/server-filesystem /Users/username/Desktop</code>
+                    </div>
+                    <div style="background-color: var(--ai-msg-bg); padding: 0.75rem; border-radius: var(--border-radius); position: relative;">
+                        <strong>Filesystem (Docker):</strong>
+                        <button class="btn secondary-btn" onclick="MCPManager.copyExampleCommand('docker run -i --rm --mount type=bind,src=/Users/username/Desktop,dst=/projects/Desktop mcp/filesystem /projects')" 
+                                style="position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.25rem 0.5rem; font-size: 0.8rem;" 
+                                title="Copy command">
+                            <i class="fas fa-copy"></i>
+                        </button><br>
+                        <code style="font-size: 0.85rem;">docker run -i --rm --mount type=bind,src=/Users/username/Desktop,dst=/projects/Desktop mcp/filesystem /projects</code>
+                    </div>
                 </div>
-                <div id="server-instructions" class="server-instructions" style="display: none;">
-                    <h4>✅ Proxy Connected - Start MCP Servers!</h4>
-                    <p>You can now start <strong>stdio-based MCP servers</strong> as processes. Choose between simple command or JSON config format.</p>
-                    
-                    <div class="input-mode-toggle">
-                        <label><input type="radio" name="input-mode" value="command" checked> Simple Command</label>
-                        <label><input type="radio" name="input-mode" value="json"> JSON Config</label>
-                    </div>
-                    
-                    <div id="command-examples" class="server-config-examples">
-                        <h5>Example commands:</h5>
-                        <div class="config-example">
-                            <strong>Filesystem (npx):</strong>
-                            <div class="config-fields">
-                                <span>Command:</span> <code>npx -y @modelcontextprotocol/server-filesystem /Users/username/Desktop</code>
-                            </div>
-                        </div>
-                        <div class="config-example">
-                            <strong>Filesystem (Docker):</strong>
-                            <div class="config-fields">
-                                <span>Command:</span> <code>docker run -i --rm --mount type=bind,src=/Users/username/Desktop,dst=/projects/Desktop mcp/filesystem /projects</code>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div id="json-examples" class="server-config-examples" style="display: none;">
-                        <h5>Example JSON configs:</h5>
-                        <div class="config-example">
-                            <strong>Filesystem (Docker):</strong>
-                            <pre><code>{
+                
+                <div id="json-examples" style="display: none;">
+                    <p class="form-help"><strong>Example JSON config:</strong></p>
+                    <div style="background-color: var(--ai-msg-bg); padding: 0.75rem; border-radius: var(--border-radius); position: relative;">
+                        <strong>Filesystem (Docker):</strong>
+                        <button class="btn secondary-btn" onclick="MCPManager.copyExampleCommand('{\n  \"name\": \"filesystem\",\n  \"command\": \"docker\",\n  \"args\": [\n    \"run\", \"-i\", \"--rm\",\n    \"--mount\", \"type=bind,src=/Users/username/Desktop,dst=/projects/Desktop\",\n    \"mcp/filesystem\", \"/projects\"\n  ]\n}')" 
+                                style="position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.25rem 0.5rem; font-size: 0.8rem;" 
+                                title="Copy JSON config">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                        <pre style="margin: 0.5rem 0 0 0; font-size: 0.8rem; background: var(--dark-color); color: var(--light-text); padding: 0.5rem; border-radius: 4px; overflow-x: auto;"><code>{
   "name": "filesystem",
   "command": "docker",
   "args": [
@@ -132,14 +150,13 @@ window.MCPManager = (function() {
     "mcp/filesystem", "/projects"
   ]
 }</code></pre>
-                        </div>
                     </div>
-                    
-                    <p><strong>💡 Note:</strong> The form below adapts to your chosen input mode. Server name will be auto-detected or extracted from config.</p>
                 </div>
-                <p class="info-message">
-                    First connect to the MCP stdio proxy. Start it with: <code>node mcp-stdio-proxy/server.js --debug</code>
-                </p>
+                
+                <p class="form-help"><strong>💡 Note:</strong> The form below adapts to your chosen input mode. Server name will be auto-detected or extracted from config.</p>
+            </div>
+            <div style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 0.75rem; border-radius: var(--border-radius); margin: 1rem 0;">
+                <p class="form-help" style="margin: 0;">First connect to the MCP stdio proxy. Start it with: <code>node mcp-stdio-proxy/server.js --debug</code></p>
             </div>
         `;
         
@@ -226,216 +243,112 @@ window.MCPManager = (function() {
     function addMCPStyles() {
         const style = document.createElement('style');
         style.textContent = `
-            .mcp-proxy-section {
-                margin-bottom: 20px;
-                padding: 15px;
-                border: 1px solid var(--border-color);
-                border-radius: var(--border-radius);
-                background-color: var(--input-bg);
-            }
-            
-            .proxy-url-container {
-                display: flex;
-                gap: 10px;
-                align-items: stretch;
-            }
-            
-            .proxy-url-container input {
-                flex: 1;
-            }
-            
+            /* MCP Status indicators using existing color variables */
             .proxy-status {
-                margin: 10px 0;
-                padding: 8px 12px;
+                margin: 0.75rem 0;
+                padding: 0.75rem;
                 border-radius: var(--border-radius);
                 font-size: 0.9em;
                 font-weight: 500;
             }
             
             .proxy-status.connected {
-                background-color: #d1fae5;
-                color: #065f46;
-                border: 1px solid #a7f3d0;
+                background-color: var(--secondary-color);
+                color: white;
             }
             
             .proxy-status.disconnected {
-                background-color: #fee2e2;
-                color: #991b1b;
-                border: 1px solid #fca5a5;
+                background-color: #ef4444;
+                color: white;
             }
             
             .proxy-status.testing {
-                background-color: #fef3c7;
-                color: #92400e;
-                border: 1px solid #fde68a;
+                background-color: var(--accent-color);
+                color: white;
             }
             
-            .info-message {
-                background-color: var(--info-bg, #e3f2fd);
-                color: var(--info-color, #1976d2);
-                padding: 10px;
-                border-radius: var(--border-radius);
-                margin: 10px 0;
-                font-size: 0.9em;
-            }
-            
-            .server-instructions {
-                background-color: #d1fae5;
-                border: 1px solid #a7f3d0;
-                border-radius: var(--border-radius);
-                padding: 15px;
-                margin: 15px 0;
-            }
-            
-            .server-instructions h4 {
-                margin: 0 0 10px 0;
-                color: #065f46;
-            }
-            
-            .server-instructions pre {
-                background-color: #1f2937;
-                color: #f9fafb;
-                padding: 12px;
-                border-radius: 4px;
-                font-size: 0.85em;
-                overflow-x: auto;
-                margin: 10px 0;
-            }
-            
-            .server-instructions ul {
-                margin: 10px 0;
-                padding-left: 20px;
-            }
-            
-            .server-instructions li {
-                margin-bottom: 5px;
-            }
-            
-            .server-instructions code {
-                background-color: #374151;
-                color: #f9fafb;
-                padding: 2px 4px;
-                border-radius: 3px;
-                font-size: 0.9em;
-            }
-            
-            .server-config-examples {
-                margin: 15px 0;
-            }
-            
-            .server-config-examples h5 {
-                margin: 0 0 10px 0;
-                color: #065f46;
-            }
-            
-            .config-example {
-                background-color: #f0fdf4;
-                border: 1px solid #bbf7d0;
-                border-radius: 4px;
-                padding: 10px;
-                margin-bottom: 10px;
-            }
-            
-            .config-fields {
-                font-family: monospace;
-                font-size: 0.85em;
-                margin-top: 5px;
-                line-height: 1.4;
-            }
-            
-            .config-fields span {
-                font-weight: bold;
-                color: #065f46;
-            }
-            
-            /* Input mode toggle */
-            .input-mode-toggle {
+            /* Override existing MCP server item for proxy servers layout */
+            .mcp-server-item.proxy-server {
                 display: flex;
-                gap: 20px;
-                margin: 15px 0;
-                padding: 10px;
-                background-color: #f0fdf4;
-                border-radius: 4px;
-                border: 1px solid #bbf7d0;
+                justify-content: space-between;
+                align-items: flex-start;
+                flex-direction: row;
             }
             
-            .input-mode-toggle label {
+            .mcp-server-item.proxy-server .mcp-server-info {
+                flex: 1;
+                margin-right: 1rem;
+            }
+            
+            .mcp-server-item.proxy-server .mcp-server-actions {
                 display: flex;
-                align-items: center;
-                gap: 5px;
-                font-weight: 500;
-                color: #065f46;
-                cursor: pointer;
+                flex-direction: column;
+                gap: 0.5rem;
+                flex-shrink: 0;
+                min-width: 120px;
             }
             
-            .input-mode-toggle input[type="radio"] {
-                margin: 0;
+            .mcp-server-item.proxy-server .mcp-server-actions .btn {
+                white-space: normal;
+                text-align: center;
+                line-height: 1.2;
             }
             
-            /* Form field transitions for show/hide */
-            .form-group {
-                transition: all 0.3s ease;
+            /* Command History using existing patterns */
+            .mcp-command-history-section {
+                margin-bottom: 1.5rem;
             }
             
-            .form-group[style*="display: none"] {
-                height: 0;
-                overflow: hidden;
-                margin: 0;
-                padding: 0;
-            }
-            
-            /* Server list items */
-            .mcp-server-item {
+            .history-item {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                padding: 12px;
-                margin-bottom: 8px;
+                padding: 0.75rem;
+                margin-bottom: 0.5rem;
                 background-color: var(--ai-msg-bg);
                 border-radius: var(--border-radius);
-                border: 1px solid var(--border-color);
+                border: 1px solid rgba(0, 0, 0, 0.1);
+                transition: var(--transition);
             }
             
-            .mcp-server-info {
+            .history-item:hover {
+                background-color: rgba(0, 0, 0, 0.05);
+            }
+            
+            .history-item-info {
                 flex: 1;
+                cursor: pointer;
             }
             
-            .mcp-server-name {
-                font-weight: bold;
-                font-size: 0.95em;
-                margin-bottom: 4px;
-            }
-            
-            .mcp-server-status {
-                font-size: 0.85em;
-                margin-bottom: 4px;
-            }
-            
-            .mcp-server-status.running {
-                color: #059669;
-            }
-            
-            .mcp-server-status.stopped {
-                color: #d97706;
-            }
-            
-            .mcp-server-command {
-                font-size: 0.8em;
-                color: var(--text-secondary);
+            .history-item-command {
                 font-family: monospace;
+                font-size: 0.9em;
+                margin-bottom: 0.25rem;
+                color: var(--text-color);
+                word-break: break-all;
             }
             
-            .mcp-server-actions {
+            .history-item-meta {
+                font-size: 0.85rem;
+                color: rgba(0, 0, 0, 0.6);
+            }
+            
+            .history-item-actions {
                 display: flex;
-                gap: 8px;
-                flex-wrap: wrap;
+                gap: 0.5rem;
+                flex-shrink: 0;
             }
             
-            .mcp-server-actions button {
-                padding: 6px 12px;
-                font-size: 0.85em;
-                border-radius: 4px;
-                white-space: nowrap;
+            .history-item-actions .btn {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.8rem;
+            }
+            
+            .empty-history-state {
+                text-align: center;
+                color: rgba(0, 0, 0, 0.6);
+                font-style: italic;
+                padding: 1.5rem;
             }
         `;
         document.head.appendChild(style);
@@ -450,6 +363,7 @@ window.MCPManager = (function() {
         if (proxyConnected) {
             updateServersList();
         }
+        updateCommandHistory();
         mcpModal.classList.add('active');
     }
     
@@ -708,12 +622,12 @@ window.MCPManager = (function() {
      */
     function createProxyServerItem(server) {
         const serverItem = document.createElement('div');
-        serverItem.className = 'mcp-server-item';
+        serverItem.className = 'mcp-server-item proxy-server';
         
         // Check if MCP client has an active connection to this server
         const hasActiveConnection = MCPClient && MCPClient.getConnectionInfo(server.name) !== null;
         
-        const statusClass = hasActiveConnection ? 'running' : 'stopped';
+        const statusClass = hasActiveConnection ? 'connected' : 'disconnected';
         const statusText = hasActiveConnection ? 'Connected & Tools Loaded' : 'Process Running';
         const statusIcon = hasActiveConnection ? '✅' : '🔄';
         
@@ -725,8 +639,8 @@ window.MCPManager = (function() {
             </div>
             <div class="mcp-server-actions">
                 ${!hasActiveConnection ? `
-                    <button class="btn primary-btn load-tools-btn" onclick="MCPManager.connectToServer('${server.name}')">
-                        Connect & Load Tools
+                    <button class="btn primary-btn" onclick="MCPManager.connectToServer('${server.name}')">
+                        Connect &<br>Load Tools
                     </button>
                 ` : `
                     <button class="btn secondary-btn" onclick="MCPManager.refreshServerTools('${server.name}')">
@@ -1248,6 +1162,9 @@ async function mcp_${serverName}_${tool.name}(params) {
             });
             
             if (response.ok) {
+                // Save command to history (encrypted storage, excluded from shared links)
+                saveCommandToHistory(input, serverName, selectedMode);
+                
                 // Clear form
                 document.getElementById('mcp-server-url').value = '';
                 
@@ -1257,6 +1174,7 @@ async function mcp_${serverName}_${tool.name}(params) {
                 setTimeout(() => {
                     checkProxyConnection();
                     updateServersList();
+                    updateCommandHistory();
                 }, 1000); // Give server time to start
             } else {
                 const error = await response.json();
@@ -1384,12 +1302,253 @@ async function mcp_${serverName}_${tool.name}(params) {
         }
     }
     
+    /**
+     * Command History Management
+     */
+    
+    /**
+     * Get command history from encrypted storage
+     * @returns {Array} Array of command history entries
+     */
+    function getCommandHistory() {
+        try {
+            // Use CoreStorageService for encrypted storage like other hacka.re data
+            const history = window.CoreStorageService?.getValue('mcp-command-history');
+            return history || [];
+        } catch (error) {
+            console.error('[MCPManager] Failed to load command history:', error);
+            return [];
+        }
+    }
+    
+    /**
+     * Save command to history (encrypted storage, excluded from shared links)
+     * @param {string} command - The command that was executed
+     * @param {string} serverName - The generated server name
+     * @param {string} mode - 'command' or 'json'
+     */
+    function saveCommandToHistory(command, serverName, mode = 'command') {
+        try {
+            const history = getCommandHistory();
+            
+            // Create history entry
+            const entry = {
+                id: Date.now() + Math.random(),
+                command: command,
+                serverName: serverName,
+                mode: mode,
+                timestamp: new Date().toISOString(),
+                lastUsed: new Date().toISOString()
+            };
+            
+            // Check for duplicates and remove if exists
+            const existingIndex = history.findIndex(h => h.command === command && h.mode === mode);
+            if (existingIndex > -1) {
+                // Update existing entry's lastUsed timestamp
+                history[existingIndex].lastUsed = entry.lastUsed;
+                history[existingIndex].serverName = serverName; // Update server name in case it changed
+            } else {
+                // Add new entry to beginning
+                history.unshift(entry);
+            }
+            
+            // Keep only last 20 entries
+            if (history.length > 20) {
+                history.splice(20);
+            }
+            
+            // Save back to encrypted storage
+            window.CoreStorageService?.setValue('mcp-command-history', history);
+            
+        } catch (error) {
+            console.error('[MCPManager] Failed to save command to history:', error);
+        }
+    }
+    
+    /**
+     * Delete command from history
+     * @param {string} entryId - ID of the history entry to delete
+     */
+    function deleteFromHistory(entryId) {
+        try {
+            const history = getCommandHistory();
+            const filteredHistory = history.filter(entry => entry.id !== entryId);
+            window.CoreStorageService?.setValue('mcp-command-history', filteredHistory);
+            updateCommandHistory();
+            showNotification('Command removed from history', 'info');
+        } catch (error) {
+            console.error('[MCPManager] Failed to delete from history:', error);
+            showNotification('Failed to delete from history', 'error');
+        }
+    }
+    
+    /**
+     * Start command from history
+     * @param {Object} historyEntry - The history entry to execute
+     */
+    async function startFromHistory(historyEntry) {
+        try {
+            // Update the form with the history entry
+            const urlInput = document.getElementById('mcp-server-url');
+            if (urlInput) {
+                urlInput.value = historyEntry.command;
+            }
+            
+            // Set the correct input mode
+            const modeRadio = document.querySelector(`input[name="input-mode"][value="${historyEntry.mode}"]`);
+            if (modeRadio) {
+                modeRadio.checked = true;
+                handleInputModeChange({ target: modeRadio });
+            }
+            
+            // Update last used timestamp
+            const history = getCommandHistory();
+            const entryIndex = history.findIndex(h => h.id === historyEntry.id);
+            if (entryIndex > -1) {
+                history[entryIndex].lastUsed = new Date().toISOString();
+                window.CoreStorageService?.setValue('mcp-command-history', history);
+            }
+            
+            // Trigger form submission
+            if (proxyConnected) {
+                await handleStdioServerSubmission({ preventDefault: () => {}, stopPropagation: () => {} });
+            } else {
+                showNotification('Please connect to proxy first', 'error');
+            }
+            
+        } catch (error) {
+            console.error('[MCPManager] Failed to start from history:', error);
+            showNotification(`Failed to start command: ${error.message}`, 'error');
+        }
+    }
+    
+    /**
+     * Update the command history display
+     */
+    function updateCommandHistory() {
+        if (!commandHistoryList) {
+            return;
+        }
+        
+        const history = getCommandHistory();
+        
+        if (history.length === 0) {
+            commandHistoryList.innerHTML = `
+                <div class="empty-history-state">
+                    <p>No command history yet. Start a server to build your history.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Clear existing content
+        commandHistoryList.innerHTML = '';
+        
+        // Sort by last used (most recent first)
+        const sortedHistory = history.sort((a, b) => new Date(b.lastUsed) - new Date(a.lastUsed));
+        
+        sortedHistory.forEach(entry => {
+            const historyItem = createHistoryItem(entry);
+            commandHistoryList.appendChild(historyItem);
+        });
+    }
+    
+    /**
+     * Create a history item element
+     * @param {Object} entry - History entry
+     * @returns {HTMLElement} History item element
+     */
+    function createHistoryItem(entry) {
+        const historyItem = document.createElement('div');
+        historyItem.className = 'history-item';
+        
+        // Format timestamp
+        const lastUsed = new Date(entry.lastUsed);
+        const timeAgo = getTimeAgo(lastUsed);
+        
+        // Truncate long commands
+        const displayCommand = entry.command.length > 80 
+            ? entry.command.substring(0, 80) + '...' 
+            : entry.command;
+        
+        historyItem.innerHTML = `
+            <div class="history-item-info" onclick="MCPManager.startFromHistory(${JSON.stringify(entry).replace(/"/g, '&quot;')})">
+                <div class="history-item-command">${displayCommand}</div>
+                <div class="history-item-meta">
+                    Server: ${entry.serverName} • Mode: ${entry.mode} • ${timeAgo}
+                </div>
+            </div>
+            <div class="history-item-actions">
+                <button class="btn danger-btn" onclick="MCPManager.confirmDeleteHistory('${entry.id}')" title="Delete from history">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+        
+        return historyItem;
+    }
+    
+    /**
+     * Show confirmation dialog for deleting history entry
+     * @param {string} entryId - ID of the entry to delete
+     */
+    function confirmDeleteHistory(entryId) {
+        const history = getCommandHistory();
+        const entry = history.find(h => h.id == entryId);
+        
+        if (!entry) {
+            showNotification('History entry not found', 'error');
+            return;
+        }
+        
+        const confirmed = confirm(`Delete this command from history?\n\n${entry.command}\n\nThis action cannot be undone.`);
+        if (confirmed) {
+            deleteFromHistory(entryId);
+        }
+    }
+    
+    /**
+     * Copy example command to clipboard
+     * @param {string} command - The command or config to copy
+     */
+    function copyExampleCommand(command) {
+        navigator.clipboard.writeText(command).then(() => {
+            showNotification('Example copied to clipboard', 'success');
+        }).catch(err => {
+            console.error('[MCPManager] Failed to copy to clipboard:', err);
+            showNotification('Failed to copy to clipboard', 'error');
+        });
+    }
+    
+    /**
+     * Get human-readable time ago string
+     * @param {Date} date - Date to calculate from
+     * @returns {string} Time ago string
+     */
+    function getTimeAgo(date) {
+        const now = new Date();
+        const diffMs = now - date;
+        const diffSecs = Math.floor(diffMs / 1000);
+        const diffMins = Math.floor(diffSecs / 60);
+        const diffHours = Math.floor(diffMins / 60);
+        const diffDays = Math.floor(diffHours / 24);
+        
+        if (diffSecs < 60) return 'Just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        if (diffHours < 24) return `${diffHours}h ago`;
+        if (diffDays < 30) return `${diffDays}d ago`;
+        return date.toLocaleDateString();
+    }
+    
     // Public API - minimal integration with existing MCP system
     return {
         init,
         testProxyConnection,
         connectToServer,
         stopProxyServer,
-        refreshServerTools
+        refreshServerTools,
+        startFromHistory,
+        confirmDeleteHistory,
+        copyExampleCommand
     };
 })();
