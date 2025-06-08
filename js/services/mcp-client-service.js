@@ -590,7 +590,10 @@ window.MCPClientService = (function() {
                 groupId
             );
             
-            console.log(`[MCP] Registered tool: ${functionName}`);
+            // Enable the function by default (check it)
+            window.FunctionToolsService.enableJsFunction(functionName);
+            
+            console.log(`[MCP] Registered and enabled tool: ${functionName}`);
         }
     }
     
@@ -639,8 +642,11 @@ async function mcp_${serverName}_${tool.name}(params) {
             return { error: "MCP Client Service not available", success: false };
         }
         
+        // Just pass params directly - it should already be an object
+        const args = params || {};
+        
         // Call the tool
-        const result = await MCPClient.callTool('${serverName}', '${tool.name}', params || {});
+        const result = await MCPClient.callTool('${serverName}', '${tool.name}', args || {});
         
         return {
             success: true,

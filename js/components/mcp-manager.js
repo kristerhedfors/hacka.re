@@ -788,51 +788,61 @@ window.MCPManager = (function() {
      * @returns {string} JavaScript function code
      */
     function generateMCPFunctionCode(serverName, tool) {
-        return `/**
- * ${tool.description || `MCP tool ${tool.name} from ${serverName}`}
- * @description ${tool.description || `Calls ${tool.name} on MCP server ${serverName}`}
- * @tool This function calls an MCP tool via the proxy
- */
-async function mcp_${serverName}_${tool.name}(args) {
-    try {
-        // Call the MCP tool via the proxy
-        const toolCallMessage = {
-            jsonrpc: "2.0",
-            id: Date.now(),
-            method: "tools/call",
-            params: {
-                name: '${tool.name}',
-                arguments: args || {}
+        // Generate parameter documentation - keep using params object style
+        let paramDocs = '';
+        if (tool.inputSchema && tool.inputSchema.properties) {
+            const required = new Set(tool.inputSchema.required || []);
+            for (const [name, prop] of Object.entries(tool.inputSchema.properties)) {
+                const isRequired = required.has(name);
+                const type = prop.type || 'any';
+                const description = prop.description || '';
+                paramDocs += `\n * @param {${type}} params.${name} ${isRequired ? '(required)' : ''} - ${description}`;
             }
-        };
-        
-        const response = await fetch('${currentProxyUrl}/mcp/command', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Server-Name': '${serverName}'
-            },
-            body: JSON.stringify(toolCallMessage)
-        });
-        
-        if (!response.ok) {
-            throw new Error(\`HTTP \${response.status}: \${response.statusText}\`);
+        } else {
+            paramDocs = '\n * @param {Object} params - Tool parameters';
         }
         
-        // For now, return success - in a real implementation, we'd parse the SSE response
+        return `/**
+ * ${tool.description || `MCP tool ${tool.name} from ${serverName}`}
+ * @description ${tool.description || `Calls ${tool.name} on MCP server ${serverName}`}${paramDocs}
+ * @returns {Promise<Object>} Tool execution result
+ * @tool This function calls an MCP tool via the proxy
+ */
+async function mcp_${serverName}_${tool.name}(params) {
+    try {
+        // Use the MCP Client Service to call the tool
+        const MCPClient = window.MCPClientService;
+        if (!MCPClient) {
+            return { 
+                success: false, 
+                error: "MCP Client Service not available" 
+            };
+        }
+        
+        // Call the tool through the proper MCP client
+        // If params is not an object, treat it as the first parameter
+        let args = params;
+        if (typeof params !== 'object' || params === null) {
+            // If tool expects parameters and a non-object was passed, 
+            // assume it's the first parameter
+            const firstParam = ${tool.inputSchema?.properties ? `Object.keys(${JSON.stringify(tool.inputSchema.properties)})[0]` : 'null'};
+            if (firstParam) {
+                args = { [firstParam]: params };
+            } else {
+                args = {};
+            }
+        }
+        
+        const result = await MCPClient.callTool('${serverName}', '${tool.name}', args || {});
+        
         return {
             success: true,
-            message: 'Tool call sent to ${serverName}',
-            server: '${serverName}',
-            tool: '${tool.name}',
-            arguments: args || {}
+            result: result
         };
     } catch (error) {
         return {
             success: false,
-            error: error.message,
-            server: '${serverName}',
-            tool: '${tool.name}'
+            error: error.message || "Tool execution failed"
         };
     }
 }`;

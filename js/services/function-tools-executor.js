@@ -98,7 +98,8 @@ window.FunctionToolsExecutor = (function() {
             
             // Build execution code that includes all functions
             const executionCode = this._buildExecutionCode(name);
-            Logger.debug(`Execution code:`, executionCode);
+            // Commented out verbose logging - use for deep debugging only
+            // Logger.debug(`Execution code:`, executionCode);
             
             // Create sandbox environment
             const sandbox = this._createSandbox(args);
@@ -162,7 +163,7 @@ window.FunctionToolsExecutor = (function() {
             for (const funcName in jsFunctions) {
                 if (funcName !== targetName) {
                     allFunctionsCode += jsFunctions[funcName].code + '\n\n';
-                    Logger.debug(`Added auxiliary user-defined function: ${funcName}`);
+                    // Logger.debug(`Added auxiliary user-defined function: ${funcName}`);
                 }
             }
             
@@ -170,20 +171,20 @@ window.FunctionToolsExecutor = (function() {
             for (const funcName in enabledDefaultFunctions) {
                 if (funcName !== targetName) {
                     allFunctionsCode += enabledDefaultFunctions[funcName].code + '\n\n';
-                    Logger.debug(`Added auxiliary default function: ${funcName}`);
+                    // Logger.debug(`Added auxiliary default function: ${funcName}`);
                 }
             }
             
             // Add the target function last (check both sources)
             if (jsFunctions[targetName]) {
                 allFunctionsCode += jsFunctions[targetName].code;
-                Logger.debug(`Added target user-defined function: ${targetName}`);
+                // Logger.debug(`Added target user-defined function: ${targetName}`);
             } else if (enabledDefaultFunctions[targetName]) {
                 allFunctionsCode += enabledDefaultFunctions[targetName].code;
-                Logger.debug(`Added target default function: ${targetName}`);
+                // Logger.debug(`Added target default function: ${targetName}`);
             }
             
-            Logger.debug(`Total code length: ${allFunctionsCode.length} characters`);
+            // Logger.debug(`Total code length: ${allFunctionsCode.length} characters`);
             
             return allFunctionsCode;
         },
