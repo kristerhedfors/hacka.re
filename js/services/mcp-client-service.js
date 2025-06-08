@@ -627,6 +627,10 @@ window.MCPClientService = (function() {
         // Generate parameter documentation from schema
         const paramDocs = generateParameterDocs(tool.inputSchema);
         
+        // Get parameter names from schema for explicit parameter handling
+        const paramNames = tool.inputSchema?.properties ? Object.keys(tool.inputSchema.properties) : [];
+        const paramDeclaration = paramNames.length > 0 ? paramNames.join(', ') : '';
+        
         return `/**
  * ${tool.description || `MCP tool: ${tool.name}`}
  * @description Executes ${tool.name} tool from MCP server ${serverName}
@@ -634,24 +638,25 @@ ${paramDocs}
  * @returns {Promise<Object>} Tool execution result
  * @callable
  */
-async function mcp_${serverName}_${tool.name}(params) {
+async function mcp_${serverName}_${tool.name}(${paramDeclaration}) {
     try {
-        // Debug: log the incoming params
-        console.log(\`[MCP Function] mcp_${serverName}_${tool.name} called with params:\`, params);
-        console.log(\`[MCP Function] params type:\`, typeof params);
-        
         // Get the MCP client service
         const MCPClient = window.MCPClientService;
         if (!MCPClient) {
             return { error: "MCP Client Service not available", success: false };
         }
         
-        // Just pass params directly - it should already be an object
-        const args = params || {};
-        console.log(\`[MCP Function] args to be sent:\`, args);
+        // Build params object from explicit parameters
+        const params = {};
+        ${paramNames.map((paramName, index) => `
+        if (typeof ${paramName} !== 'undefined') {
+            params['${paramName}'] = ${paramName};
+        }`).join('')}
+        
+        console.log(\`[MCP Function] mcp_${serverName}_${tool.name} called with params:\`, params);
         
         // Call the tool
-        const result = await MCPClient.callTool('${serverName}', '${tool.name}', args);
+        const result = await MCPClient.callTool('${serverName}', '${tool.name}', params);
         
         return {
             success: true,
