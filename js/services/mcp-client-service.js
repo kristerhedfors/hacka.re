@@ -224,32 +224,51 @@ window.MCPClientService = (function() {
                 connected = false;
             },
             connect: async () => {
-                // First, start the server process
-                const startResponse = await fetch(`${proxyUrl}/mcp/start`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        name: serverName,
-                        command: config.command,
-                        args: config.args || [],
-                        env: config.env || {}
-                    })
-                });
+                // Check if server is already running first
+                let serverAlreadyRunning = false;
+                try {
+                    const listResponse = await fetch(`${proxyUrl}/mcp/list`);
+                    if (listResponse.ok) {
+                        const data = await listResponse.json();
+                        const servers = data.servers || [];
+                        serverAlreadyRunning = servers.some(s => s.name === serverName);
+                    }
+                } catch (error) {
+                    console.log('[MCP] Could not check server list, will try to start:', error.message);
+                }
                 
-                if (!startResponse.ok) {
-                    const error = await startResponse.json();
-                    throw new Error(error.error || 'Failed to start server');
+                // Only try to start the server if it's not already running
+                if (!serverAlreadyRunning) {
+                    const startResponse = await fetch(`${proxyUrl}/mcp/start`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            name: serverName,
+                            command: config.command,
+                            args: config.args || [],
+                            env: config.env || {}
+                        })
+                    });
+                    
+                    if (!startResponse.ok) {
+                        const error = await startResponse.json();
+                        // If server is already running, that's OK - continue with connection
+                        if (error.error && error.error.includes('already running')) {
+                            console.log(`[MCP] Server ${serverName} is already running, proceeding with connection`);
+                        } else {
+                            throw new Error(error.error || 'Failed to start server');
+                        }
+                    }
+                } else {
+                    console.log(`[MCP] Server ${serverName} is already running, connecting to existing instance`);
                 }
                 
                 // Connect to SSE event stream
                 return new Promise((resolve, reject) => {
-                    eventSource = new EventSource(`${proxyUrl}/mcp/events`, {
-                        headers: {
-                            'X-Server-Name': serverName
-                        }
-                    });
+                    // EventSource doesn't support custom headers, so pass server name as query param
+                    eventSource = new EventSource(`${proxyUrl}/mcp/events?server=${encodeURIComponent(serverName)}`);
                     
                     eventSource.addEventListener('connected', () => {
                         connected = true;
