@@ -504,6 +504,8 @@ window.MCPManager = (function() {
                 proxyStatus.innerHTML = `✅ Connected to MCP stdio proxy (${data.servers || 0} servers running)`;
                 showNotification('Connected to MCP proxy - you can now add server configurations', 'success');
                 updateServerInstructions();
+                // Update the servers list to show any running servers
+                updateServersList();
             } else {
                 throw new Error(`HTTP ${response.status}`);
             }
@@ -535,6 +537,8 @@ window.MCPManager = (function() {
                 proxyStatus.className = 'proxy-status connected';
                 proxyStatus.innerHTML = `✅ Connected to MCP stdio proxy (${data.servers || 0} servers running)`;
                 updateServerInstructions();
+                // Update the servers list to show any running servers
+                updateServersList();
             } else {
                 throw new Error('Not responding');
             }
@@ -690,7 +694,7 @@ window.MCPManager = (function() {
                 });
             })
             .catch(error => {
-                console.error('Failed to fetch proxy servers:', error);
+                console.error('[MCPManager] Failed to fetch proxy servers:', error);
                 if (serversList) {
                     serversList.innerHTML = '<div class="empty-mcp-servers-state"><p>Failed to load servers list</p></div>';
                 }
@@ -706,9 +710,12 @@ window.MCPManager = (function() {
         const serverItem = document.createElement('div');
         serverItem.className = 'mcp-server-item';
         
-        const statusClass = server.connected ? 'running' : 'stopped';
-        const statusText = server.connected ? 'Connected' : 'Process Running';
-        const statusIcon = server.connected ? '✅' : '🔄';
+        // Check if MCP client has an active connection to this server
+        const hasActiveConnection = MCPClient && MCPClient.getConnectionInfo(server.name) !== null;
+        
+        const statusClass = hasActiveConnection ? 'running' : 'stopped';
+        const statusText = hasActiveConnection ? 'Connected & Tools Loaded' : 'Process Running';
+        const statusIcon = hasActiveConnection ? '✅' : '🔄';
         
         serverItem.innerHTML = `
             <div class="mcp-server-info">
@@ -717,7 +724,7 @@ window.MCPManager = (function() {
                 <div class="mcp-server-command">${server.command} ${server.args.join(' ')}</div>
             </div>
             <div class="mcp-server-actions">
-                ${!server.connected ? `
+                ${!hasActiveConnection ? `
                     <button class="btn primary-btn load-tools-btn" onclick="MCPManager.connectToServer('${server.name}')">
                         Connect & Load Tools
                     </button>
@@ -743,132 +750,30 @@ window.MCPManager = (function() {
         try {
             showNotification(`Connecting to ${serverName}...`, 'info');
             
-            // First, initialize the MCP protocol with the server
-            const initMessage = {
-                jsonrpc: "2.0",
-                id: Date.now(),
-                method: "initialize",
-                params: {
-                    protocolVersion: "2024-11-05",
-                    capabilities: {
-                        tools: {}
-                    },
-                    clientInfo: {
-                        name: "hacka.re",
-                        version: "1.0.0"
-                    }
+            // Use the MCPClientService to properly connect to the server
+            const config = {
+                transport: {
+                    type: 'stdio',
+                    proxyUrl: currentProxyUrl,
+                    // The server is already running via the proxy, so we don't need to start it
+                    command: 'echo',  // Dummy command since server is already running
+                    args: []
                 }
             };
             
-            // Send initialize message via the proxy
-            const initResponse = await fetch(`${currentProxyUrl}/mcp/command`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Server-Name': serverName
-                },
-                body: JSON.stringify(initMessage)
+            // Connect using the MCP Client Service
+            await MCPClient.connect(serverName, config, {
+                onNotification: handleServerNotification
             });
             
-            if (!initResponse.ok) {
-                throw new Error(`Failed to initialize server: ${initResponse.status}`);
+            // The MCP Client Service will automatically fetch and register tools
+            const connectionInfo = MCPClient.getConnectionInfo(serverName);
+            if (connectionInfo && connectionInfo.tools) {
+                showNotification(`✅ Connected to ${serverName} - loaded ${connectionInfo.tools.length} tools`, 'success');
             }
             
-            // Send initialized notification
-            const initializedMessage = {
-                jsonrpc: "2.0",
-                method: "notifications/initialized"
-            };
-            
-            await fetch(`${currentProxyUrl}/mcp/command`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Server-Name': serverName
-                },
-                body: JSON.stringify(initializedMessage)
-            });
-            
-            // List available tools
-            const toolsMessage = {
-                jsonrpc: "2.0",
-                id: Date.now() + 1,
-                method: "tools/list"
-            };
-            
-            const toolsResponse = await fetch(`${currentProxyUrl}/mcp/command`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Server-Name': serverName
-                },
-                body: JSON.stringify(toolsMessage)
-            });
-            
-            if (!toolsResponse.ok) {
-                throw new Error(`Failed to list tools: ${toolsResponse.status}`);
-            }
-            
-            // Start listening for responses via SSE
-            const eventSource = new EventSource(`${currentProxyUrl}/mcp/events?server=${encodeURIComponent(serverName)}`);
-            
-            let toolsLoaded = false;
-            
-            eventSource.onmessage = function(event) {
-                try {
-                    const response = JSON.parse(event.data);
-                    console.log(`[MCP] Response from ${serverName}:`, response);
-                    
-                    // Check if this is a tools/list response
-                    if (response.result && response.result.tools && !toolsLoaded) {
-                        toolsLoaded = true;
-                        const tools = response.result.tools;
-                        
-                        showNotification(`✅ Connected to ${serverName} - loaded ${tools.length} tools`, 'success');
-                        
-                        // Register tools with hacka.re's function calling system
-                        tools.forEach(tool => {
-                            const functionName = `mcp_${serverName}_${tool.name}`;
-                            const functionCode = generateMCPFunctionCode(serverName, tool);
-                            
-                            // Add to function calling system
-                            if (window.FunctionToolsService) {
-                                FunctionToolsService.addJsFunction(
-                                    functionName,
-                                    functionCode,
-                                    tool,
-                                    `mcp_${serverName}_group`
-                                );
-                                FunctionToolsService.enableJsFunction(functionName);
-                            }
-                        });
-                        
-                        // Update the servers list to show connected status
-                        updateServersList();
-                        
-                        // Close event source after getting tools
-                        eventSource.close();
-                    }
-                } catch (error) {
-                    console.error(`Error processing MCP response:`, error);
-                }
-            };
-            
-            eventSource.onerror = function(error) {
-                console.error(`SSE error for ${serverName}:`, error);
-                eventSource.close();
-                if (!toolsLoaded) {
-                    showNotification(`Failed to connect to ${serverName}: SSE connection failed`, 'error');
-                }
-            };
-            
-            // Timeout after 10 seconds if no tools loaded
-            setTimeout(() => {
-                if (!toolsLoaded) {
-                    eventSource.close();
-                    showNotification(`Connection to ${serverName} timed out`, 'error');
-                }
-            }, 10000);
+            // Update the servers list to show connected status
+            updateServersList();
             
         } catch (error) {
             console.error(`Failed to connect to ${serverName}:`, error);
@@ -943,6 +848,11 @@ async function mcp_${serverName}_${tool.name}(args) {
         }
         
         try {
+            // First disconnect from MCP client if connected
+            if (MCPClient.getConnectionInfo(serverName)) {
+                await MCPClient.disconnect(serverName);
+            }
+            
             const response = await fetch(`${currentProxyUrl}/mcp/stop`, {
                 method: 'POST',
                 headers: {
@@ -953,10 +863,6 @@ async function mcp_${serverName}_${tool.name}(args) {
             
             if (response.ok) {
                 showNotification(`Stopped server ${serverName}`, 'info');
-                // Disconnect from MCP client if connected
-                if (MCPClient.getConnectionInfo(serverName)) {
-                    await MCPClient.disconnect(serverName);
-                }
                 updateServersList();
                 checkProxyConnection();
             } else {
@@ -975,6 +881,13 @@ async function mcp_${serverName}_${tool.name}(args) {
      */
     async function refreshServerTools(serverName) {
         try {
+            // Check if we have an active connection
+            if (!MCPClient.getConnectionInfo(serverName)) {
+                showNotification(`Not connected to ${serverName}. Connecting now...`, 'info');
+                await connectToServer(serverName);
+                return;
+            }
+            
             await MCPClient.refreshServerCapabilities(serverName);
             showNotification(`Refreshed tools from ${serverName}`, 'success');
             updateServersList();
