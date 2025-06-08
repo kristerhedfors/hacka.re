@@ -636,6 +636,10 @@ ${paramDocs}
  */
 async function mcp_${serverName}_${tool.name}(params) {
     try {
+        // Debug: log the incoming params
+        console.log(\`[MCP Function] mcp_${serverName}_${tool.name} called with params:\`, params);
+        console.log(\`[MCP Function] params type:\`, typeof params);
+        
         // Get the MCP client service
         const MCPClient = window.MCPClientService;
         if (!MCPClient) {
@@ -644,9 +648,10 @@ async function mcp_${serverName}_${tool.name}(params) {
         
         // Just pass params directly - it should already be an object
         const args = params || {};
+        console.log(\`[MCP Function] args to be sent:\`, args);
         
         // Call the tool
-        const result = await MCPClient.callTool('${serverName}', '${tool.name}', args || {});
+        const result = await MCPClient.callTool('${serverName}', '${tool.name}', args);
         
         return {
             success: true,
@@ -702,6 +707,10 @@ async function mcp_${serverName}_${tool.name}(params) {
             name: toolName,
             arguments: params
         });
+        
+        // Debug: log the actual arguments being sent
+        console.log(`[MCP] Calling tool ${toolName} with arguments:`, params);
+        console.log(`[MCP] Full request:`, request);
         
         // Set up progress callback if provided
         if (options.onProgress) {
