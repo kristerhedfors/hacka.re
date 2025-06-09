@@ -1,33 +1,49 @@
 # MCP (Model Context Protocol) Tests
 
-This directory contains comprehensive test coverage for the MCP integration in hacka.re.
+This directory contains comprehensive test coverage for the MCP integration in hacka.re, providing 26 total tests covering UI interactions, proxy connectivity, and real server integrations.
 
-## Test Structure
+## Quick Start
 
-### Unit Tests (`test_mcp_unit.py`)
-- Tests MCP components in isolation with mocked dependencies
-- Covers:
-  - MCP manager initialization
-  - Proxy connection states
-  - Tool parameter validation
-  - Tool registration with function calling system
-  - Server command parsing
-  - Error handling
-  - Storage persistence
+### Run All Tests
+```bash
+./run_mcp_tests.sh              # All 26 tests (~48s)
+```
 
-### Integration Tests (`test_mcp_integration.py`)
-- Tests with real MCP stdio proxy and filesystem server
-- Covers:
-  - Full server lifecycle (start, connect, stop)
-  - Tool discovery and loading
-  - Tool execution through chat interface
-  - Multiple server management
-  - Error recovery and reconnection
-  - File operations with test filesystem
+### Run by Category  
+```bash
+./run_mcp_tests.sh --unit       # 18 unit tests (~29s)
+./run_mcp_tests.sh --integration # 8 integration tests (~34s)
+```
 
-### Existing Tests (`test_mcp_reconnection.py`)
-- Tests MCP UI behavior during reconnection scenarios
-- Covers proxy health checks and server state management
+### Individual Test Files
+```bash
+pytest test_mcp_unit.py -v           # 6 core unit tests
+pytest test_mcp_simple.py -v         # 6 basic UI tests
+pytest test_mcp_reconnection.py -v   # 6 reconnection tests
+pytest test_mcp_integration.py -v    # 3 full integration tests
+pytest test_mcp_integration_simple.py -v # 5 simple integration tests
+```
+
+## Test Architecture
+
+### MCP Implementation Components
+
+hacka.re's MCP implementation consists of:
+- **MCPClientService** (`js/services/mcp-client-service.js`) - Zero-dependency MCP client
+- **MCPManager** (`js/components/mcp-manager.js`) - UI component for server management  
+- **mcp-stdio-proxy** (`mcp-stdio-proxy/server.js`) - Node.js proxy for local MCP servers
+- **Integration layer** - Automatic tool registration with hacka.re's function calling system
+
+### Test Categories
+
+**Unit Tests (18 tests)** - Mocked dependencies for isolated testing
+- Core MCP manager functionality
+- Basic UI interactions
+- Reconnection and error handling scenarios
+
+**Integration Tests (8 tests)** - Real MCP proxy and server testing  
+- Full server lifecycle testing
+- Simplified integration scenarios
 
 ## Test Filesystem
 
@@ -45,29 +61,29 @@ mcp_test_filesystem/
 
 ## Running Tests
 
-### All MCP Tests
-```bash
-./run_mcp_tests.sh
-```
+### Test Options
+- `--unit` - Run only unit tests (18 tests, mocked dependencies)
+- `--integration` - Run only integration tests (8 tests, real servers)
+- `--headless` - Run without browser UI (faster)
+- `--verbose` - Show detailed test output with timings
+- `--skip-server` - Don't start/stop HTTP server (if managing manually)
 
-### Options
-- `--unit` - Run only unit tests (fast, mocked)
-- `--integration` - Run only integration tests (slower, real servers)
-- `--headless` - Run without browser UI
-- `--verbose` - Show detailed test output
-- `--skip-server` - Don't start/stop HTTP server
-
-### Examples
+### Command Examples
 ```bash
-# Run only unit tests in headless mode
+# Quick validation (unit tests only, headless)
 ./run_mcp_tests.sh --unit --headless
 
-# Run integration tests with verbose output
+# Full integration validation with details
 ./run_mcp_tests.sh --integration --verbose
 
-# Run all tests without starting HTTP server
-./run_mcp_tests.sh --skip-server
+# Complete test suite for CI pipelines
+./run_mcp_tests.sh --headless --verbose
 ```
+
+## Additional Documentation
+
+- **[MCP_TESTS_STATUS.md](MCP_TESTS_STATUS.md)** - Current test results and performance metrics
+- **[MCP_TESTS_TROUBLESHOOTING.md](MCP_TESTS_TROUBLESHOOTING.md)** - Common issues, debugging, and command reference
 
 ## MCP Proxy Management
 
@@ -101,15 +117,39 @@ The integration tests automatically manage the proxy lifecycle.
 - `page` - Playwright browser page
 - `start_http_server` - Starts hacka.re on port 8000
 
-## Writing New MCP Tests
+## Current Implementation Details
 
-### Unit Test Template
+### MCP Client Service Features
+- **Zero-dependency** - Pure JavaScript implementation, no external libraries
+- **Stdio transport** - Local process communication via mcp-stdio-proxy
+- **SSE transport** - HTTP-based MCP servers with Server-Sent Events
+- **Auto-registration** - Tools automatically register with hacka.re's function calling system
+- **Progress callbacks** - Real-time progress notifications for long-running tools
+- **Error handling** - Comprehensive error recovery and connection management
+
+### Proxy Architecture
+```
+Browser (hacka.re) ←→ mcp-stdio-proxy ←→ MCP Server Process
+     (HTTP/SSE)              (stdio)        (filesystem/etc)
+```
+
+### Tool Integration Flow
+1. User adds MCP server command in UI
+2. Proxy starts server process with stdio communication
+3. MCPClientService establishes JSON-RPC connection
+4. Server capabilities (tools/resources/prompts) are fetched
+5. Tools automatically register as callable functions in hacka.re
+6. AI models can call tools through normal function calling interface
+
+### Writing New MCP Tests
+
+**Unit Test Template** (with mocking)
 ```python
-@pytest.mark.asyncio
-async def test_mcp_feature(page: Page, start_http_server):
-    """Test description"""
-    page.goto("http://localhost:8000")
+def test_mcp_feature(page: Page, serve_hacka_re):
+    """Test MCP feature with mocked responses"""
+    page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
+    dismiss_settings_modal(page)
     
     # Mock MCP proxy responses
     page.route("**/localhost:3001/health", lambda route: route.fulfill(
@@ -117,21 +157,33 @@ async def test_mcp_feature(page: Page, start_http_server):
         json={"status": "ok", "servers": 0}
     ))
     
-    # Test implementation
+    # Open MCP modal and test functionality
+    page.locator("#mcp-servers-btn").click()
+    expect(page.locator("#mcp-servers-modal")).to_be_visible()
+    
+    # Test implementation with assertions
     # ...
     
-    screenshot_with_markdown(page, "test_name.png", "Test Description")
+    screenshot_with_markdown(page, "test_name", {
+        "Status": "Test completed",
+        "Component": "MCP Manager",
+        "Action": "Feature tested"
+    })
 ```
 
-### Integration Test Template
+**Integration Test Template** (with real servers)
 ```python
-@pytest.mark.asyncio
-async def test_mcp_integration(page: Page, start_http_server, mcp_proxy):
-    """Test with real MCP servers"""
-    page.goto("http://localhost:8000")
+def test_mcp_integration_feature(page: Page, serve_hacka_re, mcp_proxy):
+    """Test with real MCP proxy and servers"""
+    page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
+    dismiss_settings_modal(page)
     
-    # Real proxy and server interactions
+    # Use real proxy connection
+    page.locator("#mcp-servers-btn").click()
+    page.locator("#test-proxy-btn").click()
+    
+    # Test with actual server communication
     # ...
 ```
 

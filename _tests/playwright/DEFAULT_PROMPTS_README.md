@@ -51,7 +51,7 @@ The default prompts are organized in the following structure:
    - **Agent Orchestration**: Pattern for creating multi-agent systems
    - **Pure Python OpenAI API Proxy**: Dependency-free Python implementation of an OpenAI API proxy
 
-5. **MCP SDK README**: Documentation for Model Context Protocol SDK (if available)
+5. **MCP SDK README**: Documentation for Model Context Protocol SDK implementation
 
 ### Special Prompts
 
@@ -428,7 +428,7 @@ Default prompts are defined in JavaScript modules:
 - `js/default-prompts/hacka-re-project.js`: Information about the hacka.re project
 - `js/default-prompts/interpretability-urgency.js`: Static prompt about AI interpretability
 - `js/default-prompts/owasp-llm-top10.js`: OWASP Top 10 for LLM applications
-- `js/default-prompts/mcp-sdk-readme.js`: Documentation for MCP SDK (if available)
+- `js/default-prompts/mcp-sdk-readme.js`: Documentation for MCP SDK implementation
 
 ### Default Prompts Selection
 
