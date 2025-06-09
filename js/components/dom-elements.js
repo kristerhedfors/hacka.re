@@ -81,6 +81,18 @@ window.DOMElements = (function() {
             functionClearBtn: document.getElementById('function-clear-btn'),
             closeFunctionModal: document.getElementById('close-function-modal'),
             
+            // MCP servers modal elements
+            mcpServersBtn: document.getElementById('mcp-servers-btn'),
+            mcpServersModal: document.getElementById('mcp-servers-modal'),
+            mcpServersList: document.getElementById('mcp-servers-list'),
+            emptyMcpServersState: document.getElementById('empty-mcp-servers-state'),
+            mcpServerForm: document.getElementById('mcp-server-form'),
+            mcpServerName: document.getElementById('mcp-server-name'),
+            mcpServerUrl: document.getElementById('mcp-server-url'),
+            mcpServerDescription: document.getElementById('mcp-server-description'),
+            mcpServerTestBtn: document.getElementById('mcp-server-test-btn'),
+            closeMcpServersModal: document.getElementById('close-mcp-servers-modal'),
+            
             // Settings modal elements
             settingsBtn: document.getElementById('settings-btn'),
             settingsModal: document.getElementById('settings-modal'),

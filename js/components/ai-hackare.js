@@ -103,6 +103,13 @@ window.AIHackareComponent = (function() {
             });
         }
         
+        // MCP servers button click
+        if (this.elements.mcpServersBtn) {
+            this.elements.mcpServersBtn.addEventListener('click', () => {
+                this.functionCallingManager.showMcpServersModal();
+            });
+        }
+        
         // Function button click
         if (this.elements.functionBtn) {
             this.elements.functionBtn.addEventListener('click', () => {
@@ -319,6 +326,9 @@ window.AIHackareComponent = (function() {
             }
             if (e.target === this.elements.promptsModal) {
                 this.promptsManager.hidePromptsModal();
+            }
+            if (e.target === this.elements.mcpServersModal) {
+                this.functionCallingManager.hideMcpServersModal();
             }
             if (e.target === this.elements.functionModal) {
                 this.uiManager.hideFunctionModal();
