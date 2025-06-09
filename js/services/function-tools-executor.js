@@ -107,11 +107,34 @@ window.FunctionToolsExecutor = (function() {
             // Create the function using Function constructor with all functions included
             let executionFunction;
             try {
-                const sandboxKeys = Object.keys(sandbox);
+                // Sanitize sandbox keys to ensure valid JavaScript identifiers
+                const sandboxKeys = Object.keys(sandbox).map(key => key.replace(/[^a-zA-Z0-9_$]/g, '_'));
                 const sandboxValues = Object.values(sandbox);
-                executionFunction = new Function(...sandboxKeys, executionCode);
+                
+                // Debug: Log the execution code that's causing issues
+                Logger.debug("Generated execution code (first 500 chars):", executionCode.substring(0, 500));
+                Logger.debug("Generated execution code (last 200 chars):", executionCode.substring(Math.max(0, executionCode.length - 200)));
+                Logger.debug("Sandbox keys:", sandboxKeys);
+                
+                // Check for problematic patterns in the code
+                const dashPattern = /[a-zA-Z0-9_$]*-[a-zA-Z0-9_$]*/g;
+                const dashMatches = executionCode.match(dashPattern);
+                if (dashMatches) {
+                    Logger.error("Found potential problematic identifiers with dashes:", dashMatches);
+                }
+                
+                // Sanitize execution code to replace any remaining dashes in identifiers
+                // This is a safety net to prevent syntax errors from function/variable names with dashes
+                // BUT we must be careful not to change string literals!
+                let sanitizedExecutionCode = executionCode;
+                // Only replace identifier patterns with dashes, but NOT inside strings
+                // This regex avoids strings by using negative lookbehind/lookahead for quotes
+                sanitizedExecutionCode = sanitizedExecutionCode.replace(/(?<!['"])\b([a-zA-Z_$][a-zA-Z0-9_$]*)-([a-zA-Z0-9_$]+)\b(?!['"]*)/g, '$1_$2');
+                
+                executionFunction = new Function(...sandboxKeys, sanitizedExecutionCode);
             } catch (constructorError) {
                 Logger.error("Error creating execution function:", constructorError);
+                Logger.error("Problematic execution code:", executionCode);
                 throw new Error(`Failed to create execution function: ${constructorError.message}`);
             }
             
@@ -202,15 +225,18 @@ window.FunctionToolsExecutor = (function() {
             
             Logger.debug(`Function signature match: ${!!functionMatch}`);
             
+            // Use the actual function name from the code, not the original name which might have dashes
+            const actualFunctionName = functionMatch ? functionMatch[1] : name.replace(/[^a-zA-Z0-9_$]/g, '_');
+            
             if (!functionMatch) {
-                return `return ${name}(args);`;
+                return `return ${actualFunctionName}(args);`;
             }
             
             const paramsString = functionMatch[2];
             Logger.debug(`Matched parameters: ${paramsString}`);
             
             if (!paramsString.trim()) {
-                return `return ${name}();`;
+                return `return ${actualFunctionName}();`;
             }
             
             // Extract parameter names more carefully
@@ -236,7 +262,7 @@ window.FunctionToolsExecutor = (function() {
                 return `args["${param}"]`;
             }).join(', ');
             
-            return `return ${name}(${paramExtractions});`;
+            return `return ${actualFunctionName}(${paramExtractions});`;
         },
         
         _enhanceError: function(error, name) {

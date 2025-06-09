@@ -92,7 +92,7 @@ function log(...args) {
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, x-server-name',
     'Access-Control-Max-Age': '86400'
 };
 
@@ -105,6 +105,7 @@ class MCPServerProcess extends EventEmitter {
         this.process = null;
         this.buffer = '';
         this.connected = false;
+        this.initialized = false;
     }
 
     start() {
@@ -144,8 +145,27 @@ class MCPServerProcess extends EventEmitter {
             this.emit('error', error);
         });
 
-        this.connected = true;
-        log(`Server connected: ${this.connected}`);
+        // Don't set connected immediately - wait for initialization
+        log(`Process started, waiting for initialization...`);
+        
+        // Send initialization request after a short delay to ensure process is ready
+        setTimeout(() => {
+            const initRequest = {
+                jsonrpc: '2.0',
+                method: 'initialize',
+                params: {
+                    protocolVersion: '1.0.0',
+                    capabilities: {},
+                    clientInfo: {
+                        name: 'mcp-http-wrapper',
+                        version: '1.0.0'
+                    }
+                },
+                id: 1
+            };
+            this.send(initRequest);
+            log('Sent initialization request');
+        }, 100);
     }
 
     processBuffer() {
@@ -159,6 +179,15 @@ class MCPServerProcess extends EventEmitter {
                 try {
                     const message = JSON.parse(line);
                     log(`Parsed message:`, JSON.stringify(message, null, 2));
+                    
+                    // Check if this is an initialization response
+                    if (!this.initialized && message.result && message.result.protocolVersion) {
+                        this.initialized = true;
+                        this.connected = true;
+                        console.log(`✅ MCP server initialized successfully`);
+                        log(`Server initialized with protocol version: ${message.result.protocolVersion}`);
+                    }
+                    
                     this.emit('message', message);
                 } catch (error) {
                     console.error('Failed to parse message:', line);
@@ -169,8 +198,8 @@ class MCPServerProcess extends EventEmitter {
     }
 
     send(message) {
-        if (!this.connected || !this.process) {
-            throw new Error('Server not connected');
+        if (!this.process) {
+            throw new Error('Server process not started');
         }
 
         const data = JSON.stringify(message) + '\n';
@@ -226,13 +255,51 @@ function handleRequest(req, res) {
         return;
     }
 
+    // Stop server endpoint (for hacka.re compatibility)
+    if (req.method === 'POST' && url.pathname === '/mcp/stop') {
+        res.writeHead(200, { ...corsHeaders, 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, message: 'Server stopped' }));
+        return;
+    }
+
+    // List servers endpoint (for hacka.re compatibility)
+    if (req.method === 'GET' && url.pathname === '/mcp/list') {
+        log(`/mcp/list called`);
+        log(`mcpServer state: connected=${mcpServer.connected}, initialized=${mcpServer.initialized}, process=${!!mcpServer.process}`);
+        
+        res.writeHead(200, { ...corsHeaders, 'Content-Type': 'application/json' });
+        
+        const servers = [];
+        if (mcpServer.connected && mcpServer.initialized && mcpServer.process) {
+            servers.push({
+                name: 'mcp-server',
+                command: command,
+                args: mcpArgs,
+                status: 'running',
+                connected: mcpServer.connected,
+                initialized: mcpServer.initialized,
+                pid: mcpServer.process.pid
+            });
+            log(`Added server to list: mcp-server`);
+        } else {
+            log(`Not adding server - conditions not met`);
+        }
+        
+        log(`Returning ${servers.length} servers`);
+        res.end(JSON.stringify({ servers }));
+        return;
+    }
+
     // Health check
     if (req.method === 'GET' && url.pathname === '/health') {
         res.writeHead(200, { ...corsHeaders, 'Content-Type': 'application/json' });
+        const serverCount = (mcpServer.connected && mcpServer.initialized) ? 1 : 0;
         res.end(JSON.stringify({ 
             status: 'ok', 
             server: `${command} ${mcpArgs.join(' ')}`,
-            connected: mcpServer.connected
+            connected: mcpServer.connected,
+            initialized: mcpServer.initialized,
+            servers: serverCount
         }));
         return;
     }
@@ -246,7 +313,7 @@ function handleRequest(req, res) {
             status: 'running',
             server: `${command} ${mcpArgs.join(' ')}`,
             connected: mcpServer.connected,
-            endpoints: ['/health', '/mcp/command', '/mcp/events']
+            endpoints: ['/health', '/mcp/command', '/mcp/events', '/mcp/list', '/mcp/stop']
         }));
         return;
     }
@@ -363,6 +430,8 @@ httpServer.listen(port, () => {
     console.log('\n📡 Endpoints:');
     console.log(`  POST   /mcp/command - Send command to MCP server`);
     console.log(`  GET    /mcp/events  - SSE event stream from MCP server`);
+    console.log(`  GET    /mcp/list    - List running servers`);
+    console.log(`  POST   /mcp/stop    - Stop server connection`);
     console.log(`  GET    /health      - Health check`);
     console.log(`  GET    /           - Server info`);
     
