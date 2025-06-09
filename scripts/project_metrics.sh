@@ -66,6 +66,8 @@ EXCLUDE_DIRS=(
     "reports"
     "custom_reports"
     "videos"
+    "openai_proxy"
+    "auth_examples"
 )
 
 # Additional find exclusions for patterns that need special handling
@@ -195,6 +197,28 @@ overall_avg=$(echo "scale=2; $total_lines / $total_files" | bc)
 echo -e "${YELLOW}Overall average: $overall_avg lines/file${NC}"
 echo ""
 
+# MCP-specific metrics
+echo -e "${BLUE}MCP INTEGRATION METRICS${NC}"
+echo -e "--------------------------------"
+
+# Count MCP-related files
+mcp_js_files=$(eval "find . -type f -name \"*mcp*.js\" $EXCLUSIONS" | wc -l)
+mcp_md_files=$(eval "find . -type f -name \"*mcp*.md\" -o -name \"*MCP*.md\" $EXCLUSIONS" | wc -l)
+mcp_py_files=$(eval "find . -type f -name \"*mcp*.py\" $EXCLUSIONS" | wc -l)
+
+echo -e "MCP JavaScript files: $(format_number $mcp_js_files)"
+echo -e "MCP documentation files: $(format_number $mcp_md_files)"
+echo -e "MCP Python files: $(format_number $mcp_py_files)"
+
+# MCP stdio proxy metrics
+mcp_proxy_files=$(find ./mcp-stdio-proxy -type f 2>/dev/null | wc -l)
+echo -e "MCP stdio proxy files: $(format_number $mcp_proxy_files)"
+
+# Total MCP files
+total_mcp_files=$((mcp_js_files + mcp_md_files + mcp_py_files + mcp_proxy_files))
+echo -e "${YELLOW}Total MCP-related files: $(format_number $total_mcp_files)${NC}"
+echo ""
+
 # Test metrics
 echo -e "${BLUE}TEST METRICS${NC}"
 echo -e "--------------------------------"
@@ -202,6 +226,12 @@ echo -e "--------------------------------"
 # Count playwright tests
 playwright_tests=$(find ./_tests/playwright -name "test_*.py" | wc -l)
 echo -e "Playwright tests: $(format_number $playwright_tests)"
+
+# Count MCP-specific tests
+mcp_test_files=$(find ./_tests/playwright -name "*mcp*" -type f | wc -l)
+mcp_pytest_files=$(find ./_tests/playwright -name "test_mcp*.py" | wc -l)
+echo -e "MCP test files (all): $(format_number $mcp_test_files)"
+echo -e "MCP pytest files: $(format_number $mcp_pytest_files)"
 
 # Count other test files
 other_tests=$(find ./_tests -type f -name "*.test.*" -o -name "*-test.*" | wc -l)
@@ -215,6 +245,12 @@ echo -e "${YELLOW}Total tests: $(format_number $total_tests)${NC}"
 js_files=$(count_files_by_extension "js")
 test_coverage=$(echo "scale=2; $total_tests / $js_files * 100" | bc)
 echo -e "Estimated test coverage: ${test_coverage}% (tests/js files ratio)"
+
+# MCP test coverage
+if [ "$js_files" -gt 0 ]; then
+    mcp_coverage=$(echo "scale=2; $mcp_pytest_files / $mcp_js_files * 100" | bc)
+    echo -e "MCP test coverage: ${mcp_coverage}% (MCP tests/MCP JS files ratio)"
+fi
 echo ""
 
 # Directory size metrics
