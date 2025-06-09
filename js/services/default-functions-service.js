@@ -37,34 +37,34 @@ window.DefaultFunctionsService = (function() {
             DEFAULT_FUNCTIONS.push(window.MCPExampleFunctions);
         }
         
-        // Additional default function groups can be added here in the future
+        // Additional default function collections can be added here in the future
         
-        console.log(`Loaded ${DEFAULT_FUNCTIONS.length} default function groups:`, DEFAULT_FUNCTIONS.map(g => g.name));
+        console.log(`Loaded ${DEFAULT_FUNCTIONS.length} default function collections:`, DEFAULT_FUNCTIONS.map(g => g.name));
     }
     
     // Initialize functions when the service is loaded
     initializeDefaultFunctions();
     
     /**
-     * Get all default function groups
-     * @returns {Array} Array of default function group objects
+     * Get all default function collections
+     * @returns {Array} Array of default function collection objects
      */
-    function getDefaultFunctionGroups() {
+    function getDefaultFunctionCollections() {
         return DEFAULT_FUNCTIONS;
     }
     
     /**
-     * Get a default function group by ID
-     * @param {string} id - The default function group ID
-     * @returns {Object|null} The default function group object or null if not found
+     * Get a default function collection by ID
+     * @param {string} id - The default function collection ID
+     * @returns {Object|null} The default function collection object or null if not found
      */
-    function getDefaultFunctionGroupById(id) {
+    function getDefaultFunctionCollectionById(id) {
         return DEFAULT_FUNCTIONS.find(g => g.id === id) || null;
     }
     
     /**
-     * Get the selected default function group IDs
-     * @returns {Array} Array of selected default function group IDs
+     * Get the selected default function collection IDs
+     * @returns {Array} Array of selected default function collection IDs
      */
     function getSelectedDefaultFunctionIds() {
         const selectedIds = CoreStorageService.getValue(SELECTED_DEFAULT_FUNCTIONS_KEY);
@@ -81,8 +81,8 @@ window.DefaultFunctionsService = (function() {
     }
     
     /**
-     * Set the selected default function group IDs
-     * @param {Array} ids - Array of default function group IDs to set as selected
+     * Set the selected default function collection IDs
+     * @param {Array} ids - Array of default function collection IDs to set as selected
      */
     function setSelectedDefaultFunctionIds(ids) {
         if (Array.isArray(ids) && ids.length > 0) {
@@ -143,22 +143,22 @@ window.DefaultFunctionsService = (function() {
     }
     
     /**
-     * Check if a default function group is selected
-     * @param {string} id - The default function group ID to check
-     * @returns {boolean} True if the function group is selected
+     * Check if a default function collection is selected
+     * @param {string} id - The default function collection ID to check
+     * @returns {boolean} True if the function collection is selected
      */
-    function isDefaultFunctionGroupSelected(id) {
+    function isDefaultFunctionCollectionSelected(id) {
         const selectedIds = getSelectedDefaultFunctionIds();
         return selectedIds.includes(id);
     }
     
     /**
-     * Toggle a default function group's selection status
-     * @param {string} id - The default function group ID to toggle
-     * @returns {boolean} True if the function group is now selected, false if unselected
+     * Toggle a default function collection's selection status
+     * @param {string} id - The default function collection ID to toggle
+     * @returns {boolean} True if the function collection is now selected, false if unselected
      */
-    function toggleDefaultFunctionGroupSelection(id) {
-        console.log("DefaultFunctionsService.toggleDefaultFunctionGroupSelection called for id:", id);
+    function toggleDefaultFunctionCollectionSelection(id) {
+        console.log("DefaultFunctionsService.toggleDefaultFunctionCollectionSelection called for id:", id);
         const selectedIds = getSelectedDefaultFunctionIds();
         const index = selectedIds.indexOf(id);
         let result;
@@ -170,9 +170,9 @@ window.DefaultFunctionsService = (function() {
             result = false;
             
             // Remove the functions from the function calling system
-            const functionGroup = getDefaultFunctionGroupById(id);
-            if (functionGroup && functionGroup.functions) {
-                functionGroup.functions.forEach(func => {
+            const functionCollection = getDefaultFunctionCollectionById(id);
+            if (functionCollection && functionCollection.functions) {
+                functionCollection.functions.forEach(func => {
                     if (window.FunctionToolsService) {
                         window.FunctionToolsService.removeJsFunction(func.name);
                     }
@@ -185,12 +185,12 @@ window.DefaultFunctionsService = (function() {
             result = true;
             
             // Add the functions to the function calling system
-            const functionGroup = getDefaultFunctionGroupById(id);
-            if (functionGroup && functionGroup.functions && window.FunctionToolsService) {
-                // Parse all functions in the group first
+            const functionCollection = getDefaultFunctionCollectionById(id);
+            if (functionCollection && functionCollection.functions && window.FunctionToolsService) {
+                // Parse all functions in the collection first
                 const parsedFunctions = [];
                 
-                functionGroup.functions.forEach(func => {
+                functionCollection.functions.forEach(func => {
                     try {
                         // Generate tool definition for the function
                         const toolDefinition = window.FunctionToolsParser.ToolDefinitionGenerator.generate(func.name, func.code);
@@ -205,17 +205,17 @@ window.DefaultFunctionsService = (function() {
                     }
                 });
                 
-                // Add all functions with the same group ID
+                // Add all functions with the same collection ID
                 parsedFunctions.forEach(parsedFunc => {
                     window.FunctionToolsService.addJsFunction(
                         parsedFunc.name,
                         parsedFunc.code,
                         parsedFunc.toolDefinition,
-                        functionGroup.groupId || functionGroup.id
+                        functionCollection.groupId || functionCollection.id
                     );
                 });
                 
-                console.log(`Added ${parsedFunctions.length} default functions from group: ${id}`);
+                console.log(`Added ${parsedFunctions.length} default functions from collection: ${id}`);
             }
         }
         
@@ -223,17 +223,17 @@ window.DefaultFunctionsService = (function() {
     }
     
     /**
-     * Get all selected default function groups
-     * @returns {Array} Array of selected default function group objects
+     * Get all selected default function collections
+     * @returns {Array} Array of selected default function collection objects
      */
-    function getSelectedDefaultFunctionGroups() {
+    function getSelectedDefaultFunctionCollections() {
         const selectedIds = getSelectedDefaultFunctionIds();
-        return DEFAULT_FUNCTIONS.filter(group => selectedIds.includes(group.id));
+        return DEFAULT_FUNCTIONS.filter(collection => selectedIds.includes(collection.id));
     }
     
     /**
      * Check if an individual function is selected
-     * @param {string} functionId - The function ID to check (format: groupId:functionName)
+     * @param {string} functionId - The function ID to check (format: collectionId:functionName)
      * @returns {boolean} True if the function is selected
      */
     function isIndividualFunctionSelected(functionId) {
@@ -243,7 +243,7 @@ window.DefaultFunctionsService = (function() {
     
     /**
      * Toggle an individual function's selection status
-     * @param {string} functionId - The function ID to toggle (format: groupId:functionName)
+     * @param {string} functionId - The function ID to toggle (format: collectionId:functionName)
      * @returns {boolean} True if the function is now selected, false if unselected
      */
     function toggleIndividualFunctionSelection(functionId) {
@@ -445,13 +445,13 @@ window.DefaultFunctionsService = (function() {
 
     // Public API
     return {
-        getDefaultFunctionGroups,
-        getDefaultFunctionGroupById,
+        getDefaultFunctionCollections,
+        getDefaultFunctionCollectionById,
         getSelectedDefaultFunctionIds,
         setSelectedDefaultFunctionIds,
-        toggleDefaultFunctionGroupSelection,
-        isDefaultFunctionGroupSelected,
-        getSelectedDefaultFunctionGroups,
+        toggleDefaultFunctionCollectionSelection,
+        isDefaultFunctionCollectionSelected,
+        getSelectedDefaultFunctionCollections,
         getSelectedIndividualFunctionIds,
         setSelectedIndividualFunctionIds,
         isIndividualFunctionSelected,

@@ -13,23 +13,24 @@ window.FunctionToolsRegistry = (function() {
          * @param {string} name - The name of the function
          * @param {string} code - The JavaScript function code
          * @param {Object} toolDefinition - The tool definition generated from the function
-         * @param {string} groupId - Optional group ID to associate functions that were defined together
+         * @param {string} collectionId - Optional collection ID to associate functions that were defined together
          * @returns {boolean} Whether the function was added successfully
          */
-        addJsFunction: function(name, code, toolDefinition, groupId) {
+        addJsFunction: function(name, code, toolDefinition, collectionId, collectionMetadata) {
             // Validate inputs
             if (!name || !code || !toolDefinition) {
                 return false;
             }
             
-            // Generate a group ID if not provided
-            if (!groupId) {
-                groupId = 'group_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            // Generate a collection ID if not provided
+            if (!collectionId) {
+                collectionId = 'collection_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             }
             
             // Get current state
             const jsFunctions = Storage.getJsFunctions();
-            const functionGroups = Storage.getFunctionGroups();
+            const functionCollections = Storage.getFunctionCollections();
+            const functionCollectionMetadata = Storage.getFunctionCollectionMetadata();
             
             // Add the function to the registry
             jsFunctions[name] = {
@@ -37,60 +38,71 @@ window.FunctionToolsRegistry = (function() {
                 toolDefinition: toolDefinition
             };
             
-            // Associate the function with its group
-            functionGroups[name] = groupId;
+            // Associate the function with its collection
+            functionCollections[name] = collectionId;
+            
+            // Store collection metadata if provided
+            if (collectionMetadata && !functionCollectionMetadata[collectionId]) {
+                functionCollectionMetadata[collectionId] = collectionMetadata;
+            }
             
             // Update storage
             Storage.setJsFunctions(jsFunctions);
-            Storage.setFunctionGroups(functionGroups);
+            Storage.setFunctionCollections(functionCollections);
+            Storage.setFunctionCollectionMetadata(functionCollectionMetadata);
             Storage.save();
             
             return true;
         },
         
         /**
-         * Remove a JavaScript function and all functions in its group
+         * Remove a JavaScript function and all functions in its collection
          * @param {string} name - The name of the function to remove
          * @returns {boolean} Whether the function was removed successfully
          */
         removeJsFunction: function(name) {
             const jsFunctions = Storage.getJsFunctions();
-            const functionGroups = Storage.getFunctionGroups();
+            const functionCollections = Storage.getFunctionCollections();
+            const functionCollectionMetadata = Storage.getFunctionCollectionMetadata();
             let enabledFunctions = Storage.getEnabledFunctions();
             
             if (!jsFunctions[name]) {
                 return false;
             }
             
-            // Get the group ID for this function
-            const groupId = functionGroups[name];
+            // Get the collection ID for this function
+            const collectionId = functionCollections[name];
             
-            if (groupId) {
-                // Find all functions in the same group
-                const functionsInGroup = Object.keys(functionGroups).filter(
-                    funcName => functionGroups[funcName] === groupId
+            if (collectionId) {
+                // Find all functions in the same collection
+                const functionsInCollection = Object.keys(functionCollections).filter(
+                    funcName => functionCollections[funcName] === collectionId
                 );
                 
-                // Remove all functions in the group
-                functionsInGroup.forEach(funcName => {
+                // Remove all functions in the collection
+                functionsInCollection.forEach(funcName => {
                     delete jsFunctions[funcName];
-                    delete functionGroups[funcName];
+                    delete functionCollections[funcName];
                     
                     // Also remove from enabled functions if present
                     enabledFunctions = enabledFunctions.filter(fn => fn !== funcName);
                 });
+                
+                // Remove collection metadata
+                delete functionCollectionMetadata[collectionId];
             } else {
-                // If no group ID (legacy data), just remove this function
-                delete jsFunctions[funcName];
-                delete functionGroups[funcName];
+                // If no collection ID (legacy data), just remove this function
+                delete jsFunctions[name];
+                delete functionCollections[name];
                 
                 // Also remove from enabled functions if present
-                enabledFunctions = enabledFunctions.filter(funcName => funcName !== name);
+                enabledFunctions = enabledFunctions.filter(fn => fn !== name);
             }
             
             // Update storage
             Storage.setJsFunctions(jsFunctions);
-            Storage.setFunctionGroups(functionGroups);
+            Storage.setFunctionCollections(functionCollections);
+            Storage.setFunctionCollectionMetadata(functionCollectionMetadata);
             Storage.setEnabledFunctions(enabledFunctions);
             Storage.save();
             
@@ -204,21 +216,59 @@ window.FunctionToolsRegistry = (function() {
         },
         
         /**
-         * Get all functions in the same group as the specified function
+         * Get all functions in the same collection as the specified function
          * @param {string} name - The name of the function
-         * @returns {Array} Array of function names in the same group
+         * @returns {Array} Array of function names in the same collection
          */
-        getFunctionsInSameGroup: function(name) {
-            const functionGroups = Storage.getFunctionGroups();
+        getFunctionsInSameCollection: function(name) {
+            const functionCollections = Storage.getFunctionCollections();
             
-            if (!functionGroups[name]) {
-                return [name]; // Return just this function if no group info
+            if (!functionCollections[name]) {
+                return [name]; // Return just this function if no collection info
             }
             
-            const groupId = functionGroups[name];
-            return Object.keys(functionGroups).filter(
-                funcName => functionGroups[funcName] === groupId
+            const collectionId = functionCollections[name];
+            return Object.keys(functionCollections).filter(
+                funcName => functionCollections[funcName] === collectionId
             );
+        },
+        
+        /**
+         * Get metadata for a function collection
+         * @param {string} collectionId - The collection ID
+         * @returns {Object|null} The collection metadata or null if not found
+         */
+        getCollectionMetadata: function(collectionId) {
+            const functionCollectionMetadata = Storage.getFunctionCollectionMetadata();
+            return functionCollectionMetadata[collectionId] || null;
+        },
+        
+        /**
+         * Get all function collections with their metadata
+         * @returns {Object} Object mapping collection IDs to their functions and metadata
+         */
+        getAllFunctionCollections: function() {
+            const functionCollections = Storage.getFunctionCollections();
+            const functionCollectionMetadata = Storage.getFunctionCollectionMetadata();
+            const jsFunctions = Storage.getJsFunctions();
+            
+            const collections = {};
+            
+            // Build collections from function associations
+            Object.entries(functionCollections).forEach(([funcName, collectionId]) => {
+                if (!collections[collectionId]) {
+                    collections[collectionId] = {
+                        id: collectionId,
+                        functions: [],
+                        metadata: functionCollectionMetadata[collectionId] || {}
+                    };
+                }
+                if (jsFunctions[funcName]) {
+                    collections[collectionId].functions.push(funcName);
+                }
+            });
+            
+            return collections;
         }
     };
     
