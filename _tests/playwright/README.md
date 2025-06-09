@@ -189,45 +189,62 @@ The tests are organized into the following files:
 
 ## Testing MCP Functionality
 
-> **Note**: MCP functionality is currently under development and temporarily disabled. All MCP tests are currently skipped with `pytestmark = pytest.mark.skip(reason="MCP functionality is currently under development and temporarily disabled")`.
+The Model Context Protocol (MCP) tests provide comprehensive coverage of the MCP integration in hacka.re. The test suite includes 26 tests covering UI interactions, proxy connectivity, and real server integrations.
 
-The Model Context Protocol (MCP) tests are divided into two categories:
+### MCP Test Architecture
 
-1. **UI Tests**: These tests verify the MCP UI elements and basic functionality without requiring an actual MCP server.
-2. **Integration Tests**: These tests require an actual running MCP server to test the full integration.
+hacka.re's MCP implementation consists of:
+- **MCPClientService** (`js/services/mcp-client-service.js`) - Zero-dependency MCP client
+- **MCPManager** (`js/components/mcp-manager.js`) - UI component for server management  
+- **mcp-stdio-proxy** (`mcp-stdio-proxy/server.js`) - Node.js proxy for local MCP servers
 
-### Running MCP UI Tests (Currently Disabled)
+### MCP Test Categories
 
-When MCP functionality is re-enabled, the basic MCP UI tests can be run like any other test:
+**Unit Tests (18 tests)** - Mocked dependencies for isolated testing:
+- `test_mcp_unit.py` (6 tests) - Core MCP manager functionality
+- `test_mcp_simple.py` (6 tests) - Basic UI interactions
+- `test_mcp_reconnection.py` (6 tests) - Reconnection and error handling
+
+**Integration Tests (8 tests)** - Real MCP proxy and server testing:
+- `test_mcp_integration.py` (3 tests) - Full server lifecycle testing
+- `test_mcp_integration_simple.py` (5 tests) - Simplified integration scenarios
+
+### Running MCP Tests
+
+Use the dedicated MCP test runner:
 
 ```bash
-pytest test_mcp.py -k "not test_filesystem_mcp_server_integration"
+# All MCP tests (26 tests)
+./run_mcp_tests.sh
+
+# Unit tests only (18 tests, mocked)
+./run_mcp_tests.sh --unit
+
+# Integration tests only (8 tests, real servers)
+./run_mcp_tests.sh --integration
 ```
 
-### Running MCP Integration Tests (Currently Disabled)
+Individual test files:
+```bash
+pytest test_mcp_unit.py -v           # 6 core unit tests
+pytest test_mcp_simple.py -v         # 6 basic UI tests
+pytest test_mcp_reconnection.py -v   # 6 reconnection tests
+pytest test_mcp_integration.py -v    # 3 full integration tests
+pytest test_mcp_integration_simple.py -v # 5 simple integration tests
+```
 
-When MCP functionality is re-enabled, to run the MCP integration tests, you'll need to:
+### MCP Integration Requirements
 
-1. Start an MCP server using supergateway. For example, to start a filesystem MCP server:
+Integration tests require:
+1. **Node.js and npm** - For running MCP proxy and servers
+2. **@modelcontextprotocol/server-filesystem** - Automatically installed during tests
+3. **mcp-stdio-proxy** - Located in `../../mcp-stdio-proxy/`
 
-   ```bash
-   npx -y supergateway \
-     --stdio "npx -y @modelcontextprotocol/server-filesystem ./my-folder" \
-     --port 8000 \
-     --baseUrl http://localhost:8000 \
-     --ssePath /sse \
-     --messagePath /message
-   ```
-
-   Replace `./my-folder` with the path to a directory you want to expose through the filesystem server.
-
-2. Run the specific integration test:
-
-   ```bash
-   pytest test_mcp.py::test_filesystem_mcp_server_integration -v
-   ```
-
-Note that the integration test is marked with `@pytest.mark.skip` by default since it requires an actual running MCP server. You'll need to remove this mark or use the `-k` flag to run it.
+The integration tests automatically:
+- Check for Node.js availability
+- Install required npm packages
+- Start/stop the MCP proxy process
+- Handle missing dependencies gracefully
 
 ## Handling Welcome Modal in Tests
 
