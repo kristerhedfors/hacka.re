@@ -336,6 +336,71 @@
     gap: 0.75rem;
 }
 
+/* Function collection container styles */
+.function-collection-container {
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.function-collection-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: var(--bg-color-secondary);
+    cursor: pointer;
+    user-select: none;
+    border-left-width: 12px;
+    border-left-style: solid;
+}
+
+.function-collection-header h4 {
+    margin: 0 0 0 10px;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.function-collection-header i {
+    font-size: 14px;
+    transition: transform 0.2s ease;
+}
+
+.function-collection-count {
+    margin-left: 10px;
+    color: var(--text-color-secondary);
+    font-size: 14px;
+}
+
+.function-collection-source {
+    margin-left: auto;
+    margin-right: 10px;
+    color: var(--text-color-secondary);
+    font-size: 12px;
+}
+
+.function-collection-delete {
+    background: none;
+    border: none;
+    color: var(--text-color-secondary);
+    cursor: pointer;
+    padding: 5px;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.function-collection-delete:hover {
+    color: var(--error-color);
+}
+
+.function-collection-functions {
+    padding: 10px;
+    background-color: var(--bg-color);
+    border-top: 1px solid var(--border-color);
+}
+
 .function-item {
     padding: 0.75rem;
     border: 1px solid rgba(0, 0, 0, 0.1);
@@ -348,29 +413,29 @@
     overflow: hidden;
 }
 
-/* Function group color indicators - with thicker borders (12px) */
-.function-item[data-group-color="color-1"] {
+/* Function collection color indicators - with thicker borders (12px) */
+.function-item[data-collection-color="color-1"] {
     border-left: 12px solid var(--function-color-1);
 }
 
-.function-item[data-group-color="color-2"] {
+.function-item[data-collection-color="color-2"] {
     border-left: 12px solid var(--function-color-2);
 }
 
-.function-item[data-group-color="color-3"] {
+.function-item[data-collection-color="color-3"] {
     border-left: 12px solid var(--function-color-3);
 }
 
-.function-item[data-group-color="color-4"] {
+.function-item[data-collection-color="color-4"] {
     border-left: 12px solid var(--function-color-4);
 }
 
-.function-item[data-group-color="color-5"] {
+.function-item[data-collection-color="color-5"] {
     border-left: 12px solid var(--function-color-5);
 }
 
-/* Subtle background tint for function groups */
-.function-item[data-group-color="color-1"]::before {
+/* Subtle background tint for function collections */
+.function-item[data-collection-color="color-1"]::before {
     content: "";
     position: absolute;
     top: 0;
@@ -382,7 +447,7 @@
     pointer-events: none;
 }
 
-.function-item[data-group-color="color-2"]::before {
+.function-item[data-collection-color="color-2"]::before {
     content: "";
     position: absolute;
     top: 0;
@@ -394,7 +459,7 @@
     pointer-events: none;
 }
 
-.function-item[data-group-color="color-3"]::before {
+.function-item[data-collection-color="color-3"]::before {
     content: "";
     position: absolute;
     top: 0;
@@ -406,7 +471,7 @@
     pointer-events: none;
 }
 
-.function-item[data-group-color="color-4"]::before {
+.function-item[data-collection-color="color-4"]::before {
     content: "";
     position: absolute;
     top: 0;
@@ -418,7 +483,7 @@
     pointer-events: none;
 }
 
-.function-item[data-group-color="color-5"]::before {
+.function-item[data-collection-color="color-5"]::before {
     content: "";
     position: absolute;
     top: 0;

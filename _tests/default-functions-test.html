@@ -90,16 +90,16 @@
         function testDefaultFunctionsService() {
             const result = document.getElementById('test1-result');
             try {
-                // Test getting default function groups
-                const groups = DefaultFunctionsService.getDefaultFunctionGroups();
-                let output = `Found ${groups.length} default function groups:\n`;
+                // Test getting default function collections
+                const collections = DefaultFunctionsService.getDefaultFunctionCollections();
+                let output = `Found ${collections.length} default function collections:\n`;
                 
-                groups.forEach(group => {
-                    output += `\n- ${group.name} (ID: ${group.id})`;
-                    output += `\n  Description: ${group.description}`;
-                    output += `\n  Functions: ${group.functions ? group.functions.length : 0}`;
-                    if (group.functions) {
-                        group.functions.forEach(func => {
+                collections.forEach(collection => {
+                    output += `\n- ${collection.name} (ID: ${collection.id})`;
+                    output += `\n  Description: ${collection.description}`;
+                    output += `\n  Functions: ${collection.functions ? collection.functions.length : 0}`;
+                    if (collection.functions) {
+                        collection.functions.forEach(func => {
                             output += `\n    - ${func.name}`;
                         });
                     }
@@ -146,21 +146,21 @@
             try {
                 let output = 'Testing function selection and loading:\n';
                 
-                // Get RC4 encryption group
-                const rc4Group = DefaultFunctionsService.getDefaultFunctionGroupById('rc4-encryption');
-                if (!rc4Group) {
-                    throw new Error('RC4 encryption group not found');
+                // Get RC4 encryption collection
+                const rc4Collection = DefaultFunctionsService.getDefaultFunctionCollectionById('rc4-encryption');
+                if (!rc4Collection) {
+                    throw new Error('RC4 encryption collection not found');
                 }
                 
-                output += `\nFound group: ${rc4Group.name}`;
+                output += `\nFound collection: ${rc4Collection.name}`;
                 
                 // Check if it's selected
-                const isSelected = DefaultFunctionsService.isDefaultFunctionGroupSelected('rc4-encryption');
+                const isSelected = DefaultFunctionsService.isDefaultFunctionCollectionSelected('rc4-encryption');
                 output += `\nCurrently selected: ${isSelected}`;
                 
                 // Toggle selection
                 output += '\n\nToggling selection...';
-                const newState = DefaultFunctionsService.toggleDefaultFunctionGroupSelection('rc4-encryption');
+                const newState = DefaultFunctionsService.toggleDefaultFunctionCollectionSelection('rc4-encryption');
                 output += `\nNew state: ${newState ? 'selected' : 'unselected'}`;
                 
                 // Check if functions were added to FunctionToolsService
@@ -199,17 +199,17 @@
             list.className = 'default-functions-list';
             list.style.display = 'none';
             
-            const groups = DefaultFunctionsService.getDefaultFunctionGroups();
-            groups.forEach(group => {
+            const collections = DefaultFunctionsService.getDefaultFunctionCollections();
+            collections.forEach(collection => {
                 const item = document.createElement('div');
-                item.className = 'function-group-item default-function-group-item';
+                item.className = 'function-collection-item default-function-collection-item';
                 item.innerHTML = `
-                    <input type="checkbox" class="function-group-checkbox">
-                    <div class="function-group-content">
-                        <div class="function-group-name">${group.name}</div>
-                        <div class="function-group-description">${group.description}</div>
+                    <input type="checkbox" class="function-collection-checkbox">
+                    <div class="function-collection-content">
+                        <div class="function-collection-name">${collection.name}</div>
+                        <div class="function-collection-description">${collection.description}</div>
                     </div>
-                    <button class="function-group-info"><i class="fas fa-info-circle"></i></button>
+                    <button class="function-collection-info"><i class="fas fa-info-circle"></i></button>
                 `;
                 list.appendChild(item);
             });

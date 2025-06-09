@@ -8,8 +8,8 @@ from function_calling_api.helpers.setup_helpers import (
     enable_tool_calling_and_function_tools
 )
 
-def test_function_group_colors(page: Page, serve_hacka_re, api_key):
-    """Test that functions from the same import are grouped by color and deletion works for the entire group."""
+def test_function_collection_colors(page: Page, serve_hacka_re, api_key):
+    """Test that functions from the same import are collected by color and deletion works for the entire collection."""
     # Set up console error logging
     setup_console_logging(page)
     
@@ -39,8 +39,8 @@ def test_function_group_colors(page: Page, serve_hacka_re, api_key):
     function_clear_btn = page.locator("#function-clear-btn")
     function_clear_btn.click()
     
-    # Define a group of functions to add
-    function_group = """
+    # Define a collection of functions to add
+    function_collection = """
     /**
      * Helper function to format a number
      * @param {number} num - The number to format
@@ -84,9 +84,9 @@ def test_function_group_colors(page: Page, serve_hacka_re, api_key):
     }
     """
     
-    # Add the function group
+    # Add the function collection
     function_code = page.locator("#function-code")
-    function_code.fill(function_group)
+    function_code.fill(function_collection)
     
     # Validate the function
     page.locator("#function-validate-btn").click()
@@ -103,7 +103,7 @@ def test_function_group_colors(page: Page, serve_hacka_re, api_key):
     expect(function_list.locator(".function-item")).to_have_count(2)  # Only callable functions are shown
     
     # Take a screenshot showing functions in the list
-    screenshot_with_markdown(page, "function_group_added", {
+    screenshot_with_markdown(page, "function_collection_added", {
         "step": "Functions added to list",
         "expected_functions": "add_numbers, subtract_numbers"
     })
@@ -118,7 +118,7 @@ def test_function_group_colors(page: Page, serve_hacka_re, api_key):
     first_function = all_functions.nth(0)
     second_function = all_functions.nth(1)
     
-    # Test deletion of a function in the group
+    # Test deletion of a function in the collection
     # Handle the confirmation dialog before triggering delete
     page.on('dialog', lambda dialog: dialog.accept())
     
@@ -127,13 +127,13 @@ def test_function_group_colors(page: Page, serve_hacka_re, api_key):
     delete_button.click()
     
     # Wait for the function list to update
-    # Since both functions are in the same group, they should both be deleted
+    # Since both functions are in the same collection, they should both be deleted
     expect(function_list.locator('.function-item')).to_have_count(0)
     
     # Take a screenshot showing empty function list
-    screenshot_with_markdown(page, "function_group_deleted", {
-        "step": "After deleting one function from group",
-        "result": "All functions in the group were deleted"
+    screenshot_with_markdown(page, "function_collection_deleted", {
+        "step": "After deleting one function from collection",
+        "result": "All functions in the collection were deleted"
     })
     
     # Close the modal

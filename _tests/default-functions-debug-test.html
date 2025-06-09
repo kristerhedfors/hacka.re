@@ -152,11 +152,11 @@
             if (window.FunctionToolsStorage) {
                 const jsFunctions = window.FunctionToolsStorage.getJsFunctions();
                 const enabledFunctions = window.FunctionToolsStorage.getEnabledFunctions();
-                const functionGroups = window.FunctionToolsStorage.getFunctionGroups();
+                const functionCollections = window.FunctionToolsStorage.getFunctionCollections();
                 
                 log(`JS Functions: ${Object.keys(jsFunctions).join(', ') || 'none'}`, 'info');
                 log(`Enabled Functions: ${enabledFunctions.join(', ') || 'none'}`, 'info');
-                log(`Function Groups: ${JSON.stringify(functionGroups)}`, 'info');
+                log(`Function Collections: ${JSON.stringify(functionCollections)}`, 'info');
             }
             
             // Check default functions storage
