@@ -562,11 +562,14 @@ window.MCPClientService = (function() {
             return;
         }
         
+        // Sanitize server name for use in function names (replace non-alphanumeric with underscore)
+        const sanitizedServerName = serverName.replace(/[^a-zA-Z0-9_]/g, '_');
         const groupId = `mcp-${serverName}`;
         
         for (const tool of tools) {
-            const functionName = `mcp_${serverName}_${tool.name}`;
-            const functionCode = createToolFunction(serverName, tool);
+            // Sanitize the complete function name to ensure valid JavaScript identifier
+            const functionName = `${sanitizedServerName}_${tool.name}`.replace(/[^a-zA-Z0-9_$]/g, '_');
+            const functionCode = createToolFunction(serverName, sanitizedServerName, functionName, tool);
             
             // Create tool definition compatible with hacka.re
             const toolDefinition = {
@@ -606,8 +609,10 @@ window.MCPClientService = (function() {
             return;
         }
         
+        // Sanitize server name to match registered function names
+        const sanitizedServerName = serverName.replace(/[^a-zA-Z0-9_]/g, '_');
         const functions = window.FunctionToolsService.getJsFunctions();
-        const prefix = `mcp_${serverName}_`;
+        const prefix = `${sanitizedServerName}_`;
         
         for (const functionName in functions) {
             if (functionName.startsWith(prefix)) {
@@ -619,11 +624,13 @@ window.MCPClientService = (function() {
     
     /**
      * Create a JavaScript function that calls an MCP tool
-     * @param {string} serverName - Name of the server
+     * @param {string} serverName - Original name of the server  
+     * @param {string} sanitizedServerName - Sanitized server name for logging
+     * @param {string} functionName - Sanitized function name
      * @param {Object} tool - Tool definition
      * @returns {string} JavaScript function code
      */
-    function createToolFunction(serverName, tool) {
+    function createToolFunction(serverName, sanitizedServerName, functionName, tool) {
         // Generate parameter documentation from schema
         const paramDocs = generateParameterDocs(tool.inputSchema);
         
@@ -638,7 +645,7 @@ ${paramDocs}
  * @returns {Promise<Object>} Tool execution result
  * @callable
  */
-async function mcp_${serverName}_${tool.name}(${paramDeclaration}) {
+async function ${functionName}(${paramDeclaration}) {
     try {
         // Get the MCP client service
         const MCPClient = window.MCPClientService;
@@ -653,9 +660,15 @@ async function mcp_${serverName}_${tool.name}(${paramDeclaration}) {
             params['${paramName}'] = ${paramName};
         }`).join('')}
         
-        console.log(\`[MCP Function] mcp_${serverName}_${tool.name} called with params:\`, params);
+        console.log(\`[MCP Function] ${functionName} called with params:\`, params);
         
-        // Call the tool
+        // Debug: Log available connections
+        const activeConnections = MCPClient.getActiveConnections();
+        console.log('[MCP Function] Available server connections:', activeConnections);
+        console.log('[MCP Function] Trying to call server:', '${serverName}');
+        console.log('[MCP Function] Function name being used:', '${functionName}');
+        
+        // Call the tool (use original server name for the actual call)  
         const result = await MCPClient.callTool('${serverName}', '${tool.name}', params);
         
         return {
