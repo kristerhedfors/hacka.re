@@ -1,0 +1,13 @@
+{
+  "name": "MCP Test Configuration",
+  "version": "1.0.0",
+  "settings": {
+    "debug": true,
+    "maxItems": 100,
+    "allowedOperations": ["read", "list", "search"]
+  },
+  "metadata": {
+    "created": "2025-01-09",
+    "purpose": "Testing MCP filesystem server functionality"
+  }
+}
