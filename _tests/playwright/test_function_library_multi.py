@@ -38,8 +38,8 @@ def test_function_library_multi(page: Page, serve_hacka_re, api_key):
     expect(function_modal).to_be_visible()
     
     # Check if the function name field is hidden
-    function_name_group = page.locator(".function-editor form .form-group").first
-    expect(function_name_group).to_have_css("display", "none")
+    function_name_collection = page.locator(".function-editor form .form-group").first
+    expect(function_name_collection).to_have_css("display", "none")
     
     # Check if the function code editor has the multi-function placeholder
     function_code = page.locator("#function-code")

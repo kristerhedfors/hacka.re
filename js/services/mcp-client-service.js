@@ -564,7 +564,30 @@ window.MCPClientService = (function() {
         
         // Sanitize server name for use in function names (replace non-alphanumeric with underscore)
         const sanitizedServerName = serverName.replace(/[^a-zA-Z0-9_]/g, '_');
-        const groupId = `mcp-${serverName}`;
+        const groupId = `mcp-${serverName}-${Date.now()}`;
+        
+        // Get server command info for metadata
+        const connection = activeConnections.get(serverName);
+        let mcpCommand = serverName;
+        if (connection && connection.config && connection.config.transport) {
+            const transport = connection.config.transport;
+            if (transport.command && transport.args) {
+                mcpCommand = `${transport.command} ${transport.args.join(' ')}`;
+            }
+        }
+        
+        // Create group metadata for MCP tools
+        const groupMetadata = {
+            name: `MCP: ${serverName}`,
+            createdAt: new Date().toISOString(),
+            source: 'mcp',
+            mcpServer: serverName,
+            mcpCommand: mcpCommand,
+            toolCount: tools.length
+        };
+        
+        // Register first tool with metadata
+        let firstTool = true;
         
         for (const tool of tools) {
             // Sanitize the complete function name to ensure valid JavaScript identifier
@@ -590,8 +613,11 @@ window.MCPClientService = (function() {
                 functionName,
                 functionCode,
                 toolDefinition,
-                groupId
+                groupId,
+                firstTool ? groupMetadata : null // Only pass metadata for first tool
             );
+            
+            firstTool = false;
             
             // Enable the function by default (check it)
             window.FunctionToolsService.enableJsFunction(functionName);

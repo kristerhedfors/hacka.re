@@ -56,15 +56,15 @@ window.FunctionToolsService = (function() {
      * @param {string} name - The name of the function
      * @param {string} code - The JavaScript function code
      * @param {Object} toolDefinition - The tool definition generated from the function
-     * @param {string} groupId - Optional group ID to associate functions that were defined together
+     * @param {string} collectionId - Optional collection ID to associate functions that were defined together
      * @returns {boolean} Whether the function was added successfully
      */
-    function addJsFunction(name, code, toolDefinition, groupId) {
-        return Registry.addJsFunction(name, code, toolDefinition, groupId);
+    function addJsFunction(name, code, toolDefinition, collectionId, collectionMetadata) {
+        return Registry.addJsFunction(name, code, toolDefinition, collectionId, collectionMetadata);
     }
     
     /**
-     * Remove a JavaScript function and all functions in its group
+     * Remove a JavaScript function and all functions in its collection
      * @param {string} name - The name of the function to remove
      * @returns {boolean} Whether the function was removed successfully
      */
@@ -171,20 +171,38 @@ window.FunctionToolsService = (function() {
     }
     
     /**
-     * Get all functions in the same group as the specified function
+     * Get all functions in the same collection as the specified function
      * @param {string} name - The name of the function
-     * @returns {Array} Array of function names in the same group
+     * @returns {Array} Array of function names in the same collection
      */
-    function getFunctionsInSameGroup(name) {
-        return Registry.getFunctionsInSameGroup(name);
+    function getFunctionsInSameCollection(name) {
+        return Registry.getFunctionsInSameCollection(name);
     }
     
     /**
-     * Get function groups mapping
-     * @returns {Object} Object mapping function names to group IDs
+     * Get metadata for a function collection
+     * @param {string} collectionId - The collection ID
+     * @returns {Object|null} The collection metadata or null if not found
      */
-    function getFunctionGroups() {
-        return Storage.getFunctionGroups();
+    function getCollectionMetadata(collectionId) {
+        return Registry.getCollectionMetadata(collectionId);
+    }
+    
+    
+    /**
+     * Get all function collections with their metadata
+     * @returns {Object} Object mapping collection IDs to their functions and metadata
+     */
+    function getAllFunctionCollections() {
+        return Registry.getAllFunctionCollections();
+    }
+    
+    /**
+     * Get function collections mapping
+     * @returns {Object} Object mapping function names to collection IDs
+     */
+    function getFunctionCollections() {
+        return Storage.getFunctionCollections();
     }
     
     // Public API
@@ -204,7 +222,9 @@ window.FunctionToolsService = (function() {
         executeJsFunction,
         processToolCalls,
         generateToolDefinition,
-        getFunctionsInSameGroup,
-        getFunctionGroups
+        getFunctionsInSameCollection,
+        getCollectionMetadata,
+        getAllFunctionCollections,
+        getFunctionCollections
     };
 })();

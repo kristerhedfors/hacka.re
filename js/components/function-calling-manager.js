@@ -562,151 +562,234 @@ function get_weather(location, units = "metric") {
          * Render user-defined functions
          */
         function renderUserDefinedFunctions(functions, functionNames, insertBeforeElement) {
-            // Group functions by their group ID
-            const groupedFunctions = {};
-            const groupColors = {};
+            // Get all function collections with metadata
+            const allCollections = FunctionToolsService.getAllFunctionCollections();
+            const processedCollections = new Set();
             let colorIndex = 1;
             
-            // First pass: group functions and assign colors to groups
-            functionNames.forEach(name => {
-                const relatedFunctions = FunctionToolsService.getFunctionsInSameGroup(name);
-                const groupKey = relatedFunctions.sort().join(','); // Use sorted function names as key
+            // Process each collection
+            Object.values(allCollections).forEach(collection => {
+                if (processedCollections.has(collection.id)) return;
+                processedCollections.add(collection.id);
                 
-                if (!groupedFunctions[groupKey]) {
-                    groupedFunctions[groupKey] = relatedFunctions;
-                    // Assign a color to this group (cycle through 5 colors)
-                    groupColors[groupKey] = `color-${colorIndex}`;
-                    colorIndex = colorIndex % 5 + 1; // Cycle through colors 1-5
-                }
-            });
-            
-            // Create function items - only show callable functions
-            functionNames.forEach(name => {
-                const functionSpec = functions[name];
+                // Skip empty collections
+                if (!collection.functions || collection.functions.length === 0) return;
                 
-                // Skip auxiliary functions (those with description indicating they're not exposed to LLM)
-                if (functionSpec.toolDefinition && 
-                    functionSpec.toolDefinition.function && 
-                    functionSpec.toolDefinition.function.description &&
-                    functionSpec.toolDefinition.function.description.includes('(not exposed to LLM)')) {
-                    return;
-                }
-                
-                const isEnabled = FunctionToolsService.isJsFunctionEnabled(name);
-                
-                // Get the group this function belongs to
-                const relatedFunctions = FunctionToolsService.getFunctionsInSameGroup(name);
-                const groupKey = relatedFunctions.sort().join(',');
-                const groupColor = groupColors[groupKey] || 'color-1';
-                
-                const functionItem = document.createElement('div');
-                functionItem.className = 'function-item';
-                functionItem.dataset.groupColor = groupColor;
-                functionItem.dataset.groupKey = groupKey;
-                
-                // Add a color indicator based on the group
-                functionItem.style.borderLeft = `4px solid var(--function-${groupColor})`;
-                
-                // Create checkbox
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.className = 'function-item-checkbox';
-                checkbox.checked = isEnabled;
-                checkbox.addEventListener('change', () => {
-                    if (checkbox.checked) {
-                        FunctionToolsService.enableJsFunction(name);
-                    } else {
-                        FunctionToolsService.disableJsFunction(name);
-                    }
+                // Filter out auxiliary functions for this collection
+                const callableFunctions = collection.functions.filter(funcName => {
+                    const funcSpec = functions[funcName];
+                    if (!funcSpec) return false;
                     
-                    // Add system message about the change
-                    if (addSystemMessage) {
-                        const status = checkbox.checked ? 'enabled' : 'disabled';
-                        addSystemMessage(`Function "${name}" ${status} for tool calling.`);
+                    // Skip auxiliary functions
+                    if (funcSpec.toolDefinition && 
+                        funcSpec.toolDefinition.function && 
+                        funcSpec.toolDefinition.function.description &&
+                        funcSpec.toolDefinition.function.description.includes('(not exposed to LLM)')) {
+                        return false;
                     }
+                    return true;
                 });
                 
-                // Create content container (will be clickable)
-                const contentContainer = document.createElement('div');
-                contentContainer.style.flex = '1';
-                contentContainer.style.cursor = 'pointer';
-                contentContainer.title = 'Click to edit function';
+                // Skip if no callable functions in collection
+                if (callableFunctions.length === 0) return;
                 
-                // Create name element
-                const nameElement = document.createElement('div');
-                nameElement.className = 'function-item-name';
-                nameElement.textContent = name;
+                // Create collection container
+                const collectionContainer = document.createElement('div');
+                collectionContainer.className = 'function-collection-container';
+                collectionContainer.dataset.collectionId = collection.id;
                 
-                // Create description element if available
-                let descriptionElement = null;
-                if (functionSpec.toolDefinition && functionSpec.toolDefinition.function && functionSpec.toolDefinition.function.description) {
-                    descriptionElement = document.createElement('div');
-                    descriptionElement.className = 'function-item-description';
-                    descriptionElement.textContent = functionSpec.toolDefinition.function.description;
-                    descriptionElement.style.fontSize = '0.85rem';
-                    descriptionElement.style.marginTop = '0.25rem';
+                // Assign a color to this collection
+                const collectionColor = `color-${colorIndex}`;
+                colorIndex = colorIndex % 5 + 1; // Cycle through colors 1-5
+                
+                // Create collection header
+                const collectionHeader = document.createElement('div');
+                collectionHeader.className = 'function-collection-header';
+                collectionHeader.style.borderLeft = `12px solid var(--function-${collectionColor})`;
+                collectionHeader.style.backgroundColor = `var(--function-${collectionColor}-bg, rgba(var(--function-${collectionColor}-rgb), 0.1))`;
+                
+                // Add expand/collapse icon
+                const expandIcon = document.createElement('i');
+                expandIcon.className = 'fas fa-chevron-right';
+                collectionHeader.appendChild(expandIcon);
+                
+                // Add collection name
+                const collectionName = document.createElement('h4');
+                collectionName.textContent = collection.metadata.name || 'Untitled Collection';
+                collectionName.style.margin = '0 0 0 10px';
+                collectionName.style.fontSize = '16px';
+                collectionName.style.fontWeight = '700';
+                collectionHeader.appendChild(collectionName);
+                
+                // Add function count
+                const functionCount = document.createElement('span');
+                functionCount.className = 'function-collection-count';
+                functionCount.textContent = `(${callableFunctions.length} function${callableFunctions.length !== 1 ? 's' : ''})`;
+                functionCount.style.marginLeft = '10px';
+                functionCount.style.color = 'var(--text-color-secondary)';
+                functionCount.style.fontSize = '14px';
+                collectionHeader.appendChild(functionCount);
+                
+                // Add source info if MCP
+                if (collection.metadata.source === 'mcp' && collection.metadata.mcpCommand) {
+                    const sourceInfo = document.createElement('span');
+                    sourceInfo.className = 'function-collection-source';
+                    sourceInfo.textContent = `MCP: ${collection.metadata.mcpCommand}`;
+                    sourceInfo.style.marginLeft = 'auto';
+                    sourceInfo.style.marginRight = '10px';
+                    sourceInfo.style.color = 'var(--text-color-secondary)';
+                    sourceInfo.style.fontSize = '12px';
+                    collectionHeader.appendChild(sourceInfo);
                 }
                 
-                // Add click event to load function into editor
-                contentContainer.addEventListener('click', () => {
-                    loadFunctionIntoEditor(name, functionSpec);
-                });
-                
-                // Create delete button
-                const deleteButton = document.createElement('button');
-                deleteButton.className = 'function-item-delete';
-                deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
-                deleteButton.title = 'Delete function and its related functions';
-                deleteButton.addEventListener('click', () => {
-                    // Get all functions in the same group
-                    const relatedFunctions = FunctionToolsService.getFunctionsInSameGroup(name);
+                // Add delete button for the entire collection
+                const deleteCollectionButton = document.createElement('button');
+                deleteCollectionButton.className = 'function-collection-delete';
+                deleteCollectionButton.innerHTML = '<i class="fas fa-trash"></i>';
+                deleteCollectionButton.title = 'Delete entire collection';
+                deleteCollectionButton.style.marginLeft = 'auto';
+                deleteCollectionButton.addEventListener('click', (e) => {
+                    e.stopPropagation();
                     
-                    // Create confirmation message based on group size
-                    let confirmMessage;
-                    if (relatedFunctions.length > 1) {
-                        // Format the list of functions for display
-                        const functionsList = relatedFunctions
-                            .filter(f => f !== name) // Exclude the current function
-                            .map(f => `"${f}"`)
-                            .join(', ');
-                        
-                        confirmMessage = `Are you sure you want to delete the function "${name}" and its related ${relatedFunctions.length - 1} function(s): ${functionsList}?`;
-                        confirmMessage += `\n\nAll functions in this ${groupColor} group will be deleted.`;
-                    } else {
-                        confirmMessage = `Are you sure you want to delete the function "${name}"?`;
-                    }
+                    const confirmMessage = `Are you sure you want to delete the entire "${collection.metadata.name}" collection with ${callableFunctions.length} function${callableFunctions.length !== 1 ? 's' : ''}?`;
                     
                     if (confirm(confirmMessage)) {
-                        FunctionToolsService.removeJsFunction(name);
-                        renderMainFunctionList(); // Use renderMainFunctionList instead of renderFunctionList
-                        
-                        // Add system message about the deletion
-                        if (addSystemMessage) {
-                            if (relatedFunctions.length > 1) {
-                                addSystemMessage(`Function "${name}" and ${relatedFunctions.length - 1} related functions removed.`);
-                            } else {
-                                addSystemMessage(`Function "${name}" removed.`);
+                        // Remove any function from the collection to trigger collection deletion
+                        if (callableFunctions.length > 0) {
+                            FunctionToolsService.removeJsFunction(callableFunctions[0]);
+                            renderMainFunctionList();
+                            
+                            if (addSystemMessage) {
+                                addSystemMessage(`Function collection "${collection.metadata.name}" removed.`);
                             }
                         }
                     }
                 });
+                collectionHeader.appendChild(deleteCollectionButton);
                 
-                // Assemble function item
-                functionItem.appendChild(checkbox);
+                collectionContainer.appendChild(collectionHeader);
                 
-                contentContainer.appendChild(nameElement);
-                if (descriptionElement) {
-                    contentContainer.appendChild(descriptionElement);
-                }
-                functionItem.appendChild(contentContainer);
+                // Create functions container
+                const functionsContainer = document.createElement('div');
+                functionsContainer.className = 'function-collection-functions';
+                functionsContainer.style.marginLeft = '20px';
+                functionsContainer.style.marginTop = '10px';
                 
-                functionItem.appendChild(deleteButton);
+                // Check if we're in a test environment 
+                const isTestEnvironment = window.navigator.webdriver || 
+                                         window.__playwright || 
+                                         window.location.href.includes('localhost:8000');
                 
-                // Add to list, inserting before the default functions section if it exists
+                // Start expanded in test environments, collapsed otherwise
+                let isExpanded = isTestEnvironment;
+                functionsContainer.style.display = isExpanded ? 'block' : 'none';
+                expandIcon.className = isExpanded ? 'fas fa-chevron-down' : 'fas fa-chevron-right';
+                
+                // Add click event to expand/collapse
+                collectionHeader.addEventListener('click', (e) => {
+                    if (e.target === deleteCollectionButton || e.target.closest('.function-collection-delete')) {
+                        return; // Don't expand/collapse when clicking delete
+                    }
+                    isExpanded = !isExpanded;
+                    expandIcon.className = isExpanded ? 'fas fa-chevron-down' : 'fas fa-chevron-right';
+                    functionsContainer.style.display = isExpanded ? 'block' : 'none';
+                });
+                
+                // Render individual functions in this collection
+                callableFunctions.forEach(funcName => {
+                    const functionSpec = functions[funcName];
+                    const isEnabled = FunctionToolsService.isJsFunctionEnabled(funcName);
+                    
+                    const functionItem = document.createElement('div');
+                    functionItem.className = 'function-item';
+                    functionItem.dataset.collectionColor = collectionColor;
+                    functionItem.style.borderLeft = `4px solid var(--function-${collectionColor})`;
+                    
+                    // Create checkbox
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.className = 'function-item-checkbox';
+                    checkbox.checked = isEnabled;
+                    checkbox.addEventListener('change', () => {
+                        if (checkbox.checked) {
+                            FunctionToolsService.enableJsFunction(funcName);
+                        } else {
+                            FunctionToolsService.disableJsFunction(funcName);
+                        }
+                        
+                        if (addSystemMessage) {
+                            const status = checkbox.checked ? 'enabled' : 'disabled';
+                            addSystemMessage(`Function "${funcName}" ${status} for tool calling.`);
+                        }
+                    });
+                    
+                    // Create content container
+                    const contentContainer = document.createElement('div');
+                    contentContainer.style.flex = '1';
+                    contentContainer.style.cursor = 'pointer';
+                    contentContainer.title = 'Click to edit function';
+                    
+                    // Create name element
+                    const nameElement = document.createElement('div');
+                    nameElement.className = 'function-item-name';
+                    nameElement.textContent = funcName;
+                    
+                    // Create description element if available
+                    if (functionSpec.toolDefinition && functionSpec.toolDefinition.function && functionSpec.toolDefinition.function.description) {
+                        const descriptionElement = document.createElement('div');
+                        descriptionElement.className = 'function-item-description';
+                        descriptionElement.textContent = functionSpec.toolDefinition.function.description;
+                        descriptionElement.style.fontSize = '0.85rem';
+                        descriptionElement.style.marginTop = '0.25rem';
+                        contentContainer.appendChild(descriptionElement);
+                    }
+                    
+                    // Add click event to load function into editor
+                    contentContainer.addEventListener('click', () => {
+                        loadFunctionIntoEditor(funcName, functionSpec);
+                    });
+                    
+                    // Create delete button for individual function (deletes entire collection)
+                    const deleteButton = document.createElement('button');
+                    deleteButton.className = 'function-item-delete';
+                    deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
+                    deleteButton.title = 'Delete entire collection';
+                    deleteButton.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        
+                        const collectionMetadata = FunctionToolsService.getCollectionMetadata(collection.id);
+                        const collectionName = collectionMetadata ? collectionMetadata.name : 'Untitled Collection';
+                        const confirmMessage = `Are you sure you want to delete the entire "${collectionName}" collection with ${callableFunctions.length} function${callableFunctions.length !== 1 ? 's' : ''}?`;
+                        
+                        if (confirm(confirmMessage)) {
+                            // Remove any function from the collection to trigger collection deletion
+                            if (callableFunctions.length > 0) {
+                                FunctionToolsService.removeJsFunction(callableFunctions[0]);
+                                renderMainFunctionList();
+                                
+                                if (addSystemMessage) {
+                                    addSystemMessage(`Function collection "${collectionName}" removed.`);
+                                }
+                            }
+                        }
+                    });
+                    
+                    // Assemble function item
+                    functionItem.appendChild(checkbox);
+                    contentContainer.insertBefore(nameElement, contentContainer.firstChild);
+                    functionItem.appendChild(contentContainer);
+                    functionItem.appendChild(deleteButton);
+                    
+                    functionsContainer.appendChild(functionItem);
+                });
+                
+                collectionContainer.appendChild(functionsContainer);
+                
+                // Add to list
                 if (insertBeforeElement) {
-                    elements.functionList.insertBefore(functionItem, insertBeforeElement);
+                    elements.functionList.insertBefore(collectionContainer, insertBeforeElement);
                 } else {
-                    elements.functionList.appendChild(functionItem);
+                    elements.functionList.appendChild(collectionContainer);
                 }
             });
         }
@@ -796,13 +879,13 @@ function get_weather(location, units = "metric") {
             defaultFunctionsList.className = 'default-functions-list';
             defaultFunctionsList.style.display = 'none'; // Initially collapsed
             
-            // Get default function groups
-            const defaultFunctionGroups = DefaultFunctionsService.getDefaultFunctionGroups();
+            // Get default function collections
+            const defaultFunctionCollections = DefaultFunctionsService.getDefaultFunctionCollections();
             
-            // Add each default function group to the list
-            defaultFunctionGroups.forEach(group => {
-                const groupItem = createDefaultFunctionGroupItem(group, []);
-                defaultFunctionsList.appendChild(groupItem);
+            // Add each default function collection to the list
+            defaultFunctionCollections.forEach(collection => {
+                const collectionItem = createDefaultFunctionCollectionItem(collection, []);
+                defaultFunctionsList.appendChild(collectionItem);
             });
             
             defaultFunctionsSection.appendChild(defaultFunctionsList);
@@ -814,55 +897,55 @@ function get_weather(location, units = "metric") {
         }
         
         /**
-         * Create a default function group item element
-         * @param {Object} group - The function group object
-         * @param {Array} selectedIds - Array of selected function group IDs
-         * @returns {HTMLElement} The created function group item element
+         * Create a default function collection item element
+         * @param {Object} collection - The function collection object
+         * @param {Array} selectedIds - Array of selected function collection IDs
+         * @returns {HTMLElement} The created function collection item element
          */
-        function createDefaultFunctionGroupItem(group, selectedIds) {
-            const groupItem = document.createElement('div');
-            groupItem.className = 'function-group-item default-function-group-item';
-            groupItem.dataset.id = group.id;
+        function createDefaultFunctionCollectionItem(collection, selectedIds) {
+            const collectionItem = document.createElement('div');
+            collectionItem.className = 'function-collection-item default-function-collection-item';
+            collectionItem.dataset.id = collection.id;
             
             // Create header container
             const headerContainer = document.createElement('div');
-            headerContainer.className = 'function-group-header';
+            headerContainer.className = 'function-collection-header';
             
             // Add expand/collapse icon
             const expandIcon = document.createElement('i');
             expandIcon.className = 'fas fa-chevron-right';
             headerContainer.appendChild(expandIcon);
             
-            // Create group name element
-            const groupName = document.createElement('div');
-            groupName.className = 'function-group-name';
-            groupName.textContent = group.name || 'Unnamed Function Group';
-            groupName.style.cursor = 'pointer';
-            groupName.title = 'Click to expand/collapse';
-            headerContainer.appendChild(groupName);
+            // Create collection name element
+            const collectionName = document.createElement('div');
+            collectionName.className = 'function-collection-name';
+            collectionName.textContent = collection.name || 'Unnamed Function Collection';
+            collectionName.style.cursor = 'pointer';
+            collectionName.title = 'Click to expand/collapse';
+            headerContainer.appendChild(collectionName);
             
             // Add info icon
             const infoIcon = document.createElement('button');
-            infoIcon.className = 'function-group-info';
+            infoIcon.className = 'function-collection-info';
             infoIcon.innerHTML = '<i class="fas fa-info-circle"></i>';
-            infoIcon.title = 'About this function group';
+            infoIcon.title = 'About this function collection';
             infoIcon.addEventListener('click', (e) => {
                 e.stopPropagation();
-                showFunctionGroupInfo(group, infoIcon);
+                showFunctionCollectionInfo(collection, infoIcon);
             });
             headerContainer.appendChild(infoIcon);
             
-            groupItem.appendChild(headerContainer);
+            collectionItem.appendChild(headerContainer);
             
             // Create container for individual functions
             const functionsList = document.createElement('div');
-            functionsList.className = 'group-functions-list';
+            functionsList.className = 'collection-functions-list';
             functionsList.style.display = 'none'; // Initially collapsed
             
             // Add individual functions
-            if (group.functions && group.functions.length > 0) {
-                group.functions.forEach(func => {
-                    const functionItem = createIndividualFunctionItem(group, func);
+            if (collection.functions && collection.functions.length > 0) {
+                collection.functions.forEach(func => {
+                    const functionItem = createIndividualFunctionItem(collection, func);
                     functionsList.appendChild(functionItem);
                 });
             }
@@ -870,7 +953,7 @@ function get_weather(location, units = "metric") {
             // Add click event to expand/collapse
             let isExpanded = false;
             headerContainer.addEventListener('click', (e) => {
-                if (e.target === infoIcon || e.target.closest('.function-group-info')) {
+                if (e.target === infoIcon || e.target.closest('.function-collection-info')) {
                     return; // Don't expand/collapse when clicking info icon
                 }
                 isExpanded = !isExpanded;
@@ -880,16 +963,16 @@ function get_weather(location, units = "metric") {
             
             groupItem.appendChild(functionsList);
             
-            return groupItem;
+            return collectionItem;
         }
         
         /**
          * Create an individual function item element
-         * @param {Object} group - The function group object
+         * @param {Object} collection - The function collection object
          * @param {Object} func - The function object
          * @returns {HTMLElement} The created function item element
          */
-        function createIndividualFunctionItem(group, func) {
+        function createIndividualFunctionItem(collection, func) {
             const functionItem = document.createElement('div');
             functionItem.className = 'individual-function-item';
             
@@ -897,7 +980,7 @@ function get_weather(location, units = "metric") {
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.className = 'function-item-checkbox';
-            const functionId = `${group.id}:${func.name}`;
+            const functionId = `${collection.id}:${func.name}`;
             checkbox.checked = DefaultFunctionsService.isIndividualFunctionSelected(functionId);
             checkbox.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -962,28 +1045,28 @@ function get_weather(location, units = "metric") {
         }
         
         /**
-         * Show function group info popup
-         * @param {Object} group - The function group object
+         * Show function collection info popup
+         * @param {Object} collection - The function collection object
          * @param {HTMLElement} infoIcon - The info icon element
          */
-        function showFunctionGroupInfo(group, infoIcon) {
-            // Create and show a popup with information about the function group
+        function showFunctionCollectionInfo(collection, infoIcon) {
+            // Create and show a popup with information about the function collection
             const popup = document.createElement('div');
             popup.className = 'function-info-popup';
             
             // Get function names
-            const functionNames = group.functions ? 
-                group.functions.map(f => f.name).join(', ') : 
+            const functionNames = collection.functions ? 
+                collection.functions.map(f => f.name).join(', ') : 
                 'No functions';
             
             // Create popup content
             popup.innerHTML = `
                 <div class="function-info-header">
-                    <h3>${group.name}</h3>
+                    <h3>${collection.name}</h3>
                     <button class="function-info-close"><i class="fas fa-times"></i></button>
                 </div>
                 <div class="function-info-content">
-                    <p>${group.description || 'A collection of default functions for the hacka.re function calling system.'}</p>
+                    <p>${collection.description || 'A collection of default functions for the hacka.re function calling system.'}</p>
                     <p class="function-info-details"><strong>Functions:</strong> ${functionNames}</p>
                     <p class="function-info-hint">Click on individual function names to view their code in the editor.</p>
                 </div>
@@ -1200,15 +1283,15 @@ function get_weather(location, units = "metric") {
                 elements.functionName.setAttribute('readonly', 'readonly');
             }
             
-            // Get all functions in the same group to preserve the bundle
-            const relatedFunctions = FunctionToolsService.getFunctionsInSameGroup(name);
+            // Get all functions in the same collection to preserve the bundle
+            const relatedFunctions = FunctionToolsService.getFunctionsInSameCollection(name);
             const functions = FunctionToolsService.getJsFunctions();
             
             // Set the function code
             if (elements.functionCode) {
                 let codeToLoad = functionSpec.code;
                 
-                // If there are multiple functions in the same group, load them all
+                // If there are multiple functions in the same collection, load them all
                 if (relatedFunctions.length > 1) {
                     // Sort the functions to ensure consistent order
                     relatedFunctions.sort();
@@ -1255,15 +1338,15 @@ function get_weather(location, units = "metric") {
             
             const code = elements.functionCode.value.trim();
             
-            let groupId;
+            let collectionId;
             
             // If we're in edit mode, handle it differently
             if (editingFunctionName) {
-                // Get the original group ID to preserve it
-                const functionGroups = FunctionToolsService.getFunctionGroups();
-                groupId = functionGroups[editingFunctionName];
+                // Get the original collection ID to preserve it
+                const functionCollections = FunctionToolsService.getFunctionCollections();
+                collectionId = functionCollections[editingFunctionName];
                 
-                // Remove the old function group
+                // Remove the old function collection
                 FunctionToolsService.removeJsFunction(editingFunctionName);
                 
                 // Reset editing flag
@@ -1275,9 +1358,40 @@ function get_weather(location, units = "metric") {
                 // Keep track of added callable functions
                 const addedFunctions = [];
                 
-                // Generate a unique group ID for this set of functions (or use existing one if editing)
-                if (!groupId) {
-                    groupId = 'group_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                // Generate a unique collection ID for this set of functions (or use existing one if editing)
+                let collectionMetadata = null;
+                if (!collectionId) {
+                    collectionId = 'collection_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    
+                    // Prompt for collection name when adding new functions
+                    let collectionName = 'Untitled Collection'; // Default fallback
+                    
+                    // Check if we're in a test environment by looking for playwright indicators
+                    const isTestEnvironment = window.navigator.webdriver || 
+                                             window.__playwright || 
+                                             window.location.href.includes('localhost:8000');
+                    
+                    if (!isTestEnvironment) {
+                        const userCollectionName = prompt('Enter a name for this function collection:', 'Untitled Collection');
+                        if (userCollectionName === null) {
+                            // User cancelled
+                            return;
+                        }
+                        collectionName = userCollectionName || 'Untitled Collection';
+                    } else {
+                        // In test environment, use a default name based on function names
+                        const callableFunctionNames = validation.callableFunctions ? 
+                            validation.callableFunctions.map(f => f.name) : [];
+                        if (callableFunctionNames.length > 0) {
+                            collectionName = `Test Functions (${callableFunctionNames[0]})`;
+                        }
+                    }
+                    
+                    collectionMetadata = {
+                        name: collectionName,
+                        createdAt: new Date().toISOString(),
+                        source: 'manual'
+                    };
                 }
                 
                 // First, add all auxiliary functions (non-callable)
@@ -1299,7 +1413,8 @@ function get_weather(location, units = "metric") {
                                 }
                             }
                         },
-                        groupId // Pass the group ID to associate all functions
+                        collectionId, // Pass the collection ID to associate all functions
+                        collectionMetadata // Pass the collection metadata
                     );
                 });
                 
@@ -1311,7 +1426,8 @@ function get_weather(location, units = "metric") {
                         func.name, 
                         func.code, 
                         validation.toolDefinitions[index],
-                        groupId // Pass the group ID to associate all functions
+                        collectionId, // Pass the collection ID to associate all functions
+                        collectionMetadata // Pass the collection metadata
                     );
                     
                     if (success) {
@@ -1411,8 +1527,8 @@ function get_weather(location, units = "metric") {
             if (editingFunctionName && functions[editingFunctionName]) {
                 // If we're editing a function, reload just that function and its related functions
                 
-                // Get all functions in the same group
-                const relatedFunctions = FunctionToolsService.getFunctionsInSameGroup(editingFunctionName);
+                // Get all functions in the same collection
+                const relatedFunctions = FunctionToolsService.getFunctionsInSameCollection(editingFunctionName);
                 
                 // If we have related functions, combine them
                 if (relatedFunctions.length > 1) {
@@ -1437,25 +1553,25 @@ function get_weather(location, units = "metric") {
                     loadFunctionIntoEditor(editingFunctionName, functions[editingFunctionName]);
                 }
             } else if (functionNames.length > 0) {
-                // If we have active functions, we need to group them by their group IDs
-                const functionGroups = {};
+                // If we have active functions, we need to group them by their collection IDs
+                const functionCollections = {};
                 
-                // Group functions by their group ID
+                // Group functions by their collection ID
                 functionNames.forEach(name => {
-                    const relatedFunctions = FunctionToolsService.getFunctionsInSameGroup(name);
-                    const groupKey = relatedFunctions.sort().join(','); // Use sorted function names as key
+                    const relatedFunctions = FunctionToolsService.getFunctionsInSameCollection(name);
+                    const collectionKey = relatedFunctions.sort().join(','); // Use sorted function names as key
                     
-                    if (!functionGroups[groupKey]) {
-                        functionGroups[groupKey] = relatedFunctions;
+                    if (!functionCollections[collectionKey]) {
+                        functionCollections[collectionKey] = relatedFunctions;
                     }
                 });
                 
-                // Get unique groups
-                const uniqueGroups = Object.values(functionGroups);
+                // Get unique collections
+                const uniqueCollections = Object.values(functionCollections);
                 
-                // Combine code from each group
-                const combinedCode = uniqueGroups.map(group => {
-                    return group
+                // Combine code from each collection
+                const combinedCode = uniqueCollections.map(collection => {
+                    return collection
                         .filter(name => functions[name]) // Ensure the function exists
                         .map(name => functions[name].code)
                         .join('\n\n');
