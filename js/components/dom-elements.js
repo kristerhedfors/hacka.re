@@ -70,6 +70,7 @@ window.DOMElements = (function() {
             functionList: document.getElementById('function-list'),
             emptyFunctionState: document.getElementById('empty-function-state'),
             functionEditorForm: document.getElementById('function-editor-form'),
+            functionCollectionName: document.getElementById('function-collection-name'),
             functionName: document.getElementById('function-name'),
             functionCode: document.getElementById('function-code'),
             copyFunctionCodeBtn: document.getElementById('copy-function-code-btn'),

@@ -199,11 +199,11 @@ function multiply_numbers(a, b) {
     page.locator("#close-function-modal").click()
     expect(function_modal).not_to_be_visible()
 
-def test_multiple_function_groups(page: Page, serve_hacka_re, api_key):
-    """Test that multiple function groups (bundles) are handled correctly.
+def test_multiple_function_collections(page: Page, serve_hacka_re, api_key):
+    """Test that multiple function collections (bundles) are handled correctly.
     
-    When functions are defined in separate submissions to the editor, they form separate bundles.
-    Each bundle can be deleted independently without affecting other bundles.
+    When functions are defined in separate submissions to the editor, they form separate collections.
+    Each collection can be deleted independently without affecting other collections.
     """
     # Set up console error logging
     setup_console_logging(page)
@@ -228,7 +228,7 @@ def test_multiple_function_groups(page: Page, serve_hacka_re, api_key):
     function_modal = page.locator("#function-modal")
     expect(function_modal).to_be_visible()
     
-    # Add first function bundle (group)
+    # Add first function bundle (collection)
     function_code = page.locator("#function-code")
     function_code.fill("""/**
  * Helper function that formats data (not exposed to LLM)
@@ -261,7 +261,7 @@ async function getCurrentTimeInBerlin() {
   }
 }""")
     
-    # Validate and submit the first function group
+    # Validate and submit the first function collection
     page.locator("#function-validate-btn").click()
     validation_result = page.locator("#function-validation-result")
     validation_result.wait_for(state="visible", timeout=5000)
@@ -271,7 +271,7 @@ async function getCurrentTimeInBerlin() {
     function_list = page.locator("#function-list")
     expect(function_list.locator(".function-item-name:has-text('getCurrentTimeInBerlin')")).to_be_visible()
     
-    # Add second function bundle (group) - separate submission creates new bundle
+    # Add second function bundle (collection) - separate submission creates new collection
     function_code.fill("""/**
  * Helper function for string operations
  * @param {string} str - The string to process
@@ -311,7 +311,7 @@ function multiply_numbers(a, b) {
   };
 }""")
     
-    # Validate and submit the second function group
+    # Validate and submit the second function collection
     page.locator("#function-validate-btn").click()
     validation_result = page.locator("#function-validation-result")
     validation_result.wait_for(state="visible", timeout=5000)
@@ -322,8 +322,8 @@ function multiply_numbers(a, b) {
     expect(function_list.locator(".function-item-name:has-text('multiply_numbers')")).to_be_visible()
     
     # Take a screenshot showing both functions in the list
-    screenshot_with_markdown(page, "function_groups_both", {
-        "step": "Both function groups added",
+    screenshot_with_markdown(page, "function_collections_both", {
+        "step": "Both function collections added",
         "functions_visible": "getCurrentTimeInBerlin, multiply_numbers",
         "functions_not_visible": "formatData, processString (helper functions)"
     })
@@ -334,7 +334,7 @@ function multiply_numbers(a, b) {
     # Click the Reset button to load all functions
     page.locator("#function-clear-btn").click()
     
-    # Verify that the editor now contains all functions from both groups
+    # Verify that the editor now contains all functions from both collections
     code_content = function_code.input_value()
     assert "getCurrentTimeInBerlin" in code_content, "getCurrentTimeInBerlin function not found in editor"
     assert "formatData" in code_content, "formatData function not found in editor"
@@ -369,9 +369,9 @@ function multiply_numbers(a, b) {
     assert "multiply_numbers" in code_content, "multiply_numbers function not found in editor"
     assert "processString" in code_content, "processString function not found in editor"
     
-    # Take a screenshot showing only the second function group remains
-    screenshot_with_markdown(page, "function_groups_after_deletion", {
-        "step": "After deleting first function group",
+    # Take a screenshot showing only the second function collection remains
+    screenshot_with_markdown(page, "function_collections_after_deletion", {
+        "step": "After deleting first function collection",
         "functions_in_editor": "multiply_numbers, processString",
         "functions_not_in_editor": "getCurrentTimeInBerlin, formatData"
     })

@@ -10,7 +10,8 @@ window.FunctionToolsStorage = (function() {
     // Registry state
     let jsFunctions = {};
     let enabledFunctions = [];
-    let functionGroups = {};
+    let functionCollections = {};
+    let functionCollectionMetadata = {};
     
     const StorageManager = {
         load: function() {
@@ -41,12 +42,20 @@ window.FunctionToolsStorage = (function() {
                 console.log("- No stored enabledFunctions found");
             }
             
-            const storedFunctionGroups = CoreStorageService.getValue(STORAGE_KEYS.FUNCTION_GROUPS);
-            if (storedFunctionGroups) {
-                functionGroups = storedFunctionGroups;
-                console.log("- Loaded functionGroups:", Object.keys(functionGroups));
+            const storedFunctionCollections = CoreStorageService.getValue(STORAGE_KEYS.FUNCTION_COLLECTIONS);
+            if (storedFunctionCollections) {
+                functionCollections = storedFunctionCollections;
+                console.log("- Loaded functionCollections:", Object.keys(functionCollections));
             } else {
-                console.log("- No stored functionGroups found");
+                console.log("- No stored functionCollections found");
+            }
+            
+            const storedFunctionCollectionMetadata = CoreStorageService.getValue(STORAGE_KEYS.FUNCTION_COLLECTION_METADATA);
+            if (storedFunctionCollectionMetadata) {
+                functionCollectionMetadata = storedFunctionCollectionMetadata;
+                console.log("- Loaded functionCollectionMetadata:", Object.keys(functionCollectionMetadata));
+            } else {
+                console.log("- No stored functionCollectionMetadata found");
             }
         },
         
@@ -54,11 +63,13 @@ window.FunctionToolsStorage = (function() {
             console.log("FunctionToolsStorage.save() called");
             console.log("- Saving jsFunctions:", Object.keys(jsFunctions));
             console.log("- Saving enabledFunctions:", enabledFunctions);
-            console.log("- Saving functionGroups:", Object.keys(functionGroups));
+            console.log("- Saving functionCollections:", Object.keys(functionCollections));
+            console.log("- Saving functionCollectionMetadata:", Object.keys(functionCollectionMetadata));
             
             CoreStorageService.setValue(STORAGE_KEYS.JS_FUNCTIONS, jsFunctions);
             CoreStorageService.setValue(STORAGE_KEYS.ENABLED_FUNCTIONS, enabledFunctions);
-            CoreStorageService.setValue(STORAGE_KEYS.FUNCTION_GROUPS, functionGroups);
+            CoreStorageService.setValue(STORAGE_KEYS.FUNCTION_COLLECTIONS, functionCollections);
+            CoreStorageService.setValue(STORAGE_KEYS.FUNCTION_COLLECTION_METADATA, functionCollectionMetadata);
             
             console.log("- Save complete");
         },
@@ -85,8 +96,12 @@ window.FunctionToolsStorage = (function() {
             return enabledFunctions;
         },
         
-        getFunctionGroups: function() {
-            return functionGroups;
+        getFunctionCollections: function() {
+            return functionCollections;
+        },
+        
+        getFunctionCollectionMetadata: function() {
+            return functionCollectionMetadata;
         },
         
         // Setters for registry state
@@ -98,8 +113,12 @@ window.FunctionToolsStorage = (function() {
             enabledFunctions = functions;
         },
         
-        setFunctionGroups: function(groups) {
-            functionGroups = groups;
+        setFunctionCollections: function(collections) {
+            functionCollections = collections;
+        },
+        
+        setFunctionCollectionMetadata: function(metadata) {
+            functionCollectionMetadata = metadata;
         }
     };
     

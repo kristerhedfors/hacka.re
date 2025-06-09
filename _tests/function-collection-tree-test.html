@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Function Collection Tree Test</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/function-calling.css">
+    <link rel="stylesheet" href="../css/themes.css">
+    <link rel="stylesheet" href="../lib/font-awesome/all.min.css">
+    <style>
+        body {
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: var(--bg-color-secondary);
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        .test-actions {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .test-actions button {
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .test-actions button:hover {
+            opacity: 0.9;
+        }
+        
+        #functionList {
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            border-radius: 8px;
+            background-color: var(--bg-color);
+            min-height: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Function Collection Tree Structure Test</h1>
+        
+        <div class="test-actions">
+            <button onclick="addTestFunctions()">Add Test Functions</button>
+            <button onclick="addMCPFunctions()">Add MCP Functions</button>
+            <button onclick="clearAllFunctions()">Clear All</button>
+        </div>
+        
+        <div id="functionList" class="function-list"></div>
+        
+        <div id="status" style="margin-top: 20px; padding: 10px; background: #333; color: #fff; border-radius: 4px; font-family: monospace;"></div>
+    </div>
+    
+    <!-- Include necessary scripts -->
+    <script src="../js/services/core-storage-service.js"></script>
+    <script src="../js/services/namespace-service.js"></script>
+    <script src="../js/services/function-tools-config.js"></script>
+    <script src="../js/services/function-tools-logger.js"></script>
+    <script src="../js/services/function-tools-storage.js"></script>
+    <script src="../js/services/function-tools-parser.js"></script>
+    <script src="../js/services/function-tools-executor.js"></script>
+    <script src="../js/services/function-tools-processor.js"></script>
+    <script src="../js/services/function-tools-registry.js"></script>
+    <script src="../js/services/function-tools-service.js"></script>
+    
+    <script>
+        const status = document.getElementById('status');
+        
+        function log(message) {
+            console.log(message);
+            status.textContent = message;
+        }
+        
+        function addTestFunctions() {
+            // Clear existing functions first
+            clearAllFunctions();
+            
+            // Add first collection
+            const collectionId1 = 'collection_' + Date.now() + '_1';
+            const collectionMetadata1 = {
+                name: 'Math Utilities',
+                createdAt: new Date().toISOString(),
+                source: 'manual'
+            };
+            
+            FunctionToolsService.addJsFunction(
+                'add',
+                `/**
+                 * Adds two numbers
+                 * @param {number} a - First number
+                 * @param {number} b - Second number
+                 * @returns {number} Sum of a and b
+                 * @callable
+                 */
+                function add(a, b) {
+                    return a + b;
+                }`,
+                {
+                    type: 'function',
+                    function: {
+                        name: 'add',
+                        description: 'Adds two numbers',
+                        parameters: {
+                            type: 'object',
+                            properties: {
+                                a: { type: 'number', description: 'First number' },
+                                b: { type: 'number', description: 'Second number' }
+                            },
+                            required: ['a', 'b']
+                        }
+                    }
+                },
+                collectionId1,
+                collectionMetadata1
+            );
+            
+            FunctionToolsService.addJsFunction(
+                'multiply',
+                `/**
+                 * Multiplies two numbers
+                 * @param {number} a - First number
+                 * @param {number} b - Second number
+                 * @returns {number} Product of a and b
+                 * @callable
+                 */
+                function multiply(a, b) {
+                    return a * b;
+                }`,
+                {
+                    type: 'function',
+                    function: {
+                        name: 'multiply',
+                        description: 'Multiplies two numbers',
+                        parameters: {
+                            type: 'object',
+                            properties: {
+                                a: { type: 'number', description: 'First number' },
+                                b: { type: 'number', description: 'Second number' }
+                            },
+                            required: ['a', 'b']
+                        }
+                    }
+                },
+                collectionId1
+            );
+            
+            // Add second collection
+            const collectionId2 = 'collection_' + Date.now() + '_2';
+            const collectionMetadata2 = {
+                name: 'String Utilities',
+                createdAt: new Date().toISOString(),
+                source: 'manual'
+            };
+            
+            FunctionToolsService.addJsFunction(
+                'uppercase',
+                `/**
+                 * Converts string to uppercase
+                 * @param {string} text - Text to convert
+                 * @returns {string} Uppercase text
+                 * @callable
+                 */
+                function uppercase(text) {
+                    return text.toUpperCase();
+                }`,
+                {
+                    type: 'function',
+                    function: {
+                        name: 'uppercase',
+                        description: 'Converts string to uppercase',
+                        parameters: {
+                            type: 'object',
+                            properties: {
+                                text: { type: 'string', description: 'Text to convert' }
+                            },
+                            required: ['text']
+                        }
+                    }
+                },
+                collectionId2,
+                collectionMetadata2
+            );
+            
+            // Enable all functions
+            FunctionToolsService.enableJsFunction('add');
+            FunctionToolsService.enableJsFunction('multiply');
+            FunctionToolsService.enableJsFunction('uppercase');
+            
+            renderFunctions();
+            log('Added test function collections');
+        }
+        
+        function addMCPFunctions() {
+            // Simulate MCP tool registration
+            const collectionId = `mcp-filesystem-${Date.now()}`;
+            const collectionMetadata = {
+                name: 'MCP: filesystem',
+                createdAt: new Date().toISOString(),
+                source: 'mcp',
+                mcpServer: 'filesystem',
+                mcpCommand: 'npx @modelcontextprotocol/server-filesystem',
+                toolCount: 2
+            };
+            
+            FunctionToolsService.addJsFunction(
+                'filesystem_read_file',
+                `/**
+                 * Reads a file from the filesystem
+                 * @param {string} path - Path to the file
+                 * @returns {Promise<Object>} File content
+                 * @callable
+                 */
+                async function filesystem_read_file(path) {
+                    // MCP tool implementation
+                    return { content: 'file content' };
+                }`,
+                {
+                    type: 'function',
+                    function: {
+                        name: 'filesystem_read_file',
+                        description: 'Reads a file from the filesystem',
+                        parameters: {
+                            type: 'object',
+                            properties: {
+                                path: { type: 'string', description: 'Path to the file' }
+                            },
+                            required: ['path']
+                        }
+                    }
+                },
+                collectionId,
+                collectionMetadata
+            );
+            
+            FunctionToolsService.addJsFunction(
+                'filesystem_write_file',
+                `/**
+                 * Writes content to a file
+                 * @param {string} path - Path to the file
+                 * @param {string} content - Content to write
+                 * @returns {Promise<Object>} Write result
+                 * @callable
+                 */
+                async function filesystem_write_file(path, content) {
+                    // MCP tool implementation
+                    return { success: true };
+                }`,
+                {
+                    type: 'function',
+                    function: {
+                        name: 'filesystem_write_file',
+                        description: 'Writes content to a file',
+                        parameters: {
+                            type: 'object',
+                            properties: {
+                                path: { type: 'string', description: 'Path to the file' },
+                                content: { type: 'string', description: 'Content to write' }
+                            },
+                            required: ['path', 'content']
+                        }
+                    }
+                },
+                collectionId
+            );
+            
+            // Enable MCP functions
+            FunctionToolsService.enableJsFunction('filesystem_read_file');
+            FunctionToolsService.enableJsFunction('filesystem_write_file');
+            
+            renderFunctions();
+            log('Added MCP function collection');
+        }
+        
+        function clearAllFunctions() {
+            const functions = FunctionToolsService.getJsFunctions();
+            const functionNames = Object.keys(functions);
+            
+            // Remove each function (will remove entire collections)
+            const processedCollections = new Set();
+            functionNames.forEach(name => {
+                const collections = FunctionToolsService.getFunctionGroups();
+                const collectionId = collections[name];
+                
+                if (!processedCollections.has(collectionId)) {
+                    FunctionToolsService.removeJsFunction(name);
+                    processedCollections.add(collectionId);
+                }
+            });
+            
+            renderFunctions();
+            log('Cleared all functions');
+        }
+        
+        function renderFunctions() {
+            const functionList = document.getElementById('functionList');
+            functionList.innerHTML = '';
+            
+            const functions = FunctionToolsService.getJsFunctions();
+            const functionNames = Object.keys(functions);
+            
+            if (functionNames.length === 0) {
+                functionList.innerHTML = '<p style="text-align: center; color: var(--text-color-secondary);">No functions defined</p>';
+                return;
+            }
+            
+            // Use the renderUserDefinedFunctions logic from function-calling-manager
+            const allCollections = FunctionToolsService.getAllFunctionGroups();
+            let colorIndex = 1;
+            
+            Object.values(allCollections).forEach(collection => {
+                if (!collection.functions || collection.functions.length === 0) return;
+                
+                // Create collection container
+                const collectionContainer = document.createElement('div');
+                collectionContainer.className = 'function-collection-container';
+                
+                const collectionColor = `color-${colorIndex}`;
+                colorIndex = colorIndex % 5 + 1;
+                
+                // Create collection header
+                const collectionHeader = document.createElement('div');
+                collectionHeader.className = 'function-collection-header';
+                collectionHeader.style.borderLeft = `12px solid var(--function-${collectionColor})`;
+                
+                const expandIcon = document.createElement('i');
+                expandIcon.className = 'fas fa-chevron-right';
+                collectionHeader.appendChild(expandIcon);
+                
+                const collectionName = document.createElement('h4');
+                collectionName.textContent = collection.metadata.name || 'Untitled Collection';
+                collectionHeader.appendChild(collectionName);
+                
+                const functionCount = document.createElement('span');
+                functionCount.className = 'function-collection-count';
+                functionCount.textContent = `(${collection.functions.length} functions)`;
+                collectionHeader.appendChild(functionCount);
+                
+                if (collection.metadata.source === 'mcp') {
+                    const sourceInfo = document.createElement('span');
+                    sourceInfo.className = 'function-collection-source';
+                    sourceInfo.textContent = `MCP: ${collection.metadata.mcpCommand}`;
+                    sourceInfo.style.marginLeft = 'auto';
+                    collectionHeader.appendChild(sourceInfo);
+                }
+                
+                collectionContainer.appendChild(collectionHeader);
+                
+                // Create functions container
+                const functionsContainer = document.createElement('div');
+                functionsContainer.className = 'function-collection-functions';
+                functionsContainer.style.display = 'none';
+                
+                // Toggle expand/collapse
+                let isExpanded = false;
+                collectionHeader.addEventListener('click', () => {
+                    isExpanded = !isExpanded;
+                    expandIcon.className = isExpanded ? 'fas fa-chevron-down' : 'fas fa-chevron-right';
+                    functionsContainer.style.display = isExpanded ? 'block' : 'none';
+                });
+                
+                // Add functions
+                collection.functions.forEach(funcName => {
+                    const funcSpec = functions[funcName];
+                    const isEnabled = FunctionToolsService.isJsFunctionEnabled(funcName);
+                    
+                    const functionItem = document.createElement('div');
+                    functionItem.className = 'function-item';
+                    functionItem.style.borderLeft = `4px solid var(--function-${collectionColor})`;
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.className = 'function-item-checkbox';
+                    checkbox.checked = isEnabled;
+                    checkbox.addEventListener('change', () => {
+                        if (checkbox.checked) {
+                            FunctionToolsService.enableJsFunction(funcName);
+                        } else {
+                            FunctionToolsService.disableJsFunction(funcName);
+                        }
+                        log(`Function ${funcName} ${checkbox.checked ? 'enabled' : 'disabled'}`);
+                    });
+                    
+                    const nameElement = document.createElement('div');
+                    nameElement.className = 'function-item-name';
+                    nameElement.textContent = funcName;
+                    
+                    functionItem.appendChild(checkbox);
+                    functionItem.appendChild(nameElement);
+                    
+                    functionsContainer.appendChild(functionItem);
+                });
+                
+                collectionContainer.appendChild(functionsContainer);
+                functionList.appendChild(collectionContainer);
+            });
+        }
+        
+        // Initialize
+        renderFunctions();
+        log('Test page ready');
+    </script>
+</body>
+</html>

@@ -9,7 +9,8 @@ window.FunctionToolsConfig = (function() {
         FUNCTION_TOOLS_ENABLED: 'function_tools_enabled',
         JS_FUNCTIONS: 'js_functions',
         ENABLED_FUNCTIONS: 'enabled_functions',
-        FUNCTION_GROUPS: 'function_groups'
+        FUNCTION_COLLECTIONS: 'function_collections',
+        FUNCTION_COLLECTION_METADATA: 'function_collection_metadata'
     };
     
     // Configuration
