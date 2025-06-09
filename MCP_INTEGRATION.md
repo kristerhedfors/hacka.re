@@ -146,8 +146,9 @@ The MCP modal follows hacka.re's consistent UI patterns:
 ## Security and Privacy
 
 ### Data Encryption
-- All MCP command history encrypted in localStorage
-- Uses hacka.re's existing `CoreStorageService`
+- All MCP data encrypted in localStorage using `CoreStorageService`
+- Command history stored as `mcp-command-history` (encrypted, namespaced)
+- Server connections stored as `mcp-connections` (encrypted, namespaced)
 - No data transmitted to external servers except direct MCP communication
 
 ### Proxy Security
@@ -261,10 +262,11 @@ Server Name: custom-server
 - Group management for MCP functions
 
 ### Settings and Storage
-- MCP settings encrypted with other hacka.re data
-- Command history excluded from shared links
-- Server configurations persist across sessions
+- All MCP data encrypted with other hacka.re data using `CoreStorageService`
+- Command history excluded from shared links for privacy
+- Server configurations persist across sessions in encrypted storage
 - Namespace isolation for different GPT instances
+- Storage keys: `mcp-command-history`, `mcp-connections`
 
 ### UI Consistency
 - MCP modal follows hacka.re design patterns

@@ -1244,25 +1244,28 @@ async function mcp_${serverName}_${tool.name}(params) {
     }
     
     /**
-     * Save connection configuration to localStorage
+     * Save connection configuration to encrypted storage
      * @param {string} name - Server name
      * @param {Object} config - Server configuration
      */
     function saveConnectionConfig(name, config) {
         const savedConnections = getSavedConnections();
         savedConnections[name] = config;
-        localStorage.setItem('mcp-connections', JSON.stringify(savedConnections));
+        // Use CoreStorageService for encrypted, namespaced storage like other hacka.re data
+        window.CoreStorageService?.setValue('mcp-connections', savedConnections);
     }
     
     /**
-     * Get saved connection configurations
+     * Get saved connection configurations from encrypted storage
      * @returns {Object} Saved connections object
      */
     function getSavedConnections() {
         try {
-            return JSON.parse(localStorage.getItem('mcp-connections') || '{}');
+            // Use CoreStorageService for encrypted, namespaced storage like other hacka.re data
+            const connections = window.CoreStorageService?.getValue('mcp-connections');
+            return connections || {};
         } catch (error) {
-            console.error('[MCPManager] Failed to parse saved connections:', error);
+            console.error('[MCPManager] Failed to load saved connections:', error);
             return {};
         }
     }
