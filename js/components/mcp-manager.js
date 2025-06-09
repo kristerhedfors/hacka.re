@@ -458,9 +458,11 @@ window.MCPManager = (function() {
             const response = await fetch(`${currentProxyUrl}/health`);
             if (response.ok) {
                 const data = await response.json();
+                console.log('[MCPManager] Test connection response:', data);
                 proxyConnected = true;
                 proxyStatus.className = 'proxy-status connected';
-                proxyStatus.innerHTML = `✅ Connected to MCP stdio proxy (${data.servers || 0} servers running)`;
+                const serverCount = Array.isArray(data.servers) ? data.servers.length : (data.servers || 0);
+                proxyStatus.innerHTML = `✅ Connected to MCP stdio proxy (${serverCount} servers running)`;
                 showNotification('Connected to MCP proxy - you can now add server configurations', 'success');
                 updateServerInstructions();
                 // Update the servers list to show any running servers
