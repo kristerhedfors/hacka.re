@@ -119,6 +119,20 @@ avg_lines_per_file() {
     fi
 }
 
+# Function to find largest files by extension
+largest_files_by_extension() {
+    local ext=$1
+    local limit=${2:-3}  # Default to top 3 files
+    
+    # Find files, get line counts, sort by size, take top N
+    eval "find . -type f -name \"*.$ext\" $EXCLUSIONS" | while read file; do
+        if [ -f "$file" ]; then
+            lines=$(wc -l < "$file" 2>/dev/null || echo "0")
+            echo "$lines $file"
+        fi
+    done | sort -rn | head -$limit
+}
+
 # Function to format numbers with commas
 format_number() {
     # Use printf with awk instead of sed for better compatibility
@@ -196,6 +210,24 @@ done
 overall_avg=$(echo "scale=2; $total_lines / $total_files" | bc)
 echo -e "${YELLOW}Overall average: $overall_avg lines/file${NC}"
 echo ""
+
+# Print largest files by type (refactoring candidates)
+echo -e "${BLUE}LARGEST FILES BY TYPE (Refactoring Candidates)${NC}"
+echo -e "------------------------------------------------"
+
+# Show largest files for each extension that has files
+for ext in "${extensions[@]}"; do
+    files=$(count_files_by_extension "$ext")
+    if [ "$files" -gt 0 ]; then
+        echo -e "${YELLOW}Largest .$ext files:${NC}"
+        largest_files_by_extension "$ext" 3 | while read line_count file_path; do
+            if [ -n "$line_count" ] && [ "$line_count" -gt 0 ]; then
+                echo -e "  $(format_number $line_count) lines: $file_path"
+            fi
+        done
+        echo ""
+    fi
+done
 
 # MCP-specific metrics
 echo -e "${BLUE}MCP INTEGRATION METRICS${NC}"
