@@ -271,6 +271,11 @@
                     syntax highlighting, happens locally in your browser. As a static web application, hacka.re never sends your data to any server except when making direct API calls to your chosen LLM provider.
                 </p>
                 <br />
+                
+                <p>
+                    <strong>MCP Integration:</strong> For extended functionality, hacka.re includes a local MCP (Model Context Protocol) stdio proxy that enables AI models to access external tools like filesystem operations, databases, and custom integrations. The proxy runs locally and maintains hacka.re's privacy-first approach by avoiding external data transmission.
+                </p>
+                <br />
 
                 <p>
                     Few dependencies limits the attack surface and thus increases the resilince to various attacks. We only depend on `marked` for rendering markdown,
@@ -294,6 +299,16 @@
                     <li><strong>DataService:</strong> Implements data-type-specific storage operations</li>
                     <li><strong>StorageService:</strong> High-level facade exposing storage APIs</li>
                 </ol>
+                
+                <p>
+                    <strong>MCP Data Storage:</strong>
+                </p>
+                <ul>
+                    <li><strong>mcp-connections:</strong> Encrypted storage of MCP server configurations and connection details</li>
+                    <li><strong>mcp-command-history:</strong> Encrypted storage of command history with deduplication and time tracking</li>
+                    <li><strong>Namespace Isolation:</strong> MCP data is isolated per namespace (title/subtitle) for multi-tenant usage</li>
+                    <li><strong>Privacy Protection:</strong> Command history excluded from shared links to protect sensitive information</li>
+                </ul>
                 
             </div>
 
@@ -395,9 +410,61 @@
             </div>
 
             <div class="feature-section">
+                <h3>MCP (Model Context Protocol) Integration</h3>
+                <p>
+                    <a href="https://hacka.re/" target="_blank">hacka.re</a> implements comprehensive Model Context Protocol (MCP) integration that allows AI models to access external tools and resources through MCP servers. The integration is built as a pure client-side implementation with no external dependencies, following hacka.re's privacy-focused architecture.
+                </p>
+                
+                <p>
+                    <strong>MCP Components:</strong>
+                </p>
+                <ol>
+                    <li><strong>MCPClientService:</strong> Zero-dependency MCP client implementation with JSON-RPC 2.0 protocol support</li>
+                    <li><strong>MCPManager:</strong> UI component for managing MCP server connections and configurations</li>
+                    <li><strong>MCP Stdio Proxy:</strong> Bridge between browser-based client and stdio-based MCP servers</li>
+                    <li><strong>Function Integration Layer:</strong> Automatic tool registration with hacka.re's existing function calling system</li>
+                </ol>
+                
+                <p>
+                    <strong>Transport Layer Support:</strong>
+                </p>
+                <ul>
+                    <li><strong>Stdio Transport:</strong> Local process communication via mcp-stdio-proxy for servers like filesystem, database, and custom tools</li>
+                    <li><strong>SSE Transport:</strong> HTTP-based MCP servers with Server-Sent Events for web-based integrations</li>
+                    <li><strong>Real-time Communication:</strong> Progress callbacks and live status updates during tool execution</li>
+                </ul>
+                
+                <p>
+                    <strong>Tool Integration Flow:</strong>
+                </p>
+                <ol>
+                    <li>User configures MCP server command through the UI interface</li>
+                    <li>Proxy starts server process with stdio communication channel</li>
+                    <li>MCPClientService establishes JSON-RPC connection and capability negotiation</li>
+                    <li>Server capabilities (tools, resources, prompts) are automatically discovered</li>
+                    <li>Tools are dynamically registered as JavaScript functions in hacka.re's function calling system</li>
+                    <li>AI models can seamlessly call MCP tools through the standard function calling interface</li>
+                </ol>
+                
+                <p>
+                    <strong>Security and Privacy:</strong>
+                </p>
+                <ul>
+                    <li><strong>Encrypted Storage:</strong> All MCP configurations and command history stored using CoreStorageService encryption</li>
+                    <li><strong>Local Processing:</strong> MCP proxy runs locally on localhost only, no external network access unless explicitly configured</li>
+                    <li><strong>Process Isolation:</strong> Each MCP server runs in its own sandboxed process environment</li>
+                    <li><strong>Privacy-First:</strong> Command history excluded from shared links to protect sensitive information</li>
+                </ul>
+                
+                <p>
+                    This architecture enables powerful extensions to AI capabilities while maintaining hacka.re's core principles of privacy, security, and client-side operation. MCP tools appear as native functions to the AI models, creating a seamless experience for enhanced functionality.
+                </p>
+            </div>
+
+            <div class="feature-section">
     <h3>Function Calling Architecture</h3>
     <p>
-        <a href="https://hacka.re/" target="_blank">hacka.re</a> implements a function calling system that allows users to define JavaScript functions that can be called by AI models through the OpenAI-compatible API. This feature enables the AI to perform actions or retrieve information by executing user-defined code.
+        <a href="https://hacka.re/" target="_blank">hacka.re</a> implements a comprehensive function calling system that allows users to define JavaScript functions that can be called by AI models through the OpenAI-compatible API. This system supports both user-defined functions and external tools through MCP integration.
     </p>
     
     <p>
@@ -407,6 +474,7 @@
         <li><strong>FunctionCallingManager:</strong> Handles the UI for creating, editing, and managing functions</li>
         <li><strong>FunctionToolsService:</strong> Manages JavaScript function registration, validation, and execution</li>
         <li><strong>ApiToolsService:</strong> Handles tool declarations and execution for OpenAI-compatible API tool calling</li>
+        <li><strong>MCP Integration Layer:</strong> Automatically registers MCP server tools as callable functions</li>
     </ol>
     
     <p>
@@ -442,10 +510,11 @@
         <li>The system processes tool calls from the API response</li>
         <li>Tool calls are routed to the appropriate handler based on the function name</li>
         <li>Function results are returned to the API for follow-up responses</li>
+        <li><strong>MCP Tool Integration:</strong> External MCP tools are seamlessly integrated and appear as native functions to AI models</li>
     </ul>
     
     <p>
-        This architecture allows for powerful extensions to the AI's capabilities while maintaining security and privacy by executing all code locally in the browser.
+        This architecture allows for powerful extensions to the AI's capabilities while maintaining security and privacy. User-defined functions execute locally in the browser, while MCP tools run in isolated local processes, ensuring no external data transmission beyond direct API communication.
     </p>
 </div>
 
