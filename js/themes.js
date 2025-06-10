@@ -5,7 +5,6 @@
 
 window.ThemeService = (function() {
     const THEME_STORAGE_KEY = 'hackare_theme_mode';
-    let darkModeToggleBtn;
     
     // Define the theme cycle order - include light and dark modes
     const themeOrder = ['light', 'dark', 'sunset', 'ocean', 'forest', 'midnight'];
@@ -14,29 +13,24 @@ window.ThemeService = (function() {
      * Initialize the theme
      */
     function initTheme() {
-        console.log('ThemeService: Initializing theme');
         
         // Create theme toggle button
         createThemeToggle();
         
         // Get saved theme preference or use system preference
         const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
-        console.log('ThemeService: Saved theme preference:', savedTheme);
         
         // Apply theme based on saved preference or default to light mode
         if (savedTheme) {
-            console.log('ThemeService: Applying saved theme:', savedTheme);
             applyTheme(savedTheme);
         } else {
             // Default to light mode regardless of system preference
-            console.log('ThemeService: No saved preference, defaulting to light mode');
             enableLightMode();
         }
         
         // Add keyboard shortcuts for cycling themes (Alt+Shift+T)
         document.addEventListener('keydown', function(event) {
             if (event.altKey && event.shiftKey && event.key === 'T') {
-                console.log('ThemeService: Theme cycle keyboard shortcut triggered');
                 cycleTheme();
             }
         });
@@ -44,13 +38,11 @@ window.ThemeService = (function() {
         // Add event listener for system preference changes
         if (window.matchMedia) {
             const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
-            console.log('ThemeService: System prefers dark mode:', prefersDarkMode.matches);
             
             // Listen for changes to system preference
             prefersDarkMode.addEventListener('change', (e) => {
                 // Only apply system preference if no saved preference exists
                 if (!localStorage.getItem(THEME_STORAGE_KEY)) {
-                    console.log('ThemeService: System preference changed, new preference:', e.matches ? 'dark' : 'light');
                     if (e.matches) {
                         enableDarkMode();
                     } else {
@@ -61,43 +53,16 @@ window.ThemeService = (function() {
         }
     }
     
-    /**
-     * Create and add the dark mode toggle button to the header
-     * This function is kept for compatibility but doesn't create a separate button anymore
-     */
-    function createDarkModeToggle() {
-        console.log('ThemeService: Dark mode toggle functionality now integrated into theme cycle button');
-        // No longer creating a separate dark mode toggle button
-        return;
-    }
-    
-    /**
-     * Update the toggle button icon based on current theme
-     */
-    function updateToggleButton() {
-        if (darkModeToggleBtn) {
-            darkModeToggleBtn.innerHTML = isDarkMode() 
-                ? '<i class="fas fa-sun"></i>' 
-                : '<i class="fas fa-moon"></i>';
-            
-            darkModeToggleBtn.title = isDarkMode() 
-                ? 'Switch to Light Mode' 
-                : 'Switch to Dark Mode';
-        }
-    }
     
     /**
      * Toggle between dark and light mode
      */
     function toggleDarkMode() {
-        console.log('ThemeService: Toggling dark mode, current mode:', isDarkMode() ? 'dark' : 'light');
         
         try {
             if (isDarkMode()) {
-                console.log('ThemeService: Switching to light mode');
                 enableLightMode();
             } else {
-                console.log('ThemeService: Switching to dark mode');
                 enableDarkMode();
             }
             
@@ -107,9 +72,7 @@ window.ThemeService = (function() {
             void document.documentElement.offsetHeight;
             document.documentElement.style.display = '';
             
-            console.log('ThemeService: Theme toggled, new mode:', isDarkMode() ? 'dark' : 'light');
         } catch (error) {
-            console.error('ThemeService: Error toggling dark mode:', error);
         }
     }
     
@@ -117,14 +80,11 @@ window.ThemeService = (function() {
      * Toggle sunset theme
      */
     function toggleSunsetTheme() {
-        console.log('ThemeService: Toggling sunset theme, current mode:', getThemeMode());
         
         try {
             if (isSunsetTheme()) {
-                console.log('ThemeService: Switching to light mode from sunset');
                 enableLightMode();
             } else {
-                console.log('ThemeService: Switching to sunset theme');
                 enableSunsetTheme();
             }
             
@@ -134,9 +94,7 @@ window.ThemeService = (function() {
             void document.documentElement.offsetHeight;
             document.documentElement.style.display = '';
             
-            console.log('ThemeService: Theme toggled, new mode:', getThemeMode());
         } catch (error) {
-            console.error('ThemeService: Error toggling sunset theme:', error);
         }
     }
     
@@ -144,7 +102,6 @@ window.ThemeService = (function() {
      * Enable dark mode
      */
     function enableDarkMode() {
-        console.log('ThemeService: Enabling dark mode');
         removeAllThemeClasses();
         document.documentElement.classList.add('theme-modern');
         document.documentElement.classList.add('dark-mode');
@@ -156,7 +113,6 @@ window.ThemeService = (function() {
      * Enable light mode
      */
     function enableLightMode() {
-        console.log('ThemeService: Enabling light mode');
         removeAllThemeClasses();
         document.documentElement.classList.add('theme-modern');
         localStorage.setItem(THEME_STORAGE_KEY, 'light');
@@ -167,7 +123,6 @@ window.ThemeService = (function() {
      * Enable sunset theme
      */
     function enableSunsetTheme() {
-        console.log('ThemeService: Enabling sunset theme');
         removeAllThemeClasses();
         document.documentElement.classList.add('theme-sunset');
         localStorage.setItem(THEME_STORAGE_KEY, 'sunset');
@@ -178,18 +133,12 @@ window.ThemeService = (function() {
      * Enable ocean theme
      */
     function enableOceanTheme() {
-        console.log('ThemeService: Enabling ocean theme');
         try {
-            console.log('ThemeService: Current classes:', document.documentElement.classList);
             removeAllThemeClasses();
-            console.log('ThemeService: After removing classes:', document.documentElement.classList);
             document.documentElement.classList.add('theme-ocean');
-            console.log('ThemeService: After adding ocean theme:', document.documentElement.classList);
             localStorage.setItem(THEME_STORAGE_KEY, 'ocean');
             updateThemeDropdown('ocean');
-            console.log('ThemeService: Ocean theme enabled');
         } catch (error) {
-            console.error('ThemeService: Error enabling ocean theme:', error);
         }
     }
     
@@ -197,7 +146,6 @@ window.ThemeService = (function() {
      * Enable forest theme
      */
     function enableForestTheme() {
-        console.log('ThemeService: Enabling forest theme');
         removeAllThemeClasses();
         document.documentElement.classList.add('theme-forest');
         localStorage.setItem(THEME_STORAGE_KEY, 'forest');
@@ -208,7 +156,6 @@ window.ThemeService = (function() {
      * Enable midnight theme
      */
     function enableMidnightTheme() {
-        console.log('ThemeService: Enabling midnight theme');
         removeAllThemeClasses();
         document.documentElement.classList.add('theme-midnight');
         // Still save to localStorage for compatibility with other functions
@@ -261,7 +208,6 @@ window.ThemeService = (function() {
      * Apply a theme by name
      */
     function applyTheme(themeName) {
-        console.log('ThemeService: Applying theme:', themeName);
         
         switch (themeName) {
             case 'light':
@@ -284,7 +230,6 @@ window.ThemeService = (function() {
                 break;
             default:
                 // Fallback to light mode if theme name is unknown
-                console.log('ThemeService: Unknown theme name, defaulting to light mode');
                 enableLightMode();
                 break;
         }
@@ -294,19 +239,16 @@ window.ThemeService = (function() {
      * Cycle to the next theme in the theme order
      */
     function cycleTheme() {
-        console.log('ThemeService: Cycling to next theme');
         
         try {
             // Get current theme
             const currentTheme = getThemeMode();
-            console.log('ThemeService: Current theme before cycling:', currentTheme);
             
             // Find the index of the current theme in the theme order
             let currentIndex = themeOrder.indexOf(currentTheme);
             
             // If current theme is not in the theme order, default to light theme
             if (currentIndex === -1) {
-                console.log('ThemeService: Current theme not in cycle order, defaulting to light theme');
                 enableLightMode();
                 return;
             }
@@ -316,7 +258,6 @@ window.ThemeService = (function() {
             
             // Get the next theme
             const nextTheme = themeOrder[nextIndex];
-            console.log('ThemeService: Next theme:', nextTheme);
             
             // Apply the next theme
             applyTheme(nextTheme);
@@ -331,9 +272,7 @@ window.ThemeService = (function() {
             void document.documentElement.offsetHeight;
             document.documentElement.style.display = '';
             
-            console.log('ThemeService: Theme cycled, new mode:', getThemeMode());
         } catch (error) {
-            console.error('ThemeService: Error cycling theme:', error);
         }
     }
     
@@ -341,13 +280,11 @@ window.ThemeService = (function() {
      * Create theme toggle button
      */
     function createThemeToggle() {
-        console.log('ThemeService: Creating theme toggle button');
         
         // Check if toggle already exists
         let themeToggleBtn = document.getElementById('theme-toggle-btn');
         
         if (themeToggleBtn) {
-            console.log('ThemeService: Theme toggle button already exists, attaching event listener');
             // Add click event listener to cycle through themes
             themeToggleBtn.addEventListener('click', cycleTheme);
             return;
@@ -369,13 +306,10 @@ window.ThemeService = (function() {
             const settings = header.querySelector('.settings');
             if (settings) {
                 settings.appendChild(themeToggleBtn);
-                console.log('ThemeService: Theme toggle button added to settings');
             } else {
                 header.appendChild(themeToggleBtn);
-                console.log('ThemeService: Theme toggle button added to header');
             }
         } else {
-            console.error('ThemeService: Header element not found');
         }
     }
     
@@ -384,7 +318,6 @@ window.ThemeService = (function() {
      */
     function updateThemeDropdown(theme) {
         // This function is kept for compatibility but doesn't do anything now
-        console.log('ThemeService: Theme updated to:', theme);
     }
     
     /**
