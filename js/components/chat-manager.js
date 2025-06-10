@@ -123,7 +123,7 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
         // Note: functionCallingManager already includes FunctionToolsService functions, so we don't need to include them separately
         const combinedToolsManager = {
             getToolDefinitions: () => {
-                const apiTools = apiToolsManager ? apiToolsManager.getToolDefinitions() : [];
+                const apiTools = apiToolsManager ? apiToolsManager.getEnabledToolDefinitions() : [];
                 const functionCallingTools = functionCallingManager ? functionCallingManager.getFunctionDefinitions() : [];
                 
                 // Debug logging

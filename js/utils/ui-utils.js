@@ -808,6 +808,86 @@ window.UIUtils = (function() {
         initTooltipBehavior();
     }
     
+    /**
+     * Simple Event System for decoupling components
+     * Provides publish-subscribe pattern to reduce circular dependencies
+     */
+    const EventBus = (function() {
+        const events = {};
+        
+        /**
+         * Subscribe to an event
+         * @param {string} eventName - Name of the event
+         * @param {Function} callback - Callback function
+         * @returns {Function} Unsubscribe function
+         */
+        function subscribe(eventName, callback) {
+            if (!events[eventName]) {
+                events[eventName] = [];
+            }
+            
+            events[eventName].push(callback);
+            
+            // Return unsubscribe function
+            return function unsubscribe() {
+                const index = events[eventName].indexOf(callback);
+                if (index > -1) {
+                    events[eventName].splice(index, 1);
+                }
+            };
+        }
+        
+        /**
+         * Emit an event
+         * @param {string} eventName - Name of the event
+         * @param {*} data - Data to pass to callbacks
+         */
+        function emit(eventName, data) {
+            if (!events[eventName]) {
+                return;
+            }
+            
+            // Call all callbacks asynchronously to prevent blocking
+            events[eventName].forEach(callback => {
+                setTimeout(() => {
+                    try {
+                        callback(data);
+                    } catch (error) {
+                        console.error(`Error in event callback for ${eventName}:`, error);
+                    }
+                }, 0);
+            });
+        }
+        
+        /**
+         * Remove all listeners for an event
+         * @param {string} eventName - Name of the event
+         */
+        function removeAllListeners(eventName) {
+            if (events[eventName]) {
+                events[eventName] = [];
+            }
+        }
+        
+        /**
+         * Get all current events (for debugging)
+         * @returns {Object} Events object
+         */
+        function getEvents() {
+            return Object.keys(events).reduce((acc, key) => {
+                acc[key] = events[key].length;
+                return acc;
+            }, {});
+        }
+        
+        return {
+            subscribe,
+            emit,
+            removeAllListeners,
+            getEvents
+        };
+    })();
+
     // Public API
     return {
         renderMarkdown: renderMarkdown,
@@ -821,6 +901,7 @@ window.UIUtils = (function() {
         copyChatContent: copyChatContent,
         copyToClipboardWithNotification: copyToClipboardWithNotification,
         showNotification: showNotification,
-        initCopyButtons: initCopyButtons
+        initCopyButtons: initCopyButtons,
+        EventBus: EventBus
     };
 })();
