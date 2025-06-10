@@ -1,73 +1,234 @@
 /**
  * Default Prompts CSS
  * Styles for the default prompts section in the system prompt menu
+ * Styled to match the Functions Modal design pattern
  */
 
+/* Prompts modal container */
+.prompts-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.prompts-list {
+    max-height: 300px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
 .default-prompts-section {
-    margin-bottom: 20px;
+    margin-bottom: 1.5rem;
     border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border-radius: 12px;
     overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.default-prompts-section:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
 }
 
 .default-prompts-header {
     display: flex;
     align-items: center;
-    padding: 10px 15px;
+    padding: 12px 20px;
     background-color: var(--bg-color-secondary);
     cursor: pointer;
     user-select: none;
+    border-left-width: 12px;
+    border-left-style: solid;
+    border-left-color: var(--primary-color);
+    transition: background-color 0.2s ease;
+}
+
+.default-prompts-header:hover {
+    background-color: var(--bg-color-hover, rgba(0, 0, 0, 0.03));
 }
 
 .default-prompts-header h4 {
     margin: 0 0 0 10px;
     font-size: 16px;
-    font-weight: 700; /* Changed from 500 to 700 for bold text */
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    color: var(--text-color);
 }
 
 .default-prompts-header i {
     font-size: 14px;
     transition: transform 0.2s ease;
+    color: var(--text-color-secondary);
+    min-width: 16px;
+}
+
+/* Rotate icon when expanded */
+.default-prompts-header i.fa-chevron-down {
+    transform: rotate(90deg);
 }
 
 .default-prompts-list {
-    padding: 10px;
+    padding: 0;
     background-color: var(--bg-color);
     border-top: 1px solid var(--border-color);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
 }
 
-/* Nested section styles */
+.default-prompts-list::before {
+    content: "";
+    position: absolute;
+    left: 12px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: var(--border-color);
+    opacity: 0.3;
+}
+
+/* Add spacing between prompt items in main list */
+.default-prompts-list .prompt-item {
+    margin-bottom: 8px;
+}
+
+.default-prompts-list .prompt-item:last-child {
+    margin-bottom: 12px;
+}
+
+/* Nested section styles - match function collection container */
 .nested-section {
-    margin: 10px 0;
+    margin-bottom: 1.5rem;
     border: 1px solid var(--border-color);
-    border-radius: 6px;
+    border-radius: 12px;
     overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.nested-section:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
 }
 
 .nested-section-header {
     display: flex;
     align-items: center;
-    padding: 8px 12px;
+    padding: 12px 20px;
     background-color: var(--bg-color-secondary);
     cursor: pointer;
     user-select: none;
+    border-left-width: 12px;
+    border-left-style: solid;
+    border-left-color: var(--secondary-color, #10b981);
+    transition: background-color 0.2s ease;
+}
+
+.nested-section-header:hover {
+    background-color: var(--bg-color-hover, rgba(0, 0, 0, 0.03));
 }
 
 .nested-section-header h4 {
-    margin: 0 0 0 8px;
-    font-size: 16px; /* Match the parent section font size */
-    font-weight: 700; /* Match the parent section font weight */
+    margin: 0 0 0 10px;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    color: var(--text-color);
 }
 
 .nested-section-header i {
-    font-size: 12px;
+    font-size: 14px;
     transition: transform 0.2s ease;
+    color: var(--text-color-secondary);
+    min-width: 16px;
+}
+
+/* Rotate icon when expanded */
+.nested-section-header i.fa-chevron-down {
+    transform: rotate(90deg);
 }
 
 .nested-section-list {
-    padding: 8px;
+    padding: 0;
     background-color: var(--bg-color);
     border-top: 1px solid var(--border-color);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.nested-section-list::before {
+    content: "";
+    position: absolute;
+    left: 12px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: var(--border-color);
+    opacity: 0.3;
+}
+
+/* Add spacing between prompt items */
+.nested-section-list .prompt-item {
+    margin-bottom: 8px;
+}
+
+.nested-section-list .prompt-item:last-child {
+    margin-bottom: 12px;
+}
+
+/* Regular prompt items styling to match function items */
+.prompt-item {
+    padding: 0.75rem 1rem 0.75rem 3rem;
+    border: none;
+    border-radius: 0;
+    background-color: transparent;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    position: relative;
+    overflow: hidden;
+    transition: background-color 0.2s ease;
+}
+
+.prompt-item:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Add tree connector for regular prompt items */
+.prompt-item .tree-connector {
+    position: absolute;
+    left: 12px;
+    top: 0;
+    bottom: 0;
+    width: 20px;
+    pointer-events: none;
+}
+
+.prompt-item .tree-connector::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 16px;
+    height: 2px;
+    background-color: var(--border-color);
+    opacity: 0.5;
+}
+
+.prompt-item .tree-connector::after {
+    content: "";
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
 }
 
 /* Ensure nested items use the same font size as parent items */
@@ -78,19 +239,84 @@
 /* Make sure all prompt items have consistent font size */
 .prompt-item-name {
     font-size: 14px !important;
+    font-weight: 600;
+    flex: 1;
+    transition: color 0.2s ease;
+}
+
+.default-prompt-item:hover .prompt-item-name {
+    color: var(--accent-color);
 }
 
 .default-prompt-item {
+    padding: 0.75rem 1rem 0.75rem 3rem;
+    border: none;
+    border-radius: 0;
     background-color: var(--bg-color-secondary);
     border-left: 3px solid var(--accent-color);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    position: relative;
+    overflow: hidden;
+    transition: background-color 0.2s ease;
 }
 
-/* Make all checkboxes smaller */
+.default-prompt-item:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Add tree connector for prompt items */
+.default-prompt-item .tree-connector {
+    position: absolute;
+    left: 12px;
+    top: 0;
+    bottom: 0;
+    width: 20px;
+    pointer-events: none;
+}
+
+.default-prompt-item .tree-connector::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 16px;
+    height: 2px;
+    background-color: var(--border-color);
+    opacity: 0.5;
+}
+
+.default-prompt-item .tree-connector::after {
+    content: "";
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--accent-color);
+}
+
+/* Checkbox styling to match functions modal */
 .prompt-item-checkbox,
 .default-prompt-item .prompt-item-checkbox {
-    width: 14px;
-    height: 14px;
-    margin-right: 8px;
+    margin: 0 8px 0 0 !important;
+    cursor: pointer;
+    width: 14px !important;
+    height: 14px !important;
+    min-width: 14px !important;
+    min-height: 14px !important;
+    transition: transform 0.2s ease;
+    position: relative;
+    z-index: 2;
+    flex-shrink: 0;
+}
+
+.prompt-item-checkbox:hover,
+.default-prompt-item .prompt-item-checkbox:hover {
+    transform: scale(1.1);
 }
 
 .prompt-item-info {
@@ -185,10 +411,11 @@
 /* Make prompt name clickable */
 .default-prompt-item .prompt-item-name {
     cursor: pointer;
+    transition: color 0.2s ease;
 }
 
 .default-prompt-item .prompt-item-name:hover {
-    color: var(--accent-color);
+    color: var(--primary-color);
 }
 
 /* Token usage display styles */
