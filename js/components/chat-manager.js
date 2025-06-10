@@ -138,6 +138,22 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
                 
                 return allTools;
             },
+            getEnabledToolDefinitions: () => {
+                const apiTools = apiToolsManager ? apiToolsManager.getEnabledToolDefinitions() : [];
+                const functionCallingTools = functionCallingManager ? functionCallingManager.getFunctionDefinitions() : [];
+                
+                // Debug logging
+                console.log("combinedToolsManager.getEnabledToolDefinitions called");
+                console.log("- apiTools:", apiTools.length, apiTools.map(t => t.function?.name));
+                console.log("- functionCallingTools:", functionCallingTools.length, functionCallingTools.map(t => t.function?.name));
+                console.log("- FunctionToolsService enabled:", FunctionToolsService ? FunctionToolsService.isFunctionToolsEnabled() : false);
+                console.log("- FunctionToolsService enabled functions:", FunctionToolsService ? FunctionToolsService.getEnabledFunctionNames() : []);
+                
+                const allTools = [...apiTools, ...functionCallingTools];
+                console.log("- Combined tools:", allTools.length, allTools.map(t => t.function?.name));
+                
+                return allTools;
+            },
             processToolCalls: async (toolCalls, addSystemMessage) => {
                 console.log("[ChatManager Debug] processToolCalls called");
                 console.log("[ChatManager Debug] - Tool calls input:", toolCalls);

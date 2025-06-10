@@ -1,6 +1,7 @@
 /**
  * UI Utilities
- * Helper functions for UI manipulation and rendering
+ * Core UI helper functions for rendering and manipulation
+ * Depends on: FunctionMarkers, ClipboardUtils, ContextUtils, TooltipUtils
  */
 
 window.UIUtils = (function() {
@@ -17,7 +18,9 @@ window.UIUtils = (function() {
         
         try {
             // Process function call and result markers before markdown rendering
-            text = processFunctionMarkers(text);
+            if (window.FunctionMarkers) {
+                text = window.FunctionMarkers.processMarkers(text);
+            }
             
             // Configure marked for better performance
             marked.setOptions({
@@ -62,176 +65,6 @@ window.UIUtils = (function() {
             // Fallback to simple HTML escaping if markdown rendering fails
             return `<p>${escapeHTML(text)}</p>`;
         }
-    }
-    
-    // Track function calls to assign different colors
-    const functionCallCounts = {};
-    
-    /**
-     * Process function call and result markers in text
-     * @param {string} text - Text to process
-     * @returns {string} - Text with markers replaced by HTML
-     */
-    function processFunctionMarkers(text) {
-        // Debug: log if we're processing any text with markers
-        if (text.includes('[FUNCTION_CALL:') || text.includes('[FUNCTION_RESULT:')) {
-            console.log('[UI Debug] Processing text with markers');
-        }
-        
-        // Reset function call counts if this is a new message
-        // We can detect this by checking if there are no function call markers in the text
-        if (!text.includes('[FUNCTION_CALL:') && !text.includes('[FUNCTION_RESULT:')) {
-            Object.keys(functionCallCounts).forEach(key => {
-                delete functionCallCounts[key];
-            });
-        }
-        
-        // Replace function call markers with icons
-        // Handle potential whitespace around the marker
-        // New format: [FUNCTION_CALL:functionName:encodedArgs]
-        // Old format: [FUNCTION_CALL:functionName] (for backward compatibility)
-        text = text.replace(/\s*\[FUNCTION_CALL:([^:\]]+)(?::([^\]]+))?\]\s*/g, (match, functionName, encodedArgs) => {
-            // Increment the count for this function name
-            functionCallCounts[functionName] = (functionCallCounts[functionName] || 0) + 1;
-            
-            // Calculate color class (cycle through 5 colors)
-            const colorIndex = (functionCallCounts[functionName] % 5) || 5;
-            const colorClass = `color-${colorIndex}`;
-            
-            // Decode and format the arguments
-            let formattedArgs = '{}';
-            if (encodedArgs) {
-                try {
-                    const decodedArgs = decodeURIComponent(encodedArgs);
-                    const argsObj = JSON.parse(decodedArgs);
-                    formattedArgs = JSON.stringify(argsObj, null, 2);
-                } catch (e) {
-                    formattedArgs = decodeURIComponent(encodedArgs);
-                }
-            }
-            
-            const iconHtml = `<span class="function-call-icon ${colorClass}">f<span class="function-icon-tooltip"><strong>Function:</strong> ${escapeHTML(functionName)}<br><strong>Parameters:</strong> ${escapeHTML(formattedArgs)}</span></span>`;
-            return iconHtml;
-        });
-        
-        // Replace function result markers with icons
-        // Handle potential newlines around the marker
-        // New format: [FUNCTION_RESULT:name:type:encodedValue:executionTime]
-        // Old format: [FUNCTION_RESULT:name:type:encodedValue] (for backward compatibility)
-        text = text.replace(/\s*\[FUNCTION_RESULT:([^:]+):([^:]+):([^:]+)(?::([^\]]+))?\]\s*/g, (match, functionName, resultType, encodedResult, executionTime) => {
-            // Use the same color as the corresponding function call
-            const colorIndex = (functionCallCounts[functionName] % 5) || 5;
-            const colorClass = `color-${colorIndex}`;
-            
-            // Decode the result value
-            let decodedResult = '';
-            let displayValue = '';
-            
-            try {
-                decodedResult = decodeURIComponent(encodedResult);
-                
-                // Parse the result to get a formatted display value
-                const resultValue = JSON.parse(decodedResult);
-                
-                // Format the display value based on the type
-                if (resultType === 'object' || resultType === 'array') {
-                    // For objects and arrays, show a compact JSON representation
-                    displayValue = JSON.stringify(resultValue);
-                    // Limit the length for display
-                    if (displayValue.length > 100) {
-                        displayValue = displayValue.substring(0, 97) + '...';
-                    }
-                } else {
-                    // For primitives, show the value directly
-                    displayValue = String(resultValue);
-                }
-            } catch (e) {
-                // If parsing fails, show the raw decoded result
-                displayValue = decodedResult;
-                if (displayValue.length > 100) {
-                    displayValue = displayValue.substring(0, 97) + '...';
-                }
-            }
-            
-            // Create tooltip with function result type, value, and copy button
-            // Only include a copy button for the result value, not for the function name
-            
-            // For the copy button, use a properly formatted JSON string for objects and arrays
-            let copyText = decodedResult;
-            try {
-                if (resultType === 'object' || resultType === 'array') {
-                    // Parse and re-stringify to ensure proper JSON formatting
-                    const resultValue = JSON.parse(decodedResult);
-                    copyText = JSON.stringify(resultValue, null, 2);
-                }
-            } catch (e) {
-                console.error('Error formatting result for copy:', e);
-                // Fall back to the raw decoded result
-                copyText = decodedResult;
-            }
-            
-            // Create a unique ID for this result to use with a data attribute instead of inline content
-            const resultId = `result_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-            
-            // Store the result in a global object that can be accessed by the copy function
-            if (!window.functionResults) {
-                window.functionResults = {};
-            }
-            window.functionResults[resultId] = copyText;
-            
-            // Use the ID instead of trying to escape the content for the data attribute
-            const copyButtonHtml = `<button class="tooltip-copy-btn" data-result-id="${resultId}" data-copy-message="Function result value copied to clipboard">Copy</button>`;
-            
-            // Add event listener for this specific button (will be attached when the HTML is added to the DOM)
-            setTimeout(() => {
-                const copyBtn = document.querySelector(`button[data-result-id="${resultId}"]`);
-                if (copyBtn) {
-                    copyBtn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const textToCopy = window.functionResults[resultId];
-                        if (textToCopy) {
-                            copyToClipboardWithNotification(textToCopy, "Function result value copied to clipboard", this);
-                        }
-                    });
-                }
-            }, 100);
-            
-            // For display, show more of the value for complex types
-            let displayValueHtml = escapeHTML(displayValue);
-            if (resultType === 'object' || resultType === 'array') {
-                try {
-                    // For objects and arrays, show a more detailed preview
-                    const resultValue = JSON.parse(decodedResult);
-                    // Format with indentation for better readability
-                    const formattedJson = JSON.stringify(resultValue, null, 2);
-                    // Limit to 300 characters for display, but show more than before
-                    const truncatedJson = formattedJson.length > 300 
-                        ? formattedJson.substring(0, 297) + '...' 
-                        : formattedJson;
-                    // Use pre tag to preserve formatting
-                    displayValueHtml = `<pre style="max-height: 200px; overflow-y: auto; margin: 5px 0;">${escapeHTML(truncatedJson)}</pre>`;
-                } catch (e) {
-                    console.error('Error formatting display value:', e);
-                    // Fall back to the simple escaped display value
-                }
-            }
-            
-            // Format execution time (if available)
-            let executionTimeFormatted = 'N/A';
-            if (executionTime) {
-                const executionTimeMs = parseInt(executionTime) || 0;
-                executionTimeFormatted = executionTimeMs < 1000 
-                    ? `${executionTimeMs}ms`
-                    : `${(executionTimeMs / 1000).toFixed(2)}s`;
-            }
-            
-            const resultIconHtml = `<span class="function-result-icon ${colorClass}"><span class="function-icon-tooltip"><strong>Result:</strong> ${escapeHTML(functionName)}<br><strong>Type:</strong> ${escapeHTML(resultType)}<br><strong>Time:</strong> ${executionTimeFormatted}<br><strong>Value:</strong> ${escapeHTML(displayValue)}</span></span>`;
-            return resultIconHtml;
-        });
-        
-        
-        return text;
     }
 
     /**
@@ -360,17 +193,8 @@ window.UIUtils = (function() {
         return typingIndicator;
     }
 
-    // Cache for context size by model
-    const contextSizeCache = {};
-    
-    // Track the last model used to detect model changes
-    let lastModelUsed = null;
-    
-    // Cache for token estimates by content length
-    const tokenEstimateCache = {};
-    
     /**
-     * Estimate token count based on character count
+     * Estimate context usage (delegates to ContextUtils)
      * @param {Array} messages - Array of chat messages
      * @param {Object} modelInfo - Information about the current model
      * @param {string} currentModel - Current model ID
@@ -378,56 +202,12 @@ window.UIUtils = (function() {
      * @returns {Object} - Object containing estimated tokens, context size, and usage percentage
      */
     function estimateContextUsage(messages, modelInfo, currentModel, systemPrompt = '') {
-        // Check if the model has changed since last call
-        if (lastModelUsed !== currentModel) {
-            console.log(`Model changed from ${lastModelUsed} to ${currentModel}, clearing context size cache`);
-            // Clear the cache when the model changes
-            Object.keys(contextSizeCache).forEach(key => {
-                delete contextSizeCache[key];
-            });
-            // Update the last model used
-            lastModelUsed = currentModel;
+        if (window.ContextUtils) {
+            return window.ContextUtils.estimateContextUsage(messages, modelInfo, currentModel, systemPrompt);
         }
         
-        // Get context window size for the current model (use cache if available)
-        let contextSize = contextSizeCache[currentModel];
-        
-        if (!contextSize) {
-            // Try to get context size from ModelInfoService
-            if (window.ModelInfoService && typeof ModelInfoService.getContextSize === 'function') {
-                contextSize = ModelInfoService.getContextSize(currentModel);
-                console.log(`Got context size ${contextSize} for model ${currentModel} from ModelInfoService.getContextSize`);
-            }
-            
-            // If we couldn't get a context size from ModelInfoService.getContextSize,
-            // try to get it directly from the contextWindowSizes object in ModelInfoService
-            if (!contextSize && window.ModelInfoService && ModelInfoService.contextWindowSizes) {
-                contextSize = ModelInfoService.contextWindowSizes[currentModel];
-                console.log(`Got context size ${contextSize} for model ${currentModel} from ModelInfoService.contextWindowSizes`);
-            }
-            
-            // If we still don't have a context size, default to 8192
-            if (!contextSize) {
-                contextSize = 8192;
-                console.log(`No context size found for model ${currentModel}, defaulting to ${contextSize}`);
-            }
-            
-            // Cache the context size for this model
-            contextSizeCache[currentModel] = contextSize;
-        } else {
-            console.log(`Using cached context size ${contextSize} for model ${currentModel}`);
-        }
-        
-        // Estimate token count based on message content
-        // A rough estimate is 1 token per 4 characters
-        let totalChars = 0;
-        
-        // Add system prompt characters if provided
-        if (systemPrompt) {
-            totalChars += systemPrompt.length;
-        }
-        
-        // Add message characters
+        // Fallback implementation
+        let totalChars = systemPrompt ? systemPrompt.length : 0;
         if (messages && messages.length > 0) {
             for (let i = 0; i < messages.length; i++) {
                 const message = messages[i];
@@ -437,375 +217,58 @@ window.UIUtils = (function() {
             }
         }
         
-        // Use cached token estimate if available
-        let estimatedTokens = tokenEstimateCache[totalChars];
-        if (!estimatedTokens) {
-            // Estimate tokens (4 chars per token is a rough approximation)
-            estimatedTokens = Math.ceil(totalChars / 4);
-            
-            // Cache the token estimate for this content length
-            // Only cache for reasonable content lengths to avoid memory issues
-            if (totalChars < 1000000) {
-                tokenEstimateCache[totalChars] = estimatedTokens;
-            }
-        }
-        
-        // Calculate percentage
+        const estimatedTokens = Math.ceil(totalChars / 4);
+        const contextSize = 8192; // Default fallback
         const percentage = Math.min(Math.round((estimatedTokens / contextSize) * 100), 100);
         
         return {
-            estimatedTokens: estimatedTokens,
-            contextSize: contextSize,
-            percentage: percentage
+            estimatedTokens,
+            contextSize,
+            percentage
         };
     }
 
     /**
-     * Copy chat content to clipboard
+     * Copy chat content to clipboard (delegates to ClipboardUtils)
      * @param {HTMLElement} chatMessagesElement - The chat messages container element
      * @returns {boolean} - Whether the copy was successful
      */
     function copyChatContent(chatMessagesElement) {
-        if (!chatMessagesElement) {
-            console.error('Chat messages element not found');
-            return false;
+        if (window.ClipboardUtils) {
+            return window.ClipboardUtils.copyChatContent(chatMessagesElement);
         }
         
-        try {
-            // Get all message elements
-            const messageElements = chatMessagesElement.querySelectorAll('.message');
-            
-            if (!messageElements || messageElements.length === 0) {
-                console.log('No messages to copy');
-                return false;
-            }
-            
-            // Build a string with all messages
-            let chatContent = '';
-            
-            messageElements.forEach(messageElement => {
-                // Get role
-                const role = messageElement.classList.contains('user') ? 'User' : 
-                             messageElement.classList.contains('assistant') ? 'Assistant' : 
-                             'System';
-                
-                // Get content text (strip HTML)
-                const contentElement = messageElement.querySelector('.message-content');
-                let content = '';
-                
-                if (contentElement) {
-                    // Create a temporary div to get text content
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = contentElement.innerHTML;
-                    
-                    // Replace <br> tags with newlines
-                    const brElements = tempDiv.querySelectorAll('br');
-                    brElements.forEach(br => br.replaceWith('\n'));
-                    
-                    // Replace <p> tags with double newlines
-                    const pElements = tempDiv.querySelectorAll('p');
-                    pElements.forEach(p => {
-                        p.prepend('\n\n');
-                    });
-                    
-                    // Get text content
-                    content = tempDiv.textContent.trim();
-                }
-                
-                // Add to chat content
-                chatContent += `${role}: ${content}\n\n`;
-            });
-            
-            // Copy to clipboard
-            navigator.clipboard.writeText(chatContent.trim())
-                .then(() => {
-                    console.log('Chat content copied to clipboard');
-                    return true;
-                })
-                .catch(err => {
-                    console.error('Failed to copy chat content:', err);
-                    return false;
-                });
-            
-            return true;
-        } catch (error) {
-            console.error('Error copying chat content:', error);
-            return false;
-        }
+        // Fallback implementation
+        console.error('ClipboardUtils not available');
+        return false;
     }
 
-    // Initialize event listeners for copy buttons
-    function initCopyButtons() {
-        console.log('Initializing copy buttons');
-        
-        // Use event delegation to handle clicks on copy buttons
-        document.addEventListener('click', function(event) {
-            // Check if the clicked element is a copy button
-            if (event.target && event.target.classList.contains('tooltip-copy-btn')) {
-                event.preventDefault();
-                event.stopPropagation();
-                
-                const button = event.target;
-                const textToCopy = button.getAttribute('data-copy-text');
-                const message = button.getAttribute('data-copy-message');
-                
-                console.log('Copy button clicked:', button);
-                console.log('Text to copy:', textToCopy);
-                console.log('Message:', message);
-                
-                if (textToCopy) {
-                    copyToClipboardWithNotification(textToCopy, message || 'Copied to clipboard', button);
-                } else {
-                    console.error('No text to copy found in data-copy-text attribute');
-                    showNotification('Error: No text to copy');
-                }
-                
-                return false;
-            }
-        });
-        
-        console.log('Copy button event listener initialized');
-    }
-    
     /**
-     * Copy text to clipboard with notification
+     * Copy text to clipboard with notification (delegates to ClipboardUtils)
      * @param {string} text - Text to copy
      * @param {string} message - Notification message
      * @param {HTMLElement} button - Button element that triggered the copy
      */
     function copyToClipboardWithNotification(text, message, button) {
-        console.log('copyToClipboardWithNotification called with text:', text);
-        
-        try {
-            // Try using the newer clipboard API first
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(text)
-                    .then(() => {
-                        console.log('Copied to clipboard using Clipboard API:', text);
-                        handleCopySuccess(text, message, button);
-                    })
-                    .catch(err => {
-                        console.error('Failed to copy using Clipboard API:', err);
-                        // Fall back to execCommand method
-                        fallbackCopyTextToClipboard(text, message, button);
-                    });
-            } else {
-                // Fall back to execCommand method for older browsers
-                fallbackCopyTextToClipboard(text, message, button);
-            }
-        } catch (err) {
-            console.error('Error in copyToClipboardWithNotification:', err);
-            showNotification('Failed to copy to clipboard');
+        if (window.ClipboardUtils) {
+            return window.ClipboardUtils.copyToClipboardWithNotification(text, message, button);
         }
+        
+        // Fallback implementation
+        console.error('ClipboardUtils not available');
     }
     
     /**
-     * Fallback method to copy text to clipboard using execCommand
-     * @param {string} text - Text to copy
-     * @param {string} message - Notification message
-     * @param {HTMLElement} button - Button element that triggered the copy
-     */
-    function fallbackCopyTextToClipboard(text, message, button) {
-        console.log('Using fallback copy method');
-        try {
-            // Create a temporary textarea element
-            const textArea = document.createElement('textarea');
-            textArea.value = text;
-            
-            // Make the textarea out of viewport
-            textArea.style.position = 'fixed';
-            textArea.style.left = '-999999px';
-            textArea.style.top = '-999999px';
-            
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            
-            // Execute copy command
-            const successful = document.execCommand('copy');
-            
-            // Remove the textarea
-            document.body.removeChild(textArea);
-            
-            if (successful) {
-                console.log('Copied to clipboard using execCommand:', text);
-                handleCopySuccess(text, message, button);
-            } else {
-                console.error('Failed to copy using execCommand');
-                showNotification('Failed to copy to clipboard');
-            }
-        } catch (err) {
-            console.error('Error in fallbackCopyTextToClipboard:', err);
-            showNotification('Failed to copy to clipboard');
-        }
-    }
-    
-    /**
-     * Handle successful copy operation
-     * @param {string} text - Text that was copied
-     * @param {string} message - Notification message
-     * @param {HTMLElement} button - Button element that triggered the copy
-     */
-    function handleCopySuccess(text, message, button) {
-        console.log('Copy successful:', text);
-        
-        // Show visual feedback on the button
-        if (button) {
-            const originalText = button.textContent;
-            button.textContent = 'Copied!';
-            button.classList.add('copied');
-            
-            // Reset button after a delay
-            setTimeout(() => {
-                button.textContent = originalText;
-                button.classList.remove('copied');
-            }, 1500);
-        }
-        
-        // Show notification
-        showNotification(message);
-    }
-    
-    /**
-     * Show a notification
+     * Show a notification (delegates to ClipboardUtils)
      * @param {string} message - Notification message
      */
     function showNotification(message) {
-        // Check if notification element already exists
-        let notification = document.querySelector('.copy-notification');
-        
-        // Create notification element if it doesn't exist
-        if (!notification) {
-            notification = document.createElement('div');
-            notification.className = 'copy-notification';
-            document.body.appendChild(notification);
+        if (window.ClipboardUtils) {
+            return window.ClipboardUtils.showNotification(message);
         }
         
-        // Set message and show notification
-        notification.textContent = message;
-        notification.classList.add('show');
-        
-        // Hide notification after a delay
-        setTimeout(() => {
-            notification.classList.remove('show');
-        }, 2000);
-    }
-    
-    /**
-     * Initialize tooltip behavior for function icons
-     * This ensures tooltips stay visible when moving from icon to tooltip
-     */
-    function initTooltipBehavior() {
-        console.log('Initializing tooltip behavior');
-        
-        // Use event delegation to handle mouseenter/mouseleave events
-        document.addEventListener('mouseenter', function(event) {
-            // Ensure event.target exists and has classList
-            if (!event.target || !event.target.classList) {
-                return;
-            }
-            
-            // Check if the target is a function icon or its tooltip
-            const isCallIcon = event.target.classList.contains('function-call-icon');
-            const isResultIcon = event.target.classList.contains('function-result-icon');
-            const isTooltip = event.target.closest && event.target.closest('.function-icon-tooltip');
-            
-            if (isCallIcon || isResultIcon || isTooltip) {
-                // Find the tooltip
-                let tooltip;
-                if (isCallIcon || isResultIcon) {
-                    tooltip = event.target.querySelector && event.target.querySelector('.function-icon-tooltip');
-                } else {
-                    tooltip = isTooltip;
-                }
-                
-                // Make sure tooltip stays visible
-                if (tooltip) {
-                    tooltip.style.opacity = '1';
-                    tooltip.style.pointerEvents = 'auto';
-                }
-            }
-        }, true);
-        
-        document.addEventListener('mouseleave', function(event) {
-            // Ensure event.target exists and has classList
-            if (!event.target || !event.target.classList) {
-                return;
-            }
-            
-            try {
-                // Check if we're leaving a function icon and not entering its tooltip
-                const isLeavingCallIcon = event.target.classList.contains('function-call-icon');
-                const isLeavingResultIcon = event.target.classList.contains('function-result-icon');
-                const isEnteringTooltip = event.relatedTarget && event.relatedTarget.closest && 
-                                         event.relatedTarget.closest('.function-icon-tooltip');
-                
-                if ((isLeavingCallIcon || isLeavingResultIcon) && !isEnteringTooltip) {
-                    // Find the tooltip
-                    const tooltip = event.target.querySelector && event.target.querySelector('.function-icon-tooltip');
-                    
-                    // Add a delay before hiding the tooltip
-                    if (tooltip) {
-                        setTimeout(() => {
-                            try {
-                                // Only hide if the mouse is not over the tooltip
-                                if (!tooltip.matches(':hover')) {
-                                    tooltip.style.opacity = '0';
-                                    tooltip.style.pointerEvents = 'none';
-                                }
-                            } catch (e) {
-                                console.error('Error in tooltip hover check:', e);
-                            }
-                        }, 300);
-                    }
-                }
-                
-                // Check if we're leaving a tooltip and not entering its parent icon
-                const isLeavingTooltip = event.target.closest && event.target.closest('.function-icon-tooltip');
-                const isEnteringCallIcon = event.relatedTarget && event.relatedTarget.classList && 
-                                          event.relatedTarget.classList.contains('function-call-icon');
-                const isEnteringResultIcon = event.relatedTarget && event.relatedTarget.classList && 
-                                            event.relatedTarget.classList.contains('function-result-icon');
-                const isEnteringAnotherTooltip = event.relatedTarget && event.relatedTarget.closest && 
-                                                event.relatedTarget.closest('.function-icon-tooltip');
-                
-                if (isLeavingTooltip && !isEnteringCallIcon && !isEnteringResultIcon && !isEnteringAnotherTooltip) {
-                    // Find the tooltip
-                    const tooltip = isLeavingTooltip;
-                    
-                    // Hide the tooltip after a delay
-                    if (tooltip) {
-                        setTimeout(() => {
-                            try {
-                                // Only hide if the mouse is not over the tooltip or its parent icon
-                                if (!tooltip.matches(':hover')) {
-                                    tooltip.style.opacity = '0';
-                                    tooltip.style.pointerEvents = 'none';
-                                }
-                            } catch (e) {
-                                console.error('Error in tooltip hover check:', e);
-                            }
-                        }, 300);
-                    }
-                }
-            } catch (e) {
-                console.error('Error in mouseleave handler:', e);
-            }
-        }, true);
-        
-        console.log('Tooltip behavior event listeners initialized');
-    }
-    
-    // Initialize copy buttons and tooltip behavior when the DOM is loaded
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() {
-            initCopyButtons();
-            initTooltipBehavior();
-        });
-    } else {
-        // DOM already loaded, initialize immediately
-        initCopyButtons();
-        initTooltipBehavior();
+        // Fallback implementation
+        console.error('ClipboardUtils not available');
     }
     
     /**
@@ -813,7 +276,7 @@ window.UIUtils = (function() {
      * Provides publish-subscribe pattern to reduce circular dependencies
      */
     const EventBus = (function() {
-        const events = {};
+        const events = new Map();
         
         /**
          * Subscribe to an event
@@ -822,17 +285,20 @@ window.UIUtils = (function() {
          * @returns {Function} Unsubscribe function
          */
         function subscribe(eventName, callback) {
-            if (!events[eventName]) {
-                events[eventName] = [];
+            if (!events.has(eventName)) {
+                events.set(eventName, []);
             }
             
-            events[eventName].push(callback);
+            events.get(eventName).push(callback);
             
             // Return unsubscribe function
             return function unsubscribe() {
-                const index = events[eventName].indexOf(callback);
-                if (index > -1) {
-                    events[eventName].splice(index, 1);
+                const callbacks = events.get(eventName);
+                if (callbacks) {
+                    const index = callbacks.indexOf(callback);
+                    if (index > -1) {
+                        callbacks.splice(index, 1);
+                    }
                 }
             };
         }
@@ -843,12 +309,13 @@ window.UIUtils = (function() {
          * @param {*} data - Data to pass to callbacks
          */
         function emit(eventName, data) {
-            if (!events[eventName]) {
+            const callbacks = events.get(eventName);
+            if (!callbacks) {
                 return;
             }
             
             // Call all callbacks asynchronously to prevent blocking
-            events[eventName].forEach(callback => {
+            callbacks.forEach(callback => {
                 setTimeout(() => {
                     try {
                         callback(data);
@@ -864,9 +331,7 @@ window.UIUtils = (function() {
          * @param {string} eventName - Name of the event
          */
         function removeAllListeners(eventName) {
-            if (events[eventName]) {
-                events[eventName] = [];
-            }
+            events.delete(eventName);
         }
         
         /**
@@ -874,10 +339,11 @@ window.UIUtils = (function() {
          * @returns {Object} Events object
          */
         function getEvents() {
-            return Object.keys(events).reduce((acc, key) => {
-                acc[key] = events[key].length;
-                return acc;
-            }, {});
+            const result = {};
+            events.forEach((callbacks, eventName) => {
+                result[eventName] = callbacks.length;
+            });
+            return result;
         }
         
         return {
@@ -890,18 +356,17 @@ window.UIUtils = (function() {
 
     // Public API
     return {
-        renderMarkdown: renderMarkdown,
-        escapeHTML: escapeHTML,
-        scrollToBottom: scrollToBottom,
-        setupTextareaAutoResize: setupTextareaAutoResize,
-        updateContextUsage: updateContextUsage,
-        createMessageElement: createMessageElement,
-        createTypingIndicator: createTypingIndicator,
-        estimateContextUsage: estimateContextUsage,
-        copyChatContent: copyChatContent,
-        copyToClipboardWithNotification: copyToClipboardWithNotification,
-        showNotification: showNotification,
-        initCopyButtons: initCopyButtons,
-        EventBus: EventBus
+        renderMarkdown,
+        escapeHTML,
+        scrollToBottom,
+        setupTextareaAutoResize,
+        updateContextUsage,
+        createMessageElement,
+        createTypingIndicator,
+        estimateContextUsage,
+        copyChatContent,
+        copyToClipboardWithNotification,
+        showNotification,
+        EventBus
     };
 })();
