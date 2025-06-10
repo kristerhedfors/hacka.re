@@ -119,6 +119,20 @@ avg_lines_per_file() {
     fi
 }
 
+# Function to find largest files by extension
+largest_files_by_extension() {
+    local ext=$1
+    local limit=${2:-3}  # Default to top 3 files
+    
+    # Find files, get line counts, sort by size, take top N
+    eval "find . -type f -name \"*.$ext\" $EXCLUSIONS" | while read file; do
+        if [ -f "$file" ]; then
+            lines=$(wc -l < "$file" 2>/dev/null || echo "0")
+            echo "$lines $file"
+        fi
+    done | sort -rn | head -$limit
+}
+
 # Function to format numbers with commas
 format_number() {
     # Use printf with awk instead of sed for better compatibility
@@ -195,6 +209,47 @@ done
 # Calculate overall average
 overall_avg=$(echo "scale=2; $total_lines / $total_files" | bc)
 echo -e "${YELLOW}Overall average: $overall_avg lines/file${NC}"
+echo ""
+
+# Print largest files by type (refactoring candidates)
+echo -e "${BLUE}LARGEST FILES BY TYPE (Refactoring Candidates)${NC}"
+echo -e "------------------------------------------------"
+
+# Show TEN largest JavaScript files (refactoring focus)
+js_files=$(count_files_by_extension "js")
+if [ "$js_files" -gt 0 ]; then
+    echo -e "${YELLOW}TEN Largest JavaScript files (primary refactoring targets):${NC}"
+    largest_files_by_extension "js" 10 | while read line_count file_path; do
+        if [ -n "$line_count" ] && [ "$line_count" -gt 0 ]; then
+            echo -e "  $(format_number $line_count) lines: $file_path"
+        fi
+    done
+    echo ""
+fi
+
+# Show TEN largest Python files (refactoring focus)
+py_files=$(count_files_by_extension "py")
+if [ "$py_files" -gt 0 ]; then
+    echo -e "${YELLOW}TEN Largest Python files (secondary refactoring targets):${NC}"
+    largest_files_by_extension "py" 10 | while read line_count file_path; do
+        if [ -n "$line_count" ] && [ "$line_count" -gt 0 ]; then
+            echo -e "  $(format_number $line_count) lines: $file_path"
+        fi
+    done
+    echo ""
+fi
+
+# Show aggregate metrics for other file types (no individual file listing)
+for ext in "${extensions[@]}"; do
+    if [ "$ext" != "js" ] && [ "$ext" != "py" ]; then
+        files=$(count_files_by_extension "$ext")
+        if [ "$files" -gt 0 ]; then
+            lines=$(count_lines_by_extension "$ext")
+            avg=$(avg_lines_per_file "$ext")
+            echo -e "${YELLOW}.$ext files aggregate:${NC} $(format_number $files) files, $(format_number $lines) total lines, $avg avg lines/file"
+        fi
+    fi
+done
 echo ""
 
 # MCP-specific metrics

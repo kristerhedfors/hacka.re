@@ -2,7 +2,7 @@ import pytest
 import time
 from playwright.sync_api import Page, expect
 
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, dismiss_settings_modal, dismiss_api_key_modal, screenshot_with_markdown
 from function_calling_api.helpers.setup_helpers import configure_api_key_and_model
 
 def test_clear_chat_button_exists(page: Page, serve_hacka_re):
@@ -43,6 +43,9 @@ def test_clear_chat_confirmation_dialog(page: Page, serve_hacka_re, api_key):
     # Dismiss settings modal if already open
     dismiss_settings_modal(page)
     
+    # Also dismiss API key modal if present
+    dismiss_api_key_modal(page)
+    
     # Configure API key directly without using the helper function
     # Click the settings button
     settings_button = page.locator("#settings-btn")
@@ -80,6 +83,21 @@ def test_clear_chat_confirmation_dialog(page: Page, serve_hacka_re, api_key):
     
     # Wait for the settings modal to be closed
     page.wait_for_selector("#settings-modal", state="hidden", timeout=2000)
+    
+    # Also ensure the API key modal is not active
+    api_key_modal = page.locator("#api-key-modal")
+    if api_key_modal.is_visible():
+        print("API key modal is visible, dismissing it")
+        # Try to close it by clicking outside or using JavaScript
+        page.evaluate("""() => {
+            const modal = document.getElementById('api-key-modal');
+            if (modal) {
+                modal.classList.remove('active');
+                modal.style.display = 'none';
+            }
+        }""")
+        # Wait for it to be hidden
+        page.wait_for_selector("#api-key-modal", state="hidden", timeout=2000)
     
     # Add a test message to the chat
     message_input = page.locator("#message-input")
@@ -198,7 +216,8 @@ def test_clear_chat_confirmation_dialog(page: Page, serve_hacka_re, api_key):
     assert "Are you sure you want to clear the chat history?" in dialog_messages[0], "Incorrect dialog message"
     
     # Wait for the system message indicating chat was cleared
-    system_message = page.locator(".message.system .message-content")
+    # Use last to get the most recent system message
+    system_message = page.locator(".message.system .message-content").last
     
     # Try to wait for the system message
     try:
@@ -217,11 +236,17 @@ def test_clear_chat_confirmation_dialog(page: Page, serve_hacka_re, api_key):
     user_message_count = user_messages.count()
     
     # Take a screenshot after accepting the dialog
+    # Get system message text safely
+    try:
+        system_message_text = system_message.text_content() if system_message.count() > 0 else "Not visible"
+    except:
+        system_message_text = "Not visible"
+    
     screenshot_with_markdown(page, "after_accept_clear_dialog.png", {
         "Test": "Clear Chat Confirmation Dialog",
         "Status": "After accepting confirmation dialog",
         "Dialog Shown": "Yes",
         "Dialog Message": dialog_messages[0],
-        "System Message": system_message.text_content() if system_message.is_visible() else "Not visible",
+        "System Message": system_message_text,
         "User Messages Count": user_message_count
     })
