@@ -169,6 +169,11 @@ def dismiss_settings_modal(page):
     """Dismiss the settings modal if it's visible."""
     dismiss_modal(page, "settings-modal")
 
+# Helper function to dismiss API key modal if present
+def dismiss_api_key_modal(page):
+    """Dismiss the API key modal if it's visible."""
+    dismiss_modal(page, "api-key-modal")
+
 # Helper function to check for system messages in the chat window
 def check_system_messages(page):
     """Check for system messages in the chat window and print them."""
