@@ -562,9 +562,10 @@ async function getCurrentTimeInBerlin() {
     <script src="js/services/core-storage-service.js"></script>
     <script src="js/services/data-service.js"></script>
     <script src="js/services/storage-service.js"></script>
+    <script src="js/services/context-usage-service.js"></script>
+    <script src="js/services/system-prompt-coordinator.js"></script>
     <script src="js/services/debug-service.js"></script>
     <script src="js/services/api-service.js"></script>
-    <script src="js/services/api-service-fix.js"></script>
     <script src="js/services/api-tools-service.js"></script>
     <!-- Function Tools System (refactored into multiple modules) -->
     <script src="js/services/function-tools-config.js"></script>
@@ -572,11 +573,15 @@ async function getCurrentTimeInBerlin() {
     <script src="js/services/function-tools-storage.js"></script>
     <script src="js/services/function-tools-parser.js"></script>
     <script src="js/services/function-tools-executor.js"></script>
-    <script src="js/services/function-tools-executor-fix.js"></script>
     <script src="js/services/function-tools-registry.js"></script>
     <script src="js/services/function-tools-processor.js"></script>
     <script src="js/services/function-tools-service.js"></script>
-    <script src="js/services/mcp-client-service.js"></script>
+    <!-- MCP Service Components (refactored) -->
+    <script src="js/services/mcp-transport-service.js"></script>
+    <script src="js/services/mcp-request-manager.js"></script>
+    <script src="js/services/mcp-tool-registry.js"></script>
+    <script src="js/services/mcp-connection-manager.js"></script>
+    <script src="js/services/mcp-client-core.js"></script>
     <script src="js/services/link-sharing-service.js"></script>
     <script src="js/services/share-service.js"></script>
     <!-- Default prompts -->
@@ -598,6 +603,11 @@ async function getCurrentTimeInBerlin() {
     <script src="js/default-functions/api-auth-client.js"></script>
     <script src="js/services/default-functions-service.js"></script>
     <script src="js/services/prompts-service.js"></script>
+    <!-- UI Utilities (modular) -->
+    <script src="js/utils/function-markers.js"></script>
+    <script src="js/utils/clipboard-utils.js"></script>
+    <script src="js/utils/context-utils.js"></script>
+    <script src="js/utils/tooltip-utils.js"></script>
     <script src="js/utils/ui-utils.js"></script>
     <!-- Component modules -->
     <script src="js/components/dom-elements.js"></script>
@@ -606,6 +616,12 @@ async function getCurrentTimeInBerlin() {
     <script src="js/components/function-calling/function-modal-manager.js"></script>
     <script src="js/components/function-calling/mcp-server-manager.js"></script>
     <script src="js/components/function-calling/function-list-renderer.js"></script>
+    <!-- Modular function editor components (load in dependency order) -->
+    <script src="js/components/function-calling/function-parser.js"></script>
+    <script src="js/components/function-calling/function-validator.js"></script>
+    <script src="js/components/function-calling/function-code-editor.js"></script>
+    <script src="js/components/function-calling/function-library-manager.js"></script>
+    <script src="js/components/function-calling/function-executor.js"></script>
     <script src="js/components/function-calling/function-editor-manager.js"></script>
     <script src="js/components/function-calling/function-copy-manager.js"></script>
     <script src="js/components/function-calling/default-functions-manager.js"></script>
@@ -618,6 +634,10 @@ async function getCurrentTimeInBerlin() {
     <script src="js/components/mcp/mcp-tools-manager.js"></script>
     <script src="js/components/mcp/mcp-server-manager.js"></script>
     <script src="js/components/mcp-manager.js"></script>
+    <!-- Chat Services -->
+    <script src="js/services/chat-tools-service.js"></script>
+    <script src="js/services/chat-streaming-service.js"></script>
+    <script src="js/services/chat-ui-service.js"></script>
     <script src="js/components/chat-manager.js"></script>
     <!-- Settings Manager Components -->
     <script src="js/components/settings/api-key-manager.js"></script>
@@ -631,6 +651,8 @@ async function getCurrentTimeInBerlin() {
     <script src="js/components/settings/settings-manager.js"></script>
     <script src="js/components/share-manager.js"></script>
     <script src="js/components/api-tools-manager.js"></script>
+    <script src="js/components/prompts-modal-renderer.js"></script>
+    <script src="js/components/prompts-event-handlers.js"></script>
     <script src="js/components/prompts-manager.js"></script>
     <script src="js/components/ai-hackare.js"></script>
     <script src="js/app.js"></script>
