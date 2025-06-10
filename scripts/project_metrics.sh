@@ -215,19 +215,42 @@ echo ""
 echo -e "${BLUE}LARGEST FILES BY TYPE (Refactoring Candidates)${NC}"
 echo -e "------------------------------------------------"
 
-# Show largest files for each extension that has files
+# Show TEN largest JavaScript files (refactoring focus)
+js_files=$(count_files_by_extension "js")
+if [ "$js_files" -gt 0 ]; then
+    echo -e "${YELLOW}TEN Largest JavaScript files (primary refactoring targets):${NC}"
+    largest_files_by_extension "js" 10 | while read line_count file_path; do
+        if [ -n "$line_count" ] && [ "$line_count" -gt 0 ]; then
+            echo -e "  $(format_number $line_count) lines: $file_path"
+        fi
+    done
+    echo ""
+fi
+
+# Show TEN largest Python files (refactoring focus)
+py_files=$(count_files_by_extension "py")
+if [ "$py_files" -gt 0 ]; then
+    echo -e "${YELLOW}TEN Largest Python files (secondary refactoring targets):${NC}"
+    largest_files_by_extension "py" 10 | while read line_count file_path; do
+        if [ -n "$line_count" ] && [ "$line_count" -gt 0 ]; then
+            echo -e "  $(format_number $line_count) lines: $file_path"
+        fi
+    done
+    echo ""
+fi
+
+# Show aggregate metrics for other file types (no individual file listing)
 for ext in "${extensions[@]}"; do
-    files=$(count_files_by_extension "$ext")
-    if [ "$files" -gt 0 ]; then
-        echo -e "${YELLOW}Largest .$ext files:${NC}"
-        largest_files_by_extension "$ext" 3 | while read line_count file_path; do
-            if [ -n "$line_count" ] && [ "$line_count" -gt 0 ]; then
-                echo -e "  $(format_number $line_count) lines: $file_path"
-            fi
-        done
-        echo ""
+    if [ "$ext" != "js" ] && [ "$ext" != "py" ]; then
+        files=$(count_files_by_extension "$ext")
+        if [ "$files" -gt 0 ]; then
+            lines=$(count_lines_by_extension "$ext")
+            avg=$(avg_lines_per_file "$ext")
+            echo -e "${YELLOW}.$ext files aggregate:${NC} $(format_number $files) files, $(format_number $lines) total lines, $avg avg lines/file"
+        fi
     fi
 done
+echo ""
 
 # MCP-specific metrics
 echo -e "${BLUE}MCP INTEGRATION METRICS${NC}"
