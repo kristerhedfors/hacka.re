@@ -338,32 +338,53 @@
 
 /* Function collection container styles */
 .function-collection-container {
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
     border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border-radius: 12px;
     overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.function-collection-container:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
 }
 
 .function-collection-header {
     display: flex;
     align-items: center;
-    padding: 10px 15px;
+    padding: 12px 20px;
     background-color: var(--bg-color-secondary);
     cursor: pointer;
     user-select: none;
     border-left-width: 12px;
     border-left-style: solid;
+    transition: background-color 0.2s ease;
+}
+
+.function-collection-header:hover {
+    background-color: var(--bg-color-hover, rgba(0, 0, 0, 0.03));
 }
 
 .function-collection-header h4 {
     margin: 0 0 0 10px;
     font-size: 16px;
     font-weight: 700;
+    letter-spacing: 0.3px;
+    color: var(--text-color);
 }
 
 .function-collection-header i {
     font-size: 14px;
     transition: transform 0.2s ease;
+    color: var(--text-color-secondary);
+    min-width: 16px;
+}
+
+/* Rotate icon when expanded */
+.function-collection-header i.fa-chevron-down {
+    transform: rotate(90deg);
 }
 
 .function-collection-count {
@@ -396,112 +417,133 @@
 }
 
 .function-collection-functions {
-    padding: 10px;
+    padding: 0;
     background-color: var(--bg-color);
     border-top: 1px solid var(--border-color);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+/* Add spacing between function items */
+.function-collection-functions .function-item {
+    margin-bottom: 8px;
+}
+
+.function-collection-functions .function-item:last-child {
+    margin-bottom: 12px;
+}
+
+.function-collection-functions::before {
+    content: "";
+    position: absolute;
+    left: 12px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: var(--border-color);
+    opacity: 0.3;
 }
 
 .function-item {
-    padding: 0.75rem;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: var(--border-radius);
-    background-color: rgba(0, 0, 0, 0.02);
+    padding: 0.75rem 1rem 0.75rem 3rem;
+    border: none;
+    border-radius: 0;
+    background-color: transparent;
     display: flex;
     align-items: center;
     gap: 0.75rem;
     position: relative;
     overflow: hidden;
+    transition: background-color 0.2s ease;
 }
 
-/* Function collection color indicators - with thicker borders (12px) */
-.function-item[data-collection-color="color-1"] {
-    border-left: 12px solid var(--function-color-1);
+.function-item:hover {
+    background-color: rgba(0, 0, 0, 0.02);
 }
 
-.function-item[data-collection-color="color-2"] {
-    border-left: 12px solid var(--function-color-2);
+/* Add a wrapper for tree connectors to avoid pseudo-element conflicts */
+.function-item .tree-connector {
+    position: absolute;
+    left: 12px;
+    top: 0;
+    bottom: 0;
+    width: 20px;
+    pointer-events: none;
 }
 
-.function-item[data-collection-color="color-3"] {
-    border-left: 12px solid var(--function-color-3);
-}
-
-.function-item[data-collection-color="color-4"] {
-    border-left: 12px solid var(--function-color-4);
-}
-
-.function-item[data-collection-color="color-5"] {
-    border-left: 12px solid var(--function-color-5);
-}
-
-/* Subtle background tint for function collections */
-.function-item[data-collection-color="color-1"]::before {
+/* Horizontal tree line */
+.function-item .tree-connector::before {
     content: "";
     position: absolute;
-    top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
+    top: 50%;
+    width: 16px;
+    height: 2px;
+    background-color: var(--border-color);
+    opacity: 0.5;
+}
+
+/* Color indicator dot */
+.function-item .tree-connector::after {
+    content: "";
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--connector-color, var(--border-color));
+}
+
+/* Apply collection colors to tree connector */
+.function-item[data-collection-color="color-1"] .tree-connector::after {
     background-color: var(--function-color-1);
-    opacity: 0.05;
-    pointer-events: none;
 }
 
-.function-item[data-collection-color="color-2"]::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+.function-item[data-collection-color="color-2"] .tree-connector::after {
     background-color: var(--function-color-2);
-    opacity: 0.05;
-    pointer-events: none;
 }
 
-.function-item[data-collection-color="color-3"]::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+.function-item[data-collection-color="color-3"] .tree-connector::after {
     background-color: var(--function-color-3);
-    opacity: 0.05;
-    pointer-events: none;
 }
 
-.function-item[data-collection-color="color-4"]::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+.function-item[data-collection-color="color-4"] .tree-connector::after {
     background-color: var(--function-color-4);
-    opacity: 0.05;
-    pointer-events: none;
 }
 
-.function-item[data-collection-color="color-5"]::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+.function-item[data-collection-color="color-5"] .tree-connector::after {
     background-color: var(--function-color-5);
-    opacity: 0.05;
-    pointer-events: none;
 }
+
 
 .function-item-checkbox {
-    margin: 0;
+    margin: 0 8px 0 0 !important;
+    cursor: pointer;
+    width: 14px !important;
+    height: 14px !important;
+    min-width: 14px !important;
+    min-height: 14px !important;
+    transition: transform 0.2s ease;
+    position: relative;
+    z-index: 2;
+    flex-shrink: 0;
+}
+
+.function-item-checkbox:hover {
+    transform: scale(1.1);
 }
 
 .function-item-name {
     font-weight: 600;
     flex: 1;
+    transition: color 0.2s ease;
+}
+
+.function-item:hover .function-item-name {
+    color: var(--primary-color);
 }
 
 .function-item-description {
@@ -509,21 +551,32 @@
     margin-top: 0.25rem;
     color: var(--text-color);
     opacity: 0.8;
+    transition: opacity 0.2s ease;
+}
+
+.function-item:hover .function-item-description {
+    opacity: 1;
 }
 
 .function-item-delete {
     background: none;
     border: none;
-    color: var(--primary-color);
+    color: var(--text-color-secondary);
     cursor: pointer;
     padding: 0.25rem 0.5rem;
     font-size: 0.9rem;
     border-radius: var(--border-radius);
-    transition: var(--transition);
+    transition: all 0.2s ease;
+    opacity: 0.7;
+}
+
+.function-item:hover .function-item-delete {
+    opacity: 1;
 }
 
 .function-item-delete:hover {
-    background-color: rgba(99, 102, 241, 0.1);
+    background-color: rgba(239, 68, 68, 0.1);
+    color: var(--error-color);
 }
 
 .function-editor {
