@@ -145,8 +145,6 @@ window.FunctionListRenderer = (function() {
             // Create functions container
             const functionsContainer = document.createElement('div');
             functionsContainer.className = 'function-collection-functions';
-            functionsContainer.style.marginLeft = '20px';
-            functionsContainer.style.marginTop = '10px';
             
             // Check if we're in a test environment 
             const isTestEnvironment = window.navigator.webdriver || 
@@ -264,7 +262,12 @@ window.FunctionListRenderer = (function() {
             const functionItem = document.createElement('div');
             functionItem.className = 'function-item';
             functionItem.dataset.collectionColor = collectionColor;
-            functionItem.style.borderLeft = `4px solid var(--function-${collectionColor})`;
+            
+            // Create tree connector element
+            const treeConnector = document.createElement('div');
+            treeConnector.className = 'tree-connector';
+            treeConnector.style.setProperty('--connector-color', `var(--function-${collectionColor})`);
+            functionItem.appendChild(treeConnector);
             
             // Create checkbox
             const checkbox = document.createElement('input');
