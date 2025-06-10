@@ -14,6 +14,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const aiHackare = new AIHackareComponent.AIHackare();
     aiHackare.init();
     
+    // Initialize SystemPromptCoordinator if available
+    if (window.SystemPromptCoordinator) {
+        window.SystemPromptCoordinator.init();
+        DebugService.log('SystemPromptCoordinator initialized');
+    }
+    
     // Initialize MCP Manager if available
     if (window.MCPManager) {
         MCPManager.init();
