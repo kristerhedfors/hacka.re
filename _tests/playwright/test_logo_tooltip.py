@@ -93,18 +93,18 @@ def test_heart_logo_tooltip(page: Page, serve_hacka_re):
     # Check that the modal is hidden again
     expect(logo_modal).not_to_be_visible()
     
-    # Test clicking on the serverless GPTs text if it exists
+    # Test clicking on the serverless agency text if it exists
     serverless_gpts = page.locator(".serverless-gpts")
     if serverless_gpts.count() > 0:
-        # Click on the serverless GPTs text
+        # Click on the serverless agency text
         serverless_gpts.click()
         
         # Check that the modal is now visible
         expect(logo_modal).to_be_visible()
         
-        # Take a screenshot after clicking the serverless GPTs text
-        screenshot_with_markdown(page, "heart_logo_tooltip_after_serverless_gpts_click", {
-            "Status": "After clicking serverless GPTs text",
+        # Take a screenshot after clicking the serverless agency text
+        screenshot_with_markdown(page, "heart_logo_tooltip_after_serverless_agency_click", {
+            "Status": "After clicking serverless agency text",
             "Component": "Heart Logo Modal",
             "Modal Active": "Yes"
         })
@@ -115,9 +115,9 @@ def test_heart_logo_tooltip(page: Page, serve_hacka_re):
         # Check that the modal is hidden again
         expect(logo_modal).not_to_be_visible()
     else:
-        print("Serverless GPTs text not found, skipping this part of the test")
-        screenshot_with_markdown(page, "heart_logo_tooltip_no_serverless_gpts", {
-            "Status": "Serverless GPTs text not found",
+        print("Serverless agency text not found, skipping this part of the test")
+        screenshot_with_markdown(page, "heart_logo_tooltip_no_serverless_agency", {
+            "Status": "Serverless agency text not found",
             "Component": "Heart Logo Modal",
             "Modal Active": "No"
         })
