@@ -90,7 +90,7 @@
     position: relative;
     display: inline-block;
     width: 16px;
-    height: 12px;
+    height: 10px;
     margin: 0 2px;
 }
 
@@ -445,6 +445,18 @@
     opacity: 0.3;
 }
 
+.function-collection-functions::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 10px;
+    background-color: var(--connector-color, var(--primary-color));
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+
 .function-item {
     padding: 0.75rem 1rem 0.75rem 3rem;
     border: none;
@@ -492,7 +504,7 @@
     top: 50%;
     transform: translateY(-50%);
     width: 8px;
-    height: 8px;
+    height: 10px;
     border-radius: 50%;
     background-color: var(--connector-color, var(--border-color));
 }
@@ -515,6 +527,48 @@
 }
 
 .function-item[data-collection-color="color-5"] .tree-connector::after {
+    background-color: var(--function-color-5);
+}
+
+/* Apply collection colors to function collection headers */
+.function-collection-header.color-1 {
+    border-left-color: var(--function-color-1);
+}
+
+.function-collection-header.color-2 {
+    border-left-color: var(--function-color-2);
+}
+
+.function-collection-header.color-3 {
+    border-left-color: var(--function-color-3);
+}
+
+.function-collection-header.color-4 {
+    border-left-color: var(--function-color-4);
+}
+
+.function-collection-header.color-5 {
+    border-left-color: var(--function-color-5);
+}
+
+/* Apply collection colors to bottom border */
+.function-collection-container.color-1 .function-collection-functions::after {
+    background-color: var(--function-color-1);
+}
+
+.function-collection-container.color-2 .function-collection-functions::after {
+    background-color: var(--function-color-2);
+}
+
+.function-collection-container.color-3 .function-collection-functions::after {
+    background-color: var(--function-color-3);
+}
+
+.function-collection-container.color-4 .function-collection-functions::after {
+    background-color: var(--function-color-4);
+}
+
+.function-collection-container.color-5 .function-collection-functions::after {
     background-color: var(--function-color-5);
 }
 

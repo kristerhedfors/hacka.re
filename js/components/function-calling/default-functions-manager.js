@@ -146,6 +146,11 @@ window.DefaultFunctionsManager = (function() {
             const functionItem = document.createElement('div');
             functionItem.className = 'individual-function-item';
             
+            // Add tree connector element
+            const treeConnector = document.createElement('div');
+            treeConnector.className = 'tree-connector';
+            functionItem.appendChild(treeConnector);
+            
             // Create checkbox for selecting the individual function
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
@@ -177,7 +182,7 @@ window.DefaultFunctionsManager = (function() {
             
             // Create content container (to match user-defined functions structure)
             const contentContainer = document.createElement('div');
-            contentContainer.style.flex = '1';
+            contentContainer.className = 'function-item-content';
             contentContainer.style.cursor = 'pointer';
             contentContainer.title = 'Click to view function code';
             
