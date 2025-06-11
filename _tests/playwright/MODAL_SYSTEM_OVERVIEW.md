@@ -4,15 +4,46 @@ This document provides a high-level overview of the modal system in hacka.re, in
 
 ## Modal Architecture
 
-### Component-Based Structure
+### Refactored Component-Based Structure
 
-All modals in hacka.re follow a consistent architecture:
+Following the recent refactoring, all modals in hacka.re utilize a modern, component-based architecture with specialized manager classes:
 
 1. **Modal Container** - Main modal wrapper with backdrop
 2. **Modal Content** - Inner content area with specific functionality  
 3. **Modal Header** - Title and close button
 4. **Modal Body** - Primary content and controls
 5. **Modal Footer** - Action buttons (save, cancel, etc.)
+
+### Manager-Based Architecture
+
+**Settings Modal System:**
+- `settings-coordinator.js` - Main coordination logic
+- `settings-initialization.js` - Setup and initialization
+- `settings-state-manager.js` - State management and persistence
+- 10 specialized managers (api-key, model, shared-link, etc.)
+
+**Function Modal System:**
+- `function-modal-manager.js` - Main modal orchestrator
+- `function-code-editor.js` - Code editor component
+- `function-copy-manager.js` - Function copying and sharing
+- `function-editor-manager.js` - Function editing interface
+- `function-executor.js` - Function execution handling
+- `function-library-manager.js` - Library operations
+- `function-list-renderer.js` - List display
+- `function-parser.js` - Function parsing
+- `function-validator.js` - Validation logic
+
+**Prompts Modal System:**
+- `prompts-manager.js` - Main prompts orchestrator
+- `prompts-list-manager.js` - List operations
+- `prompts-token-manager.js` - Token management
+- `prompts-event-handlers.js` - Event handling
+- `prompts-modal-renderer.js` - Rendering logic
+
+**UI Management:**
+- `modal-manager.js` - Generic modal system
+- `ui-coordinator.js` - UI coordination
+- Various display managers for context, model info, etc.
 
 ### CSS Classes and States
 
@@ -188,33 +219,59 @@ page.locator("#submit-btn").click()
 
 ## Implementation Details
 
-### Event-Driven Architecture
+### Refactored Service-Oriented Architecture
 
-Modals use a consistent event-driven approach:
+Modals now use a sophisticated service-oriented approach with dedicated managers:
 
 ```javascript
-// Modal opening
-document.getElementById('modal-btn').addEventListener('click', () => {
-    openModal('modal-id');
-});
+// Modern modal management with specialized components
+class ModalManager {
+    constructor() {
+        this.settingsCoordinator = new SettingsCoordinator();
+        this.functionModalManager = new FunctionModalManager();
+        this.promptsManager = new PromptsManager();
+    }
+    
+    openModal(modalType, config) {
+        switch(modalType) {
+            case 'settings':
+                return this.settingsCoordinator.showModal(config);
+            case 'function':
+                return this.functionModalManager.showModal(config);
+            // etc.
+        }
+    }
+}
 
-// Modal closing
-document.getElementById('close-btn').addEventListener('click', () => {
-    closeModal('modal-id');
-});
+// Specialized event handling within components
+class SettingsCoordinator {
+    initializeEventListeners() {
+        this.apiKeyManager.bindEvents();
+        this.modelManager.bindEvents();
+        this.sharedLinkManager.bindEvents();
+        // etc.
+    }
+}
 ```
 
 ### State Management
 
-**localStorage Integration:**
-- All modal state persisted to localStorage
-- Namespace-aware storage for multi-tenant support
-- Encryption for sensitive data (API keys, shared content)
+**Service-Based Storage:**
+- `core-storage-service.js` - Core storage operations
+- `storage-service.js` - Main storage interface
+- `namespace-service.js` - Multi-tenant data isolation
+- `encryption-service.js` - Data encryption/decryption
+
+**Component State Coordination:**
+- `settings-state-manager.js` - Settings state persistence
+- `function-tools-storage.js` - Function library state
+- `prompts-service.js` - Prompts state management
 
 **Cross-Modal Communication:**
-- Event system for modal-to-modal updates
-- Shared service layer for common functionality
-- Real-time updates across modals when data changes
+- Service layer for shared functionality
+- Event-driven updates between components
+- Real-time state synchronization
+- Dependency injection for clean component interactions
 
 ### CSS Transitions
 

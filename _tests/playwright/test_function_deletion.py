@@ -282,30 +282,30 @@ function processString(str) {
 }
 
 /**
- * Multiplies two numbers together
- * @description A simple function that multiplies two numbers and returns the result
- * @param {number} a - The first number to multiply
- * @param {number} b - The second number to multiply
- * @returns {Object} The result of the multiplication
+ * Calculates the area of a rectangle
+ * @description A custom function that calculates rectangle area
+ * @param {number} width - The width of the rectangle
+ * @param {number} height - The height of the rectangle
+ * @returns {Object} The area calculation result
  * @tool This function will be exposed to the LLM
  */
-function multiply_numbers(a, b) {
+function calculate_rectangle_area(width, height) {
   // Validate inputs are numbers
-  if (typeof a !== 'number' || typeof b !== 'number') {
+  if (typeof width !== 'number' || typeof height !== 'number') {
     return { 
       error: "Both inputs must be numbers",
       success: false
     };
   }
   
-  // Perform the multiplication
-  const result = a * b;
+  // Perform the calculation
+  const area = width * height;
   
   // Format the result
-  const formattedResult = processString(`Result: ${result}`);
+  const formattedResult = processString(`Area: ${area} square units`);
   
   return {
-    result: result,
+    area: area,
     formattedResult: formattedResult,
     success: true
   };
@@ -319,12 +319,12 @@ function multiply_numbers(a, b) {
     
     # Check if both callable functions are in the list
     expect(function_list.locator(".function-item-name:has-text('getCurrentTimeInBerlin')")).to_be_visible()
-    expect(function_list.locator(".function-item-name:has-text('multiply_numbers')")).to_be_visible()
+    expect(function_list.locator(".function-item-name:has-text('calculate_rectangle_area')")).to_be_visible()
     
     # Take a screenshot showing both functions in the list
     screenshot_with_markdown(page, "function_collections_both", {
         "step": "Both function collections added",
-        "functions_visible": "getCurrentTimeInBerlin, multiply_numbers",
+        "functions_visible": "getCurrentTimeInBerlin, calculate_rectangle_area",
         "functions_not_visible": "formatData, processString (helper functions)"
     })
     
@@ -338,41 +338,42 @@ function multiply_numbers(a, b) {
     code_content = function_code.input_value()
     assert "getCurrentTimeInBerlin" in code_content, "getCurrentTimeInBerlin function not found in editor"
     assert "formatData" in code_content, "formatData function not found in editor"
-    assert "multiply_numbers" in code_content, "multiply_numbers function not found in editor"
+    assert "calculate_rectangle_area" in code_content, "calculate_rectangle_area function not found in editor"
     assert "processString" in code_content, "processString function not found in editor"
     
-    # Delete the first function
+    # Delete the first function collection
     # Handle the confirmation dialog
     page.on("dialog", lambda dialog: dialog.accept())
     
-    # Delete getCurrentTimeInBerlin
-    function_list.locator(".function-item-name:has-text('getCurrentTimeInBerlin')").first.click()
-    page.locator(".function-item-delete").first.click()
+    # Delete getCurrentTimeInBerlin (this deletes the entire first collection)
+    delete_button = function_list.locator(".function-item:has-text('getCurrentTimeInBerlin') .function-item-delete")
+    delete_button.wait_for(state="visible", timeout=5000)
+    delete_button.click()
     
     # Wait for the function to be deleted
     page.wait_for_timeout(100)
     
-    # Verify only multiply_numbers remains in the list
+    # Verify only calculate_rectangle_area remains in the list
     expect(function_list.locator(".function-item-name:has-text('getCurrentTimeInBerlin')")).not_to_be_visible()
-    expect(function_list.locator(".function-item-name:has-text('multiply_numbers')")).to_be_visible()
+    expect(function_list.locator(".function-item-name:has-text('calculate_rectangle_area')")).to_be_visible()
     
     # Clear the editor again
     function_code.fill("")
     
-    # Click the Reset button again
+    # Click the Reset button again to load remaining functions
     page.locator("#function-clear-btn").click()
     
-    # Verify that the editor now contains only the second function bundle
+    # Verify that the editor now contains only the second function collection
     code_content = function_code.input_value()
     assert "getCurrentTimeInBerlin" not in code_content, "getCurrentTimeInBerlin function should not be in editor"
     assert "formatData" not in code_content, "formatData function should not be in editor"
-    assert "multiply_numbers" in code_content, "multiply_numbers function not found in editor"
+    assert "calculate_rectangle_area" in code_content, "calculate_rectangle_area function not found in editor"
     assert "processString" in code_content, "processString function not found in editor"
     
     # Take a screenshot showing only the second function collection remains
     screenshot_with_markdown(page, "function_collections_after_deletion", {
         "step": "After deleting first function collection",
-        "functions_in_editor": "multiply_numbers, processString",
+        "functions_in_editor": "calculate_rectangle_area, processString",
         "functions_not_in_editor": "getCurrentTimeInBerlin, formatData"
     })
     

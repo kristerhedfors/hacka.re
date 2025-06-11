@@ -1,4 +1,10 @@
-# Function Modal Documentation
+# Function Modal Documentation - LEGACY
+
+**⚠️ This documentation reflects the legacy function modal system. The function calling system has been extensively refactored into a modular, component-based architecture.**
+
+**For current documentation, see:**
+- `FUNCTION_SYSTEM_OVERVIEW.md` - Updated system architecture
+- Modal testing patterns in `TESTING_GUIDE.md`
 
 This document provides detailed information about the Function Modal in hacka.re and its elements for testing and development purposes.
 
@@ -250,11 +256,19 @@ Validation can take time, especially for complex functions. Wait for the validat
 page.wait_for_selector("#function-validation-result:not(:empty)", state="visible")
 ```
 
-## Implementation Details
+## Implementation Details - LEGACY
 
-### Function Storage
+### Function Storage (Legacy)
 
-Functions are stored in the browser's localStorage:
+**⚠️ Storage has been refactored to use the new service architecture:**
+
+**New Architecture:**
+- `function-tools-storage.js` - Dedicated storage operations
+- `function-tools-registry.js` - Function registry management  
+- `function-tools-config.js` - Configuration and constants
+- `core-storage-service.js` - Core storage service
+
+**Legacy Storage (for reference):**
 - `js_functions`: Object containing all defined functions with their code and tool definitions
 - `enabled_functions`: Array of function names that are enabled for tool calling
 - `function_groups`: Object mapping function names to group IDs, used to track which functions were defined together
@@ -277,12 +291,18 @@ Tool definitions are generated from function code:
 3. Function description is extracted from the `@description` tag
 4. The tool definition follows the OpenAI function calling format
 
-### Function Execution
+### Function Execution (Refactored)
 
-When a function is called by the AI:
-1. The function name and arguments are extracted from the tool call
-2. The function is executed in a sandboxed environment
-3. The result is returned to the AI as a tool response
+**New Modular System:**
+- `function-tools-executor.js` - Sandboxed execution engine
+- `function-tools-processor.js` - Tool call processing
+- `api-tool-call-handler.js` - API integration
+
+**Execution Flow:**
+1. `api-tool-call-handler.js` extracts tool calls from API responses
+2. `function-tools-processor.js` processes and validates tool calls
+3. `function-tools-executor.js` executes functions in sandboxed environment
+4. Results returned via `api-response-parser.js`
 
 ## Default Functions System
 

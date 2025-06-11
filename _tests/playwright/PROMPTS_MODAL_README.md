@@ -2,6 +2,24 @@
 
 This document provides detailed information about the Prompts Modal in hacka.re and its elements for testing and development purposes.
 
+## 🔄 Recent Refactoring
+
+The Prompts Modal system has been refactored into a modular architecture:
+
+### New Component Structure
+
+**Core Management:**
+- `prompts-manager.js` - Main prompts system orchestrator
+- `prompts-list-manager.js` - Prompts list operations and rendering
+- `prompts-token-manager.js` - Token usage calculation and display
+- `prompts-event-handlers.js` - Event handling logic
+- `prompts-modal-renderer.js` - Modal rendering and UI management
+
+**Service Integration:**
+- `prompts-service.js` - Core prompts business logic
+- `default-prompts-service.js` - Default prompts management
+- `system-prompt-coordinator.js` - System prompt coordination
+
 ## Overview
 
 The Prompts Modal is a key component of the hacka.re interface that allows users to:
@@ -339,13 +357,23 @@ page.wait_for_function("""
 
 ## Implementation Details
 
-### Prompt Storage
+### Refactored Storage Architecture
 
-Prompts are stored in the browser's localStorage:
+**Service-Based Storage:**
+- `prompts-service.js` - Main prompts service layer
+- `core-storage-service.js` - Core storage operations
+- `namespace-service.js` - Multi-tenant data isolation
+
+**Storage Structure (Managed by Services):**
 - `prompts`: Array of prompt objects, each with an id, name, and content
-- `selected_prompt_ids`: Array of IDs of selected prompts
+- `selected_prompt_ids`: Array of IDs of selected prompts  
 - `selected_default_prompt_ids`: Array of IDs of selected default prompts
 - `system_prompt`: The combined content of all selected prompts
+
+**Component Responsibilities:**
+- `prompts-list-manager.js` - Manages prompt list state and operations
+- `prompts-token-manager.js` - Handles token usage calculations
+- `system-prompt-coordinator.js` - Coordinates system prompt composition
 
 ### Default Prompts
 

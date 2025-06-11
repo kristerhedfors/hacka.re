@@ -49,36 +49,84 @@ python run_verifier.py
 
 ### Core Structure
 - **Pure client-side application** - no server-side rendering or processing
-- **Component-based architecture** with manager classes for different concerns
-- **Service-oriented design** with separate modules for API, storage, encryption, etc.
+- **Modular component-based architecture** with specialized manager classes
+- **Service-oriented design** with 33+ service modules for different concerns
 - **Event-driven UI** interactions with vanilla JavaScript
+- **Recently refactored** (~50 new files) from monolithic to modular architecture
 
-### Key Directories
+### Key Directories (Refactored Architecture)
 ```
 js/
 ├── app.js                    # Application initialization
-├── components/               # UI component managers
-│   ├── chat-manager.js      # Chat interface logic
-│   ├── settings-manager.js  # Settings modal and configuration
-│   ├── function-calling-manager.js # Function execution UI
+├── components/               # UI component managers (39 files)
+│   ├── chat-manager.js      # Chat interface orchestrator
+│   ├── function-calling/    # Function system (11 specialized modules)
+│   │   ├── function-calling-manager.js    # Main orchestrator
+│   │   ├── function-code-editor.js        # Code editor component
+│   │   ├── function-modal-manager.js      # Modal UI management
+│   │   ├── function-list-renderer.js      # List display
+│   │   └── ... (7 more specialized modules)
+│   ├── settings/            # Settings system (13 specialized modules)
+│   │   ├── settings-coordinator.js        # Core coordination
+│   │   ├── settings-state-manager.js      # State management
+│   │   ├── api-key-manager.js             # API key handling
+│   │   ├── model-manager.js               # Model selection
+│   │   └── ... (9 more specialized modules)
+│   ├── mcp/                 # Model Context Protocol (6 modules)
+│   ├── prompts/             # Prompts system (5 modules)
+│   ├── ui/                  # UI components (5 modules)
 │   └── share-manager.js     # Secure sharing functionality
-├── services/                # Core business logic
-│   ├── api-service.js       # API communication
-│   ├── storage-service.js   # Local data persistence
-│   ├── encryption-service.js # Data encryption (TweetNaCl)
-│   ├── function-tools-*.js  # Function calling system (8 modules)
-│   └── link-sharing-service.js # Encrypted sharing
-├── utils/                   # Utility functions
+├── services/                # Core business logic (33 files)
+│   ├── api-*.js            # API services (7 modules)
+│   ├── function-tools-*.js # Function calling system (8 modules)
+│   ├── mcp-*.js            # MCP services (5 modules)
+│   ├── chat-*.js           # Chat services (3 modules)
+│   ├── storage-*.js        # Storage services (4 modules)
+│   └── ... (6 more service categories)
+├── utils/                   # Utility functions (7 modules)
 └── default-prompts/         # System prompt components
 ```
 
-### Service Architecture
-- **APIService**: Handles communication with OpenAI-compatible APIs
-- **StorageService**: Manages encrypted localStorage persistence
-- **EncryptionService**: Handles data encryption using TweetNaCl
-- **FunctionToolsService**: 8-module system for JavaScript function execution
-- **LinkSharingService**: Creates encrypted, password-protected shareable links
-- **NamespaceService**: Multi-tenant data isolation
+### Service Architecture (Refactored)
+
+**API Services (7 modules):**
+- `api-service.js` - Main API communication layer
+- `api-request-builder.js` - Request construction
+- `api-response-parser.js` - Response parsing
+- `api-stream-processor.js` - Streaming response handling
+- `api-tool-call-handler.js` - Tool call processing
+- `api-debugger.js` - API debugging utilities
+- `api-tools-service.js` - API tools integration
+
+**Function Tools System (8 modules):**
+- `function-tools-service.js` - Main orchestrator
+- `function-tools-config.js` - Configuration constants
+- `function-tools-storage.js` - Storage operations
+- `function-tools-parser.js` - Argument parsing
+- `function-tools-executor.js` - Sandboxed execution
+- `function-tools-registry.js` - Function registry
+- `function-tools-processor.js` - Tool call processing
+- `function-tools-logger.js` - Centralized logging
+
+**Storage Services (4 modules):**
+- `storage-service.js` - Main storage interface
+- `core-storage-service.js` - Core storage operations
+- `encryption-service.js` - Data encryption (TweetNaCl)
+- `namespace-service.js` - Multi-tenant data isolation
+
+**MCP Services (5 modules):**
+- `mcp-client-core.js` - Core MCP functionality
+- `mcp-connection-manager.js` - Connection management
+- `mcp-transport-service.js` - Transport layer
+- `mcp-tool-registry.js` - Tool registration
+- `mcp-request-manager.js` - Request handling
+
+**Additional Services:**
+- `link-sharing-service.js` - Encrypted sharing
+- `chat-streaming-service.js` - Chat streaming
+- `prompts-service.js` - Prompts management
+- `model-info.js` - Model information
+- Plus 8 more specialized services
 
 ## Key Features
 
@@ -124,11 +172,14 @@ cp .env.example _tests/playwright/.env
 
 ## Development Practices
 
-### Code Organization
-- Component managers handle UI state and interactions
-- Services contain business logic and data operations
-- Utilities provide shared helper functions
-- Default prompts are modular components
+### Code Organization (Post-Refactoring)
+- **Specialized component managers** handle focused UI responsibilities
+- **Modular services** contain business logic with single responsibilities
+- **Manager pattern** with coordinators orchestrating specialized components
+- **Service layer architecture** with clear dependency hierarchies
+- **Component categories**: function-calling, settings, mcp, prompts, ui
+- **Utilities** provide shared helper functions (7 specialized modules)
+- **Default prompts** are modular components
 
 ### Testing Requirements
 - Always include debug information with screenshots using `screenshot_with_markdown()`
@@ -172,9 +223,12 @@ cd _tests/playwright && ./run_core_tests.sh
 4. Include debug information with screenshots
 
 ### Modifying Services
-1. Service modules are in `js/services/`
-2. Follow existing patterns for error handling and logging
-3. Update related manager components in `js/components/`
-4. Add corresponding tests to validate functionality
+1. **Service modules** are in `js/services/` (33+ specialized files)
+2. **Component modules** are in `js/components/` (39+ specialized files)
+3. **Follow module patterns**: config → logger → storage → parser/registry → executor/processor → service
+4. **Update related components**: settings/, function-calling/, mcp/, prompts/, ui/
+5. **Service dependencies**: respect the established hierarchy
+6. **Add corresponding tests** to validate functionality
+7. **Update documentation** in `_tests/playwright/` for modal changes
 
 The codebase emphasizes privacy, security, and real-world testing with actual AI APIs rather than mocked responses.

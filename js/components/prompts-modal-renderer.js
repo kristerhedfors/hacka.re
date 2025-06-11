@@ -18,7 +18,7 @@ window.PromptsModalRenderer = (function() {
                 Context usage: <span class="prompts-usage-tokens">0/0 tokens</span> <span class="prompts-usage-text">0%</span>
             </div>
             <div class="prompts-usage-bar">
-                <div class="prompts-usage-fill" style="width: 0%"></div>
+                <div class="prompts-usage-fill" style="width: 1%; min-width: 2px;"></div>
             </div>
         `;
         return tokenUsageContainer;
@@ -34,7 +34,7 @@ window.PromptsModalRenderer = (function() {
     function renderPromptItem(prompt, isSelected, isActive = false) {
         const promptItem = document.createElement('div');
         promptItem.className = 'prompt-item';
-        promptItem.dataset.id = prompt.id;
+        promptItem.dataset.promptId = prompt.id;
         
         if (isActive) {
             promptItem.classList.add('active');
@@ -72,7 +72,7 @@ window.PromptsModalRenderer = (function() {
     function renderDefaultPromptItem(prompt, isSelected) {
         const promptItem = document.createElement('div');
         promptItem.className = 'prompt-item default-prompt-item';
-        promptItem.dataset.id = prompt.id;
+        promptItem.dataset.promptId = prompt.id;
         
         // Create checkbox
         const checkbox = document.createElement('input');

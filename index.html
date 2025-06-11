@@ -308,7 +308,7 @@
                             <h4 class="function-editor-title">Function Library</h4>
                         </div>
                         <form id="function-editor-form">
-                            <div class="form-group">
+                            <div class="form-group" style="display: none;">
                                 <label for="function-collection-name">Function collection name</label>
                                 <input type="text" id="function-collection-name" class="function-collection-name-input" placeholder="Enter a name for this collection">
                             </div>
@@ -659,13 +659,22 @@ async function getCurrentTimeInBerlin() {
     <script src="js/components/settings/base-url-manager.js"></script>
     <script src="js/components/settings/title-subtitle-manager.js"></script>
     <script src="js/components/settings/welcome-manager.js"></script>
+    <script src="js/components/settings/shared-link-modal-manager.js"></script>
+    <script src="js/components/settings/shared-link-data-processor.js"></script>
     <script src="js/components/settings/shared-link-manager.js"></script>
     <script src="js/components/settings/tool-calling-manager.js"></script>
+    <!-- Settings Manager Modular Components (load before main settings-manager.js) -->
+    <script src="js/components/settings/settings-coordinator.js"></script>
+    <script src="js/components/settings/settings-state-manager.js"></script>
+    <script src="js/components/settings/settings-initialization.js"></script>
     <script src="js/components/settings/settings-manager.js"></script>
     <script src="js/components/share-manager.js"></script>
     <script src="js/components/api-tools-manager.js"></script>
     <script src="js/components/prompts-modal-renderer.js"></script>
     <script src="js/components/prompts-event-handlers.js"></script>
+    <!-- Prompts Manager Modular Components (load before main prompts-manager.js) -->
+    <script src="js/components/prompts/prompts-token-manager.js"></script>
+    <script src="js/components/prompts/prompts-list-manager.js"></script>
     <script src="js/components/prompts-manager.js"></script>
     <script src="js/components/ai-hackare.js"></script>
     <script src="js/app.js"></script>
