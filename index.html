@@ -565,6 +565,12 @@ async function getCurrentTimeInBerlin() {
     <script src="js/services/context-usage-service.js"></script>
     <script src="js/services/system-prompt-coordinator.js"></script>
     <script src="js/services/debug-service.js"></script>
+    <!-- API Service Components (refactored) -->
+    <script src="js/services/api-debugger.js"></script>
+    <script src="js/services/api-response-parser.js"></script>
+    <script src="js/services/api-request-builder.js"></script>
+    <script src="js/services/api-stream-processor.js"></script>
+    <script src="js/services/api-tool-call-handler.js"></script>
     <script src="js/services/api-service.js"></script>
     <script src="js/services/api-tools-service.js"></script>
     <!-- Function Tools System (refactored into multiple modules) -->
@@ -611,6 +617,13 @@ async function getCurrentTimeInBerlin() {
     <script src="js/utils/ui-utils.js"></script>
     <!-- Component modules -->
     <script src="js/components/dom-elements.js"></script>
+    <!-- UI sub-components -->
+    <script src="js/components/ui/modal-manager.js"></script>
+    <script src="js/components/ui/context-usage-display.js"></script>
+    <script src="js/components/ui/model-info-display.js"></script>
+    <script src="js/components/ui/share-ui-manager.js"></script>
+    <script src="js/components/ui/ui-coordinator.js"></script>
+    <!-- Legacy UI manager wrapper -->
     <script src="js/components/ui-manager.js"></script>
     <!-- Function Calling Components -->
     <script src="js/components/function-calling/function-modal-manager.js"></script>
