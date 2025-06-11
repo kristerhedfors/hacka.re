@@ -2,6 +2,32 @@
 
 This document provides detailed information about the Settings Modal in hacka.re and its elements for testing and development purposes.
 
+## 🔄 Recent Refactoring
+
+The Settings Modal has been extensively refactored into a modular, component-based architecture:
+
+### New Architecture (13 Specialized Components)
+
+**Core Coordination:**
+- `settings-manager.js` - Main entry point
+- `settings-coordinator.js` - Core coordination logic  
+- `settings-initialization.js` - Setup and initialization
+- `settings-state-manager.js` - State management and persistence
+
+**Specialized Managers:**
+- `api-key-manager.js` - API key management and validation
+- `base-url-manager.js` - API base URL configuration
+- `model-manager.js` - AI model selection and management
+- `system-prompt-manager.js` - System prompt configuration
+- `title-subtitle-manager.js` - Title and subtitle management
+- `tool-calling-manager.js` - Tool calling configuration
+- `welcome-manager.js` - Welcome modal and onboarding
+
+**Sharing Components:**
+- `shared-link-manager.js` - Shared link functionality
+- `shared-link-data-processor.js` - Shared link data processing
+- `shared-link-modal-manager.js` - Shared link modal UI
+
 ## Overview
 
 The Settings Modal is a core component of the hacka.re interface that allows users to configure various application settings, including:
@@ -222,14 +248,25 @@ When selecting Custom provider, the UI changes. Ensure tests account for:
 
 ## Implementation Details
 
-### Settings Storage
+### Refactored Storage Architecture
 
-Settings are stored in the browser's localStorage with namespace support:
-- `api_key`: The API key (encrypted)
-- `model`: The selected model
-- `base_url`: The base URL for API requests  
+**Service-Based Storage:**
+- `settings-state-manager.js` - Centralized state management
+- `core-storage-service.js` - Core storage operations
+- `namespace-service.js` - Multi-tenant data isolation
+- `encryption-service.js` - Data encryption/decryption
+
+**Storage Structure:**
+- `api_key`: The API key (encrypted via encryption-service)
+- `model`: The selected model (managed by model-manager)
+- `base_url`: The base URL for API requests (managed by base-url-manager)
 - `base_url_provider`: The selected provider (groq, openai, ollama, custom)
 - Various model and configuration data cached by provider
+
+**Component Coordination:**
+- Each specialized manager handles its own storage concerns
+- State synchronization via settings-coordinator
+- Centralized validation and error handling
 
 ### Model Caching
 

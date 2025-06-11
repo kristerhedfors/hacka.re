@@ -305,7 +305,7 @@ The cryptographic system is implemented across several JavaScript modules:
 - `js/services/share-service.js`: Sharing functionality
 - `js/services/link-sharing-service.js`: Link generation and parsing
 - `js/components/share-manager.js`: UI for sharing and session key management
-- `js/components/settings-manager.js`: Settings and configuration
+- `js/components/settings/settings-manager.js`: Settings and configuration
 
 ---
 
