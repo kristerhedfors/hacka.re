@@ -132,20 +132,37 @@ function createPromptsListManager() {
                 const contentField = formElement.querySelector('#new-prompt-content');
                 
                 if (labelField && contentField && labelField.value.trim() && contentField.value.trim()) {
-                    // Create new prompt object
-                    const newPrompt = {
-                        id: 'user_' + Date.now(),
-                        name: labelField.value.trim(),
-                        content: contentField.value.trim(),
-                        isDefault: false
-                    };
+                    // Check if we're editing an existing prompt
+                    const editingPrompt = getCurrentPrompt();
                     
-                    // Add to prompts service
-                    window.PromptsService.savePrompt(newPrompt);
+                    if (editingPrompt && !editingPrompt.isDefault) {
+                        // Update existing prompt
+                        editingPrompt.name = labelField.value.trim();
+                        editingPrompt.content = contentField.value.trim();
+                        
+                        // Update in prompts service
+                        window.PromptsService.savePrompt(editingPrompt);
+                        
+                        // Clear current prompt
+                        setCurrentPrompt(null);
+                    } else {
+                        // Create new prompt object
+                        const newPrompt = {
+                            id: 'user_' + Date.now(),
+                            name: labelField.value.trim(),
+                            content: contentField.value.trim(),
+                            isDefault: false
+                        };
+                        
+                        // Add to prompts service
+                        window.PromptsService.savePrompt(newPrompt);
+                    }
                     
                     // Clear form
                     labelField.value = '';
                     contentField.value = '';
+                    labelField.removeAttribute('readonly');
+                    contentField.removeAttribute('readonly');
                     
                     // Reload prompts list
                     if (reloadPromptsList) {
@@ -228,6 +245,9 @@ function createPromptsListManager() {
                                     // Make fields read-only when viewing default prompts
                                     labelField.setAttribute('readonly', 'readonly');
                                     contentField.setAttribute('readonly', 'readonly');
+                                    
+                                    // Scroll to the form fields so they're visible
+                                    contentField.scrollIntoView({ behavior: 'smooth', block: 'center' });
                                 }
                             }
                         );
@@ -292,6 +312,7 @@ function createPromptsListManager() {
     let updateAfterSelectionChange = () => {};
     let reloadPromptsList = () => {};
     let setCurrentPrompt = () => {};
+    let getCurrentPrompt = () => null;
     
     /**
      * Set callback functions
@@ -301,6 +322,7 @@ function createPromptsListManager() {
         updateAfterSelectionChange = callbacks.updateAfterSelectionChange || updateAfterSelectionChange;
         reloadPromptsList = callbacks.reloadPromptsList || reloadPromptsList;
         setCurrentPrompt = callbacks.setCurrentPrompt || setCurrentPrompt;
+        getCurrentPrompt = callbacks.getCurrentPrompt || getCurrentPrompt;
     }
     
     return {
