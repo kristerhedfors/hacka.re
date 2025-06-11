@@ -85,7 +85,7 @@
     bottom: 0;
     left: 0;
     right: 0;
-    height: 8px;
+    height: 10px;
     background-color: var(--primary-color);
     border-bottom-left-radius: 12px;
     border-bottom-right-radius: 12px;
@@ -178,7 +178,7 @@
     bottom: 0;
     left: 0;
     right: 0;
-    height: 8px;
+    height: 10px;
     background-color: var(--secondary-color, #10b981);
     border-bottom-left-radius: 12px;
     border-bottom-right-radius: 12px;
@@ -250,7 +250,7 @@
     top: 50%;
     transform: translateY(-50%);
     width: 8px;
-    height: 8px;
+    height: 10px;
     border-radius: 50%;
     background-color: var(--primary-color);
 }
@@ -318,7 +318,7 @@
     top: 50%;
     transform: translateY(-50%);
     width: 8px;
-    height: 8px;
+    height: 10px;
     border-radius: 50%;
     background-color: var(--accent-color);
 }
@@ -470,7 +470,7 @@
 }
 
 .prompts-usage-bar {
-    height: 8px;
+    height: 10px;
     background-color: var(--bg-color);
     border-radius: 4px;
     overflow: hidden;
