@@ -79,6 +79,18 @@
     transition: all 0.3s ease;
 }
 
+.default-prompts-list::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background-color: var(--primary-color);
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+
 .default-prompts-list::before {
     content: "";
     position: absolute;
@@ -158,6 +170,18 @@
     position: relative;
     overflow: hidden;
     transition: all 0.3s ease;
+}
+
+.nested-section-list::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background-color: var(--secondary-color, #10b981);
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
 }
 
 .nested-section-list::before {
