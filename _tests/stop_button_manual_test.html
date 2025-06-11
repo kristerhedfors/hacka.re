@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Stop Button Manual Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .pass { background-color: #d4edda; border: 1px solid #c3e6cb; }
+        .fail { background-color: #f8d7da; border: 1px solid #f5c6cb; }
+        .test-step { margin: 5px 0; padding: 5px; background-color: #f8f9fa; }
+        button { margin: 5px; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Stop Button Manual Test</h1>
+    <p>This test validates that the stop generation button works correctly.</p>
+    
+    <div id="test-results"></div>
+    
+    <h2>Test Steps:</h2>
+    <button onclick="runTest()">Run Automated Test</button>
+    <button onclick="window.open('../../index.html', '_blank')">Open Main App for Manual Test</button>
+    
+    <div id="manual-instructions" style="margin-top: 20px;">
+        <h3>Manual Test Instructions:</h3>
+        <ol>
+            <li>Click "Open Main App for Manual Test" above</li>
+            <li>Set up your API key in settings</li>
+            <li>Type a long message request (e.g., "Write a long story about robots")</li>
+            <li>Click the send button (paper plane icon)</li>
+            <li>Verify the button immediately changes to a stop icon (fas fa-stop)</li>
+            <li>Click the stop button</li>
+            <li>Verify the button changes back to paper plane icon</li>
+            <li>Verify generation stops and shows "Response generation stopped." message</li>
+        </ol>
+    </div>
+    
+    <script>
+        function addTestResult(testName, passed, details) {
+            const resultsDiv = document.getElementById('test-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            resultDiv.innerHTML = `
+                <strong>${testName}</strong>: ${passed ? 'PASS' : 'FAIL'}
+                <div>${details}</div>
+            `;
+            resultsDiv.appendChild(resultDiv);
+        }
+        
+        function addTestStep(step) {
+            const resultsDiv = document.getElementById('test-results');
+            const stepDiv = document.createElement('div');
+            stepDiv.className = 'test-step';
+            stepDiv.textContent = step;
+            resultsDiv.appendChild(stepDiv);
+        }
+        
+        async function runTest() {
+            document.getElementById('test-results').innerHTML = '';
+            addTestStep('Starting automated test...');
+            
+            try {
+                // Test 1: Check if the main application loads properly
+                addTestStep('Opening main application...');
+                const mainWindow = window.open('../../index.html', 'mainApp');
+                
+                // Wait for window to load
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                if (!mainWindow || mainWindow.closed) {
+                    addTestResult('Window Open Test', false, 'Could not open main application window');
+                    return;
+                }
+                
+                addTestResult('Window Open Test', true, 'Main application window opened successfully');
+                
+                // Test 2: Check if required elements exist
+                addTestStep('Checking for required DOM elements...');
+                
+                const sendBtn = mainWindow.document.getElementById('send-btn');
+                const messageInput = mainWindow.document.getElementById('message-input');
+                
+                if (!sendBtn) {
+                    addTestResult('DOM Elements Test', false, 'Send button not found');
+                    mainWindow.close();
+                    return;
+                }
+                
+                if (!messageInput) {
+                    addTestResult('DOM Elements Test', false, 'Message input not found');
+                    mainWindow.close();
+                    return;
+                }
+                
+                addTestResult('DOM Elements Test', true, 'Required DOM elements found');
+                
+                // Test 3: Check initial button state
+                addTestStep('Checking initial button state...');
+                
+                const initialIcon = sendBtn.querySelector('i');
+                const hasCorrectInitialClass = initialIcon && initialIcon.classList.contains('fas') && initialIcon.classList.contains('fa-paper-plane');
+                const hasCorrectInitialTitle = sendBtn.getAttribute('title') === 'Send message';
+                
+                if (!hasCorrectInitialClass || !hasCorrectInitialTitle) {
+                    addTestResult('Initial Button State Test', false, 
+                        `Initial state incorrect. Icon classes: ${initialIcon ? initialIcon.className : 'none'}, Title: ${sendBtn.getAttribute('title')}`);
+                } else {
+                    addTestResult('Initial Button State Test', true, 'Button has correct initial state (paper plane icon, "Send message" title)');
+                }
+                
+                // Test 4: Check if ChatManager exists and has required methods
+                addTestStep('Checking ChatManager availability...');
+                
+                const aiHackare = mainWindow.aiHackare;
+                if (!aiHackare || !aiHackare.chatManager) {
+                    addTestResult('ChatManager Test', false, 'ChatManager not found in window.aiHackare');
+                } else if (typeof aiHackare.chatManager.getIsGenerating !== 'function') {
+                    addTestResult('ChatManager Test', false, 'getIsGenerating method not found');
+                } else if (typeof aiHackare.chatManager.stopGeneration !== 'function') {
+                    addTestResult('ChatManager Test', false, 'stopGeneration method not found');
+                } else {
+                    addTestResult('ChatManager Test', true, 'ChatManager and required methods are available');
+                    
+                    // Test the initial generating state
+                    const isInitiallyGenerating = aiHackare.chatManager.getIsGenerating();
+                    addTestResult('Initial Generating State', !isInitiallyGenerating, 
+                        `Initial generating state: ${isInitiallyGenerating} (should be false)`);
+                }
+                
+                // Test 5: Simulate button state changes (without API call)
+                addTestStep('Testing button state changes...');
+                
+                // Simulate the UI state changes that should happen during generation
+                if (mainWindow.ChatUIService) {
+                    const elements = {
+                        sendBtn: sendBtn,
+                        messageInput: messageInput,
+                        chatMessages: mainWindow.document.getElementById('chat-messages')
+                    };
+                    
+                    const uiHandler = mainWindow.ChatUIService.createUIStateHandler(elements);
+                    
+                    // Test setting generating state
+                    uiHandler.setGeneratingState();
+                    
+                    const generatingIcon = sendBtn.querySelector('i');
+                    const hasStopClass = generatingIcon && generatingIcon.classList.contains('fas') && generatingIcon.classList.contains('fa-stop');
+                    const hasStopTitle = sendBtn.getAttribute('title') === 'Stop generation';
+                    
+                    if (!hasStopClass || !hasStopTitle) {
+                        addTestResult('Button State Change Test', false, 
+                            `Failed to change to stop state. Icon classes: ${generatingIcon ? generatingIcon.className : 'none'}, Title: ${sendBtn.getAttribute('title')}`);
+                    } else {
+                        addTestResult('Button State Change Test', true, 'Button correctly changed to stop state');
+                        
+                        // Test resetting state
+                        uiHandler.resetState();
+                        
+                        const resetIcon = sendBtn.querySelector('i');
+                        const hasResetClass = resetIcon && resetIcon.classList.contains('fas') && resetIcon.classList.contains('fa-paper-plane');
+                        const hasResetTitle = sendBtn.getAttribute('title') === 'Send message';
+                        
+                        if (!hasResetClass || !hasResetTitle) {
+                            addTestResult('Button State Reset Test', false, 
+                                `Failed to reset to send state. Icon classes: ${resetIcon ? resetIcon.className : 'none'}, Title: ${sendBtn.getAttribute('title')}`);
+                        } else {
+                            addTestResult('Button State Reset Test', true, 'Button correctly reset to send state');
+                        }
+                    }
+                } else {
+                    addTestResult('UI Service Test', false, 'ChatUIService not found');
+                }
+                
+                addTestStep('Automated test completed. Check results above.');
+                
+                // Keep window open for manual testing
+                addTestStep('Window left open for manual testing. Close it when done.');
+                
+            } catch (error) {
+                addTestResult('Test Execution', false, `Error during test: ${error.message}`);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -372,6 +372,12 @@ window.AIHackareComponent = (function() {
      * Send a message
      */
     AIHackare.prototype.sendMessage = function() {
+        // Check if currently generating - if so, stop generation
+        if (this.chatManager.getIsGenerating()) {
+            this.chatManager.stopGeneration();
+            return;
+        }
+        
         const message = this.elements.messageInput.value.trim();
         
         this.chatManager.sendMessage(
