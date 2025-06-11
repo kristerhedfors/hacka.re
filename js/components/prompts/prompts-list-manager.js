@@ -219,7 +219,7 @@ function createPromptsListManager() {
     function renderDefaultPromptsSection(elements) {
         // Get default prompts and selected IDs first
         const defaultPrompts = DefaultPromptsService.getDefaultPrompts();
-        const selectedIds = PromptsService.getSelectedPromptIds();
+        const selectedIds = DefaultPromptsService.getSelectedDefaultPromptIds();
         
         const defaultPromptsSection = PromptsModalRenderer.renderDefaultPromptsSection(defaultPrompts, selectedIds);
         elements.promptsList.appendChild(defaultPromptsSection);

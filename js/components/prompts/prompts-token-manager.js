@@ -52,7 +52,7 @@ function createPromptsTokenManager() {
         // Update the token count display
         const promptsUsageTokens = document.querySelector('.prompts-usage-tokens');
         if (promptsUsageTokens) {
-            promptsUsageTokens.textContent = `${usageInfo.tokens}/${usageInfo.contextSize} tokens`;
+            promptsUsageTokens.textContent = `${usageInfo.tokens.toLocaleString()} / ${usageInfo.contextSize.toLocaleString()} tokens`;
         }
     }
     
