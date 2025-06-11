@@ -153,7 +153,7 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
     
     // Add tools if tool calling is enabled and apiToolsManager is provided
     if (apiToolsManager) {
-        const toolDefinitions = apiToolsManager.getToolDefinitions();
+        const toolDefinitions = apiToolsManager.getEnabledToolDefinitions();
         if (toolDefinitions && toolDefinitions.length > 0) {
             requestBody.tools = toolDefinitions;
             requestBody.tool_choice = "auto";

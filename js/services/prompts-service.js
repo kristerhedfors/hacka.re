@@ -175,59 +175,35 @@ function togglePromptSelection(id) {
  */
 function applySelectedPromptsAsSystem() {
     console.log("PromptsService.applySelectedPromptsAsSystem called");
-    const selectedPrompts = getSelectedPrompts();
-    const selectedDefaultPrompts = window.DefaultPromptsService ? 
-        window.DefaultPromptsService.getSelectedDefaultPrompts() : [];
     
-    const allSelectedPrompts = [...selectedDefaultPrompts, ...selectedPrompts];
-    console.log("Selected prompts count:", allSelectedPrompts.length);
-    
-    if (allSelectedPrompts.length > 0) {
-        // Combine all selected prompts
-        const combinedContent = allSelectedPrompts
-            .map(prompt => prompt.content)
-            .join('\n\n---\n\n');
+    // Delegate to SystemPromptCoordinator for centralized management
+    if (window.SystemPromptCoordinator) {
+        const systemPrompt = window.SystemPromptCoordinator.updateSystemPrompt(true);
+        const hasPrompts = systemPrompt.length > 0;
         
-        console.log("Combined content length:", combinedContent.length);
+        console.log("System prompt applied via coordinator, has content:", hasPrompts);
+        return hasPrompts;
+    } else {
+        // Fallback to old behavior if coordinator not available
+        console.warn("SystemPromptCoordinator not available, using fallback");
+        const selectedPrompts = getSelectedPrompts();
+        const selectedDefaultPrompts = window.DefaultPromptsService ? 
+            window.DefaultPromptsService.getSelectedDefaultPrompts() : [];
         
-        // Save to system prompt in storage service
-        StorageService.saveSystemPrompt(combinedContent);
+        const allSelectedPrompts = [...selectedDefaultPrompts, ...selectedPrompts];
         
-        // Update main context usage display if aiHackare is available
-        if (window.aiHackare && window.aiHackare.chatManager) {
-            console.log("Updating main context usage from applySelectedPromptsAsSystem");
+        if (allSelectedPrompts.length > 0) {
+            const combinedContent = allSelectedPrompts
+                .map(prompt => prompt.content)
+                .join('\n\n---\n\n');
             
-            // Get the current messages
-            const messages = window.aiHackare.chatManager.getMessages() || [];
-            
-            // Calculate percentage using the utility function directly
-            const percentage = UIUtils.estimateContextUsage(
-                messages, 
-                ModelInfoService.modelInfo, 
-                window.aiHackare.settingsManager.getCurrentModel(),
-                combinedContent
-            );
-            
-            console.log("Calculated percentage:", percentage);
-            
-            // Update the UI directly
-            if (window.aiHackare.uiManager) {
-                const usageFill = document.querySelector('.usage-fill');
-                const usageText = document.querySelector('.usage-text');
-                
-                if (usageFill && usageText) {
-                    console.log("Directly updating UI elements");
-                    UIUtils.updateContextUsage(usageFill, usageText, percentage);
-                } else {
-                    console.log("Could not find UI elements");
-                }
-            }
+            StorageService.saveSystemPrompt(combinedContent);
+            return true;
+        } else {
+            StorageService.saveSystemPrompt('');
+            return false;
         }
-        
-        return true;
     }
-    
-    return false;
 }
     
     /**

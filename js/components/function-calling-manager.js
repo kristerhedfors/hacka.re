@@ -156,7 +156,7 @@ window.FunctionCallingManager = (function() {
          * @returns {Array} Array of function definitions
          */
         function getFunctionDefinitions() {
-            const userDefinedToolDefinitions = FunctionToolsService.getToolDefinitions();
+            const userDefinedToolDefinitions = FunctionToolsService.getEnabledToolDefinitions();
             
             // Get default function tool definitions
             let defaultFunctionToolDefinitions = [];

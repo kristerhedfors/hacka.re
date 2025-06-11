@@ -34,6 +34,17 @@ window.PromptsManager = (function() {
                 elements.copySystemPromptBtn.addEventListener('click', copySystemPromptToClipboard);
             }
             
+            // Subscribe to system prompt updates for context usage updates
+            if (window.UIUtils && window.UIUtils.EventBus) {
+                window.UIUtils.EventBus.subscribe('systemPromptUpdated', (data) => {
+                    updatePromptsTokenUsage();
+                });
+                
+                window.UIUtils.EventBus.subscribe('promptSelectionChanged', () => {
+                    updatePromptsTokenUsage();
+                });
+            }
+            
             // Apply selected prompts as system prompt on initialization
             PromptsService.applySelectedPromptsAsSystem();
         }
@@ -43,53 +54,9 @@ window.PromptsManager = (function() {
          * @returns {number} - Percentage of context window used
          */
         function estimatePromptsTokenUsage() {
-            const selectedPrompts = PromptsService.getSelectedPrompts();
-            
-            // Get selected default prompts - this now correctly handles nested prompts
-            const selectedDefaultPrompts = window.DefaultPromptsService ? 
-                window.DefaultPromptsService.getSelectedDefaultPrompts() : [];
-            
-            const allSelectedPrompts = [...selectedDefaultPrompts, ...selectedPrompts];
-            
-            // If no prompts selected, return 0
-            if (allSelectedPrompts.length === 0) {
-                return 0;
-            }
-            
-            // Combine all selected prompts content
-            const combinedContent = allSelectedPrompts
-                .map(prompt => {
-                    // For Function Library prompt, ensure we get the latest content
-                    if (prompt.id === 'function-library' && 
-                        window.FunctionLibraryPrompt && 
-                        typeof window.FunctionLibraryPrompt.content === 'function') {
-                        return window.FunctionLibraryPrompt.content();
-                    }
-                    return prompt.content;
-                })
-                .join('\n\n---\n\n');
-            
-            // Estimate token count (4 chars per token is a rough approximation)
-            const totalChars = combinedContent.length;
-            const estimatedTokens = Math.ceil(totalChars / 4);
-            
-            // Get context window size for the current model
             const currentModel = StorageService.getModel();
-            
-            // Use ModelInfoService.getContextSize to get the context window size
-            // This will check both the API-provided model info and the hardcoded context window sizes
-            let contextSize = window.ModelInfoService.getContextSize(currentModel);
-            
-            // Default to 8K if not specified
-            if (!contextSize) {
-                contextSize = 8192;
-                console.log(`No context size found for model ${currentModel}, defaulting to ${contextSize}`);
-            } else {
-                console.log(`Using context size ${contextSize} for model ${currentModel}`);
-            }
-            
-            // Calculate percentage
-            return Math.min(Math.round((estimatedTokens / contextSize) * 100), 100);
+            const usageInfo = ContextUsageService.getCurrentPromptsUsage(currentModel);
+            return usageInfo.percentage;
         }
         
         /**
@@ -98,48 +65,17 @@ window.PromptsManager = (function() {
         function updatePromptsTokenUsage() {
             if (!promptsUsageFill || !promptsUsageText) return;
             
-            // Get token usage information
-            const selectedPrompts = PromptsService.getSelectedPrompts();
-            const selectedDefaultPrompts = window.DefaultPromptsService ? 
-                window.DefaultPromptsService.getSelectedDefaultPrompts() : [];
-            const allSelectedPrompts = [...selectedDefaultPrompts, ...selectedPrompts];
-            
-            // Combine all selected prompts content
-            const combinedContent = allSelectedPrompts
-                .map(prompt => {
-                    // For Function Library prompt, ensure we get the latest content
-                    if (prompt.id === 'function-library' && 
-                        window.FunctionLibraryPrompt && 
-                        typeof window.FunctionLibraryPrompt.content === 'function') {
-                        return window.FunctionLibraryPrompt.content();
-                    }
-                    return prompt.content;
-                })
-                .join('\n\n---\n\n');
-            
-            // Estimate token count (4 chars per token is a rough approximation)
-            const totalChars = combinedContent.length;
-            const estimatedTokens = Math.ceil(totalChars / 4);
-            
-            // Get context window size for the current model
+            // Get token usage information from ContextUsageService
             const currentModel = StorageService.getModel();
-            let contextSize = window.ModelInfoService.getContextSize(currentModel);
-            
-            // Default to 8K if not specified
-            if (!contextSize) {
-                contextSize = 8192;
-            }
-            
-            // Calculate percentage
-            const percentage = Math.min(Math.round((estimatedTokens / contextSize) * 100), 100);
+            const usageInfo = ContextUsageService.getCurrentPromptsUsage(currentModel);
             
             // Update the percentage display
-            UIUtils.updateContextUsage(promptsUsageFill, promptsUsageText, percentage);
+            ContextUsageService.updateUsageDisplay(promptsUsageFill, promptsUsageText, usageInfo.percentage);
             
             // Update the token count display
             const promptsUsageTokens = document.querySelector('.prompts-usage-tokens');
             if (promptsUsageTokens) {
-                promptsUsageTokens.textContent = `${estimatedTokens}/${contextSize} tokens`;
+                promptsUsageTokens.textContent = `${usageInfo.tokens}/${usageInfo.contextSize} tokens`;
             }
         }
         
@@ -189,19 +125,8 @@ function loadPromptsList() {
         existingTokenUsageContainer.remove();
     }
     
-    // Create token usage container
-    const tokenUsageContainer = document.createElement('div');
-    tokenUsageContainer.className = 'prompts-token-usage-container';
-    tokenUsageContainer.innerHTML = `
-        <div class="prompts-token-usage-label">
-            Context usage: <span class="prompts-usage-tokens">0/0 tokens</span> <span class="prompts-usage-text">0%</span>
-        </div>
-        <div class="prompts-usage-bar">
-            <div class="prompts-usage-fill" style="width: 0%"></div>
-        </div>
-    `;
-    
-    // Insert token usage container after the form-help paragraph but before the prompts-list
+    // Create and insert token usage container
+    const tokenUsageContainer = PromptsModalRenderer.renderTokenUsageContainer();
     const formHelpElement = elements.promptsModal.querySelector('.form-help');
     if (formHelpElement) {
         formHelpElement.insertAdjacentElement('afterend', tokenUsageContainer);
@@ -211,538 +136,316 @@ function loadPromptsList() {
     promptsUsageFill = tokenUsageContainer.querySelector('.prompts-usage-fill');
     promptsUsageText = tokenUsageContainer.querySelector('.prompts-usage-text');
     
-    // Get all prompts
+    // Get and sort prompts
     let prompts = PromptsService.getPrompts();
-    
-    // Sort prompts alphabetically by name
     prompts.sort((a, b) => {
         const aName = a.name ? a.name.toLowerCase() : '';
         const bName = b.name ? b.name.toLowerCase() : '';
         return aName.localeCompare(bName);
     });
     
-    // Get selected prompt IDs
     const selectedPromptIds = PromptsService.getSelectedPromptIds();
     
+    // Show "no prompts" message if needed
     if (prompts.length === 0) {
-        // Show a message if no prompts
-        const noPromptsMessage = document.createElement('div');
-        noPromptsMessage.className = 'no-prompts-message';
-        noPromptsMessage.textContent = 'No saved prompts. Create one below.';
+        const noPromptsMessage = PromptsModalRenderer.renderNoPromptsMessage();
         elements.promptsList.appendChild(noPromptsMessage);
-        // Don't return early, continue to add the new prompt section
     }
     
-    // Add each prompt to the list
+    // Render each prompt item
     prompts.forEach(prompt => {
-        const promptItem = document.createElement('div');
-        promptItem.className = 'prompt-item';
-        promptItem.dataset.id = prompt.id;
+        const isSelected = selectedPromptIds.includes(prompt.id);
+        const isActive = currentPrompt && prompt.id === currentPrompt.id;
+        const promptItem = PromptsModalRenderer.renderPromptItem(prompt, isSelected, isActive);
         
-        // Add active class if this is the current prompt
-        if (currentPrompt && prompt.id === currentPrompt.id) {
-            promptItem.classList.add('active');
-        }
-        
-        // Create checkbox for selecting the prompt
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.className = 'prompt-item-checkbox';
-        checkbox.checked = selectedPromptIds.includes(prompt.id);
-        checkbox.addEventListener('click', (e) => {
-            e.stopPropagation(); // Prevent triggering the prompt item click
-            console.log("Regular prompt checkbox clicked:", prompt.id);
-            
-            // Toggle the prompt selection in the service
-            PromptsService.togglePromptSelection(prompt.id);
-            
-            // Apply selected prompts as system prompt
-            PromptsService.applySelectedPromptsAsSystem();
-            
-            // Update token usage bar in the prompts modal
-            updatePromptsTokenUsage();
-            
-            // Update the main context usage display
-            updateMainContextUsage();
-        });
-        promptItem.appendChild(checkbox);
-        
-        // Create prompt name element
-        const promptName = document.createElement('div');
-        promptName.className = 'prompt-item-name';
-        promptName.textContent = prompt.name || 'Unnamed Prompt';
-        promptItem.appendChild(promptName);
-        
-        // Add delete icon
-        const deleteIcon = document.createElement('button');
-        deleteIcon.className = 'prompt-item-delete';
-        deleteIcon.innerHTML = '<i class="fas fa-trash"></i>';
-        deleteIcon.title = 'Delete prompt';
-        deleteIcon.addEventListener('click', (e) => {
-            e.stopPropagation(); // Prevent triggering the prompt item click
-            if (confirm(`Are you sure you want to delete the prompt "${prompt.name}"?`)) {
-                PromptsService.deletePrompt(prompt.id);
-                
-                // Clear current prompt if this was the selected one
-                if (currentPrompt && currentPrompt.id === prompt.id) {
-                    currentPrompt = null;
-                }
-                
-                // Reload prompts list
-                loadPromptsList();
-            }
-        });
-        promptItem.appendChild(deleteIcon);
-        
-        // Add click event to highlight the prompt and load it into the editor
-        promptItem.addEventListener('click', (e) => {
-            // Don't trigger if clicking on the checkbox or delete icon
-            if (e.target !== checkbox && !e.target.closest('.prompt-item-delete')) {
-                // Toggle active class
-                const isActive = promptItem.classList.contains('active');
-                
-                // Remove active class from all items
-                const promptItems = elements.promptsList.querySelectorAll('.prompt-item');
-                promptItems.forEach(item => {
-                    item.classList.remove('active');
-                });
-                
-                // Add active class to this item if it wasn't already active
-                if (!isActive) {
-                    promptItem.classList.add('active');
-                    currentPrompt = prompt;
-                    
-                    // Load the prompt into the editor fields
-                    const labelField = document.getElementById('new-prompt-label');
-                    const contentField = document.getElementById('new-prompt-content');
-                    
-                    if (labelField && contentField) {
-                        labelField.value = prompt.name || '';
-                        contentField.value = prompt.content || '';
-                    }
-                } else {
-                    currentPrompt = null;
-                }
-            }
-        });
+        // Bind event handlers
+        bindPromptItemEvents(promptItem, prompt);
         
         elements.promptsList.appendChild(promptItem);
     });
     
-    // Add default prompts section if DefaultPromptsService is available
+    // Add default prompts section
     if (window.DefaultPromptsService) {
-        addDefaultPromptsSection();
+        renderDefaultPromptsSection();
     }
-            
-    // Add new prompt input fields at the bottom
-    const newPromptSection = document.createElement('div');
-    newPromptSection.className = 'new-prompt-section';
-            
-            // Add label field
-            const labelField = document.createElement('input');
-            labelField.type = 'text';
-            labelField.className = 'new-prompt-label';
-            labelField.placeholder = 'New prompt label';
-            labelField.id = 'new-prompt-label';
-            
-            // Add content field
-            const contentField = document.createElement('textarea');
-            contentField.className = 'new-prompt-content';
-            contentField.placeholder = 'Enter new prompt content here';
-            contentField.id = 'new-prompt-content';
-            contentField.rows = 6;
-            
-            // Add button container for clear and save buttons
-            const buttonContainer = document.createElement('div');
-            buttonContainer.className = 'new-prompt-buttons';
-            
-                // Add clear button
-                const clearButton = document.createElement('button');
-                clearButton.className = 'btn secondary-btn new-prompt-clear';
-                clearButton.textContent = 'Clear';
-                clearButton.addEventListener('click', () => {
-                    // Clear without confirmation
-                    labelField.value = '';
-                    contentField.value = '';
-                    
-                    // Remove active class from all items
-                    const promptItems = elements.promptsList.querySelectorAll('.prompt-item');
-                    promptItems.forEach(item => {
-                        item.classList.remove('active');
-                    });
-                    
-                    currentPrompt = null;
-                });
-            
-            // Add save button
-            const saveButton = document.createElement('button');
-            saveButton.className = 'btn primary-btn new-prompt-save';
-            saveButton.textContent = 'Save Prompt';
-            saveButton.addEventListener('click', () => {
-                const name = labelField.value.trim();
-                const content = contentField.value.trim();
-                
-                if (!name || !content) {
-                    alert('Please enter both a label and content for the prompt.');
-                    return;
-                }
-                
-                // Create or update prompt
-                const promptToSave = {
-                    id: currentPrompt ? currentPrompt.id : null,
-                    name: name,
-                    content: content
-                };
-                
-                // Save the prompt
-                const savedPrompt = PromptsService.savePrompt(promptToSave);
-                
-                // Update current prompt
-                currentPrompt = savedPrompt;
-                
-                // Clear input fields
-                labelField.value = '';
-                contentField.value = '';
-                
-                // Remove active class from all items
-                const promptItems = elements.promptsList.querySelectorAll('.prompt-item');
-                promptItems.forEach(item => {
-                    item.classList.remove('active');
-                });
-                
-                // Reset current prompt
-                currentPrompt = null;
-                
-                // Reload prompts list
-                loadPromptsList();
-                
-            // Apply selected prompts as system prompt
-            PromptsService.applySelectedPromptsAsSystem();
-            
-            // Update the main context usage display
-            updateMainContextUsage();
-            });
-            
-            // Add elements to the section
-            newPromptSection.appendChild(labelField);
-            newPromptSection.appendChild(contentField);
-            buttonContainer.appendChild(clearButton);
-            buttonContainer.appendChild(saveButton);
-            newPromptSection.appendChild(buttonContainer);
-            
-            // Add the new prompt section to the list
-            elements.promptsList.appendChild(newPromptSection);
-            
-    // Update the system prompt in the settings modal
+    
+    // Add new prompt form
+    const newPromptForm = PromptsModalRenderer.renderNewPromptForm();
+    bindFormEvents(newPromptForm);
+    elements.promptsList.appendChild(newPromptForm);
+    
+    // Update system prompt in settings
     const systemPrompt = StorageService.getSystemPrompt();
     if (elements.systemPromptInput && systemPrompt) {
         elements.systemPromptInput.value = systemPrompt;
     }
     
-    // Update token usage bar
+    // Update token usage
     updatePromptsTokenUsage();
 }
 
 /**
- * Add the default prompts section to the prompts list
+ * Bind event handlers to a prompt item
+ * @param {HTMLElement} promptItem - Prompt item element
+ * @param {Object} prompt - Prompt object
  */
-function addDefaultPromptsSection() {
-    // Create default prompts section
-    const defaultPromptsSection = document.createElement('div');
-    defaultPromptsSection.className = 'default-prompts-section';
+function bindPromptItemEvents(promptItem, prompt) {
+    const checkbox = promptItem.querySelector('.prompt-item-checkbox');
+    const deleteBtn = promptItem.querySelector('.prompt-item-delete');
     
-    // Create header with expand/collapse functionality
-    const sectionHeader = document.createElement('div');
-    sectionHeader.className = 'default-prompts-header';
+    // Checkbox handler
+    if (checkbox) {
+        const checkboxHandler = PromptsEventHandlers.createCheckboxHandler(
+            prompt.id, 
+            false, 
+            () => {
+                updatePromptsTokenUsage();
+                updateMainContextUsage();
+            }
+        );
+        checkbox.addEventListener('click', checkboxHandler);
+    }
     
-    // Add expand/collapse icon
-    const expandIcon = document.createElement('i');
-    expandIcon.className = 'fas fa-chevron-right';
-    sectionHeader.appendChild(expandIcon);
+    // Delete handler
+    if (deleteBtn) {
+        const deleteHandler = PromptsEventHandlers.createDeleteHandler(
+            prompt.id,
+            prompt.name,
+            (deletedId) => {
+                if (currentPrompt && currentPrompt.id === deletedId) {
+                    currentPrompt = null;
+                }
+                loadPromptsList();
+            }
+        );
+        deleteBtn.addEventListener('click', deleteHandler);
+    }
     
-    // Add section title
-    const sectionTitle = document.createElement('h4');
-    sectionTitle.textContent = 'Default Prompts';
-    sectionHeader.appendChild(sectionTitle);
-    
-    // Add click event to expand/collapse
-    let isExpanded = false;
-    sectionHeader.addEventListener('click', () => {
-        isExpanded = !isExpanded;
-        expandIcon.className = isExpanded ? 'fas fa-chevron-down' : 'fas fa-chevron-right';
-        defaultPromptsList.style.display = isExpanded ? 'block' : 'none';
-        
-        // Update the main context usage display when expanding the Default Prompts section
-        if (isExpanded) {
-            updateMainContextUsage();
-        }
-    });
-    
-    defaultPromptsSection.appendChild(sectionHeader);
-    
-    // Create container for default prompts
-    const defaultPromptsList = document.createElement('div');
-    defaultPromptsList.className = 'default-prompts-list';
-    defaultPromptsList.style.display = 'none'; // Initially collapsed
-    
-    // Get default prompts and selected IDs
-    const defaultPrompts = DefaultPromptsService.getDefaultPrompts();
-    const selectedDefaultPromptIds = DefaultPromptsService.getSelectedDefaultPromptIds();
-    
-    // Add each default prompt to the list
-    defaultPrompts.forEach(prompt => {
-        // Check if this is a section with nested items
-        if (prompt.isSection && prompt.items && prompt.items.length > 0) {
-            // Create a nested section
-            const nestedSection = document.createElement('div');
-            nestedSection.className = 'nested-section';
-            
-            // Create nested section header
-            const nestedHeader = document.createElement('div');
-            nestedHeader.className = 'nested-section-header';
-            
-            // Add expand/collapse icon for nested section
-            const nestedExpandIcon = document.createElement('i');
-            nestedExpandIcon.className = 'fas fa-chevron-right';
-            nestedHeader.appendChild(nestedExpandIcon);
-            
-            // Add nested section title
-            const nestedTitle = document.createElement('h4');
-            nestedTitle.textContent = prompt.name || 'Unnamed Section';
-            nestedHeader.appendChild(nestedTitle);
-            
-            // Add click event to expand/collapse nested section
-            let isNestedExpanded = false;
-            nestedHeader.addEventListener('click', () => {
-                isNestedExpanded = !isNestedExpanded;
-                nestedExpandIcon.className = isNestedExpanded ? 'fas fa-chevron-down' : 'fas fa-chevron-right';
-                nestedList.style.display = isNestedExpanded ? 'block' : 'none';
+    // Edit handler
+    const editHandler = PromptsEventHandlers.createPromptEditHandler(
+        prompt,
+        promptItem,
+        (selectedPrompt) => {
+            currentPrompt = selectedPrompt;
+            if (selectedPrompt) {
+                // Load prompt into editor
+                const labelField = document.getElementById('new-prompt-label');
+                const contentField = document.getElementById('new-prompt-content');
                 
-                // Update the main context usage display when expanding a section
-                // This ensures the context usage is updated when the Code section is expanded
-                if (isNestedExpanded && prompt.id === 'code-section') {
+                if (labelField && contentField) {
+                    labelField.value = selectedPrompt.name || '';
+                    contentField.value = selectedPrompt.content || '';
+                }
+            }
+        }
+    );
+    promptItem.addEventListener('click', editHandler);
+}
+
+/**
+ * Render the default prompts section
+ */
+function renderDefaultPromptsSection() {
+    const defaultPrompts = window.DefaultPromptsService.getDefaultPrompts();
+    const selectedIds = window.DefaultPromptsService.getSelectedDefaultPromptIds();
+    
+    const defaultPromptsSection = PromptsModalRenderer.renderDefaultPromptsSection(defaultPrompts, selectedIds);
+    
+    // Bind event handlers for the main section
+    const sectionHeader = defaultPromptsSection.querySelector('.default-prompts-header');
+    const sectionContent = defaultPromptsSection.querySelector('.default-prompts-list');
+    
+    if (sectionHeader && sectionContent) {
+        const toggleHandler = PromptsEventHandlers.createSectionToggleHandler(
+            sectionHeader,
+            sectionContent,
+            (isExpanded) => {
+                if (isExpanded) {
                     updateMainContextUsage();
                 }
-            });
-            
-            nestedSection.appendChild(nestedHeader);
-            
-            // Create container for nested items
-            const nestedList = document.createElement('div');
-            nestedList.className = 'nested-section-list';
-            nestedList.style.display = 'none'; // Initially collapsed
-            
-            // Add each nested item
-            prompt.items.forEach(nestedPrompt => {
-                const nestedItem = createPromptItem(nestedPrompt, selectedDefaultPromptIds);
-                nestedList.appendChild(nestedItem);
-            });
-            
-            nestedSection.appendChild(nestedList);
-            defaultPromptsList.appendChild(nestedSection);
-        } else {
-            // Regular prompt item
-            const promptItem = createPromptItem(prompt, selectedDefaultPromptIds);
-            defaultPromptsList.appendChild(promptItem);
-        }
-    });
+            }
+        );
+        sectionHeader.addEventListener('click', toggleHandler);
+    }
     
-    defaultPromptsSection.appendChild(defaultPromptsList);
+    // Bind events for default prompt items
+    bindDefaultPromptEvents(defaultPromptsSection);
+    
     elements.promptsList.appendChild(defaultPromptsSection);
 }
 
 /**
- * Create a prompt item element
- * @param {Object} prompt - The prompt object
- * @param {Array} selectedIds - Array of selected prompt IDs
- * @returns {HTMLElement} The created prompt item element
+ * Bind events for default prompt items
+ * @param {HTMLElement} container - Container element
  */
-function createPromptItem(prompt, selectedIds) {
-    const promptItem = document.createElement('div');
-    promptItem.className = 'prompt-item default-prompt-item';
-    promptItem.dataset.id = prompt.id;
+function bindDefaultPromptEvents(container) {
+    const defaultPromptItems = container.querySelectorAll('.default-prompt-item');
     
-    // Create checkbox for selecting the prompt
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.className = 'prompt-item-checkbox';
-    checkbox.checked = selectedIds.includes(prompt.id);
-    checkbox.addEventListener('click', (e) => {
-        e.stopPropagation(); // Prevent triggering the prompt item click
-        console.log("Default prompt checkbox clicked:", prompt.id);
+    defaultPromptItems.forEach(item => {
+        const promptId = item.dataset.id;
+        const checkbox = item.querySelector('.prompt-item-checkbox');
+        const nameElement = item.querySelector('.prompt-item-name');
+        const infoBtn = item.querySelector('.prompt-item-info');
         
-        // Toggle the prompt selection in the service
-        DefaultPromptsService.toggleDefaultPromptSelection(prompt.id);
+        // Find prompt object
+        const allDefaultPrompts = getAllFlatDefaultPrompts();
+        const prompt = allDefaultPrompts.find(p => p.id === promptId);
         
-        // Apply selected prompts as system prompt
-        PromptsService.applySelectedPromptsAsSystem();
+        if (!prompt) return;
         
-        // Update token usage bar in the prompts modal
-        updatePromptsTokenUsage();
-        
-        // Update the main context usage display
-        updateMainContextUsage();
-    });
-    promptItem.appendChild(checkbox);
-    
-    // Create prompt name element
-    const promptName = document.createElement('div');
-    promptName.className = 'prompt-item-name';
-    promptName.textContent = prompt.name || 'Unnamed Default Prompt';
-    promptName.style.cursor = 'pointer'; // Add pointer cursor to indicate it's clickable
-    promptName.title = 'Click to view prompt content';
-    
-    // Add click event to the prompt name to load the prompt into the editor
-    promptName.addEventListener('click', (e) => {
-        e.stopPropagation(); // Prevent triggering the prompt item click
-        
-        // Show content in a read-only way (using the editor fields)
-        const labelField = document.getElementById('new-prompt-label');
-        const contentField = document.getElementById('new-prompt-content');
-        
-        if (labelField && contentField) {
-            labelField.value = prompt.name || '';
-            
-            // For the Function Library prompt, re-evaluate the content function to get the current state
-            let contentValue = '';
-            if (prompt.id === 'function-library' && window.FunctionLibraryPrompt && typeof window.FunctionLibraryPrompt.content === 'function') {
-                // Re-evaluate the function to get the current content
-                contentValue = window.FunctionLibraryPrompt.content();
-            } else {
-                // For other prompts, use the stored content
-                contentValue = prompt.content || '';
-            }
-            
-            contentField.value = contentValue;
-            
-            // Make it clear these are read-only for default prompts
-            labelField.setAttribute('readonly', 'readonly');
-            contentField.setAttribute('readonly', 'readonly');
-            
-            // Update the main context usage display when viewing a prompt's content
-            // This ensures the context usage is updated when a nested prompt is clicked
-            updateMainContextUsage();
-            
-            // Remove readonly after a short delay when clicking elsewhere
-            setTimeout(() => {
-                document.addEventListener('click', function removeReadonly(e) {
-                    if (!e.target.closest('.new-prompt-section')) {
-                        labelField.removeAttribute('readonly');
-                        contentField.removeAttribute('readonly');
-                        document.removeEventListener('click', removeReadonly);
-                    }
-                });
-            }, 100);
-        }
-    });
-    
-    promptItem.appendChild(promptName);
-    
-    // Add info icon instead of delete (default prompts can't be deleted)
-    const infoIcon = document.createElement('button');
-    infoIcon.className = 'prompt-item-info';
-    infoIcon.innerHTML = '<i class="fas fa-info-circle"></i>';
-    infoIcon.title = 'About this prompt';
-    infoIcon.addEventListener('click', (e) => {
-        e.stopPropagation(); // Prevent triggering the prompt item click
-        
-        // Create and show a popup with information about the prompt
-        const popup = document.createElement('div');
-        popup.className = 'prompt-info-popup';
-        
-        // Get description based on prompt ID
-        let description = '';
-        switch(prompt.id) {
-            case 'hacka-re-project':
-                description = 'Information about the hacka.re project, including architecture. Markdown format.';
-                break;
-            case 'interpretability-urgency':
-                description = 'Discusses the importance of AI interpretability research and its urgency for safe AI development.';
-                break;
-            case 'function-library':
-                description = 'All JavaScript functions currently stored in <a href="#" class="function-library-link">Function Library</a>, for convenient LLM-assisted function updates.';
-                break;
-            case 'agent-orchestration':
-                description = 'Demonstrates a pattern for creating multi-agent systems with function calling capabilities.';
-                break;
-            case 'owasp-llm-top10':
-                description = 'The entire OWASP Top 10 for LLM applications as of May 2025. Markdown format, about 60 pages printed.';
-                break;
-            case 'mcp-sdk-readme':
-                description = 'Documentation for the Model Context Protocol SDK, which enables communication between AI models and external tools.';
-                break;
-            default:
-                description = prompt.description || 'A default system prompt component for the hacka.re chat interface.';
+        // Checkbox handler
+        if (checkbox) {
+            const checkboxHandler = PromptsEventHandlers.createCheckboxHandler(
+                promptId,
+                true,
+                () => {
+                    updatePromptsTokenUsage();
+                    updateMainContextUsage();
+                }
+            );
+            checkbox.addEventListener('click', checkboxHandler);
         }
         
-        // Create popup content
-        popup.innerHTML = `
-            <div class="prompt-info-header">
-                <h3>${prompt.name}</h3>
-                <button class="prompt-info-close"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="prompt-info-content">
-                <p>${description}</p>
-                <p class="prompt-info-hint">Click on the prompt name to view its content in the editor.</p>
-            </div>
-        `;
-        
-        // Add close button functionality
-        const closeBtn = popup.querySelector('.prompt-info-close');
-        closeBtn.addEventListener('click', () => {
-            document.body.removeChild(popup);
-        });
-        
-        // Add click outside to close
-        document.addEventListener('click', function closePopup(event) {
-            if (!popup.contains(event.target) && event.target !== infoIcon) {
-                if (document.body.contains(popup)) {
-                    document.body.removeChild(popup);
-                }
-                document.removeEventListener('click', closePopup);
-            }
-        });
-        
-        // Position the popup near the info icon
-        const rect = infoIcon.getBoundingClientRect();
-        popup.style.position = 'absolute';
-        popup.style.top = `${rect.bottom + window.scrollY + 10}px`;
-        popup.style.left = `${rect.left + window.scrollX - 200}px`; // Offset to center
-        
-        // Add to body
-        document.body.appendChild(popup);
-        
-        // Add event listener for Function Library link if present
-        const functionLibraryLink = popup.querySelector('.function-library-link');
-        if (functionLibraryLink) {
-            functionLibraryLink.addEventListener('click', (e) => {
-                e.preventDefault();
-                
-                // Close the popup
-                if (document.body.contains(popup)) {
-                    document.body.removeChild(popup);
-                }
-                
-                // Close the prompts modal
-                hidePromptsModal();
-                
-                // Open the function modal
-                if (window.aiHackare && window.aiHackare.functionCallingManager) {
-                    window.aiHackare.functionCallingManager.showFunctionModal();
-                } else {
-                    // Fallback if the function calling manager is not available
-                    const functionBtn = document.getElementById('function-btn');
-                    if (functionBtn) {
-                        functionBtn.click();
+        // Name click handler for viewing content
+        if (nameElement) {
+            const viewHandler = PromptsEventHandlers.createDefaultPromptViewHandler(
+                prompt,
+                (selectedPrompt) => {
+                    // Load prompt content into editor fields (read-only)
+                    const labelField = document.getElementById('new-prompt-label');
+                    const contentField = document.getElementById('new-prompt-content');
+                    
+                    if (labelField && contentField) {
+                        labelField.value = selectedPrompt.name || '';
+                        
+                        // Handle dynamic content for Function Library
+                        let contentValue = '';
+                        if (selectedPrompt.id === 'function-library' && 
+                            window.FunctionLibraryPrompt && 
+                            typeof window.FunctionLibraryPrompt.content === 'function') {
+                            contentValue = window.FunctionLibraryPrompt.content();
+                        } else {
+                            contentValue = selectedPrompt.content || '';
+                        }
+                        
+                        contentField.value = contentValue;
+                        
+                        // Make fields temporarily read-only
+                        labelField.setAttribute('readonly', 'readonly');
+                        contentField.setAttribute('readonly', 'readonly');
+                        
+                        updateMainContextUsage();
+                        
+                        // Remove readonly after click elsewhere
+                        setTimeout(() => {
+                            document.addEventListener('click', function removeReadonly(e) {
+                                if (!e.target.closest('.new-prompt-section')) {
+                                    labelField.removeAttribute('readonly');
+                                    contentField.removeAttribute('readonly');
+                                    document.removeEventListener('click', removeReadonly);
+                                }
+                            });
+                        }, 100);
                     }
                 }
-            });
+            );
+            nameElement.addEventListener('click', viewHandler);
+        }
+        
+        // Info button handler
+        if (infoBtn) {
+            const infoHandler = PromptsEventHandlers.createInfoHandler(prompt, infoBtn);
+            infoBtn.addEventListener('click', infoHandler);
         }
     });
-    promptItem.appendChild(infoIcon);
     
-    return promptItem;
+    // Bind nested section toggle handlers
+    const nestedSections = container.querySelectorAll('.nested-section');
+    nestedSections.forEach(section => {
+        const header = section.querySelector('.nested-section-header');
+        const content = section.querySelector('.nested-section-list');
+        
+        if (header && content) {
+            const toggleHandler = PromptsEventHandlers.createSectionToggleHandler(
+                header,
+                content,
+                (isExpanded) => {
+                    // Special handling for Code section
+                    const titleElement = header.querySelector('h4');
+                    if (isExpanded && titleElement && titleElement.textContent === 'Code') {
+                        updateMainContextUsage();
+                    }
+                }
+            );
+            header.addEventListener('click', toggleHandler);
+        }
+    });
 }
+
+/**
+ * Get all default prompts flattened (including nested items)
+ * @returns {Array} Flattened array of default prompts
+ */
+function getAllFlatDefaultPrompts() {
+    const defaultPrompts = window.DefaultPromptsService.getDefaultPrompts();
+    const flatPrompts = [];
+    
+    defaultPrompts.forEach(prompt => {
+        if (prompt.isSection && prompt.items) {
+            flatPrompts.push(...prompt.items);
+        } else {
+            flatPrompts.push(prompt);
+        }
+    });
+    
+    return flatPrompts;
+}
+
+/**
+ * Bind events for the new prompt form
+ * @param {HTMLElement} form - Form element
+ */
+function bindFormEvents(form) {
+    const clearBtn = form.querySelector('.new-prompt-clear');
+    const saveBtn = form.querySelector('.new-prompt-save');
+    
+    if (clearBtn) {
+        const clearHandler = PromptsEventHandlers.createClearHandler(() => {
+            currentPrompt = null;
+        });
+        clearBtn.addEventListener('click', clearHandler);
+    }
+    
+    if (saveBtn) {
+        const saveHandler = PromptsEventHandlers.createSaveHandler((promptData) => {
+            // Create or update prompt
+            const promptToSave = {
+                id: currentPrompt ? currentPrompt.id : null,
+                name: promptData.name,
+                content: promptData.content
+            };
+            
+            // Save the prompt
+            const savedPrompt = PromptsService.savePrompt(promptToSave);
+            currentPrompt = null;
+            
+            // Clear form and reload
+            const labelField = document.getElementById('new-prompt-label');
+            const contentField = document.getElementById('new-prompt-content');
+            if (labelField) labelField.value = '';
+            if (contentField) contentField.value = '';
+            
+            loadPromptsList();
+            
+            // Apply selected prompts as system prompt
+            PromptsService.applySelectedPromptsAsSystem();
+            updateMainContextUsage();
+        });
+        saveBtn.addEventListener('click', saveHandler);
+    }
+}
+
+
         
         /**
          * Create a new prompt
@@ -757,53 +460,14 @@ function createPromptItem(prompt, selectedIds) {
         
         /**
          * Update the main context usage display in the header
+         * Emits event for other components to handle
          */
         function updateMainContextUsage() {
-            // Get all selected prompts
-            const selectedDefaultPrompts = DefaultPromptsService.getSelectedDefaultPrompts();
-            const selectedPrompts = PromptsService.getSelectedPrompts();
-            const allSelectedPrompts = [...selectedDefaultPrompts, ...selectedPrompts];
-            
-            // Combine all selected prompts
-            const combinedContent = allSelectedPrompts
-                .map(prompt => {
-                    // For Function Library prompt, ensure we get the latest content
-                    if (prompt.id === 'function-library' && 
-                        window.FunctionLibraryPrompt && 
-                        typeof window.FunctionLibraryPrompt.content === 'function') {
-                        return window.FunctionLibraryPrompt.content();
-                    }
-                    return prompt.content;
-                })
-                .join('\n\n---\n\n');
-            
-            // Get current messages
-            const messages = window.aiHackare && window.aiHackare.chatManager ? 
-                window.aiHackare.chatManager.getMessages() || [] : [];
-            
-            // Get current model
-            const currentModel = window.aiHackare && window.aiHackare.settingsManager ? 
-                window.aiHackare.settingsManager.getCurrentModel() : '';
-            
-            // Calculate usage info directly
-            const usageInfo = UIUtils.estimateContextUsage(
-                messages, 
-                ModelInfoService.modelInfo, 
-                currentModel,
-                combinedContent
-            );
-            
-            console.log("Main context usage update - percentage:", usageInfo.percentage);
-            
-            // Update the UI directly
-            const usageFill = document.querySelector('.usage-fill');
-            const usageText = document.querySelector('.usage-text');
-            
-            if (usageFill && usageText) {
-                console.log("Updating main UI elements from updateMainContextUsage");
-                UIUtils.updateContextUsage(usageFill, usageText, usageInfo.percentage);
-            } else {
-                console.log("Could not find main UI elements");
+            // Emit event for other components to handle context updates
+            if (window.UIUtils && window.UIUtils.EventBus) {
+                window.UIUtils.EventBus.emit('contextUsageUpdateRequested', {
+                    source: 'prompts-manager'
+                });
             }
         }
         
@@ -812,30 +476,14 @@ function createPromptItem(prompt, selectedIds) {
          */
         function copySystemPromptToClipboard() {
             try {
-                // Get all selected prompts
-                const selectedPrompts = PromptsService.getSelectedPrompts();
-                const selectedDefaultPrompts = window.DefaultPromptsService ? 
-                    window.DefaultPromptsService.getSelectedDefaultPrompts() : [];
+                // Get system prompt from SystemPromptCoordinator
+                const systemPrompt = window.SystemPromptCoordinator ? 
+                    window.SystemPromptCoordinator.assembleSystemPrompt() : '';
                 
-                const allSelectedPrompts = [...selectedDefaultPrompts, ...selectedPrompts];
-                
-                if (allSelectedPrompts.length === 0) {
+                if (!systemPrompt || systemPrompt.trim() === '') {
                     alert('No prompts are currently selected. Select some prompts to copy the system prompt.');
                     return;
                 }
-                
-                // Combine all selected prompts to get the current system prompt
-                const systemPrompt = allSelectedPrompts
-                    .map(prompt => {
-                        // For Function Library prompt, ensure we get the latest content
-                        if (prompt.id === 'function-library' && 
-                            window.FunctionLibraryPrompt && 
-                            typeof window.FunctionLibraryPrompt.content === 'function') {
-                            return window.FunctionLibraryPrompt.content();
-                        }
-                        return prompt.content;
-                    })
-                    .join('\n\n---\n\n');
                 
                 // Copy to clipboard
                 navigator.clipboard.writeText(systemPrompt).then(() => {
@@ -868,8 +516,10 @@ function createPromptItem(prompt, selectedIds) {
          * @param {string} systemPrompt - The system prompt to set
          */
         function updateSystemPromptInput(systemPrompt) {
-            if (elements.systemPromptInput && systemPrompt) {
-                elements.systemPromptInput.value = systemPrompt;
+            if (elements.systemPromptInput) {
+                const promptContent = systemPrompt || (window.SystemPromptCoordinator ? 
+                    window.SystemPromptCoordinator.assembleSystemPrompt() : '');
+                elements.systemPromptInput.value = promptContent;
             }
         }
         
