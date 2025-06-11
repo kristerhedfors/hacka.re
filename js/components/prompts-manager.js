@@ -17,6 +17,9 @@ window.PromptsManager = (function() {
         let promptsUsageFill;
         let promptsUsageText;
         
+        // Debounce timer for selection changes
+        let selectionChangeTimer = null;
+        
         /**
          * Initialize the prompts manager
          */
@@ -136,25 +139,35 @@ window.PromptsManager = (function() {
         }
         
         /**
-         * Update after selection change
+         * Update after selection change (debounced for better performance)
          */
         function updateAfterSelectionChange() {
-            // Apply selected prompts as system prompt
-            PromptsService.applySelectedPromptsAsSystem();
-            
-            // Update token usage
-            updatePromptsTokenUsage();
-            
-            // Update system prompt in settings
-            const systemPrompt = StorageService.getSystemPrompt();
-            if (elements.systemPromptInput && systemPrompt) {
-                elements.systemPromptInput.value = systemPrompt;
+            // Clear existing timer
+            if (selectionChangeTimer) {
+                clearTimeout(selectionChangeTimer);
             }
             
-            // Publish event for other components
-            if (window.UIUtils && window.UIUtils.EventBus) {
-                window.UIUtils.EventBus.emit('promptSelectionChanged', {});
-            }
+            // Schedule debounced update
+            selectionChangeTimer = setTimeout(() => {
+                // Apply selected prompts as system prompt
+                PromptsService.applySelectedPromptsAsSystem();
+                
+                // Update token usage
+                updatePromptsTokenUsage();
+                
+                // Update system prompt in settings
+                const systemPrompt = StorageService.getSystemPrompt();
+                if (elements.systemPromptInput && systemPrompt) {
+                    elements.systemPromptInput.value = systemPrompt;
+                }
+                
+                // Publish event for other components
+                if (window.UIUtils && window.UIUtils.EventBus) {
+                    window.UIUtils.EventBus.emit('promptSelectionChanged', {});
+                }
+                
+                selectionChangeTimer = null;
+            }, 100); // 100ms debounce delay
         }
         
         /**

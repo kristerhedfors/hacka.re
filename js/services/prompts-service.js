@@ -11,6 +11,22 @@ window.PromptsService = (function() {
     // Storage key for selected prompt IDs (those included in the system prompt)
     const SELECTED_PROMPT_IDS_KEY = 'selected_prompt_ids';
     
+    // Cache for selected prompt IDs to reduce decrypt operations
+    let selectedPromptIdsCache = null;
+    let cacheTimestamp = 0;
+    const CACHE_TTL = 5000; // 5 seconds TTL
+    
+    // Debounce timer for batched updates
+    let updateTimer = null;
+    
+    // Performance monitoring
+    const performanceMetrics = {
+        cacheHits: 0,
+        cacheMisses: 0,
+        decryptOperations: 0,
+        toggleOperations: 0
+    };
+    
     /**
      * Save a prompt to local storage with encryption
      * @param {Object} prompt - The prompt object to save
@@ -95,32 +111,64 @@ window.PromptsService = (function() {
     }
     
     /**
-     * Get the selected prompt IDs with decryption
+     * Get the selected prompt IDs with caching to reduce decrypt operations
      * @returns {Array} Array of selected prompt IDs
      */
     function getSelectedPromptIds() {
+        const now = Date.now();
+        
+        // Check if cache is valid
+        if (selectedPromptIdsCache !== null && (now - cacheTimestamp) < CACHE_TTL) {
+            performanceMetrics.cacheHits++;
+            return selectedPromptIdsCache;
+        }
+        
+        // Cache miss - decrypt from storage
+        performanceMetrics.cacheMisses++;
+        performanceMetrics.decryptOperations++;
         const selectedIds = CoreStorageService.getValue(SELECTED_PROMPT_IDS_KEY);
-        return selectedIds || [];
+        const result = selectedIds || [];
+        
+        // Update cache
+        selectedPromptIdsCache = result;
+        cacheTimestamp = now;
+        
+        return result;
     }
     
     /**
-     * Set the selected prompt IDs with encryption
+     * Set the selected prompt IDs with encryption and update cache
      * @param {Array} ids - Array of prompt IDs to set as selected
      */
     function setSelectedPromptIds(ids) {
         if (Array.isArray(ids) && ids.length > 0) {
             CoreStorageService.setValue(SELECTED_PROMPT_IDS_KEY, ids);
+            // Update cache immediately
+            selectedPromptIdsCache = [...ids];
+            cacheTimestamp = Date.now();
         } else {
             CoreStorageService.removeValue(SELECTED_PROMPT_IDS_KEY);
+            // Clear cache
+            selectedPromptIdsCache = [];
+            cacheTimestamp = Date.now();
         }
     }
     
+    /**
+     * Clear the cache to force reload from storage
+     */
+    function clearCache() {
+        selectedPromptIdsCache = null;
+        cacheTimestamp = 0;
+    }
+    
 /**
- * Toggle a prompt's selection status
+ * Toggle a prompt's selection status (optimized)
  * @param {string} id - The prompt ID to toggle
  * @returns {boolean} True if the prompt is now selected, false if unselected
  */
 function togglePromptSelection(id) {
+    performanceMetrics.toggleOperations++;
     const selectedIds = getSelectedPromptIds();
     const index = selectedIds.indexOf(id);
     let result;
@@ -137,15 +185,31 @@ function togglePromptSelection(id) {
         result = true;
     }
     
-    // Update main context usage display if aiHackare is available
-    if (window.aiHackare && window.aiHackare.chatManager) {
-        window.aiHackare.chatManager.estimateContextUsage(
-            window.aiHackare.uiManager.updateContextUsage.bind(window.aiHackare.uiManager),
-            window.aiHackare.settingsManager.getCurrentModel()
-        );
-    }
+    // Don't trigger context updates here - let the PromptsManager coordinate
+    // This prevents redundant context calculations on every toggle
+    // The PromptsManager's updateAfterSelectionChange will handle the coordination
     
     return result;
+}
+
+/**
+ * Schedule a debounced context usage update to batch operations
+ */
+function scheduleContextUpdate() {
+    if (updateTimer) {
+        clearTimeout(updateTimer);
+    }
+    
+    updateTimer = setTimeout(() => {
+        // Update main context usage display if aiHackare is available
+        if (window.aiHackare && window.aiHackare.chatManager) {
+            window.aiHackare.chatManager.estimateContextUsage(
+                window.aiHackare.uiManager.updateContextUsage.bind(window.aiHackare.uiManager),
+                window.aiHackare.settingsManager.getCurrentModel()
+            );
+        }
+        updateTimer = null;
+    }, 150); // 150ms debounce delay
 }
     
     /**
@@ -214,6 +278,29 @@ function applySelectedPromptsAsSystem() {
         return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
     }
     
+    /**
+     * Get performance metrics for debugging
+     * @returns {Object} Performance metrics
+     */
+    function getPerformanceMetrics() {
+        return {
+            ...performanceMetrics,
+            cacheHitRate: performanceMetrics.cacheHits + performanceMetrics.cacheMisses > 0 
+                ? (performanceMetrics.cacheHits / (performanceMetrics.cacheHits + performanceMetrics.cacheMisses) * 100).toFixed(2) + '%'
+                : 'N/A'
+        };
+    }
+    
+    /**
+     * Reset performance metrics
+     */
+    function resetPerformanceMetrics() {
+        performanceMetrics.cacheHits = 0;
+        performanceMetrics.cacheMisses = 0;
+        performanceMetrics.decryptOperations = 0;
+        performanceMetrics.toggleOperations = 0;
+    }
+    
     // Public API
     return {
         savePrompt,
@@ -225,6 +312,10 @@ function applySelectedPromptsAsSystem() {
         togglePromptSelection,
         isPromptSelected,
         getSelectedPrompts,
-        applySelectedPromptsAsSystem
+        applySelectedPromptsAsSystem,
+        clearCache,
+        scheduleContextUpdate,
+        getPerformanceMetrics,
+        resetPerformanceMetrics
     };
 })();

@@ -8,7 +8,7 @@
 .prompts-container {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 0;
 }
 
 .prompts-list {
@@ -16,7 +16,7 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0;
 }
 
 .default-prompts-section {
@@ -42,7 +42,7 @@
     user-select: none;
     border-left-width: 12px;
     border-left-style: solid;
-    border-left-color: var(--primary-color);
+    border-left-color: transparent;
     transition: background-color 0.2s ease;
 }
 
@@ -79,6 +79,18 @@
     transition: all 0.3s ease;
 }
 
+.default-prompts-list::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 10px;
+    background-color: transparent;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+
 .default-prompts-list::before {
     content: "";
     position: absolute;
@@ -92,11 +104,11 @@
 
 /* Add spacing between prompt items in main list */
 .default-prompts-list .prompt-item {
-    margin-bottom: 8px;
+    margin-bottom: 0;
 }
 
 .default-prompts-list .prompt-item:last-child {
-    margin-bottom: 12px;
+    margin-bottom: 0;
 }
 
 /* Nested section styles - match function collection container */
@@ -160,6 +172,18 @@
     transition: all 0.3s ease;
 }
 
+.nested-section-list::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 10px;
+    background-color: var(--secondary-color, #10b981);
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+
 .nested-section-list::before {
     content: "";
     position: absolute;
@@ -173,11 +197,11 @@
 
 /* Add spacing between prompt items */
 .nested-section-list .prompt-item {
-    margin-bottom: 8px;
+    margin-bottom: 0;
 }
 
 .nested-section-list .prompt-item:last-child {
-    margin-bottom: 12px;
+    margin-bottom: 0;
 }
 
 /* Regular prompt items styling to match function items */
@@ -226,7 +250,7 @@
     top: 50%;
     transform: translateY(-50%);
     width: 8px;
-    height: 8px;
+    height: 10px;
     border-radius: 50%;
     background-color: var(--primary-color);
 }
@@ -294,7 +318,7 @@
     top: 50%;
     transform: translateY(-50%);
     width: 8px;
-    height: 8px;
+    height: 10px;
     border-radius: 50%;
     background-color: var(--accent-color);
 }
@@ -446,7 +470,7 @@
 }
 
 .prompts-usage-bar {
-    height: 8px;
+    height: 10px;
     background-color: var(--bg-color);
     border-radius: 4px;
     overflow: hidden;
