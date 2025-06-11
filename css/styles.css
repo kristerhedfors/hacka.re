@@ -139,12 +139,16 @@ a[href="https://hacka.re/"] {
     font-family: 'Courier New', monospace !important;
 }
 
+/* Apply Courier New to default title and subtitle */
+.logo-text.default-title,
+.tagline.default-subtitle {
+    font-family: 'Courier New', monospace !important;
+}
+
 /* Ensure links in the heart logo tooltip use the same style as footer links */
 .heart-logo .tooltip a:not([href="https://hacka.re/"]) {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
 }
-
-/* Remove .logo-text from the above rule to prevent Courier New from affecting serverless GPTs */
 
 /* Override for custom titles (which are wrapped in named-gpt-container) */
 .named-gpt-container .logo-text {
@@ -230,7 +234,7 @@ a[href="https://hacka.re/"] {
 }
 
 .gpts {
-    font-weight: 700; /* Bold weight for "GPTs" */
+    font-weight: 400; /* Normal weight for "GPTs" to match "serverless" */
 }
 
 @keyframes textSweep {
