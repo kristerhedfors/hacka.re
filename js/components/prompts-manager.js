@@ -76,18 +76,22 @@ window.PromptsManager = (function() {
          * Show the prompts modal
          */
         function showPromptsModal() {
-            // Load prompts
-            loadPromptsList();
+            // Show the modal first
+            if (elements.promptsModal) {
+                elements.promptsModal.classList.add('active');
+            }
             
             // Reset current prompt
             currentPrompt = null;
             
-            // Show the modal
-            if (elements.promptsModal) {
-                elements.promptsModal.classList.add('active');
-                
+            // Load prompts with error handling
+            try {
+                loadPromptsList();
                 // Update the main context usage display
                 updateMainContextUsage();
+            } catch (error) {
+                console.error('Error loading prompts list:', error);
+                // Even if there's an error, keep the modal visible
             }
         }
         
@@ -148,7 +152,7 @@ window.PromptsManager = (function() {
             
             // Publish event for other components
             if (window.UIUtils && window.UIUtils.EventBus) {
-                window.UIUtils.EventBus.publish('promptSelectionChanged', {});
+                window.UIUtils.EventBus.emit('promptSelectionChanged', {});
             }
         }
         

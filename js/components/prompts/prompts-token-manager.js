@@ -40,7 +40,7 @@ function createPromptsTokenManager() {
      */
     function updateMainContextUsage() {
         if (window.UIUtils && window.UIUtils.EventBus) {
-            window.UIUtils.EventBus.publish('requestContextUpdate', {});
+            window.UIUtils.EventBus.emit('requestContextUpdate', {});
         }
     }
     

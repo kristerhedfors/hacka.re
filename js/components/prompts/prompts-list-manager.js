@@ -86,6 +86,7 @@ function createPromptsListManager() {
         if (checkbox) {
             const checkboxHandler = PromptsEventHandlers.createCheckboxHandler(
                 prompt.id,
+                false, // isDefault = false for user prompts
                 () => updateAfterSelectionChange()
             );
             checkbox.addEventListener('change', checkboxHandler);
@@ -94,18 +95,27 @@ function createPromptsListManager() {
         // Delete button handler
         if (deleteBtn) {
             const deleteHandler = PromptsEventHandlers.createDeleteHandler(
-                prompt,
+                prompt.id,
+                prompt.name,
                 () => reloadPromptsList()
             );
             deleteBtn.addEventListener('click', deleteHandler);
         }
         
-        // Click handler for item selection
-        const clickHandler = PromptsEventHandlers.createItemClickHandler(
+        // Click handler for editing prompt
+        const editHandler = PromptsEventHandlers.createPromptEditHandler(
             prompt,
-            (selectedPrompt) => setCurrentPrompt(selectedPrompt)
+            promptItem,
+            (editedPrompt) => {
+                if (editedPrompt) {
+                    setCurrentPrompt(editedPrompt);
+                } else {
+                    // Edit was cancelled
+                    setCurrentPrompt(null);
+                }
+            }
         );
-        promptItem.addEventListener('click', clickHandler);
+        promptItem.addEventListener('click', editHandler);
     }
     
     /**
@@ -113,12 +123,55 @@ function createPromptsListManager() {
      * @param {HTMLElement} formElement - Form element
      */
     function bindFormEvents(formElement) {
-        const form = formElement.querySelector('.new-prompt-form');
-        if (form) {
-            const submitHandler = PromptsEventHandlers.createFormSubmitHandler(
-                () => reloadPromptsList()
-            );
-            form.addEventListener('submit', submitHandler);
+        // Bind save button
+        const saveButton = formElement.querySelector('.new-prompt-save');
+        if (saveButton) {
+            const saveHandler = PromptsEventHandlers.createSaveHandler(() => {
+                // Get form values
+                const labelField = formElement.querySelector('#new-prompt-label');
+                const contentField = formElement.querySelector('#new-prompt-content');
+                
+                if (labelField && contentField && labelField.value.trim() && contentField.value.trim()) {
+                    // Create new prompt object
+                    const newPrompt = {
+                        id: 'user_' + Date.now(),
+                        name: labelField.value.trim(),
+                        content: contentField.value.trim(),
+                        isDefault: false
+                    };
+                    
+                    // Add to prompts service
+                    window.PromptsService.savePrompt(newPrompt);
+                    
+                    // Clear form
+                    labelField.value = '';
+                    contentField.value = '';
+                    
+                    // Reload prompts list
+                    if (reloadPromptsList) {
+                        reloadPromptsList();
+                    }
+                    
+                    // Update context usage
+                    if (updateAfterSelectionChange) {
+                        updateAfterSelectionChange();
+                    }
+                }
+            });
+            saveButton.addEventListener('click', saveHandler);
+        }
+        
+        // Bind clear button
+        const clearButton = formElement.querySelector('.new-prompt-clear');
+        if (clearButton) {
+            const clearHandler = PromptsEventHandlers.createClearHandler(() => {
+                const labelField = formElement.querySelector('#new-prompt-label');
+                const contentField = formElement.querySelector('#new-prompt-content');
+                
+                if (labelField) labelField.value = '';
+                if (contentField) contentField.value = '';
+            });
+            clearButton.addEventListener('click', clearHandler);
         }
     }
     
@@ -127,25 +180,112 @@ function createPromptsListManager() {
      * @param {Object} elements - DOM elements
      */
     function renderDefaultPromptsSection(elements) {
-        const defaultPromptsSection = PromptsModalRenderer.renderDefaultPromptsSection();
+        // Get default prompts and selected IDs first
+        const defaultPrompts = DefaultPromptsService.getDefaultPrompts();
+        const selectedIds = PromptsService.getSelectedPromptIds();
+        
+        const defaultPromptsSection = PromptsModalRenderer.renderDefaultPromptsSection(defaultPrompts, selectedIds);
         elements.promptsList.appendChild(defaultPromptsSection);
         
         // Bind default prompts events
-        const defaultPromptsContainer = defaultPromptsSection.querySelector('.default-prompts-container');
+        const defaultPromptsContainer = defaultPromptsSection.querySelector('.default-prompts-list');
         if (defaultPromptsContainer) {
-            const defaultPrompts = DefaultPromptsService.getDefaultPrompts();
             
-            defaultPrompts.forEach(defaultPrompt => {
-                const promptElement = defaultPromptsContainer.querySelector(`[data-prompt-id="${defaultPrompt.id}"]`);
+            // Function to bind events for a prompt item
+            const bindPromptEvents = (prompt) => {
+                const promptElement = defaultPromptsSection.querySelector(`[data-prompt-id="${prompt.id}"]`);
                 if (promptElement) {
-                    const addHandler = PromptsEventHandlers.createDefaultPromptAddHandler(
-                        defaultPrompt,
-                        () => reloadPromptsList()
-                    );
-                    promptElement.addEventListener('click', addHandler);
+                    // Bind checkbox handler for selection
+                    const checkbox = promptElement.querySelector('input[type="checkbox"]');
+                    if (checkbox) {
+                        const checkboxHandler = PromptsEventHandlers.createCheckboxHandler(
+                            prompt.id,
+                            true, // isDefault = true for default prompts
+                            () => {
+                                // Update context usage after selection change
+                                if (updateAfterSelectionChange) {
+                                    updateAfterSelectionChange();
+                                }
+                            }
+                        );
+                        checkbox.addEventListener('change', checkboxHandler);
+                    }
+                    
+                    // Bind prompt name click handler for viewing content
+                    const promptName = promptElement.querySelector('.prompt-item-name');
+                    if (promptName) {
+                        const viewHandler = PromptsEventHandlers.createDefaultPromptViewHandler(
+                            prompt,
+                            (viewedPrompt) => {
+                                // Load prompt content into the new prompt form editor
+                                const labelField = document.getElementById('new-prompt-label');
+                                const contentField = document.getElementById('new-prompt-content');
+                                
+                                if (labelField && contentField) {
+                                    labelField.value = viewedPrompt.name || '';
+                                    contentField.value = viewedPrompt.content || '';
+                                    
+                                    // Make fields read-only when viewing default prompts
+                                    labelField.setAttribute('readonly', 'readonly');
+                                    contentField.setAttribute('readonly', 'readonly');
+                                }
+                            }
+                        );
+                        promptName.addEventListener('click', viewHandler);
+                    }
+                    
+                    // Bind info button handler
+                    const infoButton = promptElement.querySelector('.prompt-item-info');
+                    if (infoButton) {
+                        const infoHandler = PromptsEventHandlers.createInfoHandler(prompt, infoButton);
+                        infoButton.addEventListener('click', infoHandler);
+                    }
+                }
+            };
+            
+            // Bind events for all prompts (including nested ones)
+            defaultPrompts.forEach(defaultPrompt => {
+                if (defaultPrompt.isSection && defaultPrompt.items) {
+                    // Bind events for items in nested sections
+                    defaultPrompt.items.forEach(bindPromptEvents);
+                } else {
+                    // Bind events for top-level prompts
+                    bindPromptEvents(defaultPrompt);
                 }
             });
         }
+        
+        // Bind expand/collapse events for section headers
+        const sectionHeaders = defaultPromptsSection.querySelectorAll('.default-prompts-header, .nested-section-header');
+        sectionHeaders.forEach(header => {
+            header.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Find the corresponding list container
+                let listContainer;
+                if (header.classList.contains('default-prompts-header')) {
+                    listContainer = defaultPromptsSection.querySelector('.default-prompts-list');
+                } else {
+                    // For nested sections, find the next sibling list
+                    listContainer = header.nextElementSibling;
+                    while (listContainer && !listContainer.classList.contains('nested-section-list')) {
+                        listContainer = listContainer.nextElementSibling;
+                    }
+                }
+                
+                if (listContainer) {
+                    const isExpanded = listContainer.style.display !== 'none';
+                    listContainer.style.display = isExpanded ? 'none' : 'block';
+                    
+                    // Update icon
+                    const icon = header.querySelector('i');
+                    if (icon) {
+                        icon.className = isExpanded ? 'fas fa-chevron-right' : 'fas fa-chevron-down';
+                    }
+                }
+            });
+        });
     }
     
     // Callback functions (to be set by parent manager)
