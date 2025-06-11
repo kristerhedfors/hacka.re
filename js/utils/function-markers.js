@@ -1,0 +1,238 @@
+/**
+ * Function Markers Processing
+ * Handles processing of function call and result markers in text
+ */
+
+window.FunctionMarkers = (function() {
+    // Track function calls to assign different colors
+    const functionCallCounts = {};
+    
+    // Global storage for function results (used by copy buttons)
+    if (!window.functionResults) {
+        window.functionResults = {};
+    }
+    
+    /**
+     * Reset function call counts
+     * Called when starting to process a new message
+     */
+    function resetCounts() {
+        Object.keys(functionCallCounts).forEach(key => {
+            delete functionCallCounts[key];
+        });
+    }
+    
+    /**
+     * Get or increment function call count
+     * @param {string} functionName - Name of the function
+     * @returns {number} - Current count for this function
+     */
+    function getOrIncrementCount(functionName) {
+        functionCallCounts[functionName] = (functionCallCounts[functionName] || 0) + 1;
+        return functionCallCounts[functionName];
+    }
+    
+    /**
+     * Get color class based on function call count
+     * @param {string} functionName - Name of the function
+     * @returns {string} - CSS color class
+     */
+    function getColorClass(functionName) {
+        const colorIndex = (functionCallCounts[functionName] % 5) || 5;
+        return `color-${colorIndex}`;
+    }
+    
+    /**
+     * Escape HTML special characters
+     * @param {string} text - Text to escape
+     * @returns {string} - HTML-escaped text
+     */
+    function escapeHTML(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    /**
+     * Process function call markers in text
+     * @param {string} text - Text to process
+     * @returns {string} - Text with function call markers replaced
+     */
+    function processFunctionCallMarkers(text) {
+        // New format: [FUNCTION_CALL:functionName:encodedArgs]
+        // Old format: [FUNCTION_CALL:functionName] (for backward compatibility)
+        return text.replace(/\s*\[FUNCTION_CALL:([^:\]]+)(?::([^\]]+))?\]\s*/g, (match, functionName, encodedArgs) => {
+            const count = getOrIncrementCount(functionName);
+            const colorClass = getColorClass(functionName);
+            
+            // Decode and format the arguments
+            let formattedArgs = '{}';
+            if (encodedArgs) {
+                try {
+                    const decodedArgs = decodeURIComponent(encodedArgs);
+                    const argsObj = JSON.parse(decodedArgs);
+                    formattedArgs = JSON.stringify(argsObj, null, 2);
+                } catch (e) {
+                    formattedArgs = decodeURIComponent(encodedArgs);
+                }
+            }
+            
+            return `<span class="function-call-icon ${colorClass}">f<span class="function-icon-tooltip"><strong>Function:</strong> ${escapeHTML(functionName)}<br><strong>Parameters:</strong> ${escapeHTML(formattedArgs)}</span></span>`;
+        });
+    }
+    
+    /**
+     * Format display value for function results
+     * @param {string} decodedResult - Decoded result value
+     * @param {string} resultType - Type of the result
+     * @returns {Object} - Object with displayValue and displayValueHtml
+     */
+    function formatDisplayValue(decodedResult, resultType) {
+        let displayValue = '';
+        let displayValueHtml = '';
+        
+        try {
+            const resultValue = JSON.parse(decodedResult);
+            
+            if (resultType === 'object' || resultType === 'array') {
+                // For objects and arrays, show a compact JSON representation
+                displayValue = JSON.stringify(resultValue);
+                if (displayValue.length > 100) {
+                    displayValue = displayValue.substring(0, 97) + '...';
+                }
+                
+                // For HTML display, show more detailed preview
+                const formattedJson = JSON.stringify(resultValue, null, 2);
+                const truncatedJson = formattedJson.length > 300 
+                    ? formattedJson.substring(0, 297) + '...' 
+                    : formattedJson;
+                displayValueHtml = `<pre style="max-height: 200px; overflow-y: auto; margin: 5px 0;">${escapeHTML(truncatedJson)}</pre>`;
+            } else {
+                // For primitives, show the value directly
+                displayValue = String(resultValue);
+                displayValueHtml = escapeHTML(displayValue);
+            }
+        } catch (e) {
+            // If parsing fails, show the raw decoded result
+            displayValue = decodedResult;
+            if (displayValue.length > 100) {
+                displayValue = displayValue.substring(0, 97) + '...';
+            }
+            displayValueHtml = escapeHTML(displayValue);
+        }
+        
+        return { displayValue, displayValueHtml };
+    }
+    
+    /**
+     * Create copy button for function result
+     * @param {string} decodedResult - Decoded result value
+     * @param {string} resultType - Type of the result
+     * @returns {string} - HTML for copy button
+     */
+    function createCopyButton(decodedResult, resultType) {
+        // For the copy button, use properly formatted JSON string for objects and arrays
+        let copyText = decodedResult;
+        try {
+            if (resultType === 'object' || resultType === 'array') {
+                const resultValue = JSON.parse(decodedResult);
+                copyText = JSON.stringify(resultValue, null, 2);
+            }
+        } catch (e) {
+            console.error('Error formatting result for copy:', e);
+            copyText = decodedResult;
+        }
+        
+        // Create a unique ID for this result
+        const resultId = `result_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        
+        // Store the result in global object
+        window.functionResults[resultId] = copyText;
+        
+        // Setup copy button event listener
+        setTimeout(() => {
+            const copyBtn = document.querySelector(`button[data-result-id="${resultId}"]`);
+            if (copyBtn) {
+                copyBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const textToCopy = window.functionResults[resultId];
+                    if (textToCopy && window.UIUtils && window.UIUtils.copyToClipboardWithNotification) {
+                        window.UIUtils.copyToClipboardWithNotification(textToCopy, "Function result value copied to clipboard", this);
+                    }
+                });
+            }
+        }, 100);
+        
+        return `<button class="tooltip-copy-btn" data-result-id="${resultId}" data-copy-message="Function result value copied to clipboard">Copy</button>`;
+    }
+    
+    /**
+     * Format execution time
+     * @param {string} executionTime - Execution time in milliseconds
+     * @returns {string} - Formatted execution time
+     */
+    function formatExecutionTime(executionTime) {
+        if (!executionTime) {
+            return 'N/A';
+        }
+        
+        const executionTimeMs = parseInt(executionTime) || 0;
+        return executionTimeMs < 1000 
+            ? `${executionTimeMs}ms`
+            : `${(executionTimeMs / 1000).toFixed(2)}s`;
+    }
+    
+    /**
+     * Process function result markers in text
+     * @param {string} text - Text to process
+     * @returns {string} - Text with function result markers replaced
+     */
+    function processFunctionResultMarkers(text) {
+        // New format: [FUNCTION_RESULT:name:type:encodedValue:executionTime]
+        // Old format: [FUNCTION_RESULT:name:type:encodedValue] (for backward compatibility)
+        return text.replace(/\s*\[FUNCTION_RESULT:([^:]+):([^:]+):([^:]+)(?::([^\]]+))?\]\s*/g, (match, functionName, resultType, encodedResult, executionTime) => {
+            const colorClass = getColorClass(functionName);
+            
+            // Decode the result value
+            const decodedResult = decodeURIComponent(encodedResult);
+            const { displayValue } = formatDisplayValue(decodedResult, resultType);
+            const executionTimeFormatted = formatExecutionTime(executionTime);
+            
+            return `<span class="function-result-icon ${colorClass}"><span class="function-icon-tooltip"><strong>Result:</strong> ${escapeHTML(functionName)}<br><strong>Type:</strong> ${escapeHTML(resultType)}<br><strong>Time:</strong> ${executionTimeFormatted}<br><strong>Value:</strong> ${escapeHTML(displayValue)}</span></span>`;
+        });
+    }
+    
+    /**
+     * Process all function markers in text
+     * @param {string} text - Text to process
+     * @returns {string} - Text with markers replaced by HTML
+     */
+    function processMarkers(text) {
+        // Debug: log if we're processing any text with markers
+        if (text.includes('[FUNCTION_CALL:') || text.includes('[FUNCTION_RESULT:')) {
+            console.log('[Function Markers] Processing text with markers');
+        }
+        
+        // Reset function call counts if this is a new message
+        if (!text.includes('[FUNCTION_CALL:') && !text.includes('[FUNCTION_RESULT:')) {
+            resetCounts();
+        }
+        
+        // Process function call markers first
+        text = processFunctionCallMarkers(text);
+        
+        // Then process function result markers
+        text = processFunctionResultMarkers(text);
+        
+        return text;
+    }
+    
+    // Public API
+    return {
+        processMarkers,
+        resetCounts,
+        getColorClass,
+        escapeHTML: escapeHTML
+    };
+})();

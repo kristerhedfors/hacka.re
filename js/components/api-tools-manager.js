@@ -34,10 +34,20 @@ window.ApiToolsManager = (function() {
         }
         
         /**
+         * @deprecated Use getEnabledToolDefinitions() instead
          * Get enabled tool definitions for API requests with deduplication
          * @returns {Array} Array of enabled tool definitions in OpenAI format
          */
         function getToolDefinitions() {
+            console.log("ApiToolsManager.getToolDefinitions called (DEPRECATED - use getEnabledToolDefinitions instead)");
+            return getEnabledToolDefinitions();
+        }
+        
+        /**
+         * Get enabled tool definitions for API requests
+         * @returns {Array} Array of enabled tool definitions in OpenAI format
+         */
+        function getEnabledToolDefinitions() {
             return ApiToolsService.getEnabledToolDefinitions();
         }
         
@@ -56,6 +66,7 @@ window.ApiToolsManager = (function() {
             init,
             addToolCallingSetting,
             getToolDefinitions,
+            getEnabledToolDefinitions,
             processToolCalls
         };
     }
