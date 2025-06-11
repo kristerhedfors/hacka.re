@@ -158,11 +158,11 @@ window.updateTitleAndSubtitle = function(forceUpdate = false) {
                                 element.removeChild(existingServerlessSpan);
                             }
                             
-                            // If using default title/subtitle, add the "serverless GPTs" text
+                            // If using default title/subtitle, add the "serverless agency" text
                             if (isTitleDefault && isSubtitleDefault) {
                                 const serverlessSpan = document.createElement('span');
                                 serverlessSpan.className = 'serverless-gpts';
-                                serverlessSpan.innerHTML = ' serverless <span class="gpts">GPTs</span>';
+                                serverlessSpan.innerHTML = ' serverless <span class="gpts">agency</span>';
                                 element.appendChild(serverlessSpan);
                                 
                                 // Remove named-gpt-container wrapper if it exists

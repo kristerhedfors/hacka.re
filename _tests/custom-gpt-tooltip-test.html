@@ -68,7 +68,7 @@
     
     <header>
         <div class="logo">
-            <h1 class="logo-text">hacka.re<span class="heart-logo">♥&#xFE0E;
+            <h1 class="logo-text"><span style="font-family: 'Courier New', monospace;">hacka.re</span><span class="heart-logo">♥&#xFE0E;
                 <div class="typing-dots"></div>
             </span></h1>
             <p class="tagline">För hackare av hackare</p>
@@ -218,11 +218,11 @@
                                 element.removeChild(existingServerlessSpan);
                             }
                             
-                            // If using default title/subtitle, add the "serverless GPTs" text
+                            // If using default title/subtitle, add the "serverless agency" text
                             if (isTitleDefault && isSubtitleDefault) {
                                 const serverlessSpan = document.createElement('span');
                                 serverlessSpan.className = 'serverless-gpts';
-                                serverlessSpan.innerHTML = ' serverless <span class="gpts">GPTs</span>';
+                                serverlessSpan.innerHTML = ' serverless <span class="gpts">agency</span>';
                                 element.appendChild(serverlessSpan);
                                 
                                 // Remove named-gpt-container wrapper if it exists
