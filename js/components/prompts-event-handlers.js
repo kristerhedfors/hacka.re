@@ -92,7 +92,7 @@ window.PromptsEventHandlers = (function() {
             if (!isActive) {
                 promptItem.classList.add('active');
                 
-                // Notify caller of edit action
+                // Notify caller of edit action (this will trigger setCurrentPrompt and reload the list)
                 if (onEdit) {
                     onEdit(prompt);
                 }

@@ -46,7 +46,8 @@ window.PromptsManager = (function() {
             PromptsListManager.setCallbacks({
                 updateAfterSelectionChange: updateAfterSelectionChange,
                 reloadPromptsList: loadPromptsList,
-                setCurrentPrompt: setCurrentPrompt
+                setCurrentPrompt: setCurrentPrompt,
+                getCurrentPrompt: () => currentPrompt
             });
         }
         
