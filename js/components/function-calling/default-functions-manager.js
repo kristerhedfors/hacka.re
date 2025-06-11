@@ -201,6 +201,11 @@ window.DefaultFunctionsManager = (function() {
                         });
                     }, 100);
                 }
+                
+                // Scroll to the editor form (same behavior as user-defined functions)
+                if (elements.functionEditorForm) {
+                    elements.functionEditorForm.scrollIntoView({ behavior: 'smooth' });
+                }
             });
             
             functionItem.appendChild(functionName);
