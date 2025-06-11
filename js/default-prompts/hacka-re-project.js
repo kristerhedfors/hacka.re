@@ -5,7 +5,7 @@
 window.HackaReProjectPrompt = {
     id: 'hacka-re-project',
     name: 'About hacka.re Project',
-    content: `# About hacka.re: Serverless GPTs
+    content: `# About hacka.re: Serverless Agency
 
 hacka.re is a highly portable, low-dependency, privacy-first chat interface for Large Language Models. It is a lightweight, static web UI that runs entirely client-side with no server-side rendering, designed by whitehat hackers, for whitehat hackers.
 

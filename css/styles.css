@@ -97,11 +97,12 @@ header {
     color: var(--light-text);
 }
 
-/* Apply sweeping effect to all text in header except hacka.re logo */
+/* Apply sweeping effect to all text in header including hacka.re logo */
 header .model-info,
 header .settings,
 header .tagline,
 header .serverless-gpts,
+header .logo-text,
 header .model-developer,
 header .model-name,
 header .model-stats,
@@ -123,7 +124,7 @@ header .model-provider,
 
 .logo h1 {
     font-size: 1.5rem;
-    font-weight: 700;
+    font-weight: 400;
     margin: 0;
     display: flex;
     align-items: center;
@@ -139,12 +140,16 @@ a[href="https://hacka.re/"] {
     font-family: 'Courier New', monospace !important;
 }
 
+/* Apply Courier New to default title and subtitle */
+.logo-text.default-title,
+.tagline.default-subtitle {
+    font-family: 'Courier New', monospace !important;
+}
+
 /* Ensure links in the heart logo tooltip use the same style as footer links */
 .heart-logo .tooltip a:not([href="https://hacka.re/"]) {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
 }
-
-/* Remove .logo-text from the above rule to prevent Courier New from affecting serverless GPTs */
 
 /* Override for custom titles (which are wrapped in named-gpt-container) */
 .named-gpt-container .logo-text {
@@ -159,6 +164,10 @@ a[href="https://hacka.re/"] {
 /* Logo Text and Heart Styling */
 .logo-text {
     line-height: 1;
+    cursor: pointer;
+    pointer-events: auto;
+    position: relative;
+    z-index: 10;
 }
 
 /* Named GPT styling */
@@ -217,7 +226,7 @@ a[href="https://hacka.re/"] {
 .serverless-gpts {
     color: #aaaaaa; /* Darker color than the off-white for hacka.re */
     font-size: inherit; /* Same size as hacka.re */
-    font-weight: 400; /* Normal weight to contrast with bold hacka.re */
+    font-weight: 400; /* Normal weight, same as hacka.re */
     position: relative;
     margin-left: 5px; /* Same margin as between hacka.re and heart */
     animation: textSweep 3s infinite alternate;
@@ -230,7 +239,7 @@ a[href="https://hacka.re/"] {
 }
 
 .gpts {
-    font-weight: 700; /* Bold weight for "GPTs" */
+    font-weight: 400; /* Normal weight for "GPTs" to match "serverless" */
 }
 
 @keyframes textSweep {
