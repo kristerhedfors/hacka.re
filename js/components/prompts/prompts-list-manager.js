@@ -70,6 +70,26 @@ function createPromptsListManager() {
         bindFormEvents(newPromptForm);
         elements.promptsList.appendChild(newPromptForm);
         
+        // If there's a current prompt being edited, populate the form fields
+        if (currentPrompt && !currentPrompt.isDefault) {
+            setTimeout(() => {
+                const labelField = document.getElementById('new-prompt-label');
+                const contentField = document.getElementById('new-prompt-content');
+                
+                if (labelField && contentField) {
+                    labelField.value = currentPrompt.name || '';
+                    contentField.value = currentPrompt.content || '';
+                    
+                    // Remove readonly attributes for user prompts
+                    labelField.removeAttribute('readonly');
+                    contentField.removeAttribute('readonly');
+                    
+                    // Scroll to the form fields
+                    contentField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 100); // Small delay to ensure the form is fully rendered
+        }
+        
         return { promptsUsageFill, promptsUsageText };
     }
     
