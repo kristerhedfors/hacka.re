@@ -10,6 +10,11 @@ window.DefaultPromptsService = (function() {
     // Default prompts data - these are loaded from individual files
     let DEFAULT_PROMPTS = [];
     
+    // Cache for selected default prompt IDs to reduce decrypt operations
+    let selectedDefaultPromptIdsCache = null;
+    let defaultCacheTimestamp = 0;
+    const DEFAULT_CACHE_TTL = 5000; // 5 seconds TTL
+    
 /**
  * Initialize the default prompts
  * This function loads all registered default prompts
@@ -164,28 +169,56 @@ function initializeDefaultPrompts() {
     }
     
     /**
-     * Get the selected default prompt IDs
+     * Get the selected default prompt IDs with caching to reduce decrypt operations
      * @returns {Array} Array of selected default prompt IDs
      */
     function getSelectedDefaultPromptIds() {
+        const now = Date.now();
+        
+        // Check if cache is valid
+        if (selectedDefaultPromptIdsCache !== null && (now - defaultCacheTimestamp) < DEFAULT_CACHE_TTL) {
+            return selectedDefaultPromptIdsCache;
+        }
+        
+        // Cache miss - decrypt from storage
         const selectedIds = CoreStorageService.getValue(SELECTED_DEFAULT_PROMPTS_KEY);
-        return selectedIds || [];
+        const result = selectedIds || [];
+        
+        // Update cache
+        selectedDefaultPromptIdsCache = result;
+        defaultCacheTimestamp = now;
+        
+        return result;
     }
     
     /**
-     * Set the selected default prompt IDs
+     * Set the selected default prompt IDs with caching
      * @param {Array} ids - Array of default prompt IDs to set as selected
      */
     function setSelectedDefaultPromptIds(ids) {
         if (Array.isArray(ids) && ids.length > 0) {
             CoreStorageService.setValue(SELECTED_DEFAULT_PROMPTS_KEY, ids);
+            // Update cache immediately
+            selectedDefaultPromptIdsCache = [...ids];
+            defaultCacheTimestamp = Date.now();
         } else {
             CoreStorageService.removeValue(SELECTED_DEFAULT_PROMPTS_KEY);
+            // Clear cache
+            selectedDefaultPromptIdsCache = [];
+            defaultCacheTimestamp = Date.now();
         }
     }
     
     /**
-     * Toggle a default prompt's selection status
+     * Clear the default prompts cache
+     */
+    function clearDefaultCache() {
+        selectedDefaultPromptIdsCache = null;
+        defaultCacheTimestamp = 0;
+    }
+    
+    /**
+     * Toggle a default prompt's selection status (optimized)
      * @param {string} id - The default prompt ID to toggle
      * @returns {boolean} True if the prompt is now selected, false if unselected
      */
@@ -207,83 +240,9 @@ function initializeDefaultPrompts() {
             result = true;
         }
         
-        // Get all selected prompts - getSelectedDefaultPrompts now handles nested prompts
-        // and re-evaluates Function Library content automatically
-        const selectedDefaultPrompts = getSelectedDefaultPrompts();
-        const selectedPrompts = window.PromptsService ? 
-            window.PromptsService.getSelectedPrompts() : [];
-        
-        const allSelectedPrompts = [...selectedDefaultPrompts, ...selectedPrompts];
-        console.log("Selected prompts count:", allSelectedPrompts.length);
-        
-        if (allSelectedPrompts.length > 0) {
-            // Combine all selected prompts
-            const combinedContent = allSelectedPrompts
-                .map(prompt => prompt.content)
-                .join('\n\n---\n\n');
-            
-            console.log("Combined content length:", combinedContent.length);
-            
-            // Save to system prompt in storage service
-            StorageService.saveSystemPrompt(combinedContent);
-            
-            // Update main context usage display directly
-            if (window.ModelInfoService && window.aiHackare && window.aiHackare.chatManager) {
-                console.log("Updating main context usage directly from toggleDefaultPromptSelection");
-                
-                // Get the current messages - make sure we're getting the latest messages
-                const messages = window.aiHackare.chatManager.getMessages() || [];
-                
-                // Get current model
-                const currentModel = window.aiHackare.settingsManager ? 
-                    window.aiHackare.settingsManager.getCurrentModel() : '';
-                
-                // Calculate percentage using the utility function directly
-                const percentage = UIUtils.estimateContextUsage(
-                    messages, 
-                    ModelInfoService.modelInfo, 
-                    currentModel,
-                    combinedContent
-                );
-                
-                console.log("Calculated percentage:", percentage);
-                
-                // Update the UI directly
-                const usageFill = document.querySelector('.usage-fill');
-                const usageText = document.querySelector('.usage-text');
-                
-                if (usageFill && usageText) {
-                    console.log("Directly updating UI elements");
-                    UIUtils.updateContextUsage(usageFill, usageText, percentage);
-                } else {
-                    console.log("Could not find UI elements");
-                }
-            }
-        } else {
-            // No prompts selected, clear the system prompt
-            StorageService.saveSystemPrompt('');
-            
-            // Update context usage to reflect empty system prompt
-            if (window.ModelInfoService && window.aiHackare && window.aiHackare.chatManager) {
-                const messages = window.aiHackare.chatManager.getMessages() || [];
-                const currentModel = window.aiHackare.settingsManager ? 
-                    window.aiHackare.settingsManager.getCurrentModel() : '';
-                
-                const percentage = UIUtils.estimateContextUsage(
-                    messages, 
-                    ModelInfoService.modelInfo, 
-                    currentModel,
-                    ''
-                );
-                
-                const usageFill = document.querySelector('.usage-fill');
-                const usageText = document.querySelector('.usage-text');
-                
-                if (usageFill && usageText) {
-                    UIUtils.updateContextUsage(usageFill, usageText, percentage);
-                }
-            }
-        }
+        // Don't trigger system prompt assembly here - let the coordinator handle it
+        // This prevents redundant system prompt builds that cause multiple decrypt operations
+        // The PromptsManager's updateAfterSelectionChange will handle the coordination
         
         return result;
     }
@@ -347,6 +306,7 @@ function initializeDefaultPrompts() {
         toggleDefaultPromptSelection,
         isDefaultPromptSelected,
         getSelectedDefaultPrompts,
-        initializeDefaultPrompts
+        initializeDefaultPrompts,
+        clearDefaultCache
     };
 })();

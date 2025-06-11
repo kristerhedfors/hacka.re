@@ -2,6 +2,10 @@
  * PromptsTokenManager - Handles token usage calculations and display for prompts
  */
 function createPromptsTokenManager() {
+    // Cache for token usage calculations
+    let tokenUsageCache = null;
+    let cacheTimestamp = 0;
+    const TOKEN_CACHE_TTL = 2000; // 2 seconds TTL for token calculations
     
     /**
      * Estimate token usage for selected prompts
@@ -14,16 +18,33 @@ function createPromptsTokenManager() {
     }
     
     /**
-     * Update the prompts token usage bar
+     * Update the prompts token usage bar with caching
      * @param {HTMLElement} promptsUsageFill - Usage fill element
      * @param {HTMLElement} promptsUsageText - Usage text element
      */
     function updatePromptsTokenUsage(promptsUsageFill, promptsUsageText) {
         if (!promptsUsageFill || !promptsUsageText) return;
         
-        // Get token usage information from ContextUsageService
+        const now = Date.now();
         const currentModel = StorageService.getModel();
-        const usageInfo = ContextUsageService.getCurrentPromptsUsage(currentModel);
+        
+        // Check if cache is valid for this model
+        let usageInfo;
+        if (tokenUsageCache && 
+            tokenUsageCache.model === currentModel && 
+            (now - cacheTimestamp) < TOKEN_CACHE_TTL) {
+            usageInfo = tokenUsageCache.usageInfo;
+        } else {
+            // Cache miss - calculate token usage
+            usageInfo = ContextUsageService.getCurrentPromptsUsage(currentModel);
+            
+            // Update cache
+            tokenUsageCache = {
+                model: currentModel,
+                usageInfo: usageInfo
+            };
+            cacheTimestamp = now;
+        }
         
         // Update the percentage display
         ContextUsageService.updateUsageDisplay(promptsUsageFill, promptsUsageText, usageInfo.percentage);
@@ -33,6 +54,14 @@ function createPromptsTokenManager() {
         if (promptsUsageTokens) {
             promptsUsageTokens.textContent = `${usageInfo.tokens}/${usageInfo.contextSize} tokens`;
         }
+    }
+    
+    /**
+     * Clear the token usage cache
+     */
+    function clearTokenCache() {
+        tokenUsageCache = null;
+        cacheTimestamp = 0;
     }
     
     /**
@@ -61,10 +90,12 @@ function createPromptsTokenManager() {
         // Subscribe to system prompt updates for context usage updates
         if (window.UIUtils && window.UIUtils.EventBus) {
             window.UIUtils.EventBus.subscribe('systemPromptUpdated', (data) => {
+                clearTokenCache(); // Invalidate cache when system prompt changes
                 if (updateCallback) updateCallback();
             });
             
             window.UIUtils.EventBus.subscribe('promptSelectionChanged', () => {
+                clearTokenCache(); // Invalidate cache when selection changes
                 if (updateCallback) updateCallback();
             });
         }
@@ -75,7 +106,8 @@ function createPromptsTokenManager() {
         updatePromptsTokenUsage,
         updateMainContextUsage,
         getCurrentPromptsUsage,
-        initializeTokenMonitoring
+        initializeTokenMonitoring,
+        clearTokenCache
     };
 }
 

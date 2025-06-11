@@ -60,12 +60,40 @@ window.SystemPromptCoordinator = (function() {
         return combinedContent;
     }
     
+    // Debounce timer for system prompt updates
+    let updateDebounceTimer = null;
+    
     /**
-     * Update the system prompt in storage and notify components
+     * Update the system prompt in storage and notify components (with debouncing)
      * @param {boolean} notifyComponents - Whether to trigger component updates
      * @returns {string} The assembled system prompt
      */
     function updateSystemPrompt(notifyComponents = true) {
+        // For immediate mode, execute right away
+        if (!notifyComponents) {
+            return executeSystemPromptUpdate(notifyComponents);
+        }
+        
+        // For notification mode, debounce to prevent excessive updates
+        if (updateDebounceTimer) {
+            clearTimeout(updateDebounceTimer);
+        }
+        
+        updateDebounceTimer = setTimeout(() => {
+            executeSystemPromptUpdate(notifyComponents);
+            updateDebounceTimer = null;
+        }, 50); // 50ms debounce
+        
+        // Return current system prompt for immediate use
+        return assembleSystemPrompt();
+    }
+    
+    /**
+     * Execute the actual system prompt update
+     * @param {boolean} notifyComponents - Whether to trigger component updates
+     * @returns {string} The assembled system prompt
+     */
+    function executeSystemPromptUpdate(notifyComponents = true) {
         const systemPrompt = assembleSystemPrompt();
         
         // Save to storage
@@ -93,23 +121,19 @@ window.SystemPromptCoordinator = (function() {
             systemPromptInput.value = systemPrompt;
         }
         
-        // Trigger context usage updates if components are available
-        if (window.aiHackare) {
-            // Update main context usage if chat manager is available
-            if (window.aiHackare.chatManager && 
+        // Use the PromptsService's debounced context update instead of direct calls
+        // This prevents multiple simultaneous context usage calculations
+        if (window.PromptsService && typeof window.PromptsService.scheduleContextUpdate === 'function') {
+            window.PromptsService.scheduleContextUpdate();
+        } else {
+            // Fallback to direct update if PromptsService not available
+            if (window.aiHackare && window.aiHackare.chatManager && 
                 typeof window.aiHackare.chatManager.updateContextUsage === 'function') {
                 window.aiHackare.chatManager.updateContextUsage();
             }
-            
-            // Update prompts manager context usage if available
-            if (window.aiHackare.promptsManager && 
-                typeof window.aiHackare.promptsManager.updatePromptsTokenUsage === 'function') {
-                // Note: This would need to be exposed in the public API
-                console.log('Prompts manager context usage update needed');
-            }
         }
         
-        // Emit event via EventBus for decoupled communication
+        // Emit event via EventBus for decoupled communication (reduced frequency)
         if (window.UIUtils && window.UIUtils.EventBus) {
             window.UIUtils.EventBus.emit('systemPromptUpdated', {
                 systemPrompt: systemPrompt,
@@ -117,14 +141,8 @@ window.SystemPromptCoordinator = (function() {
             });
         }
         
-        // Also emit custom DOM event for backward compatibility
-        const event = new CustomEvent('systemPromptUpdated', {
-            detail: {
-                systemPrompt: systemPrompt,
-                promptCount: getAllSelectedPrompts().length
-            }
-        });
-        document.dispatchEvent(event);
+        // Remove redundant custom DOM event since EventBus covers this
+        // This reduces duplicate event handling
     }
     
     /**
