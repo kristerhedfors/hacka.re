@@ -154,7 +154,7 @@ window.LogoAnimation = (function() {
                 // Add click event listeners to all related elements
                 heartLogo.addEventListener('click', toggleTooltip);
                 
-                // Add click event listeners to title, subtitle, and serverless GPTs text if they exist
+                // Add click event listeners to title, subtitle, and serverless agency text if they exist
                 if (logoText) {
                     logoText.addEventListener('click', toggleTooltip);
                 }
