@@ -1,40 +1,99 @@
 /**
  * Default Functions CSS
  * Styles for the default functions section in the function calling modal
+ * Styled to match the Default Prompts design pattern
  */
 
 .default-functions-section {
-    margin-top: 20px;
-    margin-bottom: 20px;
+    margin-bottom: 1.5rem;
     border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border-radius: 12px;
     overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.default-functions-section:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
 }
 
 .default-functions-header {
     display: flex;
     align-items: center;
-    padding: 10px 15px;
+    padding: 12px 20px;
     background-color: var(--bg-color-secondary);
     cursor: pointer;
     user-select: none;
+    border-left-width: 12px;
+    border-left-style: solid;
+    border-left-color: transparent;
+    transition: background-color 0.2s ease;
+}
+
+.default-functions-header:hover {
+    background-color: var(--bg-color-hover, rgba(0, 0, 0, 0.03));
 }
 
 .default-functions-header h4 {
     margin: 0 0 0 10px;
     font-size: 16px;
     font-weight: 700;
+    letter-spacing: 0.3px;
+    color: var(--text-color);
 }
 
 .default-functions-header i {
     font-size: 14px;
     transition: transform 0.2s ease;
+    color: var(--text-color-secondary);
+    min-width: 16px;
+}
+
+/* Rotate icon when expanded */
+.default-functions-header i.fa-chevron-down {
+    transform: rotate(90deg);
 }
 
 .default-functions-list {
-    padding: 10px;
+    padding: 0;
     background-color: var(--bg-color);
     border-top: 1px solid var(--border-color);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.default-functions-list::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 10px;
+    background-color: transparent;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+
+.default-functions-list::before {
+    content: "";
+    position: absolute;
+    left: 12px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: var(--border-color);
+    opacity: 0.3;
+}
+
+/* Add spacing between function collections in main list */
+.default-functions-list .function-collection-item {
+    margin-bottom: 8px;
+}
+
+.default-functions-list .function-collection-item:last-child {
+    margin-bottom: 12px;
 }
 
 /* Function collection item styles */
