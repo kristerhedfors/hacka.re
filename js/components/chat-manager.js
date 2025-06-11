@@ -437,6 +437,14 @@ function cleanupGeneration(updateContextUsage, currentModel) {
         }
         
         /**
+         * Check if currently generating
+         * @returns {boolean} True if generating
+         */
+        function getIsGenerating() {
+            return isGenerating;
+        }
+        
+        /**
          * Set messages
          * @param {Array} newMessages - New messages
          */
@@ -468,6 +476,7 @@ function cleanupGeneration(updateContextUsage, currentModel) {
             clearChatHistory,
             estimateContextUsage,
             getMessages,
+            getIsGenerating,
             setMessages
         };
     }
