@@ -70,7 +70,20 @@ document.addEventListener('DOMContentLoaded', function() {
     // Also make the logo text and tagline clickable
     const logoText = document.querySelector('.logo-text');
     if (logoText) {
+        logoText.style.cursor = 'pointer';
         logoText.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            infoModal.classList.add('active');
+        });
+    }
+    
+    // Also make the entire logo container clickable
+    const logo = document.querySelector('.logo');
+    if (logo) {
+        logo.style.cursor = 'pointer';
+        logo.addEventListener('click', function(e) {
+            e.preventDefault();
             e.stopPropagation();
             infoModal.classList.add('active');
         });

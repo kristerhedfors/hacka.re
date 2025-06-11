@@ -184,6 +184,8 @@ window.FunctionLibraryManager = (function() {
         const functions = FunctionToolsService.getJsFunctions();
         const functionNames = Object.keys(functions);
         
+        console.log('loadActiveFunctionsIntoEditor: Found functions:', functionNames);
+        
         if (functionNames.length > 0) {
             // If we have active functions, we need to group them by their collection IDs
             const functionCollections = {};
