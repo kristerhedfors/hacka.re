@@ -2,21 +2,46 @@
 
 This document provides comprehensive information about hacka.re's function calling system, including architecture, testing patterns, and implementation details.
 
+## 🔄 Major Refactoring - New Architecture
+
+The function calling system has been completely refactored from a monolithic structure into a modern, modular architecture.
+
 ## Function System Architecture
 
-### Core Components
+### Core Components (Refactored)
 
-**FunctionToolsService** (`js/services/function-tools-*.js`)
-- 8-module refactored architecture for function execution
-- Registry for JavaScript functions and tool definitions
-- Integration with AI model tool calling
-- Storage and persistence management
+**Function Tools Service Layer** (`js/services/function-tools-*.js`) - 8 Modules:
+1. `function-tools-config.js` - Configuration constants and storage keys
+2. `function-tools-logger.js` - Centralized logging utilities
+3. `function-tools-storage.js` - Storage operations and state management
+4. `function-tools-parser.js` - Argument parsing and tool definition generation
+5. `function-tools-executor.js` - Sandboxed function execution
+6. `function-tools-registry.js` - Function registry management
+7. `function-tools-processor.js` - Tool call processing from API responses
+8. `function-tools-service.js` - Main orchestrator (public API)
 
-**FunctionManager** (`js/components/function-calling-manager.js`)
-- UI component for function management
-- Code editor interface with syntax highlighting
-- Validation and tool definition generation
-- Function library display and controls
+**Function UI Components** (`js/components/function-calling/`) - 11 Modules:
+- `function-calling-manager.js` - Main orchestrator for function calling UI
+- `default-functions-manager.js` - Built-in function management
+- `function-code-editor.js` - Code editor component
+- `function-copy-manager.js` - Function copying and sharing
+- `function-editor-manager.js` - Function editing interface
+- `function-executor.js` - Function execution handling
+- `function-library-manager.js` - Function library operations
+- `function-list-renderer.js` - Function list display and rendering
+- `function-modal-manager.js` - Function modal UI management
+- `function-parser.js` - Function parsing and validation
+- `function-validator.js` - Function validation logic
+
+**API Integration Services** (`js/services/`) - Supporting Services:
+- `api-tool-call-handler.js` - Tool call handling in API responses
+- `api-tools-service.js` - API tools integration service
+- `chat-tools-service.js` - Chat tools integration
+
+**MCP Integration** (`js/components/mcp/` and `js/services/mcp-*.js`):
+- Complete Model Context Protocol support
+- MCP server management for function calling
+- Tool registry integration with MCP tools
 
 **Function Modal** (`#function-modal`)
 - Modal interface for function creation and editing
@@ -115,9 +140,15 @@ Creation → Validation → Registration → Execution → Management
 - Syntax errors: Specific error messages with line numbers
 - Tool definition preview with parameter schemas
 
-### Function Storage
+### Function Storage (Refactored)
 
-**localStorage Structure:**
+**Service-Based Storage Architecture:**
+- `function-tools-storage.js` - Centralized storage operations
+- `core-storage-service.js` - Core storage service
+- `namespace-service.js` - Multi-tenant data isolation
+- `encryption-service.js` - Data encryption/decryption
+
+**Storage Structure (Managed by Services):**
 ```javascript
 {
   "js_functions": {
@@ -133,6 +164,11 @@ Creation → Validation → Registration → Execution → Management
   }
 }
 ```
+
+**Service Coordination:**
+- `function-tools-registry.js` manages function registration
+- `function-tools-storage.js` handles persistence
+- `function-tools-config.js` provides configuration constants
 
 ## Function Management Interface
 
