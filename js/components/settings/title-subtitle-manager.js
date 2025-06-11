@@ -23,11 +23,22 @@ window.TitleSubtitleManager = (function() {
             const title = StorageService.getTitle();
             const subtitle = StorageService.getSubtitle();
             
+            // Check if using default values
+            const isDefaultTitle = title === "hacka.re";
+            const isDefaultSubtitle = subtitle === "Free, open, för hackare av hackare";
+            
             // Update main page
             const logoTextElements = document.querySelectorAll('.logo-text');
             const taglineElements = document.querySelectorAll('.tagline');
             
             logoTextElements.forEach(element => {
+                // Add or remove default-title class based on content
+                if (isDefaultTitle) {
+                    element.classList.add('default-title');
+                } else {
+                    element.classList.remove('default-title');
+                }
+                
                 // Preserve the heart logo and typing dots
                 const heartLogo = element.querySelector('.heart-logo');
                 if (heartLogo) {
@@ -38,6 +49,13 @@ window.TitleSubtitleManager = (function() {
             });
             
             taglineElements.forEach(element => {
+                // Add or remove default-subtitle class based on content
+                if (isDefaultSubtitle) {
+                    element.classList.add('default-subtitle');
+                } else {
+                    element.classList.remove('default-subtitle');
+                }
+                
                 element.textContent = subtitle;
             });
             
