@@ -175,15 +175,41 @@ window.DefaultFunctionsManager = (function() {
             });
             functionItem.appendChild(checkbox);
             
+            // Create content container (to match user-defined functions structure)
+            const contentContainer = document.createElement('div');
+            contentContainer.style.flex = '1';
+            contentContainer.style.cursor = 'pointer';
+            contentContainer.title = 'Click to view function code';
+            
             // Create function name element
             const functionName = document.createElement('div');
             functionName.className = 'function-item-name';
             functionName.textContent = func.name;
-            functionName.style.cursor = 'pointer';
-            functionName.title = 'Click to view function code';
             
-            // Add click event to show function code
-            functionName.addEventListener('click', (e) => {
+            // Add function name to content container first
+            contentContainer.appendChild(functionName);
+            
+            // Add function description if available
+            // First try to get description from func.description, then extract from JSDoc in code
+            let description = func.description;
+            
+            if (!description && func.code) {
+                // Try to extract @description from JSDoc comments in the code
+                const descriptionMatch = func.code.match(/@description\s+(.+?)(?:\n|\*\/)/);
+                if (descriptionMatch && descriptionMatch[1]) {
+                    description = descriptionMatch[1].trim();
+                }
+            }
+            
+            if (description) {
+                const functionDesc = document.createElement('div');
+                functionDesc.className = 'function-item-description';
+                functionDesc.textContent = description;
+                contentContainer.appendChild(functionDesc);
+            }
+            
+            // Add click event to content container to show function code
+            contentContainer.addEventListener('click', (e) => {
                 e.stopPropagation();
                 
                 // Show function code in the editor (read-only)
@@ -201,17 +227,14 @@ window.DefaultFunctionsManager = (function() {
                         });
                     }, 100);
                 }
+                
+                // Scroll to the editor form (same behavior as user-defined functions)
+                if (elements.functionEditorForm) {
+                    elements.functionEditorForm.scrollIntoView({ behavior: 'smooth' });
+                }
             });
             
-            functionItem.appendChild(functionName);
-            
-            // Add function description if available
-            if (func.description) {
-                const functionDesc = document.createElement('div');
-                functionDesc.className = 'function-item-description';
-                functionDesc.textContent = func.description;
-                functionItem.appendChild(functionDesc);
-            }
+            functionItem.appendChild(contentContainer);
             
             return functionItem;
         }
