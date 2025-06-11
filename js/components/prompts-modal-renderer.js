@@ -15,7 +15,7 @@ window.PromptsModalRenderer = (function() {
         tokenUsageContainer.className = 'prompts-token-usage-container';
         tokenUsageContainer.innerHTML = `
             <div class="prompts-token-usage-label">
-                Context usage: <span class="prompts-usage-tokens">0/0 tokens</span> <span class="prompts-usage-text">0%</span>
+                Context usage: <span class="prompts-usage-tokens">0 / 0 tokens</span> <span class="prompts-usage-text">0%</span>
             </div>
             <div class="prompts-usage-bar">
                 <div class="prompts-usage-fill" style="width: 1%; min-width: 2px;"></div>
