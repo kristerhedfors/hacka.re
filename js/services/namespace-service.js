@@ -4,6 +4,11 @@
  */
 
 window.NamespaceService = (function() {
+    // Constants
+    const NAMESPACE_PREFIX = 'hackare_';
+    const NAMESPACE_SUFFIX = '_namespace';
+    const NAMESPACE_PATTERN = /^hackare_([A-Za-z0-9]{8})_namespace$/;
+    
     // Base storage keys without namespace
     const BASE_STORAGE_KEYS = {
         API_KEY: 'api_key',
@@ -24,19 +29,43 @@ window.NamespaceService = (function() {
         BASE_STORAGE_KEYS.SUBTITLE
     ];
     
-    // Store the previous namespace when it changes
-    let previousNamespaceId = null;
-    let previousNamespaceKey = null;
-    let previousNamespaceHash = null;
+    // State management
+    const state = {
+        // Previous namespace when it changes
+        previous: {
+            namespaceId: null,
+            namespaceKey: null,
+            namespaceHash: null
+        },
+        // Current namespace - will be updated when title/subtitle change
+        current: {
+            namespaceId: null,
+            namespaceKey: null,
+            namespaceHash: null
+        },
+        // Flag to track if the current master key was decrypted using the fallback namespace hash
+        usingFallbackForMasterKey: false
+    };
     
-    // Current namespace - will be updated when title/subtitle change
-    let currentNamespaceId = null;
-    let currentNamespaceKey = null;
-    let currentNamespaceHash = null;
+    // Helper functions
+    function getSessionKey() {
+        if (window.ShareManager && typeof window.ShareManager.getSessionKey === 'function') {
+            return window.ShareManager.getSessionKey();
+        }
+        return null;
+    }
     
-    // Flag to track if the current master key was decrypted using the fallback namespace hash
-    let usingFallbackForMasterKey = false;
+    function addSystemMessage(message) {
+        if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
+            window.ChatManager.addSystemMessage(message);
+        }
+    }
     
+    function getNamespaceStorageKey(namespaceId) {
+        return `${NAMESPACE_PREFIX}${namespaceId}${NAMESPACE_SUFFIX}`;
+    }
+    
+    // Core namespace operations
     /**
      * Store namespace data in localStorage
      * @param {string} namespaceId - The namespace ID
@@ -45,61 +74,35 @@ window.NamespaceService = (function() {
      */
     function storeNamespaceData(namespaceId, namespaceHash, masterKey) {
         try {
-            // Get the session key from ShareManager if available
-            let sessionKey = null;
-            if (window.ShareManager && typeof window.ShareManager.getSessionKey === 'function') {
-                sessionKey = window.ShareManager.getSessionKey();
-            }
-            
-            // If no session key is available, use the namespace hash as fallback
+            const sessionKey = getSessionKey();
             const encryptionKey = sessionKey || namespaceHash;
             
             // Set the flag if we're using the namespace hash as fallback
             if (!sessionKey) {
-                usingFallbackForMasterKey = true;
+                state.usingFallbackForMasterKey = true;
             }
-            
-            // Debug logging disabled
-            // console.log('[CRYPTO DEBUG] Storing namespace data:', {
-            //     namespaceId: namespaceId,
-            //     usingSessionKey: !!sessionKey,
-            //     encryptionKeyType: sessionKey ? 'SESSION_KEY' : 'NAMESPACE_HASH',
-            //     encryptionKeyLength: encryptionKey.length,
-            //     namespaceHashLength: namespaceHash.length,
-            //     usingFallbackForMasterKey: usingFallbackForMasterKey
-            // });
             
             // Add a system message if available
-            if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
-                const message = sessionKey 
+            addSystemMessage(
+                sessionKey 
                     ? `[CRYPTO] Using session key to encrypt namespace hash for ${namespaceId}`
-                    : `[CRYPTO] FALLBACK: Using namespace hash to encrypt itself for ${namespaceId} (no session key available)`;
-                window.ChatManager.addSystemMessage(message);
-            }
+                    : `[CRYPTO] FALLBACK: Using namespace hash to encrypt itself for ${namespaceId} (no session key available)`
+            );
             
             // Store the encrypted hash in the namespace entry
-            // We use the session key (if available) or the hash itself as the encryption key
             const encryptedData = EncryptionService.encrypt(namespaceHash, encryptionKey);
-            const namespaceStorageKey = `hackare_${namespaceId}_namespace`;
+            const namespaceStorageKey = getNamespaceStorageKey(namespaceId);
             localStorage.setItem(namespaceStorageKey, encryptedData);
             
             // Store the master key in a separate entry
             const masterKeyStorageKey = CryptoUtils.getMasterKeyStorageKey(namespaceId);
             
-            // Debug logging for master key encryption disabled
-            // console.log('[CRYPTO DEBUG] Storing master key:', {
-            //     masterKeyStorageKey: masterKeyStorageKey,
-            //     usingSessionKey: !!sessionKey,
-            //     encryptionKeyType: sessionKey ? 'SESSION_KEY' : 'NAMESPACE_HASH'
-            // });
-            
             // Add a system message for master key encryption
-            if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
-                const message = sessionKey 
+            addSystemMessage(
+                sessionKey 
                     ? `[CRYPTO] Using session key to encrypt master key for ${namespaceId}`
-                    : `[CRYPTO] FALLBACK: Using namespace hash to encrypt master key for ${namespaceId} (no session key available)`;
-                window.ChatManager.addSystemMessage(message);
-            }
+                    : `[CRYPTO] FALLBACK: Using namespace hash to encrypt master key for ${namespaceId} (no session key available)`
+            );
             
             // Encrypt the master key with the session key or namespace hash
             const encryptedMasterKey = EncryptionService.encrypt(masterKey, encryptionKey);
@@ -120,102 +123,108 @@ window.NamespaceService = (function() {
             const masterKeyStorageKey = CryptoUtils.getMasterKeyStorageKey(namespaceId);
             const encryptedMasterKey = localStorage.getItem(masterKeyStorageKey);
             
-            // Debug logging disabled
-            // console.log('[CRYPTO DEBUG] Getting namespace master key:', {
-            //     namespaceId: namespaceId,
-            //     masterKeyStorageKey: masterKeyStorageKey,
-            //     hasEncryptedMasterKey: !!encryptedMasterKey
-            // });
-            
             if (!encryptedMasterKey) {
-                // console.log(`[CRYPTO DEBUG] No encrypted master key found for ${namespaceId}`);
-                
-                // Add a system message if available
-                if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
-                    window.ChatManager.addSystemMessage(`[CRYPTO] ERROR: No encrypted master key found for ${namespaceId}`);
-                }
-                
+                addSystemMessage(`[CRYPTO] ERROR: No encrypted master key found for ${namespaceId}`);
                 return null;
             }
             
-            // Get the session key from ShareManager if available
-            let sessionKey = null;
-            if (window.ShareManager && typeof window.ShareManager.getSessionKey === 'function') {
-                sessionKey = window.ShareManager.getSessionKey();
-            }
-            
-            // Debug logging disabled
-            // console.log('[CRYPTO DEBUG] Decrypting master key:', {
-            //     hasSessionKey: !!sessionKey,
-            //     sessionKeyLength: sessionKey ? sessionKey.length : 0,
-            //     namespaceHashLength: namespaceHash.length
-            // });
-            
+            const sessionKey = getSessionKey();
             let masterKey = null;
             let decryptionMethod = null;
             
             // Try to decrypt with session key first
             if (sessionKey) {
                 try {
-                    // Add a system message if available
-                    if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
-                        window.ChatManager.addSystemMessage(`[CRYPTO] Attempting to decrypt master key with session key for ${namespaceId}`);
-                    }
-                    
+                    addSystemMessage(`[CRYPTO] Attempting to decrypt master key with session key for ${namespaceId}`);
                     masterKey = EncryptionService.decrypt(encryptedMasterKey, sessionKey);
                     if (masterKey) {
                         decryptionMethod = 'SESSION_KEY';
-                        // console.log('[CRYPTO DEBUG] Successfully decrypted master key with session key');
                     }
                 } catch (e) {
-                    // Session key didn't work, will try namespace hash next
-                    // console.log('[CRYPTO DEBUG] Session key decryption failed:', e.message);
-                    
-                    // Add a system message if available
-                    if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
-                        window.ChatManager.addSystemMessage(`[CRYPTO] Session key decryption failed for master key, trying namespace hash fallback`);
-                    }
+                    addSystemMessage(`[CRYPTO] Session key decryption failed for master key, trying namespace hash fallback`);
                 }
             }
             
             // Fallback to namespace hash if session key didn't work or isn't available
             if (!masterKey) {
                 try {
-                    // Add a system message if available
-                    if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
-                        window.ChatManager.addSystemMessage(`[CRYPTO] FALLBACK: Attempting to decrypt master key with namespace hash for ${namespaceId}`);
-                    }
-                    
+                    addSystemMessage(`[CRYPTO] FALLBACK: Attempting to decrypt master key with namespace hash for ${namespaceId}`);
                     masterKey = EncryptionService.decrypt(encryptedMasterKey, namespaceHash);
                     if (masterKey) {
                         decryptionMethod = 'NAMESPACE_HASH';
-                        // console.log('[CRYPTO DEBUG] Successfully decrypted master key with namespace hash');
                     }
                 } catch (e) {
-                    // console.log('[CRYPTO DEBUG] Namespace hash decryption failed:', e.message);
-                    
-                    // Add a system message if available
-                    if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
-                        window.ChatManager.addSystemMessage(`[CRYPTO] ERROR: Failed to decrypt master key with both session key and namespace hash`);
-                    }
-                    
+                    addSystemMessage(`[CRYPTO] ERROR: Failed to decrypt master key with both session key and namespace hash`);
                     return null;
                 }
             }
             
             // Add a success message if available
-            if (masterKey && window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
-                window.ChatManager.addSystemMessage(`[CRYPTO] Successfully decrypted master key for ${namespaceId} using ${decryptionMethod === 'SESSION_KEY' ? 'session key' : 'namespace hash'}`);
+            if (masterKey) {
+                const method = decryptionMethod === 'SESSION_KEY' ? 'session key' : 'namespace hash';
+                addSystemMessage(`[CRYPTO] Successfully decrypted master key for ${namespaceId} using ${method}`);
             }
             
             // Set the flag if we used the namespace hash as fallback
-            usingFallbackForMasterKey = (decryptionMethod === 'NAMESPACE_HASH');
+            state.usingFallbackForMasterKey = (decryptionMethod === 'NAMESPACE_HASH');
             
             return masterKey;
         } catch (error) {
             console.error('Failed to get master key:', error);
             return null;
         }
+    }
+    
+    /**
+     * Get all namespace IDs from localStorage
+     * @returns {Array<string>} Array of namespace IDs
+     */
+    function getAllNamespaceIds() {
+        const namespaceIds = [];
+        
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            const match = key && key.match(NAMESPACE_PATTERN);
+            
+            if (match) {
+                namespaceIds.push(match[1]);
+            }
+        }
+        
+        return namespaceIds;
+    }
+    
+    /**
+     * Try to decrypt namespace with different keys
+     * @param {string} encryptedData - The encrypted namespace data
+     * @param {string} targetHash - The target namespace hash
+     * @param {string} sessionKey - The session key (if available)
+     * @returns {Object|null} Object with decryptedHash and decryptionMethod if successful
+     */
+    function tryDecryptNamespace(encryptedData, targetHash, sessionKey) {
+        // First try with session key if available
+        if (sessionKey) {
+            try {
+                const decryptedHash = EncryptionService.decrypt(encryptedData, sessionKey);
+                if (decryptedHash === targetHash) {
+                    return { decryptedHash, decryptionMethod: 'SESSION_KEY' };
+                }
+            } catch (e) {
+                // Session key didn't work, will try namespace hash next
+            }
+        }
+        
+        // Try with namespace hash
+        try {
+            const decryptedHash = EncryptionService.decrypt(encryptedData, targetHash);
+            if (decryptedHash === targetHash) {
+                return { decryptedHash, decryptionMethod: 'NAMESPACE_HASH' };
+            }
+        } catch (e) {
+            // Namespace hash didn't work either
+        }
+        
+        return null;
     }
     
     /**
@@ -226,112 +235,33 @@ window.NamespaceService = (function() {
      */
     function findExistingNamespace(title, subtitle) {
         const targetHash = CryptoUtils.generateNamespaceHash(title, subtitle);
+        const sessionKey = getSessionKey();
         
-        // Get the session key from ShareManager if available
-        let sessionKey = null;
-        if (window.ShareManager && typeof window.ShareManager.getSessionKey === 'function') {
-            sessionKey = window.ShareManager.getSessionKey();
-        }
+        addSystemMessage(`[CRYPTO] Searching for namespace with hash: ${targetHash.substring(0, 8)}...`);
         
-        // Debug logging disabled
-        // console.log('[CRYPTO DEBUG] Finding existing namespace:', {
-        //     title: title,
-        //     subtitle: subtitle,
-        //     targetHashLength: targetHash.length,
-        //     hasSessionKey: !!sessionKey,
-        //     sessionKeyLength: sessionKey ? sessionKey.length : 0
-        // });
-        
-        // Add a system message if available
-        if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
-            window.ChatManager.addSystemMessage(`[CRYPTO] Searching for namespace with hash: ${targetHash.substring(0, 8)}...`);
-        }
-        
-        // Find all namespace entries with the format "hackare_namespaceid_namespace"
-        const namespaceKeys = [];
-        const namespacePattern = /^hackare_([A-Za-z0-9]{8})_namespace$/;
-        
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            const match = key && key.match(namespacePattern);
-            
-            if (match) {
-                // Extract the namespace ID from the key
-                const namespaceId = match[1];
-                namespaceKeys.push(namespaceId);
-            }
-        }
-        
-        // Debug logging disabled
-        // console.log('[CRYPTO DEBUG] Found namespace keys:', {
-        //     count: namespaceKeys.length,
-        //     keys: namespaceKeys
-        // });
+        const namespaceIds = getAllNamespaceIds();
         
         // Try to decrypt each namespace entry
-        for (const namespaceId of namespaceKeys) {
+        for (const namespaceId of namespaceIds) {
             try {
-                const namespaceStorageKey = `hackare_${namespaceId}_namespace`;
+                const namespaceStorageKey = getNamespaceStorageKey(namespaceId);
                 const encryptedData = localStorage.getItem(namespaceStorageKey);
+                
                 if (!encryptedData) {
-                    // console.log(`[CRYPTO DEBUG] No encrypted data for ${namespaceId}`);
                     continue;
                 }
                 
-                let decryptedHash = null;
-                let decryptionMethod = null;
+                const decryptResult = tryDecryptNamespace(encryptedData, targetHash, sessionKey);
                 
-                // First try with session key if available
-                if (sessionKey) {
-                    try {
-                        decryptedHash = EncryptionService.decrypt(encryptedData, sessionKey);
-                        if (decryptedHash === targetHash) {
-                            decryptionMethod = 'SESSION_KEY';
-                        }
-                    } catch (e) {
-                        // Session key didn't work, will try namespace hash next
-                        // console.log(`[CRYPTO DEBUG] Session key decryption failed for ${namespaceId}:`, e.message);
-                    }
-                }
-                
-                // If session key didn't work or isn't available, try with namespace hash
-                if (!decryptedHash || decryptedHash !== targetHash) {
-                    try {
-                        decryptedHash = EncryptionService.decrypt(encryptedData, targetHash);
-                        if (decryptedHash === targetHash) {
-                            decryptionMethod = 'NAMESPACE_HASH';
-                        }
-                    } catch (e) {
-                        // Namespace hash didn't work either
-                        // console.log(`[CRYPTO DEBUG] Namespace hash decryption failed for ${namespaceId}:`, e.message);
-                        continue;
-                    }
-                }
-                
-                // If decryption succeeds and the hash matches, we found our namespace
-                if (decryptedHash === targetHash) {
-                    // Debug logging disabled
-                    // console.log('[CRYPTO DEBUG] Found matching namespace:', {
-                    //     namespaceId: namespaceId,
-                    //     decryptionMethod: decryptionMethod
-                    // });
-                    
-                    // Add a system message if available
-                    if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
-                        window.ChatManager.addSystemMessage(`[CRYPTO] Found namespace ${namespaceId} using ${decryptionMethod === 'SESSION_KEY' ? 'session key' : 'namespace hash'}`);
-                    }
+                if (decryptResult) {
+                    const method = decryptResult.decryptionMethod === 'SESSION_KEY' ? 'session key' : 'namespace hash';
+                    addSystemMessage(`[CRYPTO] Found namespace ${namespaceId} using ${method}`);
                     
                     // Get the namespace master key
                     const masterKey = getMasterKey(namespaceId, targetHash);
                     
                     if (!masterKey) {
-                        // console.error('[CRYPTO DEBUG] Found namespace but master key is missing');
-                        
-                        // Add a system message if available
-                        if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
-                            window.ChatManager.addSystemMessage(`[CRYPTO] ERROR: Found namespace ${namespaceId} but master key is missing`);
-                        }
-                        
+                        addSystemMessage(`[CRYPTO] ERROR: Found namespace ${namespaceId} but master key is missing`);
                         continue;
                     }
                     
@@ -343,19 +273,12 @@ window.NamespaceService = (function() {
                 }
             } catch (error) {
                 // Decryption failed, try the next namespace
-                // console.log(`[CRYPTO DEBUG] Error processing namespace ${namespaceId}:`, error.message);
                 continue;
             }
         }
         
         // No matching namespace found
-        // console.log('[CRYPTO DEBUG] No matching namespace found');
-        
-        // Add a system message if available
-        if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
-            window.ChatManager.addSystemMessage(`[CRYPTO] No matching namespace found for title "${title}" and subtitle "${subtitle}"`);
-        }
-        
+        addSystemMessage(`[CRYPTO] No matching namespace found for title "${title}" and subtitle "${subtitle}"`);
         return null;
     }
     
@@ -364,21 +287,12 @@ window.NamespaceService = (function() {
      * @returns {Object} Object with namespaceId, namespaceHash, and masterKey
      */
     function getOrCreateNamespace() {
-        // Debug logging disabled
-        // console.log('[CRYPTO DEBUG] Getting or creating namespace');
-        
         // If we already have a namespace, return it
-        if (currentNamespaceId && currentNamespaceKey && currentNamespaceHash) {
-            // console.log('[CRYPTO DEBUG] Using cached namespace:', {
-            //     namespaceId: currentNamespaceId,
-            //     namespaceHashLength: currentNamespaceHash.length,
-            //     masterKeyLength: currentNamespaceKey.length
-            // });
-            
+        if (state.current.namespaceId && state.current.namespaceKey && state.current.namespaceHash) {
             return {
-                namespaceId: currentNamespaceId,
-                namespaceHash: currentNamespaceHash,
-                masterKey: currentNamespaceKey
+                namespaceId: state.current.namespaceId,
+                namespaceHash: state.current.namespaceHash,
+                masterKey: state.current.namespaceKey
             };
         }
         
@@ -386,70 +300,40 @@ window.NamespaceService = (function() {
         const title = sessionStorage.getItem(BASE_STORAGE_KEYS.TITLE) || "hacka.re";
         const subtitle = sessionStorage.getItem(BASE_STORAGE_KEYS.SUBTITLE) || "Free, open, för hackare av hackare";
         
-        // console.log('[CRYPTO DEBUG] Looking up namespace for:', {
-        //     title: title,
-        //     subtitle: subtitle
-        // });
-        
-        // Add a system message if available
-        if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
-            window.ChatManager.addSystemMessage(`[CRYPTO] Getting or creating namespace for title "${title}" and subtitle "${subtitle}"`);
-        }
+        addSystemMessage(`[CRYPTO] Getting or creating namespace for title "${title}" and subtitle "${subtitle}"`);
         
         // Try to find an existing namespace
         const existingNamespace = findExistingNamespace(title, subtitle);
         if (existingNamespace) {
             // Use the existing namespace
-            currentNamespaceId = existingNamespace.namespaceId;
-            currentNamespaceHash = existingNamespace.namespaceHash;
-            currentNamespaceKey = existingNamespace.masterKey;
+            state.current.namespaceId = existingNamespace.namespaceId;
+            state.current.namespaceHash = existingNamespace.namespaceHash;
+            state.current.namespaceKey = existingNamespace.masterKey;
             
-            // console.log('[CRYPTO DEBUG] Using existing namespace:', {
-            //     namespaceId: currentNamespaceId,
-            //     namespaceHashLength: currentNamespaceHash.length,
-            //     masterKeyLength: currentNamespaceKey.length
-            // });
-            
-            // Add a system message if available
-            if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
-                window.ChatManager.addSystemMessage(`[CRYPTO] Using existing namespace: ${currentNamespaceId}`);
-            }
+            addSystemMessage(`[CRYPTO] Using existing namespace: ${state.current.namespaceId}`);
         } else {
             // Create a new namespace
-            // console.log('[CRYPTO DEBUG] No existing namespace found, creating new one');
-            
-            // Add a system message if available
-            if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
-                window.ChatManager.addSystemMessage(`[CRYPTO] Creating new namespace for title "${title}" and subtitle "${subtitle}"`);
-            }
+            addSystemMessage(`[CRYPTO] Creating new namespace for title "${title}" and subtitle "${subtitle}"`);
             
             const newNamespace = CryptoUtils.createNamespaceEntry(title, subtitle);
-            currentNamespaceId = newNamespace.namespaceId;
-            currentNamespaceHash = newNamespace.namespaceHash;
-            currentNamespaceKey = newNamespace.masterKey;
-            
-            // console.log('[CRYPTO DEBUG] Created new namespace:', {
-            //     namespaceId: currentNamespaceId,
-            //     namespaceHashLength: currentNamespaceHash.length,
-            //     masterKeyLength: currentNamespaceKey.length
-            // });
+            state.current.namespaceId = newNamespace.namespaceId;
+            state.current.namespaceHash = newNamespace.namespaceHash;
+            state.current.namespaceKey = newNamespace.masterKey;
             
             // Store the new namespace data
-            storeNamespaceData(currentNamespaceId, currentNamespaceHash, currentNamespaceKey);
+            storeNamespaceData(state.current.namespaceId, state.current.namespaceHash, state.current.namespaceKey);
             
-            // Add a system message if available
-            if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
-                window.ChatManager.addSystemMessage(`[CRYPTO] Created and stored new namespace: ${currentNamespaceId}`);
-            }
+            addSystemMessage(`[CRYPTO] Created and stored new namespace: ${state.current.namespaceId}`);
         }
         
         return {
-            namespaceId: currentNamespaceId,
-            namespaceHash: currentNamespaceHash,
-            masterKey: currentNamespaceKey
+            namespaceId: state.current.namespaceId,
+            namespaceHash: state.current.namespaceHash,
+            masterKey: state.current.namespaceKey
         };
     }
     
+    // Namespace access methods
     /**
      * Get the current namespace ID for storage keys
      * @returns {string} The namespace ID
@@ -475,51 +359,35 @@ window.NamespaceService = (function() {
         return getNamespaceId();
     }
     
+    // State management methods
     /**
      * Reset the namespace cache when title or subtitle changes
      */
     function resetNamespaceCache() {
-        // console.log('[CRYPTO DEBUG] Resetting namespace cache');
-        
         // Store the current namespace before resetting
-        if (currentNamespaceId && currentNamespaceKey && currentNamespaceHash) {
-            // console.log('[CRYPTO DEBUG] Storing previous namespace:', {
-            //     namespaceId: currentNamespaceId,
-            //     namespaceHashLength: currentNamespaceHash.length,
-            //     masterKeyLength: currentNamespaceKey.length
-            // });
+        if (state.current.namespaceId && state.current.namespaceKey && state.current.namespaceHash) {
+            state.previous.namespaceId = state.current.namespaceId;
+            state.previous.namespaceKey = state.current.namespaceKey;
+            state.previous.namespaceHash = state.current.namespaceHash;
             
-            previousNamespaceId = currentNamespaceId;
-            previousNamespaceKey = currentNamespaceKey;
-            previousNamespaceHash = currentNamespaceHash;
-            
-            // Add a system message if available
-            if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
-                window.ChatManager.addSystemMessage(`[CRYPTO] Storing previous namespace: ${currentNamespaceId}`);
-            }
-        } else {
-            // console.log('[CRYPTO DEBUG] No current namespace to store as previous');
+            addSystemMessage(`[CRYPTO] Storing previous namespace: ${state.current.namespaceId}`);
         }
         
         // Reset current namespace
-        currentNamespaceId = null;
-        currentNamespaceKey = null;
-        currentNamespaceHash = null;
+        state.current.namespaceId = null;
+        state.current.namespaceKey = null;
+        state.current.namespaceHash = null;
         
-        // console.log('[CRYPTO DEBUG] Namespace cache reset');
-        
-        // Add a system message if available
-        if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
-            window.ChatManager.addSystemMessage(`[CRYPTO] Namespace cache reset, will create or find namespace on next access`);
-        }
+        addSystemMessage(`[CRYPTO] Namespace cache reset, will create or find namespace on next access`);
     }
     
+    // Previous namespace access methods
     /**
      * Get the previous namespace hash if available
      * @returns {string|null} The previous namespace hash or null if not available
      */
     function getPreviousNamespaceHash() {
-        return previousNamespaceHash;
+        return state.previous.namespaceHash;
     }
     
     /**
@@ -527,7 +395,7 @@ window.NamespaceService = (function() {
      * @returns {string|null} The previous namespace ID or null if not available
      */
     function getPreviousNamespaceId() {
-        return previousNamespaceId;
+        return state.previous.namespaceId;
     }
     
     /**
@@ -535,7 +403,7 @@ window.NamespaceService = (function() {
      * @returns {string|null} The previous namespace key or null if not available
      */
     function getPreviousNamespaceKey() {
-        return previousNamespaceKey;
+        return state.previous.namespaceKey;
     }
     
     /**
@@ -543,9 +411,10 @@ window.NamespaceService = (function() {
      * @returns {string|null} The previous namespace or null if not available
      */
     function getPreviousNamespace() {
-        return previousNamespaceId;
+        return state.previous.namespaceId;
     }
     
+    // Key management methods
     /**
      * Get the namespaced key for a storage item
      * @param {string} baseKey - The base key without namespace
@@ -561,7 +430,7 @@ window.NamespaceService = (function() {
         const namespaceId = getNamespaceId();
         
         // Format: hackare_namespaceid_variablename
-        return `hackare_${namespaceId}_${baseKey}`;
+        return `${NAMESPACE_PREFIX}${namespaceId}_${baseKey}`;
     }
     
     /**
@@ -581,7 +450,7 @@ window.NamespaceService = (function() {
             }
             
             // Include keys with the old namespace in the new format: hackare_namespaceid_variablename
-            if (oldNamespaceId && key.startsWith(`hackare_${oldNamespaceId}_`)) {
+            if (oldNamespaceId && key.startsWith(`${NAMESPACE_PREFIX}${oldNamespaceId}_`)) {
                 keysToReEncrypt.push(key);
                 continue;
             }
@@ -601,7 +470,7 @@ window.NamespaceService = (function() {
      * @returns {boolean} True if the master key was decrypted using the fallback namespace hash
      */
     function isUsingFallbackForMasterKey() {
-        return usingFallbackForMasterKey;
+        return state.usingFallbackForMasterKey;
     }
     
     // Public API
