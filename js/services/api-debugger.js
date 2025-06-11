@@ -100,6 +100,19 @@ window.ApiDebugger = (function() {
     }
     
     /**
+     * Log info message with context
+     * @param {string} operation - Operation name
+     * @param {string} message - Info message
+     * @param {*} context - Additional context
+     */
+    function logInfo(operation, message, context = null) {
+        console.log(`${DEBUG_PREFIX} ${operation}: ${message}`);
+        if (context) {
+            console.log(`${DEBUG_PREFIX} Context:`, context);
+        }
+    }
+    
+    /**
      * Log error with context
      * @param {string} operation - Operation that failed
      * @param {Error} error - Error object
@@ -249,6 +262,7 @@ window.ApiDebugger = (function() {
         logToolCall,
         logBaseUrl,
         logModel,
+        logInfo,
         logError,
         logPerformance,
         logProviderConfig,
