@@ -92,6 +92,22 @@ window.PromptsEventHandlers = (function() {
             if (!isActive) {
                 promptItem.classList.add('active');
                 
+                // Load prompt content into the form fields
+                const labelField = document.getElementById('new-prompt-label');
+                const contentField = document.getElementById('new-prompt-content');
+                
+                if (labelField && contentField) {
+                    labelField.value = prompt.name || '';
+                    contentField.value = prompt.content || '';
+                    
+                    // Remove readonly attributes for user prompts (they can be edited)
+                    labelField.removeAttribute('readonly');
+                    contentField.removeAttribute('readonly');
+                    
+                    // Scroll to the form fields so they're visible
+                    contentField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                
                 // Notify caller of edit action
                 if (onEdit) {
                     onEdit(prompt);
@@ -100,6 +116,17 @@ window.PromptsEventHandlers = (function() {
                 // Notify caller that editing was cancelled
                 if (onEdit) {
                     onEdit(null);
+                }
+                
+                // Clear the form fields when deselecting
+                const labelField = document.getElementById('new-prompt-label');
+                const contentField = document.getElementById('new-prompt-content');
+                
+                if (labelField && contentField) {
+                    labelField.value = '';
+                    contentField.value = '';
+                    labelField.removeAttribute('readonly');
+                    contentField.removeAttribute('readonly');
                 }
             }
         };
