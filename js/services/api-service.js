@@ -115,7 +115,12 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
         );
         
     } catch (error) {
-        ApiDebugger.logError('generateChatCompletion', error);
+        // Don't log AbortError as an error - it's expected when user cancels generation
+        if (error.name === 'AbortError') {
+            ApiDebugger.logInfo('generateChatCompletion', 'Request cancelled by user');
+        } else {
+            ApiDebugger.logError('generateChatCompletion', error);
+        }
         timer.stop();
         throw error;
     }
