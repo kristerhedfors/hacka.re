@@ -116,22 +116,9 @@ window.FunctionToolsExecutor = (function() {
                 Logger.debug("Generated execution code (last 200 chars):", executionCode.substring(Math.max(0, executionCode.length - 200)));
                 Logger.debug("Sandbox keys:", sandboxKeys);
                 
-                // Check for problematic patterns in the code
-                const dashPattern = /[a-zA-Z0-9_$]*-[a-zA-Z0-9_$]*/g;
-                const dashMatches = executionCode.match(dashPattern);
-                if (dashMatches) {
-                    Logger.error("Found potential problematic identifiers with dashes:", dashMatches);
-                }
-                
-                // Sanitize execution code to replace any remaining dashes in identifiers
-                // This is a safety net to prevent syntax errors from function/variable names with dashes
-                // BUT we must be careful not to change string literals!
-                let sanitizedExecutionCode = executionCode;
-                // Only replace identifier patterns with dashes, but NOT inside strings
-                // This regex avoids strings by using negative lookbehind/lookahead for quotes
-                sanitizedExecutionCode = sanitizedExecutionCode.replace(/(?<!['"])\b([a-zA-Z_$][a-zA-Z0-9_$]*)-([a-zA-Z0-9_$]+)\b(?!['"]*)/g, '$1_$2');
-                
-                executionFunction = new Function(...sandboxKeys, sanitizedExecutionCode);
+                // Skip dash checking and sanitization for now - it's causing issues with valid code
+                // The function names should already be sanitized by the parser/registry
+                executionFunction = new Function(...sandboxKeys, executionCode);
             } catch (constructorError) {
                 Logger.error("Error creating execution function:", constructorError);
                 Logger.error("Problematic execution code:", executionCode);
@@ -148,13 +135,33 @@ window.FunctionToolsExecutor = (function() {
         },
         
         _createSandbox: function(args) {
+            // Create a more complete sandbox that includes necessary browser APIs
+            // for MCP functions and other advanced functions
             return {
-                fetch: window.fetch.bind(window),
+                window: window,
+                document: document,
+                fetch: window.fetch ? window.fetch.bind(window) : undefined,
                 console: console,
                 setTimeout: setTimeout.bind(window),
                 clearTimeout: clearTimeout.bind(window),
+                setInterval: setInterval.bind(window),
+                clearInterval: clearInterval.bind(window),
+                Promise: Promise,
                 JSON: JSON,
                 Error: Error,
+                Array: Array,
+                Object: Object,
+                String: String,
+                Number: Number,
+                Boolean: Boolean,
+                Date: Date,
+                Math: Math,
+                RegExp: RegExp,
+                // Include any MCP-related globals that functions might need
+                MCPClientService: window.MCPClientService,
+                MCPManager: window.MCPManager,
+                // Include function tools globals
+                FunctionToolsService: window.FunctionToolsService,
                 args: args
             };
         },

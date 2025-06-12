@@ -54,7 +54,7 @@ window.MCPToolsManager = (function() {
  * @returns {Promise<Object>} Tool execution result
  * @tool This function calls an MCP tool via the proxy
  */
-async function mcp_${serverName}_${tool.name}(params) {
+async function ${tool.name}(params) {
     try {
         // Use the MCP Client Service to call the tool
         const MCPClient = window.MCPClientService;
@@ -109,7 +109,7 @@ async function mcp_${serverName}_${tool.name}(params) {
                     tools.push({
                         serverName,
                         tool,
-                        functionName: `mcp_${serverName}_${tool.name}`,
+                        functionName: tool.name,
                         functionCode: generateFunctionCode(serverName, tool)
                     });
                 }
@@ -144,8 +144,8 @@ async function mcp_${serverName}_${tool.name}(params) {
      * @param {string} toolName - Name of the tool
      */
     function copyToolUsage(serverName, toolName) {
-        const functionName = `mcp_${serverName}_${toolName}`;
-        const usage = `${functionName}({ /* parameters */ })`;
+        const functionName = toolName;
+        const usage = `${functionName}({ /* parameters */ })`;  // Note: MCP tool from ${serverName}
         
         navigator.clipboard.writeText(usage).then(() => {
             notificationHandler(`Copied ${functionName} usage to clipboard`, 'success');
@@ -195,7 +195,7 @@ async function mcp_${serverName}_${tool.name}(params) {
             }
             
             // For now, just show info about the tool
-            const message = `Tool: ${toolName}\nDescription: ${tool.description || 'No description'}\n\nTo test this tool, use it in chat with the function name: mcp_${serverName}_${toolName}`;
+            const message = `Tool: ${toolName}\nDescription: ${tool.description || 'No description'}\n\nTo test this tool, use it in chat with the function name: ${toolName}\n\nNote: This is an MCP tool from server "${serverName}"`;
             alert(message);
             
             // In the future, this could open a parameter input dialog
@@ -217,6 +217,11 @@ async function mcp_${serverName}_${tool.name}(params) {
         if (window.FunctionCallingManager && window.FunctionCallingManager.addFunction) {
             for (const toolInfo of tools) {
                 try {
+                    // Check for name collision before adding
+                    if (window.FunctionCallingManager.hasFunction && window.FunctionCallingManager.hasFunction(toolInfo.functionName)) {
+                        throw new Error(`Function name collision: "${toolInfo.functionName}" already exists`);
+                    }
+                    
                     // Add the function to the function calling system
                     window.FunctionCallingManager.addFunction(
                         toolInfo.functionName,
@@ -226,6 +231,11 @@ async function mcp_${serverName}_${tool.name}(params) {
                     registeredCount++;
                 } catch (error) {
                     console.error(`Failed to register tool ${toolInfo.tool.name}:`, error);
+                    // Re-throw name collision errors to stop registration
+                    if (error.message.includes('Function name collision')) {
+                        notificationHandler(`Error: ${error.message}`, 'error');
+                        throw error;
+                    }
                 }
             }
             
