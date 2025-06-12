@@ -121,22 +121,40 @@ window.MCPUIManager = (function() {
                 <div id="command-examples">
                     <p class="form-help"><strong>Example commands:</strong></p>
                     <div style="background-color: var(--ai-msg-bg); padding: 0.75rem; border-radius: var(--border-radius); margin-bottom: 0.5rem; position: relative;">
-                        <strong>Filesystem (npx):</strong>
-                        <button class="btn secondary-btn" onclick="MCPManager.copyExampleCommand('npx -y @modelcontextprotocol/server-filesystem /Users/username/Desktop')" 
+                        <strong>Filesystem (npx - specific user):</strong>
+                        <button class="btn secondary-btn" onclick="MCPManager.copyExampleCommand('npx -y @modelcontextprotocol/server-filesystem /Users/user')" 
                                 style="position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.25rem 0.5rem; font-size: 0.8rem;" 
                                 title="Copy command">
                             <i class="fas fa-copy"></i>
                         </button><br>
-                        <code style="font-size: 0.85rem;">npx -y @modelcontextprotocol/server-filesystem /Users/username/Desktop</code>
+                        <code style="font-size: 0.85rem;">npx -y @modelcontextprotocol/server-filesystem /Users/user</code>
+                    </div>
+                    <div style="background-color: var(--ai-msg-bg); padding: 0.75rem; border-radius: var(--border-radius); margin-bottom: 0.5rem; position: relative;">
+                        <strong>Filesystem (npx - Desktop):</strong>
+                        <button class="btn secondary-btn" onclick="MCPManager.copyExampleCommand('npx -y @modelcontextprotocol/server-filesystem /Users/user/Desktop')" 
+                                style="position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.25rem 0.5rem; font-size: 0.8rem;" 
+                                title="Copy command">
+                            <i class="fas fa-copy"></i>
+                        </button><br>
+                        <code style="font-size: 0.85rem;">npx -y @modelcontextprotocol/server-filesystem /Users/user/Desktop</code>
+                    </div>
+                    <div style="background-color: var(--ai-msg-bg); padding: 0.75rem; border-radius: var(--border-radius); margin-bottom: 0.5rem; position: relative;">
+                        <strong>Memory Server:</strong>
+                        <button class="btn secondary-btn" onclick="MCPManager.copyExampleCommand('npx -y @modelcontextprotocol/server-memory')" 
+                                style="position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.25rem 0.5rem; font-size: 0.8rem;" 
+                                title="Copy command">
+                            <i class="fas fa-copy"></i>
+                        </button><br>
+                        <code style="font-size: 0.85rem;">npx -y @modelcontextprotocol/server-memory</code>
                     </div>
                     <div style="background-color: var(--ai-msg-bg); padding: 0.75rem; border-radius: var(--border-radius); position: relative;">
                         <strong>Filesystem (Docker):</strong>
-                        <button class="btn secondary-btn" onclick="MCPManager.copyExampleCommand('docker run -i --rm --mount type=bind,src=/Users/username/Desktop,dst=/projects/Desktop mcp/filesystem /projects')" 
+                        <button class="btn secondary-btn" onclick="MCPManager.copyExampleCommand('docker run -i --rm --mount type=bind,src=/Users/user/Desktop,dst=/projects/Desktop mcp/filesystem /projects')" 
                                 style="position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.25rem 0.5rem; font-size: 0.8rem;" 
                                 title="Copy command">
                             <i class="fas fa-copy"></i>
                         </button><br>
-                        <code style="font-size: 0.85rem;">docker run -i --rm --mount type=bind,src=/Users/username/Desktop,dst=/projects/Desktop mcp/filesystem /projects</code>
+                        <code style="font-size: 0.85rem;">docker run -i --rm --mount type=bind,src=/Users/user/Desktop,dst=/projects/Desktop mcp/filesystem /projects</code>
                     </div>
                 </div>
                 
@@ -144,7 +162,7 @@ window.MCPUIManager = (function() {
                     <p class="form-help"><strong>Example JSON config:</strong></p>
                     <div style="background-color: var(--ai-msg-bg); padding: 0.75rem; border-radius: var(--border-radius); position: relative;">
                         <strong>Filesystem (Docker):</strong>
-                        <button class="btn secondary-btn" onclick="MCPManager.copyExampleCommand('{\n  \"name\": \"filesystem\",\n  \"command\": \"docker\",\n  \"args\": [\n    \"run\", \"-i\", \"--rm\",\n    \"--mount\", \"type=bind,src=/Users/username/Desktop,dst=/projects/Desktop\",\n    \"mcp/filesystem\", \"/projects\"\n  ]\n}')" 
+                        <button class="btn secondary-btn" onclick="MCPManager.copyExampleCommand('{\n  \"name\": \"filesystem\",\n  \"command\": \"docker\",\n  \"args\": [\n    \"run\", \"-i\", \"--rm\",\n    \"--mount\", \"type=bind,src=/Users/user/Desktop,dst=/projects/Desktop\",\n    \"mcp/filesystem\", \"/projects\"\n  ]\n}')" 
                                 style="position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.25rem 0.5rem; font-size: 0.8rem;" 
                                 title="Copy JSON config">
                             <i class="fas fa-copy"></i>
@@ -154,7 +172,7 @@ window.MCPUIManager = (function() {
   "command": "docker",
   "args": [
     "run", "-i", "--rm",
-    "--mount", "type=bind,src=/Users/username/Desktop,dst=/projects/Desktop",
+    "--mount", "type=bind,src=/Users/user/Desktop,dst=/projects/Desktop",
     "mcp/filesystem", "/projects"
   ]
 }</code></pre>
@@ -168,47 +186,48 @@ window.MCPUIManager = (function() {
                 <p class="form-help" style="margin: 0 0 0.75rem 0;">Copy these standalone commands - no separate proxy needed:</p>
                 
                 <div style="background-color: var(--ai-msg-bg); padding: 0.75rem; border-radius: var(--border-radius); margin-bottom: 0.5rem; position: relative;">
-                    <strong>Filesystem Server:</strong>
-                    <button class="btn secondary-btn" onclick="MCPManager.copyExampleCommand('node mcp-stdio-proxy/mcp-http-wrapper.js npx @modelcontextprotocol/server-filesystem $HOME')" 
+                    <strong>Filesystem Server (User Directory):</strong>
+                    <button class="btn secondary-btn" onclick="MCPManager.copyExampleCommand('mcp-http-wrapper.js npx @modelcontextprotocol/server-filesystem /Users/user')" 
                             style="position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.25rem 0.5rem; font-size: 0.8rem;" 
                             title="Copy one-liner command">
                         <i class="fas fa-copy"></i>
                     </button><br>
-                    <code style="font-size: 0.85rem;">node mcp-stdio-proxy/mcp-http-wrapper.js npx @modelcontextprotocol/server-filesystem $HOME</code>
+                    <code style="font-size: 0.85rem;">mcp-http-wrapper.js npx @modelcontextprotocol/server-filesystem /Users/user</code>
                     <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
-                        Standalone filesystem server on port 3001
+                        Standalone filesystem server for user directory on port 3001
                     </div>
                 </div>
                 
                 <div style="background-color: var(--ai-msg-bg); padding: 0.75rem; border-radius: var(--border-radius); margin-bottom: 0.5rem; position: relative;">
                     <strong>Memory Server:</strong>
-                    <button class="btn secondary-btn" onclick="MCPManager.copyExampleCommand('node mcp-stdio-proxy/mcp-http-wrapper.js npx @modelcontextprotocol/server-memory')" 
+                    <button class="btn secondary-btn" onclick="MCPManager.copyExampleCommand('mcp-http-wrapper.js npx @modelcontextprotocol/server-memory')" 
                             style="position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.25rem 0.5rem; font-size: 0.8rem;" 
                             title="Copy one-liner command">
                         <i class="fas fa-copy"></i>
                     </button><br>
-                    <code style="font-size: 0.85rem;">node mcp-stdio-proxy/mcp-http-wrapper.js npx @modelcontextprotocol/server-memory</code>
+                    <code style="font-size: 0.85rem;">mcp-http-wrapper.js npx @modelcontextprotocol/server-memory</code>
                     <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
                         Standalone memory server on port 3001
                     </div>
                 </div>
                 
                 <div style="background-color: var(--ai-msg-bg); padding: 0.75rem; border-radius: var(--border-radius); margin-bottom: 0.5rem; position: relative;">
-                    <strong>Custom Directory:</strong>
-                    <button class="btn secondary-btn" onclick="MCPManager.copyExampleCommand('node mcp-stdio-proxy/mcp-http-wrapper.js npx @modelcontextprotocol/server-filesystem /path/to/directory --port=8080 --debug')" 
+                    <strong>Custom Directory with Debug:</strong>
+                    <button class="btn secondary-btn" onclick="MCPManager.copyExampleCommand('mcp-http-wrapper.js npx @modelcontextprotocol/server-filesystem /Users/user/Documents --port=8080 --debug')" 
                             style="position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.25rem 0.5rem; font-size: 0.8rem;" 
                             title="Copy one-liner command">
                         <i class="fas fa-copy"></i>
                     </button><br>
-                    <code style="font-size: 0.85rem;">node mcp-stdio-proxy/mcp-http-wrapper.js npx @modelcontextprotocol/server-filesystem /path/to/directory --port=8080 --debug</code>
+                    <code style="font-size: 0.85rem;">mcp-http-wrapper.js npx @modelcontextprotocol/server-filesystem /Users/user/Documents --port=8080 --debug</code>
                     <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
-                        Custom directory and port with debug output
+                        Documents directory on custom port with debug output
                     </div>
                 </div>
                 
                 <div style="font-size: 0.85rem; margin-top: 0.75rem; padding: 0.5rem; background-color: rgba(0,0,0,0.05); border-radius: 4px;">
-                    <strong>How it works:</strong> Each command starts an MCP server + HTTP wrapper in one process. 
+                    <strong>How it works:</strong> Run these commands from the hacka.re directory. Each command starts an MCP server + HTTP wrapper in one process. 
                     Connect hacka.re directly to the port (default 3001) - no separate proxy needed!
+                    <br><strong>Note:</strong> The wrapper script <code>mcp-http-wrapper.js</code> is in the <code>mcp-stdio-proxy/</code> subdirectory.
                 </div>
             </div>
         `;

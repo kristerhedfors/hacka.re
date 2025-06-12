@@ -43,10 +43,31 @@ class ToolRegistry {
 
         let firstTool = true;
         const registeredNames = [];
+        const existingFunctions = new Set();
+        
+        // Check for existing function names across all registered tools
+        for (const [otherServer, otherTools] of this.registeredTools.entries()) {
+            if (otherServer !== serverName) {
+                otherTools.forEach(name => existingFunctions.add(name));
+            }
+        }
+        
+        // Also check for existing functions in the function tools service
+        if (window.FunctionToolsService && window.FunctionToolsService.getAllFunctions) {
+            const allFunctions = window.FunctionToolsService.getAllFunctions();
+            Object.keys(allFunctions).forEach(name => existingFunctions.add(name));
+        }
 
         for (const tool of tools) {
             try {
                 const functionName = this._generateFunctionName(sanitizedServerName, tool.name);
+                
+                // Check for name collision
+                if (existingFunctions.has(functionName)) {
+                    throw new Error(`Function name collision: "${functionName}" already exists. ` +
+                        `The tool "${tool.name}" from MCP server "${serverName}" conflicts with an existing function.`);
+                }
+                
                 const functionCode = this._createToolFunction(serverName, functionName, tool);
                 const toolDefinition = this._createToolDefinition(functionName, tool, serverName);
 
@@ -61,9 +82,14 @@ class ToolRegistry {
                 firstTool = false;
                 window.FunctionToolsService.enableJsFunction(functionName);
                 registeredNames.push(functionName);
-                console.log(`[MCP Tool Registry] Registered and enabled tool: ${functionName}`);
+                existingFunctions.add(functionName);
+                console.log(`[MCP Tool Registry] Registered and enabled tool: ${functionName} (original: ${tool.name})`);
             } catch (error) {
                 console.error(`[MCP Tool Registry] Failed to register tool ${tool.name}:`, error);
+                // Re-throw the error to stop registration if it's a name collision
+                if (error.message.includes('Function name collision')) {
+                    throw error;
+                }
             }
         }
 
@@ -145,15 +171,17 @@ class ToolRegistry {
     }
 
     /**
-     * Generate a unique function name for a tool
-     * @param {string} sanitizedServerName - Sanitized server name
+     * Generate a function name for a tool (preserving original name)
+     * @param {string} sanitizedServerName - Sanitized server name (unused but kept for compatibility)
      * @param {string} toolName - Original tool name
-     * @returns {string} Generated function name
+     * @returns {string} Sanitized tool name without prefix
      * @private
      */
     _generateFunctionName(sanitizedServerName, toolName) {
+        // Only sanitize characters that are invalid in JavaScript function names
+        // but preserve the original tool name without prefixing
         const sanitizedToolName = toolName.replace(/[^a-zA-Z0-9_$]/g, '_');
-        return `${sanitizedServerName}_${sanitizedToolName}`;
+        return sanitizedToolName;
     }
 
     /**
