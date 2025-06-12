@@ -428,7 +428,7 @@ async function getCurrentTimeInBerlin() {
                         <div class="mcp-server-config-header">
                             <h4>Add MCP Server</h4>
                         </div>
-                        <form id="mcp-server-form">
+                        <form id="mcp-server-form" novalidate>
                             <div class="form-group">
                                 <label for="mcp-server-name">Server Name</label>
                                 <input type="text" id="mcp-server-name" placeholder="Enter MCP server name" required>
@@ -455,7 +455,6 @@ async function getCurrentTimeInBerlin() {
                             </div>
                             <div class="form-actions">
                                 <button type="submit" class="btn primary-btn">Connect Server</button>
-                                <button type="button" id="mcp-server-test-btn" class="btn secondary-btn">Test Connection</button>
                                 <button type="button" id="mcp-oauth-config-btn" class="btn secondary-btn transport-oauth" style="display: none;">Configure OAuth</button>
                             </div>
                         </form>

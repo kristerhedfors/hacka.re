@@ -129,6 +129,20 @@ window.MCPManager = (function() {
         await proxyManager.checkConnection();
         await serverManager.updateServersList();
         commandHistory.updateHistoryDisplay();
+        
+        // Ensure form visibility is properly set
+        if (oauthIntegration) {
+            const transportSelect = document.getElementById('mcp-transport-type');
+            if (transportSelect) {
+                oauthIntegration.updateFormVisibility(transportSelect.value);
+            }
+        }
+        
+        // Ensure all form fields are visible and not modified by old systems
+        const serverNameField = document.getElementById('mcp-server-name');
+        if (serverNameField && serverNameField.parentElement) {
+            serverNameField.parentElement.style.display = '';
+        }
     }
     
     // Public API - expose key functions from sub-components

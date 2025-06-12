@@ -327,7 +327,8 @@ window.MCPUIManager = (function() {
         const instructionsElement = document.getElementById('server-instructions');
         if (instructionsElement) {
             instructionsElement.style.display = show ? 'block' : 'none';
-            if (show) {
+            // Disabled old mode system - now using OAuth integration's transport system
+            /* if (show) {
                 updateFormLabels(true);
                 // Initialize input mode to command mode
                 setTimeout(() => {
@@ -339,7 +340,7 @@ window.MCPUIManager = (function() {
                 }, 100);
             } else {
                 updateFormLabels(false);
-            }
+            } */
         }
     }
     

@@ -100,7 +100,16 @@ class StdioTransport extends Transport {
                 if (error.error && error.error.includes('already running')) {
                     console.log(`[MCP Transport] Server ${this.serverName} is already running, proceeding with connection`);
                 } else {
-                    throw new Error(error.error || 'Failed to start server');
+                    // Extract the user-friendly error message from the proxy
+                    const errorMessage = error.error || 'Failed to start server';
+                    console.error(`[MCP Transport] Server start failed:`, errorMessage);
+                    
+                    // Display user-friendly error as an alert
+                    if (typeof alert !== 'undefined') {
+                        alert(`Failed to start MCP server "${this.serverName}":\n\n${errorMessage}`);
+                    }
+                    
+                    throw new Error(errorMessage);
                 }
             }
         } else {

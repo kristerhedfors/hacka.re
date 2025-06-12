@@ -33,6 +33,12 @@ window.MCPOAuthIntegration = (function() {
         // Extend server connection logic
         extendServerConnection();
         
+        // Ensure initial form state is clean
+        const transportSelect = document.getElementById('mcp-transport-type');
+        if (transportSelect) {
+            updateFormVisibility(transportSelect.value);
+        }
+        
         console.log('[MCPOAuthIntegration] Initialized');
         return true;
     }
@@ -71,16 +77,38 @@ window.MCPOAuthIntegration = (function() {
         const relevantFields = form.querySelectorAll(`.transport-${transportType}`);
         relevantFields.forEach(field => field.style.display = 'block');
         
-        // Update required attributes
+        // Update required attributes based on visibility
         const commandInput = document.getElementById('mcp-server-command');
         const urlInput = document.getElementById('mcp-server-url');
         
+        // Remove required from all inputs first
+        commandInput?.removeAttribute('required');
+        urlInput?.removeAttribute('required');
+        
+        // Then set required only on visible inputs based on transport type
         if (transportType === 'stdio') {
-            commandInput?.setAttribute('required', 'required');
-            urlInput?.removeAttribute('required');
-        } else {
-            commandInput?.removeAttribute('required');
-            urlInput?.setAttribute('required', 'required');
+            // Only command input should be visible and required
+            if (commandInput && commandInput.parentElement.style.display !== 'none') {
+                commandInput.setAttribute('required', 'required');
+            }
+        } else if (transportType === 'sse') {
+            // Only URL input should be visible and required
+            if (urlInput && urlInput.parentElement.style.display !== 'none') {
+                urlInput.setAttribute('required', 'required');
+            }
+        } else if (transportType === 'oauth') {
+            // URL is required, command is optional
+            if (urlInput && urlInput.parentElement.style.display !== 'none') {
+                urlInput.setAttribute('required', 'required');
+            }
+        }
+        
+        // Extra safety: ensure hidden inputs never have required attribute
+        if (commandInput && commandInput.parentElement.style.display === 'none') {
+            commandInput.removeAttribute('required');
+        }
+        if (urlInput && urlInput.parentElement.style.display === 'none') {
+            urlInput.removeAttribute('required');
         }
         
         // Show/hide OAuth sections
@@ -161,10 +189,42 @@ window.MCPOAuthIntegration = (function() {
      */
     async function handleFormSubmissionWithOAuth(e) {
         e.preventDefault();
+        e.stopPropagation();
+        
+        // Disable browser validation for this submission
+        const formElement = e.target;
+        formElement.noValidate = true;
         
         const serverName = document.getElementById('mcp-server-name').value.trim();
         const transportType = document.getElementById('mcp-transport-type').value;
         const description = document.getElementById('mcp-server-description').value.trim();
+        
+        // Ensure form visibility is correct before validation
+        updateFormVisibility(transportType);
+        
+        // Final safety check: remove required from any hidden form elements
+        const form = e.target;
+        const allInputs = form.querySelectorAll('input, textarea, select');
+        allInputs.forEach(input => {
+            const parent = input.closest('.form-group');
+            const isHidden = parent && (parent.style.display === 'none' || window.getComputedStyle(parent).display === 'none');
+            const isInputHidden = input.style.display === 'none' || window.getComputedStyle(input).display === 'none';
+            
+            if (isHidden || isInputHidden) {
+                input.removeAttribute('required');
+                // Also remove any validation attributes that might cause issues
+                input.removeAttribute('pattern');
+                input.removeAttribute('min');
+                input.removeAttribute('max');
+                input.removeAttribute('minlength');
+                input.removeAttribute('maxlength');
+            }
+            
+            // Debug log
+            if (input.hasAttribute('required')) {
+                console.log('Required field:', input.id || input.name || 'unnamed', 'visible:', !isHidden && !isInputHidden);
+            }
+        });
         
         if (!serverName) {
             alert('Please enter a server name');
@@ -186,8 +246,47 @@ window.MCPOAuthIntegration = (function() {
                     return;
                 }
                 
+                // Validate command - check for common error messages pasted by mistake
+                const errorPatterns = [
+                    /^An invalid form control/i,
+                    /^Error:/i,
+                    /^Failed to/i,
+                    /^Cannot /i,
+                    /^Unable to/i,
+                    /^Exception:/i,
+                    /^TypeError:/i,
+                    /^ReferenceError:/i,
+                    /^SyntaxError:/i
+                ];
+                
+                if (errorPatterns.some(pattern => pattern.test(command))) {
+                    alert('It looks like you pasted an error message instead of a command. Please enter a valid command like:\n\nnpx -y @modelcontextprotocol/server-filesystem /path/to/directory');
+                    return;
+                }
+                
                 // Parse command into command and args
                 const commandParts = command.split(/\s+/).filter(part => part);
+                
+                // Validate the first part is a reasonable command
+                const firstPart = commandParts[0];
+                if (!firstPart || firstPart.length < 2) {
+                    alert('Please enter a valid command. The command must be at least 2 characters long.');
+                    return;
+                }
+                
+                // Additional validation for common mistakes
+                if (command.length > 500) {
+                    alert('The command is too long. Please check if you pasted something by mistake.');
+                    return;
+                }
+                
+                // Check if command looks suspicious (too short, starts with quotes, etc)
+                if (firstPart.startsWith('"') || firstPart.startsWith("'") || 
+                    firstPart.includes('=') || firstPart.startsWith('.')) {
+                    alert('The command doesn\'t look valid. Please enter a command like:\n\nnpx -y @modelcontextprotocol/server-filesystem /path/to/directory');
+                    return;
+                }
+                
                 config.transport.command = commandParts[0];
                 config.transport.args = commandParts.slice(1);
                 config.transport.proxyUrl = window.MCPProxyManager?.getProxyUrl() || 'http://localhost:3001';
