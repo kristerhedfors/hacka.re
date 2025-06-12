@@ -260,6 +260,279 @@ class SseTransport extends Transport {
 }
 
 /**
+ * OAuth transport for MCP servers with OAuth authentication
+ * 
+ * This transport extends SSE transport to add OAuth token management,
+ * automatic token refresh, and proper authorization headers.
+ */
+class OAuthTransport extends SseTransport {
+    constructor(config, serverName) {
+        super(config);
+        this.serverName = serverName;
+        this.oauthService = null;
+        this.initializeOAuthService();
+    }
+
+    initializeOAuthService() {
+        // Initialize OAuth service if available
+        if (window.MCPOAuthService) {
+            this.oauthService = new window.MCPOAuthService.OAuthService();
+        } else {
+            console.warn('[MCP Transport] OAuth service not available');
+        }
+    }
+
+    async connect() {
+        // Ensure we have a valid token before connecting
+        if (this.oauthService) {
+            try {
+                await this.oauthService.getAccessToken(this.serverName);
+            } catch (error) {
+                throw new MCPTransportError(`OAuth authentication required: ${error.message}`);
+            }
+        }
+
+        return super.connect();
+    }
+
+    async send(message) {
+        if (!this.connected) {
+            throw new MCPTransportError('OAuth transport not connected');
+        }
+
+        const maxRetries = 2;
+        let attempt = 0;
+
+        while (attempt <= maxRetries) {
+            try {
+                // Get fresh authorization header
+                let headers = {
+                    'Content-Type': 'application/json',
+                    ...this.config.headers
+                };
+
+                if (this.oauthService) {
+                    try {
+                        const authHeader = await this.oauthService.getAuthorizationHeader(this.serverName);
+                        headers = { ...headers, ...authHeader };
+                    } catch (error) {
+                        console.error('[MCP Transport] Failed to get OAuth token:', error);
+                        
+                        // Check if this is a recoverable error
+                        if (error.code === 'no_token' || error.code === 'token_expired') {
+                            throw new MCPTransportError('OAuth authentication required', 'auth_required');
+                        }
+                        throw new MCPTransportError(`OAuth error: ${error.message}`, 'oauth_error');
+                    }
+                }
+
+                const response = await fetch(this.config.url, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(message)
+                });
+
+                // Handle OAuth errors with retry logic
+                if (response.status === 401) {
+                    if (attempt < maxRetries && this.oauthService) {
+                        console.log(`[MCP Transport] Received 401, attempting token refresh (attempt ${attempt + 1}/${maxRetries})`);
+                        
+                        try {
+                            // Try to refresh the token
+                            const refreshed = await this.oauthService.refreshAccessToken(this.serverName);
+                            if (refreshed) {
+                                attempt++;
+                                continue; // Retry with refreshed token
+                            }
+                        } catch (refreshError) {
+                            console.error('[MCP Transport] Token refresh failed:', refreshError.message);
+                        }
+                    }
+                    
+                    // If we can't refresh or max retries reached
+                    throw new MCPTransportError(
+                        'Authentication failed - token invalid or expired', 
+                        'auth_failed',
+                        { status: 401, retries: attempt }
+                    );
+                }
+
+                // Handle other OAuth-specific errors
+                if (response.status === 403) {
+                    const errorText = await response.text().catch(() => '');
+                    throw new MCPTransportError(
+                        `Insufficient permissions: ${errorText}`,
+                        'insufficient_scope',
+                        { status: 403 }
+                    );
+                }
+
+                // Handle rate limiting
+                if (response.status === 429) {
+                    const retryAfter = response.headers.get('retry-after');
+                    throw new MCPTransportError(
+                        `Rate limited${retryAfter ? ` - retry after ${retryAfter}s` : ''}`,
+                        'rate_limited',
+                        { status: 429, retryAfter }
+                    );
+                }
+
+                // Handle server errors
+                if (response.status >= 500) {
+                    throw new MCPTransportError(
+                        `Server error: ${response.status} ${response.statusText}`,
+                        'server_error',
+                        { status: response.status }
+                    );
+                }
+
+                // Handle other client errors
+                if (!response.ok) {
+                    const errorText = await response.text().catch(() => response.statusText);
+                    throw new MCPTransportError(
+                        `HTTP error: ${response.status} - ${errorText}`,
+                        'http_error',
+                        { status: response.status }
+                    );
+                }
+
+                // Success - exit retry loop
+                console.log(`[MCP Transport] Message sent successfully to ${this.serverName}`);
+                return;
+
+            } catch (error) {
+                // Don't retry on these error types
+                if (error instanceof MCPTransportError && 
+                    ['auth_required', 'insufficient_scope', 'rate_limited'].includes(error.code)) {
+                    throw error;
+                }
+
+                // If this is the last attempt, throw the error
+                if (attempt >= maxRetries) {
+                    if (error instanceof MCPTransportError) {
+                        throw error;
+                    }
+                    throw new MCPTransportError(
+                        `Request failed after ${maxRetries + 1} attempts: ${error.message}`,
+                        'request_failed'
+                    );
+                }
+
+                // Wait before retry (exponential backoff)
+                const backoffMs = Math.min(1000 * Math.pow(2, attempt), 5000);
+                console.warn(`[MCP Transport] Request failed, retrying in ${backoffMs}ms...`);
+                await new Promise(resolve => setTimeout(resolve, backoffMs));
+                attempt++;
+            }
+        }
+    }
+
+    /**
+     * Get OAuth status for this transport
+     * @returns {Object} OAuth status information
+     */
+    getOAuthStatus() {
+        if (!this.oauthService) {
+            return { 
+                available: false,
+                error: 'OAuth service not initialized'
+            };
+        }
+
+        const tokenInfo = this.oauthService.getTokenInfo(this.serverName);
+        const serverInfo = this.oauthService.getServerConfig ? 
+            this.oauthService.getServerConfig(this.serverName) : null;
+
+        return {
+            available: true,
+            authenticated: !!(tokenInfo && tokenInfo.hasToken && !tokenInfo.isExpired),
+            serverName: this.serverName,
+            tokenInfo: tokenInfo,
+            serverConfig: serverInfo ? {
+                hasMetadata: !!(serverInfo._metadata),
+                hasClientRegistration: !!(serverInfo._clientCredentials),
+                authorizationUrl: serverInfo.authorizationUrl,
+                tokenUrl: serverInfo.tokenUrl
+            } : null,
+            lastError: this._lastError || null
+        };
+    }
+
+    /**
+     * Enhanced connect with OAuth 2.1 compliance validation
+     */
+    async connect() {
+        try {
+            // Validate OAuth 2.1 compliance if metadata available
+            if (this.oauthService && this.oauthService.validateOAuth21Compliance) {
+                const compliance = await this.oauthService.validateOAuth21Compliance(this.serverName);
+                if (!compliance.compatible) {
+                    console.warn(`[MCP Transport] OAuth 2.1 compliance issues for ${this.serverName}:`, compliance.issues);
+                }
+            }
+
+            // Ensure we have a valid token before connecting
+            if (this.oauthService) {
+                try {
+                    await this.oauthService.getAccessToken(this.serverName);
+                    console.log(`[MCP Transport] OAuth token validated for ${this.serverName}`);
+                } catch (error) {
+                    this._lastError = error.message;
+                    throw new MCPTransportError(`OAuth authentication required: ${error.message}`, 'auth_required');
+                }
+            }
+
+            return super.connect();
+        } catch (error) {
+            this._lastError = error.message;
+            throw error;
+        }
+    }
+
+    /**
+     * Disconnect and clean up OAuth resources
+     */
+    async close() {
+        this._lastError = null;
+        return super.close();
+    }
+
+    /**
+     * Test OAuth connectivity
+     * @returns {Promise<Object>} Connection test result
+     */
+    async testOAuthConnection() {
+        if (!this.oauthService) {
+            return {
+                success: false,
+                error: 'OAuth service not available'
+            };
+        }
+
+        try {
+            // Try to get a fresh token
+            await this.oauthService.getAccessToken(this.serverName);
+            
+            // Test a simple request if connected
+            if (this.connected) {
+                await this.send({ jsonrpc: '2.0', method: 'ping', id: 'oauth-test' });
+            }
+
+            return {
+                success: true,
+                message: 'OAuth connection test successful'
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message,
+                code: error.code
+            };
+        }
+    }
+}
+
+/**
  * Transport factory for creating transport instances
  */
 class TransportFactory {
@@ -274,6 +547,8 @@ class TransportFactory {
             return new StdioTransport(config, serverName);
         } else if (config.type === 'sse') {
             return new SseTransport(config);
+        } else if (config.type === 'oauth') {
+            return new OAuthTransport(config, serverName);
         } else {
             throw new Error(`Unsupported transport type: ${config.type}`);
         }
@@ -284,7 +559,7 @@ class TransportFactory {
      * @returns {Array<string>} Array of supported transport types
      */
     static getSupportedTypes() {
-        return ['stdio', 'sse'];
+        return ['stdio', 'sse', 'oauth'];
     }
 }
 
@@ -293,6 +568,7 @@ window.MCPTransportService = {
     Transport,
     StdioTransport,
     SseTransport,
+    OAuthTransport,
     TransportFactory,
     MCPTransportError
 };

@@ -1913,3 +1913,206 @@ footer a:hover {
     0% { background-position: 0% center; }
     100% { background-position: 100% center; }
 }
+
+/* MCP OAuth Styles */
+.mcp-oauth-config {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background-color: var(--background-light);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+}
+
+.mcp-oauth-config h4 {
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+}
+
+.oauth-provider-selection {
+    margin-bottom: 1.5rem;
+}
+
+.oauth-config-fields .mcp-form-group {
+    margin-bottom: 1rem;
+}
+
+.mcp-select,
+.mcp-input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background-color: var(--background-color);
+    color: var(--text-color);
+    font-size: 14px;
+}
+
+.mcp-input[type="password"] {
+    font-family: monospace;
+}
+
+.oauth-preview-section {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.oauth-url-preview {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background-color: var(--background-code);
+    border-radius: var(--border-radius);
+    margin-top: 0.5rem;
+}
+
+.oauth-url-preview code {
+    flex: 1;
+    overflow-x: auto;
+    white-space: nowrap;
+    font-size: 12px;
+}
+
+.oauth-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+    justify-content: flex-end;
+}
+
+.oauth-status {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    border-radius: var(--border-radius);
+}
+
+.oauth-status.success {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+
+.oauth-status.error {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}
+
+.oauth-status.info {
+    background-color: #d1ecf1;
+    border: 1px solid #bee5eb;
+    color: #0c5460;
+}
+
+/* OAuth Flow Styles */
+.mcp-oauth-status {
+    padding: 1.5rem;
+    background-color: var(--background-light);
+    border-radius: var(--border-radius);
+    margin-bottom: 1rem;
+}
+
+.token-status {
+    margin: 1rem 0;
+}
+
+.status-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.status-item:last-child {
+    border-bottom: none;
+}
+
+.status-item label {
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.token-status.valid .status-value {
+    color: #28a745;
+}
+
+.token-status.expired .status-value {
+    color: #dc3545;
+}
+
+.token-status.no-token {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-muted);
+}
+
+.oauth-flow-actions {
+    margin-top: 1rem;
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+/* OAuth Callback Modal */
+.oauth-callback-modal .modal-content,
+.oauth-instructions-modal .modal-content {
+    max-width: 600px;
+}
+
+.oauth-callback-content {
+    padding: 2rem;
+    text-align: center;
+}
+
+.loading-spinner {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(0,0,0,.1);
+    border-radius: 50%;
+    border-top-color: var(--primary-color);
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.oauth-instructions ol {
+    text-align: left;
+    margin: 1rem 0;
+}
+
+.manual-code-entry {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.manual-code-entry h4 {
+    margin-bottom: 1rem;
+}
+
+.manual-code-entry .mcp-input {
+    margin-bottom: 0.5rem;
+}
+
+/* Transport type specific visibility */
+.transport-stdio,
+.transport-sse,
+.transport-oauth {
+    display: none;
+}
+
+#mcp-transport-type[value="stdio"] ~ .transport-stdio,
+#mcp-transport-type[value="sse"] ~ .transport-sse,
+#mcp-transport-type[value="oauth"] ~ .transport-oauth {
+    display: block;
+}
+
+/* OAuth section visibility */
+.mcp-oauth-section,
+.mcp-oauth-status-section {
+    margin-top: 1.5rem;
+}
