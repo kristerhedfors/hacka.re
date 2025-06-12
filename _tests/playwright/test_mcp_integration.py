@@ -119,12 +119,29 @@ def test_mcp_filesystem_server_integration(page: Page, serve_hacka_re, mcp_proxy
     except:
         pytest.skip("Could not connect to MCP proxy")
     
-    # Start filesystem server with test directory
+    # Close and reopen modal to reset form state
+    page.locator("#close-mcp-servers-modal").click()
+    time.sleep(0.5)
+    page.locator("#mcp-servers-btn").click()
+    expect(page.locator("#mcp-servers-modal")).to_be_visible()
+    
+    # Set up filesystem server with test directory
     test_dir = Path(__file__).parent / "mcp_test_filesystem"
     server_command = f"npx -y @modelcontextprotocol/server-filesystem {test_dir}"
     
-    url_input = page.locator("#mcp-server-url")
-    url_input.fill(server_command)
+    # Fill server name (wait for field to be visible first)
+    name_input = page.locator("#mcp-server-name")
+    expect(name_input).to_be_visible()
+    name_input.fill("Test Filesystem Server")
+    
+    # Set transport type to stdio (default is already stdio, but let's be explicit)
+    transport_select = page.locator("#mcp-transport-type")
+    transport_select.select_option("stdio")
+    
+    # Fill command (not URL since this is stdio transport)
+    command_input = page.locator("#mcp-server-command")
+    expect(command_input).to_be_visible()
+    command_input.fill(server_command)
     
     submit_btn = page.locator("#mcp-server-form button[type='submit']")
     submit_btn.click()
@@ -197,21 +214,28 @@ def test_mcp_multiple_servers(page: Page, serve_hacka_re, mcp_proxy):
     page.locator("#mcp-servers-btn").click()
     expect(page.locator("#mcp-servers-modal")).to_be_visible()
     
-    # Connect to proxy
-    page.locator("#test-proxy-btn").click()
-    time.sleep(2)
-    
-    # Test multiple form submissions
-    url_input = page.locator("#mcp-server-url")
+    # Skip proxy test and focus on multiple form submissions using stdio transport
+    name_input = page.locator("#mcp-server-name")
+    command_input = page.locator("#mcp-server-command")
     submit_btn = page.locator("#mcp-server-form button[type='submit']")
     
     # Submit first server command
-    url_input.fill("echo 'test server 1'")
+    # Ensure transport is set to stdio (default)
+    transport_select = page.locator("#mcp-transport-type")
+    transport_select.select_option("stdio")
+    page.evaluate("window.MCPOAuthIntegration && window.MCPOAuthIntegration.updateFormVisibility('stdio')")
+    
+    name_input.fill("Test Server 1")
+    expect(command_input).to_be_visible()
+    command_input.fill("echo 'test server 1'")
     submit_btn.click()
     time.sleep(1)
     
     # Submit second server command
-    url_input.fill("echo 'test server 2'")
+    name_input.clear()
+    name_input.fill("Test Server 2")
+    command_input.clear()
+    command_input.fill("echo 'test server 2'")
     submit_btn.click()
     time.sleep(1)
     

@@ -13,6 +13,7 @@ window.MCPManager = (function() {
     let commandHistory = null;
     let toolsManager = null;
     let utils = null;
+    let oauthIntegration = null;
     
     // Initialize state
     let initialized = false;
@@ -39,6 +40,7 @@ window.MCPManager = (function() {
         commandHistory = window.MCPCommandHistory;
         toolsManager = window.MCPToolsManager;
         utils = window.MCPUtils || { showNotification: console.log };
+        oauthIntegration = window.MCPOAuthIntegration;
         
         // Check all components are available
         if (!uiManager || !proxyManager || !serverManager || !commandHistory || !toolsManager) {
@@ -75,6 +77,15 @@ window.MCPManager = (function() {
             MCPClient: window.MCPClientService,
             notificationHandler: utils.showNotification
         });
+        
+        // Initialize OAuth integration if available
+        if (oauthIntegration) {
+            if (oauthIntegration.init()) {
+                console.log('[MCPManager] OAuth integration initialized');
+            } else {
+                console.warn('[MCPManager] OAuth integration failed to initialize');
+            }
+        }
         
         // Setup initial state
         setupEventHandlers();
