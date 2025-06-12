@@ -293,11 +293,4 @@ window.MCPOAuthIntegration = (function() {
     };
 })();
 
-// Initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        window.MCPOAuthIntegration.init();
-    });
-} else {
-    window.MCPOAuthIntegration.init();
-}
+// Note: Initialization is handled by MCPManager to ensure proper dependency order
