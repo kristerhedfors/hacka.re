@@ -127,11 +127,29 @@ window.FunctionToolsExecutor = (function() {
             
             Logger.debug(`Calling function ${name} with arguments:`, args);
             
-            // Execute the function with sandbox
-            const result = await executionFunction(...Object.values(sandbox));
-            
-            Logger.debug(`Function ${name} returned:`, result);
-            return result;
+            // Execute the function with sandbox and ensure proper async handling
+            try {
+                const result = await executionFunction(...Object.values(sandbox));
+                
+                Logger.debug(`Function ${name} returned:`, result);
+                
+                // If the result is a Promise, wait for it to resolve
+                if (result && typeof result.then === 'function') {
+                    Logger.debug(`Function ${name} returned a Promise, awaiting resolution...`);
+                    const resolvedResult = await result;
+                    Logger.debug(`Promise from ${name} resolved to:`, resolvedResult);
+                    return resolvedResult;
+                }
+                
+                return result;
+            } catch (executionError) {
+                Logger.error(`Error during function execution for ${name}:`, executionError);
+                // Check if this is a timeout or async handling issue
+                if (executionError.message && executionError.message.includes('timeout')) {
+                    Logger.error(`Function ${name} execution timed out - this may be due to unresolved promises`);
+                }
+                throw executionError;
+            }
         },
         
         _createSandbox: function(args) {
@@ -170,13 +188,28 @@ window.FunctionToolsExecutor = (function() {
             const allFunctionsCode = this._getAllFunctionsCode(name);
             const functionCallCode = this._generateFunctionCall(name);
             
-            return `
-                // Include all functions in the execution environment
-                ${allFunctionsCode}
-                
-                // Call the function with properly extracted parameters
-                ${functionCallCode}
-            `;
+            // Check if the function call uses await (indicating an async function)
+            const needsAsync = functionCallCode.includes('await ');
+            
+            if (needsAsync) {
+                return `
+                    // Include all functions in the execution environment
+                    ${allFunctionsCode}
+                    
+                    // Wrap in async function to handle await
+                    return (async () => {
+                        ${functionCallCode}
+                    })();
+                `;
+            } else {
+                return `
+                    // Include all functions in the execution environment
+                    ${allFunctionsCode}
+                    
+                    // Call the function with properly extracted parameters
+                    ${functionCallCode}
+                `;
+            }
         },
         
         _getAllFunctionsCode: function(targetName) {
@@ -228,22 +261,26 @@ window.FunctionToolsExecutor = (function() {
                 const enabledDefaultFunctions = window.DefaultFunctionsService.getEnabledDefaultFunctions();
                 functionCode = enabledDefaultFunctions[name] ? enabledDefaultFunctions[name].code : null;
             }
-            const functionMatch = functionCode.match(/(?:^|\s|\/\*\*[\s\S]*?\*\/\s*)(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(([^)]*)\)/);
+            const functionMatch = functionCode.match(/(?:^|\s|\/\*\*[\s\S]*?\*\/\s*)(async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(([^)]*)\)/);
             
             Logger.debug(`Function signature match: ${!!functionMatch}`);
             
+            // Check if the function is async
+            const isAsync = !!(functionMatch && functionMatch[1] && functionMatch[1].trim() === 'async');
+            Logger.debug(`Function is async: ${isAsync}`);
+            
             // Use the actual function name from the code, not the original name which might have dashes
-            const actualFunctionName = functionMatch ? functionMatch[1] : name.replace(/[^a-zA-Z0-9_$]/g, '_');
+            const actualFunctionName = functionMatch ? functionMatch[2] : name.replace(/[^a-zA-Z0-9_$]/g, '_');
             
             if (!functionMatch) {
                 return `return ${actualFunctionName}(args);`;
             }
             
-            const paramsString = functionMatch[2];
+            const paramsString = functionMatch[3];
             Logger.debug(`Matched parameters: ${paramsString}`);
             
             if (!paramsString.trim()) {
-                return `return ${actualFunctionName}();`;
+                return `return ${isAsync ? 'await ' : ''}${actualFunctionName}();`;
             }
             
             // Extract parameter names more carefully
@@ -269,7 +306,7 @@ window.FunctionToolsExecutor = (function() {
                 return `args["${param}"]`;
             }).join(', ');
             
-            return `return ${actualFunctionName}(${paramExtractions});`;
+            return `return ${isAsync ? 'await ' : ''}${actualFunctionName}(${paramExtractions});`;
         },
         
         _enhanceError: function(error, name) {
