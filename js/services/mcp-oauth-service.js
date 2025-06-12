@@ -162,9 +162,22 @@ class OAuthService {
         // Initialize metadata discovery and client registration services
         this.metadataService = null;
         this.registrationService = null;
-        this.initializeServices();
         
-        this.loadTokens();
+        // Check if storage service is available before initializing
+        if (this.storageService) {
+            this.initializeServices();
+            this.loadTokens();
+        } else {
+            console.warn('[MCP OAuth] Storage service not available, deferring initialization');
+            // Try again after a short delay
+            setTimeout(() => {
+                this.storageService = window.CoreStorageService;
+                if (this.storageService) {
+                    this.initializeServices();
+                    this.loadTokens();
+                }
+            }, 100);
+        }
     }
 
     /**
@@ -183,8 +196,13 @@ class OAuthService {
      * Load tokens from encrypted storage
      */
     async loadTokens() {
+        if (!this.storageService) {
+            console.warn('[MCP OAuth] Storage service not available, skipping token loading');
+            return;
+        }
+        
         try {
-            const storedTokens = await this.storageService.getItem(this.STORAGE_KEY);
+            const storedTokens = await this.storageService.getValue(this.STORAGE_KEY);
             if (storedTokens && typeof storedTokens === 'object') {
                 Object.entries(storedTokens).forEach(([serverName, tokenData]) => {
                     this.tokens.set(serverName, new OAuthToken(tokenData));
@@ -199,12 +217,17 @@ class OAuthService {
      * Save tokens to encrypted storage
      */
     async saveTokens() {
+        if (!this.storageService) {
+            console.warn('[MCP OAuth] Storage service not available, skipping token saving');
+            return;
+        }
+        
         try {
             const tokensObj = {};
             this.tokens.forEach((token, serverName) => {
                 tokensObj[serverName] = token.toJSON();
             });
-            await this.storageService.setItem(this.STORAGE_KEY, tokensObj);
+            await this.storageService.setValue(this.STORAGE_KEY, tokensObj);
         } catch (error) {
             console.error('[MCP OAuth] Failed to save tokens:', error);
         }

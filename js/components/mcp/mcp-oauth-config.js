@@ -19,7 +19,20 @@ class MCPOAuthConfig {
         this.currentConfig = null;
         this.STORAGE_KEY = 'mcp-oauth-configs';
         this.configs = new Map();
-        this.initializeService();
+        
+        // Check if storage service is available before initializing
+        if (this.storageService) {
+            this.initializeService();
+        } else {
+            console.warn('[MCP OAuth Config] Storage service not available, deferring initialization');
+            // Try again after a short delay
+            setTimeout(() => {
+                this.storageService = window.CoreStorageService;
+                if (this.storageService) {
+                    this.initializeService();
+                }
+            }, 100);
+        }
     }
 
     async initializeService() {
@@ -46,8 +59,13 @@ class MCPOAuthConfig {
      * Load OAuth configurations from storage
      */
     async loadConfigs() {
+        if (!this.storageService) {
+            console.warn('[MCP OAuth Config] Storage service not available, skipping config loading');
+            return;
+        }
+        
         try {
-            const savedConfigs = await this.storageService.getItem(this.STORAGE_KEY);
+            const savedConfigs = await this.storageService.getValue(this.STORAGE_KEY);
             if (savedConfigs && typeof savedConfigs === 'object') {
                 Object.entries(savedConfigs).forEach(([serverName, config]) => {
                     this.configs.set(serverName, config);
@@ -62,12 +80,17 @@ class MCPOAuthConfig {
      * Save OAuth configurations to storage
      */
     async saveConfigs() {
+        if (!this.storageService) {
+            console.warn('[MCP OAuth Config] Storage service not available, skipping config saving');
+            return;
+        }
+        
         try {
             const configsObj = {};
             this.configs.forEach((config, serverName) => {
                 configsObj[serverName] = config;
             });
-            await this.storageService.setItem(this.STORAGE_KEY, configsObj);
+            await this.storageService.setValue(this.STORAGE_KEY, configsObj);
         } catch (error) {
             console.error('[MCP OAuth Config] Failed to save configurations:', error);
         }
