@@ -110,6 +110,7 @@ class MCPServerProcess extends EventEmitter {
         this.process.on('error', (error) => {
             console.error(`Failed to start MCP server:`, error);
             debug(`[ERROR] Process error:`, error.stack);
+            this.connected = false;
             this.emit('error', error);
         });
 
@@ -426,13 +427,45 @@ async function handleStart(req, res) {
 
             debug(`[START] Creating new server process:`, { command, args, env });
             const server = new MCPServerProcess(command, args, env, name);
+            
+            // Set up error handler before starting
+            let errorOccurred = false;
+            const errorHandler = (error) => {
+                errorOccurred = true;
+                debug(`[START] Server spawn error:`, error.message);
+                activeServers.delete(name);
+                
+                // Send appropriate error message based on error type
+                let errorMessage = 'Failed to start server';
+                if (error.code === 'ENOENT') {
+                    errorMessage = `Command not found: "${command}". Please check that the command exists and is in your PATH.`;
+                } else if (error.code === 'EACCES') {
+                    errorMessage = `Permission denied to execute: "${command}"`;
+                } else {
+                    errorMessage = `Failed to start server: ${error.message}`;
+                }
+                
+                if (!res.headersSent) {
+                    res.writeHead(400, { ...corsHeaders, 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: errorMessage }));
+                }
+            };
+            
+            server.once('error', errorHandler);
+            
+            // Start the server
             server.start();
             activeServers.set(name, server);
             debug(`[START] Server added to active servers. Total servers: ${activeServers.size}`);
 
-            res.writeHead(200, { ...corsHeaders, 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: true, name }));
-            debug(`[START] Success response sent`);
+            // Give it a moment to see if spawn fails immediately
+            setTimeout(() => {
+                if (!errorOccurred && server.connected) {
+                    res.writeHead(200, { ...corsHeaders, 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: true, name }));
+                    debug(`[START] Success response sent`);
+                }
+            }, 100);
         } catch (error) {
             debug(`[START] Error:`, error.message);
             debug(`[START] Error stack:`, error.stack);
