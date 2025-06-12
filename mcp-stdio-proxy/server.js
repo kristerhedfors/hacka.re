@@ -11,6 +11,7 @@
 const http = require('http');
 const { spawn } = require('child_process');
 const { EventEmitter } = require('events');
+const { OAuthMiddleware } = require('./oauth-middleware');
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -24,6 +25,12 @@ const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS?.split(',') || ['*'];
 
 // Active MCP server processes
 const activeServers = new Map();
+
+// Initialize OAuth middleware
+const oauthMiddleware = new OAuthMiddleware({
+    enableAuth: process.env.OAUTH_ENABLED === 'true',
+    trustedOrigins: process.env.TRUSTED_ORIGINS?.split(',').map(o => o.trim())
+});
 
 // Debug logging
 function debug(...args) {
@@ -44,11 +51,15 @@ const corsHeaders = {
  * MCP Server Process Manager
  */
 class MCPServerProcess extends EventEmitter {
-    constructor(command, args = [], env = {}) {
+    constructor(command, args = [], env = {}, serverName = '') {
         super();
         this.command = command;
         this.args = args;
-        this.env = { ...process.env, ...env };
+        this.serverName = serverName;
+        
+        // Inject OAuth environment variables if configured
+        this.env = oauthMiddleware.injectOAuthEnvironment(serverName, { ...process.env, ...env });
+        
         this.process = null;
         this.buffer = '';
         this.messageQueue = [];
@@ -177,6 +188,22 @@ function handleRequest(req, res) {
         res.end();
         return;
     }
+    
+    // Apply OAuth authentication middleware for protected endpoints
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const isProtectedEndpoint = ['/mcp/start', '/mcp/stop', '/mcp/command'].includes(url.pathname);
+    
+    if (isProtectedEndpoint) {
+        // Use OAuth middleware authentication
+        oauthMiddleware.authenticate(req, res, () => {
+            continueRequest(req, res);
+        });
+    } else {
+        continueRequest(req, res);
+    }
+}
+
+function continueRequest(req, res) {
 
     const url = new URL(req.url, `http://${req.headers.host}`);
     debug(`[HTTP] Parsed URL:`, url.pathname);
@@ -212,10 +239,30 @@ function handleRequest(req, res) {
         return;
     }
 
+    // OAuth endpoints
+    if (req.method === 'POST' && url.pathname === '/oauth/credentials') {
+        handleOAuthCredentials(req, res);
+        return;
+    }
+
+    if (req.method === 'GET' && url.pathname === '/oauth/status') {
+        handleOAuthStatus(req, res);
+        return;
+    }
+
+    if (req.method === 'POST' && url.pathname === '/oauth/refresh') {
+        handleOAuthRefresh(req, res);
+        return;
+    }
+
     // Health check
     if (req.method === 'GET' && url.pathname === '/health') {
         res.writeHead(200, { ...corsHeaders, 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ status: 'ok', servers: activeServers.size }));
+        res.end(JSON.stringify({ 
+            status: 'ok', 
+            servers: activeServers.size,
+            oauth: oauthMiddleware.getOAuthStatus()
+        }));
         return;
     }
 
@@ -378,7 +425,7 @@ async function handleStart(req, res) {
             }
 
             debug(`[START] Creating new server process:`, { command, args, env });
-            const server = new MCPServerProcess(command, args, env);
+            const server = new MCPServerProcess(command, args, env, name);
             server.start();
             activeServers.set(name, server);
             debug(`[START] Server added to active servers. Total servers: ${activeServers.size}`);
@@ -439,6 +486,79 @@ function handleList(req, res) {
     res.end(JSON.stringify({ servers }));
 }
 
+/**
+ * Handle OAuth credentials endpoint
+ */
+async function handleOAuthCredentials(req, res) {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+        try {
+            const { serverName, credentials } = JSON.parse(body);
+
+            if (!serverName || !credentials) {
+                res.writeHead(400, { ...corsHeaders, 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Missing serverName or credentials' }));
+                return;
+            }
+
+            // Store OAuth credentials for the server
+            oauthMiddleware.setServerCredentials(serverName, credentials);
+
+            res.writeHead(200, { ...corsHeaders, 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, serverName }));
+        } catch (error) {
+            res.writeHead(400, { ...corsHeaders, 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: error.message }));
+        }
+    });
+}
+
+/**
+ * Handle OAuth status endpoint
+ */
+function handleOAuthStatus(req, res) {
+    const status = oauthMiddleware.getOAuthStatus();
+    res.writeHead(200, { ...corsHeaders, 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(status));
+}
+
+/**
+ * Handle OAuth token refresh endpoint
+ */
+async function handleOAuthRefresh(req, res) {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+        try {
+            const { serverName } = JSON.parse(body);
+
+            if (!serverName) {
+                res.writeHead(400, { ...corsHeaders, 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Missing serverName' }));
+                return;
+            }
+
+            const refreshed = await oauthMiddleware.refreshServerToken(serverName);
+
+            if (refreshed) {
+                res.writeHead(200, { ...corsHeaders, 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true, serverName, refreshed: true }));
+            } else {
+                res.writeHead(400, { ...corsHeaders, 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ 
+                    error: 'Token refresh failed',
+                    serverName,
+                    refreshed: false
+                }));
+            }
+        } catch (error) {
+            res.writeHead(400, { ...corsHeaders, 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: error.message }));
+        }
+    });
+}
+
 // Create and start server
 const server = http.createServer(handleRequest);
 
@@ -446,13 +566,17 @@ server.listen(PORT, () => {
     console.log(`\n🔌 MCP Stdio Proxy running on http://localhost:${PORT}`);
     console.log(`📊 Debug mode: ${DEBUG ? 'ENABLED' : 'DISABLED'}`);
     console.log(`🌐 CORS origins: ${ALLOWED_ORIGINS.join(', ')}`);
+    console.log(`🔐 OAuth authentication: ${oauthMiddleware.enableAuth ? 'ENABLED' : 'DISABLED'}`);
     console.log('\n📡 Endpoints:');
-    console.log(`  POST   /mcp/start   - Start a new MCP server`);
-    console.log(`  POST   /mcp/stop    - Stop an MCP server`);
-    console.log(`  POST   /mcp/command - Send command to server`);
-    console.log(`  GET    /mcp/events  - SSE event stream`);
-    console.log(`  GET    /mcp/list    - List active servers`);
-    console.log(`  GET    /health      - Health check`);
+    console.log(`  POST   /mcp/start         - Start a new MCP server`);
+    console.log(`  POST   /mcp/stop          - Stop an MCP server`);
+    console.log(`  POST   /mcp/command       - Send command to server`);
+    console.log(`  GET    /mcp/events        - SSE event stream`);
+    console.log(`  GET    /mcp/list          - List active servers`);
+    console.log(`  GET    /health            - Health check`);
+    console.log(`  POST   /oauth/credentials - Set OAuth credentials`);
+    console.log(`  GET    /oauth/status      - OAuth status`);
+    console.log(`  POST   /oauth/refresh     - Refresh OAuth token`);
     
     console.log('\n💡 Usage examples:');
     console.log('   Basic:           node server.js');
@@ -462,6 +586,14 @@ server.listen(PORT, () => {
     console.log('   Environment:     DEBUG=true PORT=8080 node server.js');
     
     console.log('\n🚀 Ready to accept MCP connections from hacka.re!\n');
+    
+    // Set up OAuth token cleanup interval
+    if (oauthMiddleware.enableAuth) {
+        setInterval(() => {
+            oauthMiddleware.cleanupExpiredTokens();
+        }, 5 * 60 * 1000); // Clean up every 5 minutes
+        console.log('🧹 OAuth token cleanup scheduled every 5 minutes');
+    }
 });
 
 // Graceful shutdown
