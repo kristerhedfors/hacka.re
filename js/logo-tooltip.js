@@ -1,140 +1,93 @@
 /**
- * Logo Tooltip Modal Script
- * Handles the modal functionality for the heart logo tooltip
+ * Logo Tooltip Toggle Script
+ * Handles the expandable tree toggle functionality for the logo
  */
 
 document.addEventListener('DOMContentLoaded', function() {
+    const logoContainer = document.querySelector('.logo-text-container');
     const heartLogo = document.querySelector('.heart-logo');
-    if (!heartLogo) return;
+    if (!logoContainer || !heartLogo) return;
     
-    // Create a new modal for the logo info
-    const infoModal = document.createElement('div');
-    infoModal.id = 'logo-info-modal';
-    infoModal.className = 'modal';
+    // Get the logo lines (excluding the first one with the heart)
+    const logoLines = logoContainer.querySelectorAll('.logo-line:nth-child(n+2)');
     
-    // Get the content from the tooltip
-    const tooltipContent = heartLogo.querySelector('.tooltip');
-    if (!tooltipContent) return;
-    
-    // Create modal content
-    const modalContent = document.createElement('div');
-    modalContent.className = 'modal-content';
-    
-    // Add a header
-    const header = document.createElement('div');
-    header.className = 'settings-header';
-    
-    const heading = document.createElement('h2');
-    heading.textContent = 'About hacka.re';
-    
-    header.appendChild(heading);
-    modalContent.appendChild(header);
-    
-    // Create a tooltip-content wrapper for consistent styling
-    const contentWrapper = document.createElement('div');
-    contentWrapper.className = 'tooltip-content';
-    
-    // Clone the tooltip content
-    const contentClone = tooltipContent.cloneNode(true);
-    
-    // Move all children from contentClone to contentWrapper
-    while (contentClone.firstChild) {
-        contentWrapper.appendChild(contentClone.firstChild);
-    }
-    
-    modalContent.appendChild(contentWrapper);
-    
-    // Add close button
-    const closeButtonContainer = document.createElement('div');
-    closeButtonContainer.className = 'form-actions';
-    
-    const closeButton = document.createElement('button');
-    closeButton.type = 'button';
-    closeButton.className = 'btn secondary-btn';
-    closeButton.textContent = 'Close';
-    closeButton.id = 'close-logo-info-modal';
-    
-    closeButtonContainer.appendChild(closeButton);
-    modalContent.appendChild(closeButtonContainer);
-    
-    // Add modal to document
-    infoModal.appendChild(modalContent);
-    document.body.appendChild(infoModal);
-    
-    // Show modal when logo is clicked
-    heartLogo.addEventListener('click', function(e) {
+    // Add click handler to the entire logo area
+    logoContainer.addEventListener('click', function(e) {
         e.stopPropagation();
-        infoModal.classList.add('active');
+        toggleLogoExpansion();
     });
     
-    // Also make the logo text and tagline clickable
-    const logoText = document.querySelector('.logo-text');
-    if (logoText) {
-        logoText.style.cursor = 'pointer';
-        logoText.addEventListener('click', function(e) {
-            e.preventDefault();
+    // Also handle clicks in the upper left corner area
+    const headerArea = document.querySelector('header');
+    if (headerArea) {
+        // Create an invisible click area in the upper left corner
+        const clickArea = document.createElement('div');
+        clickArea.style.position = 'absolute';
+        clickArea.style.top = '0';
+        clickArea.style.left = '0';
+        clickArea.style.width = '100px';
+        clickArea.style.height = '100px';
+        clickArea.style.cursor = 'pointer';
+        clickArea.style.zIndex = '10';
+        headerArea.style.position = 'relative';
+        headerArea.appendChild(clickArea);
+        
+        clickArea.addEventListener('click', function(e) {
             e.stopPropagation();
-            infoModal.classList.add('active');
+            toggleLogoExpansion();
         });
     }
     
-    // Also make the entire logo container clickable
-    const logo = document.querySelector('.logo');
-    if (logo) {
-        logo.style.cursor = 'pointer';
-        logo.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            infoModal.classList.add('active');
-        });
-    }
-    
-    const tagline = document.querySelector('.tagline');
-    if (tagline) {
-        tagline.addEventListener('click', function(e) {
-            e.stopPropagation();
-            infoModal.classList.add('active');
-        });
-    }
-    
-    // Close modal when close button is clicked
-    closeButton.addEventListener('click', function() {
-        infoModal.classList.remove('active');
-    });
-    
-    // Close modal when clicking outside
-    infoModal.addEventListener('click', function(e) {
-        if (e.target === infoModal) {
-            infoModal.classList.remove('active');
+    // Function to toggle the logo expansion
+    function toggleLogoExpansion() {
+        const isCollapsed = logoContainer.classList.contains('collapsed');
+        const firstLogoLine = logoContainer.querySelector('.logo-line:first-child');
+        
+        if (isCollapsed) {
+            // Expand
+            logoContainer.classList.remove('collapsed');
+            logoLines.forEach(line => {
+                line.style.display = 'block';
+            });
+            // Restore the original text content
+            if (firstLogoLine && firstLogoLine.dataset.originalText) {
+                firstLogoLine.innerHTML = firstLogoLine.dataset.originalText;
+            }
+        } else {
+            // Collapse
+            logoContainer.classList.add('collapsed');
+            logoLines.forEach(line => {
+                line.style.display = 'none';
+            });
+            // Store original text and show only heart
+            if (firstLogoLine && !firstLogoLine.dataset.originalText) {
+                firstLogoLine.dataset.originalText = firstLogoLine.innerHTML;
+            }
+            if (firstLogoLine) {
+                const heartElement = firstLogoLine.querySelector('.heart-logo');
+                if (heartElement) {
+                    // Clear and clone only the heart with all its children
+                    const heartClone = heartElement.cloneNode(true);
+                    firstLogoLine.innerHTML = '';
+                    firstLogoLine.appendChild(heartClone);
+                }
+            }
         }
-    });
+    }
     
-    // Close modal when pressing Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && infoModal.classList.contains('active')) {
-            infoModal.classList.remove('active');
-        }
-    });
+    // Remove the old modal functionality if it exists
+    const oldModal = document.getElementById('logo-info-modal');
+    if (oldModal) {
+        oldModal.remove();
+    }
     
-    // Replace the original tooltip with a properly styled one
-    const newTooltip = document.createElement('div');
-    newTooltip.className = 'tooltip';
+    // Hide the tooltip element as we're not using it anymore
+    const tooltip = heartLogo.querySelector('.tooltip');
+    if (tooltip) {
+        tooltip.style.display = 'none';
+    }
     
-    // Create tooltip content wrapper
-    const newTooltipContent = document.createElement('div');
-    newTooltipContent.className = 'tooltip-content';
-    
-    // Copy the important notices with proper styling
-    const importantNotices = tooltipContent.querySelectorAll('.important-notice');
-    importantNotices.forEach(notice => {
-        const newNotice = document.createElement('div');
-        newNotice.className = 'important-notice';
-        newNotice.innerHTML = notice.innerHTML;
-        newTooltipContent.appendChild(newNotice);
-    });
-    
-    newTooltip.appendChild(newTooltipContent);
-    
-    // Replace the old tooltip with the new one
-    tooltipContent.parentNode.replaceChild(newTooltip, tooltipContent);
+    // Update cursor styles
+    logoContainer.style.cursor = 'pointer';
+    heartLogo.style.cursor = 'pointer';
 });

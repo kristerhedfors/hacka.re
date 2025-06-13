@@ -31,30 +31,38 @@
         <header>
             <span class="beta-tag">BETA</span>
             <div class="logo">
-                <h1 class="logo-text default-title">hacka.re<span class="heart-logo">♥&#xFE0E;
-                    <!-- SVG fallback for Firefox Focus -->
-                    <svg class="firefox-focus-fallback" width="16" height="6" viewBox="0 0 16 6" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 3; display: none;">
-                        <circle cx="3" cy="3" r="1.5" fill="#22CC22" />
-                        <circle cx="8" cy="3" r="1.5" fill="#22CC22" />
-                        <circle cx="13" cy="3" r="1.5" fill="#22CC22" />
-                    </svg>
-                    <div class="typing-dots"></div>
-                    <div class="tooltip">
-                        <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 10px; border-radius: 8px;">
-                            <p><strong><span style="font-family: 'Courier New', monospace;">hacka.re</span></strong>: Privacy-focused chat client that stores API keys, conversations, and settings locally in your browser.</p>
+                <!-- Hidden elements for JavaScript compatibility -->
+                <h1 class="logo-text default-title" style="display: none;">hacka.re<span class="heart-logo">♥&#xFE0E;</span></h1>
+                <p class="tagline default-subtitle" style="display: none;">Free, open, för hackare, av hackare.</p>
+                
+                <!-- New three-line layout -->
+                <div class="logo-text-container default-layout">
+                    <div class="logo-line"><span class="heart-logo">♥&#xFE0E;
+                        <!-- SVG fallback for Firefox Focus -->
+                        <svg class="firefox-focus-fallback" width="16" height="6" viewBox="0 0 16 6" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 3; display: none;">
+                            <circle cx="3" cy="3" r="1.5" fill="#22CC22" />
+                            <circle cx="8" cy="3" r="1.5" fill="#22CC22" />
+                            <circle cx="13" cy="3" r="1.5" fill="#22CC22" />
+                        </svg>
+                        <div class="typing-dots"></div>
+                        <div class="tooltip">
+                            <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 10px; border-radius: 8px;">
+                                <p><strong><span style="font-family: 'Courier New', monospace;">hacka.re</span></strong>: Privacy-focused chat client that stores API keys, conversations, and settings locally in your browser.</p>
+                            </div>
+                            <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 10px; border-radius: 8px;">
+                                <p><strong>Features</strong>: Serverless, offline-capable, MIT licensed. Create encrypted, password-protected GPTs with custom prompts.</p>
+                            </div>
+                            <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 10px; border-radius: 8px;">
+                                <p><strong>Get started</strong>: Configure with base URL (OpenAI-compatible) and API key.</p>
+                            </div>
+                            <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 0; border-radius: 8px;">
+                                <p style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;"><i class="fas fa-magic"></i> <strong>Vibe-Coded</strong> with Claude 3.7 Sonnet | <a href="about/index.html">About</a> | <a href="about/development.html">Development</a> | <a href="about/disclaimer.html">Disclaimer</a></p>
+                            </div>
                         </div>
-                        <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 10px; border-radius: 8px;">
-                            <p><strong>Features</strong>: Serverless, offline-capable, MIT licensed. Create encrypted, password-protected GPTs with custom prompts.</p>
-                        </div>
-                        <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 10px; border-radius: 8px;">
-                            <p><strong>Get started</strong>: Configure with base URL (OpenAI-compatible) and API key.</p>
-                        </div>
-                        <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 0; border-radius: 8px;">
-                            <p style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;"><i class="fas fa-magic"></i> <strong>Vibe-Coded</strong> with Claude 3.7 Sonnet | <a href="about/index.html">About</a> | <a href="about/development.html">Development</a> | <a href="about/disclaimer.html">Disclaimer</a></p>
-                        </div>
-                    </div>
-                </span></h1>
-                <p class="tagline default-subtitle">Free, open, för hackare, av hackare.</p>
+                    </span> hacka.re</div>
+                    <div class="logo-line">├─ Serverless agency:</div>
+                    <div class="logo-line">└─ free, open, av hackare, för hackare</div>
+                </div>
             </div>
             <div class="model-info">
                 <div class="model-name-display"></div>

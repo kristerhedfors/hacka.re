@@ -122,13 +122,10 @@ header .model-provider,
     text-fill-color: transparent;
 }
 
-.logo h1 {
-    font-size: 1.5rem;
-    font-weight: 400;
-    margin: 0;
+/* Logo container */
+.logo {
     display: flex;
     align-items: center;
-    position: relative;
 }
 
 /* Apply Courier New font to all instances of hacka.re */
@@ -213,7 +210,7 @@ a[href="https://hacka.re/"] {
     line-height: 0.8;
     display: inline-block;
     margin-left: 5px;
-    cursor: help;
+    cursor: pointer;
     /* Apply sweeping gradient animation based on base color */
     animation: heartSweep 3s infinite alternate;
     background: linear-gradient(90deg, #505050, #444444, #383838);
@@ -490,6 +487,102 @@ body.firefox-focus .heart-logo {
 .tagline {
     font-size: 0.9rem;
     opacity: 0.9;
+}
+
+/* New four-line logo layout */
+.logo-text-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.2;
+    transition: all 0.3s ease;
+}
+
+.logo-line {
+    font-family: 'Courier New', monospace !important;
+    font-size: 1.1rem;
+    font-weight: 400;
+    margin: 0;
+    padding: 0;
+    animation: textSweep 3s infinite alternate;
+    background: linear-gradient(90deg, #c2c2c2, #ffffff, #c2c2c2);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-fill-color: transparent;
+    transition: all 0.3s ease;
+}
+
+/* Smooth transitions for collapsing lines */
+.logo-line:nth-child(n+2) {
+    overflow: hidden;
+    max-height: 30px;
+    opacity: 1;
+    transition: max-height 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
+}
+
+.logo-text-container.collapsed .logo-line:nth-child(n+2) {
+    max-height: 0;
+    opacity: 0;
+    margin: 0;
+}
+
+/* Adjust heart logo for inline display */
+.logo-line .heart-logo {
+    font-size: 1.1rem;
+    margin-left: 2px;
+    margin-right: 2px;
+    vertical-align: baseline;
+    line-height: inherit;
+}
+
+/* When collapsed, show only heart */
+.logo-text-container.collapsed {
+    flex-direction: row;
+    align-items: center;
+}
+
+.logo-text-container.collapsed .logo-line:first-child {
+    display: flex;
+    align-items: center;
+}
+
+/* Hide the "hacka.re" text when collapsed */
+.logo-text-container.collapsed .logo-line:first-child::after {
+    content: '';
+}
+
+/* Make heart 3x larger when collapsed */
+.logo-text-container.collapsed .heart-logo {
+    font-size: 3.3rem !important; /* 3x the original 1.1rem */
+    margin: 0;
+    transition: font-size 0.3s ease;
+}
+
+/* Scale up typing dots when heart is collapsed */
+.logo-text-container.collapsed .typing-dots {
+    transform: translate(-50%, -50%) scale(3);
+    width: 48px; /* 3x the original 16px */
+    height: 18px; /* 3x the original 6px */
+}
+
+.logo-text-container.collapsed .dot {
+    width: 9px; /* 3x the original 3px */
+    height: 9px; /* 3x the original 3px */
+    margin: 0 3px; /* 3x the original 1px */
+}
+
+/* Scale up the Firefox Focus fallback SVG as well */
+.logo-text-container.collapsed .firefox-focus-fallback {
+    width: 48px !important; /* 3x the original 16px */
+    height: 18px !important; /* 3x the original 6px */
+    transform: translate(-50%, -50%) scale(3) !important;
+}
+
+/* Hide default layout when custom title is active */
+.named-gpt-container ~ .logo-text-container.default-layout {
+    display: none;
 }
 
 /* Model Info Styles */
