@@ -144,7 +144,6 @@ window.UICoordinator = (function() {
          */
         function updateModelInfoDisplay(currentModel) {
             modelInfoDisplay.updateModelInfoDisplay(currentModel);
-            contextUsageDisplay.updateContextUsage(0);
         }
         
         /**
