@@ -19,7 +19,14 @@ window.LogoAnimation = (function() {
     
     // Initialize the animation
     function init() {
-        document.addEventListener('DOMContentLoaded', function() {
+        // Support re-initialization
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', setupAnimation);
+        } else {
+            setupAnimation();
+        }
+        
+        function setupAnimation() {
             // Add a special class to the body for Firefox Focus
             if (isFirefoxFocus()) {
                 document.body.classList.add('firefox-focus');
@@ -31,9 +38,13 @@ window.LogoAnimation = (function() {
                 }
             }
             
-            // Get the heart logo element
-            const heartLogo = document.querySelector('.heart-logo');
-            const typingDots = document.querySelector('.typing-dots');
+            // Get the heart logo element - support multiple hearts
+            const heartLogos = document.querySelectorAll('.heart-logo');
+            if (heartLogos.length === 0) return;
+            
+            // Use the last heart logo (most recently added)
+            const heartLogo = heartLogos[heartLogos.length - 1];
+            const typingDots = heartLogo.querySelector('.typing-dots');
             
             if (!heartLogo || !typingDots) return;
             
@@ -201,42 +212,61 @@ window.LogoAnimation = (function() {
                 
                 tooltip.appendChild(closeButton);
             }
-        });
+        }
     }
     
     // Function to run a single heartbeat (lub-dub)
     function runSingleHeartbeat() {
         return new Promise(resolve => {
+            // Check if we're in collapsed mode
+            const logoContainer = document.querySelector('.logo-text-container');
+            const isCollapsed = logoContainer && logoContainer.classList.contains('collapsed');
+            
             // Reset any existing animations and make dots visible
             dots.forEach(dot => {
                 dot.style.animation = 'none';
                 dot.style.transform = 'translateY(0) translateZ(0)';
                 dot.style.opacity = '1'; // Make dots visible during heartbeat
                 
-                // Explicitly set styles for Firefox Focus compatibility
-                dot.style.backgroundColor = '#22CC22';
-                dot.style.width = '3px';
-                dot.style.height = '3px';
-                dot.style.borderRadius = '50%';
-                dot.style.display = 'inline-block';
-                dot.style.boxShadow = '0 1px 1px rgba(0, 0, 0, 0.2)';
+                // Set appropriate size based on collapsed state
+                if (isCollapsed) {
+                    dot.style.backgroundColor = '#22CC22';
+                    dot.style.width = '4px'; // Reduced from 9px
+                    dot.style.height = '4px'; // Reduced from 9px
+                    dot.style.borderRadius = '50%';
+                    dot.style.display = 'inline-block';
+                    dot.style.boxShadow = '0 1px 1px rgba(0, 0, 0, 0.2)';
+                } else {
+                    // Standard size
+                    dot.style.backgroundColor = '#22CC22';
+                    dot.style.width = '3px';
+                    dot.style.height = '3px';
+                    dot.style.borderRadius = '50%';
+                    dot.style.display = 'inline-block';
+                    dot.style.boxShadow = '0 1px 1px rgba(0, 0, 0, 0.2)';
+                }
                 
                 // Force hardware acceleration
                 dot.style.willChange = 'opacity, transform';
             });
             
+            // Choose appropriate animations based on collapsed state
+            const lubAnimation = isCollapsed ? 'heartbeatLubLarge' : 'heartbeatLub';
+            const dubAnimation = isCollapsed ? 'heartbeatDubLarge' : 'heartbeatDub';
+            
             // First beat (lub) - stronger
             dots.forEach((dot, index) => {
                 setTimeout(() => {
                     // Apply animation with !important to override any browser restrictions
-                    dot.style.setProperty('animation', 'heartbeatLub 200ms ease-in-out', 'important');
+                    dot.style.setProperty('animation', `${lubAnimation} 200ms ease-in-out`, 'important');
                     
                     // For Firefox Focus, also set these properties directly
                     if (isFirefoxFocus()) {
+                        const moveDistance = isCollapsed ? '-5px' : '-4px'; // Reduced from -12px
                         setTimeout(() => {
                             dot.style.opacity = '1';
                             dot.style.backgroundColor = '#22CC22';
-                            dot.style.transform = 'translateY(-4px) translateZ(0)';
+                            dot.style.transform = `translateY(${moveDistance}) translateZ(0)`;
                         }, 100); // At 50% of animation
                     }
                 }, index * 30);
@@ -247,14 +277,15 @@ window.LogoAnimation = (function() {
                 dots.forEach((dot, index) => {
                     setTimeout(() => {
                         // Apply animation with !important
-                        dot.style.setProperty('animation', 'heartbeatDub 200ms ease-in-out', 'important');
+                        dot.style.setProperty('animation', `${dubAnimation} 200ms ease-in-out`, 'important');
                         
                         // For Firefox Focus, also set these properties directly
                         if (isFirefoxFocus()) {
+                            const moveDistance = isCollapsed ? '-2px' : '-2px'; // Reduced from -6px
                             setTimeout(() => {
                                 dot.style.opacity = '1';
                                 dot.style.backgroundColor = '#22CC22';
-                                dot.style.transform = 'translateY(-2px) translateZ(0)';
+                                dot.style.transform = `translateY(${moveDistance}) translateZ(0)`;
                             }, 100); // At 50% of animation
                         }
                     }, index * 30);
@@ -285,6 +316,7 @@ window.LogoAnimation = (function() {
         if (animationRunning) return;
         
         animationRunning = true;
+        document.body.dataset.animationRunning = 'true';
         
         // Run the animation in a loop
         async function animationCycle() {
@@ -309,6 +341,7 @@ window.LogoAnimation = (function() {
     // Stop the animation
     function stopAnimation() {
         animationRunning = false;
+        document.body.dataset.animationRunning = 'false';
         
         if (animationLoop) {
             clearTimeout(animationLoop);

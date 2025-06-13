@@ -53,6 +53,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (firstLogoLine && firstLogoLine.dataset.originalText) {
                 firstLogoLine.innerHTML = firstLogoLine.dataset.originalText;
             }
+            // Re-initialize logo animation to ensure dots are properly set up
+            if (window.LogoAnimation) {
+                setTimeout(() => {
+                    window.LogoAnimation.init();
+                }, 100);
+            }
         } else {
             // Collapse
             logoContainer.classList.add('collapsed');
@@ -66,10 +72,18 @@ document.addEventListener('DOMContentLoaded', function() {
             if (firstLogoLine) {
                 const heartElement = firstLogoLine.querySelector('.heart-logo');
                 if (heartElement) {
-                    // Clear and clone only the heart with all its children
+                    // Clear and clone only the heart with all its children (including typing-dots)
                     const heartClone = heartElement.cloneNode(true);
                     firstLogoLine.innerHTML = '';
                     firstLogoLine.appendChild(heartClone);
+                    
+                    // Re-initialize the animation system after a short delay
+                    setTimeout(() => {
+                        if (window.LogoAnimation) {
+                            // Re-initialize the entire animation system
+                            window.LogoAnimation.init();
+                        }
+                    }, 100);
                 }
             }
         }
