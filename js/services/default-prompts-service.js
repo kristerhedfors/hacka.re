@@ -146,6 +146,9 @@ function initializeDefaultPrompts() {
     // Initialize prompts when the service is loaded
     initializeDefaultPrompts();
     
+    // Add a global helper for debugging
+    window.clearDefaultPrompts = clearSelectedDefaultPrompts;
+    
     /**
      * Get all default prompts
      * @returns {Array} Array of default prompt objects
@@ -239,14 +242,14 @@ function initializeDefaultPrompts() {
                     window.aiHackare.settingsManager.getCurrentModel() : '';
                 
                 // Calculate percentage using the utility function directly
-                const percentage = UIUtils.estimateContextUsage(
+                const contextUsageData = UIUtils.estimateContextUsage(
                     messages, 
                     ModelInfoService.modelInfo, 
                     currentModel,
                     combinedContent
                 );
                 
-                console.log("Calculated percentage:", percentage);
+                console.log("Calculated context usage data:", contextUsageData);
                 
                 // Update the UI directly
                 const usageFill = document.querySelector('.usage-fill');
@@ -254,7 +257,7 @@ function initializeDefaultPrompts() {
                 
                 if (usageFill && usageText) {
                     console.log("Directly updating UI elements");
-                    UIUtils.updateContextUsage(usageFill, usageText, percentage);
+                    UIUtils.updateContextUsage(usageFill, usageText, contextUsageData.percentage);
                 } else {
                     console.log("Could not find UI elements");
                 }
@@ -269,7 +272,7 @@ function initializeDefaultPrompts() {
                 const currentModel = window.aiHackare.settingsManager ? 
                     window.aiHackare.settingsManager.getCurrentModel() : '';
                 
-                const percentage = UIUtils.estimateContextUsage(
+                const contextUsageData = UIUtils.estimateContextUsage(
                     messages, 
                     ModelInfoService.modelInfo, 
                     currentModel,
@@ -280,7 +283,7 @@ function initializeDefaultPrompts() {
                 const usageText = document.querySelector('.usage-text');
                 
                 if (usageFill && usageText) {
-                    UIUtils.updateContextUsage(usageFill, usageText, percentage);
+                    UIUtils.updateContextUsage(usageFill, usageText, contextUsageData.percentage);
                 }
             }
         }
@@ -338,6 +341,20 @@ function initializeDefaultPrompts() {
         return selectedPrompts;
     }
     
+    /**
+     * Clear all selected default prompts
+     * This is useful for debugging or resetting the state
+     */
+    function clearSelectedDefaultPrompts() {
+        console.log('Clearing all selected default prompts');
+        CoreStorageService.removeValue(SELECTED_DEFAULT_PROMPTS_KEY);
+        
+        // Update system prompt
+        if (window.SystemPromptCoordinator) {
+            window.SystemPromptCoordinator.updateSystemPrompt(true);
+        }
+    }
+
     // Public API
     return {
         getDefaultPrompts,
@@ -347,6 +364,7 @@ function initializeDefaultPrompts() {
         toggleDefaultPromptSelection,
         isDefaultPromptSelected,
         getSelectedDefaultPrompts,
-        initializeDefaultPrompts
+        initializeDefaultPrompts,
+        clearSelectedDefaultPrompts
     };
 })();
