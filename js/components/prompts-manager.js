@@ -162,9 +162,11 @@ window.PromptsManager = (function() {
          */
         function copySystemPromptToClipboard() {
             const systemPrompt = StorageService.getSystemPrompt();
-            if (systemPrompt) {
+            const copyButton = elements.copySystemPromptBtn;
+            
+            if (systemPrompt && systemPrompt.trim()) {
                 if (window.ClipboardUtils) {
-                    window.ClipboardUtils.copyToClipboard(systemPrompt, 'System prompt copied to clipboard!');
+                    window.ClipboardUtils.copyToClipboardWithNotification(systemPrompt, 'System prompt copied to clipboard!', copyButton);
                 } else {
                     // Fallback method
                     navigator.clipboard.writeText(systemPrompt).then(() => {
@@ -180,8 +182,21 @@ window.PromptsManager = (function() {
                     });
                 }
             } else {
-                if (window.UIUtils && window.UIUtils.showToast) {
-                    window.UIUtils.showToast('No system prompt to copy', 'warning');
+                // Copy empty string but with helpful message
+                const emptyMessage = "(System prompt is empty - no prompts are currently selected)";
+                if (window.ClipboardUtils) {
+                    window.ClipboardUtils.copyToClipboardWithNotification(emptyMessage, 'Empty system prompt copied to clipboard', copyButton);
+                } else {
+                    navigator.clipboard.writeText(emptyMessage).then(() => {
+                        if (window.UIUtils && window.UIUtils.showToast) {
+                            window.UIUtils.showToast('Empty system prompt copied to clipboard', 'info');
+                        }
+                    }).catch(err => {
+                        console.error('Failed to copy empty system prompt: ', err);
+                        if (window.UIUtils && window.UIUtils.showToast) {
+                            window.UIUtils.showToast('Failed to copy system prompt', 'error');
+                        }
+                    });
                 }
             }
         }

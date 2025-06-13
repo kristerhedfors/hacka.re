@@ -146,6 +146,9 @@ function initializeDefaultPrompts() {
     // Initialize prompts when the service is loaded
     initializeDefaultPrompts();
     
+    // Add a global helper for debugging
+    window.clearDefaultPrompts = clearSelectedDefaultPrompts;
+    
     /**
      * Get all default prompts
      * @returns {Array} Array of default prompt objects
@@ -338,6 +341,20 @@ function initializeDefaultPrompts() {
         return selectedPrompts;
     }
     
+    /**
+     * Clear all selected default prompts
+     * This is useful for debugging or resetting the state
+     */
+    function clearSelectedDefaultPrompts() {
+        console.log('Clearing all selected default prompts');
+        CoreStorageService.removeValue(SELECTED_DEFAULT_PROMPTS_KEY);
+        
+        // Update system prompt
+        if (window.SystemPromptCoordinator) {
+            window.SystemPromptCoordinator.updateSystemPrompt(true);
+        }
+    }
+
     // Public API
     return {
         getDefaultPrompts,
@@ -347,6 +364,7 @@ function initializeDefaultPrompts() {
         toggleDefaultPromptSelection,
         isDefaultPromptSelected,
         getSelectedDefaultPrompts,
-        initializeDefaultPrompts
+        initializeDefaultPrompts,
+        clearSelectedDefaultPrompts
     };
 })();
