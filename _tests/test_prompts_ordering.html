@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Prompts Ordering and Copy</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/default-prompts.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: var(--bg-color, #f5f5f5);
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-step {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .test-step h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            width: 90%;
+        }
+        .prompts-list {
+            border: 2px solid #007bff;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        #copy-result {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: #f8f9fa;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Prompts Ordering & Copy Test</h1>
+        <p>This test validates that user-defined prompts appear before default prompts and that the copy functionality works correctly.</p>
+
+        <div class="test-step">
+            <h3>Step 1: Initialize Services</h3>
+            <button onclick="initializeServices()">Initialize All Services</button>
+            <div id="init-result" class="test-result"></div>
+        </div>
+
+        <div class="test-step">
+            <h3>Step 2: Clear Existing Data</h3>
+            <button onclick="clearAllData()">Clear All Prompts & Selections</button>
+            <div id="clear-result" class="test-result"></div>
+        </div>
+
+        <div class="test-step">
+            <h3>Step 3: Create Test User Prompt</h3>
+            <button onclick="createTestUserPrompt()">Create "Test User Prompt"</button>
+            <div id="user-prompt-result" class="test-result"></div>
+        </div>
+
+        <div class="test-step">
+            <h3>Step 4: Select Prompts</h3>
+            <button onclick="selectTestPrompts()">Select User Prompt + Default Prompt</button>
+            <div id="selection-result" class="test-result"></div>
+        </div>
+
+        <div class="test-step">
+            <h3>Step 5: Test Prompts List Rendering</h3>
+            <button onclick="testPromptsListRendering()">Render Prompts List</button>
+            <div id="rendering-result" class="test-result"></div>
+            <div id="prompts-list-container"></div>
+        </div>
+
+        <div class="test-step">
+            <h3>Step 6: Test System Prompt Generation</h3>
+            <button onclick="testSystemPromptGeneration()">Generate System Prompt</button>
+            <div id="system-prompt-result" class="test-result"></div>
+        </div>
+
+        <div class="test-step">
+            <h3>Step 7: Test Copy Functionality</h3>
+            <button onclick="testCopyFunctionality()">Test Copy to Clipboard</button>
+            <div id="copy-result-status" class="test-result"></div>
+            <div id="copy-result"></div>
+        </div>
+
+        <div class="test-step">
+            <h3>Complete Test Summary</h3>
+            <button onclick="runFullTest()">🚀 Run Complete Test</button>
+            <div id="full-test-result" class="test-result"></div>
+        </div>
+    </div>
+
+    <!-- Modal for prompts display -->
+    <div id="test-modal" class="modal">
+        <div class="modal-content">
+            <h3>Prompts List Preview</h3>
+            <div id="modal-prompts-list"></div>
+            <button onclick="closeModal()">Close</button>
+        </div>
+    </div>
+
+    <!-- Load all required scripts -->
+    <script src="../js/utils/ui-utils.js"></script>
+    <script src="../js/utils/clipboard-utils.js"></script>
+    <script src="../js/services/core-storage-service.js"></script>
+    <script src="../js/services/storage-service.js"></script>
+    <script src="../js/services/prompts-service.js"></script>
+    <script src="../js/services/default-prompts-service.js"></script>
+    <script src="../js/services/system-prompt-coordinator.js"></script>
+    <script src="../js/services/function-tools-service.js"></script>
+    <script src="../js/default-prompts/function-library.js"></script>
+    <script src="../js/components/prompts-modal-renderer.js"></script>
+    <script src="../js/components/prompts-event-handlers.js"></script>
+    <script src="../js/components/prompts/prompts-list-manager.js"></script>
+
+    <script>
+        let testResults = [];
+
+        function logResult(step, success, message, details = null) {
+            const result = { step, success, message, details, timestamp: new Date().toISOString() };
+            testResults.push(result);
+            console.log(`${success ? '✅' : '❌'} ${step}: ${message}`, details || '');
+            return result;
+        }
+
+        function displayResult(elementId, result) {
+            const element = document.getElementById(elementId);
+            element.className = `test-result ${result.success ? 'success' : 'error'}`;
+            element.innerHTML = `<strong>${result.success ? '✅' : '❌'} ${result.step}:</strong> ${result.message}`;
+            if (result.details) {
+                element.innerHTML += `<br><small>${JSON.stringify(result.details, null, 2)}</small>`;
+            }
+        }
+
+        function initializeServices() {
+            try {
+                // Check if all required services are loaded
+                const requiredServices = [
+                    'PromptsService',
+                    'DefaultPromptsService', 
+                    'SystemPromptCoordinator',
+                    'PromptsListManager',
+                    'PromptsModalRenderer',
+                    'ClipboardUtils'
+                ];
+
+                const missingServices = requiredServices.filter(service => !window[service]);
+                
+                if (missingServices.length > 0) {
+                    const result = logResult('Initialize', false, `Missing services: ${missingServices.join(', ')}`);
+                    displayResult('init-result', result);
+                    return false;
+                }
+
+                // Initialize SystemPromptCoordinator
+                if (window.SystemPromptCoordinator && typeof window.SystemPromptCoordinator.init === 'function') {
+                    window.SystemPromptCoordinator.init();
+                }
+
+                const result = logResult('Initialize', true, 'All services loaded successfully', {
+                    loadedServices: requiredServices,
+                    defaultPrompts: window.DefaultPromptsService.getDefaultPrompts().length,
+                    userPrompts: window.PromptsService.getPrompts().length
+                });
+                displayResult('init-result', result);
+                return true;
+            } catch (error) {
+                const result = logResult('Initialize', false, `Error: ${error.message}`, error);
+                displayResult('init-result', result);
+                return false;
+            }
+        }
+
+        function clearAllData() {
+            try {
+                // Clear all user prompts
+                const userPrompts = window.PromptsService.getPrompts();
+                userPrompts.forEach(prompt => {
+                    window.PromptsService.deletePrompt(prompt.id);
+                });
+
+                // Clear all selections
+                window.PromptsService.setSelectedPromptIds([]);
+                window.DefaultPromptsService.setSelectedDefaultPromptIds([]);
+
+                // Clear system prompt
+                window.StorageService.saveSystemPrompt('');
+
+                const result = logResult('Clear Data', true, 'All data cleared successfully', {
+                    clearedUserPrompts: userPrompts.length,
+                    remainingUserPrompts: window.PromptsService.getPrompts().length,
+                    selectedUserPrompts: window.PromptsService.getSelectedPromptIds().length,
+                    selectedDefaultPrompts: window.DefaultPromptsService.getSelectedDefaultPromptIds().length
+                });
+                displayResult('clear-result', result);
+                return true;
+            } catch (error) {
+                const result = logResult('Clear Data', false, `Error: ${error.message}`, error);
+                displayResult('clear-result', result);
+                return false;
+            }
+        }
+
+        function createTestUserPrompt() {
+            try {
+                const testPrompt = {
+                    id: 'test-user-prompt-' + Date.now(),
+                    name: 'Test User Prompt',
+                    content: 'This is a test user-defined prompt that should appear BEFORE default prompts.',
+                    isDefault: false
+                };
+
+                window.PromptsService.savePrompt(testPrompt);
+
+                const savedPrompts = window.PromptsService.getPrompts();
+                const foundPrompt = savedPrompts.find(p => p.id === testPrompt.id);
+
+                const success = !!foundPrompt;
+                const result = logResult('Create User Prompt', success, 
+                    success ? 'Test user prompt created successfully' : 'Failed to create test user prompt',
+                    { testPrompt, savedPrompts: savedPrompts.length, foundPrompt }
+                );
+                displayResult('user-prompt-result', result);
+                return success;
+            } catch (error) {
+                const result = logResult('Create User Prompt', false, `Error: ${error.message}`, error);
+                displayResult('user-prompt-result', result);
+                return false;
+            }
+        }
+
+        function selectTestPrompts() {
+            try {
+                // Select the test user prompt
+                const userPrompts = window.PromptsService.getPrompts();
+                const testUserPrompt = userPrompts.find(p => p.name === 'Test User Prompt');
+                
+                if (!testUserPrompt) {
+                    const result = logResult('Select Prompts', false, 'Test user prompt not found');
+                    displayResult('selection-result', result);
+                    return false;
+                }
+
+                // Select user prompt
+                window.PromptsService.setSelectedPromptIds([testUserPrompt.id]);
+
+                // Select a default prompt (function-library)
+                const defaultPrompts = window.DefaultPromptsService.getDefaultPrompts();
+                const functionLibraryPrompt = findDefaultPromptById(defaultPrompts, 'function-library');
+                
+                if (functionLibraryPrompt) {
+                    window.DefaultPromptsService.setSelectedDefaultPromptIds(['function-library']);
+                }
+
+                // Apply selections to system prompt
+                window.SystemPromptCoordinator.updateSystemPrompt(false);
+
+                const selectedUserIds = window.PromptsService.getSelectedPromptIds();
+                const selectedDefaultIds = window.DefaultPromptsService.getSelectedDefaultPromptIds();
+                const systemPrompt = window.StorageService.getSystemPrompt();
+
+                const result = logResult('Select Prompts', true, 'Prompts selected successfully', {
+                    selectedUserPrompts: selectedUserIds,
+                    selectedDefaultPrompts: selectedDefaultIds,
+                    systemPromptLength: systemPrompt.length,
+                    systemPromptPreview: systemPrompt.substring(0, 200) + '...'
+                });
+                displayResult('selection-result', result);
+                return true;
+            } catch (error) {
+                const result = logResult('Select Prompts', false, `Error: ${error.message}`, error);
+                displayResult('selection-result', result);
+                return false;
+            }
+        }
+
+        function findDefaultPromptById(prompts, id) {
+            for (const prompt of prompts) {
+                if (prompt.id === id) {
+                    return prompt;
+                }
+                if (prompt.isSection && prompt.items) {
+                    const found = prompt.items.find(item => item.id === id);
+                    if (found) return found;
+                }
+            }
+            return null;
+        }
+
+        function testPromptsListRendering() {
+            try {
+                // Create a test container
+                const container = document.getElementById('prompts-list-container');
+                container.innerHTML = '';
+
+                const promptsList = document.createElement('div');
+                promptsList.className = 'prompts-list';
+                promptsList.id = 'test-prompts-list';
+
+                const elements = {
+                    promptsList: promptsList,
+                    promptsModal: container
+                };
+
+                // Use the PromptsListManager to load prompts
+                const usageElements = window.PromptsListManager.loadPromptsList(elements, null);
+
+                container.appendChild(promptsList);
+
+                // Analyze the order of elements
+                const children = Array.from(promptsList.children);
+                const orderAnalysis = children.map((child, index) => ({
+                    index,
+                    className: child.className,
+                    type: getElementType(child),
+                    textContent: child.textContent ? child.textContent.substring(0, 50) + '...' : ''
+                }));
+
+                // Check if user prompts come before default prompts
+                const userSectionIndex = children.findIndex(child => 
+                    child.className.includes('user-prompts-section'));
+                const defaultSectionIndex = children.findIndex(child => 
+                    child.className.includes('default-prompts-section'));
+
+                const correctOrder = userSectionIndex >= 0 && defaultSectionIndex >= 0 && userSectionIndex < defaultSectionIndex;
+
+                const result = logResult('Render Prompts List', correctOrder, 
+                    correctOrder ? 
+                        `✅ Correct order: User section at index ${userSectionIndex}, Default section at index ${defaultSectionIndex}` :
+                        `❌ Wrong order: User section at index ${userSectionIndex}, Default section at index ${defaultSectionIndex}`,
+                    { orderAnalysis, userSectionIndex, defaultSectionIndex }
+                );
+                displayResult('rendering-result', result);
+                return correctOrder;
+            } catch (error) {
+                const result = logResult('Render Prompts List', false, `Error: ${error.message}`, error);
+                displayResult('rendering-result', result);
+                return false;
+            }
+        }
+
+        function getElementType(element) {
+            if (element.className.includes('user-prompts-section')) return 'USER_SECTION';
+            if (element.className.includes('default-prompts-section')) return 'DEFAULT_SECTION';
+            if (element.className.includes('new-prompt-section')) return 'FORM_SECTION';
+            if (element.className.includes('prompts-token-usage-container')) return 'TOKEN_USAGE';
+            return 'OTHER';
+        }
+
+        function testSystemPromptGeneration() {
+            try {
+                const systemPrompt = window.StorageService.getSystemPrompt();
+                const selectedUserPrompts = window.PromptsService.getSelectedPrompts();
+                const selectedDefaultPrompts = window.DefaultPromptsService.getSelectedDefaultPrompts();
+
+                // Check if system prompt contains both user and default content
+                const hasUserContent = selectedUserPrompts.length > 0 && 
+                    selectedUserPrompts.some(p => systemPrompt.includes(p.content));
+                const hasDefaultContent = selectedDefaultPrompts.length > 0 && 
+                    selectedDefaultPrompts.some(p => systemPrompt.includes(p.content || (typeof p.content === 'function' ? p.content() : '')));
+
+                // Check order in system prompt - user content should come before default content
+                let userContentIndex = -1;
+                let defaultContentIndex = -1;
+
+                if (selectedUserPrompts.length > 0) {
+                    userContentIndex = systemPrompt.indexOf(selectedUserPrompts[0].content);
+                }
+                if (selectedDefaultPrompts.length > 0) {
+                    const defaultContent = selectedDefaultPrompts[0].content || 
+                        (typeof selectedDefaultPrompts[0].content === 'function' ? selectedDefaultPrompts[0].content() : '');
+                    defaultContentIndex = systemPrompt.indexOf(defaultContent);
+                }
+
+                const correctOrderInPrompt = (userContentIndex >= 0 && defaultContentIndex >= 0) ? 
+                    userContentIndex < defaultContentIndex : true;
+
+                const success = hasUserContent && (selectedDefaultPrompts.length === 0 || hasDefaultContent) && correctOrderInPrompt;
+
+                const result = logResult('System Prompt Generation', success, 
+                    success ? 'System prompt generated correctly with proper order' : 'System prompt generation failed',
+                    {
+                        systemPromptLength: systemPrompt.length,
+                        hasUserContent,
+                        hasDefaultContent,
+                        userContentIndex,
+                        defaultContentIndex,
+                        correctOrderInPrompt,
+                        selectedUserPrompts: selectedUserPrompts.length,
+                        selectedDefaultPrompts: selectedDefaultPrompts.length,
+                        systemPromptPreview: systemPrompt.substring(0, 300) + '...'
+                    }
+                );
+                displayResult('system-prompt-result', result);
+                return success;
+            } catch (error) {
+                const result = logResult('System Prompt Generation', false, `Error: ${error.message}`, error);
+                displayResult('system-prompt-result', result);
+                return false;
+            }
+        }
+
+        function testCopyFunctionality() {
+            try {
+                const systemPrompt = window.StorageService.getSystemPrompt();
+                
+                // Create a mock button for testing
+                const mockButton = document.createElement('button');
+                mockButton.innerHTML = '<i class="fas fa-copy"></i>';
+                mockButton.title = 'Copy entire system prompt to clipboard';
+
+                // Test the copy functionality
+                let copySuccess = false;
+                let copiedText = '';
+
+                // Mock the clipboard API for testing
+                const originalClipboard = navigator.clipboard;
+                navigator.clipboard = {
+                    writeText: function(text) {
+                        copySuccess = true;
+                        copiedText = text;
+                        return Promise.resolve();
+                    }
+                };
+
+                // Test the copy function
+                window.ClipboardUtils.copyToClipboardWithNotification(
+                    systemPrompt, 
+                    'System prompt copied to clipboard!', 
+                    mockButton
+                );
+
+                // Restore original clipboard
+                navigator.clipboard = originalClipboard;
+
+                // Display the copied content
+                const copyResultElement = document.getElementById('copy-result');
+                copyResultElement.textContent = copiedText;
+
+                const result = logResult('Copy Functionality', copySuccess, 
+                    copySuccess ? 'Copy functionality works correctly' : 'Copy functionality failed',
+                    {
+                        systemPromptLength: systemPrompt.length,
+                        copiedLength: copiedText.length,
+                        textsMatch: systemPrompt === copiedText,
+                        buttonPreserved: mockButton.innerHTML.includes('fa-copy')
+                    }
+                );
+                displayResult('copy-result-status', result);
+                return copySuccess;
+            } catch (error) {
+                const result = logResult('Copy Functionality', false, `Error: ${error.message}`, error);
+                displayResult('copy-result-status', result);
+                return false;
+            }
+        }
+
+        async function runFullTest() {
+            const fullTestElement = document.getElementById('full-test-result');
+            fullTestElement.className = 'test-result info';
+            fullTestElement.innerHTML = '🧪 Running complete test suite...';
+
+            testResults = []; // Reset results
+
+            const steps = [
+                initializeServices,
+                clearAllData,
+                createTestUserPrompt,
+                selectTestPrompts,
+                testPromptsListRendering,
+                testSystemPromptGeneration,
+                testCopyFunctionality
+            ];
+
+            let allPassed = true;
+            for (const step of steps) {
+                const stepResult = step();
+                if (!stepResult) {
+                    allPassed = false;
+                }
+                // Small delay to allow DOM updates
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            const summary = testResults.reduce((acc, result) => {
+                acc[result.success ? 'passed' : 'failed']++;
+                return acc;
+            }, { passed: 0, failed: 0 });
+
+            const result = logResult('Complete Test', allPassed, 
+                allPassed ? 
+                    `🎉 All tests passed! (${summary.passed}/${testResults.length})` : 
+                    `❌ Some tests failed. Passed: ${summary.passed}, Failed: ${summary.failed}`,
+                { summary, detailedResults: testResults }
+            );
+
+            fullTestElement.className = `test-result ${allPassed ? 'success' : 'error'}`;
+            fullTestElement.innerHTML = `<strong>${result.success ? '🎉' : '❌'} Complete Test:</strong> ${result.message}`;
+            
+            return allPassed;
+        }
+
+        function closeModal() {
+            document.getElementById('test-modal').classList.remove('active');
+        }
+
+        // Auto-initialize when page loads
+        window.addEventListener('load', () => {
+            console.log('🧪 Test page loaded. Ready to run tests.');
+            setTimeout(initializeServices, 500); // Give scripts time to load
+        });
+    </script>
+</body>
+</html>

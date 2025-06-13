@@ -41,13 +41,28 @@ window.ClipboardUtils = (function() {
         
         // Show visual feedback on the button
         if (button) {
+            const originalHTML = button.innerHTML;
             const originalText = button.textContent;
-            button.textContent = 'Copied!';
+            
+            // Only change text if button doesn't contain HTML (icons, etc.)
+            if (originalHTML === originalText) {
+                // Button contains only text
+                button.textContent = 'Copied!';
+            } else {
+                // Button contains HTML (like icons), add a temporary class for styling
+                button.classList.add('copied');
+                button.title = 'Copied!';
+            }
+            
             button.classList.add('copied');
             
             // Reset button after a delay
             setTimeout(() => {
-                button.textContent = originalText;
+                if (originalHTML === originalText) {
+                    button.textContent = originalText;
+                } else {
+                    button.title = button.getAttribute('data-original-title') || 'Copy entire system prompt to clipboard';
+                }
                 button.classList.remove('copied');
             }, 1500);
         }
