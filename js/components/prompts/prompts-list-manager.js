@@ -42,10 +42,21 @@ function createPromptsListManager() {
         
         const selectedPromptIds = PromptsService.getSelectedPromptIds();
         
+        // STEP 1: Create user prompts section FIRST
+        const userPromptsSection = document.createElement('div');
+        userPromptsSection.className = 'user-prompts-section';
+        userPromptsSection.style.order = '1'; // Force CSS order
+        
+        // Add section header for user prompts
+        const userSectionHeader = document.createElement('div');
+        userSectionHeader.className = 'user-prompts-header';
+        userSectionHeader.innerHTML = '<h4>Your Custom Prompts</h4>';
+        userPromptsSection.appendChild(userSectionHeader);
+        
         // Show "no prompts" message if needed
         if (prompts.length === 0) {
             const noPromptsMessage = PromptsModalRenderer.renderNoPromptsMessage();
-            elements.promptsList.appendChild(noPromptsMessage);
+            userPromptsSection.appendChild(noPromptsMessage);
         }
         
         // Render each prompt item
@@ -57,17 +68,31 @@ function createPromptsListManager() {
             // Bind event handlers
             bindPromptItemEvents(promptItem, prompt);
             
-            elements.promptsList.appendChild(promptItem);
+            userPromptsSection.appendChild(promptItem);
         });
         
-        // Add default prompts section
+        // STEP 2: Create default prompts section SECOND
+        let defaultPromptsSection = null;
         if (window.DefaultPromptsService) {
-            renderDefaultPromptsSection(elements);
+            const defaultPrompts = DefaultPromptsService.getDefaultPrompts();
+            const selectedDefaultIds = DefaultPromptsService.getSelectedDefaultPromptIds();
+            defaultPromptsSection = PromptsModalRenderer.renderDefaultPromptsSection(defaultPrompts, selectedDefaultIds);
+            defaultPromptsSection.style.order = '2'; // Force CSS order
+            
+            // Bind default prompts events inline
+            bindDefaultPromptsEvents(defaultPromptsSection, defaultPrompts);
         }
         
-        // Add new prompt form
+        // STEP 3: Create new prompt form THIRD
         const newPromptForm = PromptsModalRenderer.renderNewPromptForm();
+        newPromptForm.style.order = '3'; // Force CSS order
         bindFormEvents(newPromptForm);
+        
+        // STEP 4: Add all sections to DOM in explicit order
+        elements.promptsList.appendChild(userPromptsSection);
+        if (defaultPromptsSection) {
+            elements.promptsList.appendChild(defaultPromptsSection);
+        }
         elements.promptsList.appendChild(newPromptForm);
         
         // If there's a current prompt being edited, populate the form fields
@@ -213,17 +238,11 @@ function createPromptsListManager() {
     }
     
     /**
-     * Render default prompts section
-     * @param {Object} elements - DOM elements
+     * Bind events for default prompts section
+     * @param {HTMLElement} defaultPromptsSection - Default prompts section element
+     * @param {Array} defaultPrompts - Array of default prompts
      */
-    function renderDefaultPromptsSection(elements) {
-        // Get default prompts and selected IDs first
-        const defaultPrompts = DefaultPromptsService.getDefaultPrompts();
-        const selectedIds = DefaultPromptsService.getSelectedDefaultPromptIds();
-        
-        const defaultPromptsSection = PromptsModalRenderer.renderDefaultPromptsSection(defaultPrompts, selectedIds);
-        elements.promptsList.appendChild(defaultPromptsSection);
-        
+    function bindDefaultPromptsEvents(defaultPromptsSection, defaultPrompts) {
         // Bind default prompts events
         const defaultPromptsContainer = defaultPromptsSection.querySelector('.default-prompts-list');
         if (defaultPromptsContainer) {
@@ -349,7 +368,7 @@ function createPromptsListManager() {
         loadPromptsList,
         bindPromptItemEvents,
         bindFormEvents,
-        renderDefaultPromptsSection,
+        bindDefaultPromptsEvents,
         setCallbacks
     };
 }
