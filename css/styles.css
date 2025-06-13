@@ -95,6 +95,8 @@ header {
     align-items: center;
     box-shadow: var(--box-shadow);
     color: var(--light-text);
+    min-height: auto; /* Allow header to grow with content */
+    flex-wrap: nowrap; /* Keep main items in a row by default */
 }
 
 /* Apply sweeping effect to all text in header including hacka.re logo */
@@ -126,6 +128,8 @@ header .model-provider,
 .logo {
     display: flex;
     align-items: center;
+    min-height: auto; /* Allow logo to grow with content */
+    overflow: visible; /* Ensure content is not clipped */
 }
 
 /* Apply Courier New font to all instances of hacka.re */
@@ -512,6 +516,7 @@ body.firefox-focus .heart-logo {
     -webkit-text-fill-color: transparent;
     text-fill-color: transparent;
     transition: all 0.3s ease;
+    white-space: nowrap; /* Prevent wrapping by default */
 }
 
 /* Smooth transitions for collapsing lines */

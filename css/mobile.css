@@ -11,6 +11,21 @@
         padding: 0.75rem;
         flex-wrap: wrap;
         gap: 0.5rem;
+        min-height: auto; /* Allow header to grow */
+    }
+    
+    /* Logo text container adjustments for mobile */
+    .logo-text-container {
+        max-width: 100%;
+    }
+    
+    /* Allow the third line to wrap on small screens */
+    .logo-line:nth-child(3) {
+        white-space: normal !important; /* Allow wrapping */
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        max-height: none !important; /* Remove height restriction */
+        line-height: 1.3; /* Slightly increase line height for wrapped text */
     }
     
     /* Improve model info display on mobile */
@@ -169,6 +184,24 @@
         transform: translateX(-50%);
         max-height: 80vh;
         overflow-y: auto;
+    }
+}
+
+/* Medium screens - handle logo wrapping */
+@media (max-width: 600px) {
+    /* Allow the logo container to use more space */
+    .logo {
+        flex: 1 1 auto;
+        min-width: 0; /* Allow shrinking */
+    }
+    
+    /* Ensure the third line can wrap properly */
+    .logo-line:nth-child(3) {
+        white-space: normal !important;
+        hyphens: auto;
+        -webkit-hyphens: auto;
+        -moz-hyphens: auto;
+        -ms-hyphens: auto;
     }
 }
 
