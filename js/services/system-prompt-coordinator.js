@@ -16,7 +16,7 @@ window.SystemPromptCoordinator = (function() {
         const selectedDefaultPrompts = window.DefaultPromptsService ? 
             window.DefaultPromptsService.getSelectedDefaultPrompts() : [];
         
-        return [...selectedDefaultPrompts, ...selectedPrompts];
+        return [...selectedPrompts, ...selectedDefaultPrompts];
     }
     
     /**
