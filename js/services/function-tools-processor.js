@@ -172,9 +172,7 @@ window.FunctionToolsProcessor = (function() {
             const toolResult = {
                 tool_call_id: toolCall.id,
                 role: "tool",
-                name: name,
-                content: JSON.stringify(result),
-                executionTime: executionTime // Add execution time to the result
+                content: JSON.stringify(result)
             };
             
             Logger.debug(`Created tool result for "${name}" (${executionTime}ms):`, toolResult);
