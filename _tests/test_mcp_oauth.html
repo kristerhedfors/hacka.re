@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP OAuth Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>MCP OAuth Test Page</h1>
+    
+    <div class="test-section">
+        <h2>OAuth Service Test</h2>
+        <button onclick="testOAuthService()">Test OAuth Service</button>
+        <button onclick="testPKCE()">Test PKCE Generation</button>
+        <div id="oauth-service-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>OAuth Flow Test</h2>
+        <button onclick="startTestFlow()">Start OAuth Flow (GitHub)</button>
+        <button onclick="startCustomFlow()">Start Custom OAuth Flow</button>
+        <div id="oauth-flow-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Transport Test</h2>
+        <button onclick="testOAuthTransport()">Test OAuth Transport</button>
+        <div id="transport-result" class="result"></div>
+    </div>
+
+    <script>
+        // Mock the required services
+        window.CoreStorageService = {
+            getItem: async (key) => localStorage.getItem(key),
+            setItem: async (key, value) => localStorage.setItem(key, JSON.stringify(value))
+        };
+        
+        window.MCPTransportService = {
+            SseTransport: class {
+                constructor(config) {
+                    this.config = config;
+                    this.connected = false;
+                }
+                async connect() {
+                    this.connected = true;
+                    return Promise.resolve();
+                }
+                async send(message) {
+                    return Promise.resolve();
+                }
+                close() {
+                    this.connected = false;
+                }
+            }
+        };
+    </script>
+    
+    <!-- Load OAuth components -->
+    <script src="../js/services/mcp-oauth-service.js"></script>
+    <script src="../js/services/mcp-transport-service.js"></script>
+    
+    <script>
+        function showResult(elementId, text, isError = false) {
+            const element = document.getElementById(elementId);
+            element.textContent = text;
+            element.className = `result ${isError ? 'error' : 'success'}`;
+        }
+        
+        async function testOAuthService() {
+            try {
+                const service = new window.MCPOAuthService.OAuthService();
+                const result = {
+                    serviceCreated: !!service,
+                    hasStorageService: !!service.storageService,
+                    hasTokensMap: !!service.tokens,
+                    hasPendingFlows: !!service.pendingFlows,
+                    methods: Object.getOwnPropertyNames(Object.getPrototypeOf(service))
+                        .filter(m => typeof service[m] === 'function' && m !== 'constructor')
+                };
+                showResult('oauth-service-result', JSON.stringify(result, null, 2));
+            } catch (error) {
+                showResult('oauth-service-result', `Error: ${error.message}`, true);
+            }
+        }
+        
+        async function testPKCE() {
+            try {
+                const pkce = window.MCPOAuthService.PKCEHelper;
+                const verifier = pkce.generateCodeVerifier();
+                const challenge = await pkce.generateCodeChallenge(verifier);
+                
+                const result = {
+                    verifier: verifier,
+                    verifierLength: verifier.length,
+                    challenge: challenge,
+                    challengeLength: challenge.length,
+                    verifierValid: /^[A-Za-z0-9\-_]+$/.test(verifier),
+                    challengeValid: /^[A-Za-z0-9\-_]+$/.test(challenge)
+                };
+                showResult('oauth-service-result', JSON.stringify(result, null, 2));
+            } catch (error) {
+                showResult('oauth-service-result', `Error: ${error.message}`, true);
+            }
+        }
+        
+        async function startTestFlow() {
+            try {
+                const service = new window.MCPOAuthService.OAuthService();
+                const config = {
+                    clientId: 'test-client-id',
+                    redirectUri: 'http://localhost:8000/oauth/callback',
+                    authorizationUrl: 'https://github.com/login/oauth/authorize',
+                    tokenUrl: 'https://github.com/login/oauth/access_token',
+                    scope: 'repo read:user',
+                    responseType: 'code',
+                    grantType: 'authorization_code'
+                };
+                
+                const result = await service.startAuthorizationFlow('test-github-server', config);
+                showResult('oauth-flow-result', JSON.stringify({
+                    authorizationUrl: result.authorizationUrl,
+                    state: result.state,
+                    serverName: result.serverName,
+                    urlValid: result.authorizationUrl.startsWith('https://github.com/login/oauth/authorize')
+                }, null, 2));
+            } catch (error) {
+                showResult('oauth-flow-result', `Error: ${error.message}`, true);
+            }
+        }
+        
+        async function startCustomFlow() {
+            try {
+                const service = new window.MCPOAuthService.OAuthService();
+                const config = {
+                    clientId: 'custom-client-id',
+                    redirectUri: 'http://localhost:8000/oauth/callback',
+                    authorizationUrl: 'https://example.com/oauth/authorize',
+                    tokenUrl: 'https://example.com/oauth/token',
+                    scope: 'read write',
+                    responseType: 'code',
+                    grantType: 'authorization_code',
+                    additionalParams: {
+                        prompt: 'consent',
+                        access_type: 'offline'
+                    }
+                };
+                
+                const result = await service.startAuthorizationFlow('test-custom-server', config);
+                const url = new URL(result.authorizationUrl);
+                showResult('oauth-flow-result', JSON.stringify({
+                    authorizationUrl: result.authorizationUrl,
+                    state: result.state,
+                    serverName: result.serverName,
+                    hasPromptParam: url.searchParams.has('prompt'),
+                    promptValue: url.searchParams.get('prompt'),
+                    hasAccessTypeParam: url.searchParams.has('access_type'),
+                    accessTypeValue: url.searchParams.get('access_type')
+                }, null, 2));
+            } catch (error) {
+                showResult('oauth-flow-result', `Error: ${error.message}`, true);
+            }
+        }
+        
+        async function testOAuthTransport() {
+            try {
+                const OAuthTransport = window.MCPTransportService.OAuthTransport;
+                const config = {
+                    url: 'https://example.com/mcp',
+                    headers: { 'X-Custom': 'test' }
+                };
+                
+                const transport = new OAuthTransport(config, 'test-server');
+                const result = {
+                    transportCreated: !!transport,
+                    hasOAuthService: !!transport.oauthService,
+                    serverName: transport.serverName,
+                    configUrl: transport.config.url,
+                    transportType: transport.constructor.name,
+                    methods: Object.getOwnPropertyNames(Object.getPrototypeOf(transport))
+                        .filter(m => typeof transport[m] === 'function' && m !== 'constructor')
+                };
+                showResult('transport-result', JSON.stringify(result, null, 2));
+            } catch (error) {
+                showResult('transport-result', `Error: ${error.message}`, true);
+            }
+        }
+    </script>
+</body>
+</html>
