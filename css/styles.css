@@ -560,24 +560,42 @@ body.firefox-focus .heart-logo {
     transition: font-size 0.3s ease;
 }
 
-/* Scale up typing dots when heart is collapsed */
+/* Scale up typing dots when heart is collapsed - reduced by 2.5x */
 .logo-text-container.collapsed .typing-dots {
-    transform: translate(-50%, -50%) scale(3);
-    width: 48px; /* 3x the original 16px */
-    height: 18px; /* 3x the original 6px */
+    width: 19px !important; /* 1.2x the original 16px (16*3/2.5) */
+    height: 7px !important; /* 1.2x the original 6px (6*3/2.5) */
+    transform: translate(-50%, -50%) !important;
 }
 
 .logo-text-container.collapsed .dot {
-    width: 9px; /* 3x the original 3px */
-    height: 9px; /* 3x the original 3px */
-    margin: 0 3px; /* 3x the original 1px */
+    width: 4px !important; /* 1.2x the original 3px (3*3/2.5) */
+    height: 4px !important; /* 1.2x the original 3px */
+    margin: 0 1px !important; /* 1.2x the original 1px */
+    background-color: #22CC22 !important;
 }
 
 /* Scale up the Firefox Focus fallback SVG as well */
 .logo-text-container.collapsed .firefox-focus-fallback {
-    width: 48px !important; /* 3x the original 16px */
-    height: 18px !important; /* 3x the original 6px */
-    transform: translate(-50%, -50%) scale(3) !important;
+    width: 19px !important; /* 1.2x the original 16px */
+    height: 7px !important; /* 1.2x the original 6px */
+    transform: translate(-50%, -50%) !important;
+}
+
+/* Override keyframes for larger dots - reduced movement */
+@keyframes heartbeatLubLarge {
+    0% { transform: translateY(0) translateZ(0); opacity: 0; background-color: #22CC22; }
+    10% { transform: translateY(-1px) translateZ(0); opacity: 1; background-color: #22CC22; }
+    50% { transform: translateY(-5px) translateZ(0); opacity: 1; background-color: #22CC22; }
+    90% { transform: translateY(-1px) translateZ(0); opacity: 1; background-color: #22CC22; }
+    100% { transform: translateY(0) translateZ(0); opacity: 0; background-color: #22CC22; }
+}
+
+@keyframes heartbeatDubLarge {
+    0% { transform: translateY(0) translateZ(0); opacity: 0; background-color: #22CC22; }
+    10% { transform: translateY(-1px) translateZ(0); opacity: 1; background-color: #22CC22; }
+    50% { transform: translateY(-2px) translateZ(0); opacity: 1; background-color: #22CC22; }
+    90% { transform: translateY(-1px) translateZ(0); opacity: 1; background-color: #22CC22; }
+    100% { transform: translateY(0) translateZ(0); opacity: 0; background-color: #22CC22; }
 }
 
 /* Hide default layout when custom title is active */
