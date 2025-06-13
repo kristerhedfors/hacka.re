@@ -58,25 +58,44 @@ window.ModelInfoDisplay = (function() {
         }
         
         /**
-         * Update provider element in model stats
+         * Update provider element inline with model name
          * @param {string} provider - Provider name
          */
         function updateProviderDisplay(provider) {
-            if (elements.modelStats) {
-                // Check if provider element already exists
-                let providerElement = elements.modelStats.querySelector('.model-provider');
+            if (elements.modelNameDisplay) {
+                // Check if provider span already exists
+                let providerSpan = elements.modelNameDisplay.querySelector('.model-provider-inline');
                 
                 // If not, create it
-                if (!providerElement) {
-                    providerElement = document.createElement('span');
-                    providerElement.className = 'model-provider';
+                if (!providerSpan) {
+                    providerSpan = document.createElement('span');
+                    providerSpan.className = 'model-provider-inline';
+                    providerSpan.style.fontSize = '0.85rem';
+                    providerSpan.style.opacity = '0.9';
+                    providerSpan.style.marginLeft = '0.5rem';
                     
-                    // Insert at the beginning of model stats
-                    elements.modelStats.insertBefore(providerElement, elements.modelStats.firstChild);
+                    // Ensure we have a space before the provider span
+                    const lastChild = elements.modelNameDisplay.lastChild;
+                    if (lastChild && lastChild.nodeType === Node.TEXT_NODE) {
+                        const text = lastChild.textContent;
+                        if (!text.endsWith(' ')) {
+                            lastChild.textContent = text + ' ';
+                        }
+                    }
+                    
+                    elements.modelNameDisplay.appendChild(providerSpan);
                 }
                 
-                // Update the provider text with "by" prefix
-                providerElement.textContent = 'by ' + provider;
+                // Update the provider text
+                providerSpan.textContent = 'by ' + provider;
+            }
+            
+            // Remove any existing provider element from model stats
+            if (elements.modelStats) {
+                const existingProviderElement = elements.modelStats.querySelector('.model-provider');
+                if (existingProviderElement) {
+                    existingProviderElement.remove();
+                }
             }
         }
         
@@ -101,7 +120,12 @@ window.ModelInfoDisplay = (function() {
             
             // Update model name display
             if (elements.modelNameDisplay) {
-                elements.modelNameDisplay.textContent = displayName;
+                // Safeguard: Don't update if displayName is just a number
+                if (!/^\d+$/.test(displayName)) {
+                    // Clear any existing content first
+                    elements.modelNameDisplay.innerHTML = '';
+                    elements.modelNameDisplay.textContent = displayName;
+                }
             }
             
             // Determine and update provider
@@ -125,7 +149,29 @@ window.ModelInfoDisplay = (function() {
                 
                 // Update model name display
                 if (elements.modelNameDisplay) {
-                    elements.modelNameDisplay.textContent = displayName;
+                    // Safeguard: Don't update if displayName is just a number
+                    if (!/^\d+$/.test(displayName)) {
+                        // Check if we have a provider span
+                        const providerSpan = elements.modelNameDisplay.querySelector('.model-provider-inline');
+                        
+                        // Update just the text content, preserving the provider span
+                        if (providerSpan) {
+                            // Update only the text before the span
+                            const textNode = elements.modelNameDisplay.firstChild;
+                            if (textNode && textNode.nodeType === Node.TEXT_NODE) {
+                                textNode.textContent = displayName + ' ';
+                            } else {
+                                // Insert text node before the span
+                                elements.modelNameDisplay.insertBefore(
+                                    document.createTextNode(displayName + ' '),
+                                    providerSpan
+                                );
+                            }
+                        } else {
+                            // No provider span, just update text
+                            elements.modelNameDisplay.textContent = displayName;
+                        }
+                    }
                 }
                 
                 // Determine and update provider

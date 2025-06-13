@@ -17,12 +17,6 @@ window.ContextUsageDisplay = (function() {
          * @param {number} [contextSize] - Context window size
          */
         function updateContextUsage(percentage, estimatedTokens, contextSize) {
-            console.log("ContextUsageDisplay.updateContextUsage called with percentage:", percentage);
-            console.log("- estimatedTokens:", estimatedTokens);
-            console.log("- contextSize:", contextSize);
-            console.log("elements.usageFill:", elements.usageFill);
-            console.log("elements.usageText:", elements.usageText);
-            
             // Store the original model name before any updates to detect if it gets overwritten
             let originalModelName = null;
             if (elements.modelNameDisplay) {
@@ -49,16 +43,19 @@ window.ContextUsageDisplay = (function() {
                 
                 // If the model name was overwritten with a number (like percentage), restore it
                 if (/^\d+$/.test(currentText) || currentText !== originalModelName) {
-                    console.log(`Model name was overwritten with "${currentText}", restoring to "${originalModelName}"`);
-                    elements.modelNameDisplay.textContent = originalModelName;
+                    // Preserve the provider span if it exists
+                    const providerSpan = elements.modelNameDisplay.querySelector('.model-provider-inline');
                     
-                    // If we have access to the stored model, use its display name instead
-                    if (window.StorageService && window.ModelInfoService) {
-                        const storedModel = window.StorageService.getModel();
-                        if (storedModel) {
-                            const expectedDisplayName = window.ModelInfoService.getDisplayName(storedModel);
-                            elements.modelNameDisplay.textContent = expectedDisplayName;
-                        }
+                    if (providerSpan) {
+                        // Extract the model name without the provider text
+                        const modelNameOnly = originalModelName.replace(/ by .+$/, '');
+                        
+                        // Clear the display and rebuild it properly
+                        elements.modelNameDisplay.textContent = modelNameOnly + ' ';
+                        elements.modelNameDisplay.appendChild(providerSpan);
+                    } else {
+                        // No provider span, just restore text
+                        elements.modelNameDisplay.textContent = originalModelName;
                     }
                 }
             }
