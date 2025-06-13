@@ -192,6 +192,11 @@
         font-size: 0.8rem;
     }
     
+    /* Ensure token count doesn't break on mobile */
+    .model-context {
+        white-space: nowrap;
+    }
+    
     /* Optimize message bubbles for very small screens */
     .message {
         max-width: 98%;

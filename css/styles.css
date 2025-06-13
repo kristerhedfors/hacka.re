@@ -671,6 +671,7 @@ body.firefox-focus .heart-logo {
 /* Square icon is now handled separately */
 .model-context {
     margin-left: 0.2rem;
+    white-space: nowrap; /* Prevent line breaks in token count */
 }
 
 .context-usage {
