@@ -46,11 +46,11 @@ const OAUTH_PROVIDERS = {
  * OAuth error class for specific OAuth-related errors
  */
 class MCPOAuthError extends Error {
-    constructor(message, code = null, description = null) {
+    constructor(message, code = null, data = null) {
         super(message);
         this.name = 'MCPOAuthError';
         this.code = code;
-        this.description = description;
+        this.data = data;
     }
 }
 
@@ -293,45 +293,40 @@ class OAuthService {
         try {
             console.log(`[MCP OAuth] Starting device flow for ${serverName}`);
             
-            // Request device code
-            const deviceResponse = await fetch(config.deviceCodeUrl, {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: new URLSearchParams({
-                    client_id: config.clientId,
-                    scope: config.scope || ''
-                })
-            });
-            
-            if (!deviceResponse.ok) {
-                throw new Error(`Device code request failed: ${deviceResponse.status}`);
+            // Try automatic device code request first
+            try {
+                const deviceResponse = await fetch(config.deviceCodeUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        client_id: config.clientId,
+                        scope: config.scope || ''
+                    })
+                });
+                
+                if (!deviceResponse.ok) {
+                    throw new Error(`Device code request failed: ${deviceResponse.status}`);
+                }
+                
+                const deviceData = await deviceResponse.json();
+                console.log(`[MCP OAuth] Device code obtained for ${serverName}`);
+                
+                return await this.createDeviceFlowInfo(serverName, config, deviceData);
+                
+            } catch (corsError) {
+                console.log(`[MCP OAuth] Direct device flow request failed (likely CORS): ${corsError.message}`);
+                
+                // If CORS error, fall back to manual device flow
+                if (corsError.message.includes('CORS') || corsError.message.includes('Failed to fetch')) {
+                    console.log(`[MCP OAuth] Falling back to manual device flow for ${serverName}`);
+                    return this.startManualDeviceFlow(serverName, config);
+                }
+                
+                throw corsError;
             }
-            
-            const deviceData = await deviceResponse.json();
-            console.log(`[MCP OAuth] Device code obtained for ${serverName}`);
-            
-            // Store device flow information
-            const flowInfo = {
-                serverName,
-                config,
-                deviceCode: deviceData.device_code,
-                userCode: deviceData.user_code,
-                verificationUri: deviceData.verification_uri,
-                verificationUriComplete: deviceData.verification_uri_complete,
-                expiresIn: deviceData.expires_in,
-                interval: deviceData.interval || 5,
-                startedAt: Date.now()
-            };
-            
-            // Store in pending flows using device_code as key
-            this.pendingFlows.set(deviceData.device_code, flowInfo);
-            await this.savePendingFlows();
-            
-            console.log(`[MCP OAuth] Device flow started for ${serverName}`);
-            return flowInfo;
             
         } catch (error) {
             console.error(`[MCP OAuth] Failed to start device flow: ${error.message}`);
@@ -341,7 +336,98 @@ class OAuthService {
             );
         }
     }
+    
+    /**
+     * Create device flow info object
+     * @param {string} serverName - Server name
+     * @param {Object} config - OAuth config
+     * @param {Object} deviceData - Device data from GitHub
+     * @returns {Promise<Object>} Flow info
+     */
+    async createDeviceFlowInfo(serverName, config, deviceData) {
+        const flowInfo = {
+            serverName,
+            config,
+            deviceCode: deviceData.device_code,
+            userCode: deviceData.user_code,
+            verificationUri: deviceData.verification_uri,
+            verificationUriComplete: deviceData.verification_uri_complete,
+            expiresIn: deviceData.expires_in,
+            interval: deviceData.interval || 5,
+            startedAt: Date.now()
+        };
+        
+        // Store in pending flows using device_code as key
+        this.pendingFlows.set(deviceData.device_code, flowInfo);
+        await this.savePendingFlows();
+        
+        return flowInfo;
+    }
+    
+    /**
+     * Start manual device flow when CORS prevents automatic flow
+     * @param {string} serverName - Server name
+     * @param {Object} config - OAuth config
+     * @returns {Object} Manual flow info
+     */
+    startManualDeviceFlow(serverName, config) {
+        // Generate a temporary ID for this manual flow
+        const manualFlowId = 'manual_' + Date.now();
+        console.log(`[MCP OAuth] Creating manual flow with ID: ${manualFlowId}`);
+        
+        const manualFlowInfo = {
+            serverName,
+            config,
+            isManualFlow: true,
+            manualFlowId,
+            clientId: config.clientId,
+            scope: config.scope || 'repo read:user',
+            deviceCodeUrl: config.deviceCodeUrl,
+            verificationUri: 'https://github.com/login/device',
+            startedAt: Date.now()
+        };
+        
+        // Store manual flow
+        this.pendingFlows.set(manualFlowId, manualFlowInfo);
+        console.log(`[MCP OAuth] Stored manual flow. Pending flows count: ${this.pendingFlows.size}`);
+        console.log(`[MCP OAuth] Pending flows keys:`, Array.from(this.pendingFlows.keys()));
+        this.savePendingFlows();
+        
+        return manualFlowInfo;
+    }
 
+    /**
+     * Handle manual device flow data entry
+     * @param {string} manualFlowId - Manual flow ID
+     * @param {Object} deviceData - Device data entered by user
+     * @returns {Object} Flow info with device data
+     */
+    async submitManualDeviceData(manualFlowId, deviceData) {
+        console.log(`[MCP OAuth] Looking for manual flow with ID: ${manualFlowId}`);
+        console.log(`[MCP OAuth] Available flows:`, Array.from(this.pendingFlows.keys()));
+        console.log(`[MCP OAuth] Pending flows size: ${this.pendingFlows.size}`);
+        
+        const manualFlow = this.pendingFlows.get(manualFlowId);
+        console.log(`[MCP OAuth] Found manual flow:`, manualFlow);
+        
+        if (!manualFlow || !manualFlow.isManualFlow) {
+            throw new Error(`Invalid manual flow ID: ${manualFlowId}`);
+        }
+        
+        // Convert manual flow to regular device flow
+        const flowInfo = await this.createDeviceFlowInfo(
+            manualFlow.serverName,
+            manualFlow.config,
+            deviceData
+        );
+        
+        // Remove the manual flow
+        this.pendingFlows.delete(manualFlowId);
+        await this.savePendingFlows();
+        
+        return flowInfo;
+    }
+    
     /**
      * Poll for device flow completion
      * @param {string} deviceCode - Device code from startDeviceFlow
@@ -409,10 +495,43 @@ class OAuthService {
             
         } catch (error) {
             if (error instanceof MCPOAuthError) throw error;
+            
+            // If this is a CORS error for GitHub, provide helpful manual instructions
+            if ((error.message.includes('CORS') || error.message.includes('Failed to fetch')) && 
+                config && (config.provider === 'github' || config.useDeviceFlow)) {
+                console.log('[MCP OAuth] GitHub token polling blocked by CORS - suggesting manual token entry');
+                throw new MCPOAuthError(
+                    'GitHub token polling blocked by CORS. Please enter your access token manually.',
+                    'github_cors_polling_failed',
+                    {
+                        requiresManualToken: true,
+                        serverName,
+                        deviceCode,
+                        clientId: config.clientId,
+                        tokenInstructions: `After authorizing on GitHub, run this command to get your token:\n\ncurl -X POST https://github.com/login/oauth/access_token -H "Accept: application/json" -d "client_id=${config.clientId}&device_code=${deviceCode}&grant_type=urn:ietf:params:oauth:grant-type:device_code"`
+                    }
+                );
+            }
+            
             throw new MCPOAuthError(`Device flow polling failed: ${error.message}`, 'device_flow_poll_failed');
         }
     }
 
+    /**
+     * Store manually entered token (for CORS workarounds)
+     * @param {string} serverName - Server name
+     * @param {Object} tokenData - Token data
+     */
+    async storeManualToken(serverName, tokenData) {
+        console.log(`[MCP OAuth] Storing manual token for ${serverName}`);
+        
+        const token = new OAuthToken(tokenData);
+        this.tokens.set(serverName, token);
+        await this.saveTokens();
+        
+        console.log(`[MCP OAuth] Manual token stored successfully for ${serverName}`);
+    }
+    
     /**
      * Start OAuth authorization flow with automatic metadata discovery and client registration
      * @param {string} serverName - Name of the MCP server
