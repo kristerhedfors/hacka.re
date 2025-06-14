@@ -53,50 +53,6 @@
         gap: 0.25rem;
     }
     
-    /* Mobile portrait: Move collapsed heart to settings row */
-    @media (orientation: portrait) {
-        /* When heart is collapsed, modify header layout */
-        .logo-text-container.collapsed {
-            position: absolute;
-            right: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            z-index: 10;
-        }
-        
-        /* Position collapsed heart as leftmost icon in settings row */
-        .logo-text-container.collapsed .heart-logo {
-            font-size: 1.3rem !important; /* Match icon button size */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 44px;
-            height: 44px;
-            margin: 0;
-            margin-right: 0.25rem; /* Match settings gap */
-            border-radius: 50%;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-        
-        /* Add hover effect matching other icon buttons */
-        .logo-text-container.collapsed .heart-logo:hover {
-            background-color: rgba(255, 255, 255, 0.2);
-        }
-        
-        /* Hide typing dots when in settings row to avoid clutter */
-        .logo-text-container.collapsed .typing-dots,
-        .logo-text-container.collapsed .firefox-focus-fallback {
-            display: none;
-        }
-        
-        /* Adjust settings container to accommodate heart icon */
-        .logo-text-container.collapsed ~ .settings {
-            margin-left: 0;
-            padding-left: 69px; /* 44px heart + 25px gap */
-        }
-    }
-    
     .icon-btn {
         width: 44px;
         height: 44px;
