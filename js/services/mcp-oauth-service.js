@@ -355,36 +355,28 @@ class OAuthService {
             const sessionKey = window.ShareManager && window.ShareManager.getSessionKey ? 
                 window.ShareManager.getSessionKey() : null;
             
-            // Check if session key is available and warn user if not
+            // Log session key availability
             if (!sessionKey) {
                 console.warn(`[MCP OAuth] No session key available - OAuth will use namespace-based fallback`);
-                
-                // Show user a warning about the session requirement
-                if (window.confirm(
-                    'No session password is set. OAuth may fail without a session password. ' +
-                    'Would you like to set a session password first?\n\n' +
-                    'Click OK to set password, or Cancel to continue anyway.'
-                )) {
-                    throw new MCPOAuthError(
-                        'Please set a session password first via the sharing options, then try OAuth again.',
-                        'no_session_key'
-                    );
-                }
+            } else {
+                console.log(`[MCP OAuth] Session key available - will include in redirect URI`);
             }
             
             // Enhance redirect URI with session information if available
             let enhancedRedirectUri = effectiveConfig.redirectUri;
+            console.log(`[MCP OAuth] Base redirect URI: ${enhancedRedirectUri}`);
+            
             if (sessionKey) {
                 // Encode session key for URL parameter
                 const encodedSession = encodeURIComponent(btoa(sessionKey));
                 const separator = enhancedRedirectUri.includes('?') ? '&' : '?';
                 enhancedRedirectUri = `${effectiveConfig.redirectUri}${separator}oauth_session=${encodedSession}`;
-                console.log(`[MCP OAuth] Enhanced redirect URI with session parameter`);
+                console.log(`[MCP OAuth] Enhanced redirect URI with session parameter: ${enhancedRedirectUri}`);
             } else {
                 // Add namespace to URL for fallback session restoration
                 const separator = enhancedRedirectUri.includes('?') ? '&' : '?';
                 enhancedRedirectUri = `${effectiveConfig.redirectUri}${separator}oauth_namespace=${namespaceId}`;
-                console.log(`[MCP OAuth] Using namespace-based redirect URI (no session key available)`);
+                console.log(`[MCP OAuth] Enhanced redirect URI with namespace parameter: ${enhancedRedirectUri}`);
             }
             
             // Build authorization URL with enhanced redirect URI
@@ -406,6 +398,7 @@ class OAuthService {
             }
 
             const authorizationUrl = `${effectiveConfig.authorizationUrl}?${params.toString()}`;
+            console.log(`[MCP OAuth] Final authorization URL: ${authorizationUrl}`);
             
             // Store flow information
             const flowInfo = {
