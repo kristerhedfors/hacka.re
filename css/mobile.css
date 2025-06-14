@@ -55,19 +55,18 @@
     
     /* Mobile portrait: Move collapsed heart to settings row */
     @media (orientation: portrait) {
-        /* When heart is collapsed, move entire logo container to settings row */
+        /* When heart is collapsed, modify header layout */
         .logo-text-container.collapsed {
-            position: static !important;
-            width: auto !important;
-            height: auto !important;
-            order: -1; /* Place before settings container */
-            margin: 0 !important;
-            flex: 0 0 auto !important;
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
         }
         
-        /* Style the heart for mobile icon row */
+        /* Position collapsed heart as leftmost icon in settings row */
         .logo-text-container.collapsed .heart-logo {
-            font-size: 2.64rem !important; /* 80% of original 3.3rem collapsed size */
+            font-size: 1.3rem !important; /* Match icon button size */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -88,39 +87,13 @@
         /* Hide typing dots when in settings row to avoid clutter */
         .logo-text-container.collapsed .typing-dots,
         .logo-text-container.collapsed .firefox-focus-fallback {
-            display: none !important;
+            display: none;
         }
         
-        /* Ensure header uses flexbox properly to accommodate repositioned heart */
-        header {
-            display: flex;
-            align-items: center;
-        }
-        
-        /* Move collapsed logo container next to settings */
-        header:has(.logo-text-container.collapsed) {
-            flex-direction: row;
-            flex-wrap: nowrap;
-        }
-        
-        /* Group logo and settings together on the right */
-        header:has(.logo-text-container.collapsed) .logo {
-            order: 1; /* Logo area becomes second */
-        }
-        
-        header:has(.logo-text-container.collapsed) .settings {
-            order: 2; /* Settings remain last */
-            margin-left: 0; /* Remove auto margin */
-        }
-        
-        /* Create a flex container for the collapsed heart and settings */
-        header:has(.logo-text-container.collapsed) .logo-text-container.collapsed,
-        header:has(.logo-text-container.collapsed) .settings {
-            margin-left: auto; /* Push both to the right together */
-        }
-        
-        header:has(.logo-text-container.collapsed) .logo-text-container.collapsed {
-            margin-right: 0 !important;
+        /* Adjust settings container to accommodate heart icon */
+        .logo-text-container.collapsed ~ .settings {
+            margin-left: 0;
+            padding-left: 69px; /* 44px heart + 25px gap */
         }
     }
     
