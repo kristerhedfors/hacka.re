@@ -56,6 +56,7 @@ class MCPOAuthFlow {
         this.showCallbackUI(code, state, error);
         
         if (error) {
+            const urlParams = new URLSearchParams(window.location.search);
             this.showCallbackError(error, urlParams.get('error_description'));
             return;
         }
@@ -69,7 +70,8 @@ class MCPOAuthFlow {
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
         } catch (error) {
-            this.showCallbackError('token_exchange_failed', error.message);
+            console.error('[MCP OAuth Flow] Authorization failed:', error);
+            this.showCallbackError(error.code || 'token_exchange_failed', error.message);
         }
     }
 
@@ -149,7 +151,10 @@ class MCPOAuthFlow {
                 <h4>❌ Authorization Failed</h4>
                 <p>Error: ${error}</p>
                 ${description ? `<p>Description: ${description}</p>` : ''}
-                <p>Please check your OAuth configuration and try again.</p>
+                ${error === 'invalid_state' ? 
+                    '<p><strong>Tip:</strong> This may happen if your session changed during OAuth. Try starting the OAuth flow again.</p>' :
+                    '<p>Please check your OAuth configuration and try again.</p>'
+                }
             </div>
         `;
     }
