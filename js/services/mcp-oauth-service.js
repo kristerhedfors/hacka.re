@@ -17,11 +17,14 @@
  */
 const OAUTH_PROVIDERS = {
     github: {
-        authorizationUrl: 'https://github.com/login/oauth/authorize',
+        deviceCodeUrl: 'https://github.com/login/device/code',
         tokenUrl: 'https://github.com/login/oauth/access_token',
         scope: 'repo read:user',
-        responseType: 'code',
-        grantType: 'authorization_code'
+        grantType: 'urn:ietf:params:oauth:grant-type:device_code',
+        useDeviceFlow: true,
+        // GitHub also supports authorization code flow, but we prefer device flow for client-side apps
+        authorizationUrl: 'https://github.com/login/oauth/authorize',
+        responseType: 'code'
     },
     google: {
         authorizationUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
@@ -281,6 +284,136 @@ class OAuthService {
     }
 
     /**
+     * Start OAuth Device Flow for GitHub (recommended for client-side apps)
+     * @param {string} serverName - Name of the MCP server
+     * @param {Object} config - OAuth configuration
+     * @returns {Promise<Object>} Device code flow info
+     */
+    async startDeviceFlow(serverName, config) {
+        try {
+            console.log(`[MCP OAuth] Starting device flow for ${serverName}`);
+            
+            // Request device code
+            const deviceResponse = await fetch(config.deviceCodeUrl, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({
+                    client_id: config.clientId,
+                    scope: config.scope || ''
+                })
+            });
+            
+            if (!deviceResponse.ok) {
+                throw new Error(`Device code request failed: ${deviceResponse.status}`);
+            }
+            
+            const deviceData = await deviceResponse.json();
+            console.log(`[MCP OAuth] Device code obtained for ${serverName}`);
+            
+            // Store device flow information
+            const flowInfo = {
+                serverName,
+                config,
+                deviceCode: deviceData.device_code,
+                userCode: deviceData.user_code,
+                verificationUri: deviceData.verification_uri,
+                verificationUriComplete: deviceData.verification_uri_complete,
+                expiresIn: deviceData.expires_in,
+                interval: deviceData.interval || 5,
+                startedAt: Date.now()
+            };
+            
+            // Store in pending flows using device_code as key
+            this.pendingFlows.set(deviceData.device_code, flowInfo);
+            await this.savePendingFlows();
+            
+            console.log(`[MCP OAuth] Device flow started for ${serverName}`);
+            return flowInfo;
+            
+        } catch (error) {
+            console.error(`[MCP OAuth] Failed to start device flow: ${error.message}`);
+            throw new MCPOAuthError(
+                `Device flow startup failed: ${error.message}`,
+                'device_flow_start_failed'
+            );
+        }
+    }
+
+    /**
+     * Poll for device flow completion
+     * @param {string} deviceCode - Device code from startDeviceFlow
+     * @returns {Promise<Object>} Token response when complete
+     */
+    async pollDeviceFlow(deviceCode) {
+        const flowInfo = this.pendingFlows.get(deviceCode);
+        if (!flowInfo) {
+            throw new MCPOAuthError('Device flow not found', 'device_flow_not_found');
+        }
+        
+        const { serverName, config } = flowInfo;
+        
+        try {
+            const response = await fetch(config.tokenUrl, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({
+                    client_id: config.clientId,
+                    device_code: deviceCode,
+                    grant_type: config.grantType
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.error) {
+                if (data.error === 'authorization_pending') {
+                    // User hasn't completed authorization yet
+                    return { pending: true, interval: flowInfo.interval };
+                } else if (data.error === 'slow_down') {
+                    // Increase polling interval
+                    flowInfo.interval = Math.min(flowInfo.interval * 2, 30);
+                    return { pending: true, interval: flowInfo.interval };
+                } else if (data.error === 'expired_token') {
+                    // Device code expired
+                    this.pendingFlows.delete(deviceCode);
+                    await this.savePendingFlows();
+                    throw new MCPOAuthError('Device code expired', 'device_code_expired');
+                } else if (data.error === 'access_denied') {
+                    // User denied access
+                    this.pendingFlows.delete(deviceCode);
+                    await this.savePendingFlows();
+                    throw new MCPOAuthError('Access denied by user', 'access_denied');
+                } else {
+                    throw new MCPOAuthError(`Device flow error: ${data.error}`, data.error);
+                }
+            }
+            
+            // Success! Create and store token
+            data.issued_at = Date.now();
+            const token = new OAuthToken(data);
+            this.tokens.set(serverName, token);
+            await this.saveTokens();
+            
+            // Clean up pending flow
+            this.pendingFlows.delete(deviceCode);
+            await this.savePendingFlows();
+            
+            console.log(`[MCP OAuth] Device flow completed for ${serverName}`);
+            return { token, serverName };
+            
+        } catch (error) {
+            if (error instanceof MCPOAuthError) throw error;
+            throw new MCPOAuthError(`Device flow polling failed: ${error.message}`, 'device_flow_poll_failed');
+        }
+    }
+
+    /**
      * Start OAuth authorization flow with automatic metadata discovery and client registration
      * @param {string} serverName - Name of the MCP server
      * @param {Object} config - OAuth configuration
@@ -532,6 +665,8 @@ class OAuthService {
         if (config.clientSecret) {
             params.set('client_secret', config.clientSecret);
         }
+
+        console.log(`[MCP OAuth] Token exchange URL: ${config.tokenUrl}`);
 
         const response = await fetch(config.tokenUrl, {
             method: 'POST',
