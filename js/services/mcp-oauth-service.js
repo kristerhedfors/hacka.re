@@ -158,6 +158,7 @@ class OAuthService {
         this.pendingFlows = new Map(); // Track pending authorization flows
         this.serverConfigs = new Map(); // Server OAuth configurations
         this.STORAGE_KEY = 'mcp-oauth-tokens';
+        this.PENDING_FLOWS_KEY = 'mcp-oauth-pending-flows';
         
         // Initialize metadata discovery and client registration services
         this.metadataService = null;
@@ -167,6 +168,7 @@ class OAuthService {
         if (this.storageService) {
             this.initializeServices();
             this.loadTokens();
+            this.loadPendingFlows();
         } else {
             console.warn('[MCP OAuth] Storage service not available, deferring initialization');
             // Try again after a short delay
@@ -175,6 +177,7 @@ class OAuthService {
                 if (this.storageService) {
                     this.initializeServices();
                     this.loadTokens();
+                    this.loadPendingFlows();
                 }
             }, 100);
         }
@@ -230,6 +233,50 @@ class OAuthService {
             await this.storageService.setValue(this.STORAGE_KEY, tokensObj);
         } catch (error) {
             console.error('[MCP OAuth] Failed to save tokens:', error);
+        }
+    }
+
+    /**
+     * Load pending flows from encrypted storage
+     */
+    async loadPendingFlows() {
+        if (!this.storageService) {
+            console.warn('[MCP OAuth] Storage service not available, skipping pending flows loading');
+            return;
+        }
+        
+        try {
+            const storedFlows = await this.storageService.getValue(this.PENDING_FLOWS_KEY);
+            if (storedFlows && typeof storedFlows === 'object') {
+                Object.entries(storedFlows).forEach(([state, flowInfo]) => {
+                    this.pendingFlows.set(state, flowInfo);
+                });
+                
+                // Clean up old flows after loading
+                this.cleanupPendingFlows();
+            }
+        } catch (error) {
+            console.error('[MCP OAuth] Failed to load pending flows:', error);
+        }
+    }
+
+    /**
+     * Save pending flows to encrypted storage
+     */
+    async savePendingFlows() {
+        if (!this.storageService) {
+            console.warn('[MCP OAuth] Storage service not available, skipping pending flows saving');
+            return;
+        }
+        
+        try {
+            const flowsObj = {};
+            this.pendingFlows.forEach((flowInfo, state) => {
+                flowsObj[state] = flowInfo;
+            });
+            await this.storageService.setValue(this.PENDING_FLOWS_KEY, flowsObj);
+        } catch (error) {
+            console.error('[MCP OAuth] Failed to save pending flows:', error);
         }
     }
 
@@ -299,8 +346,10 @@ class OAuthService {
             const codeVerifier = PKCEHelper.generateCodeVerifier();
             const codeChallenge = await PKCEHelper.generateCodeChallenge(codeVerifier);
         
-            // Generate state for CSRF protection
-            const state = PKCEHelper.generateCodeVerifier();
+            // Generate state for CSRF protection with namespace information
+            const baseState = PKCEHelper.generateCodeVerifier();
+            const namespaceId = window.NamespaceService ? window.NamespaceService.getNamespaceId() : 'default';
+            const state = `${baseState}:${namespaceId}`;
             
             // Build authorization URL
             const params = new URLSearchParams({
@@ -334,10 +383,13 @@ class OAuthService {
             
             this.pendingFlows.set(state, flowInfo);
             
+            // Save pending flows to storage immediately
+            await this.savePendingFlows();
+            
             // Clean up old flows (older than 10 minutes)
             this.cleanupPendingFlows();
             
-            console.log(`[MCP OAuth] Authorization flow started for ${serverName}`);
+            console.log(`[MCP OAuth] Authorization flow started for ${serverName}, state: ${state}`);
             return {
                 authorizationUrl,
                 state,
@@ -362,12 +414,33 @@ class OAuthService {
      * @returns {Promise<OAuthToken>} OAuth token
      */
     async completeAuthorizationFlow(code, state) {
+        // Extract namespace from state parameter
+        const [baseState, namespaceId] = state.includes(':') ? state.split(':') : [state, null];
+        
+        // If we have a namespace, try to restore session context
+        if (namespaceId && window.NamespaceService) {
+            const currentNamespaceId = window.NamespaceService.getNamespaceId();
+            console.log(`[MCP OAuth] Callback state namespace: ${namespaceId}, current: ${currentNamespaceId}`);
+            
+            // If namespaces don't match, the user might need to re-enter their session
+            if (currentNamespaceId !== namespaceId) {
+                console.warn(`[MCP OAuth] Namespace mismatch - callback: ${namespaceId}, current: ${currentNamespaceId}`);
+                // We'll still try to complete the flow, but this might indicate a session issue
+            }
+        }
+        
         const flowInfo = this.pendingFlows.get(state);
         if (!flowInfo) {
-            throw new MCPOAuthError('Invalid or expired state parameter', 'invalid_state');
+            throw new MCPOAuthError(
+                'Invalid or expired state parameter. This may happen if your session has changed since starting the OAuth flow.', 
+                'invalid_state'
+            );
         }
         
         this.pendingFlows.delete(state);
+        
+        // Save updated pending flows to storage
+        await this.savePendingFlows();
         
         const { serverName, config, codeVerifier } = flowInfo;
         
@@ -381,7 +454,7 @@ class OAuthService {
         
         console.log(`[MCP OAuth] Successfully obtained token for ${serverName}`);
         
-        return token;
+        return { token, serverName };
     }
 
     /**
@@ -568,13 +641,21 @@ class OAuthService {
     /**
      * Clean up old pending flows
      */
-    cleanupPendingFlows() {
+    async cleanupPendingFlows() {
         const tenMinutesAgo = Date.now() - (10 * 60 * 1000);
+        let hasChanges = false;
         
         for (const [state, flowInfo] of this.pendingFlows) {
             if (flowInfo.startedAt < tenMinutesAgo) {
                 this.pendingFlows.delete(state);
+                hasChanges = true;
+                console.log(`[MCP OAuth] Cleaned up expired pending flow: ${state}`);
             }
+        }
+        
+        // Save to storage if we made changes
+        if (hasChanges) {
+            await this.savePendingFlows();
         }
     }
 
