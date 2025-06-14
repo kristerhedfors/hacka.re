@@ -136,8 +136,8 @@ class MCPOAuthConfig {
                     <div class="mcp-form-group">
                         <label for="oauth-redirect-uri">Redirect URI:</label>
                         <input type="text" id="oauth-redirect-uri" class="mcp-input" 
-                               placeholder="e.g., http://localhost:8000/oauth/callback" 
-                               value="${existingConfig.redirectUri || window.location.origin + '/oauth/callback'}">
+                               placeholder="e.g., http://localhost:8000" 
+                               value="${existingConfig.redirectUri || window.location.origin}">
                     </div>
 
                     <div class="mcp-form-group custom-only" style="display: none;">
@@ -718,7 +718,7 @@ class MCPOAuthConfig {
                 scope: '', // Will be filled by user
                 clientId: '', // Will be filled by user or registration
                 clientSecret: '', // Optional
-                redirectUri: `${window.location.origin}/oauth/callback`,
+                redirectUri: `${window.location.origin}`,
                 mcpServerUrl: mcpServerUrl,
                 _metadata: metadata,
                 _autoConfigured: true
