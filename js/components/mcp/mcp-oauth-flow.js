@@ -777,6 +777,11 @@ class MCPOAuthFlow {
         const serverName = pendingFlow?.serverName || 'GitHub MCP Server';
         const hasExistingFlow = !!pendingFlow;
         
+        // Check for namespace issues
+        const currentNamespace = window.NamespaceService ? window.NamespaceService.getNamespaceId() : 'unknown';
+        const stateNamespace = pendingFlow?.namespaceId || 'unknown';
+        const namespaceMismatch = currentNamespace !== stateNamespace;
+        
         modal.innerHTML = `
             <div class="modal-content">
                 <h3>GitHub OAuth - Device Flow Required</h3>
@@ -785,7 +790,13 @@ class MCPOAuthFlow {
                         <h4>ℹ️ Important Notice</h4>
                         <p>You've been redirected back from GitHub, but GitHub OAuth on hacka.re uses <strong>Device Flow</strong> instead of redirect-based authorization.</p>
                         
-                        ${hasExistingFlow ? `
+                        ${namespaceMismatch ? `
+                            <h5>⚠️ Session Mismatch Detected</h5>
+                            <p>The OAuth flow was started in a different session/namespace. Your MCP server configuration might not be visible in the current session.</p>
+                            <p><strong>Current namespace:</strong> ${currentNamespace}<br>
+                               <strong>OAuth namespace:</strong> ${stateNamespace}</p>
+                            <p>You may need to enter your session password to access the correct configuration.</p>
+                        ` : hasExistingFlow ? `
                             <h5>Found Existing OAuth Configuration</h5>
                             <p>We detected an OAuth configuration for <strong>${serverName}</strong>. You need to use the device flow instead of this redirect.</p>
                         ` : `
@@ -827,6 +838,13 @@ class MCPOAuthFlow {
         
         document.body.appendChild(modal);
         console.log('[MCP OAuth Flow] GitHub device flow modal appended to document body');
+        
+        // Force the modal to stay visible and focused
+        setTimeout(() => {
+            modal.style.display = 'block';
+            modal.style.zIndex = '10000';
+            console.log('[MCP OAuth Flow] Ensured modal visibility with z-index 10000');
+        }, 100);
     }
 
     /**
