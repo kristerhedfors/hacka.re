@@ -81,6 +81,7 @@ class MCPOAuthFlow {
                     window.history.replaceState({}, document.title, window.location.pathname);
                     
                     // Show the device flow message to guide the user
+                    console.log('[MCP OAuth Flow] About to show GitHub device flow message modal');
                     this.showGitHubDeviceFlowMessage(pendingFlow);
                     return;
                 }
@@ -767,9 +768,11 @@ class MCPOAuthFlow {
      * @param {Object} pendingFlow - Optional pending flow info
      */
     showGitHubDeviceFlowMessage(pendingFlow = null) {
+        console.log('[MCP OAuth Flow] showGitHubDeviceFlowMessage called with pendingFlow:', pendingFlow);
         const modal = document.createElement('div');
         modal.className = 'modal github-device-flow-message-modal';
         modal.style.display = 'block';
+        console.log('[MCP OAuth Flow] Created modal element:', modal);
         
         const serverName = pendingFlow?.serverName || 'GitHub MCP Server';
         const hasExistingFlow = !!pendingFlow;
@@ -823,6 +826,7 @@ class MCPOAuthFlow {
         `;
         
         document.body.appendChild(modal);
+        console.log('[MCP OAuth Flow] GitHub device flow modal appended to document body');
     }
 
     /**
