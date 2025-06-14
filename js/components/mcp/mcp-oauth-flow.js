@@ -24,16 +24,20 @@ class MCPOAuthFlow {
         // Initialize OAuth service
         if (window.MCPOAuthService) {
             this.oauthService = new window.MCPOAuthService.OAuthService();
+            
+            // Wait a moment for the OAuth service to fully initialize
+            // This ensures pending flows are loaded before callback detection
+            await new Promise(resolve => setTimeout(resolve, 100));
         }
         
         // Check for OAuth callback in URL
-        this.checkForOAuthCallback();
+        await this.checkForOAuthCallback();
     }
 
     /**
      * Check if current page is an OAuth callback
      */
-    checkForOAuthCallback() {
+    async checkForOAuthCallback() {
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
         const state = urlParams.get('state');
@@ -62,6 +66,13 @@ class MCPOAuthFlow {
                     await this.oauthService.loadPendingFlows();
                     pendingFlow = this.oauthService.pendingFlows.get(state);
                 }
+                
+                console.log('[MCP OAuth Flow] Checking pending flow for device flow detection:', {
+                    foundFlow: !!pendingFlow,
+                    provider: pendingFlow?.config?.provider,
+                    useDeviceFlow: pendingFlow?.config?.useDeviceFlow,
+                    config: pendingFlow?.config
+                });
                 
                 if (pendingFlow && pendingFlow.config && 
                     (pendingFlow.config.provider === 'github' || pendingFlow.config.useDeviceFlow)) {
@@ -196,6 +207,18 @@ class MCPOAuthFlow {
      * @param {string} error - Error if any
      */
     async handleOAuthCallback(code, state, error) {
+        // Double-check if this is a GitHub flow that should use device flow
+        if (this.oauthService) {
+            const pendingFlow = this.oauthService.pendingFlows.get(state);
+            if (pendingFlow && pendingFlow.config && pendingFlow.config.provider === 'github') {
+                console.log('[MCP OAuth Flow] Detected GitHub callback in handleOAuthCallback - this should not happen with device flow');
+                this.showGitHubDeviceFlowMessage();
+                // Clean up URL and exit
+                window.history.replaceState({}, document.title, window.location.pathname);
+                return;
+            }
+        }
+        
         // Show callback UI
         this.showCallbackUI(code, state, error);
         
@@ -734,6 +757,60 @@ class MCPOAuthFlow {
         }
         
         console.log('[MCP OAuth Flow] Device flow cancelled');
+    }
+
+    /**
+     * Show GitHub device flow message
+     */
+    showGitHubDeviceFlowMessage() {
+        const modal = document.createElement('div');
+        modal.className = 'modal github-device-flow-message-modal';
+        modal.style.display = 'block';
+        
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h3>GitHub OAuth - Device Flow Required</h3>
+                <div class="github-device-flow-message">
+                    <div class="info-message">
+                        <h4>ℹ️ Important Notice</h4>
+                        <p>You've been redirected back from GitHub, but GitHub OAuth on hacka.re uses <strong>Device Flow</strong> instead of redirect-based authorization.</p>
+                        
+                        <h5>What happened?</h5>
+                        <p>It looks like you may have started an authorization code flow instead of device flow, or you manually navigated to GitHub's OAuth page.</p>
+                        
+                        <h5>How to properly authorize with GitHub:</h5>
+                        <ol>
+                            <li>Go to <strong>Settings → MCP Servers</strong></li>
+                            <li>Find your GitHub MCP server configuration</li>
+                            <li>Click the <strong>"Authorize"</strong> button</li>
+                            <li>You'll see a device code to enter on GitHub</li>
+                            <li>No page redirects needed!</li>
+                        </ol>
+                        
+                        <p><strong>Benefits of Device Flow:</strong></p>
+                        <ul>
+                            <li>✅ No CORS issues</li>
+                            <li>✅ Works entirely client-side</li>
+                            <li>✅ More secure for browser apps</li>
+                            <li>✅ No session restoration needed</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="secondary-button" onclick="this.closest('.modal').remove()">
+                        I Understand
+                    </button>
+                    <button class="primary-button" onclick="
+                        this.closest('.modal').remove();
+                        document.querySelector('[data-modal=\\'settings\\']')?.click();
+                    ">
+                        Go to Settings
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
     }
 
     /**
