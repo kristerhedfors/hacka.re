@@ -351,11 +351,27 @@ class OAuthService {
             const namespaceId = window.NamespaceService ? window.NamespaceService.getNamespaceId() : 'default';
             const state = `${baseState}:${namespaceId}`;
             
-            // Build authorization URL
+            // Get session key for URL parameter (needed for session restoration on callback)
+            const sessionKey = window.ShareManager && window.ShareManager.getSessionKey ? 
+                window.ShareManager.getSessionKey() : null;
+            
+            // Enhance redirect URI with session information if available
+            let enhancedRedirectUri = effectiveConfig.redirectUri;
+            if (sessionKey) {
+                // Encode session key for URL parameter
+                const encodedSession = encodeURIComponent(btoa(sessionKey));
+                const separator = enhancedRedirectUri.includes('?') ? '&' : '?';
+                enhancedRedirectUri = `${effectiveConfig.redirectUri}${separator}oauth_session=${encodedSession}`;
+                console.log(`[MCP OAuth] Enhanced redirect URI with session parameter`);
+            } else {
+                console.warn(`[MCP OAuth] No session key available - OAuth callback may require manual session restoration`);
+            }
+            
+            // Build authorization URL with enhanced redirect URI
             const params = new URLSearchParams({
                 response_type: effectiveConfig.responseType || 'code',
                 client_id: effectiveConfig.clientId,
-                redirect_uri: effectiveConfig.redirectUri,
+                redirect_uri: enhancedRedirectUri,
                 scope: effectiveConfig.scope,
                 state: state,
                 code_challenge: codeChallenge,

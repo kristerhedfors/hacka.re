@@ -38,10 +38,61 @@ class MCPOAuthFlow {
         const code = urlParams.get('code');
         const state = urlParams.get('state');
         const error = urlParams.get('error');
+        const oauthSession = urlParams.get('oauth_session');
         
         if (code && state) {
+            console.log('[MCP OAuth Flow] Detected OAuth callback with code and state');
+            
+            // Extract namespace from state if present
+            const [baseState, namespaceId] = state.includes(':') ? state.split(':') : [state, null];
+            if (namespaceId) {
+                console.log(`[MCP OAuth Flow] OAuth callback for namespace: ${namespaceId}`);
+            }
+            
+            // Restore session if oauth_session parameter is present
+            if (oauthSession) {
+                this.restoreSessionFromUrl(oauthSession, namespaceId);
+            }
+            
             // Handle OAuth callback
             this.handleOAuthCallback(code, state, error);
+        }
+    }
+
+    /**
+     * Restore session context from URL parameter
+     * @param {string} encodedSession - Base64 encoded session key
+     * @param {string} namespaceId - Namespace ID from state parameter
+     */
+    restoreSessionFromUrl(encodedSession, namespaceId) {
+        try {
+            // Decode the session key
+            const sessionKey = atob(decodeURIComponent(encodedSession));
+            
+            console.log(`[MCP OAuth Flow] Restoring session for namespace: ${namespaceId}`);
+            
+            // Set the session key in ShareManager if available
+            if (window.aiHackare && window.aiHackare.shareManager) {
+                window.aiHackare.shareManager.setSessionKey(sessionKey);
+                console.log('[MCP OAuth Flow] Session key restored successfully');
+            } else if (window.ShareManager && window.ShareManager.setSessionKey) {
+                // Fallback for different initialization patterns
+                window.ShareManager.setSessionKey(sessionKey);
+                console.log('[MCP OAuth Flow] Session key restored via fallback method');
+            } else {
+                console.error('[MCP OAuth Flow] ShareManager not available for session restoration');
+                return false;
+            }
+            
+            // Clean up the URL by removing the oauth_session parameter
+            const url = new URL(window.location);
+            url.searchParams.delete('oauth_session');
+            window.history.replaceState({}, document.title, url.toString());
+            
+            return true;
+        } catch (error) {
+            console.error('[MCP OAuth Flow] Failed to restore session from URL:', error);
+            return false;
         }
     }
 

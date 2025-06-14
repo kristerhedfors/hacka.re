@@ -97,6 +97,20 @@ class MCPOAuthConfig {
     }
 
     /**
+     * Generate default redirect URI for the current environment
+     * @returns {string} Default redirect URI
+     */
+    generateDefaultRedirectUri() {
+        // For production, always use https://hacka.re
+        if (window.location.hostname === 'hacka.re') {
+            return 'https://hacka.re';
+        }
+        
+        // For local development, use the current origin
+        return window.location.origin;
+    }
+
+    /**
      * Create OAuth configuration UI
      * @param {HTMLElement} container - Container element
      * @param {string} serverName - Server name for configuration
@@ -136,8 +150,14 @@ class MCPOAuthConfig {
                     <div class="mcp-form-group">
                         <label for="oauth-redirect-uri">Redirect URI:</label>
                         <input type="text" id="oauth-redirect-uri" class="mcp-input" 
-                               placeholder="e.g., http://localhost:8000" 
-                               value="${existingConfig.redirectUri || window.location.origin}">
+                               placeholder="e.g., https://hacka.re" 
+                               value="${existingConfig.redirectUri || this.generateDefaultRedirectUri()}">
+                        <small>
+                            <strong>For GitHub OAuth Apps:</strong><br>
+                            • Homepage URL: <code>https://hacka.re</code><br>
+                            • Authorization callback URL: <code>https://hacka.re</code><br>
+                            <em>Note: Session restoration is handled automatically via URL parameters</em>
+                        </small>
                     </div>
 
                     <div class="mcp-form-group custom-only" style="display: none;">
