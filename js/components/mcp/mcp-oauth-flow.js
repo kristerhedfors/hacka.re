@@ -39,6 +39,7 @@ class MCPOAuthFlow {
         const state = urlParams.get('state');
         const error = urlParams.get('error');
         const oauthSession = urlParams.get('oauth_session');
+        const oauthNamespace = urlParams.get('oauth_namespace');
         
         if (code && state) {
             console.log('[MCP OAuth Flow] Detected OAuth callback with code and state');
@@ -52,6 +53,9 @@ class MCPOAuthFlow {
             // Restore session if oauth_session parameter is present
             if (oauthSession) {
                 this.restoreSessionFromUrl(oauthSession, namespaceId);
+            } else if (oauthNamespace && !window.ShareManager?.getSessionKey?.()) {
+                // Fallback: prompt user for session password if no session key
+                this.promptForSessionPassword(oauthNamespace);
             }
             
             // Handle OAuth callback
@@ -93,6 +97,35 @@ class MCPOAuthFlow {
         } catch (error) {
             console.error('[MCP OAuth Flow] Failed to restore session from URL:', error);
             return false;
+        }
+    }
+
+    /**
+     * Prompt user for session password to restore OAuth session
+     * @param {string} namespaceId - Namespace ID from URL parameter
+     */
+    promptForSessionPassword(namespaceId) {
+        const password = prompt(
+            `OAuth callback detected for namespace ${namespaceId}.\n\n` +
+            'Please enter your session password to complete the OAuth flow:'
+        );
+        
+        if (password) {
+            // Set the session key
+            if (window.aiHackare && window.aiHackare.shareManager) {
+                window.aiHackare.shareManager.setSessionKey(password);
+                console.log('[MCP OAuth Flow] Session password set via user prompt');
+            } else if (window.ShareManager && window.ShareManager.setSessionKey) {
+                window.ShareManager.setSessionKey(password);
+                console.log('[MCP OAuth Flow] Session password set via user prompt (fallback)');
+            }
+            
+            // Clean up the oauth_namespace parameter
+            const url = new URL(window.location);
+            url.searchParams.delete('oauth_namespace');
+            window.history.replaceState({}, document.title, url.toString());
+        } else {
+            console.warn('[MCP OAuth Flow] User cancelled session password prompt');
         }
     }
 
