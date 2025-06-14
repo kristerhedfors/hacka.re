@@ -76,9 +76,12 @@ class MCPOAuthFlow {
                 
                 if (pendingFlow && pendingFlow.config && 
                     (pendingFlow.config.provider === 'github' || pendingFlow.config.useDeviceFlow)) {
-                    console.log('[MCP OAuth Flow] Ignoring device flow provider OAuth callback - uses Device Flow, not redirects');
+                    console.log('[MCP OAuth Flow] Detected device flow provider OAuth callback - redirecting to proper device flow');
                     // Clean up the URL parameters without processing
                     window.history.replaceState({}, document.title, window.location.pathname);
+                    
+                    // Show the device flow message to guide the user
+                    this.showGitHubDeviceFlowMessage(pendingFlow);
                     return;
                 }
             }
@@ -761,11 +764,15 @@ class MCPOAuthFlow {
 
     /**
      * Show GitHub device flow message
+     * @param {Object} pendingFlow - Optional pending flow info
      */
-    showGitHubDeviceFlowMessage() {
+    showGitHubDeviceFlowMessage(pendingFlow = null) {
         const modal = document.createElement('div');
         modal.className = 'modal github-device-flow-message-modal';
         modal.style.display = 'block';
+        
+        const serverName = pendingFlow?.serverName || 'GitHub MCP Server';
+        const hasExistingFlow = !!pendingFlow;
         
         modal.innerHTML = `
             <div class="modal-content">
@@ -775,8 +782,13 @@ class MCPOAuthFlow {
                         <h4>ℹ️ Important Notice</h4>
                         <p>You've been redirected back from GitHub, but GitHub OAuth on hacka.re uses <strong>Device Flow</strong> instead of redirect-based authorization.</p>
                         
-                        <h5>What happened?</h5>
-                        <p>It looks like you may have started an authorization code flow instead of device flow, or you manually navigated to GitHub's OAuth page.</p>
+                        ${hasExistingFlow ? `
+                            <h5>Found Existing OAuth Configuration</h5>
+                            <p>We detected an OAuth configuration for <strong>${serverName}</strong>. You need to use the device flow instead of this redirect.</p>
+                        ` : `
+                            <h5>What happened?</h5>
+                            <p>It looks like you may have started an authorization code flow instead of device flow, or you manually navigated to GitHub's OAuth page.</p>
+                        `}
                         
                         <h5>How to properly authorize with GitHub:</h5>
                         <ol>
