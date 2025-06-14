@@ -52,6 +52,26 @@ class MCPOAuthFlow {
                 console.log(`[MCP OAuth Flow] OAuth callback for namespace: ${namespaceId}`);
             }
             
+            // Check if this is a GitHub callback - we should ignore it since GitHub uses Device Flow
+            if (this.oauthService) {
+                // Try to get the pending flow to check if it's GitHub
+                let pendingFlow = this.oauthService.pendingFlows.get(state);
+                
+                // If not found in memory, try to load from storage
+                if (!pendingFlow) {
+                    await this.oauthService.loadPendingFlows();
+                    pendingFlow = this.oauthService.pendingFlows.get(state);
+                }
+                
+                if (pendingFlow && pendingFlow.config && 
+                    (pendingFlow.config.provider === 'github' || pendingFlow.config.useDeviceFlow)) {
+                    console.log('[MCP OAuth Flow] Ignoring device flow provider OAuth callback - uses Device Flow, not redirects');
+                    // Clean up the URL parameters without processing
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    return;
+                }
+            }
+            
             // Restore session from state parameter if available
             if (encodedSessionKey) {
                 console.log('[MCP OAuth Flow] Session key found in state parameter');
@@ -62,7 +82,7 @@ class MCPOAuthFlow {
                 this.promptForSessionPassword(namespaceId);
             }
             
-            // Handle OAuth callback
+            // Handle OAuth callback for non-GitHub providers
             this.handleOAuthCallback(code, state, error);
         }
     }
@@ -386,10 +406,10 @@ class MCPOAuthFlow {
     }
 
     /**
-     * Start OAuth authorization flow
+     * Start OAuth Device Flow (recommended for GitHub)
      * @param {string} serverName - Server name
      */
-    async startAuthorization(serverName) {
+    async startDeviceFlow(serverName) {
         try {
             // Get configuration
             const config = this.oauthConfig.getConfiguration(serverName);
@@ -398,6 +418,28 @@ class MCPOAuthFlow {
                 return;
             }
             
+            // Check if this provider supports device flow
+            if (config.useDeviceFlow || config.provider === 'github') {
+                // Use device flow for GitHub and other providers that support it
+                const flowResult = await this.oauthService.startDeviceFlow(serverName, config);
+                this.showDeviceFlowInstructions(flowResult);
+                this.startDeviceFlowPolling(flowResult.deviceCode);
+            } else {
+                // Fall back to authorization code flow for other providers
+                await this.startAuthorizationCodeFlow(serverName, config);
+            }
+        } catch (error) {
+            alert(`Failed to start OAuth flow: ${error.message}`);
+        }
+    }
+
+    /**
+     * Start OAuth authorization code flow (fallback for non-GitHub providers)
+     * @param {string} serverName - Server name
+     * @param {Object} config - OAuth configuration
+     */
+    async startAuthorizationCodeFlow(serverName, config) {
+        try {
             // Update OAuth service configuration
             if (this.oauthService) {
                 this.oauthService.serverConfigs = this.oauthService.serverConfigs || new Map();
@@ -412,6 +454,14 @@ class MCPOAuthFlow {
         } catch (error) {
             alert(`Failed to start authorization: ${error.message}`);
         }
+    }
+
+    /**
+     * Legacy method name for compatibility
+     * @param {string} serverName - Server name
+     */
+    async startAuthorization(serverName) {
+        return this.startDeviceFlow(serverName);
     }
 
     /**
@@ -553,6 +603,208 @@ class MCPOAuthFlow {
         } catch (error) {
             alert(`Failed to revoke token: ${error.message}`);
         }
+    }
+
+    /**
+     * Show Device Flow instructions modal
+     * @param {Object} flowInfo - Device flow information
+     */
+    showDeviceFlowInstructions(flowInfo) {
+        const modal = document.createElement('div');
+        modal.className = 'modal device-flow-modal';
+        modal.style.display = 'block';
+        
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h3>GitHub Device Flow Authorization</h3>
+                <div class="device-flow-instructions">
+                    <div class="device-code-section">
+                        <h4>Step 1: Copy this code</h4>
+                        <div class="device-code-display">
+                            <input type="text" id="device-user-code" class="device-code-input" 
+                                   value="${flowInfo.userCode}" readonly>
+                            <button class="copy-button" onclick="
+                                document.getElementById('device-user-code').select();
+                                document.execCommand('copy');
+                                this.textContent = 'Copied!';
+                                setTimeout(() => this.textContent = 'Copy', 2000);
+                            ">Copy</button>
+                        </div>
+                    </div>
+                    
+                    <div class="device-verification-section">
+                        <h4>Step 2: Visit GitHub and enter the code</h4>
+                        <div class="verification-actions">
+                            ${flowInfo.verificationUriComplete ? 
+                                `<a href="${flowInfo.verificationUriComplete}" target="_blank" class="primary-button">
+                                    Open GitHub (code pre-filled)
+                                </a>` :
+                                `<a href="${flowInfo.verificationUri}" target="_blank" class="primary-button">
+                                    Open GitHub
+                                </a>`
+                            }
+                            <p class="verification-url">Or go to: <code>${flowInfo.verificationUri}</code></p>
+                        </div>
+                    </div>
+                    
+                    <div class="polling-status">
+                        <h4>Step 3: Authorization Status</h4>
+                        <div class="status-display">
+                            <div class="loading-spinner"></div>
+                            <span id="polling-status-text">Waiting for authorization...</span>
+                        </div>
+                        <div class="polling-details">
+                            <p><strong>Server:</strong> ${flowInfo.serverName}</p>
+                            <p><strong>Expires in:</strong> <span id="device-flow-countdown">${Math.floor(flowInfo.expiresIn / 60)} minutes</span></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="secondary-button" onclick="this.closest('.modal').remove(); window.mcpOAuthFlow.cancelDeviceFlow('${flowInfo.deviceCode}')">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Start countdown timer
+        this.startDeviceFlowCountdown(flowInfo.expiresIn);
+    }
+
+    /**
+     * Start device flow polling
+     * @param {string} deviceCode - Device code to poll for
+     */
+    startDeviceFlowPolling(deviceCode) {
+        const flowInfo = this.oauthService.pendingFlows.get(deviceCode);
+        if (!flowInfo) {
+            console.error('[MCP OAuth Flow] No flow info found for device code');
+            return;
+        }
+        
+        const pollInterval = flowInfo.interval * 1000; // Convert to milliseconds
+        console.log(`[MCP OAuth Flow] Starting polling every ${flowInfo.interval} seconds`);
+        
+        const pollTimer = setInterval(async () => {
+            try {
+                const result = await this.oauthService.pollDeviceFlow(deviceCode);
+                
+                if (result.pending) {
+                    // Update polling interval if GitHub requests slower polling
+                    if (result.interval && result.interval !== flowInfo.interval) {
+                        clearInterval(pollTimer);
+                        flowInfo.interval = result.interval;
+                        console.log(`[MCP OAuth Flow] Updating polling interval to ${result.interval} seconds`);
+                        this.startDeviceFlowPolling(deviceCode);
+                    }
+                    return; // Continue polling
+                }
+                
+                // Success!
+                clearInterval(pollTimer);
+                this.showDeviceFlowSuccess(result.serverName);
+                
+            } catch (error) {
+                clearInterval(pollTimer);
+                console.error('[MCP OAuth Flow] Device flow polling failed:', error);
+                this.showDeviceFlowError(error.message, error.code);
+            }
+        }, pollInterval);
+        
+        // Store the timer so we can cancel it if needed
+        this.deviceFlowTimer = pollTimer;
+    }
+
+    /**
+     * Cancel device flow
+     * @param {string} deviceCode - Device code to cancel
+     */
+    cancelDeviceFlow(deviceCode) {
+        if (this.deviceFlowTimer) {
+            clearInterval(this.deviceFlowTimer);
+            this.deviceFlowTimer = null;
+        }
+        
+        // Clean up pending flow
+        if (this.oauthService && this.oauthService.pendingFlows) {
+            this.oauthService.pendingFlows.delete(deviceCode);
+            this.oauthService.savePendingFlows();
+        }
+        
+        console.log('[MCP OAuth Flow] Device flow cancelled');
+    }
+
+    /**
+     * Show device flow success
+     * @param {string} serverName - Server name
+     */
+    showDeviceFlowSuccess(serverName) {
+        const modal = document.querySelector('.device-flow-modal');
+        if (!modal) return;
+        
+        const content = modal.querySelector('.device-flow-instructions');
+        content.innerHTML = `
+            <div class="success-message">
+                <h4>✓ Authorization Successful!</h4>
+                <p>Successfully authorized MCP server: <strong>${serverName}</strong></p>
+                <p>You can now close this window and use the MCP server with OAuth authentication.</p>
+            </div>
+        `;
+        
+        // Auto-close after 3 seconds
+        setTimeout(() => {
+            modal.remove();
+        }, 3000);
+    }
+
+    /**
+     * Show device flow error
+     * @param {string} message - Error message
+     * @param {string} code - Error code
+     */
+    showDeviceFlowError(message, code) {
+        const modal = document.querySelector('.device-flow-modal');
+        if (!modal) return;
+        
+        const content = modal.querySelector('.device-flow-instructions');
+        content.innerHTML = `
+            <div class="error-message">
+                <h4>❌ Authorization Failed</h4>
+                <p>Error: ${code || 'device_flow_failed'}</p>
+                <p>Description: ${message}</p>
+                ${code === 'device_code_expired' ? 
+                    '<p><strong>Tip:</strong> The device code has expired. Please start the OAuth flow again.</p>' :
+                    '<p>Please check your OAuth configuration and try again.</p>'
+                }
+            </div>
+        `;
+    }
+
+    /**
+     * Start device flow countdown timer
+     * @param {number} expiresIn - Seconds until expiration
+     */
+    startDeviceFlowCountdown(expiresIn) {
+        const countdownElement = document.getElementById('device-flow-countdown');
+        if (!countdownElement) return;
+        
+        let remainingSeconds = expiresIn;
+        
+        const countdownTimer = setInterval(() => {
+            remainingSeconds--;
+            
+            if (remainingSeconds <= 0) {
+                clearInterval(countdownTimer);
+                countdownElement.textContent = 'Expired';
+                return;
+            }
+            
+            const minutes = Math.floor(remainingSeconds / 60);
+            const seconds = remainingSeconds % 60;
+            countdownElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }, 1000);
     }
 
     /**

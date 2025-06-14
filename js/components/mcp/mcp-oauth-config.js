@@ -156,7 +156,7 @@ class MCPOAuthConfig {
                             <strong>For GitHub OAuth Apps:</strong><br>
                             • Homepage URL: <code>https://hacka.re</code><br>
                             • Authorization callback URL: <code>https://hacka.re</code><br>
-                            <em>Note: Session restoration is handled automatically via URL parameters</em>
+                            <em>Note: GitHub uses Device Flow (no redirect required)</em>
                         </small>
                     </div>
 
@@ -335,6 +335,12 @@ class MCPOAuthConfig {
             config.tokenUrl = providerConfig.tokenUrl;
             config.responseType = providerConfig.responseType;
             config.grantType = providerConfig.grantType;
+            
+            // Copy device flow specific properties
+            if (providerConfig.useDeviceFlow) {
+                config.useDeviceFlow = providerConfig.useDeviceFlow;
+                config.deviceCodeUrl = providerConfig.deviceCodeUrl;
+            }
         }
 
         // Parse additional parameters
