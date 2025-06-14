@@ -637,25 +637,102 @@ class MCPOAuthFlow {
      * @param {Object} flowInfo - Device flow information
      */
     showDeviceFlowInstructions(flowInfo) {
+        if (flowInfo.isManualFlow) {
+            this.showManualDeviceFlowInstructions(flowInfo);
+        } else {
+            this.showAutomaticDeviceFlowInstructions(flowInfo);
+        }
+    }
+    
+    /**
+     * Show manual device flow instructions (when CORS prevents automatic flow)
+     * @param {Object} flowInfo - Manual flow information
+     */
+    showManualDeviceFlowInstructions(flowInfo) {
+        const modal = document.createElement('div');
+        modal.className = 'modal device-flow-modal manual-device-flow';
+        modal.style.display = 'block';
+        
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h3>🔧 Manual GitHub Device Flow</h3>
+                <div class="device-flow-instructions">
+                    <div class="cors-notice">
+                        <h4>⚠️ Manual Setup Required</h4>
+                        <p>Due to browser security restrictions (CORS), we can't automatically request a device code from GitHub. 
+                           Please follow these steps to get your device code manually:</p>
+                    </div>
+                    
+                    <div class="manual-steps-section">
+                        <h4>Step 1: Get Device Code</h4>
+                        <p>Run this command in your terminal or use a tool like Postman:</p>
+                        <div class="code-block">
+                            <code id="curl-command">curl -X POST https://github.com/login/device/code -H "Accept: application/json" -H "Content-Type: application/x-www-form-urlencoded" -d "client_id=${flowInfo.clientId}&scope=${flowInfo.scope}"</code>
+                            <button class="copy-button" onclick="window.mcpOAuthFlow.copyCurlCommand(this)">Copy</button>
+                        </div>
+                        <p><strong>Multi-line version for readability:</strong></p>
+                        <div class="code-block">
+                            <pre id="curl-command-multiline">curl -X POST https://github.com/login/device/code \\
+  -H "Accept: application/json" \\
+  -H "Content-Type: application/x-www-form-urlencoded" \\
+  -d "client_id=${flowInfo.clientId}&scope=${flowInfo.scope}"</pre>
+                        </div>
+                        <p><strong>Alternative:</strong> If you have GitHub CLI installed, run: <code>gh auth device-login</code></p>
+                    </div>
+                    
+                    <div class="manual-input-section">
+                        <h4>Step 2: Enter the Response</h4>
+                        <p>Paste the JSON response from the curl command:</p>
+                        <textarea id="device-response-input" placeholder='{
+  "device_code": "3584d83530557fdd1f46af8289938c8ef79f9dc5",
+  "user_code": "WDJB-MJHT",
+  "verification_uri": "https://github.com/login/device",
+  "expires_in": 900,
+  "interval": 5
+}' rows="8" class="device-response-textarea"></textarea>
+                        <button class="primary-button" onclick="window.mcpOAuthFlow.processManualDeviceResponse('${flowInfo.manualFlowId}')">
+                            Process Device Code
+                        </button>
+                    </div>
+                    
+                    <div class="help-section">
+                        <h4>🔗 Useful Links</h4>
+                        <ul>
+                            <li><a href="https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps#device-flow" target="_blank">GitHub Device Flow Documentation</a></li>
+                            <li><a href="https://reqbin.com/" target="_blank">Online REST API Tester (alternative to curl)</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="secondary-button" onclick="this.closest('.modal').remove()">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+    }
+    
+    /**
+     * Show automatic device flow instructions (normal flow)
+     * @param {Object} flowInfo - Device flow information
+     */
+    showAutomaticDeviceFlowInstructions(flowInfo) {
         const modal = document.createElement('div');
         modal.className = 'modal device-flow-modal';
         modal.style.display = 'block';
         
         modal.innerHTML = `
             <div class="modal-content">
-                <h3>GitHub Device Flow Authorization</h3>
+                <h3>✅ GitHub Device Flow Authorization</h3>
                 <div class="device-flow-instructions">
                     <div class="device-code-section">
                         <h4>Step 1: Copy this code</h4>
                         <div class="device-code-display">
                             <input type="text" id="device-user-code" class="device-code-input" 
                                    value="${flowInfo.userCode}" readonly>
-                            <button class="copy-button" onclick="
-                                document.getElementById('device-user-code').select();
-                                document.execCommand('copy');
-                                this.textContent = 'Copied!';
-                                setTimeout(() => this.textContent = 'Copy', 2000);
-                            ">Copy</button>
+                            <button class="copy-button" onclick="window.mcpOAuthFlow.copyDeviceCode(this)">Copy</button>
                         </div>
                     </div>
                     
@@ -705,9 +782,13 @@ class MCPOAuthFlow {
      * @param {string} deviceCode - Device code to poll for
      */
     startDeviceFlowPolling(deviceCode) {
+        console.log(`[MCP OAuth Flow] Starting polling for device code: ${deviceCode}`);
+        console.log(`[MCP OAuth Flow] Available flows:`, Array.from(this.oauthService.pendingFlows.keys()));
+        
         const flowInfo = this.oauthService.pendingFlows.get(deviceCode);
         if (!flowInfo) {
-            console.error('[MCP OAuth Flow] No flow info found for device code');
+            console.error(`[MCP OAuth Flow] No flow info found for device code: ${deviceCode}`);
+            console.error('[MCP OAuth Flow] Available flows:', this.oauthService.pendingFlows);
             return;
         }
         
@@ -736,7 +817,17 @@ class MCPOAuthFlow {
             } catch (error) {
                 clearInterval(pollTimer);
                 console.error('[MCP OAuth Flow] Device flow polling failed:', error);
-                this.showDeviceFlowError(error.message, error.code);
+                console.log('[MCP OAuth Flow] Error code:', error.code);
+                console.log('[MCP OAuth Flow] Error data:', error.data);
+                
+                // Check if this is a GitHub CORS error that requires manual token entry
+                if (error.code === 'github_cors_polling_failed' && error.data?.requiresManualToken) {
+                    console.log('[MCP OAuth Flow] Showing manual token entry for GitHub CORS issue');
+                    this.showManualTokenEntry(error.data);
+                } else {
+                    console.log('[MCP OAuth Flow] Showing device flow error instead of manual token entry');
+                    this.showDeviceFlowError(error.message, error.code);
+                }
             }
         }, pollInterval);
         
@@ -744,6 +835,136 @@ class MCPOAuthFlow {
         this.deviceFlowTimer = pollTimer;
     }
 
+    /**
+     * Copy curl command to clipboard
+     * @param {HTMLElement} button - Copy button element
+     */
+    copyCurlCommand(button) {
+        const curlElement = document.getElementById('curl-command');
+        if (!curlElement) return;
+        
+        const curlText = curlElement.textContent;
+        
+        // Use modern clipboard API if available
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(curlText).then(() => {
+                button.textContent = 'Copied!';
+                setTimeout(() => button.textContent = 'Copy', 2000);
+            }).catch(() => {
+                this.fallbackCopy(curlText, button);
+            });
+        } else {
+            this.fallbackCopy(curlText, button);
+        }
+    }
+    
+    /**
+     * Copy device code to clipboard
+     * @param {HTMLElement} button - Copy button element
+     */
+    copyDeviceCode(button) {
+        const deviceCodeInput = document.getElementById('device-user-code');
+        if (!deviceCodeInput) return;
+        
+        const deviceCode = deviceCodeInput.value;
+        
+        // Use modern clipboard API if available
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(deviceCode).then(() => {
+                button.textContent = 'Copied!';
+                setTimeout(() => button.textContent = 'Copy', 2000);
+            }).catch(() => {
+                this.fallbackCopy(deviceCode, button);
+            });
+        } else {
+            this.fallbackCopy(deviceCode, button);
+        }
+    }
+    
+    /**
+     * Fallback copy method using selection and execCommand
+     * @param {string} text - Text to copy
+     * @param {HTMLElement} button - Copy button element
+     */
+    fallbackCopy(text, button) {
+        // Create a temporary textarea element
+        const tempTextarea = document.createElement('textarea');
+        tempTextarea.value = text;
+        tempTextarea.style.position = 'fixed';
+        tempTextarea.style.opacity = '0';
+        document.body.appendChild(tempTextarea);
+        
+        try {
+            tempTextarea.select();
+            tempTextarea.setSelectionRange(0, 99999); // For mobile devices
+            const successful = document.execCommand('copy');
+            
+            if (successful) {
+                button.textContent = 'Copied!';
+                setTimeout(() => button.textContent = 'Copy', 2000);
+            } else {
+                button.textContent = 'Failed';
+                setTimeout(() => button.textContent = 'Copy', 2000);
+            }
+        } catch (err) {
+            console.error('Fallback copy failed:', err);
+            button.textContent = 'Failed';
+            setTimeout(() => button.textContent = 'Copy', 2000);
+        } finally {
+            document.body.removeChild(tempTextarea);
+        }
+    }
+    
+    /**
+     * Process manual device response from user
+     * @param {string} manualFlowId - Manual flow ID
+     */
+    async processManualDeviceResponse(manualFlowId) {
+        console.log(`[MCP OAuth Flow] Processing manual device response for flow: ${manualFlowId}`);
+        
+        const responseText = document.getElementById('device-response-input').value.trim();
+        console.log(`[MCP OAuth Flow] Response text length: ${responseText.length}`);
+        
+        if (!responseText) {
+            alert('Please enter the JSON response from the curl command');
+            return;
+        }
+        
+        try {
+            const deviceData = JSON.parse(responseText);
+            console.log('[MCP OAuth Flow] Parsed device data:', deviceData);
+            
+            // Validate required fields
+            if (!deviceData.device_code || !deviceData.user_code || !deviceData.verification_uri) {
+                throw new Error('Missing required fields in device response');
+            }
+            
+            console.log('[MCP OAuth Flow] Submitting manual device data...');
+            // Submit manual device data
+            const flowInfo = await this.oauthService.submitManualDeviceData(manualFlowId, deviceData);
+            console.log('[MCP OAuth Flow] Flow info created:', flowInfo);
+            
+            // Close current modal
+            const modal = document.querySelector('.manual-device-flow');
+            if (modal) {
+                console.log('[MCP OAuth Flow] Removing manual flow modal');
+                modal.remove();
+            }
+            
+            // Show automatic device flow UI
+            console.log('[MCP OAuth Flow] Showing automatic device flow UI');
+            this.showAutomaticDeviceFlowInstructions(flowInfo);
+            
+            // Start polling
+            console.log(`[MCP OAuth Flow] Starting polling for device code: ${flowInfo.deviceCode}`);
+            this.startDeviceFlowPolling(flowInfo.deviceCode);
+            
+        } catch (error) {
+            console.error('[MCP OAuth Flow] Error processing manual device response:', error);
+            alert(`Error processing device response: ${error.message}\n\nPlease check that you pasted valid JSON.`);
+        }
+    }
+    
     /**
      * Cancel device flow
      * @param {string} deviceCode - Device code to cancel
@@ -864,12 +1085,147 @@ class MCPOAuthFlow {
             </div>
         `;
         
+        // Trigger MCP connection completion if quick connectors available
+        if (window.MCPQuickConnectors && serverName) {
+            console.log('[MCP OAuth Flow] Triggering MCP connection completion after authentication success');
+            console.log('[MCP OAuth Flow] Server name received:', serverName);
+            // Extract service key from server name (e.g., 'mcp-github' -> 'github')
+            const serviceKey = serverName.replace('mcp-', '');
+            console.log('[MCP OAuth Flow] Extracted service key:', serviceKey);
+            if (serviceKey) {
+                window.MCPQuickConnectors.completeConnectionAfterAuth(serviceKey);
+            } else {
+                console.warn('[MCP OAuth Flow] Could not extract service key from server name:', serverName);
+            }
+        } else if (window.MCPQuickConnectors && !serverName) {
+            console.warn('[MCP OAuth Flow] showDeviceFlowSuccess called without serverName');
+        }
+        
         // Auto-close after 3 seconds
         setTimeout(() => {
             modal.remove();
         }, 3000);
     }
 
+    /**
+     * Show manual token entry for GitHub CORS issues
+     * @param {Object} errorData - Error data with token instructions
+     */
+    showManualTokenEntry(errorData) {
+        const modal = document.querySelector('.device-flow-modal');
+        if (!modal) return;
+        
+        const content = modal.querySelector('.device-flow-instructions');
+        content.innerHTML = `
+            <div class="manual-token-entry">
+                <h4>🔧 Manual Token Entry Required</h4>
+                <div class="cors-notice">
+                    <p><strong>GitHub token polling is blocked by CORS.</strong> Since you've already authorized the device, 
+                       you can get your access token manually and enter it below.</p>
+                </div>
+                
+                <div class="token-instructions-section">
+                    <h5>Step 1: Get Your Access Token</h5>
+                    <p>Run this command in your terminal:</p>
+                    <div class="code-block">
+                        <code id="token-curl-command">${errorData.tokenInstructions}</code>
+                        <button class="copy-button" onclick="window.mcpOAuthFlow.copyTokenCommand(this)">Copy</button>
+                    </div>
+                    <p><small><strong>Note:</strong> This command will only work if you've completed the GitHub authorization step above.</small></p>
+                </div>
+                
+                <div class="token-input-section">
+                    <h5>Step 2: Enter the Access Token</h5>
+                    <p>Paste the <code>access_token</code> value from the JSON response:</p>
+                    <div class="token-input-group">
+                        <input type="password" id="manual-access-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" class="token-input" />
+                        <button class="primary-button" onclick="window.mcpOAuthFlow.submitManualToken('${errorData.serverName}', '${errorData.deviceCode}')">
+                            Save Token
+                        </button>
+                    </div>
+                    <p><small>Your token will be encrypted and stored securely.</small></p>
+                </div>
+                
+                <div class="help-section">
+                    <h5>📚 Alternative Methods</h5>
+                    <ul>
+                        <li><strong>GitHub CLI:</strong> <code>gh auth token</code> (if you have gh CLI)</li>
+                        <li><strong>Personal Access Token:</strong> Create one at <a href="https://github.com/settings/tokens" target="_blank">GitHub Settings</a></li>
+                    </ul>
+                </div>
+            </div>
+        `;
+    }
+    
+    /**
+     * Copy token curl command to clipboard
+     * @param {HTMLElement} button - Copy button element
+     */
+    copyTokenCommand(button) {
+        const commandElement = document.getElementById('token-curl-command');
+        if (!commandElement) return;
+        
+        const commandText = commandElement.textContent;
+        
+        // Use modern clipboard API if available
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(commandText).then(() => {
+                button.textContent = 'Copied!';
+                setTimeout(() => button.textContent = 'Copy', 2000);
+            }).catch(() => {
+                this.fallbackCopy(commandText, button);
+            });
+        } else {
+            this.fallbackCopy(commandText, button);
+        }
+    }
+    
+    /**
+     * Submit manual access token
+     * @param {string} serverName - Server name
+     * @param {string} deviceCode - Device code
+     */
+    async submitManualToken(serverName, deviceCode) {
+        const tokenInput = document.getElementById('manual-access-token');
+        const accessToken = tokenInput.value.trim();
+        
+        if (!accessToken) {
+            alert('Please enter an access token');
+            return;
+        }
+        
+        // Validate token format (GitHub tokens start with ghp_, gho_, ghu_, or ghs_)
+        if (!accessToken.match(/^gh[p|o|u|s]_[A-Za-z0-9_]{36,}$/)) {
+            if (!confirm('This doesn\'t look like a GitHub access token. Continue anyway?')) {
+                return;
+            }
+        }
+        
+        try {
+            // Create token object
+            const tokenData = {
+                access_token: accessToken,
+                token_type: 'bearer',
+                scope: 'repo read:user',
+                issued_at: Date.now()
+            };
+            
+            // Store the token using the OAuth service
+            await this.oauthService.storeManualToken(serverName, tokenData);
+            
+            // Clean up the device flow
+            this.oauthService.pendingFlows.delete(deviceCode);
+            await this.oauthService.savePendingFlows();
+            
+            // Show success
+            this.showDeviceFlowSuccess(serverName);
+            
+        } catch (error) {
+            console.error('[MCP OAuth Flow] Failed to store manual token:', error);
+            alert(`Failed to save token: ${error.message}`);
+        }
+    }
+    
     /**
      * Show device flow error
      * @param {string} message - Error message

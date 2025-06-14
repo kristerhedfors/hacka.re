@@ -14,14 +14,17 @@ window.MCPQuickConnectors = (function() {
             icon: 'fab fa-github',
             description: 'Access GitHub repositories, issues, and pull requests',
             transport: 'oauth',
-            serverUrl: 'https://api.github.com',
+            serverUrl: 'https://api.githubcopilot.com/mcp/',
             oauthConfig: {
                 provider: 'github',
                 authorizationUrl: 'https://github.com/login/oauth/authorize',
                 tokenUrl: 'https://github.com/login/oauth/access_token',
+                deviceCodeUrl: 'https://github.com/login/device/code',
                 scope: 'repo read:user',
                 clientId: '', // User needs to provide
-                redirectUri: window.location.origin
+                redirectUri: window.location.origin,
+                useDeviceFlow: true,
+                grantType: 'urn:ietf:params:oauth:grant-type:device_code'
             },
             setupInstructions: {
                 title: 'GitHub OAuth Setup',
@@ -30,9 +33,9 @@ window.MCPQuickConnectors = (function() {
                     'Click "New OAuth App"',
                     'Set Application name to: "hacka.re MCP Client" (or your preferred name)',
                     'Set Homepage URL to: ' + window.location.origin,
-                    'Set Authorization callback URL to: ' + window.location.origin,
+                    'Set Authorization callback URL to: ' + window.location.origin + ' (required but not used)',
                     'Copy the Client ID and paste it below',
-                    'Note: The OAuth flow will redirect back to this page with the authorization code'
+                    'Note: hacka.re uses GitHub\'s Device Flow - no redirects needed!'
                 ],
                 docUrl: 'https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app'
             }
@@ -245,29 +248,42 @@ window.MCPQuickConnectors = (function() {
             }
         }
         
-        // Check if OAuth is configured
-        if (!oauthConfig.hasConfiguration(serverName)) {
-            // Show setup dialog
-            showSetupDialog(serviceKey);
-            return;
+        // For GitHub, always check client ID specifically 
+        if (serviceKey === 'github') {
+            const savedConfig = oauthConfig.hasConfiguration(serverName) ? 
+                oauthConfig.getConfiguration(serverName) : null;
+            
+            if (!savedConfig || !savedConfig.clientId) {
+                console.log('[MCPQuickConnectors] GitHub requires Client ID setup');
+                showSetupDialog(serviceKey);
+                return;
+            }
+            
+            // Check if the saved config has the correct redirect URI
+            if (savedConfig.redirectUri && savedConfig.redirectUri.includes('/oauth/callback')) {
+                // Clear the old configuration with incorrect redirect URI
+                console.log('[MCPQuickConnectors] Clearing old OAuth config with incorrect redirect URI');
+                oauthConfig.configs.delete(serverName);
+                await oauthConfig.saveConfigs();
+                showSetupDialog(serviceKey);
+                return;
+            }
+        } else {
+            // For other services, use the original logic
+            if (!oauthConfig.hasConfiguration(serverName)) {
+                showSetupDialog(serviceKey);
+                return;
+            }
+            
+            const savedConfig = oauthConfig.getConfiguration(serverName);
+            if (!savedConfig.clientId) {
+                showSetupDialog(serviceKey);
+                return;
+            }
         }
         
-        // Check if the saved config has the correct redirect URI
+        // Get saved config for use in the flow
         const savedConfig = oauthConfig.getConfiguration(serverName);
-        if (savedConfig.redirectUri && savedConfig.redirectUri.includes('/oauth/callback')) {
-            // Clear the old configuration with incorrect redirect URI
-            console.log('[MCPQuickConnectors] Clearing old OAuth config with incorrect redirect URI');
-            oauthConfig.configs.delete(serverName);
-            await oauthConfig.saveConfigs();
-            showSetupDialog(serviceKey);
-            return;
-        }
-        
-        // Check if client ID is present
-        if (!savedConfig.clientId) {
-            showSetupDialog(serviceKey);
-            return;
-        }
         
         try {
             // Update status to connecting
@@ -284,21 +300,47 @@ window.MCPQuickConnectors = (function() {
             };
             
             // Check if we have a valid token
-            const oauthService = new window.MCPOAuthService.OAuthService();
+            // Use the same OAuth service instance as the OAuth flow
+            const oauthService = window.mcpOAuthFlow.oauthService || new window.MCPOAuthService.OAuthService();
             try {
                 await oauthService.getAccessToken(serverName, false);
             } catch (error) {
                 // Need to authorize
                 updateConnectorStatus(serviceKey, 'authorizing');
                 console.log('[MCPQuickConnectors] Starting OAuth flow with config:', savedConfig);
-                const authResult = await oauthService.startAuthorizationFlow(serverName, savedConfig);
                 
-                console.log('[MCPQuickConnectors] Authorization URL:', authResult.authorizationUrl);
-                // Open authorization window
-                const authWindow = window.open(authResult.authorizationUrl, 'oauth_authorize', 'width=600,height=700');
-                
-                // Wait for authorization
-                await waitForAuthorization(authWindow, serverName, authResult.state);
+                // Check if this service uses device flow (GitHub)
+                if (savedConfig.useDeviceFlow || savedConfig.provider === 'github' || serviceKey === 'github') {
+                    // Use device flow for GitHub
+                    const flowResult = await oauthService.startDeviceFlow(serverName, savedConfig);
+                    
+                    // Show device flow UI instead of opening a window
+                    if (window.mcpOAuthFlow) {
+                        // Use the global instance
+                        window.mcpOAuthFlow.showDeviceFlowInstructions(flowResult);
+                        
+                        // Start polling for completion
+                        // Note: startDeviceFlowPolling doesn't return a promise, it handles completion internally
+                        window.mcpOAuthFlow.startDeviceFlowPolling(flowResult.deviceCode);
+                        
+                        // Wait for the user to complete the flow
+                        // The modal will close and update the UI when done
+                        updateConnectorStatus(serviceKey, 'disconnected');
+                        return; // Exit here as the flow will complete asynchronously
+                    } else {
+                        throw new Error('Device flow UI not available');
+                    }
+                } else {
+                    // Use standard authorization flow for other providers
+                    const authResult = await oauthService.startAuthorizationFlow(serverName, savedConfig);
+                    
+                    console.log('[MCPQuickConnectors] Authorization URL:', authResult.authorizationUrl);
+                    // Open authorization window
+                    const authWindow = window.open(authResult.authorizationUrl, 'oauth_authorize', 'width=600,height=700');
+                    
+                    // Wait for authorization
+                    await waitForAuthorization(authWindow, serverName, authResult.state);
+                }
             }
             
             // Connect to MCP server
@@ -308,24 +350,31 @@ window.MCPQuickConnectors = (function() {
                 }
             });
             
+            // Update servers list
+            if (window.MCPServerManager) {
+                window.MCPServerManager.updateServersList();
+            }
+            
             // Update status
             updateConnectorStatus(serviceKey, 'connected');
             
             // Save state
             saveConnectorState(serviceKey, 'connected');
             
-            // Update servers list
-            if (window.MCPServerManager) {
-                window.MCPServerManager.updateServersList();
-            }
-            
             // Show success message
             showNotification(`✅ Connected to ${config.name}`, 'success');
             
         } catch (error) {
             console.error(`[MCPQuickConnectors] Failed to connect to ${serviceKey}:`, error);
-            updateConnectorStatus(serviceKey, 'disconnected');
-            showNotification(`❌ Failed to connect to ${config.name}: ${error.message}`, 'error');
+            
+            // Check if this is a manual curl error
+            if (error.message && error.message.includes('Try manual connection with curl:')) {
+                // Show manual connection testing UI
+                showManualConnectionUI(serviceKey, error.message);
+            } else {
+                updateConnectorStatus(serviceKey, 'disconnected');
+                showNotification(`❌ Failed to connect to ${config.name}: ${error.message}`, 'error');
+            }
         }
     }
     
@@ -409,8 +458,53 @@ window.MCPQuickConnectors = (function() {
         // Close dialog
         closeSetupDialog();
         
-        // Connect to service
-        await connectService(serviceKey);
+        // For GitHub, start device flow instead of direct connection
+        if (serviceKey === 'github') {
+            await startGitHubDeviceFlow(serviceKey, serverName, oauthConfigData);
+        } else {
+            // For other services, proceed with normal connection
+            await connectService(serviceKey);
+        }
+    }
+    
+    /**
+     * Start GitHub device flow after Client ID is saved
+     * @param {string} serviceKey - Service key (github)
+     * @param {string} serverName - Server name (mcp-github)
+     * @param {Object} oauthConfigData - OAuth configuration
+     */
+    async function startGitHubDeviceFlow(serviceKey, serverName, oauthConfigData) {
+        try {
+            console.log('[MCPQuickConnectors] Starting GitHub device flow for', serviceKey);
+            updateConnectorStatus(serviceKey, 'authorizing');
+            
+            // Use the OAuth service to start device flow
+            if (!oauthFlow || !oauthFlow.oauthService) {
+                throw new Error('OAuth service not available');
+            }
+            
+            // Start device flow (this will handle CORS fallback to manual flow)
+            const flowResult = await oauthFlow.oauthService.startDeviceFlow(serverName, oauthConfigData);
+            console.log('[MCPQuickConnectors] Device flow started:', flowResult);
+            
+            // Show device flow UI (manual or automatic)
+            if (window.mcpOAuthFlow) {
+                window.mcpOAuthFlow.showDeviceFlowInstructions(flowResult);
+                
+                if (!flowResult.isManualFlow) {
+                    // Automatic flow - start polling
+                    window.mcpOAuthFlow.startDeviceFlowPolling(flowResult.deviceCode);
+                }
+                // For manual flow, the UI will handle the rest
+            } else {
+                throw new Error('Device flow UI not available');
+            }
+            
+        } catch (error) {
+            console.error('[MCPQuickConnectors] Failed to start GitHub device flow:', error);
+            updateConnectorStatus(serviceKey, 'disconnected');
+            showNotification(`❌ Failed to start GitHub authentication: ${error.message}`, 'error');
+        }
     }
     
     /**
@@ -612,6 +706,257 @@ window.MCPQuickConnectors = (function() {
         }
     }
     
+    /**
+     * Complete MCP connection after OAuth authentication
+     * This is called when authentication completes outside the normal flow (e.g., manual token entry)
+     * @param {string} serviceKey - Service key (github, gmail, drive, calendar)
+     */
+    async function completeConnectionAfterAuth(serviceKey) {
+        console.log(`[MCPQuickConnectors] Completing connection after auth for ${serviceKey}`);
+        
+        const config = QUICK_CONNECTORS[serviceKey];
+        const serverName = `mcp-${serviceKey}`;
+        
+        if (!config) {
+            console.error(`[MCPQuickConnectors] Unknown service: ${serviceKey}`);
+            return;
+        }
+        
+        try {
+            // Update status to connecting
+            updateConnectorStatus(serviceKey, 'connecting');
+            
+            // Create MCP server configuration
+            const mcpConfig = {
+                name: serverName,
+                description: config.description,
+                transport: {
+                    type: 'oauth',
+                    url: config.serverUrl
+                }
+            };
+            
+            // Connect to MCP server
+            await mcpClient.connect(serverName, mcpConfig, {
+                onNotification: (notification) => {
+                    console.log(`[MCP] Notification from ${serverName}:`, notification);
+                }
+            });
+            
+            // Update servers list
+            if (window.MCPServerManager) {
+                window.MCPServerManager.updateServersList();
+            }
+            
+            // Update status
+            updateConnectorStatus(serviceKey, 'connected');
+            
+            // Save state
+            saveConnectorState(serviceKey, 'connected');
+            
+            // Show success message
+            showNotification(`✅ Connected to ${config.name}`, 'success');
+            
+            console.log(`[MCPQuickConnectors] Successfully completed connection for ${serviceKey}`);
+            
+        } catch (error) {
+            console.error(`[MCPQuickConnectors] Failed to complete connection for ${serviceKey}:`, error);
+            
+            // Check if this is a manual curl error
+            if (error.message && error.message.includes('Try manual connection with curl:')) {
+                // Show manual connection testing UI
+                showManualConnectionUI(serviceKey, error.message);
+            } else {
+                updateConnectorStatus(serviceKey, 'disconnected');
+                showNotification(`❌ Failed to connect to ${config.name}: ${error.message}`, 'error');
+            }
+        }
+    }
+    
+    /**
+     * Show manual connection UI for CORS/auth issues
+     * @param {string} serviceKey - Service key
+     * @param {string} errorMessage - Error message containing curl command
+     */
+    function showManualConnectionUI(serviceKey, errorMessage) {
+        const config = QUICK_CONNECTORS[serviceKey];
+        
+        console.log('[MCPQuickConnectors] Error message for manual UI:', errorMessage);
+        
+        // Extract curl command from error message (everything after "curl:\n\n")
+        const curlCommandMatch = errorMessage.match(/curl:\s*\n\s*\n([\s\S]*)/);
+        const curlCommand = curlCommandMatch ? curlCommandMatch[1].trim() : 'Curl command not found in error message';
+        
+        console.log('[MCPQuickConnectors] Extracted curl command:', curlCommand);
+        
+        // Create modal
+        const modal = document.createElement('div');
+        modal.className = 'modal mcp-manual-connection-modal';
+        modal.style.display = 'block';
+        
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h3>🔧 Manual ${config.name} Connection Test</h3>
+                
+                <div class="manual-connection-instructions">
+                    <div class="cors-notice">
+                        <h4>⚠️ Connection Authentication Issue</h4>
+                        <p>The automatic connection to ${config.name} MCP server failed due to authentication. 
+                           Please test the connection manually using the curl command below:</p>
+                    </div>
+                    
+                    <div class="manual-curl-section">
+                        <h4>Step 1: Test Connection</h4>
+                        <p>Run this command in your terminal:</p>
+                        <div class="code-block">
+                            <pre id="mcp-curl-command">${curlCommand}</pre>
+                            <button class="copy-button" onclick="MCPQuickConnectors.copyCurlCommand(this)">Copy</button>
+                        </div>
+                    </div>
+                    
+                    <div class="manual-response-section">
+                        <h4>Step 2: Paste Response</h4>
+                        <p>Paste the response from the curl command (JSON or error message):</p>
+                        <textarea id="mcp-response-input" placeholder='Paste the response here...
+Example JSON: {"jsonrpc": "2.0", "result": {...}, "id": 1}
+Or error: bad request: unknown integration' rows="8" class="mcp-response-textarea"></textarea>
+                        <button class="primary-button" onclick="MCPQuickConnectors.processManualConnectionResponse('${serviceKey}')">
+                            Process Response
+                        </button>
+                    </div>
+                    
+                    <div class="connection-actions">
+                        <button class="btn secondary-btn" onclick="MCPQuickConnectors.closeManualConnectionUI()">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+    }
+    
+    /**
+     * Close manual connection UI
+     */
+    function closeManualConnectionUI() {
+        const modal = document.querySelector('.mcp-manual-connection-modal');
+        if (modal) {
+            modal.remove();
+        }
+    }
+    
+    /**
+     * Copy curl command from manual connection UI
+     * @param {HTMLElement} button - Copy button element
+     */
+    function copyCurlCommand(button) {
+        const command = document.getElementById('mcp-curl-command').textContent;
+        
+        // Try modern clipboard API first
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(command).then(() => {
+                button.textContent = 'Copied!';
+                setTimeout(() => button.textContent = 'Copy', 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                fallbackCopyMcp(command, button);
+            });
+        } else {
+            fallbackCopyMcp(command, button);
+        }
+    }
+    
+    /**
+     * Fallback copy method for MCP
+     * @param {string} text - Text to copy
+     * @param {HTMLElement} button - Button element
+     */
+    function fallbackCopyMcp(text, button) {
+        const tempTextarea = document.createElement('textarea');
+        tempTextarea.value = text;
+        document.body.appendChild(tempTextarea);
+        tempTextarea.select();
+        
+        try {
+            const successful = document.execCommand('copy');
+            if (successful) {
+                button.textContent = 'Copied!';
+                setTimeout(() => button.textContent = 'Copy', 2000);
+            } else {
+                button.textContent = 'Failed';
+                setTimeout(() => button.textContent = 'Copy', 2000);
+            }
+        } catch (err) {
+            console.error('Fallback copy failed:', err);
+            button.textContent = 'Failed';
+            setTimeout(() => button.textContent = 'Copy', 2000);
+        } finally {
+            document.body.removeChild(tempTextarea);
+        }
+    }
+    
+    /**
+     * Process manual connection response
+     * @param {string} serviceKey - Service key
+     */
+    function processManualConnectionResponse(serviceKey) {
+        const responseText = document.getElementById('mcp-response-input').value.trim();
+        
+        if (!responseText) {
+            alert('Please enter the response from the curl command');
+            return;
+        }
+        
+        const config = QUICK_CONNECTORS[serviceKey];
+        
+        // Try to parse as JSON first
+        try {
+            const response = JSON.parse(responseText);
+            console.log('[MCPQuickConnectors] Manual connection JSON response:', response);
+            
+            // Validate response structure
+            if (!response.jsonrpc || response.jsonrpc !== '2.0') {
+                throw new Error('Invalid JSON-RPC response format');
+            }
+            
+            if (response.error) {
+                throw new Error(`MCP server error: ${response.error.message || JSON.stringify(response.error)}`);
+            }
+            
+            if (!response.result) {
+                throw new Error('Missing result in response');
+            }
+            
+            // Close manual connection UI
+            closeManualConnectionUI();
+            
+            // Update status to connected
+            updateConnectorStatus(serviceKey, 'connected');
+            showNotification(`✅ Manual connection to ${config.name} successful!`, 'success');
+            
+            console.log(`[MCPQuickConnectors] Manual connection successful for ${serviceKey}`);
+            
+        } catch (jsonError) {
+            // If not valid JSON, treat as error message
+            console.log('[MCPQuickConnectors] Non-JSON response:', responseText);
+            
+            // Close manual connection UI
+            closeManualConnectionUI();
+            
+            // Show the error message to user
+            const errorMsg = responseText.toLowerCase().includes('unknown integration') 
+                ? `GitHub MCP Server Error: "${responseText}"\n\nThis suggests the GitHub Copilot MCP server may require a different type of authentication or registration. The personal access token might not be sufficient for this service.`
+                : `Server responded with error: "${responseText}"`;
+                
+            alert(errorMsg);
+            
+            // Update status back to disconnected
+            updateConnectorStatus(serviceKey, 'disconnected');
+        }
+    }
+
     // Public API
     return {
         init,
@@ -621,6 +966,10 @@ window.MCPQuickConnectors = (function() {
         saveSetup,
         closeSetupDialog,
         updateAllConnectorStatuses,
-        clearOAuthConfig
+        clearOAuthConfig,
+        completeConnectionAfterAuth,
+        copyCurlCommand,
+        closeManualConnectionUI,
+        processManualConnectionResponse
     };
 })();
