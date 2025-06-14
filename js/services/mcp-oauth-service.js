@@ -346,38 +346,30 @@ class OAuthService {
             const codeVerifier = PKCEHelper.generateCodeVerifier();
             const codeChallenge = await PKCEHelper.generateCodeChallenge(codeVerifier);
         
-            // Generate state for CSRF protection with namespace information
+            // Generate state for CSRF protection with session information encoded
             const baseState = PKCEHelper.generateCodeVerifier();
             const namespaceId = window.NamespaceService ? window.NamespaceService.getNamespaceId() : 'default';
-            const state = `${baseState}:${namespaceId}`;
             
-            // Get session key for URL parameter (needed for session restoration on callback)
+            // Get session key for state encoding (needed for session restoration on callback)
             const sessionKey = window.ShareManager && window.ShareManager.getSessionKey ? 
                 window.ShareManager.getSessionKey() : null;
             
-            // Log session key availability
-            if (!sessionKey) {
-                console.warn(`[MCP OAuth] No session key available - OAuth will use namespace-based fallback`);
-            } else {
-                console.log(`[MCP OAuth] Session key available - will include in redirect URI`);
-            }
-            
-            // Enhance redirect URI with session information if available
-            let enhancedRedirectUri = effectiveConfig.redirectUri;
-            console.log(`[MCP OAuth] Base redirect URI: ${enhancedRedirectUri}`);
-            
+            // Encode session information into state parameter since GitHub strips query params
+            let state;
             if (sessionKey) {
-                // Encode session key for URL parameter
-                const encodedSession = encodeURIComponent(btoa(sessionKey));
-                const separator = enhancedRedirectUri.includes('?') ? '&' : '?';
-                enhancedRedirectUri = `${effectiveConfig.redirectUri}${separator}oauth_session=${encodedSession}`;
-                console.log(`[MCP OAuth] Enhanced redirect URI with session parameter: ${enhancedRedirectUri}`);
+                // Encode session key into state: baseState:namespace:sessionKey
+                const encodedSession = btoa(sessionKey).replace(/[+/=]/g, ''); // Remove URL-unsafe chars
+                state = `${baseState}:${namespaceId}:${encodedSession}`;
+                console.log(`[MCP OAuth] State includes session key for automatic restoration`);
             } else {
-                // Add namespace to URL for fallback session restoration
-                const separator = enhancedRedirectUri.includes('?') ? '&' : '?';
-                enhancedRedirectUri = `${effectiveConfig.redirectUri}${separator}oauth_namespace=${namespaceId}`;
-                console.log(`[MCP OAuth] Enhanced redirect URI with namespace parameter: ${enhancedRedirectUri}`);
+                // Just include namespace: baseState:namespace
+                state = `${baseState}:${namespaceId}`;
+                console.log(`[MCP OAuth] State includes namespace only - will prompt for session key`);
             }
+            
+            // Use base redirect URI since GitHub strips query parameters anyway
+            const enhancedRedirectUri = effectiveConfig.redirectUri;
+            console.log(`[MCP OAuth] Using base redirect URI (GitHub strips query params): ${enhancedRedirectUri}`);
             
             // Build authorization URL with enhanced redirect URI
             console.log(`[MCP OAuth] Building params with redirect_uri: ${enhancedRedirectUri}`);
@@ -403,13 +395,14 @@ class OAuthService {
             const authorizationUrl = `${effectiveConfig.authorizationUrl}?${params.toString()}`;
             console.log(`[MCP OAuth] Final authorization URL: ${authorizationUrl}`);
             
-            // Store flow information
+            // Store flow information including the enhanced redirect URI
             const flowInfo = {
                 serverName,
                 config: effectiveConfig,
                 state,
                 codeVerifier,
                 codeChallenge,
+                enhancedRedirectUri: enhancedRedirectUri, // Store the exact redirect URI used
                 startedAt: Date.now()
             };
             
@@ -446,8 +439,11 @@ class OAuthService {
      * @returns {Promise<OAuthToken>} OAuth token
      */
     async completeAuthorizationFlow(code, state) {
-        // Extract namespace from state parameter
-        const [baseState, namespaceId] = state.includes(':') ? state.split(':') : [state, null];
+        // Extract namespace from state parameter: baseState:namespaceId or baseState:namespaceId:encodedSessionKey
+        const stateParts = state.split(':');
+        const baseState = stateParts[0];
+        const namespaceId = stateParts[1];
+        const encodedSessionKey = stateParts[2]; // Optional
         
         // If we have a namespace, try to restore session context
         if (namespaceId && window.NamespaceService) {
@@ -496,10 +492,10 @@ class OAuthService {
         // Save updated pending flows to storage
         await this.savePendingFlows();
         
-        const { serverName, config, codeVerifier } = finalFlowInfo;
+        const { serverName, config, codeVerifier, enhancedRedirectUri } = finalFlowInfo;
         
-        // Exchange code for token
-        const tokenData = await this.exchangeCodeForToken(code, config, codeVerifier);
+        // Exchange code for token using the exact redirect URI that was used in authorization
+        const tokenData = await this.exchangeCodeForToken(code, config, codeVerifier, enhancedRedirectUri);
         
         // Create and store token
         const token = new OAuthToken(tokenData);
@@ -516,13 +512,18 @@ class OAuthService {
      * @param {string} code - Authorization code
      * @param {Object} config - OAuth configuration
      * @param {string} codeVerifier - PKCE code verifier
+     * @param {string} redirectUri - The exact redirect URI used in authorization (optional)
      * @returns {Promise<Object>} Token response
      */
-    async exchangeCodeForToken(code, config, codeVerifier) {
+    async exchangeCodeForToken(code, config, codeVerifier, redirectUri = null) {
+        // Use the provided redirect URI or fall back to config.redirectUri
+        const actualRedirectUri = redirectUri || config.redirectUri;
+        console.log(`[MCP OAuth] Token exchange using redirect_uri: ${actualRedirectUri}`);
+        
         const params = new URLSearchParams({
             grant_type: config.grantType || 'authorization_code',
             code: code,
-            redirect_uri: config.redirectUri,
+            redirect_uri: actualRedirectUri,
             client_id: config.clientId,
             code_verifier: codeVerifier
         });

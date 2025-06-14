@@ -38,24 +38,28 @@ class MCPOAuthFlow {
         const code = urlParams.get('code');
         const state = urlParams.get('state');
         const error = urlParams.get('error');
-        const oauthSession = urlParams.get('oauth_session');
-        const oauthNamespace = urlParams.get('oauth_namespace');
         
         if (code && state) {
             console.log('[MCP OAuth Flow] Detected OAuth callback with code and state');
             
-            // Extract namespace from state if present
-            const [baseState, namespaceId] = state.includes(':') ? state.split(':') : [state, null];
+            // Parse state parameter: baseState:namespaceId or baseState:namespaceId:encodedSessionKey
+            const stateParts = state.split(':');
+            const baseState = stateParts[0];
+            const namespaceId = stateParts[1];
+            const encodedSessionKey = stateParts[2]; // Optional
+            
             if (namespaceId) {
                 console.log(`[MCP OAuth Flow] OAuth callback for namespace: ${namespaceId}`);
             }
             
-            // Restore session if oauth_session parameter is present
-            if (oauthSession) {
-                this.restoreSessionFromUrl(oauthSession, namespaceId);
-            } else if (oauthNamespace && !window.ShareManager?.getSessionKey?.()) {
+            // Restore session from state parameter if available
+            if (encodedSessionKey) {
+                console.log('[MCP OAuth Flow] Session key found in state parameter');
+                this.restoreSessionFromState(encodedSessionKey, namespaceId);
+            } else if (namespaceId && !window.ShareManager?.getSessionKey?.()) {
                 // Fallback: prompt user for session password if no session key
-                this.promptForSessionPassword(oauthNamespace);
+                console.log('[MCP OAuth Flow] No session key in state, prompting user');
+                this.promptForSessionPassword(namespaceId);
             }
             
             // Handle OAuth callback
@@ -96,6 +100,42 @@ class MCPOAuthFlow {
             return true;
         } catch (error) {
             console.error('[MCP OAuth Flow] Failed to restore session from URL:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Restore session context from state parameter
+     * @param {string} encodedSessionKey - Base64 encoded session key (URL-safe)
+     * @param {string} namespaceId - Namespace ID from state parameter
+     */
+    restoreSessionFromState(encodedSessionKey, namespaceId) {
+        try {
+            // Decode the session key (add back padding if needed)
+            let paddedEncodedSession = encodedSessionKey;
+            while (paddedEncodedSession.length % 4) {
+                paddedEncodedSession += '=';
+            }
+            const sessionKey = atob(paddedEncodedSession);
+            
+            console.log(`[MCP OAuth Flow] Restoring session for namespace: ${namespaceId}`);
+            
+            // Set the session key in ShareManager if available
+            if (window.aiHackare && window.aiHackare.shareManager) {
+                window.aiHackare.shareManager.setSessionKey(sessionKey);
+                console.log('[MCP OAuth Flow] Session key restored from state parameter');
+            } else if (window.ShareManager && window.ShareManager.setSessionKey) {
+                // Fallback for different initialization patterns
+                window.ShareManager.setSessionKey(sessionKey);
+                console.log('[MCP OAuth Flow] Session key restored from state parameter (fallback)');
+            } else {
+                console.error('[MCP OAuth Flow] ShareManager not available for session restoration');
+                return false;
+            }
+            
+            return true;
+        } catch (error) {
+            console.error('[MCP OAuth Flow] Failed to restore session from state parameter:', error);
             return false;
         }
     }
