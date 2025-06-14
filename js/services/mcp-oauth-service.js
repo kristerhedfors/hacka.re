@@ -355,6 +355,23 @@ class OAuthService {
             const sessionKey = window.ShareManager && window.ShareManager.getSessionKey ? 
                 window.ShareManager.getSessionKey() : null;
             
+            // Check if session key is available and warn user if not
+            if (!sessionKey) {
+                console.warn(`[MCP OAuth] No session key available - OAuth will use namespace-based fallback`);
+                
+                // Show user a warning about the session requirement
+                if (window.confirm(
+                    'No session password is set. OAuth may fail without a session password. ' +
+                    'Would you like to set a session password first?\n\n' +
+                    'Click OK to set password, or Cancel to continue anyway.'
+                )) {
+                    throw new MCPOAuthError(
+                        'Please set a session password first via the sharing options, then try OAuth again.',
+                        'no_session_key'
+                    );
+                }
+            }
+            
             // Enhance redirect URI with session information if available
             let enhancedRedirectUri = effectiveConfig.redirectUri;
             if (sessionKey) {
@@ -364,7 +381,10 @@ class OAuthService {
                 enhancedRedirectUri = `${effectiveConfig.redirectUri}${separator}oauth_session=${encodedSession}`;
                 console.log(`[MCP OAuth] Enhanced redirect URI with session parameter`);
             } else {
-                console.warn(`[MCP OAuth] No session key available - OAuth callback may require manual session restoration`);
+                // Add namespace to URL for fallback session restoration
+                const separator = enhancedRedirectUri.includes('?') ? '&' : '?';
+                enhancedRedirectUri = `${effectiveConfig.redirectUri}${separator}oauth_namespace=${namespaceId}`;
+                console.log(`[MCP OAuth] Using namespace-based redirect URI (no session key available)`);
             }
             
             // Build authorization URL with enhanced redirect URI
