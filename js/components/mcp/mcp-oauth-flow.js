@@ -828,7 +828,7 @@ class MCPOAuthFlow {
                     </button>
                     <button class="primary-button" onclick="
                         this.closest('.modal').remove();
-                        document.querySelector('[data-modal=\\'mcp\\']')?.click();
+                        document.querySelector('#mcp-servers-btn')?.click();
                     ">
                         Open MCP Modal
                     </button>
