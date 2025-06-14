@@ -795,10 +795,10 @@ class MCPOAuthFlow {
                         
                         <h5>How to properly authorize with GitHub:</h5>
                         <ol>
-                            <li>Go to <strong>Settings → MCP Servers</strong></li>
-                            <li>Find your GitHub MCP server configuration</li>
-                            <li>Click the <strong>"Authorize"</strong> button</li>
-                            <li>You'll see a device code to enter on GitHub</li>
+                            <li>Click the <strong>"MCP"</strong> button in the top toolbar</li>
+                            <li>Find your GitHub MCP server configuration (${serverName})</li>
+                            <li>Click the <strong>"Authorize"</strong> button next to it</li>
+                            <li>You'll see a device code to copy and enter on GitHub</li>
                             <li>No page redirects needed!</li>
                         </ol>
                         
@@ -817,9 +817,9 @@ class MCPOAuthFlow {
                     </button>
                     <button class="primary-button" onclick="
                         this.closest('.modal').remove();
-                        document.querySelector('[data-modal=\\'settings\\']')?.click();
+                        document.querySelector('[data-modal=\\'mcp\\']')?.click();
                     ">
-                        Go to Settings
+                        Open MCP Modal
                     </button>
                 </div>
             </div>
