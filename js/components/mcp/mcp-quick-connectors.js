@@ -947,7 +947,7 @@ Or error: bad request: unknown integration' rows="8" class="mcp-response-textare
             
             // Show the error message to user
             const errorMsg = responseText.toLowerCase().includes('unknown integration') 
-                ? `GitHub MCP Server Error: "${responseText}"\n\nThis suggests the GitHub Copilot MCP server may require a different type of authentication or registration. The personal access token might not be sufficient for this service.`
+                ? `GitHub MCP Server Error: "${responseText}"\n\nThe GitHub Copilot MCP server appears to require:\n• GitHub Copilot subscription\n• Copilot-specific authentication (not regular OAuth tokens)\n• Integration registration with GitHub\n\nThis service may be restricted to official GitHub Copilot integrations like VS Code.`
                 : `Server responded with error: "${responseText}"`;
                 
             alert(errorMsg);

@@ -299,6 +299,7 @@ class HttpTransport extends Transport {
 
             const requestHeaders = {
                 'Content-Type': 'application/json',
+                'X-MCP-Toolsets': 'repos,issues,pull_requests,users',
                 ...this.config.headers
             };
             
