@@ -380,6 +380,7 @@ class OAuthService {
             }
             
             // Build authorization URL with enhanced redirect URI
+            console.log(`[MCP OAuth] Building params with redirect_uri: ${enhancedRedirectUri}`);
             const params = new URLSearchParams({
                 response_type: effectiveConfig.responseType || 'code',
                 client_id: effectiveConfig.clientId,
@@ -389,6 +390,8 @@ class OAuthService {
                 code_challenge: codeChallenge,
                 code_challenge_method: 'S256'
             });
+            
+            console.log(`[MCP OAuth] URLSearchParams redirect_uri: ${params.get('redirect_uri')}`);
 
             // Add custom parameters if provided
             if (effectiveConfig.additionalParams) {
@@ -458,8 +461,30 @@ class OAuthService {
             }
         }
         
+        console.log(`[MCP OAuth] Looking for pending flow with state: ${state}`);
+        console.log(`[MCP OAuth] Available pending flows:`, Array.from(this.pendingFlows.keys()));
+        
         const flowInfo = this.pendingFlows.get(state);
         if (!flowInfo) {
+            console.error(`[MCP OAuth] No pending flow found for state: ${state}`);
+            console.error(`[MCP OAuth] Pending flows in memory:`, this.pendingFlows.size);
+            
+            // Try to reload pending flows from storage
+            await this.loadPendingFlows();
+            console.log(`[MCP OAuth] After reloading, available flows:`, Array.from(this.pendingFlows.keys()));
+            
+            const reloadedFlowInfo = this.pendingFlows.get(state);
+            if (!reloadedFlowInfo) {
+                throw new MCPOAuthError(
+                    'Invalid or expired state parameter. This may happen if your session has changed since starting the OAuth flow.', 
+                    'invalid_state'
+                );
+            }
+        }
+        
+        // Get the flow info (either from initial lookup or after reload)
+        const finalFlowInfo = this.pendingFlows.get(state);
+        if (!finalFlowInfo) {
             throw new MCPOAuthError(
                 'Invalid or expired state parameter. This may happen if your session has changed since starting the OAuth flow.', 
                 'invalid_state'
@@ -471,7 +496,7 @@ class OAuthService {
         // Save updated pending flows to storage
         await this.savePendingFlows();
         
-        const { serverName, config, codeVerifier } = flowInfo;
+        const { serverName, config, codeVerifier } = finalFlowInfo;
         
         // Exchange code for token
         const tokenData = await this.exchangeCodeForToken(code, config, codeVerifier);
