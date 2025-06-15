@@ -6,7 +6,7 @@ import time
 import requests
 import json
 from pathlib import Path
-from test_utils import dismiss_welcome_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
 
 
 class StdioProxyWithOAuth:
@@ -163,7 +163,14 @@ class TestMCPStdioOAuthMiddleware:
         oauth_proxy.start_with_oauth(enable_oauth=True)
         
         page.goto(serve_hacka_re)
+        # Wait for page to be ready
+        page.wait_for_selector("body", state="visible", timeout=2000)
+        page.wait_for_load_state("networkidle", timeout=2000)
         dismiss_welcome_modal(page)
+        dismiss_settings_modal(page)
+        
+        # Add a small delay to ensure all JavaScript has initialized
+        page.wait_for_timeout(500)
         
         # Test trusted origin access through browser
         proxy_test = page.evaluate(f"""
@@ -323,7 +330,14 @@ class TestMCPStdioOAuthMiddleware:
         oauth_proxy.start_with_oauth(enable_oauth=True)
         
         page.goto(serve_hacka_re)
+        # Wait for page to be ready
+        page.wait_for_selector("body", state="visible", timeout=2000)
+        page.wait_for_load_state("networkidle", timeout=2000)
         dismiss_welcome_modal(page)
+        dismiss_settings_modal(page)
+        
+        # Add a small delay to ensure all JavaScript has initialized
+        page.wait_for_timeout(500)
         
         # Set OAuth credentials through UI/API
         credentials_setup = page.evaluate(f"""

@@ -15,10 +15,11 @@
  * Custom error classes for transport-specific errors
  */
 class MCPTransportError extends Error {
-    constructor(message, code = null) {
+    constructor(message, code = null, data = null) {
         super(message);
         this.name = 'MCPTransportError';
         this.code = code;
+        this.data = data;
     }
 }
 
@@ -269,12 +270,130 @@ class SseTransport extends Transport {
 }
 
 /**
+ * HTTP transport for HTTP-based MCP servers
+ * 
+ * This transport communicates with MCP servers using HTTP requests
+ * without relying on Server-Sent Events.
+ */
+class HttpTransport extends Transport {
+    constructor(config) {
+        super();
+        this.config = config;
+        this.connected = false;
+    }
+
+    async connect() {
+        // For HTTP-based MCP, we don't need a persistent connection
+        // We'll validate the connection with a simple request
+        try {
+            const initMessage = {
+                jsonrpc: '2.0',
+                method: 'initialize',
+                params: {
+                    protocolVersion: '2024-11-05',
+                    capabilities: {},
+                    clientInfo: { name: 'hacka.re', version: '1.0' }
+                },
+                id: 1
+            };
+
+            const requestHeaders = {
+                'Content-Type': 'application/json',
+                'X-MCP-Toolsets': 'repos,issues,pull_requests,users',
+                ...this.config.headers
+            };
+            
+            console.log('[MCP Transport] Making request to:', this.config.url);
+            console.log('[MCP Transport] Request headers:', requestHeaders);
+            console.log('[MCP Transport] Request body:', JSON.stringify(initMessage, null, 2));
+            
+            const testResponse = await fetch(this.config.url, {
+                method: 'POST',
+                headers: requestHeaders,
+                body: JSON.stringify(initMessage)
+            });
+
+            if (testResponse.ok) {
+                this.connected = true;
+                return;
+            } else if (testResponse.status === 401 || testResponse.status === 403 || testResponse.status === 400) {
+                // For authentication and client errors, provide manual curl command
+                const curlCommand = this.generateCurlCommand(this.config.url, initMessage, this.config.headers);
+                console.log('[MCP Transport] Generated curl command:', curlCommand);
+                console.log('[MCP Transport] Headers:', this.config.headers);
+                console.log('[MCP Transport] Request body:', JSON.stringify(initMessage, null, 2));
+                
+                const errorType = testResponse.status === 400 ? 'Request format error' : 'Authentication failed';
+                throw new MCPTransportError(
+                    `${errorType}. Try manual connection with curl:\n\n${curlCommand}`,
+                    'auth_manual_required',
+                    { curlCommand, url: this.config.url, message: initMessage, headers: this.config.headers }
+                );
+            } else {
+                throw new MCPTransportError(`HTTP connection failed: ${testResponse.status} ${testResponse.statusText}`);
+            }
+        } catch (error) {
+            if (error instanceof MCPTransportError) {
+                throw error;
+            }
+            throw new MCPTransportError(`Failed to connect via HTTP: ${error.message}`);
+        }
+    }
+
+    generateCurlCommand(url, message, headers = {}) {
+        let curlCommand = `curl -X POST "${url}" \\\n`;
+        curlCommand += `  -H "Content-Type: application/json" \\\n`;
+        
+        // Add additional headers
+        for (const [key, value] of Object.entries(headers)) {
+            curlCommand += `  -H "${key}: ${value}" \\\n`;
+        }
+        
+        curlCommand += `  -d '${JSON.stringify(message, null, 2)}'`;
+        
+        return curlCommand;
+    }
+
+    async send(message) {
+        if (!this.connected) {
+            throw new MCPTransportError('HTTP transport not connected');
+        }
+
+        const response = await fetch(this.config.url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...this.config.headers
+            },
+            body: JSON.stringify(message)
+        });
+
+        if (!response.ok) {
+            throw new MCPTransportError(`HTTP error! status: ${response.status}`);
+        }
+
+        const responseData = await response.json();
+        
+        // Simulate the message callback for HTTP responses
+        if (this.onMessage) {
+            this.onMessage(responseData);
+        }
+
+        return responseData;
+    }
+
+    close() {
+        this.connected = false;
+    }
+}
+
+/**
  * OAuth transport for MCP servers with OAuth authentication
  * 
- * This transport extends SSE transport to add OAuth token management,
+ * This transport extends HTTP transport to add OAuth token management,
  * automatic token refresh, and proper authorization headers.
  */
-class OAuthTransport extends SseTransport {
+class OAuthTransport extends HttpTransport {
     constructor(config, serverName) {
         super(config);
         this.serverName = serverName;
@@ -292,16 +411,35 @@ class OAuthTransport extends SseTransport {
     }
 
     async connect() {
-        // Ensure we have a valid token before connecting
-        if (this.oauthService) {
-            try {
-                await this.oauthService.getAccessToken(this.serverName);
-            } catch (error) {
-                throw new MCPTransportError(`OAuth authentication required: ${error.message}`);
+        try {
+            // Validate OAuth 2.1 compliance if metadata available
+            if (this.oauthService && this.oauthService.validateOAuth21Compliance) {
+                const compliance = await this.oauthService.validateOAuth21Compliance(this.serverName);
+                if (!compliance.compatible) {
+                    console.warn(`[MCP Transport] OAuth 2.1 compliance issues for ${this.serverName}:`, compliance.issues);
+                }
             }
-        }
 
-        return super.connect();
+            // Ensure we have a valid token before connecting
+            if (this.oauthService) {
+                try {
+                    await this.oauthService.getAccessToken(this.serverName);
+                    console.log(`[MCP Transport] OAuth token validated for ${this.serverName}`);
+                    
+                    // Add authorization header to config
+                    const authHeader = await this.oauthService.getAuthorizationHeader(this.serverName);
+                    this.config.headers = { ...this.config.headers, ...authHeader };
+                } catch (error) {
+                    this._lastError = error.message;
+                    throw new MCPTransportError(`OAuth authentication required: ${error.message}`, 'auth_required');
+                }
+            }
+
+            return super.connect();
+        } catch (error) {
+            this._lastError = error.message;
+            throw error;
+        }
     }
 
     async send(message) {
@@ -467,36 +605,6 @@ class OAuthTransport extends SseTransport {
         };
     }
 
-    /**
-     * Enhanced connect with OAuth 2.1 compliance validation
-     */
-    async connect() {
-        try {
-            // Validate OAuth 2.1 compliance if metadata available
-            if (this.oauthService && this.oauthService.validateOAuth21Compliance) {
-                const compliance = await this.oauthService.validateOAuth21Compliance(this.serverName);
-                if (!compliance.compatible) {
-                    console.warn(`[MCP Transport] OAuth 2.1 compliance issues for ${this.serverName}:`, compliance.issues);
-                }
-            }
-
-            // Ensure we have a valid token before connecting
-            if (this.oauthService) {
-                try {
-                    await this.oauthService.getAccessToken(this.serverName);
-                    console.log(`[MCP Transport] OAuth token validated for ${this.serverName}`);
-                } catch (error) {
-                    this._lastError = error.message;
-                    throw new MCPTransportError(`OAuth authentication required: ${error.message}`, 'auth_required');
-                }
-            }
-
-            return super.connect();
-        } catch (error) {
-            this._lastError = error.message;
-            throw error;
-        }
-    }
 
     /**
      * Disconnect and clean up OAuth resources
@@ -556,6 +664,8 @@ class TransportFactory {
             return new StdioTransport(config, serverName);
         } else if (config.type === 'sse') {
             return new SseTransport(config);
+        } else if (config.type === 'http') {
+            return new HttpTransport(config);
         } else if (config.type === 'oauth') {
             return new OAuthTransport(config, serverName);
         } else {
@@ -568,7 +678,7 @@ class TransportFactory {
      * @returns {Array<string>} Array of supported transport types
      */
     static getSupportedTypes() {
-        return ['stdio', 'sse', 'oauth'];
+        return ['stdio', 'sse', 'http', 'oauth'];
     }
 }
 

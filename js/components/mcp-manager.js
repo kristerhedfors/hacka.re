@@ -14,6 +14,7 @@ window.MCPManager = (function() {
     let toolsManager = null;
     let utils = null;
     let oauthIntegration = null;
+    let quickConnectors = null;
     
     // Initialize state
     let initialized = false;
@@ -41,10 +42,26 @@ window.MCPManager = (function() {
         toolsManager = window.MCPToolsManager;
         utils = window.MCPUtils || { showNotification: console.log };
         oauthIntegration = window.MCPOAuthIntegration;
+        quickConnectors = window.MCPQuickConnectors;
         
         // Check all components are available
-        if (!uiManager || !proxyManager || !serverManager || !commandHistory || !toolsManager) {
-            console.error('[MCPManager] Missing required components');
+        const missingComponents = [];
+        if (!uiManager) missingComponents.push('MCPUIManager');
+        if (!proxyManager) missingComponents.push('MCPProxyManager');
+        if (!serverManager) missingComponents.push('MCPServerManager');
+        if (!commandHistory) missingComponents.push('MCPCommandHistory');
+        if (!toolsManager) missingComponents.push('MCPToolsManager');
+        
+        if (missingComponents.length > 0) {
+            console.error('[MCPManager] Missing required components:', missingComponents);
+            console.log('[MCPManager] Available components:', {
+                uiManager: !!uiManager,
+                proxyManager: !!proxyManager,
+                serverManager: !!serverManager,
+                commandHistory: !!commandHistory,
+                toolsManager: !!toolsManager,
+                quickConnectors: !!quickConnectors
+            });
             return;
         }
         
@@ -85,6 +102,18 @@ window.MCPManager = (function() {
             } else {
                 console.warn('[MCPManager] OAuth integration failed to initialize');
             }
+        }
+        
+        // Initialize quick connectors if available
+        if (quickConnectors) {
+            console.log('[MCPManager] Attempting to initialize quick connectors');
+            if (quickConnectors.init()) {
+                console.log('[MCPManager] Quick connectors initialized');
+            } else {
+                console.warn('[MCPManager] Quick connectors failed to initialize');
+            }
+        } else {
+            console.warn('[MCPManager] Quick connectors component not available');
         }
         
         // Setup initial state

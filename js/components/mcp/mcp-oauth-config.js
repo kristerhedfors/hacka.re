@@ -97,6 +97,20 @@ class MCPOAuthConfig {
     }
 
     /**
+     * Generate default redirect URI for the current environment
+     * @returns {string} Default redirect URI
+     */
+    generateDefaultRedirectUri() {
+        // For production, always use https://hacka.re
+        if (window.location.hostname === 'hacka.re') {
+            return 'https://hacka.re';
+        }
+        
+        // For local development, use the current origin
+        return window.location.origin;
+    }
+
+    /**
      * Create OAuth configuration UI
      * @param {HTMLElement} container - Container element
      * @param {string} serverName - Server name for configuration
@@ -136,8 +150,14 @@ class MCPOAuthConfig {
                     <div class="mcp-form-group">
                         <label for="oauth-redirect-uri">Redirect URI:</label>
                         <input type="text" id="oauth-redirect-uri" class="mcp-input" 
-                               placeholder="e.g., http://localhost:8000/oauth/callback" 
-                               value="${existingConfig.redirectUri || window.location.origin + '/oauth/callback'}">
+                               placeholder="e.g., https://hacka.re" 
+                               value="${existingConfig.redirectUri || this.generateDefaultRedirectUri()}">
+                        <small>
+                            <strong>For GitHub OAuth Apps:</strong><br>
+                            • Homepage URL: <code>https://hacka.re</code><br>
+                            • Authorization callback URL: <code>https://hacka.re</code><br>
+                            <em>Note: GitHub uses Device Flow (no redirect required)</em>
+                        </small>
                     </div>
 
                     <div class="mcp-form-group custom-only" style="display: none;">
@@ -315,6 +335,12 @@ class MCPOAuthConfig {
             config.tokenUrl = providerConfig.tokenUrl;
             config.responseType = providerConfig.responseType;
             config.grantType = providerConfig.grantType;
+            
+            // Copy device flow specific properties
+            if (providerConfig.useDeviceFlow) {
+                config.useDeviceFlow = providerConfig.useDeviceFlow;
+                config.deviceCodeUrl = providerConfig.deviceCodeUrl;
+            }
         }
 
         // Parse additional parameters
@@ -718,7 +744,7 @@ class MCPOAuthConfig {
                 scope: '', // Will be filled by user
                 clientId: '', // Will be filled by user or registration
                 clientSecret: '', // Optional
-                redirectUri: `${window.location.origin}/oauth/callback`,
+                redirectUri: `${window.location.origin}`,
                 mcpServerUrl: mcpServerUrl,
                 _metadata: metadata,
                 _autoConfigured: true

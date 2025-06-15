@@ -392,6 +392,7 @@ async function getCurrentTimeInBerlin() {
         
         <div id="mcp-servers-modal" class="modal">
             <div class="modal-content">
+                <span class="experimental-tag">EXPERIMENTAL</span>
                 <div class="settings-header">
                     <h2>MCP Servers</h2>
                     <span class="info-icon" id="mcp-servers-info-icon">
@@ -544,7 +545,7 @@ async function getCurrentTimeInBerlin() {
                         </div>
                     </div>
                     <div class="form-actions">
-                        <a href="#" id="clear-all-settings" class="function-library-link" style="margin-right: auto;">Delete GPT namespace and settings</a>
+                        <a href="#" id="clear-all-settings" class="function-library-link" style="margin-right: auto;">Delete current namespace and settings</a>
                         <button type="submit" class="btn primary-btn" id="save-settings-btn" name="save-settings-btn" aria-label="Save Settings Button">Save Settings</button>
                         <button type="button" class="btn secondary-btn" id="close-settings" name="close-settings" aria-label="Cancel Button">Cancel</button>
                     </div>
@@ -680,6 +681,7 @@ async function getCurrentTimeInBerlin() {
     <script src="js/components/mcp/mcp-oauth-config.js"></script>
     <script src="js/components/mcp/mcp-oauth-flow.js"></script>
     <script src="js/components/mcp/mcp-oauth-integration.js"></script>
+    <script src="js/components/mcp/mcp-quick-connectors.js"></script>
     <script src="js/components/mcp-manager.js"></script>
     <!-- Chat Services -->
     <script src="js/services/chat-tools-service.js"></script>
