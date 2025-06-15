@@ -2533,3 +2533,150 @@ footer a:hover {
 .manual-token-entry .help-section a:hover {
     text-decoration: underline;
 }
+
+
+/* ===== Service Connector Styles ===== */
+.service-pat-modal .modal-content,
+.service-oauth-setup-modal .modal-content {
+    max-width: 600px;
+    margin: 2rem auto;
+}
+
+.service-pat-modal .token-setup-instructions,
+.service-oauth-setup-modal .oauth-setup-instructions {
+    background-color: #f3f4f6;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.service-pat-modal .token-setup-instructions h4,
+.service-oauth-setup-modal .oauth-setup-instructions h4 {
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.service-pat-modal .token-setup-instructions ol,
+.service-oauth-setup-modal .oauth-setup-instructions ol {
+    margin-left: 1.5rem;
+    margin-top: 0.5rem;
+}
+
+.service-pat-modal .token-setup-instructions li,
+.service-oauth-setup-modal .oauth-setup-instructions li {
+    margin-bottom: 0.5rem;
+}
+
+.service-pat-modal .token-input-form,
+.service-oauth-setup-modal .oauth-credentials-form {
+    margin-top: 1.5rem;
+}
+
+.service-pat-modal .form-group,
+.service-oauth-setup-modal .form-group {
+    margin-bottom: 1rem;
+}
+
+.service-pat-modal label,
+.service-oauth-setup-modal label {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.service-pat-modal input,
+.service-oauth-setup-modal input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+}
+
+.service-pat-modal input:focus,
+.service-oauth-setup-modal input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.service-pat-modal .form-help,
+.service-oauth-setup-modal .form-help {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+}
+
+.service-pat-modal .form-actions,
+.service-oauth-setup-modal .form-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+}
+
+/* Device Code Modal Styles */
+.device-code-modal .modal-content {
+    max-width: 500px;
+    margin: 2rem auto;
+}
+
+.device-code-modal .device-code-instructions {
+    text-align: center;
+}
+
+.device-code-modal .device-code-instructions ol {
+    text-align: left;
+    margin: 1rem 0 1rem 2rem;
+}
+
+.device-code-modal .device-code-display {
+    background-color: #f3f4f6;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    margin: 1.5rem 0;
+}
+
+.device-code-modal .device-code-large {
+    font-size: 2rem;
+    font-weight: bold;
+    font-family: "Courier New", monospace;
+    color: var(--primary-color);
+    letter-spacing: 0.25rem;
+    display: block;
+    margin-bottom: 1rem;
+}
+
+.device-code-modal .waiting-message {
+    color: #6b7280;
+    font-size: 0.875rem;
+    margin-top: 1rem;
+}
+
+.device-code-modal .waiting-message i {
+    margin-right: 0.5rem;
+}
+
+/* Quick Connector Status Styles */
+.quick-connector-card .status-connected {
+    color: var(--secondary-color);
+    font-weight: 500;
+}
+
+.quick-connector-card .status-connecting,
+.quick-connector-card .status-authorizing {
+    color: var(--primary-color);
+}
+
+.quick-connector-card .tool-count {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-left: 0.5rem;
+}
+
+.quick-connector-card .disconnect-btn {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    padding: 0.25rem 0.75rem;
+}

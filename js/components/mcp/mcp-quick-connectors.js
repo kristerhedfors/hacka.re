@@ -13,51 +13,28 @@ window.MCPQuickConnectors = (function() {
             name: 'GitHub',
             icon: 'fab fa-github',
             description: 'Access GitHub repositories, issues, and pull requests',
-            transport: 'oauth',
-            serverUrl: 'https://api.githubcopilot.com/mcp/',
-            oauthConfig: {
-                provider: 'github',
-                authorizationUrl: 'https://github.com/login/oauth/authorize',
-                tokenUrl: 'https://github.com/login/oauth/access_token',
-                deviceCodeUrl: 'https://github.com/login/device/code',
-                scope: 'repo read:user',
-                clientId: '', // User needs to provide
-                redirectUri: window.location.origin,
-                useDeviceFlow: true,
-                grantType: 'urn:ietf:params:oauth:grant-type:device_code'
-            },
+            transport: 'service-connector',
+            authType: 'pat',
             setupInstructions: {
-                title: 'GitHub OAuth Setup',
+                title: 'GitHub Personal Access Token Setup',
                 steps: [
-                    'Go to GitHub Settings > Developer settings > OAuth Apps',
-                    'Click "New OAuth App"',
-                    'Set Application name to: "hacka.re MCP Client" (or your preferred name)',
-                    'Set Homepage URL to: ' + window.location.origin,
-                    'Set Authorization callback URL to: ' + window.location.origin + ' (required but not used)',
-                    'Copy the Client ID and paste it below',
-                    'Note: hacka.re uses GitHub\'s Device Flow - no redirects needed!'
+                    'Go to GitHub Settings > Developer settings > Personal access tokens > Tokens (classic)',
+                    'Click "Generate new token"',
+                    'Give your token a descriptive name like "hacka.re MCP Integration"',
+                    'Select scopes: "repo" for full repository access, "read:user" for user info',
+                    'Click "Generate token" and copy the token immediately',
+                    'Paste the token when prompted (it won\'t be shown again on GitHub)',
+                    'Note: Your token will be encrypted and stored locally'
                 ],
-                docUrl: 'https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app'
+                docUrl: 'https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token'
             }
         },
         gmail: {
             name: 'Gmail',
             icon: 'fas fa-envelope',
             description: 'Read and send emails through Gmail',
-            transport: 'oauth',
-            serverUrl: 'https://gmail.googleapis.com',
-            oauthConfig: {
-                provider: 'google',
-                authorizationUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
-                tokenUrl: 'https://oauth2.googleapis.com/token',
-                scope: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send',
-                clientId: '', // User needs to provide
-                redirectUri: window.location.origin,
-                additionalParams: {
-                    access_type: 'offline',
-                    prompt: 'consent'
-                }
-            },
+            transport: 'service-connector',
+            authType: 'oauth-device',
             setupInstructions: {
                 title: 'Gmail OAuth Setup',
                 steps: [
@@ -65,43 +42,28 @@ window.MCPQuickConnectors = (function() {
                     'Create a new project or select existing one',
                     'Enable Gmail API in "APIs & Services" > "Library"',
                     'Go to "APIs & Services" > "Credentials"',
-                    'Create OAuth 2.0 Client ID (Web application)',
-                    'Add authorized redirect URI: ' + window.location.origin,
-                    'Copy the Client ID and paste it below'
+                    'Create OAuth 2.0 Client ID (Desktop application type)',
+                    'Copy the Client ID and Client Secret',
+                    'Enter them when prompted to start device flow authentication'
                 ],
-                docUrl: 'https://developers.google.com/gmail/api/auth/web-server'
+                docUrl: 'https://developers.google.com/gmail/api/quickstart/js'
             }
         },
-        drive: {
-            name: 'Google Drive',
-            icon: 'fab fa-google-drive',
-            description: 'Access and manage files in Google Drive',
-            transport: 'oauth',
-            serverUrl: 'https://www.googleapis.com/drive/v3',
-            oauthConfig: {
-                provider: 'google',
-                authorizationUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
-                tokenUrl: 'https://oauth2.googleapis.com/token',
-                scope: 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.file',
-                clientId: '', // User needs to provide
-                redirectUri: window.location.origin,
-                additionalParams: {
-                    access_type: 'offline',
-                    prompt: 'consent'
-                }
-            },
+        gdocs: {
+            name: 'Google Docs',
+            icon: 'fas fa-file-alt',
+            description: 'Access and edit Google Docs',
+            transport: 'service-connector',
+            authType: 'oauth-shared',
             setupInstructions: {
-                title: 'Google Drive OAuth Setup',
+                title: 'Google Docs OAuth Setup',
                 steps: [
-                    'Go to Google Cloud Console (console.cloud.google.com)',
-                    'Create a new project or select existing one',
-                    'Enable Google Drive API in "APIs & Services" > "Library"',
-                    'Go to "APIs & Services" > "Credentials"',
-                    'Create OAuth 2.0 Client ID (Web application)',
-                    'Add authorized redirect URI: ' + window.location.origin,
-                    'Copy the Client ID and paste it below'
+                    'Google Docs uses the same authentication as Gmail',
+                    'If you\'ve already connected Gmail, Docs will work automatically',
+                    'Otherwise, set up Gmail first to enable Google Docs access',
+                    'Additional permissions for Docs will be requested if needed'
                 ],
-                docUrl: 'https://developers.google.com/drive/api/guides/about-auth'
+                docUrl: 'https://developers.google.com/docs/api/quickstart/js'
             }
         },
         calendar: {
@@ -225,7 +187,7 @@ window.MCPQuickConnectors = (function() {
     
     /**
      * Connect to a service
-     * @param {string} serviceKey - Service key (github, gmail, drive, calendar)
+     * @param {string} serviceKey - Service key (github, gmail, gdocs, calendar)
      */
     async function connectService(serviceKey) {
         const config = QUICK_CONNECTORS[serviceKey];
@@ -233,7 +195,35 @@ window.MCPQuickConnectors = (function() {
             console.error(`[MCPQuickConnectors] Unknown service: ${serviceKey}`);
             return;
         }
+
+        // Check if this is a service connector type
+        if (config.transport === 'service-connector') {
+            // Use the new MCPServiceConnectors
+            if (window.MCPServiceConnectors) {
+                try {
+                    updateConnectorStatus(serviceKey, 'connecting');
+                    const result = await window.MCPServiceConnectors.connectService(serviceKey);
+                    if (result) {
+                        updateConnectorStatus(serviceKey, 'connected');
+                        saveConnectorState(serviceKey, 'connected');
+                        showNotification(`✅ Connected to ${config.name}`, 'success');
+                    } else {
+                        updateConnectorStatus(serviceKey, 'disconnected');
+                    }
+                } catch (error) {
+                    console.error(`[MCPQuickConnectors] Service connector error:`, error);
+                    updateConnectorStatus(serviceKey, 'disconnected');
+                    showNotification(`❌ Failed to connect to ${config.name}: ${error.message}`, 'error');
+                }
+                return;
+            } else {
+                console.error('[MCPQuickConnectors] MCPServiceConnectors not available');
+                showNotification('Service connectors not loaded. Please refresh the page.', 'error');
+                return;
+            }
+        }
         
+        // Original OAuth flow for other services
         const serverName = `mcp-${serviceKey}`;
         
         // Check if already connected
@@ -618,10 +608,12 @@ window.MCPQuickConnectors = (function() {
      */
     async function disconnectService(serviceKey) {
         const config = QUICK_CONNECTORS[serviceKey];
-        const serverName = `mcp-${serviceKey}`;
         
         try {
-            if (mcpClient) {
+            if (config.transport === 'service-connector' && window.MCPServiceConnectors) {
+                await window.MCPServiceConnectors.disconnectService(serviceKey);
+            } else if (mcpClient) {
+                const serverName = `mcp-${serviceKey}`;
                 const connectionInfo = mcpClient.getConnectionInfo(serverName);
                 if (connectionInfo && connectionInfo.connected) {
                     await mcpClient.disconnect(serverName);
@@ -649,10 +641,13 @@ window.MCPQuickConnectors = (function() {
      */
     function updateAllConnectorStatuses() {
         Object.keys(QUICK_CONNECTORS).forEach(serviceKey => {
-            const serverName = `mcp-${serviceKey}`;
+            const config = QUICK_CONNECTORS[serviceKey];
             let isConnected = false;
             
-            if (mcpClient) {
+            if (config.transport === 'service-connector' && window.MCPServiceConnectors) {
+                isConnected = window.MCPServiceConnectors.isConnected(serviceKey);
+            } else if (mcpClient) {
+                const serverName = `mcp-${serviceKey}`;
                 const connectionInfo = mcpClient.getConnectionInfo(serverName);
                 isConnected = connectionInfo && connectionInfo.connected;
             }
