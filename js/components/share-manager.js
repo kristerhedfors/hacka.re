@@ -288,6 +288,7 @@ window.ShareManager = (function() {
          * @param {Function} addSystemMessage - Function to add system message
          */
         async function generateComprehensiveShareLink(apiKey, systemPrompt, currentModel, messages, generateShareQRCode, addSystemMessage) {
+            console.log('ShareManager: generateComprehensiveShareLink called');
             if (!apiKey) {
                 if (addSystemMessage) {
                     addSystemMessage('Error: No API key available to share.');
@@ -325,6 +326,10 @@ window.ShareManager = (function() {
                 StorageService.saveSubtitle(subtitle);
             }
             
+            // Debug: Check MCP checkbox state
+            console.log('ShareManager: MCP checkbox element:', elements.shareMcpConnectionsCheckbox);
+            console.log('ShareManager: MCP checkbox checked:', elements.shareMcpConnectionsCheckbox ? elements.shareMcpConnectionsCheckbox.checked : 'element not found');
+            
             // Get options
             const options = {
                 baseUrl: baseUrl,
@@ -344,6 +349,8 @@ window.ShareManager = (function() {
                 title: title,
                 subtitle: subtitle
             };
+            
+            console.log('ShareManager: Options object:', options);
             
             // Validate options
             if (!options.includeBaseUrl && !options.includeApiKey && !options.includeSystemPrompt && !options.includeModel && !options.includeConversation && !options.includePromptLibrary && !options.includeFunctionLibrary && !options.includeMcpConnections) {

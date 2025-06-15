@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MCP Sharing Step-by-Step Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .step { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #e8f5e9; }
+        .error { background-color: #ffebee; }
+        .warning { background-color: #fff3e0; }
+        button { margin: 10px; padding: 10px 15px; }
+        .output { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 3px; }
+        pre { background: #f0f0f0; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>MCP Sharing Step-by-Step Debug</h1>
+    
+    <div class="step">
+        <h3>Step 1: Check if MCP checkbox exists in DOM</h3>
+        <button onclick="checkMcpCheckbox()">Check MCP Checkbox</button>
+        <div id="checkbox-result"></div>
+    </div>
+    
+    <div class="step">
+        <h3>Step 2: Check for GitHub PAT token in storage</h3>
+        <button onclick="checkGitHubToken()">Check GitHub Token</button>
+        <div id="token-result"></div>
+    </div>
+    
+    <div class="step">
+        <h3>Step 3: Test ShareService.createComprehensiveShareableLink directly</h3>
+        <button onclick="testShareService()">Test Share Service</button>
+        <div id="share-service-result"></div>
+    </div>
+    
+    <div class="step">
+        <h3>Step 4: Test complete sharing flow</h3>
+        <button onclick="testCompleteFlow()">Test Complete Flow</button>
+        <div id="complete-flow-result"></div>
+    </div>
+    
+    <script src="js/utils/crypto-utils.js"></script>
+    <script src="js/services/encryption-service.js"></script>
+    <script src="js/services/namespace-service.js"></script>
+    <script src="js/services/core-storage-service.js"></script>
+    <script src="js/services/data-service.js"></script>
+    <script src="js/services/storage-service.js"></script>
+    <script src="js/services/link-sharing-service.js"></script>
+    <script src="js/services/share-service.js"></script>
+    <script src="js/components/dom-elements.js"></script>
+
+    <script>
+        function log(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const div = document.createElement('div');
+            div.className = `output ${type}`;
+            div.innerHTML = message;
+            element.appendChild(div);
+        }
+
+        function checkMcpCheckbox() {
+            const resultDiv = document.getElementById('checkbox-result');
+            resultDiv.innerHTML = '';
+            
+            // Test direct access
+            const directCheckbox = document.getElementById('share-mcp-connections');
+            log('checkbox-result', `Direct getElementById: ${directCheckbox ? '✓ Found' : '✗ Not found'}`, 
+                directCheckbox ? 'success' : 'error');
+            
+            // Test DOMElements access
+            if (window.DOMElements) {
+                const elements = window.DOMElements.getElements();
+                log('checkbox-result', `DOMElements.shareMcpConnectionsCheckbox: ${elements.shareMcpConnectionsCheckbox ? '✓ Found' : '✗ Not found'}`, 
+                    elements.shareMcpConnectionsCheckbox ? 'success' : 'error');
+            } else {
+                log('checkbox-result', 'DOMElements module not available', 'error');
+            }
+        }
+
+        async function checkGitHubToken() {
+            const resultDiv = document.getElementById('token-result');
+            resultDiv.innerHTML = '';
+            
+            try {
+                if (!window.CoreStorageService) {
+                    log('token-result', 'CoreStorageService not available', 'error');
+                    return;
+                }
+                
+                log('token-result', 'Checking for GitHub token...', 'info');
+                const githubToken = await window.CoreStorageService.getValue('mcp_github_token');
+                
+                if (githubToken) {
+                    log('token-result', `✓ GitHub token found: ${githubToken.substring(0, 8)}...${githubToken.substring(githubToken.length - 4)}`, 'success');
+                    log('token-result', `Token length: ${githubToken.length} characters`, 'info');
+                } else {
+                    log('token-result', '✗ No GitHub token found', 'error');
+                }
+                
+                // Check namespace info
+                if (window.NamespaceService) {
+                    const namespaceId = window.NamespaceService.getNamespaceId();
+                    log('token-result', `Current namespace: ${namespaceId}`, 'info');
+                }
+                
+            } catch (error) {
+                log('token-result', `Error checking token: ${error.message}`, 'error');
+            }
+        }
+
+        async function testShareService() {
+            const resultDiv = document.getElementById('share-service-result');
+            resultDiv.innerHTML = '';
+            
+            try {
+                if (!window.ShareService) {
+                    log('share-service-result', 'ShareService not available', 'error');
+                    return;
+                }
+                
+                log('share-service-result', 'Testing ShareService.createComprehensiveShareableLink...', 'info');
+                
+                const testOptions = {
+                    baseUrl: 'https://api.openai.com/v1',
+                    apiKey: 'sk-test123',
+                    model: 'gpt-4o-mini',
+                    includeBaseUrl: true,
+                    includeApiKey: true,
+                    includeModel: true,
+                    includeMcpConnections: true,  // This is the key flag
+                    title: 'Test',
+                    subtitle: 'Debug'
+                };
+                
+                log('share-service-result', `Options: <pre>${JSON.stringify(testOptions, null, 2)}</pre>`, 'info');
+                
+                const shareableLink = await window.ShareService.createComprehensiveShareableLink(testOptions, 'testpassword123');
+                
+                log('share-service-result', `✓ Shareable link created: ${shareableLink.substring(0, 100)}...`, 'success');
+                
+                // Try to extract and decode the data
+                if (window.LinkSharingService) {
+                    const originalHash = window.location.hash;
+                    const linkData = shareableLink.split('#gpt=')[1];
+                    window.location.hash = `#gpt=${linkData}`;
+                    
+                    const extractedData = window.LinkSharingService.extractSharedApiKey('testpassword123');
+                    window.location.hash = originalHash;
+                    
+                    if (extractedData) {
+                        log('share-service-result', `✓ Extracted data: <pre>${JSON.stringify(extractedData, null, 2)}</pre>`, 'success');
+                        
+                        if (extractedData.mcpConnections) {
+                            log('share-service-result', `✓ MCP connections found in extracted data!`, 'success');
+                        } else {
+                            log('share-service-result', '✗ No MCP connections in extracted data', 'error');
+                        }
+                    } else {
+                        log('share-service-result', '✗ Failed to extract data from link', 'error');
+                    }
+                }
+                
+            } catch (error) {
+                log('share-service-result', `Error: ${error.message}`, 'error');
+                console.error('ShareService test error:', error);
+            }
+        }
+
+        async function testCompleteFlow() {
+            const resultDiv = document.getElementById('complete-flow-result');
+            resultDiv.innerHTML = '';
+            
+            log('complete-flow-result', 'Running complete MCP sharing flow test...', 'info');
+            
+            // Step 1: Check checkbox
+            await checkMcpCheckbox();
+            
+            // Step 2: Check token
+            await checkGitHubToken();
+            
+            // Step 3: Test share service
+            await testShareService();
+            
+            log('complete-flow-result', 'Complete flow test finished. Check results above.', 'info');
+        }
+
+        // Auto-run basic checks on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                checkMcpCheckbox();
+            }, 500);
+        });
+    </script>
+</body>
+</html>
