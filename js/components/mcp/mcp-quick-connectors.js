@@ -368,6 +368,16 @@ window.MCPQuickConnectors = (function() {
             if (error.message && error.message.includes('Try manual connection with curl:')) {
                 // Show manual connection testing UI
                 showManualConnectionUI(serviceKey, error.message);
+            } else if (error.message && (
+                error.message.includes('Authorization cancelled') ||
+                error.message.includes('redirect_uri_mismatch') ||
+                error.message.includes('OAuth') ||
+                error.message.includes('timeout')
+            )) {
+                // OAuth failed - show manual flow
+                console.log('[MCPQuickConnectors] OAuth error detected, showing manual flow:', error);
+                const savedConfig = oauthConfig.getConfiguration(serverName);
+                showManualOAuthFlow(serviceKey, savedConfig, error);
             } else {
                 updateConnectorStatus(serviceKey, 'disconnected');
                 showNotification(`❌ Failed to connect to ${config.name}: ${error.message}`, 'error');
@@ -522,7 +532,12 @@ window.MCPQuickConnectors = (function() {
      */
     function waitForAuthorization(authWindow, serverName, state) {
         return new Promise((resolve, reject) => {
+            let checkCount = 0;
+            const maxChecks = 120; // 60 seconds maximum wait time
+            
             const checkInterval = setInterval(() => {
+                checkCount++;
+                
                 try {
                     if (authWindow.closed) {
                         clearInterval(checkInterval);
@@ -530,12 +545,21 @@ window.MCPQuickConnectors = (function() {
                         const oauthService = new window.MCPOAuthService.OAuthService();
                         oauthService.getAccessToken(serverName, false)
                             .then(() => resolve())
-                            .catch(() => reject(new Error('Authorization cancelled')));
+                            .catch(() => reject(new Error('Authorization cancelled or failed - window closed without completing OAuth')));
                         return;
                     }
                     
                     // Try to check URL (will fail with cross-origin until redirect)
                     const currentUrl = authWindow.location.href;
+                    
+                    // Check for Google error page indicators
+                    if (currentUrl.includes('error=') || currentUrl.includes('Error%20400') || currentUrl.includes('redirect_uri_mismatch')) {
+                        clearInterval(checkInterval);
+                        authWindow.close();
+                        reject(new Error('OAuth redirect_uri_mismatch error detected - redirect URI not configured in Google Cloud Console'));
+                        return;
+                    }
+                    
                     if (currentUrl.includes('/oauth/callback')) {
                         authWindow.close();
                         clearInterval(checkInterval);
@@ -549,10 +573,40 @@ window.MCPQuickConnectors = (function() {
                             reject(new Error('Authorization failed'));
                         }
                     }
+                    
+                    // Timeout check
+                    if (checkCount >= maxChecks) {
+                        clearInterval(checkInterval);
+                        authWindow.close();
+                        reject(new Error('OAuth timeout - please try manual flow'));
+                    }
+                    
                 } catch (e) {
-                    // Cross-origin error is expected
+                    // Cross-origin error is expected, but let's also check window title/document if possible
+                    try {
+                        const title = authWindow.document.title;
+                        if (title && (title.includes('Error 400') || title.includes('redirect_uri_mismatch'))) {
+                            clearInterval(checkInterval);
+                            authWindow.close();
+                            reject(new Error('OAuth error detected from window title - redirect_uri_mismatch'));
+                            return;
+                        }
+                    } catch (titleError) {
+                        // Can't access title due to CORS, continue
+                    }
                 }
             }, 500);
+            
+            // Also add a window beforeunload listener to detect early closure
+            authWindow.addEventListener('beforeunload', () => {
+                // Small delay to let window fully close
+                setTimeout(() => {
+                    if (authWindow.closed) {
+                        clearInterval(checkInterval);
+                        reject(new Error('OAuth window closed without completing authorization'));
+                    }
+                }, 100);
+            });
         });
     }
     
