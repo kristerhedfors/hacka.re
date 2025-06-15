@@ -385,48 +385,49 @@
                         console.log(`- FunctionToolsStorage:`, !!window.FunctionToolsStorage);
                         
                         if (window.FunctionToolsRegistry && window.FunctionToolsStorage) {
-                        // Get the tool config for this specific tool
-                        const currentToolConfig = config.tools[tool.name.replace(`${serviceKey}_`, '')];
-                        
-                        // Generate tool definition for the function
-                        const toolDefinition = {
-                            type: "function",
-                            function: {
-                                name: tool.name,
-                                description: tool.description,
-                                parameters: currentToolConfig?.parameters || {
-                                    type: "object",
-                                    properties: {},
-                                    required: []
-                                }
-                            }
-                        };
-                        
-                        // Add the function using the registry
-                        const collectionId = `mcp_${serviceKey}_collection`;
-                        const collectionMetadata = {
-                            name: `${config.name} MCP Functions`,
-                            createdAt: Date.now(),
-                            source: 'mcp-service'
-                        };
-                        
-                        const added = window.FunctionToolsRegistry.addJsFunction(
-                            tool.name,
-                            tool.code,
-                            toolDefinition,
-                            collectionId,
-                            collectionMetadata
-                        );
-                        
-                        if (added) {
-                            console.log(`[MCP Service Connectors] Added ${tool.name} to Function Registry`);
+                            // Get the tool config for this specific tool
+                            const currentToolConfig = config.tools[tool.name.replace(`${serviceKey}_`, '')];
                             
-                            // Enable the function by default
-                            const enabledFunctions = window.FunctionToolsStorage.getEnabledFunctions() || [];
-                            if (!enabledFunctions.includes(tool.name)) {
-                                enabledFunctions.push(tool.name);
-                                window.FunctionToolsStorage.saveEnabledFunctions(enabledFunctions);
-                                console.log(`[MCP Service Connectors] Enabled ${tool.name} in Function Calling`);
+                            // Generate tool definition for the function
+                            const toolDefinition = {
+                                type: "function",
+                                function: {
+                                    name: tool.name,
+                                    description: tool.description,
+                                    parameters: currentToolConfig?.parameters || {
+                                        type: "object",
+                                        properties: {},
+                                        required: []
+                                    }
+                                }
+                            };
+                            
+                            // Add the function using the registry
+                            const collectionId = `mcp_${serviceKey}_collection`;
+                            const collectionMetadata = {
+                                name: `${config.name} MCP Functions`,
+                                createdAt: Date.now(),
+                                source: 'mcp-service'
+                            };
+                            
+                            const added = window.FunctionToolsRegistry.addJsFunction(
+                                tool.name,
+                                tool.code,
+                                toolDefinition,
+                                collectionId,
+                                collectionMetadata
+                            );
+                            
+                            if (added) {
+                                console.log(`[MCP Service Connectors] Added ${tool.name} to Function Registry`);
+                                
+                                // Enable the function by default
+                                const enabledFunctions = window.FunctionToolsStorage.getEnabledFunctions() || [];
+                                if (!enabledFunctions.includes(tool.name)) {
+                                    enabledFunctions.push(tool.name);
+                                    window.FunctionToolsStorage.saveEnabledFunctions(enabledFunctions);
+                                    console.log(`[MCP Service Connectors] Enabled ${tool.name} in Function Calling`);
+                                }
                             }
                         }
                     } catch (fcError) {
