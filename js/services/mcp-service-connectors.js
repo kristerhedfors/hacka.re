@@ -373,7 +373,7 @@
             for (const tool of tools) {
                 try {
                     // Add the function to the global scope so it can be called
-                    window[tool.name] = eval(`(${tool.code})`);
+                    eval(`window.${tool.name} = ${tool.code}`);
                     console.log(`[MCP Service Connectors] Registered function: ${tool.name}`);
                     
                     // Also register with the Function Calling system
@@ -447,7 +447,7 @@
                 paramNames.push(...Object.keys(toolConfig.parameters.properties));
             }
 
-            return `async function(${paramNames.join(', ')}) {
+            return `async function ${serviceKey}_${toolName}(${paramNames.join(', ')}) {
                 try {
                     const MCPServiceConnectors = window.MCPServiceConnectors;
                     const params = {${paramNames.map(name => `${name}: ${name}`).join(', ')}};
