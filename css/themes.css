@@ -32,32 +32,67 @@
 
 /* Modern Theme - Dark Mode */
 .theme-modern.dark-mode {
-    --primary-color: #3b82f6;      /* Modern blue - vibrant but not harsh */
-    --primary-dark: #2563eb;       /* Deeper modern blue */
-    --secondary-color: #06d6a0;    /* Modern teal/mint - fresh and clean */
-    --dark-color: #f8fafc;         /* Very light slate for contrast */
-    --light-color: #0f172a;        /* Deep slate - rich and sophisticated */
-    --text-color: #e2e8f0;         /* Soft light slate - easy on eyes */
+    --primary-color: #e5e7eb;      /* Light gray 200 - inverse of dark gray */
+    --primary-dark: #f3f4f6;       /* Light gray 100 - inverse of very dark */
+    --secondary-color: #9ca3af;    /* Medium gray 400 - inverse of medium gray */
+    --dark-color: #e5e7eb;         /* Light gray 200 */
+    --light-color: #111827;        /* Very dark gray 900 - inverse of white */
+    --text-color: #f9fafb;         /* Very light gray 50 - inverse of dark text */
     --light-text: #ffffff;
-    --accent-color: #f59e0b;       /* Warm amber for highlights */
+    --accent-color: #d1d5db;       /* Light gray 300 - inverse of dark gray */
     --border-radius: 8px;
     --box-shadow: none;
     --transition: all 0.3s ease;
     
-    /* Chat message colors - modern and distinct */
-    --user-msg-bg: #1e293b;        /* Rich slate - sophisticated user messages */
-    --ai-msg-bg: #0f172a;          /* Deep slate - elegant AI responses */
-    --system-msg-bg: #164e63;      /* Deep cyan - distinctive system messages */
+    /* Chat message colors - inverted grays */
+    --user-msg-bg: #1f2937;        /* Dark gray 800 */
+    --ai-msg-bg: #111827;          /* Very dark gray 900 */
+    --system-msg-bg: #0f172a;      /* Near black */
     
-    /* Function icon colors - off-white for dark theme */
-    --function-icon-color-start: #c2c2c2;
+    /* Function icon colors - light gray for dark theme */
+    --function-icon-color-start: #e5e7eb;
     --function-icon-color-mid: #ffffff;
-    --function-icon-color-end: #c2c2c2;
+    --function-icon-color-end: #e5e7eb;
     
     /* Additional dark mode specific variables */
-    --bg-color: #020617;           /* Ultra deep slate - premium feel */
-    --bg-color-secondary: #0f172a; /* Deep slate for cards/modals */
-    --border-color: #334155;       /* Medium slate for subtle borders */
+    --bg-color: #030712;           /* Near black - true inverse */
+    --bg-color-secondary: #111827; /* Very dark gray for cards/modals */
+    --border-color: #374151;       /* Gray 700 for subtle borders */
+}
+
+/* Dark mode button overrides for better contrast */
+html.theme-modern.dark-mode .primary-btn,
+html.theme-modern.dark-mode .btn.primary-btn,
+html.theme-modern.dark-mode button.primary-btn,
+html.theme-modern.dark-mode button.btn.primary-btn {
+    background-color: #374151 !important;     /* Gray 700 - moderately dark */
+    color: #ffffff !important;                /* Pure white text */
+}
+
+html.theme-modern.dark-mode .primary-btn:hover,
+html.theme-modern.dark-mode .btn.primary-btn:hover,
+html.theme-modern.dark-mode button.primary-btn:hover,
+html.theme-modern.dark-mode button.btn.primary-btn:hover {
+    background-color: #4b5563 !important;     /* Gray 600 - slightly lighter on hover */
+    color: #ffffff !important;
+}
+
+html.theme-modern.dark-mode .secondary-btn,
+html.theme-modern.dark-mode .btn.secondary-btn,
+html.theme-modern.dark-mode button.secondary-btn,
+html.theme-modern.dark-mode button.btn.secondary-btn {
+    background-color: #1f2937 !important;     /* Gray 800 background */
+    color: #e5e7eb !important;                /* Light gray text */
+    border-color: #4b5563 !important;         /* Gray 600 border */
+}
+
+html.theme-modern.dark-mode .secondary-btn:hover,
+html.theme-modern.dark-mode .btn.secondary-btn:hover,
+html.theme-modern.dark-mode button.secondary-btn:hover,
+html.theme-modern.dark-mode button.btn.secondary-btn:hover {
+    background-color: #374151 !important;     /* Gray 700 on hover */
+    color: #ffffff !important;                /* White text on hover */
+    border-color: #6b7280 !important;         /* Gray 500 border on hover */
 }
 
 /* Sunset Theme - Based on the provided image */

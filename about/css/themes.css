@@ -7,22 +7,47 @@
 
 /* Modern Theme (Default) */
 .theme-modern {
-    --primary-color: #006AA7;      /* Swedish flag blue */
-    --primary-dark: #005486;       /* Darker Swedish blue */
-    --secondary-color: #10b981;    /* Emerald */
-    --dark-color: #1f2937;         /* Gray 800 */
-    --light-color: #f9fafb;        /* Gray 50 */
-    --text-color: #374151;         /* Gray 700 */
+    --primary-color: #1f2937;      /* Dark gray 800 */
+    --primary-dark: #111827;       /* Very dark gray 900 */
+    --secondary-color: #4b5563;    /* Medium gray 600 */
+    --dark-color: #1f2937;         /* Dark gray 800 */
+    --light-color: #ffffff;        /* Pure white */
+    --text-color: #111827;         /* Very dark gray 900 */
     --light-text: #ffffff;
-    --accent-color: #f59e0b;       /* Amber */
+    --accent-color: #374151;       /* Dark gray 700 */
     --border-radius: 8px;
-    --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --box-shadow: none;
     --transition: all 0.3s ease;
     
     /* Chat message colors */
-    --user-msg-bg: #e0e7ff;        /* Indigo 100 */
-    --ai-msg-bg: #f3f4f6;          /* Gray 100 */
-    --system-msg-bg: #FFFDF0;      /* Very whitish yellow */
+    --user-msg-bg: #f3f4f6;        /* Light gray 100 */
+    --ai-msg-bg: #ffffff;          /* Pure white */
+    --system-msg-bg: #f9fafb;      /* Very light gray 50 */
+}
+
+/* Modern Theme - Dark Mode */
+.theme-modern.dark-mode {
+    --primary-color: #e5e7eb;      /* Light gray 200 - inverse of dark gray */
+    --primary-dark: #f3f4f6;       /* Light gray 100 - inverse of very dark */
+    --secondary-color: #9ca3af;    /* Medium gray 400 - inverse of medium gray */
+    --dark-color: #e5e7eb;         /* Light gray 200 */
+    --light-color: #111827;        /* Very dark gray 900 - inverse of white */
+    --text-color: #f9fafb;         /* Very light gray 50 - inverse of dark text */
+    --light-text: #ffffff;
+    --accent-color: #d1d5db;       /* Light gray 300 - inverse of dark gray */
+    --border-radius: 8px;
+    --box-shadow: none;
+    --transition: all 0.3s ease;
+    
+    /* Chat message colors - inverted grays */
+    --user-msg-bg: #1f2937;        /* Dark gray 800 */
+    --ai-msg-bg: #111827;          /* Very dark gray 900 */
+    --system-msg-bg: #0f172a;      /* Near black */
+    
+    /* Additional dark mode specific variables */
+    --bg-color: #030712;           /* Near black - true inverse */
+    --bg-color-secondary: #111827; /* Very dark gray for cards/modals */
+    --border-color: #374151;       /* Gray 700 for subtle borders */
 }
 
 /* Retro Game Theme */
@@ -74,6 +99,44 @@
 }
 
 /* ===== Theme-Specific Styles ===== */
+
+/* Modern Dark Mode Specific Styles */
+.theme-modern.dark-mode body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+.theme-modern.dark-mode a {
+    color: var(--primary-color);
+}
+
+.theme-modern.dark-mode a:hover {
+    color: var(--primary-dark);
+}
+
+/* Dark mode button overrides for better contrast */
+.theme-modern.dark-mode .btn,
+.theme-modern.dark-mode .primary-btn {
+    background-color: #111827;     /* Very dark gray 900 - much darker */
+    color: #ffffff;                /* Pure white text */
+}
+
+.theme-modern.dark-mode .btn:hover,
+.theme-modern.dark-mode .primary-btn:hover {
+    background-color: #1f2937;     /* Dark gray 800 on hover */
+}
+
+.theme-modern.dark-mode .secondary-btn {
+    background-color: #030712;     /* Near black background */
+    color: #f3f4f6;                /* Very light gray text */
+    border-color: #374151;         /* Gray 700 border */
+}
+
+.theme-modern.dark-mode .secondary-btn:hover {
+    background-color: #111827;     /* Very dark gray 900 on hover */
+    color: #ffffff;                /* White text on hover */
+    border-color: #4b5563;         /* Lighter border on hover */
+}
 
 /* Retro Game Theme Specific Styles */
 .theme-retro body {
