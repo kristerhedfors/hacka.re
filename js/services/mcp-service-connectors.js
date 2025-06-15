@@ -355,10 +355,8 @@
          * Register service tools with function calling system
          */
         async registerServiceTools(serviceKey, config, authToken) {
-            if (!window.FunctionToolsService) {
-                console.warn('[MCP Service Connectors] Function Tools Service not available');
-                return;
-            }
+            // Continue with registration even if some services aren't available
+            // We'll check for each service individually when we need it
 
             const tools = [];
             for (const [toolName, toolConfig] of Object.entries(config.tools)) {
@@ -379,6 +377,61 @@
                         return (${tool.code})(...args);
                     `);
                     console.log(`[MCP Service Connectors] Registered function: ${tool.name}`);
+                    
+                    // Also register with the Function Calling system
+                    try {
+                        console.log(`[MCP Service Connectors] Checking Function Calling system availability...`);
+                        console.log(`- FunctionToolsRegistry:`, !!window.FunctionToolsRegistry);
+                        console.log(`- FunctionToolsStorage:`, !!window.FunctionToolsStorage);
+                        
+                        if (window.FunctionToolsRegistry && window.FunctionToolsStorage) {
+                        // Get the tool config for this specific tool
+                        const currentToolConfig = config.tools[tool.name.replace(`${serviceKey}_`, '')];
+                        
+                        // Generate tool definition for the function
+                        const toolDefinition = {
+                            type: "function",
+                            function: {
+                                name: tool.name,
+                                description: tool.description,
+                                parameters: currentToolConfig?.parameters || {
+                                    type: "object",
+                                    properties: {},
+                                    required: []
+                                }
+                            }
+                        };
+                        
+                        // Add the function using the registry
+                        const collectionId = `mcp_${serviceKey}_collection`;
+                        const collectionMetadata = {
+                            name: `${config.name} MCP Functions`,
+                            createdAt: Date.now(),
+                            source: 'mcp-service'
+                        };
+                        
+                        const added = window.FunctionToolsRegistry.addJsFunction(
+                            tool.name,
+                            tool.code,
+                            toolDefinition,
+                            collectionId,
+                            collectionMetadata
+                        );
+                        
+                        if (added) {
+                            console.log(`[MCP Service Connectors] Added ${tool.name} to Function Registry`);
+                            
+                            // Enable the function by default
+                            const enabledFunctions = window.FunctionToolsStorage.getEnabledFunctions() || [];
+                            if (!enabledFunctions.includes(tool.name)) {
+                                enabledFunctions.push(tool.name);
+                                window.FunctionToolsStorage.saveEnabledFunctions(enabledFunctions);
+                                console.log(`[MCP Service Connectors] Enabled ${tool.name} in Function Calling`);
+                            }
+                        }
+                    } catch (fcError) {
+                        console.error(`[MCP Service Connectors] Error registering ${tool.name} with Function Calling:`, fcError);
+                    }
                 } catch (error) {
                     console.error(`[MCP Service Connectors] Failed to register function ${tool.name}:`, error);
                 }
@@ -1134,6 +1187,34 @@
                         delete window[functionName];
                         console.log(`[MCP Service Connectors] Removed function: ${functionName}`);
                     }
+                    
+                    // Also remove from Function Calling system
+                    if (window.FunctionToolsStorage && window.FunctionToolsRegistry) {
+                        // Get current functions
+                        const jsFunctions = window.FunctionToolsStorage.getJsFunctions() || {};
+                        const functionCollections = window.FunctionToolsStorage.getFunctionCollections() || {};
+                        
+                        // Remove function from registry
+                        if (jsFunctions[functionName]) {
+                            delete jsFunctions[functionName];
+                            delete functionCollections[functionName];
+                            window.FunctionToolsStorage.setJsFunctions(jsFunctions);
+                            window.FunctionToolsStorage.setFunctionCollections(functionCollections);
+                        }
+                        
+                        // Remove from enabled functions
+                        const enabledFunctions = window.FunctionToolsStorage.getEnabledFunctions() || [];
+                        const index = enabledFunctions.indexOf(functionName);
+                        if (index > -1) {
+                            enabledFunctions.splice(index, 1);
+                            window.FunctionToolsStorage.setEnabledFunctions(enabledFunctions);
+                        }
+                        
+                        // Save changes
+                        window.FunctionToolsStorage.save();
+                        
+                        console.log(`[MCP Service Connectors] Removed ${functionName} from Function Calling system`);
+                    }
                 }
             }
 
@@ -1175,6 +1256,15 @@
                 ...config,
                 connected: this.isConnected(key)
             }));
+        }
+
+        /**
+         * Get tool count for a service
+         */
+        getToolCount(serviceKey) {
+            const config = SERVICE_CONFIGS[serviceKey];
+            if (!config || !config.tools) return 0;
+            return Object.keys(config.tools).length;
         }
     }
 
