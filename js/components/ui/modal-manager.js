@@ -77,6 +77,29 @@ window.ModalManager = (function() {
          */
         function showShareModal() {
             elements.shareModal.classList.add('active');
+            
+            // NUCLEAR FIX: Force-attach MCP checkbox event listener when modal opens
+            setTimeout(() => {
+                const mcpCheckbox = document.getElementById('share-mcp-connections');
+                if (mcpCheckbox) {
+                    // Remove any existing listeners
+                    const newCheckbox = mcpCheckbox.cloneNode(true);
+                    mcpCheckbox.parentNode.replaceChild(newCheckbox, mcpCheckbox);
+                    
+                    // Add the event listener
+                    newCheckbox.addEventListener('change', () => {
+                        console.log('🎉 NUCLEAR FIX: MCP checkbox changed to:', newCheckbox.checked);
+                        // Trigger updateLinkLengthBar if available
+                        if (window.aiHackare && typeof window.aiHackare.updateLinkLengthBar === 'function') {
+                            window.aiHackare.updateLinkLengthBar();
+                        }
+                    });
+                    
+                    console.log('🚀 NUCLEAR FIX: MCP checkbox event listener force-attached');
+                } else {
+                    console.error('❌ NUCLEAR FIX: MCP checkbox still not found');
+                }
+            }, 50);
         }
         
         /**
