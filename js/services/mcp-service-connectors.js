@@ -425,7 +425,8 @@
                                 const enabledFunctions = window.FunctionToolsStorage.getEnabledFunctions() || [];
                                 if (!enabledFunctions.includes(tool.name)) {
                                     enabledFunctions.push(tool.name);
-                                    window.FunctionToolsStorage.saveEnabledFunctions(enabledFunctions);
+                                    window.FunctionToolsStorage.setEnabledFunctions(enabledFunctions);
+                                    window.FunctionToolsStorage.save();
                                     console.log(`[MCP Service Connectors] Enabled ${tool.name} in Function Calling`);
                                 }
                             }
