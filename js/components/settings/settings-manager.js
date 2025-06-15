@@ -171,7 +171,7 @@ window.SettingsManager = (function() {
         }
         
         /**
-         * Delete all saved settings for the current GPT namespace
+         * Delete all saved settings for the current namespace
          * @param {Function} hideSettingsModal - Function to hide settings modal
          * @param {Function} addSystemMessage - Function to add system message
          */

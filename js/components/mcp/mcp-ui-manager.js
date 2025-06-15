@@ -82,6 +82,14 @@ window.MCPUIManager = (function() {
         
         // Setup input mode toggle
         setupInputModeToggle();
+        
+        // Add quick connectors if available
+        if (window.MCPQuickConnectors) {
+            console.log('[MCPUIManager] Adding quick connectors to modal');
+            window.MCPQuickConnectors.createQuickConnectorsUI(modalContent);
+        } else {
+            console.warn('[MCPUIManager] MCPQuickConnectors not available');
+        }
     }
     
     /**
@@ -505,6 +513,95 @@ window.MCPUIManager = (function() {
                 color: rgba(0, 0, 0, 0.6);
                 font-style: italic;
                 padding: 1.5rem;
+            }
+            
+            /* Quick Connectors Styles */
+            .mcp-quick-connectors-section {
+                margin-bottom: 2rem;
+                padding-bottom: 1.5rem;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            }
+            .quick-connectors-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                gap: 1rem;
+                margin-top: 1rem;
+            }
+            .quick-connector-card {
+                display: flex;
+                align-items: center;
+                padding: 1rem;
+                background-color: var(--ai-msg-bg);
+                border-radius: var(--border-radius);
+                border: 1px solid rgba(0, 0, 0, 0.1);
+                transition: var(--transition);
+                gap: 1rem;
+            }
+            .quick-connector-card:hover {
+                background-color: rgba(0, 0, 0, 0.05);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            }
+            .connector-icon {
+                font-size: 2rem;
+                color: var(--accent-color);
+                flex-shrink: 0;
+                width: 3rem;
+                text-align: center;
+            }
+            .connector-info {
+                flex: 1;
+                min-width: 0;
+            }
+            .connector-info h4 {
+                margin: 0 0 0.25rem 0;
+                font-size: 1rem;
+                font-weight: 600;
+                color: var(--text-color);
+            }
+            .connector-info p {
+                margin: 0;
+                font-size: 0.85rem;
+                color: rgba(0, 0, 0, 0.6);
+                line-height: 1.3;
+            }
+            .connector-status {
+                flex-shrink: 0;
+                text-align: right;
+            }
+            .connector-status .connect-btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.9rem;
+                min-width: 80px;
+            }
+            .connector-status .disconnect-btn {
+                padding: 0.25rem 0.75rem;
+                font-size: 0.8rem;
+                margin-top: 0.25rem;
+            }
+            .status-connected {
+                color: var(--secondary-color);
+                font-size: 0.85rem;
+                font-weight: 500;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+                gap: 0.25rem;
+            }
+            .status-connected i {
+                margin-right: 0.25rem;
+            }
+            .tool-count {
+                font-size: 0.75rem;
+                color: rgba(0, 0, 0, 0.6);
+            }
+            .status-connecting, .status-authorizing {
+                color: var(--accent-color);
+                font-size: 0.85rem;
+                font-weight: 500;
+            }
+            .status-connecting i, .status-authorizing i {
+                margin-right: 0.25rem;
             }
         `;
         document.head.appendChild(style);

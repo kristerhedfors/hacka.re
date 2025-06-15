@@ -17,11 +17,14 @@
  */
 const OAUTH_PROVIDERS = {
     github: {
-        authorizationUrl: 'https://github.com/login/oauth/authorize',
+        deviceCodeUrl: 'https://github.com/login/device/code',
         tokenUrl: 'https://github.com/login/oauth/access_token',
         scope: 'repo read:user',
-        responseType: 'code',
-        grantType: 'authorization_code'
+        grantType: 'urn:ietf:params:oauth:grant-type:device_code',
+        useDeviceFlow: true,
+        // GitHub also supports authorization code flow, but we prefer device flow for client-side apps
+        authorizationUrl: 'https://github.com/login/oauth/authorize',
+        responseType: 'code'
     },
     google: {
         authorizationUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
@@ -43,11 +46,11 @@ const OAUTH_PROVIDERS = {
  * OAuth error class for specific OAuth-related errors
  */
 class MCPOAuthError extends Error {
-    constructor(message, code = null, description = null) {
+    constructor(message, code = null, data = null) {
         super(message);
         this.name = 'MCPOAuthError';
         this.code = code;
-        this.description = description;
+        this.data = data;
     }
 }
 
@@ -158,6 +161,7 @@ class OAuthService {
         this.pendingFlows = new Map(); // Track pending authorization flows
         this.serverConfigs = new Map(); // Server OAuth configurations
         this.STORAGE_KEY = 'mcp-oauth-tokens';
+        this.PENDING_FLOWS_KEY = 'mcp-oauth-pending-flows';
         
         // Initialize metadata discovery and client registration services
         this.metadataService = null;
@@ -167,6 +171,7 @@ class OAuthService {
         if (this.storageService) {
             this.initializeServices();
             this.loadTokens();
+            this.loadPendingFlows();
         } else {
             console.warn('[MCP OAuth] Storage service not available, deferring initialization');
             // Try again after a short delay
@@ -175,6 +180,7 @@ class OAuthService {
                 if (this.storageService) {
                     this.initializeServices();
                     this.loadTokens();
+                    this.loadPendingFlows();
                 }
             }, 100);
         }
@@ -233,6 +239,299 @@ class OAuthService {
         }
     }
 
+    /**
+     * Load pending flows from encrypted storage
+     */
+    async loadPendingFlows() {
+        if (!this.storageService) {
+            console.warn('[MCP OAuth] Storage service not available, skipping pending flows loading');
+            return;
+        }
+        
+        try {
+            const storedFlows = await this.storageService.getValue(this.PENDING_FLOWS_KEY);
+            if (storedFlows && typeof storedFlows === 'object') {
+                Object.entries(storedFlows).forEach(([state, flowInfo]) => {
+                    this.pendingFlows.set(state, flowInfo);
+                });
+                
+                // Clean up old flows after loading
+                this.cleanupPendingFlows();
+            }
+        } catch (error) {
+            console.error('[MCP OAuth] Failed to load pending flows:', error);
+        }
+    }
+
+    /**
+     * Save pending flows to encrypted storage
+     */
+    async savePendingFlows() {
+        if (!this.storageService) {
+            console.warn('[MCP OAuth] Storage service not available, skipping pending flows saving');
+            return;
+        }
+        
+        try {
+            const flowsObj = {};
+            this.pendingFlows.forEach((flowInfo, state) => {
+                flowsObj[state] = flowInfo;
+            });
+            await this.storageService.setValue(this.PENDING_FLOWS_KEY, flowsObj);
+        } catch (error) {
+            console.error('[MCP OAuth] Failed to save pending flows:', error);
+        }
+    }
+
+    /**
+     * Start OAuth Device Flow for GitHub (recommended for client-side apps)
+     * @param {string} serverName - Name of the MCP server
+     * @param {Object} config - OAuth configuration
+     * @returns {Promise<Object>} Device code flow info
+     */
+    async startDeviceFlow(serverName, config) {
+        try {
+            console.log(`[MCP OAuth] Starting device flow for ${serverName}`);
+            
+            // Try automatic device code request first
+            try {
+                const deviceResponse = await fetch(config.deviceCodeUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        client_id: config.clientId,
+                        scope: config.scope || ''
+                    })
+                });
+                
+                if (!deviceResponse.ok) {
+                    throw new Error(`Device code request failed: ${deviceResponse.status}`);
+                }
+                
+                const deviceData = await deviceResponse.json();
+                console.log(`[MCP OAuth] Device code obtained for ${serverName}`);
+                
+                return await this.createDeviceFlowInfo(serverName, config, deviceData);
+                
+            } catch (corsError) {
+                console.log(`[MCP OAuth] Direct device flow request failed (likely CORS): ${corsError.message}`);
+                
+                // If CORS error, fall back to manual device flow
+                if (corsError.message.includes('CORS') || corsError.message.includes('Failed to fetch')) {
+                    console.log(`[MCP OAuth] Falling back to manual device flow for ${serverName}`);
+                    return this.startManualDeviceFlow(serverName, config);
+                }
+                
+                throw corsError;
+            }
+            
+        } catch (error) {
+            console.error(`[MCP OAuth] Failed to start device flow: ${error.message}`);
+            throw new MCPOAuthError(
+                `Device flow startup failed: ${error.message}`,
+                'device_flow_start_failed'
+            );
+        }
+    }
+    
+    /**
+     * Create device flow info object
+     * @param {string} serverName - Server name
+     * @param {Object} config - OAuth config
+     * @param {Object} deviceData - Device data from GitHub
+     * @returns {Promise<Object>} Flow info
+     */
+    async createDeviceFlowInfo(serverName, config, deviceData) {
+        const flowInfo = {
+            serverName,
+            config,
+            deviceCode: deviceData.device_code,
+            userCode: deviceData.user_code,
+            verificationUri: deviceData.verification_uri,
+            verificationUriComplete: deviceData.verification_uri_complete,
+            expiresIn: deviceData.expires_in,
+            interval: deviceData.interval || 5,
+            startedAt: Date.now()
+        };
+        
+        // Store in pending flows using device_code as key
+        this.pendingFlows.set(deviceData.device_code, flowInfo);
+        await this.savePendingFlows();
+        
+        return flowInfo;
+    }
+    
+    /**
+     * Start manual device flow when CORS prevents automatic flow
+     * @param {string} serverName - Server name
+     * @param {Object} config - OAuth config
+     * @returns {Object} Manual flow info
+     */
+    startManualDeviceFlow(serverName, config) {
+        // Generate a temporary ID for this manual flow
+        const manualFlowId = 'manual_' + Date.now();
+        console.log(`[MCP OAuth] Creating manual flow with ID: ${manualFlowId}`);
+        
+        const manualFlowInfo = {
+            serverName,
+            config,
+            isManualFlow: true,
+            manualFlowId,
+            clientId: config.clientId,
+            scope: config.scope || 'repo read:user',
+            deviceCodeUrl: config.deviceCodeUrl,
+            verificationUri: 'https://github.com/login/device',
+            startedAt: Date.now()
+        };
+        
+        // Store manual flow
+        this.pendingFlows.set(manualFlowId, manualFlowInfo);
+        console.log(`[MCP OAuth] Stored manual flow. Pending flows count: ${this.pendingFlows.size}`);
+        console.log(`[MCP OAuth] Pending flows keys:`, Array.from(this.pendingFlows.keys()));
+        this.savePendingFlows();
+        
+        return manualFlowInfo;
+    }
+
+    /**
+     * Handle manual device flow data entry
+     * @param {string} manualFlowId - Manual flow ID
+     * @param {Object} deviceData - Device data entered by user
+     * @returns {Object} Flow info with device data
+     */
+    async submitManualDeviceData(manualFlowId, deviceData) {
+        console.log(`[MCP OAuth] Looking for manual flow with ID: ${manualFlowId}`);
+        console.log(`[MCP OAuth] Available flows:`, Array.from(this.pendingFlows.keys()));
+        console.log(`[MCP OAuth] Pending flows size: ${this.pendingFlows.size}`);
+        
+        const manualFlow = this.pendingFlows.get(manualFlowId);
+        console.log(`[MCP OAuth] Found manual flow:`, manualFlow);
+        
+        if (!manualFlow || !manualFlow.isManualFlow) {
+            throw new Error(`Invalid manual flow ID: ${manualFlowId}`);
+        }
+        
+        // Convert manual flow to regular device flow
+        const flowInfo = await this.createDeviceFlowInfo(
+            manualFlow.serverName,
+            manualFlow.config,
+            deviceData
+        );
+        
+        // Remove the manual flow
+        this.pendingFlows.delete(manualFlowId);
+        await this.savePendingFlows();
+        
+        return flowInfo;
+    }
+    
+    /**
+     * Poll for device flow completion
+     * @param {string} deviceCode - Device code from startDeviceFlow
+     * @returns {Promise<Object>} Token response when complete
+     */
+    async pollDeviceFlow(deviceCode) {
+        const flowInfo = this.pendingFlows.get(deviceCode);
+        if (!flowInfo) {
+            throw new MCPOAuthError('Device flow not found', 'device_flow_not_found');
+        }
+        
+        const { serverName, config } = flowInfo;
+        
+        try {
+            const response = await fetch(config.tokenUrl, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({
+                    client_id: config.clientId,
+                    device_code: deviceCode,
+                    grant_type: config.grantType
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.error) {
+                if (data.error === 'authorization_pending') {
+                    // User hasn't completed authorization yet
+                    return { pending: true, interval: flowInfo.interval };
+                } else if (data.error === 'slow_down') {
+                    // Increase polling interval
+                    flowInfo.interval = Math.min(flowInfo.interval * 2, 30);
+                    return { pending: true, interval: flowInfo.interval };
+                } else if (data.error === 'expired_token') {
+                    // Device code expired
+                    this.pendingFlows.delete(deviceCode);
+                    await this.savePendingFlows();
+                    throw new MCPOAuthError('Device code expired', 'device_code_expired');
+                } else if (data.error === 'access_denied') {
+                    // User denied access
+                    this.pendingFlows.delete(deviceCode);
+                    await this.savePendingFlows();
+                    throw new MCPOAuthError('Access denied by user', 'access_denied');
+                } else {
+                    throw new MCPOAuthError(`Device flow error: ${data.error}`, data.error);
+                }
+            }
+            
+            // Success! Create and store token
+            data.issued_at = Date.now();
+            const token = new OAuthToken(data);
+            this.tokens.set(serverName, token);
+            await this.saveTokens();
+            
+            // Clean up pending flow
+            this.pendingFlows.delete(deviceCode);
+            await this.savePendingFlows();
+            
+            console.log(`[MCP OAuth] Device flow completed for ${serverName}`);
+            return { token, serverName };
+            
+        } catch (error) {
+            if (error instanceof MCPOAuthError) throw error;
+            
+            // If this is a CORS error for GitHub, provide helpful manual instructions
+            if ((error.message.includes('CORS') || error.message.includes('Failed to fetch')) && 
+                config && (config.provider === 'github' || config.useDeviceFlow)) {
+                console.log('[MCP OAuth] GitHub token polling blocked by CORS - suggesting manual token entry');
+                throw new MCPOAuthError(
+                    'GitHub token polling blocked by CORS. Please enter your access token manually.',
+                    'github_cors_polling_failed',
+                    {
+                        requiresManualToken: true,
+                        serverName,
+                        deviceCode,
+                        clientId: config.clientId,
+                        tokenInstructions: `After authorizing on GitHub, run this command to get your token:\n\ncurl -X POST https://github.com/login/oauth/access_token -H "Accept: application/json" -d "client_id=${config.clientId}&device_code=${deviceCode}&grant_type=urn:ietf:params:oauth:grant-type:device_code"`
+                    }
+                );
+            }
+            
+            throw new MCPOAuthError(`Device flow polling failed: ${error.message}`, 'device_flow_poll_failed');
+        }
+    }
+
+    /**
+     * Store manually entered token (for CORS workarounds)
+     * @param {string} serverName - Server name
+     * @param {Object} tokenData - Token data
+     */
+    async storeManualToken(serverName, tokenData) {
+        console.log(`[MCP OAuth] Storing manual token for ${serverName}`);
+        
+        const token = new OAuthToken(tokenData);
+        this.tokens.set(serverName, token);
+        await this.saveTokens();
+        
+        console.log(`[MCP OAuth] Manual token stored successfully for ${serverName}`);
+    }
+    
     /**
      * Start OAuth authorization flow with automatic metadata discovery and client registration
      * @param {string} serverName - Name of the MCP server
@@ -299,19 +598,44 @@ class OAuthService {
             const codeVerifier = PKCEHelper.generateCodeVerifier();
             const codeChallenge = await PKCEHelper.generateCodeChallenge(codeVerifier);
         
-            // Generate state for CSRF protection
-            const state = PKCEHelper.generateCodeVerifier();
+            // Generate state for CSRF protection with session information encoded
+            const baseState = PKCEHelper.generateCodeVerifier();
+            const namespaceId = window.NamespaceService ? window.NamespaceService.getNamespaceId() : 'default';
             
-            // Build authorization URL
+            // Get session key for state encoding (needed for session restoration on callback)
+            const sessionKey = window.ShareManager && window.ShareManager.getSessionKey ? 
+                window.ShareManager.getSessionKey() : null;
+            
+            // Encode session information into state parameter since GitHub strips query params
+            let state;
+            if (sessionKey) {
+                // Encode session key into state: baseState:namespace:sessionKey
+                const encodedSession = btoa(sessionKey).replace(/[+/=]/g, ''); // Remove URL-unsafe chars
+                state = `${baseState}:${namespaceId}:${encodedSession}`;
+                console.log(`[MCP OAuth] State includes session key for automatic restoration`);
+            } else {
+                // Just include namespace: baseState:namespace
+                state = `${baseState}:${namespaceId}`;
+                console.log(`[MCP OAuth] State includes namespace only - will prompt for session key`);
+            }
+            
+            // Use base redirect URI since GitHub strips query parameters anyway
+            const enhancedRedirectUri = effectiveConfig.redirectUri;
+            console.log(`[MCP OAuth] Using base redirect URI (GitHub strips query params): ${enhancedRedirectUri}`);
+            
+            // Build authorization URL with enhanced redirect URI
+            console.log(`[MCP OAuth] Building params with redirect_uri: ${enhancedRedirectUri}`);
             const params = new URLSearchParams({
                 response_type: effectiveConfig.responseType || 'code',
                 client_id: effectiveConfig.clientId,
-                redirect_uri: effectiveConfig.redirectUri,
+                redirect_uri: enhancedRedirectUri,
                 scope: effectiveConfig.scope,
                 state: state,
                 code_challenge: codeChallenge,
                 code_challenge_method: 'S256'
             });
+            
+            console.log(`[MCP OAuth] URLSearchParams redirect_uri: ${params.get('redirect_uri')}`);
 
             // Add custom parameters if provided
             if (effectiveConfig.additionalParams) {
@@ -321,23 +645,28 @@ class OAuthService {
             }
 
             const authorizationUrl = `${effectiveConfig.authorizationUrl}?${params.toString()}`;
+            console.log(`[MCP OAuth] Final authorization URL: ${authorizationUrl}`);
             
-            // Store flow information
+            // Store flow information including the enhanced redirect URI
             const flowInfo = {
                 serverName,
                 config: effectiveConfig,
                 state,
                 codeVerifier,
                 codeChallenge,
+                enhancedRedirectUri: enhancedRedirectUri, // Store the exact redirect URI used
                 startedAt: Date.now()
             };
             
             this.pendingFlows.set(state, flowInfo);
             
+            // Save pending flows to storage immediately
+            await this.savePendingFlows();
+            
             // Clean up old flows (older than 10 minutes)
             this.cleanupPendingFlows();
             
-            console.log(`[MCP OAuth] Authorization flow started for ${serverName}`);
+            console.log(`[MCP OAuth] Authorization flow started for ${serverName}, state: ${state}`);
             return {
                 authorizationUrl,
                 state,
@@ -362,17 +691,63 @@ class OAuthService {
      * @returns {Promise<OAuthToken>} OAuth token
      */
     async completeAuthorizationFlow(code, state) {
+        // Extract namespace from state parameter: baseState:namespaceId or baseState:namespaceId:encodedSessionKey
+        const stateParts = state.split(':');
+        const baseState = stateParts[0];
+        const namespaceId = stateParts[1];
+        const encodedSessionKey = stateParts[2]; // Optional
+        
+        // If we have a namespace, try to restore session context
+        if (namespaceId && window.NamespaceService) {
+            const currentNamespaceId = window.NamespaceService.getNamespaceId();
+            console.log(`[MCP OAuth] Callback state namespace: ${namespaceId}, current: ${currentNamespaceId}`);
+            
+            // If namespaces don't match, the user might need to re-enter their session
+            if (currentNamespaceId !== namespaceId) {
+                console.warn(`[MCP OAuth] Namespace mismatch - callback: ${namespaceId}, current: ${currentNamespaceId}`);
+                // We'll still try to complete the flow, but this might indicate a session issue
+            }
+        }
+        
+        console.log(`[MCP OAuth] Looking for pending flow with state: ${state}`);
+        console.log(`[MCP OAuth] Available pending flows:`, Array.from(this.pendingFlows.keys()));
+        
         const flowInfo = this.pendingFlows.get(state);
         if (!flowInfo) {
-            throw new MCPOAuthError('Invalid or expired state parameter', 'invalid_state');
+            console.error(`[MCP OAuth] No pending flow found for state: ${state}`);
+            console.error(`[MCP OAuth] Pending flows in memory:`, this.pendingFlows.size);
+            
+            // Try to reload pending flows from storage
+            await this.loadPendingFlows();
+            console.log(`[MCP OAuth] After reloading, available flows:`, Array.from(this.pendingFlows.keys()));
+            
+            const reloadedFlowInfo = this.pendingFlows.get(state);
+            if (!reloadedFlowInfo) {
+                throw new MCPOAuthError(
+                    'Invalid or expired state parameter. This may happen if your session has changed since starting the OAuth flow.', 
+                    'invalid_state'
+                );
+            }
+        }
+        
+        // Get the flow info (either from initial lookup or after reload)
+        const finalFlowInfo = this.pendingFlows.get(state);
+        if (!finalFlowInfo) {
+            throw new MCPOAuthError(
+                'Invalid or expired state parameter. This may happen if your session has changed since starting the OAuth flow.', 
+                'invalid_state'
+            );
         }
         
         this.pendingFlows.delete(state);
         
-        const { serverName, config, codeVerifier } = flowInfo;
+        // Save updated pending flows to storage
+        await this.savePendingFlows();
         
-        // Exchange code for token
-        const tokenData = await this.exchangeCodeForToken(code, config, codeVerifier);
+        const { serverName, config, codeVerifier, enhancedRedirectUri } = finalFlowInfo;
+        
+        // Exchange code for token using the exact redirect URI that was used in authorization
+        const tokenData = await this.exchangeCodeForToken(code, config, codeVerifier, enhancedRedirectUri);
         
         // Create and store token
         const token = new OAuthToken(tokenData);
@@ -381,7 +756,7 @@ class OAuthService {
         
         console.log(`[MCP OAuth] Successfully obtained token for ${serverName}`);
         
-        return token;
+        return { token, serverName };
     }
 
     /**
@@ -389,13 +764,18 @@ class OAuthService {
      * @param {string} code - Authorization code
      * @param {Object} config - OAuth configuration
      * @param {string} codeVerifier - PKCE code verifier
+     * @param {string} redirectUri - The exact redirect URI used in authorization (optional)
      * @returns {Promise<Object>} Token response
      */
-    async exchangeCodeForToken(code, config, codeVerifier) {
+    async exchangeCodeForToken(code, config, codeVerifier, redirectUri = null) {
+        // Use the provided redirect URI or fall back to config.redirectUri
+        const actualRedirectUri = redirectUri || config.redirectUri;
+        console.log(`[MCP OAuth] Token exchange using redirect_uri: ${actualRedirectUri}`);
+        
         const params = new URLSearchParams({
             grant_type: config.grantType || 'authorization_code',
             code: code,
-            redirect_uri: config.redirectUri,
+            redirect_uri: actualRedirectUri,
             client_id: config.clientId,
             code_verifier: codeVerifier
         });
@@ -404,6 +784,8 @@ class OAuthService {
         if (config.clientSecret) {
             params.set('client_secret', config.clientSecret);
         }
+
+        console.log(`[MCP OAuth] Token exchange URL: ${config.tokenUrl}`);
 
         const response = await fetch(config.tokenUrl, {
             method: 'POST',
@@ -568,13 +950,21 @@ class OAuthService {
     /**
      * Clean up old pending flows
      */
-    cleanupPendingFlows() {
+    async cleanupPendingFlows() {
         const tenMinutesAgo = Date.now() - (10 * 60 * 1000);
+        let hasChanges = false;
         
         for (const [state, flowInfo] of this.pendingFlows) {
             if (flowInfo.startedAt < tenMinutesAgo) {
                 this.pendingFlows.delete(state);
+                hasChanges = true;
+                console.log(`[MCP OAuth] Cleaned up expired pending flow: ${state}`);
             }
+        }
+        
+        // Save to storage if we made changes
+        if (hasChanges) {
+            await this.savePendingFlows();
         }
     }
 

@@ -63,7 +63,7 @@ window.SettingsStateManager = (function() {
     }
     
     /**
-     * Delete all saved settings for the current GPT namespace
+     * Delete all saved settings for the current namespace
      * @param {Object} elements - DOM elements
      * @param {Function} hideSettingsModal - Function to hide settings modal
      * @param {Function} addSystemMessage - Function to add system message
@@ -84,9 +84,25 @@ window.SettingsStateManager = (function() {
             StorageService.STORAGE_KEYS.HISTORY
         ];
         
+        // Define function tools storage keys to remove
+        const functionToolsKeysToRemove = [
+            'function_tools_enabled',
+            'js_functions',
+            'enabled_functions',
+            'function_collections',
+            'function_collection_metadata'
+        ];
+        
         // Remove all settings from localStorage for the current namespace
         keysToRemove.forEach(key => {
             localStorage.removeItem(StorageService.getNamespacedKey(key));
+        });
+        
+        // Remove function tools settings from localStorage for the current namespace
+        functionToolsKeysToRemove.forEach(key => {
+            const namespacedKey = `hackare_${currentNamespace}_${key}`;
+            localStorage.removeItem(namespacedKey);
+            console.log(`Removed function tools key: ${namespacedKey}`);
         });
         
         // Remove tool calling settings
@@ -121,7 +137,7 @@ window.SettingsStateManager = (function() {
         
         // Add confirmation message
         if (addSystemMessage) {
-            addSystemMessage('All settings for the current GPT namespace have been deleted.');
+            addSystemMessage('All settings for the current namespace have been deleted.');
         }
         
         return true;
