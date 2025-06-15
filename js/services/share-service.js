@@ -70,10 +70,11 @@ window.ShareService = (function() {
      * @param {boolean} options.includeSystemPrompt - Whether to include the prompts
      * @param {boolean} options.includeConversation - Whether to include conversation data
      * @param {boolean} options.includePromptLibrary - Whether to include the prompt library
+     * @param {boolean} options.includeMcpConnections - Whether to include MCP connections
      * @param {string} password - The password to use for encryption
      * @returns {string} Shareable URL
      */
-    function createComprehensiveShareableLink(options, password) {
+    async function createComprehensiveShareableLink(options, password) {
         const payload = {};
         
         if (options.includeBaseUrl && options.baseUrl) {
@@ -108,10 +109,45 @@ window.ShareService = (function() {
             payload.subtitle = options.subtitle;
         }
         
-        // Create link with prompt library and function library options if requested
+        // Collect MCP connections if requested
+        if (options.includeMcpConnections) {
+            console.log('ShareService: Collecting MCP connections for sharing...');
+            try {
+                const mcpConnections = {};
+                
+                // Check for GitHub PAT token
+                const githubToken = await window.CoreStorageService.getValue('mcp_github_token');
+                console.log('ShareService: GitHub token found:', !!githubToken);
+                if (githubToken) {
+                    mcpConnections.github = githubToken;
+                    console.log('ShareService: Added GitHub token to MCP connections');
+                }
+                
+                // Add support for other PAT-based services here in the future
+                // const gitlabToken = await window.CoreStorageService.getValue('mcp_gitlab_token');
+                // if (gitlabToken) {
+                //     mcpConnections.gitlab = gitlabToken;
+                // }
+                
+                // Only add to payload if we have connections to share
+                if (Object.keys(mcpConnections).length > 0) {
+                    payload.mcpConnections = mcpConnections;
+                    console.log('ShareService: MCP connections added to payload:', Object.keys(mcpConnections));
+                } else {
+                    console.log('ShareService: No MCP connections found to share');
+                }
+            } catch (error) {
+                console.warn('ShareService: Failed to collect MCP connections for sharing:', error);
+            }
+        } else {
+            console.log('ShareService: MCP connections not requested in options');
+        }
+        
+        // Create link with prompt library, function library, and MCP connections options if requested
         return LinkSharingService.createCustomShareableLink(payload, password, {
             includePromptLibrary: options.includePromptLibrary,
-            includeFunctionLibrary: options.includeFunctionLibrary
+            includeFunctionLibrary: options.includeFunctionLibrary,
+            includeMcpConnections: options.includeMcpConnections
         });
     }
     

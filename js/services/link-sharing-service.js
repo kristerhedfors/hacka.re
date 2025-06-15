@@ -117,6 +117,17 @@ window.LinkSharingService = (function() {
             });
         }
         
+        // Add MCP connections if requested and available in payload
+        if (options.includeMcpConnections && payload.mcpConnections) {
+            finalPayload.mcpConnections = payload.mcpConnections;
+            
+            // Log for debugging
+            console.log('Including MCP connections in shared link:', {
+                connectionsCount: Object.keys(payload.mcpConnections).length,
+                services: Object.keys(payload.mcpConnections)
+            });
+        }
+        
         // Encrypt the payload
         const encryptedData = CryptoUtils.encryptData(finalPayload, password);
         
@@ -169,7 +180,7 @@ window.LinkSharingService = (function() {
                 
                 // Check if the decrypted data contains at least one valid field
                 // We no longer require apiKey to be present, allowing sharing of just conversation or model
-                if (!data.apiKey && !data.messages && !data.model && !data.systemPrompt && !data.prompts) {
+                if (!data.apiKey && !data.messages && !data.model && !data.systemPrompt && !data.prompts && !data.mcpConnections) {
                     console.error('Decrypted data does not contain any valid fields');
                     return null;
                 }
@@ -205,6 +216,12 @@ window.LinkSharingService = (function() {
                 if (data.enabledFunctions) {
                     result.enabledFunctions = data.enabledFunctions;
                     console.log('Extracted enabled function names from shared link:', data.enabledFunctions);
+                }
+                
+                // Include MCP connections if present
+                if (data.mcpConnections) {
+                    result.mcpConnections = data.mcpConnections;
+                    console.log('Extracted MCP connections from shared link:', Object.keys(data.mcpConnections));
                 }
                 
                 // Only include title and subtitle if they are actually present in the data

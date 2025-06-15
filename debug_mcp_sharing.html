@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug MCP Sharing</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-output { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .error { color: red; }
+        .success { color: green; }
+        button { margin: 5px; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Debug MCP Connection Sharing</h1>
+    
+    <button onclick="checkStorage()">Check Storage for GitHub Token</button>
+    <button onclick="setTestToken()">Set Test GitHub Token</button>
+    <button onclick="testShareLogic()">Test Share Logic</button>
+    <button onclick="clearTestToken()">Clear Test Token</button>
+    
+    <div id="output"></div>
+    
+    <script src="js/utils/crypto-utils.js"></script>
+    <script src="js/services/encryption-service.js"></script>
+    <script src="js/services/namespace-service.js"></script>
+    <script src="js/services/core-storage-service.js"></script>
+    <script src="js/services/data-service.js"></script>
+    <script src="js/services/storage-service.js"></script>
+    <script src="js/services/link-sharing-service.js"></script>
+    <script src="js/services/share-service.js"></script>
+
+    <script>
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const div = document.createElement('div');
+            div.className = `debug-output ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            output.appendChild(div);
+        }
+
+        async function checkStorage() {
+            try {
+                log('Checking for GitHub token in storage...');
+                
+                // Check if CoreStorageService is available
+                if (!window.CoreStorageService) {
+                    log('CoreStorageService not available', 'error');
+                    return;
+                }
+                
+                const githubToken = await window.CoreStorageService.getValue('mcp_github_token');
+                if (githubToken) {
+                    log(`GitHub token found: ${githubToken.substring(0, 10)}...${githubToken.substring(githubToken.length - 4)}`, 'success');
+                } else {
+                    log('No GitHub token found in storage', 'error');
+                }
+                
+                // Check namespace info
+                const namespaceId = window.NamespaceService ? window.NamespaceService.getNamespaceId() : 'unknown';
+                log(`Current namespace: ${namespaceId}`);
+                
+            } catch (error) {
+                log(`Error checking storage: ${error.message}`, 'error');
+            }
+        }
+
+        async function setTestToken() {
+            try {
+                log('Setting test GitHub token...');
+                
+                if (!window.CoreStorageService) {
+                    log('CoreStorageService not available', 'error');
+                    return;
+                }
+                
+                const testToken = 'ghp_test123456789abcdef0123456789abcdef01';
+                await window.CoreStorageService.setValue('mcp_github_token', testToken);
+                log('Test GitHub token set successfully', 'success');
+                
+            } catch (error) {
+                log(`Error setting test token: ${error.message}`, 'error');
+            }
+        }
+
+        async function testShareLogic() {
+            try {
+                log('Testing share logic with MCP connections...');
+                
+                if (!window.ShareService || !window.ShareService.createComprehensiveShareableLink) {
+                    log('ShareService not available', 'error');
+                    return;
+                }
+                
+                const testOptions = {
+                    baseUrl: 'https://api.openai.com/v1',
+                    apiKey: 'sk-test123',
+                    model: 'gpt-4o-mini',
+                    includeBaseUrl: true,
+                    includeApiKey: true,
+                    includeModel: true,
+                    includeMcpConnections: true,
+                    title: 'Test',
+                    subtitle: 'Debug'
+                };
+                
+                log('Creating comprehensive shareable link...');
+                const shareableLink = await window.ShareService.createComprehensiveShareableLink(testOptions, 'testpassword123');
+                
+                log(`Shareable link created: ${shareableLink.substring(0, 100)}...`, 'success');
+                
+                // Try to extract and check the payload
+                if (window.LinkSharingService && window.LinkSharingService.extractSharedApiKey) {
+                    log('Extracting shared data...');
+                    
+                    // Temporarily change the URL hash to test extraction
+                    const originalHash = window.location.hash;
+                    const linkData = shareableLink.split('#gpt=')[1];
+                    window.location.hash = `#gpt=${linkData}`;
+                    
+                    const extractedData = window.LinkSharingService.extractSharedApiKey('testpassword123');
+                    
+                    // Restore original hash
+                    window.location.hash = originalHash;
+                    
+                    if (extractedData) {
+                        log(`Extracted data: ${JSON.stringify(extractedData, null, 2)}`, 'success');
+                        
+                        if (extractedData.mcpConnections) {
+                            log(`MCP connections found: ${JSON.stringify(extractedData.mcpConnections)}`, 'success');
+                        } else {
+                            log('No MCP connections in extracted data', 'error');
+                        }
+                    } else {
+                        log('Failed to extract shared data', 'error');
+                    }
+                }
+                
+            } catch (error) {
+                log(`Error testing share logic: ${error.message}`, 'error');
+                console.error('Share logic error:', error);
+            }
+        }
+
+        async function clearTestToken() {
+            try {
+                log('Clearing test GitHub token...');
+                
+                if (!window.CoreStorageService) {
+                    log('CoreStorageService not available', 'error');
+                    return;
+                }
+                
+                await window.CoreStorageService.removeValue('mcp_github_token');
+                log('Test GitHub token cleared', 'success');
+                
+            } catch (error) {
+                log(`Error clearing test token: ${error.message}`, 'error');
+            }
+        }
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            log('Debug page loaded. Click buttons to test MCP sharing functionality.');
+        });
+    </script>
+</body>
+</html>
