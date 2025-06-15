@@ -36,7 +36,8 @@ window.ShareManager = (function() {
                     includeConversation: elements.shareConversationCheckbox.checked,
                     messageCount: parseInt(elements.messageHistoryCount.value, 10) || 1,
                     includePromptLibrary: elements.sharePromptLibraryCheckbox ? elements.sharePromptLibraryCheckbox.checked : false,
-                    includeFunctionLibrary: elements.shareFunctionLibraryCheckbox ? elements.shareFunctionLibraryCheckbox.checked : false
+                    includeFunctionLibrary: elements.shareFunctionLibraryCheckbox ? elements.shareFunctionLibraryCheckbox.checked : false,
+                    includeMcpConnections: elements.shareMcpConnectionsCheckbox ? elements.shareMcpConnectionsCheckbox.checked : false
                 };
                 
                 StorageService.saveShareOptions(options);
@@ -67,6 +68,11 @@ window.ShareManager = (function() {
                 // Set function library checkbox if it exists
                 if (elements.shareFunctionLibraryCheckbox) {
                     elements.shareFunctionLibraryCheckbox.checked = options.includeFunctionLibrary || false;
+                }
+                
+                // Set MCP connections checkbox if it exists
+                if (elements.shareMcpConnectionsCheckbox) {
+                    elements.shareMcpConnectionsCheckbox.checked = options.includeMcpConnections || false;
                 }
                 
                 // Update message history input state
@@ -281,7 +287,7 @@ window.ShareManager = (function() {
          * @param {Function} generateShareQRCode - Function to generate QR code
          * @param {Function} addSystemMessage - Function to add system message
          */
-        function generateComprehensiveShareLink(apiKey, systemPrompt, currentModel, messages, generateShareQRCode, addSystemMessage) {
+        async function generateComprehensiveShareLink(apiKey, systemPrompt, currentModel, messages, generateShareQRCode, addSystemMessage) {
             if (!apiKey) {
                 if (addSystemMessage) {
                     addSystemMessage('Error: No API key available to share.');
@@ -334,12 +340,13 @@ window.ShareManager = (function() {
                 messageCount: parseInt(elements.messageHistoryCount.value, 10) || 1,
                 includePromptLibrary: elements.sharePromptLibraryCheckbox ? elements.sharePromptLibraryCheckbox.checked : false,
                 includeFunctionLibrary: elements.shareFunctionLibraryCheckbox ? elements.shareFunctionLibraryCheckbox.checked : false,
+                includeMcpConnections: elements.shareMcpConnectionsCheckbox ? elements.shareMcpConnectionsCheckbox.checked : false,
                 title: title,
                 subtitle: subtitle
             };
             
             // Validate options
-            if (!options.includeBaseUrl && !options.includeApiKey && !options.includeSystemPrompt && !options.includeModel && !options.includeConversation) {
+            if (!options.includeBaseUrl && !options.includeApiKey && !options.includeSystemPrompt && !options.includeModel && !options.includeConversation && !options.includePromptLibrary && !options.includeFunctionLibrary && !options.includeMcpConnections) {
                 if (addSystemMessage) {
                     addSystemMessage('Error: Please select at least one item to share.');
                 }
@@ -348,7 +355,7 @@ window.ShareManager = (function() {
             
             try {
                 // Create shareable link
-                const shareableLink = ShareService.createComprehensiveShareableLink(options, password);
+                const shareableLink = await ShareService.createComprehensiveShareableLink(options, password);
                 
                 // Display the link
                 if (elements.generatedLink && elements.generatedLinkContainer) {

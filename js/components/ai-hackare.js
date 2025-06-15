@@ -468,12 +468,12 @@ window.AIHackareComponent = (function() {
     /**
      * Generate a comprehensive share link
      */
-    AIHackare.prototype.generateComprehensiveShareLink = function() {
+    AIHackare.prototype.generateComprehensiveShareLink = async function() {
         // Save share options before generating the link
         this.shareManager.saveShareOptions();
         
         // Generate the share link
-        const success = this.shareManager.generateComprehensiveShareLink(
+        const success = await this.shareManager.generateComprehensiveShareLink(
             this.settingsManager.getApiKey(),
             this.settingsManager.getSystemPrompt(),
             this.settingsManager.getCurrentModel(),

@@ -146,6 +146,10 @@ window.ShareUIManager = (function() {
                 elements.shareConversationCheckbox.checked = false;
             }
             
+            if (elements.shareMcpConnectionsCheckbox) {
+                elements.shareMcpConnectionsCheckbox.checked = false;
+            }
+            
             // Disable message history input
             if (elements.messageHistoryCount) {
                 elements.messageHistoryCount.disabled = true;
@@ -260,6 +264,21 @@ window.ShareUIManager = (function() {
                 
                 if (enabledFunctions && enabledFunctions.length > 0) {
                     estimatedLength += enabledFunctions.join(',').length + 20;
+                }
+            }
+            
+            // Add MCP connections if selected
+            if (elements.shareMcpConnectionsCheckbox && elements.shareMcpConnectionsCheckbox.checked) {
+                // Estimate size of MCP connections (service key + token for each)
+                // GitHub PAT tokens are typically ~40 characters
+                // Add an estimate for GitHub if it might be present
+                try {
+                    // Since we can't easily check storage synchronously here, estimate conservatively
+                    // Assume 1-2 connections with service key + token
+                    estimatedLength += 60; // Conservative estimate for GitHub connection
+                } catch (error) {
+                    // Fallback estimate
+                    estimatedLength += 60;
                 }
             }
             
