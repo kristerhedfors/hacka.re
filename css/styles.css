@@ -86,6 +86,22 @@ ul {
     z-index: 100; /* Ensure it appears above other elements */
 }
 
+/* ===== Experimental Tag ===== */
+.experimental-tag {
+    display: inline-block;
+    background-color: #fecaca; /* Red 200 for experimental warning */
+    color: #7f1d1d; /* Red 900 for text */
+    padding: 3px 8px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: absolute; /* Position relative to modal content */
+    right: 10px; /* Position in the right corner */
+    top: 10px; /* Position at the top */
+    z-index: 100; /* Ensure it appears above other elements */
+}
+
 /* ===== Header ===== */
 header {
     background-color: var(--primary-color);
