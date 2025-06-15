@@ -2680,3 +2680,162 @@ footer a:hover {
     font-size: 0.875rem;
     padding: 0.25rem 0.75rem;
 }
+
+/* Manual OAuth Modal Styles */
+.manual-oauth-modal .modal-content {
+    max-width: 700px;
+    margin: 2rem auto;
+}
+
+.manual-oauth-modal .oauth-error-notice {
+    background-color: #fef3c7;
+    border-left: 4px solid #f59e0b;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border-radius: 0.5rem;
+}
+
+.manual-oauth-modal .oauth-error-notice h4 {
+    color: #92400e;
+    margin-bottom: 0.5rem;
+}
+
+.manual-oauth-modal .oauth-error-notice code {
+    background-color: rgba(0, 0, 0, 0.1);
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.25rem;
+    font-family: 'Courier New', monospace;
+}
+
+.manual-oauth-modal .manual-oauth-step {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    background-color: #f9fafb;
+}
+
+.manual-oauth-modal .manual-oauth-step h4 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.manual-oauth-modal .code-block {
+    background-color: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin: 0.5rem 0;
+    position: relative;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    overflow-x: auto;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.manual-oauth-modal .code-block pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    padding-right: 3rem; /* Space for copy button */
+}
+
+.manual-oauth-modal .code-block .copy-button {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.manual-oauth-modal .code-block .copy-button:hover {
+    background: var(--primary-dark);
+}
+
+.manual-oauth-modal .response-section {
+    margin-top: 1rem;
+}
+
+.manual-oauth-modal .response-section label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.manual-oauth-modal .response-section textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    resize: vertical;
+    margin-bottom: 1rem;
+}
+
+.manual-oauth-modal .response-section textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.manual-oauth-modal .verification-info {
+    background-color: #e0f2fe;
+    border: 1px solid #b3e5fc;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.manual-oauth-modal .verification-info p {
+    margin-bottom: 0.5rem;
+}
+
+.manual-oauth-modal .verification-info p:last-child {
+    margin-bottom: 0;
+}
+
+.manual-oauth-modal .verification-info strong {
+    color: var(--primary-color);
+}
+
+.manual-oauth-modal .verification-info code {
+    background-color: #fff;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-family: 'Courier New', monospace;
+    border: 1px solid #e5e7eb;
+}
+
+.manual-oauth-modal .verification-info a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.manual-oauth-modal .verification-info a:hover {
+    text-decoration: underline;
+}
+
+.manual-oauth-modal .expires-note {
+    color: #dc2626;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.manual-oauth-modal .oauth-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+}
