@@ -322,14 +322,21 @@ window.MCPQuickConnectors = (function() {
                     }
                 } else {
                     // Use standard authorization flow for other providers
-                    const authResult = await oauthService.startAuthorizationFlow(serverName, savedConfig);
-                    
-                    console.log('[MCPQuickConnectors] Authorization URL:', authResult.authorizationUrl);
-                    // Open authorization window
-                    const authWindow = window.open(authResult.authorizationUrl, 'oauth_authorize', 'width=600,height=700');
-                    
-                    // Wait for authorization
-                    await waitForAuthorization(authWindow, serverName, authResult.state);
+                    try {
+                        const authResult = await oauthService.startAuthorizationFlow(serverName, savedConfig);
+                        
+                        console.log('[MCPQuickConnectors] Authorization URL:', authResult.authorizationUrl);
+                        // Open authorization window
+                        const authWindow = window.open(authResult.authorizationUrl, 'oauth_authorize', 'width=600,height=700');
+                        
+                        // Wait for authorization
+                        await waitForAuthorization(authWindow, serverName, authResult.state);
+                    } catch (oauthError) {
+                        // If OAuth fails (like redirect_uri_mismatch), show manual flow
+                        console.log('[MCPQuickConnectors] OAuth failed, showing manual flow:', oauthError);
+                        showManualOAuthFlow(serviceKey, savedConfig, oauthError);
+                        return;
+                    }
                 }
             }
             
@@ -893,6 +900,269 @@ Or error: bad request: unknown integration' rows="8" class="mcp-response-textare
     }
     
     /**
+     * Show manual OAuth flow with curl commands and paste fields
+     * @param {string} serviceKey - Service key (github, gmail, gdocs, calendar)
+     * @param {Object} savedConfig - OAuth configuration
+     * @param {Error} oauthError - Original OAuth error
+     */
+    function showManualOAuthFlow(serviceKey, savedConfig, oauthError) {
+        const config = QUICK_CONNECTORS[serviceKey];
+        
+        console.log('[MCPQuickConnectors] Showing manual OAuth flow for:', serviceKey, oauthError);
+        
+        // Generate curl command for device code request
+        const deviceCodeCurl = generateDeviceCodeCurl(savedConfig);
+        
+        // Create modal
+        const modal = document.createElement('div');
+        modal.className = 'modal manual-oauth-modal';
+        modal.style.display = 'block';
+        
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h3>🔧 Manual OAuth Setup for ${config.name}</h3>
+                
+                <div class="manual-oauth-instructions">
+                    <div class="oauth-error-notice">
+                        <h4>⚠️ OAuth Authorization Failed</h4>
+                        <p>Automatic OAuth failed: <code>${oauthError.message}</code></p>
+                        <p>Complete the OAuth process manually using the steps below:</p>
+                    </div>
+                    
+                    <div class="manual-oauth-step" id="step-1">
+                        <h4>Step 1: Request Device Code</h4>
+                        <p>Run this curl command in your terminal to get a device code:</p>
+                        <div class="code-block">
+                            <pre id="device-code-curl">${deviceCodeCurl}</pre>
+                            <button class="copy-button" onclick="MCPQuickConnectors.copyCommand('device-code-curl', this)">Copy</button>
+                        </div>
+                        <div class="response-section">
+                            <label for="device-code-response">Paste the JSON response here:</label>
+                            <textarea id="device-code-response" placeholder='Example: {"device_code": "xyz", "user_code": "ABCD-EFGH", "verification_uri": "https://...", "expires_in": 900}' rows="4"></textarea>
+                            <button class="btn primary-btn" onclick="MCPQuickConnectors.processDeviceCodeResponse('${serviceKey}')">
+                                Process Device Code
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="manual-oauth-step" id="step-2" style="display: none;">
+                        <h4>Step 2: Complete Authorization</h4>
+                        <div id="verification-instructions"></div>
+                        <p>After completing authorization, run this command to get your access token:</p>
+                        <div class="code-block">
+                            <pre id="token-curl"></pre>
+                            <button class="copy-button" onclick="MCPQuickConnectors.copyCommand('token-curl', this)">Copy</button>
+                        </div>
+                        <div class="response-section">
+                            <label for="token-response">Paste the token response here:</label>
+                            <textarea id="token-response" placeholder='Example: {"access_token": "ghp_xxxx", "token_type": "bearer", "scope": "repo read:user"}' rows="4"></textarea>
+                            <button class="btn primary-btn" onclick="MCPQuickConnectors.processTokenResponse('${serviceKey}')">
+                                Complete Setup
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="oauth-actions">
+                        <button class="btn secondary-btn" onclick="MCPQuickConnectors.closeManualOAuthFlow()">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+    }
+    
+    /**
+     * Generate curl command for device code request
+     * @param {Object} config - OAuth configuration
+     * @returns {string} Curl command
+     */
+    function generateDeviceCodeCurl(config) {
+        const deviceUrl = config.provider === 'github' 
+            ? 'https://github.com/login/device/code'
+            : 'https://oauth2.googleapis.com/device/code';
+        
+        const scope = Array.isArray(config.scope) ? config.scope.join(' ') : config.scope;
+        
+        return `curl -X POST "${deviceUrl}" \\
+  -H "Accept: application/json" \\
+  -H "Content-Type: application/x-www-form-urlencoded" \\
+  -d "client_id=${config.clientId}" \\
+  -d "scope=${encodeURIComponent(scope)}"`;
+    }
+    
+    /**
+     * Process device code response from manual OAuth
+     * @param {string} serviceKey - Service key
+     */
+    function processDeviceCodeResponse(serviceKey) {
+        const responseText = document.getElementById('device-code-response').value.trim();
+        
+        if (!responseText) {
+            alert('Please enter the device code response from curl');
+            return;
+        }
+        
+        try {
+            const response = JSON.parse(responseText);
+            
+            if (!response.device_code || !response.user_code || !response.verification_uri) {
+                throw new Error('Invalid device code response format');
+            }
+            
+            // Show step 2
+            document.getElementById('step-1').style.display = 'none';
+            document.getElementById('step-2').style.display = 'block';
+            
+            // Fill in verification instructions
+            const instructions = document.getElementById('verification-instructions');
+            instructions.innerHTML = `
+                <div class="verification-info">
+                    <p><strong>1. Visit:</strong> <a href="${response.verification_uri}" target="_blank">${response.verification_uri}</a></p>
+                    <p><strong>2. Enter code:</strong> <code>${response.user_code}</code></p>
+                    <p><strong>3. Complete authorization in your browser</strong></p>
+                    <p class="expires-note">⏰ Code expires in ${Math.floor(response.expires_in / 60)} minutes</p>
+                </div>
+            `;
+            
+            // Generate token curl command
+            const config = QUICK_CONNECTORS[serviceKey];
+            const savedConfig = oauthConfig.getConfiguration(`mcp-${serviceKey}`);
+            const tokenCurl = generateTokenCurl(savedConfig, response.device_code);
+            document.getElementById('token-curl').textContent = tokenCurl;
+            
+        } catch (error) {
+            alert(`Invalid response format: ${error.message}\n\nExpected JSON with device_code, user_code, and verification_uri.`);
+        }
+    }
+    
+    /**
+     * Generate curl command for token request
+     * @param {Object} config - OAuth configuration
+     * @param {string} deviceCode - Device code from previous step
+     * @returns {string} Curl command
+     */
+    function generateTokenCurl(config, deviceCode) {
+        const tokenUrl = config.provider === 'github'
+            ? 'https://github.com/login/oauth/access_token'
+            : 'https://oauth2.googleapis.com/token';
+        
+        return `curl -X POST "${tokenUrl}" \\
+  -H "Accept: application/json" \\
+  -H "Content-Type: application/x-www-form-urlencoded" \\
+  -d "client_id=${config.clientId}" \\
+  -d "device_code=${deviceCode}" \\
+  -d "grant_type=urn:ietf:params:oauth:grant-type:device_code"`;
+    }
+    
+    /**
+     * Process token response from manual OAuth
+     * @param {string} serviceKey - Service key
+     */
+    async function processTokenResponse(serviceKey) {
+        const responseText = document.getElementById('token-response').value.trim();
+        
+        if (!responseText) {
+            alert('Please enter the token response from curl');
+            return;
+        }
+        
+        try {
+            const response = JSON.parse(responseText);
+            
+            if (!response.access_token) {
+                throw new Error('No access token in response');
+            }
+            
+            // Store the token
+            const serverName = `mcp-${serviceKey}`;
+            const storageKey = `${serverName}_token`;
+            
+            await window.CoreStorageService.setValue(storageKey, response.access_token);
+            
+            // If refresh token is available, store it too
+            if (response.refresh_token) {
+                await window.CoreStorageService.setValue(`${serverName}_refresh_token`, response.refresh_token);
+            }
+            
+            // Close modal
+            closeManualOAuthFlow();
+            
+            // Complete the connection
+            updateConnectorStatus(serviceKey, 'connecting');
+            await completeConnectionAfterAuth(serviceKey);
+            
+            showNotification(`✅ Manual OAuth completed for ${QUICK_CONNECTORS[serviceKey].name}`, 'success');
+            
+        } catch (error) {
+            alert(`Invalid token response: ${error.message}\n\nExpected JSON with access_token field.`);
+        }
+    }
+    
+    /**
+     * Copy command from manual OAuth UI
+     * @param {string} elementId - ID of element containing command
+     * @param {HTMLElement} button - Copy button element
+     */
+    function copyCommand(elementId, button) {
+        const command = document.getElementById(elementId).textContent;
+        
+        // Try modern clipboard API first
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(command).then(() => {
+                button.textContent = 'Copied!';
+                setTimeout(() => button.textContent = 'Copy', 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                fallbackCopyCommand(command, button);
+            });
+        } else {
+            fallbackCopyCommand(command, button);
+        }
+    }
+    
+    /**
+     * Fallback copy method for commands
+     * @param {string} text - Text to copy
+     * @param {HTMLElement} button - Button element
+     */
+    function fallbackCopyCommand(text, button) {
+        const tempTextarea = document.createElement('textarea');
+        tempTextarea.value = text;
+        document.body.appendChild(tempTextarea);
+        tempTextarea.select();
+        
+        try {
+            const successful = document.execCommand('copy');
+            if (successful) {
+                button.textContent = 'Copied!';
+                setTimeout(() => button.textContent = 'Copy', 2000);
+            } else {
+                button.textContent = 'Failed';
+                setTimeout(() => button.textContent = 'Copy', 2000);
+            }
+        } catch (err) {
+            console.error('Fallback copy failed:', err);
+            button.textContent = 'Failed';
+            setTimeout(() => button.textContent = 'Copy', 2000);
+        } finally {
+            document.body.removeChild(tempTextarea);
+        }
+    }
+    
+    /**
+     * Close manual OAuth flow modal
+     */
+    function closeManualOAuthFlow() {
+        const modal = document.querySelector('.manual-oauth-modal');
+        if (modal) {
+            modal.remove();
+        }
+    }
+    
+    /**
      * Process manual connection response
      * @param {string} serviceKey - Service key
      */
@@ -965,6 +1235,12 @@ Or error: bad request: unknown integration' rows="8" class="mcp-response-textare
         completeConnectionAfterAuth,
         copyCurlCommand,
         closeManualConnectionUI,
-        processManualConnectionResponse
+        processManualConnectionResponse,
+        // Manual OAuth flow functions
+        showManualOAuthFlow,
+        processDeviceCodeResponse,
+        processTokenResponse,
+        copyCommand,
+        closeManualOAuthFlow
     };
 })();
