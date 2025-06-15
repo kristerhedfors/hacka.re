@@ -516,28 +516,43 @@
                     throw new Error(`Unknown GitHub tool: ${toolName}`);
             }
 
-            const response = await fetch(url, {
-                method,
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/vnd.github.v3+json',
-                    'Content-Type': 'application/json'
-                },
-                body
-            });
-
-            if (!response.ok) {
-                throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
-            }
-
-            const data = await response.json();
+            // Add timeout to prevent hanging requests
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second timeout
             
-            // Special handling for file content
-            if (toolName === 'get_file_content' && data.content) {
-                data.decodedContent = atob(data.content);
-            }
+            try {
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body,
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
 
-            return data;
+                if (!response.ok) {
+                    throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                // Special handling for file content
+                if (toolName === 'get_file_content' && data.content) {
+                    data.decodedContent = atob(data.content);
+                }
+
+                return data;
+            } catch (error) {
+                clearTimeout(timeoutId);
+                if (error.name === 'AbortError') {
+                    throw new Error(`GitHub API request timed out after 45 seconds`);
+                }
+                throw error;
+            }
         }
 
         /**
