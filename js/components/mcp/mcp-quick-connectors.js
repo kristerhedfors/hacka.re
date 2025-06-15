@@ -13,51 +13,28 @@ window.MCPQuickConnectors = (function() {
             name: 'GitHub',
             icon: 'fab fa-github',
             description: 'Access GitHub repositories, issues, and pull requests',
-            transport: 'oauth',
-            serverUrl: 'https://api.githubcopilot.com/mcp/',
-            oauthConfig: {
-                provider: 'github',
-                authorizationUrl: 'https://github.com/login/oauth/authorize',
-                tokenUrl: 'https://github.com/login/oauth/access_token',
-                deviceCodeUrl: 'https://github.com/login/device/code',
-                scope: 'repo read:user',
-                clientId: '', // User needs to provide
-                redirectUri: window.location.origin,
-                useDeviceFlow: true,
-                grantType: 'urn:ietf:params:oauth:grant-type:device_code'
-            },
+            transport: 'service-connector',
+            authType: 'pat',
             setupInstructions: {
-                title: 'GitHub OAuth Setup',
+                title: 'GitHub Personal Access Token Setup',
                 steps: [
-                    'Go to GitHub Settings > Developer settings > OAuth Apps',
-                    'Click "New OAuth App"',
-                    'Set Application name to: "hacka.re MCP Client" (or your preferred name)',
-                    'Set Homepage URL to: ' + window.location.origin,
-                    'Set Authorization callback URL to: ' + window.location.origin + ' (required but not used)',
-                    'Copy the Client ID and paste it below',
-                    'Note: hacka.re uses GitHub\'s Device Flow - no redirects needed!'
+                    'Go to GitHub Settings > Developer settings > Personal access tokens > Tokens (classic)',
+                    'Click "Generate new token"',
+                    'Give your token a descriptive name like "hacka.re MCP Integration"',
+                    'Select scopes: "repo" for full repository access, "read:user" for user info',
+                    'Click "Generate token" and copy the token immediately',
+                    'Paste the token when prompted (it won\'t be shown again on GitHub)',
+                    'Note: Your token will be encrypted and stored locally'
                 ],
-                docUrl: 'https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app'
+                docUrl: 'https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token'
             }
         },
         gmail: {
             name: 'Gmail',
             icon: 'fas fa-envelope',
             description: 'Read and send emails through Gmail',
-            transport: 'oauth',
-            serverUrl: 'https://gmail.googleapis.com',
-            oauthConfig: {
-                provider: 'google',
-                authorizationUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
-                tokenUrl: 'https://oauth2.googleapis.com/token',
-                scope: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send',
-                clientId: '', // User needs to provide
-                redirectUri: window.location.origin,
-                additionalParams: {
-                    access_type: 'offline',
-                    prompt: 'consent'
-                }
-            },
+            transport: 'service-connector',
+            authType: 'oauth-device',
             setupInstructions: {
                 title: 'Gmail OAuth Setup',
                 steps: [
@@ -65,43 +42,28 @@ window.MCPQuickConnectors = (function() {
                     'Create a new project or select existing one',
                     'Enable Gmail API in "APIs & Services" > "Library"',
                     'Go to "APIs & Services" > "Credentials"',
-                    'Create OAuth 2.0 Client ID (Web application)',
-                    'Add authorized redirect URI: ' + window.location.origin,
-                    'Copy the Client ID and paste it below'
+                    'Create OAuth 2.0 Client ID (Desktop application type)',
+                    'Copy the Client ID and Client Secret',
+                    'Enter them when prompted to start device flow authentication'
                 ],
-                docUrl: 'https://developers.google.com/gmail/api/auth/web-server'
+                docUrl: 'https://developers.google.com/gmail/api/quickstart/js'
             }
         },
-        drive: {
-            name: 'Google Drive',
-            icon: 'fab fa-google-drive',
-            description: 'Access and manage files in Google Drive',
-            transport: 'oauth',
-            serverUrl: 'https://www.googleapis.com/drive/v3',
-            oauthConfig: {
-                provider: 'google',
-                authorizationUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
-                tokenUrl: 'https://oauth2.googleapis.com/token',
-                scope: 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.file',
-                clientId: '', // User needs to provide
-                redirectUri: window.location.origin,
-                additionalParams: {
-                    access_type: 'offline',
-                    prompt: 'consent'
-                }
-            },
+        gdocs: {
+            name: 'Google Docs',
+            icon: 'fas fa-file-alt',
+            description: 'Access and edit Google Docs',
+            transport: 'service-connector',
+            authType: 'oauth-shared',
             setupInstructions: {
-                title: 'Google Drive OAuth Setup',
+                title: 'Google Docs OAuth Setup',
                 steps: [
-                    'Go to Google Cloud Console (console.cloud.google.com)',
-                    'Create a new project or select existing one',
-                    'Enable Google Drive API in "APIs & Services" > "Library"',
-                    'Go to "APIs & Services" > "Credentials"',
-                    'Create OAuth 2.0 Client ID (Web application)',
-                    'Add authorized redirect URI: ' + window.location.origin,
-                    'Copy the Client ID and paste it below'
+                    'Google Docs uses the same authentication as Gmail',
+                    'If you\'ve already connected Gmail, Docs will work automatically',
+                    'Otherwise, set up Gmail first to enable Google Docs access',
+                    'Additional permissions for Docs will be requested if needed'
                 ],
-                docUrl: 'https://developers.google.com/drive/api/guides/about-auth'
+                docUrl: 'https://developers.google.com/docs/api/quickstart/js'
             }
         },
         calendar: {
@@ -116,7 +78,7 @@ window.MCPQuickConnectors = (function() {
                 tokenUrl: 'https://oauth2.googleapis.com/token',
                 scope: 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events',
                 clientId: '', // User needs to provide
-                redirectUri: window.location.origin,
+                redirectUri: window.location.origin.startsWith('file://') ? 'http://localhost:8000' : window.location.origin,
                 additionalParams: {
                     access_type: 'offline',
                     prompt: 'consent'
@@ -130,7 +92,7 @@ window.MCPQuickConnectors = (function() {
                     'Enable Google Calendar API in "APIs & Services" > "Library"',
                     'Go to "APIs & Services" > "Credentials"',
                     'Create OAuth 2.0 Client ID (Web application)',
-                    'Add authorized redirect URI: ' + window.location.origin,
+                    'Add authorized redirect URIs: https://hacka.re AND http://localhost:8000',
                     'Copy the Client ID and paste it below'
                 ],
                 docUrl: 'https://developers.google.com/calendar/api/guides/auth'
@@ -225,7 +187,7 @@ window.MCPQuickConnectors = (function() {
     
     /**
      * Connect to a service
-     * @param {string} serviceKey - Service key (github, gmail, drive, calendar)
+     * @param {string} serviceKey - Service key (github, gmail, gdocs, calendar)
      */
     async function connectService(serviceKey) {
         const config = QUICK_CONNECTORS[serviceKey];
@@ -233,7 +195,35 @@ window.MCPQuickConnectors = (function() {
             console.error(`[MCPQuickConnectors] Unknown service: ${serviceKey}`);
             return;
         }
+
+        // Check if this is a service connector type
+        if (config.transport === 'service-connector') {
+            // Use the new MCPServiceConnectors
+            if (window.MCPServiceConnectors) {
+                try {
+                    updateConnectorStatus(serviceKey, 'connecting');
+                    const result = await window.MCPServiceConnectors.connectService(serviceKey);
+                    if (result) {
+                        updateConnectorStatus(serviceKey, 'connected');
+                        saveConnectorState(serviceKey, 'connected');
+                        showNotification(`✅ Connected to ${config.name}`, 'success');
+                    } else {
+                        updateConnectorStatus(serviceKey, 'disconnected');
+                    }
+                } catch (error) {
+                    console.error(`[MCPQuickConnectors] Service connector error:`, error);
+                    updateConnectorStatus(serviceKey, 'disconnected');
+                    showNotification(`❌ Failed to connect to ${config.name}: ${error.message}`, 'error');
+                }
+                return;
+            } else {
+                console.error('[MCPQuickConnectors] MCPServiceConnectors not available');
+                showNotification('Service connectors not loaded. Please refresh the page.', 'error');
+                return;
+            }
+        }
         
+        // Original OAuth flow for other services
         const serverName = `mcp-${serviceKey}`;
         
         // Check if already connected
@@ -332,14 +322,21 @@ window.MCPQuickConnectors = (function() {
                     }
                 } else {
                     // Use standard authorization flow for other providers
-                    const authResult = await oauthService.startAuthorizationFlow(serverName, savedConfig);
-                    
-                    console.log('[MCPQuickConnectors] Authorization URL:', authResult.authorizationUrl);
-                    // Open authorization window
-                    const authWindow = window.open(authResult.authorizationUrl, 'oauth_authorize', 'width=600,height=700');
-                    
-                    // Wait for authorization
-                    await waitForAuthorization(authWindow, serverName, authResult.state);
+                    try {
+                        const authResult = await oauthService.startAuthorizationFlow(serverName, savedConfig);
+                        
+                        console.log('[MCPQuickConnectors] Authorization URL:', authResult.authorizationUrl);
+                        // Open authorization window
+                        const authWindow = window.open(authResult.authorizationUrl, 'oauth_authorize', 'width=600,height=700');
+                        
+                        // Wait for authorization
+                        await waitForAuthorization(authWindow, serverName, authResult.state);
+                    } catch (oauthError) {
+                        // If OAuth fails (like redirect_uri_mismatch), show manual flow
+                        console.log('[MCPQuickConnectors] OAuth failed, showing manual flow:', oauthError);
+                        showManualOAuthFlow(serviceKey, savedConfig, oauthError);
+                        return;
+                    }
                 }
             }
             
@@ -371,6 +368,16 @@ window.MCPQuickConnectors = (function() {
             if (error.message && error.message.includes('Try manual connection with curl:')) {
                 // Show manual connection testing UI
                 showManualConnectionUI(serviceKey, error.message);
+            } else if (error.message && (
+                error.message.includes('Authorization cancelled') ||
+                error.message.includes('redirect_uri_mismatch') ||
+                error.message.includes('OAuth') ||
+                error.message.includes('timeout')
+            )) {
+                // OAuth failed - show manual flow
+                console.log('[MCPQuickConnectors] OAuth error detected, showing manual flow:', error);
+                const savedConfig = oauthConfig.getConfiguration(serverName);
+                showManualOAuthFlow(serviceKey, savedConfig, error);
             } else {
                 updateConnectorStatus(serviceKey, 'disconnected');
                 showNotification(`❌ Failed to connect to ${config.name}: ${error.message}`, 'error');
@@ -525,7 +532,12 @@ window.MCPQuickConnectors = (function() {
      */
     function waitForAuthorization(authWindow, serverName, state) {
         return new Promise((resolve, reject) => {
+            let checkCount = 0;
+            const maxChecks = 120; // 60 seconds maximum wait time
+            
             const checkInterval = setInterval(() => {
+                checkCount++;
+                
                 try {
                     if (authWindow.closed) {
                         clearInterval(checkInterval);
@@ -533,12 +545,21 @@ window.MCPQuickConnectors = (function() {
                         const oauthService = new window.MCPOAuthService.OAuthService();
                         oauthService.getAccessToken(serverName, false)
                             .then(() => resolve())
-                            .catch(() => reject(new Error('Authorization cancelled')));
+                            .catch(() => reject(new Error('Authorization cancelled or failed - window closed without completing OAuth')));
                         return;
                     }
                     
                     // Try to check URL (will fail with cross-origin until redirect)
                     const currentUrl = authWindow.location.href;
+                    
+                    // Check for Google error page indicators
+                    if (currentUrl.includes('error=') || currentUrl.includes('Error%20400') || currentUrl.includes('redirect_uri_mismatch')) {
+                        clearInterval(checkInterval);
+                        authWindow.close();
+                        reject(new Error('OAuth redirect_uri_mismatch error detected - redirect URI not configured in Google Cloud Console'));
+                        return;
+                    }
+                    
                     if (currentUrl.includes('/oauth/callback')) {
                         authWindow.close();
                         clearInterval(checkInterval);
@@ -552,10 +573,40 @@ window.MCPQuickConnectors = (function() {
                             reject(new Error('Authorization failed'));
                         }
                     }
+                    
+                    // Timeout check
+                    if (checkCount >= maxChecks) {
+                        clearInterval(checkInterval);
+                        authWindow.close();
+                        reject(new Error('OAuth timeout - please try manual flow'));
+                    }
+                    
                 } catch (e) {
-                    // Cross-origin error is expected
+                    // Cross-origin error is expected, but let's also check window title/document if possible
+                    try {
+                        const title = authWindow.document.title;
+                        if (title && (title.includes('Error 400') || title.includes('redirect_uri_mismatch'))) {
+                            clearInterval(checkInterval);
+                            authWindow.close();
+                            reject(new Error('OAuth error detected from window title - redirect_uri_mismatch'));
+                            return;
+                        }
+                    } catch (titleError) {
+                        // Can't access title due to CORS, continue
+                    }
                 }
             }, 500);
+            
+            // Also add a window beforeunload listener to detect early closure
+            authWindow.addEventListener('beforeunload', () => {
+                // Small delay to let window fully close
+                setTimeout(() => {
+                    if (authWindow.closed) {
+                        clearInterval(checkInterval);
+                        reject(new Error('OAuth window closed without completing authorization'));
+                    }
+                }, 100);
+            });
         });
     }
     
@@ -597,8 +648,17 @@ window.MCPQuickConnectors = (function() {
                 break;
                 
             case 'connected':
-                const connectionInfo = mcpClient?.getConnectionInfo(serverName);
-                const toolCount = connectionInfo?.tools?.length || 0;
+                let toolCount = 0;
+                
+                // Check if this is a service connector type
+                if (config.transport === 'service-connector' && window.MCPServiceConnectors) {
+                    toolCount = window.MCPServiceConnectors.getToolCount(serviceKey);
+                } else {
+                    // Regular MCP connection
+                    const connectionInfo = mcpClient?.getConnectionInfo(serverName);
+                    toolCount = connectionInfo?.tools?.length || 0;
+                }
+                
                 statusElement.innerHTML = `
                     <div class="status-connected">
                         <i class="fas fa-check-circle"></i> Connected
@@ -618,10 +678,12 @@ window.MCPQuickConnectors = (function() {
      */
     async function disconnectService(serviceKey) {
         const config = QUICK_CONNECTORS[serviceKey];
-        const serverName = `mcp-${serviceKey}`;
         
         try {
-            if (mcpClient) {
+            if (config.transport === 'service-connector' && window.MCPServiceConnectors) {
+                await window.MCPServiceConnectors.disconnectService(serviceKey);
+            } else if (mcpClient) {
+                const serverName = `mcp-${serviceKey}`;
                 const connectionInfo = mcpClient.getConnectionInfo(serverName);
                 if (connectionInfo && connectionInfo.connected) {
                     await mcpClient.disconnect(serverName);
@@ -649,10 +711,13 @@ window.MCPQuickConnectors = (function() {
      */
     function updateAllConnectorStatuses() {
         Object.keys(QUICK_CONNECTORS).forEach(serviceKey => {
-            const serverName = `mcp-${serviceKey}`;
+            const config = QUICK_CONNECTORS[serviceKey];
             let isConnected = false;
             
-            if (mcpClient) {
+            if (config.transport === 'service-connector' && window.MCPServiceConnectors) {
+                isConnected = window.MCPServiceConnectors.isConnected(serviceKey);
+            } else if (mcpClient) {
+                const serverName = `mcp-${serviceKey}`;
                 const connectionInfo = mcpClient.getConnectionInfo(serverName);
                 isConnected = connectionInfo && connectionInfo.connected;
             }
@@ -898,6 +963,269 @@ Or error: bad request: unknown integration' rows="8" class="mcp-response-textare
     }
     
     /**
+     * Show manual OAuth flow with curl commands and paste fields
+     * @param {string} serviceKey - Service key (github, gmail, gdocs, calendar)
+     * @param {Object} savedConfig - OAuth configuration
+     * @param {Error} oauthError - Original OAuth error
+     */
+    function showManualOAuthFlow(serviceKey, savedConfig, oauthError) {
+        const config = QUICK_CONNECTORS[serviceKey];
+        
+        console.log('[MCPQuickConnectors] Showing manual OAuth flow for:', serviceKey, oauthError);
+        
+        // Generate curl command for device code request
+        const deviceCodeCurl = generateDeviceCodeCurl(savedConfig);
+        
+        // Create modal
+        const modal = document.createElement('div');
+        modal.className = 'modal manual-oauth-modal';
+        modal.style.display = 'block';
+        
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h3>🔧 Manual OAuth Setup for ${config.name}</h3>
+                
+                <div class="manual-oauth-instructions">
+                    <div class="oauth-error-notice">
+                        <h4>⚠️ OAuth Authorization Failed</h4>
+                        <p>Automatic OAuth failed: <code>${oauthError.message}</code></p>
+                        <p>Complete the OAuth process manually using the steps below:</p>
+                    </div>
+                    
+                    <div class="manual-oauth-step" id="step-1">
+                        <h4>Step 1: Request Device Code</h4>
+                        <p>Run this curl command in your terminal to get a device code:</p>
+                        <div class="code-block">
+                            <pre id="device-code-curl">${deviceCodeCurl}</pre>
+                            <button class="copy-button" onclick="MCPQuickConnectors.copyCommand('device-code-curl', this)">Copy</button>
+                        </div>
+                        <div class="response-section">
+                            <label for="device-code-response">Paste the JSON response here:</label>
+                            <textarea id="device-code-response" placeholder='Example: {"device_code": "xyz", "user_code": "ABCD-EFGH", "verification_uri": "https://...", "expires_in": 900}' rows="4"></textarea>
+                            <button class="btn primary-btn" onclick="MCPQuickConnectors.processDeviceCodeResponse('${serviceKey}')">
+                                Process Device Code
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="manual-oauth-step" id="step-2" style="display: none;">
+                        <h4>Step 2: Complete Authorization</h4>
+                        <div id="verification-instructions"></div>
+                        <p>After completing authorization, run this command to get your access token:</p>
+                        <div class="code-block">
+                            <pre id="token-curl"></pre>
+                            <button class="copy-button" onclick="MCPQuickConnectors.copyCommand('token-curl', this)">Copy</button>
+                        </div>
+                        <div class="response-section">
+                            <label for="token-response">Paste the token response here:</label>
+                            <textarea id="token-response" placeholder='Example: {"access_token": "ghp_xxxx", "token_type": "bearer", "scope": "repo read:user"}' rows="4"></textarea>
+                            <button class="btn primary-btn" onclick="MCPQuickConnectors.processTokenResponse('${serviceKey}')">
+                                Complete Setup
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="oauth-actions">
+                        <button class="btn secondary-btn" onclick="MCPQuickConnectors.closeManualOAuthFlow()">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+    }
+    
+    /**
+     * Generate curl command for device code request
+     * @param {Object} config - OAuth configuration
+     * @returns {string} Curl command
+     */
+    function generateDeviceCodeCurl(config) {
+        const deviceUrl = config.provider === 'github' 
+            ? 'https://github.com/login/device/code'
+            : 'https://oauth2.googleapis.com/device/code';
+        
+        const scope = Array.isArray(config.scope) ? config.scope.join(' ') : config.scope;
+        
+        return `curl -X POST "${deviceUrl}" \\
+  -H "Accept: application/json" \\
+  -H "Content-Type: application/x-www-form-urlencoded" \\
+  -d "client_id=${config.clientId}" \\
+  -d "scope=${encodeURIComponent(scope)}"`;
+    }
+    
+    /**
+     * Process device code response from manual OAuth
+     * @param {string} serviceKey - Service key
+     */
+    function processDeviceCodeResponse(serviceKey) {
+        const responseText = document.getElementById('device-code-response').value.trim();
+        
+        if (!responseText) {
+            alert('Please enter the device code response from curl');
+            return;
+        }
+        
+        try {
+            const response = JSON.parse(responseText);
+            
+            if (!response.device_code || !response.user_code || !response.verification_uri) {
+                throw new Error('Invalid device code response format');
+            }
+            
+            // Show step 2
+            document.getElementById('step-1').style.display = 'none';
+            document.getElementById('step-2').style.display = 'block';
+            
+            // Fill in verification instructions
+            const instructions = document.getElementById('verification-instructions');
+            instructions.innerHTML = `
+                <div class="verification-info">
+                    <p><strong>1. Visit:</strong> <a href="${response.verification_uri}" target="_blank">${response.verification_uri}</a></p>
+                    <p><strong>2. Enter code:</strong> <code>${response.user_code}</code></p>
+                    <p><strong>3. Complete authorization in your browser</strong></p>
+                    <p class="expires-note">⏰ Code expires in ${Math.floor(response.expires_in / 60)} minutes</p>
+                </div>
+            `;
+            
+            // Generate token curl command
+            const config = QUICK_CONNECTORS[serviceKey];
+            const savedConfig = oauthConfig.getConfiguration(`mcp-${serviceKey}`);
+            const tokenCurl = generateTokenCurl(savedConfig, response.device_code);
+            document.getElementById('token-curl').textContent = tokenCurl;
+            
+        } catch (error) {
+            alert(`Invalid response format: ${error.message}\n\nExpected JSON with device_code, user_code, and verification_uri.`);
+        }
+    }
+    
+    /**
+     * Generate curl command for token request
+     * @param {Object} config - OAuth configuration
+     * @param {string} deviceCode - Device code from previous step
+     * @returns {string} Curl command
+     */
+    function generateTokenCurl(config, deviceCode) {
+        const tokenUrl = config.provider === 'github'
+            ? 'https://github.com/login/oauth/access_token'
+            : 'https://oauth2.googleapis.com/token';
+        
+        return `curl -X POST "${tokenUrl}" \\
+  -H "Accept: application/json" \\
+  -H "Content-Type: application/x-www-form-urlencoded" \\
+  -d "client_id=${config.clientId}" \\
+  -d "device_code=${deviceCode}" \\
+  -d "grant_type=urn:ietf:params:oauth:grant-type:device_code"`;
+    }
+    
+    /**
+     * Process token response from manual OAuth
+     * @param {string} serviceKey - Service key
+     */
+    async function processTokenResponse(serviceKey) {
+        const responseText = document.getElementById('token-response').value.trim();
+        
+        if (!responseText) {
+            alert('Please enter the token response from curl');
+            return;
+        }
+        
+        try {
+            const response = JSON.parse(responseText);
+            
+            if (!response.access_token) {
+                throw new Error('No access token in response');
+            }
+            
+            // Store the token
+            const serverName = `mcp-${serviceKey}`;
+            const storageKey = `${serverName}_token`;
+            
+            await window.CoreStorageService.setValue(storageKey, response.access_token);
+            
+            // If refresh token is available, store it too
+            if (response.refresh_token) {
+                await window.CoreStorageService.setValue(`${serverName}_refresh_token`, response.refresh_token);
+            }
+            
+            // Close modal
+            closeManualOAuthFlow();
+            
+            // Complete the connection
+            updateConnectorStatus(serviceKey, 'connecting');
+            await completeConnectionAfterAuth(serviceKey);
+            
+            showNotification(`✅ Manual OAuth completed for ${QUICK_CONNECTORS[serviceKey].name}`, 'success');
+            
+        } catch (error) {
+            alert(`Invalid token response: ${error.message}\n\nExpected JSON with access_token field.`);
+        }
+    }
+    
+    /**
+     * Copy command from manual OAuth UI
+     * @param {string} elementId - ID of element containing command
+     * @param {HTMLElement} button - Copy button element
+     */
+    function copyCommand(elementId, button) {
+        const command = document.getElementById(elementId).textContent;
+        
+        // Try modern clipboard API first
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(command).then(() => {
+                button.textContent = 'Copied!';
+                setTimeout(() => button.textContent = 'Copy', 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                fallbackCopyCommand(command, button);
+            });
+        } else {
+            fallbackCopyCommand(command, button);
+        }
+    }
+    
+    /**
+     * Fallback copy method for commands
+     * @param {string} text - Text to copy
+     * @param {HTMLElement} button - Button element
+     */
+    function fallbackCopyCommand(text, button) {
+        const tempTextarea = document.createElement('textarea');
+        tempTextarea.value = text;
+        document.body.appendChild(tempTextarea);
+        tempTextarea.select();
+        
+        try {
+            const successful = document.execCommand('copy');
+            if (successful) {
+                button.textContent = 'Copied!';
+                setTimeout(() => button.textContent = 'Copy', 2000);
+            } else {
+                button.textContent = 'Failed';
+                setTimeout(() => button.textContent = 'Copy', 2000);
+            }
+        } catch (err) {
+            console.error('Fallback copy failed:', err);
+            button.textContent = 'Failed';
+            setTimeout(() => button.textContent = 'Copy', 2000);
+        } finally {
+            document.body.removeChild(tempTextarea);
+        }
+    }
+    
+    /**
+     * Close manual OAuth flow modal
+     */
+    function closeManualOAuthFlow() {
+        const modal = document.querySelector('.manual-oauth-modal');
+        if (modal) {
+            modal.remove();
+        }
+    }
+    
+    /**
      * Process manual connection response
      * @param {string} serviceKey - Service key
      */
@@ -970,6 +1298,12 @@ Or error: bad request: unknown integration' rows="8" class="mcp-response-textare
         completeConnectionAfterAuth,
         copyCurlCommand,
         closeManualConnectionUI,
-        processManualConnectionResponse
+        processManualConnectionResponse,
+        // Manual OAuth flow functions
+        showManualOAuthFlow,
+        processDeviceCodeResponse,
+        processTokenResponse,
+        copyCommand,
+        closeManualOAuthFlow
     };
 })();
