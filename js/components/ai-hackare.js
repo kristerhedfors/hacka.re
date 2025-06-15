@@ -178,10 +178,23 @@ window.AIHackareComponent = (function() {
                 });
             }
             
-            if (this.elements.shareMcpConnectionsCheckbox) {
-                this.elements.shareMcpConnectionsCheckbox.addEventListener('change', () => {
+            // Handle MCP connections checkbox with fallback for timing issues
+            let mcpCheckbox = this.elements.shareMcpConnectionsCheckbox;
+            if (!mcpCheckbox) {
+                // Fallback: Query directly if DOMElements missed it due to timing
+                mcpCheckbox = document.getElementById('share-mcp-connections');
+                console.log('MCP checkbox fallback query result:', !!mcpCheckbox);
+            }
+            
+            if (mcpCheckbox) {
+                // Add change event listener
+                mcpCheckbox.addEventListener('change', () => {
+                    console.log('MCP checkbox changed to:', mcpCheckbox.checked);
                     this.updateLinkLengthBar();
                 });
+                console.log('✅ MCP checkbox event listener attached successfully');
+            } else {
+                console.error('❌ MCP checkbox not found even with fallback');
             }
             
             if (this.elements.shareConversationCheckbox) {
@@ -475,6 +488,58 @@ window.AIHackareComponent = (function() {
         this.updateLinkLengthBar();
     };
     
+    /**
+     * Ensure MCP checkbox works by cloning from a working checkbox if needed
+     */
+    AIHackare.prototype.ensureMcpCheckboxWorks = function() {
+        const mcpCheckbox = document.getElementById('share-mcp-connections');
+        const mcpGroup = mcpCheckbox?.parentElement;
+        
+        if (!mcpCheckbox || !mcpGroup) {
+            console.warn('MCP checkbox not found for failsafe check');
+            return;
+        }
+        
+        // Test if the checkbox is responsive by checking what element is at its center
+        const rect = mcpCheckbox.getBoundingClientRect();
+        const elementAtCenter = document.elementFromPoint(
+            rect.left + rect.width/2, 
+            rect.top + rect.height/2
+        );
+        
+        // If the checkbox is not accessible at its center point, fix it
+        if (elementAtCenter !== mcpCheckbox) {
+            console.log('MCP checkbox is not responsive, applying failsafe fix...');
+            
+            // Find a working checkbox to clone from
+            const workingGroup = document.querySelector('input[id="share-function-library"]')?.parentElement;
+            
+            if (workingGroup) {
+                // Clone the working checkbox structure
+                const clonedGroup = workingGroup.cloneNode(true);
+                
+                // Update the cloned elements for MCP
+                const clonedInput = clonedGroup.querySelector('input');
+                const clonedLabel = clonedGroup.querySelector('label');
+                
+                clonedInput.id = 'share-mcp-connections';
+                clonedInput.checked = mcpCheckbox.checked; // Preserve current state
+                clonedLabel.setAttribute('for', 'share-mcp-connections');
+                clonedLabel.textContent = 'MCP Connections';
+                
+                // Replace the broken group with the cloned working one
+                mcpGroup.parentElement.replaceChild(clonedGroup, mcpGroup);
+                
+                // Re-add the event listener
+                clonedInput.addEventListener('change', () => {
+                    this.updateLinkLengthBar();
+                });
+                
+                console.log('✅ MCP checkbox fixed with failsafe clone');
+            }
+        }
+    };
+
     /**
      * Generate a comprehensive share link
      */
