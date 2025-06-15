@@ -178,6 +178,12 @@ window.AIHackareComponent = (function() {
                 });
             }
             
+            if (this.elements.shareMcpConnectionsCheckbox) {
+                this.elements.shareMcpConnectionsCheckbox.addEventListener('change', () => {
+                    this.updateLinkLengthBar();
+                });
+            }
+            
             if (this.elements.shareConversationCheckbox) {
                 this.elements.shareConversationCheckbox.addEventListener('change', () => {
                     this.toggleMessageHistoryInput();
@@ -208,9 +214,13 @@ window.AIHackareComponent = (function() {
             
             // Generate share link button
             if (this.elements.generateShareLinkBtn) {
+                console.log('AIHackare: Generate share link button found, adding event listener');
                 this.elements.generateShareLinkBtn.addEventListener('click', () => {
+                    console.log('AIHackare: Generate share link button clicked!');
                     this.generateComprehensiveShareLink();
                 });
+            } else {
+                console.error('AIHackare: Generate share link button NOT found in elements');
             }
             
             // Close share modal button
@@ -469,6 +479,7 @@ window.AIHackareComponent = (function() {
      * Generate a comprehensive share link
      */
     AIHackare.prototype.generateComprehensiveShareLink = async function() {
+        console.log('AIHackare: generateComprehensiveShareLink called');
         // Save share options before generating the link
         this.shareManager.saveShareOptions();
         

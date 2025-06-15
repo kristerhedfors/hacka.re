@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug MCP Checkbox</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-area { background: #f5f5f5; padding: 20px; margin: 20px 0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Debug MCP Checkbox Access</h1>
+    
+    <div class="test-area">
+        <h3>Test Checkbox</h3>
+        <div class="checkbox-group">
+            <input type="checkbox" id="share-mcp-connections">
+            <label for="share-mcp-connections">
+                MCP Connections
+                <span class="info-icon">
+                    <i class="fas fa-info-circle"></i>
+                    <span class="tooltip">Test tooltip</span>
+                </span>
+            </label>
+        </div>
+        <button onclick="testAccess()">Test Element Access</button>
+        <button onclick="testDOMElements()">Test DOMElements Module</button>
+    </div>
+    
+    <div id="results"></div>
+    
+    <script src="js/components/dom-elements.js"></script>
+    
+    <script>
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.style.padding = '5px';
+            div.style.margin = '2px 0';
+            div.style.backgroundColor = type === 'error' ? '#ffebee' : type === 'success' ? '#e8f5e9' : '#f5f5f5';
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            results.appendChild(div);
+        }
+
+        function testAccess() {
+            log('Testing direct element access...');
+            
+            // Test direct getElementById
+            const checkbox = document.getElementById('share-mcp-connections');
+            if (checkbox) {
+                log(`✓ Found checkbox via getElementById: ${checkbox.tagName}`, 'success');
+                log(`✓ Checkbox checked state: ${checkbox.checked}`);
+                
+                // Test checking the checkbox
+                checkbox.checked = true;
+                log(`✓ Set checkbox to checked: ${checkbox.checked}`, 'success');
+                
+                // Test unchecking
+                checkbox.checked = false;
+                log(`✓ Set checkbox to unchecked: ${checkbox.checked}`, 'success');
+            } else {
+                log('✗ Checkbox not found via getElementById', 'error');
+            }
+        }
+
+        function testDOMElements() {
+            log('Testing DOMElements module...');
+            
+            if (window.DOMElements) {
+                log('✓ DOMElements module found', 'success');
+                
+                const elements = window.DOMElements.getElements();
+                log(`✓ DOMElements.getElements() returned: ${typeof elements}`);
+                
+                if (elements.shareMcpConnectionsCheckbox) {
+                    log(`✓ shareMcpConnectionsCheckbox found: ${elements.shareMcpConnectionsCheckbox.tagName}`, 'success');
+                    log(`✓ Element ID: ${elements.shareMcpConnectionsCheckbox.id}`);
+                    log(`✓ Element checked: ${elements.shareMcpConnectionsCheckbox.checked}`);
+                } else {
+                    log('✗ shareMcpConnectionsCheckbox not found in elements', 'error');
+                }
+            } else {
+                log('✗ DOMElements module not found', 'error');
+            }
+        }
+        
+        // Auto-run tests on load
+        window.addEventListener('load', () => {
+            log('Page loaded. Running tests...');
+            setTimeout(() => {
+                testAccess();
+                testDOMElements();
+            }, 100);
+        });
+    </script>
+</body>
+</html>
