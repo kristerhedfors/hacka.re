@@ -7,22 +7,22 @@
 
 /* Modern Theme (Default) */
 .theme-modern {
-    --primary-color: #006AA7;      /* Swedish flag blue */
-    --primary-dark: #005486;       /* Darker Swedish blue */
-    --secondary-color: #10b981;    /* Emerald */
-    --dark-color: #1f2937;         /* Gray 800 */
-    --light-color: #f9fafb;        /* Gray 50 */
-    --text-color: #374151;         /* Gray 700 */
+    --primary-color: #1f2937;      /* Dark gray 800 */
+    --primary-dark: #111827;       /* Very dark gray 900 */
+    --secondary-color: #4b5563;    /* Medium gray 600 */
+    --dark-color: #1f2937;         /* Dark gray 800 */
+    --light-color: #ffffff;        /* Pure white */
+    --text-color: #111827;         /* Very dark gray 900 */
     --light-text: #ffffff;
-    --accent-color: #f59e0b;       /* Amber */
+    --accent-color: #374151;       /* Dark gray 700 */
     --border-radius: 8px;
-    --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --box-shadow: none;
     --transition: all 0.3s ease;
     
     /* Chat message colors */
-    --user-msg-bg: #e0e7ff;        /* Indigo 100 */
-    --ai-msg-bg: #f3f4f6;          /* Gray 100 */
-    --system-msg-bg: #FFFDF0;      /* Very whitish yellow */
+    --user-msg-bg: #f3f4f6;        /* Light gray 100 */
+    --ai-msg-bg: #ffffff;          /* Pure white */
+    --system-msg-bg: #f9fafb;      /* Very light gray 50 */
 }
 
 /* Retro Game Theme */
