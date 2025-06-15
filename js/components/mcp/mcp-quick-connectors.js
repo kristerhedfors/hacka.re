@@ -648,8 +648,17 @@ window.MCPQuickConnectors = (function() {
                 break;
                 
             case 'connected':
-                const connectionInfo = mcpClient?.getConnectionInfo(serverName);
-                const toolCount = connectionInfo?.tools?.length || 0;
+                let toolCount = 0;
+                
+                // Check if this is a service connector type
+                if (config.transport === 'service-connector' && window.MCPServiceConnectors) {
+                    toolCount = window.MCPServiceConnectors.getToolCount(serviceKey);
+                } else {
+                    // Regular MCP connection
+                    const connectionInfo = mcpClient?.getConnectionInfo(serverName);
+                    toolCount = connectionInfo?.tools?.length || 0;
+                }
+                
                 statusElement.innerHTML = `
                     <div class="status-connected">
                         <i class="fas fa-check-circle"></i> Connected
