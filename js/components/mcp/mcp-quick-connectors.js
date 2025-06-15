@@ -78,7 +78,7 @@ window.MCPQuickConnectors = (function() {
                 tokenUrl: 'https://oauth2.googleapis.com/token',
                 scope: 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events',
                 clientId: '', // User needs to provide
-                redirectUri: window.location.origin,
+                redirectUri: window.location.origin.startsWith('file://') ? 'http://localhost:8000' : window.location.origin,
                 additionalParams: {
                     access_type: 'offline',
                     prompt: 'consent'
@@ -92,7 +92,7 @@ window.MCPQuickConnectors = (function() {
                     'Enable Google Calendar API in "APIs & Services" > "Library"',
                     'Go to "APIs & Services" > "Credentials"',
                     'Create OAuth 2.0 Client ID (Web application)',
-                    'Add authorized redirect URI: ' + window.location.origin,
+                    'Add authorized redirect URIs: https://hacka.re AND http://localhost:8000',
                     'Copy the Client ID and paste it below'
                 ],
                 docUrl: 'https://developers.google.com/calendar/api/guides/auth'
