@@ -373,9 +373,7 @@
             for (const tool of tools) {
                 try {
                     // Add the function to the global scope so it can be called
-                    window[tool.name] = new Function('...args', `
-                        return (${tool.code})(...args);
-                    `);
+                    window[tool.name] = eval(`(${tool.code})`);
                     console.log(`[MCP Service Connectors] Registered function: ${tool.name}`);
                     
                     // Also register with the Function Calling system
