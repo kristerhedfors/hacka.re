@@ -3,6 +3,9 @@
  * Handles share-specific UI functionality (links, QR codes, password management)
  */
 
+console.log('🚀 ShareUIManager module loading...');
+console.error('🚨 SHARE UI MANAGER FILE IS BEING LOADED! 🚨');
+
 window.ShareUIManager = (function() {
     // Constants for link length calculation
     const MAX_RECOMMENDED_LINK_LENGTH = 2000; // Most browsers accept URLs up to 2000 bytes
@@ -13,6 +16,7 @@ window.ShareUIManager = (function() {
      * @returns {Object} Share UI Manager instance
      */
     function createShareUIManager(elements) {
+        console.log('🚀 ShareUIManager: createShareUIManager called with elements:', !!elements);
         /**
          * Initialize share modal UI
          * @param {Object} config - Configuration options
@@ -196,7 +200,16 @@ window.ShareUIManager = (function() {
          * @param {Object} data - Data for calculating link length
          */
         function updateLinkLengthBar(data = {}) {
+            console.log('📊 ShareUIManager: updateLinkLengthBar called!');
+            console.log('📊 ShareUIManager: Input data:', data);
+            
             const { apiKey, systemPrompt, currentModel, messages = [] } = data;
+            console.log('📊 ShareUIManager: Destructured values:', {
+                apiKey: apiKey ? 'present' : 'missing',
+                systemPrompt: systemPrompt ? `${systemPrompt.length} chars` : 'empty',
+                currentModel: currentModel || 'undefined',
+                messages: `${messages.length} messages`
+            });
             
             // Base URL length (including hash and shared= prefix)
             const baseUrlLength = window.location.href.split('#')[0].length + 8; // 8 for "#shared="
@@ -268,18 +281,75 @@ window.ShareUIManager = (function() {
             }
             
             // Add MCP connections if selected
-            if (elements.shareMcpConnectionsCheckbox && elements.shareMcpConnectionsCheckbox.checked) {
-                // Estimate size of MCP connections (service key + token for each)
-                // GitHub PAT tokens are typically ~40 characters
-                // Add an estimate for GitHub if it might be present
+            console.log('📊 ShareUIManager: Checking MCP checkbox state...');
+            
+            // ALWAYS query the DOM fresh for MCP checkbox due to modal manager replacing it
+            const mcpCheckbox = document.getElementById('share-mcp-connections');
+            console.log('📊 ShareUIManager: Fresh MCP checkbox query found:', !!mcpCheckbox);
+            if (mcpCheckbox) {
+                console.log('📊 ShareUIManager: Fresh MCP checkbox checked state:', mcpCheckbox.checked);
+            }
+            
+            if (mcpCheckbox && mcpCheckbox.checked) {
+                console.log('ShareUIManager: MCP connections checkbox is checked, calculating size...');
+                
+                // Try to estimate MCP connections size directly
+                let mcpSize = 80; // Default fallback
+                
+                // Try to get GitHub token size directly from storage
                 try {
-                    // Since we can't easily check storage synchronously here, estimate conservatively
-                    // Assume 1-2 connections with service key + token
-                    estimatedLength += 60; // Conservative estimate for GitHub connection
+                    // Check if we can access localStorage directly for a quick estimate
+                    if (window.localStorage) {
+                        // Look for GitHub token in various possible storage formats
+                        const storageKeys = Object.keys(localStorage);
+                        for (const key of storageKeys) {
+                            if (key.includes('mcp_github_token') || key.includes('github_token')) {
+                                try {
+                                    const tokenData = localStorage.getItem(key);
+                                    if (tokenData) {
+                                        let tokenValue = tokenData;
+                                        
+                                        // Try to parse as JSON first
+                                        try {
+                                            const parsed = JSON.parse(tokenData);
+                                            if (typeof parsed === 'string') {
+                                                tokenValue = parsed;
+                                            }
+                                        } catch (e) {
+                                            // Not JSON, use as-is
+                                        }
+                                        
+                                        if (typeof tokenValue === 'string' && tokenValue.length > 20) {
+                                            mcpSize = tokenValue.length + 25; // Token + JSON structure
+                                            console.log(`ShareUIManager: Found GitHub token (${tokenValue.length} chars), estimated size: ${mcpSize} bytes`);
+                                            break;
+                                        }
+                                    }
+                                } catch (e) {
+                                    console.log(`ShareUIManager: Error checking storage key ${key}:`, e);
+                                }
+                            }
+                        }
+                    }
                 } catch (error) {
-                    // Fallback estimate
-                    estimatedLength += 60;
+                    console.log('ShareUIManager: Error checking localStorage for MCP tokens:', error);
                 }
+                
+                // Use the MCP size estimator if available
+                if (window.mcpConnectionsEstimatorSync) {
+                    try {
+                        const estimatorSize = window.mcpConnectionsEstimatorSync();
+                        if (estimatorSize > mcpSize) {
+                            mcpSize = estimatorSize;
+                            console.log(`ShareUIManager: Used size estimator result: ${mcpSize} bytes`);
+                        }
+                    } catch (error) {
+                        console.log('ShareUIManager: Error calling size estimator:', error);
+                    }
+                }
+                
+                estimatedLength += mcpSize;
+                console.log(`ShareUIManager: Added MCP connections size: ${mcpSize} bytes (total now: ${estimatedLength})`);
             }
             
             // Add conversation data if selected
@@ -368,13 +438,17 @@ window.ShareUIManager = (function() {
         }
         
         // Public API
-        return {
+        const publicAPI = {
             initializeShareModal,
             togglePasswordVisibility,
             toggleMessageHistoryInput,
             updateLinkLengthBar,
             generateShareQRCode
         };
+        
+        console.log('🚀 ShareUIManager: Instance created with methods:', Object.keys(publicAPI));
+        
+        return publicAPI;
     }
     
     // Public API

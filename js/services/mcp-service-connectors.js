@@ -1281,6 +1281,39 @@
             if (!config || !config.tools) return 0;
             return Object.keys(config.tools).length;
         }
+
+        /**
+         * Quick connect method for GitHub (used by GitHub Token Manager)
+         * @param {string} serviceKey - Service key (usually 'github')
+         * @returns {Promise<boolean>} True if connected successfully
+         */
+        async quickConnect(serviceKey) {
+            try {
+                const config = SERVICE_CONFIGS[serviceKey];
+                if (!config) {
+                    throw new Error(`Unknown service: ${serviceKey}`);
+                }
+
+                // Try to connect without showing dialog
+                const storageKey = `mcp_${serviceKey}_token`;
+                const existingToken = await window.CoreStorageService.getValue(storageKey);
+
+                if (existingToken) {
+                    if (serviceKey === 'github') {
+                        const isValid = await this.validateGitHubToken(existingToken);
+                        if (isValid) {
+                            return await this.createGitHubConnection(serviceKey, config, existingToken);
+                        }
+                    }
+                }
+
+                console.warn(`[MCP Service Connectors] No valid token found for ${serviceKey}`);
+                return false;
+            } catch (error) {
+                console.error(`[MCP Service Connectors] Quick connect failed for ${serviceKey}:`, error);
+                return false;
+            }
+        }
     }
 
     // Export to global scope

@@ -88,10 +88,44 @@ window.ModalManager = (function() {
                     
                     // Add the event listener
                     newCheckbox.addEventListener('change', () => {
-                        console.log('🎉 NUCLEAR FIX: MCP checkbox changed to:', newCheckbox.checked);
-                        // Trigger updateLinkLengthBar if available
-                        if (window.aiHackare && typeof window.aiHackare.updateLinkLengthBar === 'function') {
-                            window.aiHackare.updateLinkLengthBar();
+                        try {
+                            console.log('🎉 NUCLEAR FIX: MCP checkbox changed to:', newCheckbox.checked);
+                            console.log('🎉 NUCLEAR FIX: Event listener entry point reached');
+                            
+                            // Trigger updateLinkLengthBar if available
+                            console.log('🔍 NUCLEAR FIX: window available:', !!window);
+                            console.log('🔍 NUCLEAR FIX: window.aiHackare available:', !!window.aiHackare);
+                            console.log('🔍 NUCLEAR FIX: window.aiHackare type:', typeof window.aiHackare);
+                            
+                            if (window.aiHackare) {
+                                console.log('🔍 NUCLEAR FIX: aiHackare object keys:', Object.keys(window.aiHackare));
+                                console.log('🔍 NUCLEAR FIX: aiHackare.updateLinkLengthBar type:', typeof window.aiHackare.updateLinkLengthBar);
+                                console.log('🔍 NUCLEAR FIX: updateLinkLengthBar function available:', typeof window.aiHackare.updateLinkLengthBar === 'function');
+                                
+                                if (typeof window.aiHackare.updateLinkLengthBar === 'function') {
+                                    console.log('📞 NUCLEAR FIX: About to call updateLinkLengthBar...');
+                                    try {
+                                        window.aiHackare.updateLinkLengthBar();
+                                        console.log('✅ NUCLEAR FIX: updateLinkLengthBar call completed successfully');
+                                    } catch (callError) {
+                                        console.error('❌ NUCLEAR FIX: Error calling updateLinkLengthBar:', callError);
+                                        console.error('❌ NUCLEAR FIX: Call error stack:', callError.stack);
+                                    }
+                                } else {
+                                    console.error('❌ NUCLEAR FIX: updateLinkLengthBar is not a function');
+                                    console.error('❌ NUCLEAR FIX: updateLinkLengthBar value:', window.aiHackare.updateLinkLengthBar);
+                                }
+                            } else {
+                                console.error('❌ NUCLEAR FIX: window.aiHackare is not available');
+                                console.error('❌ NUCLEAR FIX: window.aiHackare value:', window.aiHackare);
+                            }
+                            
+                            console.log('🎉 NUCLEAR FIX: Event listener exit point reached');
+                        } catch (error) {
+                            console.error('💥 NUCLEAR FIX: Error in MCP checkbox event handler:', error);
+                            console.error('💥 NUCLEAR FIX: Error stack:', error.stack);
+                            console.error('💥 NUCLEAR FIX: Error name:', error.name);
+                            console.error('💥 NUCLEAR FIX: Error message:', error.message);
                         }
                     });
                     
