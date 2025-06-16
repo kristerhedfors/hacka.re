@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Checkbox Interaction</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-area { margin: 20px 0; padding: 20px; border: 1px solid #ddd; }
+        .checkbox-group { margin: 10px 0; }
+        
+        /* Copy the exact CSS from hacka.re */
+        .info-icon {
+            display: inline-block;
+            margin-left: 5px;
+            color: #007bff;
+            cursor: help;
+            position: relative;
+        }
+        
+        .info-icon i {
+            font-size: 0.9rem;
+        }
+        
+        .info-icon .tooltip {
+            visibility: hidden;
+            width: 300px;
+            background-color: #333;
+            color: white;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -150px;
+            pointer-events: none;
+            display: none;
+        }
+        
+        /* Test different checkbox styles */
+        .debug-overlay {
+            position: relative;
+        }
+        
+        .debug-overlay::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 0, 0, 0.2);
+            pointer-events: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <h1>Debug Checkbox Interaction Issue</h1>
+    
+    <div class="test-area">
+        <h3>Test 1: Simple checkbox (should work)</h3>
+        <div class="checkbox-group">
+            <input type="checkbox" id="test-simple">
+            <label for="test-simple">Simple checkbox</label>
+        </div>
+    </div>
+    
+    <div class="test-area">
+        <h3>Test 2: Checkbox with info icon (like MCP)</h3>
+        <div class="checkbox-group">
+            <input type="checkbox" id="test-with-icon">
+            <label for="test-with-icon">
+                Checkbox with icon
+                <span class="info-icon">
+                    <i class="fas fa-info-circle">ℹ</i>
+                    <span class="tooltip">This is a tooltip like the MCP checkbox</span>
+                </span>
+            </label>
+        </div>
+    </div>
+    
+    <div class="test-area">
+        <h3>Test 3: Check click areas</h3>
+        <div class="checkbox-group debug-overlay">
+            <input type="checkbox" id="test-debug">
+            <label for="test-debug">
+                Debug checkbox
+                <span class="info-icon">
+                    <i class="fas fa-info-circle">ℹ</i>
+                    <span class="tooltip">Debug tooltip</span>
+                </span>
+            </label>
+        </div>
+    </div>
+    
+    <div class="test-area">
+        <h3>Test 4: Exact MCP checkbox HTML</h3>
+        <div class="checkbox-group">
+            <input type="checkbox" id="share-mcp-connections">
+            <label for="share-mcp-connections">
+                MCP Connections
+                <span class="info-icon">
+                    <i class="fas fa-info-circle">ℹ</i>
+                    <span class="tooltip">Shares authenticated MCP server connections (currently PAT-based services like GitHub). Recipients will have the same access level as the sharing user.</span>
+                </span>
+            </label>
+        </div>
+    </div>
+    
+    <div id="results"></div>
+    
+    <script>
+        function log(message) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.style.padding = '5px';
+            div.style.margin = '2px 0';
+            div.style.backgroundColor = '#f0f0f0';
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            results.appendChild(div);
+        }
+        
+        // Add event listeners to all checkboxes
+        ['test-simple', 'test-with-icon', 'test-debug', 'share-mcp-connections'].forEach(id => {
+            const checkbox = document.getElementById(id);
+            if (checkbox) {
+                checkbox.addEventListener('change', () => {
+                    log(`✓ ${id} checkbox changed to: ${checkbox.checked}`);
+                });
+                
+                checkbox.addEventListener('click', () => {
+                    log(`✓ ${id} checkbox clicked`);
+                });
+                
+                // Test if we can access the element
+                log(`${id} checkbox found: ${checkbox.tagName}`);
+            } else {
+                log(`✗ ${id} checkbox NOT found`);
+            }
+        });
+        
+        // Test clicking on labels
+        document.querySelectorAll('label').forEach((label, index) => {
+            label.addEventListener('click', (e) => {
+                log(`Label ${index + 1} clicked (for: ${label.getAttribute('for')})`);
+            });
+        });
+        
+        // Test clicking on info icons
+        document.querySelectorAll('.info-icon').forEach((icon, index) => {
+            icon.addEventListener('click', (e) => {
+                log(`Info icon ${index + 1} clicked`);
+                e.stopPropagation(); // Prevent label click
+            });
+        });
+        
+        log('Test page loaded. Try clicking the checkboxes above.');
+    </script>
+</body>
+</html>
