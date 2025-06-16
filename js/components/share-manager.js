@@ -326,9 +326,45 @@ window.ShareManager = (function() {
                 StorageService.saveSubtitle(subtitle);
             }
             
-            // Debug: Check MCP checkbox state
-            console.log('ShareManager: MCP checkbox element:', elements.shareMcpConnectionsCheckbox);
-            console.log('ShareManager: MCP checkbox checked:', elements.shareMcpConnectionsCheckbox ? elements.shareMcpConnectionsCheckbox.checked : 'element not found');
+            // Debug: Check all checkbox states
+            console.log('🎛️ SHAREMANAGER: CHECKBOX STATE COLLECTION 🎛️');
+            console.log('═══════════════════════════════════════════════════');
+            
+            console.log('📋 Base URL checkbox:', !!elements.shareBaseUrlCheckbox, '- checked:', elements.shareBaseUrlCheckbox ? elements.shareBaseUrlCheckbox.checked : 'N/A');
+            console.log('🔑 API Key checkbox:', !!elements.shareApiKeyCheckbox, '- checked:', elements.shareApiKeyCheckbox ? elements.shareApiKeyCheckbox.checked : 'N/A');
+            console.log('🤖 Model checkbox:', !!elements.shareModelCheckbox, '- checked:', elements.shareModelCheckbox ? elements.shareModelCheckbox.checked : 'N/A');
+            console.log('💬 Conversation checkbox:', !!elements.shareConversationCheckbox, '- checked:', elements.shareConversationCheckbox ? elements.shareConversationCheckbox.checked : 'N/A');
+            console.log('📚 Prompt Library checkbox:', !!elements.sharePromptLibraryCheckbox, '- checked:', elements.sharePromptLibraryCheckbox ? elements.sharePromptLibraryCheckbox.checked : 'N/A');
+            console.log('⚙️ Function Library checkbox:', !!elements.shareFunctionLibraryCheckbox, '- checked:', elements.shareFunctionLibraryCheckbox ? elements.shareFunctionLibraryCheckbox.checked : 'N/A');
+            console.log('🔌 MCP Connections checkbox (elements):', !!elements.shareMcpConnectionsCheckbox, '- checked:', elements.shareMcpConnectionsCheckbox ? elements.shareMcpConnectionsCheckbox.checked : 'N/A');
+            
+            // ALWAYS try fresh DOM query for MCP checkbox as fallback
+            const mcpCheckboxFallback = document.getElementById('share-mcp-connections');
+            console.log('🔌 MCP Connections checkbox (FRESH QUERY):', !!mcpCheckboxFallback, '- checked:', mcpCheckboxFallback ? mcpCheckboxFallback.checked : 'N/A');
+            
+            // Compare the two references
+            if (elements.shareMcpConnectionsCheckbox && mcpCheckboxFallback) {
+                console.log('🔌 MCP checkbox elements are same object:', elements.shareMcpConnectionsCheckbox === mcpCheckboxFallback);
+                if (elements.shareMcpConnectionsCheckbox !== mcpCheckboxFallback) {
+                    console.log('🚨 WARNING: Different MCP checkbox elements detected!');
+                    console.log('🚨 elements.shareMcpConnectionsCheckbox:', elements.shareMcpConnectionsCheckbox);
+                    console.log('🚨 Fresh query result:', mcpCheckboxFallback);
+                }
+            }
+            
+            console.log('═══════════════════════════════════════════════════');
+            
+            // Get the most reliable MCP checkbox state
+            let mcpConnectionsChecked = false;
+            if (mcpCheckboxFallback) {
+                mcpConnectionsChecked = mcpCheckboxFallback.checked;
+                console.log('🎯 Using FRESH QUERY for MCP checkbox state:', mcpConnectionsChecked);
+            } else if (elements.shareMcpConnectionsCheckbox) {
+                mcpConnectionsChecked = elements.shareMcpConnectionsCheckbox.checked;
+                console.log('🎯 Using ELEMENTS for MCP checkbox state:', mcpConnectionsChecked);
+            } else {
+                console.log('🎯 NO MCP checkbox found - defaulting to false');
+            }
             
             // Get options
             const options = {
@@ -337,20 +373,20 @@ window.ShareManager = (function() {
                 systemPrompt: systemPrompt,
                 model: currentModel,
                 messages: messages,
-                includeBaseUrl: elements.shareBaseUrlCheckbox.checked,
-                includeApiKey: elements.shareApiKeyCheckbox.checked,
+                includeBaseUrl: elements.shareBaseUrlCheckbox ? elements.shareBaseUrlCheckbox.checked : false,
+                includeApiKey: elements.shareApiKeyCheckbox ? elements.shareApiKeyCheckbox.checked : false,
                 includeSystemPrompt: false, // System prompt is now handled by prompt library
-                includeModel: elements.shareModelCheckbox.checked,
-                includeConversation: elements.shareConversationCheckbox.checked,
+                includeModel: elements.shareModelCheckbox ? elements.shareModelCheckbox.checked : false,
+                includeConversation: elements.shareConversationCheckbox ? elements.shareConversationCheckbox.checked : false,
                 messageCount: parseInt(elements.messageHistoryCount.value, 10) || 1,
                 includePromptLibrary: elements.sharePromptLibraryCheckbox ? elements.sharePromptLibraryCheckbox.checked : false,
                 includeFunctionLibrary: elements.shareFunctionLibraryCheckbox ? elements.shareFunctionLibraryCheckbox.checked : false,
-                includeMcpConnections: elements.shareMcpConnectionsCheckbox ? elements.shareMcpConnectionsCheckbox.checked : false,
+                includeMcpConnections: mcpConnectionsChecked,
                 title: title,
                 subtitle: subtitle
             };
             
-            console.log('ShareManager: Options object:', options);
+            console.log('🎯 ShareManager: Final options object:', JSON.stringify(options, null, 2));
             
             // Validate options
             if (!options.includeBaseUrl && !options.includeApiKey && !options.includeSystemPrompt && !options.includeModel && !options.includeConversation && !options.includePromptLibrary && !options.includeFunctionLibrary && !options.includeMcpConnections) {
