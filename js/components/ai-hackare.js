@@ -178,6 +178,25 @@ window.AIHackareComponent = (function() {
                 });
             }
             
+            // Handle MCP connections checkbox with fallback for timing issues
+            let mcpCheckbox = this.elements.shareMcpConnectionsCheckbox;
+            if (!mcpCheckbox) {
+                // Fallback: Query directly if DOMElements missed it due to timing
+                mcpCheckbox = document.getElementById('share-mcp-connections');
+                console.log('MCP checkbox fallback query result:', !!mcpCheckbox);
+            }
+            
+            if (mcpCheckbox) {
+                // Add change event listener
+                mcpCheckbox.addEventListener('change', () => {
+                    console.log('MCP checkbox changed to:', mcpCheckbox.checked);
+                    this.updateLinkLengthBar();
+                });
+                console.log('✅ MCP checkbox event listener attached successfully');
+            } else {
+                console.error('❌ MCP checkbox not found even with fallback');
+            }
+            
             if (this.elements.shareConversationCheckbox) {
                 this.elements.shareConversationCheckbox.addEventListener('change', () => {
                     this.toggleMessageHistoryInput();
@@ -208,9 +227,13 @@ window.AIHackareComponent = (function() {
             
             // Generate share link button
             if (this.elements.generateShareLinkBtn) {
+                console.log('AIHackare: Generate share link button found, adding event listener');
                 this.elements.generateShareLinkBtn.addEventListener('click', () => {
+                    console.log('AIHackare: Generate share link button clicked!');
                     this.generateComprehensiveShareLink();
                 });
+            } else {
+                console.error('AIHackare: Generate share link button NOT found in elements');
             }
             
             // Close share modal button
@@ -449,12 +472,27 @@ window.AIHackareComponent = (function() {
      * Update the link length bar
      */
     AIHackare.prototype.updateLinkLengthBar = function() {
-        this.uiManager.updateLinkLengthBar(
-            this.settingsManager.getApiKey(),
-            this.settingsManager.getSystemPrompt(),
-            this.settingsManager.getCurrentModel(),
-            this.chatManager.getMessages()
-        );
+        console.log('AIHackare: updateLinkLengthBar called');
+        console.log('AIHackare: uiManager available:', !!this.uiManager);
+        console.log('AIHackare: uiManager.updateLinkLengthBar available:', !!(this.uiManager && this.uiManager.updateLinkLengthBar));
+        
+        if (this.uiManager && this.uiManager.updateLinkLengthBar) {
+            console.log('AIHackare: About to call uiManager.updateLinkLengthBar...');
+            try {
+                this.uiManager.updateLinkLengthBar(
+                    this.settingsManager.getApiKey(),
+                    this.settingsManager.getSystemPrompt(),
+                    this.settingsManager.getCurrentModel(),
+                    this.chatManager.getMessages()
+                );
+                console.log('AIHackare: uiManager.updateLinkLengthBar call completed');
+            } catch (error) {
+                console.error('AIHackare: Error calling uiManager.updateLinkLengthBar:', error);
+                console.error('AIHackare: Error stack:', error.stack);
+            }
+        } else {
+            console.error('AIHackare: uiManager or updateLinkLengthBar not available');
+        }
     };
     
     /**
@@ -466,14 +504,67 @@ window.AIHackareComponent = (function() {
     };
     
     /**
+     * Ensure MCP checkbox works by cloning from a working checkbox if needed
+     */
+    AIHackare.prototype.ensureMcpCheckboxWorks = function() {
+        const mcpCheckbox = document.getElementById('share-mcp-connections');
+        const mcpGroup = mcpCheckbox?.parentElement;
+        
+        if (!mcpCheckbox || !mcpGroup) {
+            console.warn('MCP checkbox not found for failsafe check');
+            return;
+        }
+        
+        // Test if the checkbox is responsive by checking what element is at its center
+        const rect = mcpCheckbox.getBoundingClientRect();
+        const elementAtCenter = document.elementFromPoint(
+            rect.left + rect.width/2, 
+            rect.top + rect.height/2
+        );
+        
+        // If the checkbox is not accessible at its center point, fix it
+        if (elementAtCenter !== mcpCheckbox) {
+            console.log('MCP checkbox is not responsive, applying failsafe fix...');
+            
+            // Find a working checkbox to clone from
+            const workingGroup = document.querySelector('input[id="share-function-library"]')?.parentElement;
+            
+            if (workingGroup) {
+                // Clone the working checkbox structure
+                const clonedGroup = workingGroup.cloneNode(true);
+                
+                // Update the cloned elements for MCP
+                const clonedInput = clonedGroup.querySelector('input');
+                const clonedLabel = clonedGroup.querySelector('label');
+                
+                clonedInput.id = 'share-mcp-connections';
+                clonedInput.checked = mcpCheckbox.checked; // Preserve current state
+                clonedLabel.setAttribute('for', 'share-mcp-connections');
+                clonedLabel.textContent = 'MCP Connections';
+                
+                // Replace the broken group with the cloned working one
+                mcpGroup.parentElement.replaceChild(clonedGroup, mcpGroup);
+                
+                // Re-add the event listener
+                clonedInput.addEventListener('change', () => {
+                    this.updateLinkLengthBar();
+                });
+                
+                console.log('✅ MCP checkbox fixed with failsafe clone');
+            }
+        }
+    };
+
+    /**
      * Generate a comprehensive share link
      */
-    AIHackare.prototype.generateComprehensiveShareLink = function() {
+    AIHackare.prototype.generateComprehensiveShareLink = async function() {
+        console.log('AIHackare: generateComprehensiveShareLink called');
         // Save share options before generating the link
         this.shareManager.saveShareOptions();
         
         // Generate the share link
-        const success = this.shareManager.generateComprehensiveShareLink(
+        const success = await this.shareManager.generateComprehensiveShareLink(
             this.settingsManager.getApiKey(),
             this.settingsManager.getSystemPrompt(),
             this.settingsManager.getCurrentModel(),

@@ -204,6 +204,64 @@ function createSharedLinkDataProcessor() {
     }
     
     /**
+     * Apply MCP connections from shared data
+     * @param {Object} sharedData - Shared data object
+     * @param {Function} addSystemMessage - Function to add system messages
+     */
+    async function applyMcpConnections(sharedData, addSystemMessage) {
+        // If there are shared MCP connections, restore them
+        if (sharedData.mcpConnections && typeof sharedData.mcpConnections === 'object') {
+            try {
+                const connectionKeys = Object.keys(sharedData.mcpConnections);
+                let appliedCount = 0;
+                
+                for (const serviceKey of connectionKeys) {
+                    const token = sharedData.mcpConnections[serviceKey];
+                    
+                    // Store the PAT token using the appropriate storage key
+                    const storageKey = `mcp_${serviceKey}_token`;
+                    await window.CoreStorageService.setValue(storageKey, token);
+                    
+                    appliedCount++;
+                    
+                    if (addSystemMessage) {
+                        addSystemMessage(`Shared ${serviceKey} MCP connection has been applied.`);
+                    }
+                }
+                
+                if (appliedCount > 0 && addSystemMessage) {
+                    addSystemMessage(`Total ${appliedCount} MCP connection(s) restored. You may need to manually reconnect in the MCP Servers panel.`);
+                }
+                
+                // Trigger MCP service connector to recreate connections if available
+                if (window.MCPServiceConnectors) {
+                    // Delay slightly to ensure storage is committed
+                    setTimeout(() => {
+                        connectionKeys.forEach(serviceKey => {
+                            // Try to recreate the connection automatically
+                            if (window.MCPServiceConnectors.quickConnect && serviceKey === 'github') {
+                                window.MCPServiceConnectors.quickConnect('github')
+                                    .then(() => {
+                                        console.log(`Auto-reconnected to ${serviceKey} MCP service`);
+                                    })
+                                    .catch(error => {
+                                        console.warn(`Failed to auto-reconnect to ${serviceKey} MCP service:`, error);
+                                    });
+                            }
+                        });
+                    }, 100);
+                }
+                
+            } catch (error) {
+                console.error('Error applying MCP connections from shared data:', error);
+                if (addSystemMessage) {
+                    addSystemMessage(`Error applying MCP connections: ${error.message}`);
+                }
+            }
+        }
+    }
+    
+    /**
      * Apply session key from decryption password
      * @param {string} password - The decryption password
      * @param {Object} elements - DOM elements for UI updates
@@ -235,9 +293,9 @@ function createSharedLinkDataProcessor() {
      * @param {Object} sharedData - Shared data object
      * @param {string} password - Decryption password
      * @param {Object} options - Processing options
-     * @returns {string|null} Pending shared model
+     * @returns {Promise<string|null>} Pending shared model
      */
-    function processSharedData(sharedData, password, options = {}) {
+    async function processSharedData(sharedData, password, options = {}) {
         const { addSystemMessage, setMessages, elements } = options;
         
         // Apply data in order of dependency
@@ -247,6 +305,7 @@ function createSharedLinkDataProcessor() {
         applyChatMessages(sharedData, addSystemMessage, setMessages);
         applyPrompts(sharedData, addSystemMessage);
         applyFunctions(sharedData, addSystemMessage);
+        await applyMcpConnections(sharedData, addSystemMessage);
         applySessionKey(password, elements, addSystemMessage);
         
         return pendingSharedModel;
@@ -260,6 +319,7 @@ function createSharedLinkDataProcessor() {
         applyChatMessages,
         applyPrompts,
         applyFunctions,
+        applyMcpConnections,
         applySessionKey,
         processSharedData
     };
