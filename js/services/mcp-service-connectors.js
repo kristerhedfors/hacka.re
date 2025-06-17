@@ -107,14 +107,14 @@
                 scope: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send',
                 clientId: '', // To be configured by user
                 requiresClientSecret: true,
-                redirectUri: 'http://localhost:8001/oauth-callback'
+                redirectUri: `${window.location.origin}/oauth-callback`
             },
             setupInstructions: {
                 title: 'Gmail OAuth Setup',
                 steps: [
                     'Create a Google Cloud Project and enable Gmail API',
                     'Create OAuth 2.0 credentials (Web application type)',
-                    'Add authorized redirect URI: http://localhost:8001/oauth-callback',
+                    `Add authorized redirect URI: ${window.location.origin}/oauth-callback`,
                     'Copy your Client ID and Client Secret',
                     'Click "Authorize with Google" to complete authentication',
                     'Your tokens will be securely stored locally'
