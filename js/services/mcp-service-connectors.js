@@ -107,16 +107,16 @@
                 scope: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send',
                 clientId: '', // To be configured by user
                 requiresClientSecret: true,
-                redirectUri: 'urn:ietf:wg:oauth:2.0:oob'
+                redirectUri: 'http://localhost:8001/oauth-callback'
             },
             setupInstructions: {
                 title: 'Gmail OAuth Setup',
                 steps: [
                     'Create a Google Cloud Project and enable Gmail API',
-                    'Create OAuth 2.0 credentials (Desktop application type)',
+                    'Create OAuth 2.0 credentials (Web application type)',
+                    'Add authorized redirect URI: http://localhost:8001/oauth-callback',
                     'Copy your Client ID and Client Secret',
-                    'Click the authorization link to get a code from Google',
-                    'Copy the authorization code and paste it here',
+                    'Click "Authorize with Google" to complete authentication',
                     'Your tokens will be securely stored locally'
                 ],
                 docUrl: 'https://developers.google.com/gmail/api/quickstart/js'
@@ -847,71 +847,68 @@
                         return;
                     }
                     
+                    // Generate state for security
+                    const state = Math.random().toString(36).substring(2, 15);
+                    
+                    // Store OAuth config for callback
+                    sessionStorage.setItem('oauth_state', state);
+                    sessionStorage.setItem('oauth_service', serviceKey);
+                    sessionStorage.setItem('oauth_config', JSON.stringify({
+                        ...config.oauthConfig,
+                        clientId,
+                        clientSecret
+                    }));
+                    
                     // Build authorization URL
                     const authUrl = new URL(config.oauthConfig.authorizationEndpoint);
                     authUrl.searchParams.append('client_id', clientId);
                     authUrl.searchParams.append('redirect_uri', config.oauthConfig.redirectUri);
                     authUrl.searchParams.append('response_type', 'code');
                     authUrl.searchParams.append('scope', config.oauthConfig.scope);
+                    authUrl.searchParams.append('state', state);
                     authUrl.searchParams.append('access_type', 'offline');
                     authUrl.searchParams.append('prompt', 'consent');
                     
-                    // Show auth code input form
-                    modal.innerHTML = `
-                        <div class="modal-content">
-                            <h3><i class="${config.icon}"></i> Enter Authorization Code</h3>
-                            
-                            <div class="oauth-setup-instructions">
-                                <p>1. Click the link below to authorize access:</p>
-                                <p class="oauth-auth-link">
-                                    <a href="${authUrl.toString()}" target="_blank" class="btn primary-btn">
-                                        <i class="fas fa-external-link-alt"></i> Authorize with Google
-                                    </a>
-                                </p>
-                                <p>2. Copy the authorization code from the page and paste it below:</p>
-                            </div>
-                            
-                            <div class="oauth-credentials-form">
-                                <div class="form-group">
-                                    <label for="${serviceKey}-auth-code">Authorization Code</label>
-                                    <input type="text" 
-                                           id="${serviceKey}-auth-code" 
-                                           placeholder="Paste authorization code here" 
-                                           class="mcp-input" />
-                                </div>
-                                
-                                <div class="form-actions">
-                                    <button class="btn primary-btn" id="${serviceKey}-submit-auth-code">
-                                        Complete Authentication
-                                    </button>
-                                    <button class="btn secondary-btn" onclick="document.getElementById('service-oauth-manual-setup-modal').remove()">
-                                        Cancel
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
+                    modal.remove();
                     
-                    // Handle auth code submission
-                    document.getElementById(`${serviceKey}-submit-auth-code`).onclick = async () => {
-                        const authCode = document.getElementById(`${serviceKey}-auth-code`).value.trim();
-                        
-                        if (!authCode) {
-                            alert('Please enter the authorization code');
-                            return;
+                    // Open authorization window
+                    const authWindow = window.open(authUrl.toString(), 'google_auth', 'width=500,height=600');
+                    
+                    // Poll for completion
+                    const checkInterval = setInterval(() => {
+                        try {
+                            if (authWindow.closed) {
+                                clearInterval(checkInterval);
+                                
+                                // Check if we got tokens
+                                const tokens = sessionStorage.getItem('oauth_tokens');
+                                if (tokens) {
+                                    const parsedTokens = JSON.parse(tokens);
+                                    sessionStorage.removeItem('oauth_tokens');
+                                    sessionStorage.removeItem('oauth_state');
+                                    sessionStorage.removeItem('oauth_service');
+                                    sessionStorage.removeItem('oauth_config');
+                                    
+                                    // Save tokens
+                                    const storageKey = `mcp_${serviceKey}_oauth`;
+                                    window.CoreStorageService.setValue(storageKey, {
+                                        ...parsedTokens,
+                                        clientId,
+                                        clientSecret
+                                    }).then(() => {
+                                        // Create connection
+                                        this.createGoogleConnection(serviceKey, SERVICE_CONFIGS[serviceKey], parsedTokens)
+                                            .then(result => resolve(result));
+                                    });
+                                } else {
+                                    alert('Authentication was cancelled or failed');
+                                    resolve(false);
+                                }
+                            }
+                        } catch (e) {
+                            // Window is on different domain, keep polling
                         }
-                        
-                        modal.remove();
-                        
-                        // Exchange code for tokens
-                        const result = await this.exchangeCodeForTokens(serviceKey, config, {
-                            clientId,
-                            clientSecret,
-                            authCode
-                        });
-                        
-                        resolve(result);
-                    };
+                    }, 500);
                 };
             });
         }
