@@ -74,9 +74,9 @@
             `;
         } else if (code) {
             // Get stored OAuth configuration
-            const storedState = sessionStorage.getItem('oauth_state');
-            const serviceKey = sessionStorage.getItem('oauth_service');
-            const oauthConfig = JSON.parse(sessionStorage.getItem('oauth_config') || '{}');
+            const storedState = localStorage.getItem('oauth_state');
+            const serviceKey = localStorage.getItem('oauth_service');
+            const oauthConfig = JSON.parse(localStorage.getItem('oauth_config') || '{}');
             
             // Verify state
             if (state !== storedState) {
@@ -123,14 +123,14 @@
                 
                 const data = await response.json();
                 
-                // Store tokens in sessionStorage for the main window to retrieve
+                // Store tokens in localStorage for the main window to retrieve
                 const tokens = {
                     accessToken: data.access_token,
                     refreshToken: data.refresh_token,
                     expiresAt: Date.now() + (data.expires_in * 1000)
                 };
                 
-                sessionStorage.setItem('oauth_tokens', JSON.stringify(tokens));
+                localStorage.setItem('oauth_tokens', JSON.stringify(tokens));
                 
                 statusDiv.innerHTML = `
                     <p class="message">✓ Authentication successful!</p>

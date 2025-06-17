@@ -850,10 +850,10 @@
                     // Generate state for security
                     const state = Math.random().toString(36).substring(2, 15);
                     
-                    // Store OAuth config for callback
-                    sessionStorage.setItem('oauth_state', state);
-                    sessionStorage.setItem('oauth_service', serviceKey);
-                    sessionStorage.setItem('oauth_config', JSON.stringify({
+                    // Store OAuth config for callback (using localStorage for cross-window access)
+                    localStorage.setItem('oauth_state', state);
+                    localStorage.setItem('oauth_service', serviceKey);
+                    localStorage.setItem('oauth_config', JSON.stringify({
                         ...config.oauthConfig,
                         clientId,
                         clientSecret
@@ -881,13 +881,13 @@
                                 clearInterval(checkInterval);
                                 
                                 // Check if we got tokens
-                                const tokens = sessionStorage.getItem('oauth_tokens');
+                                const tokens = localStorage.getItem('oauth_tokens');
                                 if (tokens) {
                                     const parsedTokens = JSON.parse(tokens);
-                                    sessionStorage.removeItem('oauth_tokens');
-                                    sessionStorage.removeItem('oauth_state');
-                                    sessionStorage.removeItem('oauth_service');
-                                    sessionStorage.removeItem('oauth_config');
+                                    localStorage.removeItem('oauth_tokens');
+                                    localStorage.removeItem('oauth_state');
+                                    localStorage.removeItem('oauth_service');
+                                    localStorage.removeItem('oauth_config');
                                     
                                     // Save tokens
                                     const storageKey = `mcp_${serviceKey}_oauth`;
