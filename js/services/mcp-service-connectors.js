@@ -99,14 +99,15 @@
             name: 'Gmail',
             icon: 'fas fa-envelope',
             description: 'Access Gmail messages and send emails',
-            authType: 'oauth-device',
+            authType: 'oauth-manual',
             apiBaseUrl: 'https://gmail.googleapis.com/gmail/v1',
             oauthConfig: {
-                authorizationEndpoint: 'https://oauth2.googleapis.com/device/code',
+                authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
                 tokenEndpoint: 'https://oauth2.googleapis.com/token',
                 scope: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send',
                 clientId: '', // To be configured by user
-                requiresClientSecret: true
+                requiresClientSecret: true,
+                redirectUri: 'urn:ietf:wg:oauth:2.0:oob'
             },
             setupInstructions: {
                 title: 'Gmail OAuth Setup',
@@ -114,9 +115,9 @@
                     'Create a Google Cloud Project and enable Gmail API',
                     'Create OAuth 2.0 credentials (Desktop application type)',
                     'Copy your Client ID and Client Secret',
-                    'Enter them below to start the device flow authentication',
-                    'You\'ll be given a code to enter on Google\'s device page',
-                    'Grant permissions to access your Gmail'
+                    'Click the authorization link to get a code from Google',
+                    'Copy the authorization code and paste it here',
+                    'Your tokens will be securely stored locally'
                 ],
                 docUrl: 'https://developers.google.com/gmail/api/quickstart/js'
             },
@@ -287,6 +288,10 @@
                     return await this.connectWithPAT(serviceKey, config);
                 case 'oauth-device':
                     return await this.connectWithOAuthDevice(serviceKey, config);
+                case 'oauth-web':
+                    return await this.connectWithOAuthWeb(serviceKey, config);
+                case 'oauth-manual':
+                    return await this.connectWithOAuthManual(serviceKey, config);
                 case 'oauth-shared':
                     return await this.connectWithSharedOAuth(serviceKey, config);
                 default:
@@ -576,6 +581,46 @@
         }
 
         /**
+         * Connect using OAuth Web Flow (Gmail)
+         */
+        async connectWithOAuthWeb(serviceKey, config) {
+            // Check for existing OAuth tokens
+            const storageKey = `mcp_${serviceKey}_oauth`;
+            const existingAuth = await window.CoreStorageService.getValue(storageKey);
+
+            if (existingAuth && existingAuth.refreshToken) {
+                // Try to use existing refresh token
+                const tokens = await this.refreshOAuthToken(serviceKey, existingAuth);
+                if (tokens) {
+                    return await this.createGoogleConnection(serviceKey, config, tokens);
+                }
+            }
+
+            // Need to get OAuth credentials from user
+            return await this.showOAuthWebSetupDialog(serviceKey, config);
+        }
+
+        /**
+         * Connect using OAuth Manual Flow (Gmail)
+         */
+        async connectWithOAuthManual(serviceKey, config) {
+            // Check for existing OAuth tokens
+            const storageKey = `mcp_${serviceKey}_oauth`;
+            const existingAuth = await window.CoreStorageService.getValue(storageKey);
+
+            if (existingAuth && existingAuth.refreshToken) {
+                // Try to use existing refresh token
+                const tokens = await this.refreshOAuthToken(serviceKey, existingAuth);
+                if (tokens) {
+                    return await this.createGoogleConnection(serviceKey, config, tokens);
+                }
+            }
+
+            // Need to get OAuth credentials from user
+            return await this.showOAuthManualSetupDialog(serviceKey, config);
+        }
+
+        /**
          * Show OAuth setup dialog for Google services
          */
         async showOAuthSetupDialog(serviceKey, config) {
@@ -645,9 +690,9 @@
                     
                     // Save credentials
                     const oauthConfig = {
+                        ...config.oauthConfig,
                         clientId,
-                        clientSecret,
-                        ...config.oauthConfig
+                        clientSecret
                     };
                     
                     modal.remove();
@@ -660,24 +705,270 @@
         }
 
         /**
+         * Show OAuth Web setup dialog for Google services
+         */
+        async showOAuthWebSetupDialog(serviceKey, config) {
+            return new Promise((resolve) => {
+                const modal = document.createElement('div');
+                modal.className = 'modal active';
+                modal.id = 'service-oauth-web-setup-modal';
+                modal.innerHTML = `
+                    <div class="modal-content">
+                        <h3><i class="${config.icon}"></i> Connect to ${config.name}</h3>
+                        
+                        <div class="oauth-setup-instructions">
+                            <h4>OAuth Setup Instructions:</h4>
+                            <ol>
+                                <li>Go to Google Cloud Console > APIs & Services > Credentials</li>
+                                <li>Create OAuth 2.0 Client ID (Web application type)</li>
+                                <li>Add redirect URI: ${window.location.origin}/oauth-callback</li>
+                                <li>Copy your Client ID</li>
+                                <li>Click "Authorize" below to sign in with Google</li>
+                            </ol>
+                            
+                            <p class="form-help">
+                                <a href="${config.setupInstructions.docUrl}" target="_blank">
+                                    View official documentation <i class="fas fa-external-link-alt"></i>
+                                </a>
+                            </p>
+                        </div>
+                        
+                        <div class="oauth-credentials-form">
+                            <div class="form-group">
+                                <label for="${serviceKey}-web-client-id">OAuth Client ID</label>
+                                <input type="text" 
+                                       id="${serviceKey}-web-client-id" 
+                                       placeholder="Your OAuth Client ID" 
+                                       class="mcp-input" />
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button class="btn primary-btn" id="${serviceKey}-start-web-oauth">
+                                    Authorize with Google
+                                </button>
+                                <button class="btn secondary-btn" onclick="document.getElementById('service-oauth-web-setup-modal').remove()">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+                
+                // Handle OAuth start
+                document.getElementById(`${serviceKey}-start-web-oauth`).onclick = async () => {
+                    const clientId = document.getElementById(`${serviceKey}-web-client-id`).value.trim();
+                    
+                    if (!clientId) {
+                        alert('Please enter your OAuth Client ID');
+                        return;
+                    }
+                    
+                    // Save client ID
+                    const oauthConfig = {
+                        ...config.oauthConfig,
+                        clientId
+                    };
+                    
+                    modal.remove();
+                    
+                    // Start web OAuth flow
+                    const result = await this.startGoogleWebFlow(serviceKey, oauthConfig);
+                    resolve(result);
+                };
+            });
+        }
+
+        /**
+         * Show OAuth Manual setup dialog for Google services
+         */
+        async showOAuthManualSetupDialog(serviceKey, config) {
+            return new Promise((resolve) => {
+                const modal = document.createElement('div');
+                modal.className = 'modal active';
+                modal.id = 'service-oauth-manual-setup-modal';
+                modal.innerHTML = `
+                    <div class="modal-content">
+                        <h3><i class="${config.icon}"></i> Connect to ${config.name}</h3>
+                        
+                        <div class="oauth-setup-instructions">
+                            <h4>Setup Instructions:</h4>
+                            <ol>
+                                ${config.setupInstructions.steps.map(step => `<li>${step}</li>`).join('')}
+                            </ol>
+                            
+                            <p class="form-help">
+                                <a href="${config.setupInstructions.docUrl}" target="_blank">
+                                    View official documentation <i class="fas fa-external-link-alt"></i>
+                                </a>
+                            </p>
+                        </div>
+                        
+                        <div class="oauth-credentials-form">
+                            <div class="form-group">
+                                <label for="${serviceKey}-manual-client-id">OAuth Client ID</label>
+                                <input type="text" 
+                                       id="${serviceKey}-manual-client-id" 
+                                       placeholder="Your OAuth Client ID" 
+                                       class="mcp-input" />
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="${serviceKey}-manual-client-secret">OAuth Client Secret</label>
+                                <input type="password" 
+                                       id="${serviceKey}-manual-client-secret" 
+                                       placeholder="Your OAuth Client Secret" 
+                                       class="mcp-input" />
+                                <small class="form-help">Your credentials will be encrypted and stored locally</small>
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button class="btn primary-btn" id="${serviceKey}-get-auth-code">
+                                    Get Authorization Code
+                                </button>
+                                <button class="btn secondary-btn" onclick="document.getElementById('service-oauth-manual-setup-modal').remove()">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+                
+                // Handle getting auth code
+                document.getElementById(`${serviceKey}-get-auth-code`).onclick = async () => {
+                    const clientId = document.getElementById(`${serviceKey}-manual-client-id`).value.trim();
+                    const clientSecret = document.getElementById(`${serviceKey}-manual-client-secret`).value.trim();
+                    
+                    if (!clientId || !clientSecret) {
+                        alert('Please enter both Client ID and Client Secret');
+                        return;
+                    }
+                    
+                    // Build authorization URL
+                    const authUrl = new URL(config.oauthConfig.authorizationEndpoint);
+                    authUrl.searchParams.append('client_id', clientId);
+                    authUrl.searchParams.append('redirect_uri', config.oauthConfig.redirectUri);
+                    authUrl.searchParams.append('response_type', 'code');
+                    authUrl.searchParams.append('scope', config.oauthConfig.scope);
+                    authUrl.searchParams.append('access_type', 'offline');
+                    authUrl.searchParams.append('prompt', 'consent');
+                    
+                    // Show auth code input form
+                    modal.innerHTML = `
+                        <div class="modal-content">
+                            <h3><i class="${config.icon}"></i> Enter Authorization Code</h3>
+                            
+                            <div class="oauth-setup-instructions">
+                                <p>1. Click the link below to authorize access:</p>
+                                <p class="oauth-auth-link">
+                                    <a href="${authUrl.toString()}" target="_blank" class="btn primary-btn">
+                                        <i class="fas fa-external-link-alt"></i> Authorize with Google
+                                    </a>
+                                </p>
+                                <p>2. Copy the authorization code from the page and paste it below:</p>
+                            </div>
+                            
+                            <div class="oauth-credentials-form">
+                                <div class="form-group">
+                                    <label for="${serviceKey}-auth-code">Authorization Code</label>
+                                    <input type="text" 
+                                           id="${serviceKey}-auth-code" 
+                                           placeholder="Paste authorization code here" 
+                                           class="mcp-input" />
+                                </div>
+                                
+                                <div class="form-actions">
+                                    <button class="btn primary-btn" id="${serviceKey}-submit-auth-code">
+                                        Complete Authentication
+                                    </button>
+                                    <button class="btn secondary-btn" onclick="document.getElementById('service-oauth-manual-setup-modal').remove()">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Handle auth code submission
+                    document.getElementById(`${serviceKey}-submit-auth-code`).onclick = async () => {
+                        const authCode = document.getElementById(`${serviceKey}-auth-code`).value.trim();
+                        
+                        if (!authCode) {
+                            alert('Please enter the authorization code');
+                            return;
+                        }
+                        
+                        modal.remove();
+                        
+                        // Exchange code for tokens
+                        const result = await this.exchangeCodeForTokens(serviceKey, config, {
+                            clientId,
+                            clientSecret,
+                            authCode
+                        });
+                        
+                        resolve(result);
+                    };
+                };
+            });
+        }
+
+        /**
          * Start Google OAuth Device Flow
          */
         async startGoogleDeviceFlow(serviceKey, oauthConfig) {
             try {
+                // Log the request details
+                console.log('[MCP Service Connectors] Starting OAuth device flow with:', {
+                    endpoint: oauthConfig.authorizationEndpoint,
+                    clientId: oauthConfig.clientId ? `${oauthConfig.clientId.substring(0, 10)}...` : 'missing',
+                    scope: oauthConfig.scope
+                });
+                
                 // Request device code
+                const requestBody = new URLSearchParams({
+                    client_id: oauthConfig.clientId,
+                    scope: oauthConfig.scope
+                });
+                
+                console.log('[MCP Service Connectors] Request body:', requestBody.toString());
+                
                 const deviceResponse = await fetch(oauthConfig.authorizationEndpoint, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded'
                     },
-                    body: new URLSearchParams({
-                        client_id: oauthConfig.clientId,
-                        scope: oauthConfig.scope
-                    })
+                    body: requestBody
                 });
 
                 if (!deviceResponse.ok) {
-                    throw new Error('Failed to get device code');
+                    const errorText = await deviceResponse.text();
+                    console.error('[MCP Service Connectors] Device code request failed:', {
+                        status: deviceResponse.status,
+                        statusText: deviceResponse.statusText,
+                        response: errorText
+                    });
+                    
+                    // Try to parse error response
+                    let errorMessage = 'Failed to get device code';
+                    try {
+                        const errorData = JSON.parse(errorText);
+                        if (errorData.error_description) {
+                            errorMessage = errorData.error_description;
+                        } else if (errorData.error) {
+                            errorMessage = `OAuth error: ${errorData.error}`;
+                        }
+                    } catch (e) {
+                        // If not JSON, use the text directly
+                        if (errorText) {
+                            errorMessage = errorText;
+                        }
+                    }
+                    
+                    throw new Error(errorMessage);
                 }
 
                 const deviceData = await deviceResponse.json();
@@ -703,7 +994,76 @@
                 
                 return false;
             } catch (error) {
-                console.error(`[MCP Service Connectors] OAuth device flow failed:`, error);
+                console.error('[MCP Service Connectors] OAuth device flow failed:', error);
+                console.error('[MCP Service Connectors] Full error details:', error.message);
+                alert(`Failed to authenticate with ${SERVICE_CONFIGS[serviceKey].name}: ${error.message}`);
+                return false;
+            }
+        }
+
+        /**
+         * Start Google OAuth Web Flow
+         */
+        async startGoogleWebFlow(serviceKey, oauthConfig) {
+            try {
+                // Generate state for security
+                const state = Math.random().toString(36).substring(2, 15);
+                
+                // Store state and config for callback
+                sessionStorage.setItem('oauth_state', state);
+                sessionStorage.setItem('oauth_service', serviceKey);
+                sessionStorage.setItem('oauth_config', JSON.stringify(oauthConfig));
+                
+                // Build authorization URL
+                const authUrl = new URL(oauthConfig.authorizationEndpoint);
+                authUrl.searchParams.append('client_id', oauthConfig.clientId);
+                authUrl.searchParams.append('redirect_uri', oauthConfig.redirectUri);
+                authUrl.searchParams.append('response_type', 'code');
+                authUrl.searchParams.append('scope', oauthConfig.scope);
+                authUrl.searchParams.append('state', state);
+                authUrl.searchParams.append('access_type', 'offline');
+                authUrl.searchParams.append('prompt', 'consent');
+                
+                // Open authorization window
+                const authWindow = window.open(authUrl.toString(), 'google_auth', 'width=500,height=600');
+                
+                // Poll for completion
+                return new Promise((resolve) => {
+                    const checkInterval = setInterval(() => {
+                        try {
+                            if (authWindow.closed) {
+                                clearInterval(checkInterval);
+                                
+                                // Check if we got tokens
+                                const tokens = sessionStorage.getItem('oauth_tokens');
+                                if (tokens) {
+                                    const parsedTokens = JSON.parse(tokens);
+                                    sessionStorage.removeItem('oauth_tokens');
+                                    sessionStorage.removeItem('oauth_state');
+                                    sessionStorage.removeItem('oauth_service');
+                                    sessionStorage.removeItem('oauth_config');
+                                    
+                                    // Save tokens
+                                    const storageKey = `mcp_${serviceKey}_oauth`;
+                                    window.CoreStorageService.setValue(storageKey, {
+                                        ...parsedTokens,
+                                        clientId: oauthConfig.clientId
+                                    }).then(() => {
+                                        // Create connection
+                                        this.createGoogleConnection(serviceKey, SERVICE_CONFIGS[serviceKey], parsedTokens)
+                                            .then(result => resolve(result));
+                                    });
+                                } else {
+                                    resolve(false);
+                                }
+                            }
+                        } catch (e) {
+                            // Window is on different domain, keep polling
+                        }
+                    }, 500);
+                });
+            } catch (error) {
+                console.error('[MCP Service Connectors] OAuth web flow failed:', error);
                 alert(`Failed to authenticate with ${SERVICE_CONFIGS[serviceKey].name}: ${error.message}`);
                 return false;
             }
@@ -907,6 +1267,69 @@
             if (params.before) parts.push(`before:${params.before}`);
             if (params.hasAttachment) parts.push('has:attachment');
             return parts.join(' ');
+        }
+
+        /**
+         * Exchange authorization code for tokens
+         */
+        async exchangeCodeForTokens(serviceKey, config, credentials) {
+            try {
+                const response = await fetch(config.oauthConfig.tokenEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        client_id: credentials.clientId,
+                        client_secret: credentials.clientSecret,
+                        code: credentials.authCode,
+                        redirect_uri: config.oauthConfig.redirectUri,
+                        grant_type: 'authorization_code'
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('[MCP Service Connectors] Token exchange failed:', errorText);
+                    
+                    let errorMessage = 'Failed to exchange authorization code';
+                    try {
+                        const errorData = JSON.parse(errorText);
+                        if (errorData.error_description) {
+                            errorMessage = errorData.error_description;
+                        } else if (errorData.error) {
+                            errorMessage = `OAuth error: ${errorData.error}`;
+                        }
+                    } catch (e) {
+                        if (errorText) {
+                            errorMessage = errorText;
+                        }
+                    }
+                    
+                    throw new Error(errorMessage);
+                }
+
+                const data = await response.json();
+                
+                // Save tokens
+                const tokens = {
+                    accessToken: data.access_token,
+                    refreshToken: data.refresh_token,
+                    expiresAt: Date.now() + (data.expires_in * 1000),
+                    clientId: credentials.clientId,
+                    clientSecret: credentials.clientSecret
+                };
+                
+                const storageKey = `mcp_${serviceKey}_oauth`;
+                await window.CoreStorageService.setValue(storageKey, tokens);
+                
+                // Create connection
+                return await this.createGoogleConnection(serviceKey, SERVICE_CONFIGS[serviceKey], tokens);
+            } catch (error) {
+                console.error('[MCP Service Connectors] Code exchange failed:', error);
+                alert(`Failed to complete authentication: ${error.message}`);
+                return false;
+            }
         }
 
         /**
