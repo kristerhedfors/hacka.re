@@ -877,7 +877,21 @@
                     // Poll for completion
                     const checkInterval = setInterval(() => {
                         try {
-                            if (authWindow.closed) {
+                            // Try to access window.closed safely
+                            let isClosed = false;
+                            try {
+                                isClosed = authWindow.closed;
+                            } catch (e) {
+                                // If we can't access closed property, check if window still exists
+                                try {
+                                    authWindow.postMessage('ping', '*');
+                                    isClosed = false;
+                                } catch (postError) {
+                                    isClosed = true;
+                                }
+                            }
+                            
+                            if (isClosed) {
                                 clearInterval(checkInterval);
                                 
                                 // Check if we got tokens
