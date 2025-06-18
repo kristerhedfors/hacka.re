@@ -4,11 +4,13 @@
  */
 
 import { GitHubTokenManager } from './github-token-manager.js';
+import { GmailTokenManager } from './gmail-token-manager.js';
 import { getMcpConnectionsSummary } from '../share/mcp-connections-share-item.js';
 
 export class MCPConnectionsUI {
     constructor() {
         this.githubManager = null;
+        this.gmailManager = null;
         this.initialized = false;
     }
 
@@ -23,6 +25,10 @@ export class MCPConnectionsUI {
         // Initialize GitHub token manager
         this.githubManager = new GitHubTokenManager();
         await this.githubManager.initialize();
+        
+        // Initialize Gmail token manager
+        this.gmailManager = new GmailTokenManager();
+        await this.gmailManager.initialize();
         
         this.initialized = true;
         console.log('MCP Connections UI: Initialized');
@@ -152,8 +158,8 @@ export class MCPConnectionsUI {
                 name: 'Gmail',
                 icon: 'fas fa-envelope',
                 description: 'Send and read emails',
-                authType: 'OAuth 2.0',
-                supported: false // Not yet implemented in this simplified version
+                authType: 'OAuth 2.0 / App Password',
+                supported: true
             },
             {
                 key: 'gdocs',
@@ -226,11 +232,37 @@ export class MCPConnectionsUI {
                     </button>
                 `;
             }
+        } else if (service.key === 'gmail') {
+            if (isConnected) {
+                return `
+                    <button class="btn success-btn btn-sm" disabled>
+                        <i class="fas fa-check"></i> Connected
+                    </button>
+                    <button class="btn secondary-btn btn-sm" onclick="window.mcpConnectionsUI.disconnectGmail()">
+                        Disconnect
+                    </button>
+                `;
+            } else if (hasToken) {
+                return `
+                    <button class="btn primary-btn btn-sm" onclick="window.mcpConnectionsUI.connectGmail()">
+                        <i class="fas fa-plug"></i> Connect
+                    </button>
+                    <button class="btn secondary-btn btn-sm" onclick="window.mcpConnectionsUI.setupGmail()">
+                        Reconfigure
+                    </button>
+                `;
+            } else {
+                return `
+                    <button class="btn primary-btn btn-sm" onclick="window.mcpConnectionsUI.setupGmail()">
+                        <i class="fas fa-cog"></i> Setup
+                    </button>
+                `;
+            }
         }
         
         return `
             <button class="btn secondary-btn btn-sm" disabled>
-                Setup
+                Coming Soon
             </button>
         `;
     }
@@ -330,6 +362,73 @@ export class MCPConnectionsUI {
     }
 
     /**
+     * Setup Gmail connection
+     */
+    async setupGmail() {
+        try {
+            const success = await this.gmailManager.quickSetup();
+            if (success) {
+                // Refresh any open modals
+                const modal = document.getElementById('mcp-connections-modal');
+                if (modal) {
+                    await this.refreshConnectionsStatus(modal);
+                }
+            }
+        } catch (error) {
+            console.error('MCP Connections UI: Gmail setup failed:', error);
+            alert(`Gmail setup failed: ${error.message}`);
+        }
+    }
+
+    /**
+     * Connect to Gmail
+     */
+    async connectGmail() {
+        try {
+            const connected = await this.gmailManager.connectToGmail();
+            if (connected) {
+                alert('Connected to Gmail successfully!');
+                
+                // Refresh any open modals
+                const modal = document.getElementById('mcp-connections-modal');
+                if (modal) {
+                    await this.refreshConnectionsStatus(modal);
+                }
+            } else {
+                alert('Failed to connect to Gmail. Please check your authentication.');
+            }
+        } catch (error) {
+            console.error('MCP Connections UI: Gmail connection failed:', error);
+            alert(`Gmail connection failed: ${error.message}`);
+        }
+    }
+
+    /**
+     * Disconnect Gmail
+     */
+    async disconnectGmail() {
+        if (!confirm('Are you sure you want to disconnect from Gmail? This will remove all Gmail functions.')) {
+            return;
+        }
+        
+        try {
+            if (window.MCPServiceConnectors) {
+                await window.MCPServiceConnectors.disconnectService('gmail');
+                alert('Disconnected from Gmail successfully.');
+                
+                // Refresh any open modals
+                const modal = document.getElementById('mcp-connections-modal');
+                if (modal) {
+                    await this.refreshConnectionsStatus(modal);
+                }
+            }
+        } catch (error) {
+            console.error('MCP Connections UI: Gmail disconnect failed:', error);
+            alert(`Gmail disconnect failed: ${error.message}`);
+        }
+    }
+
+    /**
      * Check if service has token
      * @param {string} serviceKey - Service key
      * @returns {Promise<boolean>} True if has token
@@ -338,6 +437,8 @@ export class MCPConnectionsUI {
         try {
             if (serviceKey === 'github') {
                 return await this.githubManager.hasValidToken();
+            } else if (serviceKey === 'gmail') {
+                return await this.gmailManager.hasValidAuth();
             }
             // Add other services here
             return false;

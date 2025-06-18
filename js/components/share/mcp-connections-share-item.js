@@ -34,19 +34,14 @@ export async function collectMcpConnectionsData() {
         //     foundConnections = true;
         // }
         
-        // Check for Google OAuth tokens (Gmail/Docs)
-        const gmailOAuth = await window.CoreStorageService.getValue('mcp_gmail_oauth');
-        if (gmailOAuth && gmailOAuth.refreshToken) {
-            // Only include if the token is still valid and has a refresh token
-            mcpConnections.gmail = {
-                type: 'oauth',
-                refreshToken: gmailOAuth.refreshToken,
-                clientId: gmailOAuth.clientId,
-                clientSecret: gmailOAuth.clientSecret,
-                expiresAt: gmailOAuth.expiresAt
-            };
-            foundConnections = true;
-            console.log('MCP Connections: Gmail OAuth added to share data');
+        // Check for Gmail authentication (both OAuth and app password)
+        if (window.GmailTokenManager) {
+            const gmailAuth = await window.GmailTokenManager.getAuthForSharing();
+            if (gmailAuth) {
+                mcpConnections.gmail = gmailAuth;
+                foundConnections = true;
+                console.log(`MCP Connections: Gmail ${gmailAuth.type} added to share data`);
+            }
         }
         
         return foundConnections ? mcpConnections : null;
@@ -93,14 +88,17 @@ export async function applyMcpConnectionsData(data) {
                     }
                     
                 } else if (serviceKey === 'gmail') {
-                    // Handle Gmail OAuth tokens
-                    if (connectionData.type === 'oauth' && connectionData.refreshToken) {
-                        await window.CoreStorageService.setValue('mcp_gmail_oauth', connectionData);
-                        appliedCount++;
-                        results.push(`Gmail OAuth token applied successfully`);
-                        
-                        // Try to auto-connect if possible
-                        await autoConnectGmail();
+                    // Handle Gmail authentication data
+                    if (window.GmailTokenManager && typeof connectionData === 'object' && connectionData.type) {
+                        const restored = await window.GmailTokenManager.restoreAuthFromSharedData(connectionData);
+                        if (restored) {
+                            appliedCount++;
+                            results.push(`Gmail ${connectionData.type} authentication restored successfully`);
+                        } else {
+                            results.push(`Failed to restore Gmail ${connectionData.type} authentication`);
+                        }
+                    } else {
+                        results.push(`Gmail authentication data format not recognized`);
                     }
                     
                 } else {

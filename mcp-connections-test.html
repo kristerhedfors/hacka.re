@@ -344,7 +344,7 @@
     <div class="container">
         <div class="header">
             <h1>🔌 MCP Connections Test</h1>
-            <p>Testing GitHub classic token integration and sharing functionality</p>
+            <p>Testing GitHub classic token and Gmail authentication integration and sharing functionality</p>
         </div>
 
         <div class="section">
@@ -360,6 +360,25 @@
                     <div>
                         <i class="fab fa-github service-icon"></i>
                         GitHub
+                    </div>
+                    <span class="status-indicator disconnected">Not Configured</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📧 Gmail Authentication Management</h2>
+            <div class="buttons">
+                <button id="setup-gmail">Setup Gmail Auth</button>
+                <button id="check-gmail">Check Gmail Status</button>
+                <button id="connect-gmail">Connect Gmail</button>
+                <button id="disconnect-gmail">Disconnect Gmail</button>
+            </div>
+            <div id="gmail-status" class="status-card">
+                <div class="connection-item disconnected">
+                    <div>
+                        <i class="fas fa-envelope service-icon"></i>
+                        Gmail
                     </div>
                     <span class="status-indicator disconnected">Not Configured</span>
                 </div>
@@ -391,11 +410,24 @@
         </div>
 
         <div class="section">
-            <h2>🧪 Function Testing</h2>
+            <h2>🧪 GitHub Function Testing</h2>
             <div class="buttons">
                 <button id="test-list-repos">Test: List Repos</button>
                 <button id="test-get-user">Test: Get User Info</button>
                 <button id="test-create-issue">Test: Create Issue</button>
+            </div>
+            <div id="function-output" class="status-card" style="display: none;">
+                <h4>Function Output:</h4>
+                <pre id="function-result"></pre>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📧 Gmail Function Testing</h2>
+            <div class="buttons">
+                <button id="test-list-messages">Test: List Messages</button>
+                <button id="test-search-messages">Test: Search Messages</button>
+                <button id="test-send-message">Test: Send Message</button>
             </div>
             <div id="function-output" class="status-card" style="display: none;">
                 <h4>Function Output:</h4>
@@ -444,6 +476,7 @@ Ready for testing...
 
         // Import the MCP components
         import { GitHubTokenManager } from './js/components/mcp/github-token-manager.js';
+        import { GmailTokenManager } from './js/components/mcp/gmail-token-manager.js';
         import { MCPConnectionsUI } from './js/components/mcp/mcp-connections-ui.js';
         import { 
             collectMcpConnectionsData, 
@@ -453,7 +486,7 @@ Ready for testing...
         } from './js/components/share/mcp-connections-share-item.js';
 
         // Initialize components
-        let githubManager, mcpUI;
+        let githubManager, gmailManager, mcpUI;
         
         async function initialize() {
             try {
@@ -461,6 +494,9 @@ Ready for testing...
                 
                 githubManager = new GitHubTokenManager();
                 await githubManager.initialize();
+                
+                gmailManager = new GmailTokenManager();
+                await gmailManager.initialize();
                 
                 mcpUI = new MCPConnectionsUI();
                 await mcpUI.initialize();
@@ -470,6 +506,7 @@ Ready for testing...
                 
                 // Initial status update
                 await updateGitHubStatus();
+                await updateGmailStatus();
                 await updateConnectionsSummary();
                 
                 log('✅ MCP connections test initialized');
@@ -525,6 +562,57 @@ Ready for testing...
                         await updateConnectionsSummary();
                     } catch (error) {
                         log(`❌ Disconnect error: ${error.message}`, 'error');
+                    }
+                } else {
+                    log('❌ MCP Service Connectors not available');
+                }
+            });
+            
+            // Gmail management
+            document.getElementById('setup-gmail').addEventListener('click', async () => {
+                log('📧 Setting up Gmail authentication...');
+                try {
+                    const success = await gmailManager.quickSetup();
+                    if (success) {
+                        log('✅ Gmail authentication setup completed');
+                        await updateGmailStatus();
+                        await updateConnectionsSummary();
+                    } else {
+                        log('❌ Gmail authentication setup cancelled or failed');
+                    }
+                } catch (error) {
+                    log(`❌ Gmail setup error: ${error.message}`, 'error');
+                }
+            });
+            
+            document.getElementById('check-gmail').addEventListener('click', async () => {
+                await updateGmailStatus();
+            });
+            
+            document.getElementById('connect-gmail').addEventListener('click', async () => {
+                log('📧 Connecting to Gmail...');
+                try {
+                    const connected = await gmailManager.connectToGmail();
+                    if (connected) {
+                        log('✅ Connected to Gmail successfully');
+                        await updateGmailStatus();
+                    } else {
+                        log('❌ Failed to connect to Gmail');
+                    }
+                } catch (error) {
+                    log(`❌ Gmail connection error: ${error.message}`, 'error');
+                }
+            });
+            
+            document.getElementById('disconnect-gmail').addEventListener('click', async () => {
+                if (window.MCPServiceConnectors) {
+                    try {
+                        await window.MCPServiceConnectors.disconnectService('gmail');
+                        log('✅ Disconnected from Gmail');
+                        await updateGmailStatus();
+                        await updateConnectionsSummary();
+                    } catch (error) {
+                        log(`❌ Gmail disconnect error: ${error.message}`, 'error');
                     }
                 } else {
                     log('❌ MCP Service Connectors not available');
@@ -612,6 +700,29 @@ Ready for testing...
                     }
                 }
             });
+            
+            // Gmail function testing
+            document.getElementById('test-list-messages').addEventListener('click', async () => {
+                await testFunction('gmail_list_messages', {query: 'is:unread', maxResults: 5});
+            });
+            
+            document.getElementById('test-search-messages').addEventListener('click', async () => {
+                const query = prompt('Enter Gmail search query (e.g., "from:example@gmail.com"):');
+                if (query) {
+                    await testFunction('gmail_search_messages', {query, maxResults: 5});
+                }
+            });
+            
+            document.getElementById('test-send-message').addEventListener('click', async () => {
+                const to = prompt('Send test email to (email address):');
+                if (to) {
+                    await testFunction('gmail_send_message', {
+                        to,
+                        subject: 'Test Email from hacka.re MCP',
+                        body: 'This is a test email sent from the hacka.re MCP Gmail integration test.'
+                    });
+                }
+            });
         }
         
         async function updateGitHubStatus() {
@@ -651,6 +762,46 @@ Ready for testing...
                 
             } catch (error) {
                 log(`❌ GitHub status check error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function updateGmailStatus() {
+            log('📧 Checking Gmail status...');
+            try {
+                const hasAuth = await gmailManager.hasValidAuth();
+                const authType = await gmailManager.getAuthType();
+                const isConnected = gmailManager.isConnected();
+                
+                const statusContainer = document.getElementById('gmail-status');
+                
+                let statusClass, statusText;
+                if (isConnected) {
+                    statusClass = 'connected';
+                    statusText = 'Connected';
+                } else if (hasAuth) {
+                    statusClass = 'configured';
+                    statusText = 'Configured';
+                } else {
+                    statusClass = 'disconnected';
+                    statusText = 'Not Configured';
+                }
+                
+                const authDisplay = authType ? ` (${authType})` : '';
+                
+                statusContainer.innerHTML = `
+                    <div class="connection-item ${statusClass}">
+                        <div>
+                            <i class="fas fa-envelope service-icon"></i>
+                            Gmail${authDisplay}
+                        </div>
+                        <span class="status-indicator ${statusClass}">${statusText}</span>
+                    </div>
+                `;
+                
+                log(`Gmail status: ${statusText}${authDisplay}`);
+                
+            } catch (error) {
+                log(`❌ Gmail status check error: ${error.message}`, 'error');
             }
         }
         
@@ -736,8 +887,10 @@ Ready for testing...
         // Make components available globally for debugging
         window.mcpTest = {
             githubManager: () => githubManager,
+            gmailManager: () => gmailManager,
             mcpUI: () => mcpUI,
             updateGitHubStatus,
+            updateGmailStatus,
             updateConnectionsSummary,
             log
         };
