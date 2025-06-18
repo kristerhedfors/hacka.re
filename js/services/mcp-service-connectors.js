@@ -1271,12 +1271,20 @@
          */
         buildGmailSearchQuery(params) {
             const parts = [];
+            
+            // Handle generic query parameter
+            if (params.query) {
+                return params.query;
+            }
+            
+            // Handle specific search parameters
             if (params.from) parts.push(`from:${params.from}`);
             if (params.to) parts.push(`to:${params.to}`);
             if (params.subject) parts.push(`subject:${params.subject}`);
             if (params.after) parts.push(`after:${params.after}`);
             if (params.before) parts.push(`before:${params.before}`);
             if (params.hasAttachment) parts.push('has:attachment');
+            
             return parts.join(' ');
         }
 
