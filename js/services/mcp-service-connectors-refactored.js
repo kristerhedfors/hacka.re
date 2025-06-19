@@ -359,7 +359,9 @@
                     const oauthConfig = {
                         ...config.oauthConfig,
                         clientId,
-                        clientSecret
+                        clientSecret,
+                        // Ensure redirect URI includes the callback page
+                        redirectUri: config.oauthConfig.redirectUri || `${window.location.origin}/oauth-callback.html`
                     };
                     
                     modal.remove();
@@ -409,7 +411,7 @@
                     const popup = window.open(authUrl, 'oauth-popup', 'width=500,height=600,scrollbars=yes,resizable=yes');
                     
                     // Wait for authorization completion
-                    const tokens = await this.waitForAuthorizationCallback(popup, oauthConfig);
+                    const tokens = await this.waitForAuthorizationCallback(popup, oauthConfig, serviceKey);
                     
                     if (tokens) {
                         this.connectedServices.set(serviceKey, {
@@ -434,12 +436,18 @@
         /**
          * Wait for OAuth authorization callback from popup
          */
-        async waitForAuthorizationCallback(popup, oauthConfig) {
+        async waitForAuthorizationCallback(popup, oauthConfig, serviceKey) {
             return new Promise((resolve, reject) => {
                 const checkClosed = setInterval(() => {
-                    if (popup.closed) {
-                        clearInterval(checkClosed);
-                        reject(new Error('Authorization cancelled by user'));
+                    try {
+                        if (popup.closed) {
+                            clearInterval(checkClosed);
+                            reject(new Error('Authorization cancelled by user'));
+                        }
+                    } catch (e) {
+                        // Cross-Origin-Opener-Policy may block access to popup.closed
+                        // In this case, we'll rely on the message handler or timeout
+                        console.log('[OAuth] Cannot check popup status due to COOP policy');
                     }
                 }, 1000);
 
@@ -468,7 +476,7 @@
                             }
                             
                             // Exchange code for tokens
-                            const provider = this.providers.get('gmail'); // For now, assuming Gmail
+                            const provider = this.providers.get(serviceKey);
                             const tokens = await provider.exchangeCodeForTokens(code, oauthConfig);
                             resolve(tokens);
                         } catch (error) {

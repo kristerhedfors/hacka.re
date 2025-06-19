@@ -156,6 +156,7 @@
                 
                 console.log('[Gmail Provider] Generated authorization URL:', authUrl);
                 console.log('[Gmail Provider] Authorization parameters:', Object.fromEntries(authParams));
+                console.log('[Gmail Provider] Redirect URI being used:', oauthConfig.redirectUri);
                 
                 // Store state for validation
                 sessionStorage.setItem('oauth_state', state);
