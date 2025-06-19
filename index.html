@@ -549,6 +549,35 @@ async function getCurrentTimeInBerlin() {
                             <p style="margin: 0; font-style: italic; color: var(--text-color-secondary);">Current system prompt preview</p>
                         </div>
                     </div>
+                    
+                    <!-- API Configuration Section -->
+                    <div class="form-group">
+                        <label>API Configuration</label>
+                        <div class="form-help">
+                            Configure token limits and response handling behavior. Changes apply immediately.
+                        </div>
+                        <div class="config-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
+                            <div>
+                                <label for="max-tool-result-length">Max Tool Result Length</label>
+                                <input type="number" id="max-tool-result-length" min="1000" max="50000" step="1000" 
+                                       title="Maximum characters in tool/function results before truncation">
+                                <small>~tokens: <span id="tool-result-tokens">1250</span></small>
+                            </div>
+                            <div>
+                                <label for="max-message-length">Max Message Length</label>
+                                <input type="number" id="max-message-length" min="10000" max="200000" step="5000"
+                                       title="Maximum characters in individual messages">
+                                <small>~tokens: <span id="message-tokens">12500</span></small>
+                            </div>
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <label>
+                                <input type="checkbox" id="log-truncation"> 
+                                Log truncation events to console
+                            </label>
+                        </div>
+                    </div>
+                    
                     <div class="form-actions">
                         <a href="#" id="clear-all-settings" class="function-library-link" style="margin-right: auto;">Delete current namespace and settings</a>
                         <button type="submit" class="btn primary-btn" id="save-settings-btn" name="save-settings-btn" aria-label="Save Settings Button">Save Settings</button>
@@ -588,6 +617,9 @@ async function getCurrentTimeInBerlin() {
         </footer>
     </div>
 
+    <!-- Configuration Files -->
+    <script src="js/config/api-config.js"></script>
+    
     <script src="js/utils/crypto-utils.js"></script>
     <script src="js/utils/rc4-utils.js"></script>
     <script src="js/services/model-info.js"></script>
@@ -706,6 +738,7 @@ async function getCurrentTimeInBerlin() {
     <script src="js/components/settings/shared-link-data-processor.js"></script>
     <script src="js/components/settings/shared-link-manager.js"></script>
     <script src="js/components/settings/tool-calling-manager.js"></script>
+    <script src="js/components/settings/api-config-manager.js"></script>
     <!-- Settings Manager Modular Components (load before main settings-manager.js) -->
     <script src="js/components/settings/settings-coordinator.js"></script>
     <script src="js/components/settings/settings-state-manager.js"></script>
