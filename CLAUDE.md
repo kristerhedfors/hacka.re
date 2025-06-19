@@ -114,12 +114,13 @@ js/
 - `encryption-service.js` - Data encryption (TweetNaCl)
 - `namespace-service.js` - Multi-tenant data isolation
 
-**MCP Services (5 modules):**
+**MCP Services (6 modules):**
 - `mcp-client-core.js` - Core MCP functionality
 - `mcp-connection-manager.js` - Connection management
 - `mcp-transport-service.js` - Transport layer
 - `mcp-tool-registry.js` - Tool registration
 - `mcp-request-manager.js` - Request handling
+- `mcp-service-connectors.js` - Gmail, GitHub, and Google Docs OAuth integrations
 
 **Additional Services:**
 - `link-sharing-service.js` - Encrypted sharing
@@ -146,6 +147,14 @@ js/
 - OpenAI, Groq, Ollama, custom endpoints
 - Real-time context window visualization
 - Token counting and usage tracking
+
+### Model Context Protocol (MCP) Integration
+- Seamless integration with external services via OAuth
+- Gmail API support for email operations (search, read, send)
+- GitHub API support for repository management
+- Google Docs API support for document operations
+- OAuth 2.0 authentication with secure token storage
+- Dynamic function registration from connected services
 
 ## Testing Approach
 
@@ -215,6 +224,29 @@ cd _tests/playwright && ./run_core_tests.sh
 1. Functions defined in Function Calling UI automatically become available
 2. Use JSDoc comments for better tool definitions
 3. Tag with `@callable` or `@tool` if selective calling enabled
+
+### Setting Up External Service Integrations (Gmail, GitHub, etc.)
+1. **Google Cloud Console Setup (for Gmail)**:
+   - Enable Gmail API in your Google Cloud project
+   - Create OAuth 2.0 credentials (Web application type)
+   - Add authorized redirect URI: `https://hacka.re/oauth-callback`
+   - Configure OAuth consent screen with required scopes:
+     - `https://www.googleapis.com/auth/gmail.readonly`
+     - `https://www.googleapis.com/auth/gmail.send`
+   - Add test users if in testing mode
+
+2. **In hacka.re**:
+   - Open MCP Servers modal (Settings → MCP Servers)
+   - Click on the service connector (e.g., Gmail)
+   - Enter OAuth Client ID and Client Secret
+   - Click "Authorize with Google" to complete authentication
+   - Functions from the service automatically register in Function Calling system
+
+3. **Troubleshooting OAuth Issues**:
+   - 403 errors usually mean the API isn't enabled in Google Cloud Console
+   - Check that OAuth consent screen has proper scopes configured
+   - Ensure redirect URIs match exactly (including protocol)
+   - For testing mode, verify user email is in test users list
 
 ### Adding Tests
 1. Create new test file in `_tests/playwright/`
