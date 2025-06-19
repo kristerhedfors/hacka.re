@@ -43,7 +43,7 @@ This document summarizes the comprehensive OAuth 2.1 specification-compliant imp
 
 ### 3. **Enhanced OAuth Service Integration**
 
-**File:** `js/services/mcp-oauth-service.js` (Enhanced)
+**File:** `js/services/mcp-oauth-service-refactored.js` (Enhanced)
 
 **Features:**
 - ✅ Integrated metadata discovery in authorization flow

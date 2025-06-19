@@ -19,7 +19,7 @@ This document describes the comprehensive integration of GitHub, Gmail, and Goog
 
 ### Core Components
 
-#### 1. **MCP Service Connectors** (`js/services/mcp-service-connectors.js`)
+#### 1. **MCP Service Connectors** (`js/services/mcp-service-connectors-refactored.js`)
 - **Purpose**: Specialized connector for popular services requiring custom authentication
 - **Features**:
   - Service-specific authentication flows (PAT, OAuth device, shared OAuth)
@@ -28,7 +28,7 @@ This document describes the comprehensive integration of GitHub, Gmail, and Goog
   - Encrypted token storage and management
   - CORS handling and proxy solutions
 
-#### 2. **Enhanced Quick Connectors** (`js/components/mcp/mcp-quick-connectors.js`)
+#### 2. **Enhanced Quick Connectors** (`js/components/mcp/mcp-quick-connectors-refactored.js`)
 - **Purpose**: Updated UI component integrating service connectors
 - **Features**:
   - Unified interface for all three services

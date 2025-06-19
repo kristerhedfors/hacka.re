@@ -10,7 +10,7 @@ GitHub OAuth Device Flow cannot work in a browser due to CORS restrictions on Gi
 Replace the current OAuth flow with a PAT input flow:
 
 ```javascript
-// In mcp-quick-connectors.js, modify the GitHub connector setup
+// In mcp-quick-connectors-refactored.js, modify the GitHub connector setup
 github: {
     name: 'GitHub',
     icon: 'fab fa-github',
@@ -35,7 +35,7 @@ github: {
 
 ### 2. Implement Token Input Dialog (Priority: HIGH)
 
-Create a new method in `mcp-quick-connectors.js`:
+Create a new method in `mcp-quick-connectors-refactored.js`:
 
 ```javascript
 function showTokenInputDialog(serviceKey) {
@@ -164,7 +164,7 @@ async saveToken(serviceKey) {
 Add clear error handling for CORS issues:
 
 ```javascript
-// In mcp-oauth-service.js, catch CORS errors specifically
+// In mcp-oauth-service-refactored.js, catch CORS errors specifically
 catch (error) {
     if (error.message.includes('CORS') || error.message.includes('Failed to fetch')) {
         console.error('[MCP OAuth] CORS error detected - GitHub OAuth not supported in browser');

@@ -8,7 +8,7 @@ This document describes the OAuth 2.0 authorization code flow implementation for
 
 ### Core Components
 
-#### 1. **MCP OAuth Service** (`js/services/mcp-oauth-service.js`)
+#### 1. **MCP OAuth Service** (`js/services/mcp-oauth-service-refactored.js`)
 The core OAuth service that handles:
 - Authorization code flow with PKCE
 - Token management and storage
@@ -36,7 +36,7 @@ User interface for OAuth setup:
 - Authorization URL preview
 - Secure credential storage
 
-#### 4. **OAuth Flow Manager** (`js/components/mcp/mcp-oauth-flow.js`)
+#### 4. **OAuth Flow Manager** (`js/components/mcp/mcp-oauth-flow-refactored.js`)
 Manages the authorization flow:
 - OAuth redirect handling
 - Authorization code exchange

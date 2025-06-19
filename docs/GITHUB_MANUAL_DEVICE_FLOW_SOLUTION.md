@@ -55,13 +55,13 @@ User copies the JSON response and pastes it into the textarea:
 
 ### Files Modified
 
-1. **`/js/services/mcp-oauth-service.js`**:
+1. **`/js/services/mcp-oauth-service-refactored.js`**:
    - Added CORS error detection
    - Added `startManualDeviceFlow()` method
    - Added `submitManualDeviceData()` method
    - Modified `startDeviceFlow()` to try automatic then manual
 
-2. **`/js/components/mcp/mcp-oauth-flow.js`**:
+2. **`/js/components/mcp/mcp-oauth-flow-refactored.js`**:
    - Added `showManualDeviceFlowInstructions()` method
    - Added `processManualDeviceResponse()` method
    - Modified `showDeviceFlowInstructions()` to handle both flows

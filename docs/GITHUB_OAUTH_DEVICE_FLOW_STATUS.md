@@ -85,7 +85,7 @@ hacka.re is designed as a **serverless, client-side only application** for priva
 
 The following changes were made to attempt Device Flow support:
 
-1. **Updated `/js/components/mcp/mcp-quick-connectors.js`**:
+1. **Updated `/js/components/mcp/mcp-quick-connectors-refactored.js`**:
    - Added `useDeviceFlow: true` to GitHub config
    - Added device flow URL configuration
    - Modified `connectService()` to check for device flow

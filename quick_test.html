@@ -24,7 +24,11 @@
     <!-- Load required services -->
     <script src="js/utils/debug-service.js"></script>
     <script src="js/services/core-storage-service.js"></script>
-    <script src="js/services/mcp-service-connectors.js"></script>
+    <!-- MCP Service Providers (refactored modular structure) -->
+    <script src="js/services/mcp-providers/github-provider.js"></script>
+    <script src="js/services/mcp-providers/gmail-provider.js"></script>
+    <script src="js/services/mcp-providers/google-workspace-provider.js"></script>
+    <script src="js/services/mcp-service-connectors-refactored.js"></script>
 
     <script>
         function updateStatus(message, type = 'info') {
