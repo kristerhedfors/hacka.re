@@ -22,7 +22,7 @@
                     scope: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send',
                     clientId: '',
                     requiresClientSecret: true,
-                    redirectUri: window.location.origin.startsWith('file://') ? 'http://localhost:8000' : window.location.origin,
+                    redirectUri: window.location.origin.startsWith('file://') ? 'http://localhost:8000/oauth-callback.html' : `${window.location.origin}/oauth-callback.html`,
                     responseType: 'code',
                     grantType: 'authorization_code',
                     additionalParams: {
@@ -37,7 +37,7 @@
                         'Go to Credentials → Create Credentials → OAuth 2.0 Client IDs',
                         'Select "Web application" as the application type',
                         'Give it a name like "hacka.re Gmail Integration"',
-                        'Add authorized redirect URIs: https://hacka.re AND http://localhost:8000',
+                        'Add authorized redirect URIs: https://hacka.re/oauth-callback.html AND http://localhost:8000/oauth-callback.html',
                         'Copy your Client ID and Client Secret',
                         'Enter them below to start the authorization flow',
                         'You\'ll be redirected to Google to grant permissions'
@@ -125,7 +125,9 @@
                     clientId: oauthConfig.clientId ? `present (${oauthConfig.clientId.substring(0, 10)}...)` : 'missing',
                     clientSecret: oauthConfig.clientSecret ? 'present' : 'missing',
                     scope: oauthConfig.scope,
-                    redirectUri: oauthConfig.redirectUri
+                    redirectUri: oauthConfig.redirectUri,
+                    currentOrigin: window.location.origin,
+                    currentHref: window.location.href
                 });
 
                 if (!oauthConfig.clientId || oauthConfig.clientId.trim() === '') {
@@ -151,6 +153,9 @@
                 });
 
                 const authUrl = `${oauthConfig.authorizationEndpoint}?${authParams.toString()}`;
+                
+                console.log('[Gmail Provider] Generated authorization URL:', authUrl);
+                console.log('[Gmail Provider] Authorization parameters:', Object.fromEntries(authParams));
                 
                 // Store state for validation
                 sessionStorage.setItem('oauth_state', state);
