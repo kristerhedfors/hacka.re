@@ -113,15 +113,16 @@
             try {
                 console.log('[Gmail Provider] Starting device flow with config:', {
                     endpoint: oauthConfig.authorizationEndpoint,
-                    clientId: oauthConfig.clientId ? 'present' : 'missing',
+                    clientId: oauthConfig.clientId ? `present (${oauthConfig.clientId.substring(0, 10)}...)` : 'missing',
+                    clientSecret: oauthConfig.clientSecret ? 'present' : 'missing',
                     scope: oauthConfig.scope
                 });
 
-                if (!oauthConfig.clientId) {
+                if (!oauthConfig.clientId || oauthConfig.clientId.trim() === '') {
                     throw new Error('OAuth Client ID is required for device flow');
                 }
 
-                if (!oauthConfig.clientSecret) {
+                if (!oauthConfig.clientSecret || oauthConfig.clientSecret.trim() === '') {
                     throw new Error('OAuth Client Secret is required for device flow');
                 }
 
@@ -142,9 +143,13 @@
                     console.error('[Gmail Provider] Device flow error:', {
                         status: deviceResponse.status,
                         statusText: deviceResponse.statusText,
-                        error: errorText
+                        error: errorText,
+                        requestBody: new URLSearchParams({
+                            client_id: oauthConfig.clientId,
+                            scope: oauthConfig.scope
+                        }).toString()
                     });
-                    throw new Error(`Failed to get device code: ${deviceResponse.status} ${errorText}`);
+                    throw new Error(`Failed to get device code: ${deviceResponse.status} - ${errorText}`);
                 }
 
                 return await deviceResponse.json();
