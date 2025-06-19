@@ -345,6 +345,12 @@
                     const clientId = document.getElementById(`${serviceKey}-client-id`).value.trim();
                     const clientSecret = document.getElementById(`${serviceKey}-client-secret`).value.trim();
                     
+                    console.log('[OAuth Setup] Captured credentials:', {
+                        clientId: clientId ? `present (${clientId.substring(0, 10)}...)` : 'MISSING',
+                        clientSecret: clientSecret ? 'present' : 'MISSING',
+                        serviceKey: serviceKey
+                    });
+                    
                     if (!clientId || !clientSecret) {
                         alert('Please enter both Client ID and Client Secret');
                         return;
