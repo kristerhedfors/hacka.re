@@ -120,15 +120,7 @@
          */
         async startAuthorizationFlow(oauthConfig) {
             try {
-                console.log('[Gmail Provider] Starting authorization code flow with config:', {
-                    endpoint: oauthConfig.authorizationEndpoint,
-                    clientId: oauthConfig.clientId ? `present (${oauthConfig.clientId.substring(0, 10)}...)` : 'missing',
-                    clientSecret: oauthConfig.clientSecret ? 'present' : 'missing',
-                    scope: oauthConfig.scope,
-                    redirectUri: oauthConfig.redirectUri,
-                    currentOrigin: window.location.origin,
-                    currentHref: window.location.href
-                });
+                console.log('[Gmail Provider] Starting authorization code flow');
 
                 if (!oauthConfig.clientId || oauthConfig.clientId.trim() === '') {
                     throw new Error('OAuth Client ID is required for authorization flow');
@@ -154,9 +146,7 @@
 
                 const authUrl = `${oauthConfig.authorizationEndpoint}?${authParams.toString()}`;
                 
-                console.log('[Gmail Provider] Generated authorization URL:', authUrl);
-                console.log('[Gmail Provider] Authorization parameters:', Object.fromEntries(authParams));
-                console.log('[Gmail Provider] Redirect URI being used:', oauthConfig.redirectUri);
+                // Removed verbose logging for cleaner console output
                 
                 // Store state for validation
                 sessionStorage.setItem('oauth_state', state);

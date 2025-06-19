@@ -40,11 +40,8 @@
         }
 
         initializeEventListeners() {
-            window.addEventListener('message', (event) => {
-                if (event.data && event.data.type === 'oauth-callback') {
-                    this.handleOAuthCallback(event.data);
-                }
-            });
+            // OAuth callbacks are now handled in waitForAuthorizationCallback
+            // No global message listener needed
         }
 
         /**
