@@ -499,16 +499,47 @@
         }
 
         getAvailableServices() {
-            return Array.from(this.providers.entries()).map(([key, provider]) => ({
-                key,
-                ...provider.config,
-                connected: this.isConnected(key)
-            }));
+            const services = [];
+            
+            for (const [key, provider] of this.providers.entries()) {
+                // Handle Google Workspace provider (has multiple services)
+                if (provider.getProvider && typeof provider.getProvider === 'function') {
+                    const serviceProvider = provider.getProvider(key);
+                    if (serviceProvider && serviceProvider.config) {
+                        services.push({
+                            key,
+                            ...serviceProvider.config,
+                            connected: this.isConnected(key)
+                        });
+                    }
+                } else {
+                    // Handle regular providers
+                    services.push({
+                        key,
+                        ...provider.config,
+                        connected: this.isConnected(key)
+                    });
+                }
+            }
+            
+            return services;
         }
 
         getToolCount(serviceKey) {
             const provider = this.providers.get(serviceKey);
-            if (!provider || !provider.config.tools) return 0;
+            if (!provider) return 0;
+            
+            // Handle Google Workspace provider (has multiple services)
+            if (provider.getProvider && typeof provider.getProvider === 'function') {
+                const serviceProvider = provider.getProvider(serviceKey);
+                if (serviceProvider && serviceProvider.config && serviceProvider.config.tools) {
+                    return Object.keys(serviceProvider.config.tools).length;
+                }
+                return 0;
+            }
+            
+            // Handle regular providers
+            if (!provider.config || !provider.config.tools) return 0;
             return Object.keys(provider.config.tools).length;
         }
 

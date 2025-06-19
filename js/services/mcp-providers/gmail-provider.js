@@ -111,10 +111,25 @@
          */
         async startDeviceFlow(oauthConfig) {
             try {
+                console.log('[Gmail Provider] Starting device flow with config:', {
+                    endpoint: oauthConfig.authorizationEndpoint,
+                    clientId: oauthConfig.clientId ? 'present' : 'missing',
+                    scope: oauthConfig.scope
+                });
+
+                if (!oauthConfig.clientId) {
+                    throw new Error('OAuth Client ID is required for device flow');
+                }
+
+                if (!oauthConfig.clientSecret) {
+                    throw new Error('OAuth Client Secret is required for device flow');
+                }
+
                 const deviceResponse = await fetch(oauthConfig.authorizationEndpoint, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Accept': 'application/json'
                     },
                     body: new URLSearchParams({
                         client_id: oauthConfig.clientId,
@@ -123,7 +138,13 @@
                 });
 
                 if (!deviceResponse.ok) {
-                    throw new Error('Failed to get device code');
+                    const errorText = await deviceResponse.text();
+                    console.error('[Gmail Provider] Device flow error:', {
+                        status: deviceResponse.status,
+                        statusText: deviceResponse.statusText,
+                        error: errorText
+                    });
+                    throw new Error(`Failed to get device code: ${deviceResponse.status} ${errorText}`);
                 }
 
                 return await deviceResponse.json();
