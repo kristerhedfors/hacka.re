@@ -209,6 +209,11 @@ hacka.re's MCP implementation consists of:
 - `test_mcp_integration.py` (3 tests) - Full server lifecycle testing
 - `test_mcp_integration_simple.py` (5 tests) - Simplified integration scenarios
 
+**OAuth Service Integration** - External service connectivity:
+- Gmail OAuth authentication flow
+- Function registration from connected services
+- Token storage and refresh handling
+
 ### Running MCP Tests
 
 Use the dedicated MCP test runner:
@@ -245,6 +250,30 @@ The integration tests automatically:
 - Install required npm packages
 - Start/stop the MCP proxy process
 - Handle missing dependencies gracefully
+
+### OAuth Service Setup (Gmail Example)
+
+For testing OAuth-based MCP integrations like Gmail:
+
+1. **Google Cloud Console Setup**:
+   - Enable the Gmail API in your Google Cloud project
+   - Create OAuth 2.0 credentials (Web application type)
+   - Add `https://hacka.re/oauth-callback` as an authorized redirect URI
+   - Configure OAuth consent screen with required scopes:
+     - `https://www.googleapis.com/auth/gmail.readonly`
+     - `https://www.googleapis.com/auth/gmail.send`
+
+2. **In hacka.re**:
+   - Open Settings → MCP Servers
+   - Click on Gmail connector
+   - Enter OAuth Client ID and Client Secret
+   - Complete OAuth flow
+   - Gmail functions automatically register in Function Calling system
+
+3. **Common Issues**:
+   - 403 errors: Gmail API not enabled in Google Cloud Console
+   - OAuth window issues: Fixed with proper CORS handling
+   - Empty search results: Fixed by supporting generic query parameter
 
 ## Handling Welcome Modal in Tests
 

@@ -14,6 +14,7 @@ hacka.re is a lightweight, static web UI built with pure HTML, CSS, and JavaScri
 - **Markdown Support**: Rich formatting for AI responses including code blocks with syntax highlighting
 - **Persistent History**: Conversation history is saved locally between sessions
 - **Function Calling**: Create JavaScript functions that can be called by AI models through the OpenAI-compatible API
+- **Model Context Protocol (MCP)**: Integrate with external services like Gmail, GitHub, and Google Docs through OAuth
 - **Secure Sharing**: Create encrypted, password-protected shareable links to securely share your API key, system prompt, active model, and conversation data with trusted individuals
 - **Customizable System Prompts**: Configure system prompts to control AI behavior
 - **Theme Options**: Multiple visual themes to customize your experience
@@ -107,6 +108,26 @@ source _venv/bin/activate
 ### Function Calling
 
 The function calling feature allows you to create JavaScript functions that can be called by AI models through the OpenAI-compatible API. By default, all functions are callable. If any function is tagged with `@callable` or `@tool`, then only tagged functions will be callable.
+
+### Model Context Protocol (MCP) Integration
+
+hacka.re supports the Model Context Protocol for seamless integration with external services. Currently supported integrations include:
+
+- **Gmail**: Search, read, and send emails directly through AI conversations
+- **GitHub**: Access repositories, manage issues, and work with code
+- **Google Docs**: Create and edit documents
+
+To set up MCP integrations:
+1. Open Settings → MCP Servers
+2. Click on a service connector (e.g., Gmail)
+3. Follow the OAuth setup instructions
+4. Once authenticated, the service's functions become available to the AI model
+
+For Gmail integration specifically:
+- Enable Gmail API in your Google Cloud Console project
+- Create OAuth 2.0 credentials (Web application type)
+- Add `https://hacka.re/oauth-callback` as an authorized redirect URI
+- Configure OAuth consent screen with Gmail scopes
 
 
 ### Testing
