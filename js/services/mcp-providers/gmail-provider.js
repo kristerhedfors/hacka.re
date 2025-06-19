@@ -140,15 +140,34 @@
 
                 if (!deviceResponse.ok) {
                     const errorText = await deviceResponse.text();
-                    console.error('[Gmail Provider] Device flow error:', {
+                    let parsedError;
+                    try {
+                        parsedError = JSON.parse(errorText);
+                    } catch (e) {
+                        parsedError = errorText;
+                    }
+                    
+                    const errorDetails = {
                         status: deviceResponse.status,
                         statusText: deviceResponse.statusText,
-                        error: errorText,
+                        errorResponse: parsedError,
+                        rawError: errorText,
                         requestBody: new URLSearchParams({
                             client_id: oauthConfig.clientId,
                             scope: oauthConfig.scope
-                        }).toString()
-                    });
+                        }).toString(),
+                        endpoint: oauthConfig.authorizationEndpoint
+                    };
+                    
+                    console.error('[Gmail Provider] Device flow error details:', errorDetails);
+                    
+                    // Log individual error fields for easy copying
+                    if (parsedError && typeof parsedError === 'object') {
+                        console.error('[Gmail Provider] Error code:', parsedError.error);
+                        console.error('[Gmail Provider] Error description:', parsedError.error_description);
+                        console.error('[Gmail Provider] Error URI:', parsedError.error_uri);
+                    }
+                    
                     throw new Error(`Failed to get device code: ${deviceResponse.status} - ${errorText}`);
                 }
 
