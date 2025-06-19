@@ -107,11 +107,26 @@ window.ApiToolsService = (function() {
             // Execute the tool handler
             const result = await builtInTools[name].handler(parsedArgs);
             
+            // Truncate large results to prevent token explosion
+            let content = JSON.stringify(result);
+            const maxLength = window.APIConfig?.LIMITS?.MAX_TOOL_RESULT_LENGTH || 5000;
+            if (content.length > maxLength) {
+                const originalLength = content.length;
+                const truncated = content.substring(0, maxLength);
+                const suffix = window.APIConfig?.TRUNCATION?.SUFFIX || '... [truncated]"}';
+                content = truncated + suffix;
+                
+                // Log truncation if debug enabled
+                if (window.APIConfig?.DEBUG?.LOG_TRUNCATION) {
+                    console.log(`[APITools] Tool result for "${name}" truncated from ${originalLength} to ${content.length} characters`);
+                }
+            }
+            
             return {
                 tool_call_id: toolCall.id,
                 role: "tool",
                 name: name,
-                content: JSON.stringify(result)
+                content: content
             };
         } catch (error) {
             console.error(`Error executing built-in tool "${name}":`, error);

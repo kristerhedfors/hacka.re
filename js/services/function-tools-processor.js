@@ -169,10 +169,24 @@ window.FunctionToolsProcessor = (function() {
         },
         
         _createSuccessResult: function(toolCall, name, result, executionTime) {
+            // Truncate large results to prevent token explosion
+            let content = JSON.stringify(result);
+            const maxLength = window.APIConfig?.LIMITS?.MAX_TOOL_RESULT_LENGTH || 5000;
+            if (content.length > maxLength) {
+                const truncated = content.substring(0, maxLength);
+                const suffix = window.APIConfig?.TRUNCATION?.SUFFIX || '... [truncated]"}';
+                content = truncated + suffix;
+                
+                // Log truncation if debug enabled
+                if (window.APIConfig?.DEBUG?.LOG_TRUNCATION) {
+                    Logger.debug(`Tool result for "${name}" truncated from ${JSON.stringify(result).length} to ${content.length} characters`);
+                }
+            }
+            
             const toolResult = {
                 tool_call_id: toolCall.id,
                 role: "tool",
-                content: JSON.stringify(result)
+                content: content
             };
             
             Logger.debug(`Created tool result for "${name}" (${executionTime}ms):`, toolResult);
