@@ -1245,7 +1245,15 @@
             });
 
             if (!response.ok) {
-                throw new Error(`Gmail API error: ${response.status} ${response.statusText}`);
+                const errorBody = await response.text();
+                console.error(`[MCP Service Connectors] Gmail API error response:`, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    body: errorBody,
+                    url: url,
+                    headers: Object.fromEntries(response.headers.entries())
+                });
+                throw new Error(`Gmail API error: ${response.status} ${response.statusText} - ${errorBody}`);
             }
 
             return await response.json();
