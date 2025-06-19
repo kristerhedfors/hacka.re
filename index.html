@@ -619,13 +619,21 @@ async function getCurrentTimeInBerlin() {
     <!-- MCP Service Components (refactored) -->
     <script src="js/services/mcp-metadata-discovery.js"></script>
     <script src="js/services/mcp-client-registration.js"></script>
-    <script src="js/services/mcp-oauth-service.js"></script>
+    <!-- OAuth Service (refactored modular structure) -->
+    <script src="js/services/oauth-providers-config.js"></script>
+    <script src="js/services/oauth-token-manager.js"></script>
+    <script src="js/services/oauth-pkce-helper.js"></script>
+    <script src="js/services/mcp-oauth-service-refactored.js"></script>
     <script src="js/services/mcp-transport-service.js"></script>
     <script src="js/services/mcp-request-manager.js"></script>
     <script src="js/services/mcp-tool-registry.js"></script>
     <script src="js/services/mcp-connection-manager.js"></script>
     <script src="js/services/mcp-client-core.js"></script>
-    <script src="js/services/mcp-service-connectors.js"></script>
+    <!-- MCP Service Providers (refactored modular structure) -->
+    <script src="js/services/mcp-providers/github-provider.js"></script>
+    <script src="js/services/mcp-providers/gmail-provider.js"></script>
+    <script src="js/services/mcp-providers/google-workspace-provider.js"></script>
+    <script src="js/services/mcp-service-connectors-refactored.js"></script>
     <script src="js/services/link-sharing-service.js"></script>
     <script src="js/services/share-service.js"></script>
     <!-- Default prompts -->
@@ -686,9 +694,15 @@ async function getCurrentTimeInBerlin() {
     <script src="js/components/mcp/mcp-tools-manager.js"></script>
     <script src="js/components/mcp/mcp-server-manager.js"></script>
     <script src="js/components/mcp/mcp-oauth-config.js"></script>
-    <script src="js/components/mcp/mcp-oauth-flow.js"></script>
+    <!-- OAuth Flow (refactored modular structure) -->
+    <script src="js/components/mcp/oauth-callback-handler.js"></script>
+    <script src="js/components/mcp/oauth-device-flow-ui.js"></script>
+    <script src="js/components/mcp/mcp-oauth-flow-refactored.js"></script>
     <script src="js/components/mcp/mcp-oauth-integration.js"></script>
-    <script src="js/components/mcp/mcp-quick-connectors.js"></script>
+    <!-- Quick Connectors (refactored modular structure) -->
+    <script src="js/components/mcp/quick-connectors-config.js"></script>
+    <script src="js/components/mcp/quick-connectors-ui.js"></script>
+    <script src="js/components/mcp/mcp-quick-connectors-refactored.js"></script>
     <script src="js/components/mcp-manager.js"></script>
     <!-- Chat Services -->
     <script src="js/services/chat-tools-service.js"></script>
