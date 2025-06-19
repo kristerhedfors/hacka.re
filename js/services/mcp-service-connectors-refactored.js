@@ -357,9 +357,9 @@
                     }
                     
                     const oauthConfig = {
+                        ...config.oauthConfig,
                         clientId,
-                        clientSecret,
-                        ...config.oauthConfig
+                        clientSecret
                     };
                     
                     modal.remove();
@@ -375,6 +375,12 @@
          */
         async startDeviceFlow(serviceKey, oauthConfig) {
             try {
+                console.log('[Service Connectors] Starting device flow with config:', {
+                    serviceKey,
+                    clientId: oauthConfig.clientId ? `present (${oauthConfig.clientId.substring(0, 10)}...)` : 'MISSING',
+                    clientSecret: oauthConfig.clientSecret ? 'present' : 'MISSING'
+                });
+                
                 const provider = this.providers.get(serviceKey);
                 const deviceData = await provider.startDeviceFlow(oauthConfig);
                 
