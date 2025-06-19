@@ -14,26 +14,35 @@
                 name: 'Gmail',
                 icon: 'fas fa-envelope',
                 description: 'Access Gmail messages and send emails',
-                authType: 'oauth-device',
+                authType: 'oauth-web',
                 apiBaseUrl: 'https://gmail.googleapis.com/gmail/v1',
                 oauthConfig: {
-                    authorizationEndpoint: 'https://oauth2.googleapis.com/device/code',
+                    authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
                     tokenEndpoint: 'https://oauth2.googleapis.com/token',
                     scope: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send',
                     clientId: '',
-                    requiresClientSecret: true
+                    requiresClientSecret: true,
+                    redirectUri: window.location.origin.startsWith('file://') ? 'http://localhost:8000' : window.location.origin,
+                    responseType: 'code',
+                    grantType: 'authorization_code',
+                    additionalParams: {
+                        access_type: 'offline',
+                        prompt: 'consent'
+                    }
                 },
                 setupInstructions: {
                     title: 'Gmail OAuth Setup',
                     steps: [
                         'Create a Google Cloud Project and enable Gmail API',
-                        'Create OAuth 2.0 credentials (Desktop application type)',
+                        'Go to Credentials → Create Credentials → OAuth 2.0 Client IDs',
+                        'Select "Web application" as the application type',
+                        'Give it a name like "hacka.re Gmail Integration"',
+                        'Add authorized redirect URIs: https://hacka.re AND http://localhost:8000',
                         'Copy your Client ID and Client Secret',
-                        'Enter them below to start the device flow authentication',
-                        'You\'ll be given a code to enter on Google\'s device page',
-                        'Grant permissions to access your Gmail'
+                        'Enter them below to start the authorization flow',
+                        'You\'ll be redirected to Google to grant permissions'
                     ],
-                    docUrl: 'https://developers.google.com/gmail/api/quickstart/js'
+                    docUrl: 'https://developers.google.com/identity/protocols/oauth2/web-server'
                 },
                 tools: {
                     list_messages: {
@@ -107,73 +116,105 @@
         }
 
         /**
-         * Start OAuth device flow
+         * Start OAuth authorization code flow
          */
-        async startDeviceFlow(oauthConfig) {
+        async startAuthorizationFlow(oauthConfig) {
             try {
-                console.log('[Gmail Provider] Starting device flow with config:', {
+                console.log('[Gmail Provider] Starting authorization code flow with config:', {
                     endpoint: oauthConfig.authorizationEndpoint,
                     clientId: oauthConfig.clientId ? `present (${oauthConfig.clientId.substring(0, 10)}...)` : 'missing',
                     clientSecret: oauthConfig.clientSecret ? 'present' : 'missing',
-                    scope: oauthConfig.scope
+                    scope: oauthConfig.scope,
+                    redirectUri: oauthConfig.redirectUri
                 });
 
                 if (!oauthConfig.clientId || oauthConfig.clientId.trim() === '') {
-                    throw new Error('OAuth Client ID is required for device flow');
+                    throw new Error('OAuth Client ID is required for authorization flow');
                 }
 
                 if (!oauthConfig.clientSecret || oauthConfig.clientSecret.trim() === '') {
-                    throw new Error('OAuth Client Secret is required for device flow');
+                    throw new Error('OAuth Client Secret is required for authorization flow');
                 }
 
-                const deviceResponse = await fetch(oauthConfig.authorizationEndpoint, {
+                // Generate state for security
+                const state = this.generateRandomString(32);
+                
+                // Build authorization URL
+                const authParams = new URLSearchParams({
+                    client_id: oauthConfig.clientId,
+                    redirect_uri: oauthConfig.redirectUri,
+                    response_type: oauthConfig.responseType || 'code',
+                    scope: oauthConfig.scope,
+                    state: state,
+                    access_type: oauthConfig.additionalParams?.access_type || 'offline',
+                    prompt: oauthConfig.additionalParams?.prompt || 'consent'
+                });
+
+                const authUrl = `${oauthConfig.authorizationEndpoint}?${authParams.toString()}`;
+                
+                // Store state for validation
+                sessionStorage.setItem('oauth_state', state);
+                sessionStorage.setItem('oauth_config', JSON.stringify(oauthConfig));
+                
+                return authUrl;
+            } catch (error) {
+                console.error('[Gmail Provider] Authorization flow start failed:', error);
+                throw error;
+            }
+        }
+
+        /**
+         * Generate random string for OAuth state
+         */
+        generateRandomString(length) {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
+        /**
+         * Exchange authorization code for tokens
+         */
+        async exchangeCodeForTokens(code, oauthConfig) {
+            try {
+                console.log('[Gmail Provider] Exchanging authorization code for tokens');
+                
+                const tokenResponse = await fetch(oauthConfig.tokenEndpoint, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'Accept': 'application/json'
+                        'Content-Type': 'application/x-www-form-urlencoded'
                     },
                     body: new URLSearchParams({
                         client_id: oauthConfig.clientId,
-                        scope: oauthConfig.scope
+                        client_secret: oauthConfig.clientSecret,
+                        code: code,
+                        grant_type: oauthConfig.grantType || 'authorization_code',
+                        redirect_uri: oauthConfig.redirectUri
                     })
                 });
 
-                if (!deviceResponse.ok) {
-                    const errorText = await deviceResponse.text();
-                    let parsedError;
-                    try {
-                        parsedError = JSON.parse(errorText);
-                    } catch (e) {
-                        parsedError = errorText;
-                    }
-                    
-                    const errorDetails = {
-                        status: deviceResponse.status,
-                        statusText: deviceResponse.statusText,
-                        errorResponse: parsedError,
-                        rawError: errorText,
-                        requestBody: new URLSearchParams({
-                            client_id: oauthConfig.clientId,
-                            scope: oauthConfig.scope
-                        }).toString(),
-                        endpoint: oauthConfig.authorizationEndpoint
-                    };
-                    
-                    console.error('[Gmail Provider] Device flow error details:', errorDetails);
-                    
-                    // Log individual error fields for easy copying
-                    if (parsedError && typeof parsedError === 'object') {
-                        console.error('[Gmail Provider] Error code:', parsedError.error);
-                        console.error('[Gmail Provider] Error description:', parsedError.error_description);
-                        console.error('[Gmail Provider] Error URI:', parsedError.error_uri);
-                    }
-                    
-                    throw new Error(`Failed to get device code: ${deviceResponse.status} - ${errorText}`);
+                if (!tokenResponse.ok) {
+                    const errorText = await tokenResponse.text();
+                    throw new Error(`Token exchange failed: ${tokenResponse.status} - ${errorText}`);
                 }
 
-                return await deviceResponse.json();
+                const tokenData = await tokenResponse.json();
+                
+                const tokens = {
+                    accessToken: tokenData.access_token,
+                    refreshToken: tokenData.refresh_token,
+                    expiresAt: Date.now() + (tokenData.expires_in * 1000),
+                    clientId: oauthConfig.clientId,
+                    clientSecret: oauthConfig.clientSecret
+                };
+                
+                await this.storeTokens(tokens);
+                return tokens;
             } catch (error) {
-                console.error('[Gmail Provider] Device flow start failed:', error);
+                console.error('[Gmail Provider] Token exchange failed:', error);
                 throw error;
             }
         }

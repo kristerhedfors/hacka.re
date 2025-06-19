@@ -364,47 +364,131 @@
                     
                     modal.remove();
                     
-                    const result = await this.startDeviceFlow(serviceKey, oauthConfig);
+                    const result = await this.startOAuthFlow(serviceKey, oauthConfig);
                     resolve(result);
                 };
             });
         }
 
         /**
-         * Start device flow authentication
+         * Start OAuth flow authentication (device flow or authorization code flow)
          */
-        async startDeviceFlow(serviceKey, oauthConfig) {
+        async startOAuthFlow(serviceKey, oauthConfig) {
             try {
-                console.log('[Service Connectors] Starting device flow with config:', {
+                console.log('[Service Connectors] Starting OAuth flow with config:', {
                     serviceKey,
+                    authType: oauthConfig.authType || 'unknown',
                     clientId: oauthConfig.clientId ? `present (${oauthConfig.clientId.substring(0, 10)}...)` : 'MISSING',
                     clientSecret: oauthConfig.clientSecret ? 'present' : 'MISSING'
                 });
                 
                 const provider = this.providers.get(serviceKey);
-                const deviceData = await provider.startDeviceFlow(oauthConfig);
                 
-                this.showDeviceCodeDialog(serviceKey, deviceData);
-                
-                const tokens = await provider.pollForAuthorization(oauthConfig, deviceData);
-                
-                if (tokens) {
-                    this.connectedServices.set(serviceKey, {
-                        provider: provider,
-                        config: provider.config,
-                        authData: tokens
-                    });
+                // Check if this provider uses device flow or authorization code flow
+                if (provider.config.authType === 'oauth-device') {
+                    // Device flow (for GitHub, etc.)
+                    const deviceData = await provider.startDeviceFlow(oauthConfig);
+                    this.showDeviceCodeDialog(serviceKey, deviceData);
+                    const tokens = await provider.pollForAuthorization(oauthConfig, deviceData);
+                    
+                    if (tokens) {
+                        this.connectedServices.set(serviceKey, {
+                            provider: provider,
+                            config: provider.config,
+                            authData: tokens
+                        });
 
-                    await this.registerServiceTools(serviceKey, provider.config, tokens);
-                    return true;
+                        await this.registerServiceTools(serviceKey, provider.config, tokens);
+                        return true;
+                    }
+                } else if (provider.config.authType === 'oauth-web') {
+                    // Authorization code flow (for Gmail, etc.)
+                    const authUrl = await provider.startAuthorizationFlow(oauthConfig);
+                    
+                    // Open popup window for authorization
+                    const popup = window.open(authUrl, 'oauth-popup', 'width=500,height=600,scrollbars=yes,resizable=yes');
+                    
+                    // Wait for authorization completion
+                    const tokens = await this.waitForAuthorizationCallback(popup, oauthConfig);
+                    
+                    if (tokens) {
+                        this.connectedServices.set(serviceKey, {
+                            provider: provider,
+                            config: provider.config,
+                            authData: tokens
+                        });
+
+                        await this.registerServiceTools(serviceKey, provider.config, tokens);
+                        return true;
+                    }
                 }
                 
                 return false;
             } catch (error) {
-                console.error(`[MCP Service Connectors] OAuth device flow failed:`, error);
+                console.error(`[MCP Service Connectors] OAuth flow failed:`, error);
                 alert(`Failed to authenticate with ${this.providers.get(serviceKey).config.name}: ${error.message}`);
                 return false;
             }
+        }
+
+        /**
+         * Wait for OAuth authorization callback from popup
+         */
+        async waitForAuthorizationCallback(popup, oauthConfig) {
+            return new Promise((resolve, reject) => {
+                const checkClosed = setInterval(() => {
+                    if (popup.closed) {
+                        clearInterval(checkClosed);
+                        reject(new Error('Authorization cancelled by user'));
+                    }
+                }, 1000);
+
+                // Listen for postMessage from the popup
+                const messageHandler = async (event) => {
+                    if (event.origin !== window.location.origin) return;
+                    
+                    if (event.data.type === 'oauth-callback') {
+                        clearInterval(checkClosed);
+                        window.removeEventListener('message', messageHandler);
+                        popup.close();
+                        
+                        try {
+                            const { code, state, error } = event.data;
+                            
+                            if (error) {
+                                reject(new Error(`OAuth error: ${error}`));
+                                return;
+                            }
+                            
+                            // Validate state
+                            const savedState = sessionStorage.getItem('oauth_state');
+                            if (state !== savedState) {
+                                reject(new Error('Invalid OAuth state parameter'));
+                                return;
+                            }
+                            
+                            // Exchange code for tokens
+                            const provider = this.providers.get('gmail'); // For now, assuming Gmail
+                            const tokens = await provider.exchangeCodeForTokens(code, oauthConfig);
+                            resolve(tokens);
+                        } catch (error) {
+                            reject(error);
+                        }
+                    }
+                };
+
+                window.addEventListener('message', messageHandler);
+                
+                // Timeout after 5 minutes
+                setTimeout(() => {
+                    clearInterval(checkClosed);
+                    window.removeEventListener('message', messageHandler);
+                    if (!popup.closed) {
+                        popup.close();
+                    }
+                    reject(new Error('Authorization timeout'));
+                }, 300000);
+            });
         }
 
         /**
