@@ -11,9 +11,25 @@ window.ModalManager = (function() {
      */
     function createModalManager(elements) {
         /**
+         * Close heart tooltip if it's open
+         */
+        function closeHeartTooltip() {
+            const heartTooltip = document.querySelector('.heart-logo .tooltip');
+            if (heartTooltip && heartTooltip.classList.contains('active')) {
+                heartTooltip.classList.remove('active');
+                document.body.classList.remove('heart-modal-open');
+                // Reset tooltip state if available
+                if (window.tooltipActive !== undefined) {
+                    window.tooltipActive = false;
+                }
+            }
+        }
+
+        /**
          * Show the API key modal
          */
         function showApiKeyModal() {
+            closeHeartTooltip();
             elements.apiKeyModal.classList.add('active');
             elements.apiKeyInput.focus();
         }
@@ -30,6 +46,7 @@ window.ModalManager = (function() {
          * @param {Object} config - Configuration for the modal
          */
         function showSettingsModal(config) {
+            closeHeartTooltip();
             const { apiKey, currentModel, fetchAvailableModels, populateDefaultModels } = config;
             
             // Update the API key field with masked value if exists
@@ -76,6 +93,7 @@ window.ModalManager = (function() {
          * Show the share modal
          */
         function showShareModal() {
+            closeHeartTooltip();
             elements.shareModal.classList.add('active');
             
             // NUCLEAR FIX: Force-attach MCP checkbox event listener when modal opens
@@ -147,6 +165,7 @@ window.ModalManager = (function() {
          * Show the function modal
          */
         function showFunctionModal() {
+            closeHeartTooltip();
             if (elements.functionModal) {
                 elements.functionModal.classList.add('active');
             }

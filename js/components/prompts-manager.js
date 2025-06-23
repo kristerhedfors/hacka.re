@@ -79,6 +79,13 @@ window.PromptsManager = (function() {
         function showPromptsModal() {
             // Show the modal first
             if (elements.promptsModal) {
+                // Close heart tooltip if open
+                const heartTooltip = document.querySelector('.heart-logo .tooltip');
+                if (heartTooltip && heartTooltip.classList.contains('active')) {
+                    heartTooltip.classList.remove('active');
+                    document.body.classList.remove('heart-modal-open');
+                }
+                
                 elements.promptsModal.classList.add('active');
             }
             
