@@ -14,12 +14,6 @@
         min-height: auto; /* Allow header to grow */
     }
     
-    /* Ensure consistent line spacing for documentation items on mobile */
-    .logo-line.documentation-item {
-        line-height: 1.5;
-        padding: 0.2rem 0;
-        margin: 0;
-    }
     
     /* Logo text container adjustments for mobile */
     .logo-text-container {
