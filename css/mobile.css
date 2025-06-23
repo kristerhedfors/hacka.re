@@ -14,6 +14,12 @@
         min-height: auto; /* Allow header to grow */
     }
     
+    /* Ensure consistent line spacing for documentation items on mobile */
+    .logo-line.documentation-item {
+        line-height: 1.4;
+        padding: 0.15rem 0;
+    }
+    
     /* Logo text container adjustments for mobile */
     .logo-text-container {
         max-width: 100%;
@@ -210,6 +216,12 @@
     /* Further optimize header for very small screens */
     header {
         padding: 0.5rem;
+    }
+    
+    /* Fix line spacing for documentation items on mobile */
+    .logo-line.documentation-item {
+        line-height: 1.5;
+        padding: 0.2rem 0;
     }
     
     .model-name {
