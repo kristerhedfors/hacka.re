@@ -595,6 +595,66 @@ body.firefox-focus .heart-logo {
     background-color: #22CC22 !important;
 }
 
+/* Style for tree links in ASCII art */
+.logo-line .tree-link {
+    color: inherit !important;
+    text-decoration: none !important;
+    font-family: 'Courier New', monospace !important;
+    font-size: inherit !important;
+    font-weight: inherit !important;
+    background: inherit !important;
+    -webkit-background-clip: inherit !important;
+    background-clip: inherit !important;
+    -webkit-text-fill-color: inherit !important;
+    text-fill-color: inherit !important;
+    transition: opacity 0.2s ease;
+}
+
+.logo-line .tree-link:hover {
+    opacity: 0.8;
+    text-decoration: underline !important;
+}
+
+/* Style for tree toggle */
+.logo-line .tree-toggle {
+    cursor: pointer;
+    color: inherit !important;
+    font-family: 'Courier New', monospace !important;
+    font-size: inherit !important;
+    font-weight: inherit !important;
+    background: inherit !important;
+    -webkit-background-clip: inherit !important;
+    background-clip: inherit !important;
+    -webkit-text-fill-color: inherit !important;
+    text-fill-color: inherit !important;
+    user-select: none;
+}
+
+.logo-line .tree-toggle:hover {
+    opacity: 0.8;
+}
+
+/* Style for feature links in ASCII art */
+.logo-line .feature-link {
+    cursor: pointer;
+    color: inherit !important;
+    text-decoration: none !important;
+    font-family: 'Courier New', monospace !important;
+    font-size: inherit !important;
+    font-weight: inherit !important;
+    background: inherit !important;
+    -webkit-background-clip: inherit !important;
+    background-clip: inherit !important;
+    -webkit-text-fill-color: inherit !important;
+    text-fill-color: inherit !important;
+    transition: opacity 0.2s ease;
+}
+
+.logo-line .feature-link:hover {
+    opacity: 0.8;
+    text-decoration: underline !important;
+}
+
 /* Scale up the Firefox Focus fallback SVG as well */
 .logo-text-container.collapsed .firefox-focus-fallback {
     width: 19px !important; /* 1.2x the original 16px */
