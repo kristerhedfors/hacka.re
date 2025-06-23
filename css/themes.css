@@ -1379,8 +1379,14 @@ header .settings .icon-btn i,
 /* ASCII Tree Menu White Text Override for Modern Theme */
 .theme-modern .heart-logo .tooltip.tree-menu,
 .theme-modern .heart-logo .tooltip.tree-menu *,
+.theme-modern .heart-logo .tooltip.tree-menu .documentation-item,
+.theme-modern .heart-logo .tooltip.tree-menu .documentation-item *,
+.theme-modern .heart-logo .tooltip.tree-menu .documentation-item a,
 .theme-modern.dark-mode .heart-logo .tooltip.tree-menu,
-.theme-modern.dark-mode .heart-logo .tooltip.tree-menu * {
+.theme-modern.dark-mode .heart-logo .tooltip.tree-menu *,
+.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item,
+.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item *,
+.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item a {
     color: #ffffff !important;
     -webkit-text-fill-color: #ffffff !important;
     text-fill-color: #ffffff !important;
