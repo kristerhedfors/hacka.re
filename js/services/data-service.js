@@ -176,6 +176,14 @@ window.DataService = (function() {
                 return 'https://api.openai.com/v1';
             case 'ollama':
                 return 'http://localhost:11434/v1';
+            case 'llamafile':
+                return 'http://localhost:8080/v1';
+            case 'gpt4all':
+                return 'http://localhost:4891/v1';
+            case 'lmstudio':
+                return 'http://localhost:1234/v1';
+            case 'localai':
+                return 'http://localhost:8080/v1';
             default:
                 return '';
         }
