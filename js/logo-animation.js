@@ -375,3 +375,115 @@ window.LogoAnimation = (function() {
 
 // Initialize the logo animation
 LogoAnimation.init();
+
+// Handle tree menu functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Tree toggle functionality
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('tree-toggle')) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const target = e.target.getAttribute('data-target');
+            const tooltip = e.target.closest('.tooltip');
+            const items = tooltip.querySelectorAll('.' + target + '-item');
+            const currentText = e.target.textContent;
+            const isExpanded = currentText.includes('[−]') || currentText.includes('[-]');
+            
+            if (isExpanded) {
+                e.target.textContent = currentText.replace(/\[[\−\-]\]/, '[+]');
+                items.forEach(item => {
+                    item.style.display = 'none';
+                });
+            } else {
+                e.target.textContent = currentText.replace('[+]', '[−]');
+                items.forEach(item => {
+                    item.style.display = 'block';
+                });
+            }
+        }
+    });
+    
+    // Feature link functionality
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('feature-link')) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const feature = e.target.getAttribute('data-feature');
+            
+            const featureToButtonId = {
+                'copy-chat': 'copy-chat-btn',
+                'mcp-servers': 'mcp-servers-btn', 
+                'function-calling': 'function-btn',
+                'system-prompts': 'prompts-btn',
+                'share': 'share-btn',
+                'theme': 'theme-toggle-btn',
+                'settings': 'settings-btn'
+            };
+            
+            // For missing buttons, trigger modal opening instead
+            const featureToAction = {
+                'copy-chat': () => {
+                    // Copy chat functionality
+                    const chatMessages = document.getElementById('chat-messages');
+                    if (chatMessages) {
+                        const textContent = Array.from(chatMessages.children)
+                            .map(msg => msg.textContent.trim())
+                            .filter(text => text.length > 0)
+                            .join('\n\n');
+                        navigator.clipboard.writeText(textContent);
+                    }
+                },
+                'mcp-servers': () => {
+                    const modal = document.getElementById('mcp-servers-modal');
+                    if (modal) modal.style.display = 'block';
+                },
+                'function-calling': () => {
+                    const modal = document.getElementById('function-modal');
+                    if (modal) modal.style.display = 'block';
+                },
+                'system-prompts': () => {
+                    const modal = document.getElementById('prompts-modal');
+                    if (modal) modal.style.display = 'block';
+                },
+                'share': () => {
+                    const modal = document.getElementById('share-modal');
+                    if (modal) modal.style.display = 'block';
+                },
+                'theme': () => {
+                    // Cycle theme functionality
+                    if (window.ThemeManager && window.ThemeManager.cycleTheme) {
+                        window.ThemeManager.cycleTheme();
+                    }
+                },
+                'settings': () => {
+                    const modal = document.getElementById('settings-modal');
+                    if (modal) modal.style.display = 'block';
+                }
+            };
+            
+            // Close tooltip first
+            const tooltip = e.target.closest('.tooltip');
+            if (tooltip) {
+                tooltip.classList.remove('active');
+            }
+            
+            // Try to find existing button first
+            const buttonId = featureToButtonId[feature];
+            if (buttonId) {
+                const button = document.getElementById(buttonId);
+                if (button) {
+                    setTimeout(() => button.click(), 100);
+                    return;
+                }
+            }
+            
+            // If no button found, use direct action
+            const action = featureToAction[feature];
+            if (action) {
+                setTimeout(() => action(), 100);
+            }
+        }
+    });
+});
