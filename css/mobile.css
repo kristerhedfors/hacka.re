@@ -391,6 +391,25 @@
         animation: slideInFromTop 0.3s ease-out !important;
     }
     
+    /* MOBILE TREE MENU - Keep primary color background and white text */
+    .heart-logo .tooltip.tree-menu.active {
+        background-color: var(--primary-color) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    }
+    
+    /* MOBILE TREE MENU TEXT - Force white text on mobile */
+    .heart-logo .tooltip.tree-menu.active *,
+    .heart-logo .tooltip.tree-menu.active .tree-link,
+    .heart-logo .tooltip.tree-menu.active .feature-link,
+    .heart-logo .tooltip.tree-menu.active .tree-toggle,
+    .heart-logo .tooltip.tree-menu.active .documentation-item,
+    .heart-logo .tooltip.tree-menu.active .documentation-item a,
+    .heart-logo .tooltip.tree-menu.active a {
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+        text-fill-color: #ffffff !important;
+    }
+    
     /* Animation for modal appearance */
     @keyframes slideInFromTop {
         0% {
