@@ -338,9 +338,15 @@ a[href="https://hacka.re/"] {
 /* White text for tree menu ONLY in modern theme (light and dark modes) */
 html.theme-modern .heart-logo .tooltip.tree-menu,
 html.theme-modern .heart-logo .tooltip.tree-menu *,
+html.theme-modern .heart-logo .tooltip.tree-menu .documentation-item,
+html.theme-modern .heart-logo .tooltip.tree-menu .documentation-item a,
 html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu,
-html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu * {
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu *,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item a {
     color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    text-fill-color: #ffffff !important;
 }
 
 /* White text on hover for modern theme only */
@@ -3122,11 +3128,17 @@ html.theme-modern .heart-logo .tooltip.tree-menu div,
 html.theme-modern .heart-logo .tooltip.tree-menu span,
 html.theme-modern .heart-logo .tooltip.tree-menu a,
 html.theme-modern .heart-logo .tooltip.tree-menu *,
+html.theme-modern .heart-logo .tooltip.tree-menu .documentation-item,
+html.theme-modern .heart-logo .tooltip.tree-menu .documentation-item *,
+html.theme-modern .heart-logo .tooltip.tree-menu .documentation-item a,
 html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu,
 html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu div,
 html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu span,
 html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu a,
-html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu * {
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu *,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item *,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item a {
     color: #ffffff !important;
     -webkit-text-fill-color: #ffffff !important;
     text-fill-color: #ffffff !important;
