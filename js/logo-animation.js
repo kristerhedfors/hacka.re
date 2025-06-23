@@ -170,6 +170,12 @@ window.LogoAnimation = (function() {
                 // Add click event listeners to all related elements
                 heartLogo.addEventListener('click', toggleTooltip);
                 
+                // Add touch support for mobile devices
+                heartLogo.addEventListener('touchend', function(e) {
+                    e.preventDefault(); // Prevent double-tap zoom
+                    toggleTooltip(e);
+                });
+                
                 // Add click event listeners to title, subtitle, and serverless agency text if they exist
                 if (logoText) {
                     logoText.addEventListener('click', toggleTooltip);
