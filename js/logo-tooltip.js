@@ -115,7 +115,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const treeToggle = document.querySelector('.tree-toggle');
     if (treeToggle) {
         treeToggle.addEventListener('click', function(e) {
+            e.preventDefault();
             e.stopPropagation();
+            
             const target = this.getAttribute('data-target');
             const items = document.querySelectorAll('.' + target + '-item');
             const currentText = this.textContent;
@@ -128,8 +130,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     item.style.display = 'none';
                 });
             } else {
-                // Expand
-                this.textContent = currentText.replace('[+]', '[−]');
+                // Expand  
+                this.textContent = currentText.replace(/\[\+\]/, '[−]');
                 items.forEach(item => {
                     item.style.display = 'block';
                 });
