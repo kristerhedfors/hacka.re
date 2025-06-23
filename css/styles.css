@@ -107,7 +107,6 @@ header {
     background-color: var(--primary-color);
     padding: 1rem 2rem;
     display: flex;
-    justify-content: space-between;
     align-items: center;
     box-shadow: var(--box-shadow);
     color: var(--light-text);
@@ -225,11 +224,11 @@ a[href="https://hacka.re/"] {
 }
 
 .heart-logo {
-    font-size: 1.5rem;
+    font-size: 1.275rem; /* 15% smaller than 1.5rem */
     position: relative;
-    line-height: 0.8;
+    line-height: 1;
     display: inline-block;
-    margin-left: 5px;
+    margin: 0; /* Remove margin for icon button positioning */
     cursor: pointer;
     /* Apply sweeping gradient animation based on base color */
     animation: heartSweep 3s infinite alternate;
@@ -277,10 +276,10 @@ a[href="https://hacka.re/"] {
     text-align: left;
     border-radius: 6px;
     padding: 15px;
-    position: fixed; /* Use fixed position to stay at a fixed position on the screen */
+    position: absolute; /* Position relative to heart button */
     z-index: 1000;
-    top: 70px; /* Position below the header */
-    left: 10px; /* Fixed distance from the left edge of the screen */
+    top: 100%; /* Position below the heart button */
+    left: 0; /* Align with left edge of heart button */
     opacity: 0;
     transition: opacity 0.3s;
     font-size: 0.85rem;
@@ -291,6 +290,42 @@ a[href="https://hacka.re/"] {
     overflow-y: auto;
     max-height: 80vh;
     border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Tree menu styling inside heart tooltip */
+.heart-logo .tooltip.tree-menu {
+    background-color: var(--primary-color);
+    color: var(--light-text);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    font-family: 'Courier New', monospace;
+    min-width: 300px;
+}
+
+.heart-logo .tooltip.tree-menu .tree-content {
+    color: var(--light-text);
+}
+
+.heart-logo .tooltip.tree-menu .logo-line {
+    padding: 0.1rem 0;
+    color: var(--light-text);
+}
+
+.heart-logo .tooltip.tree-menu .tree-link {
+    color: var(--light-text);
+    text-decoration: none;
+}
+
+.heart-logo .tooltip.tree-menu .tree-link:hover {
+    text-decoration: underline;
+}
+
+.heart-logo .tooltip.tree-menu .feature-link {
+    color: var(--light-text);
+    cursor: pointer;
+}
+
+.heart-logo .tooltip.tree-menu .feature-link:hover {
+    text-decoration: underline;
 }
 
 /* Ensure text inside the heart logo tooltip is visible with maximum specificity */
@@ -574,12 +609,7 @@ body.firefox-focus .heart-logo {
     content: '';
 }
 
-/* Make heart 3x larger when collapsed */
-.logo-text-container.collapsed .heart-logo {
-    font-size: 3.3rem !important; /* 3x the original 1.1rem */
-    margin: 0;
-    transition: font-size 0.3s ease;
-}
+/* Heart logo is now in settings, no collapsed state needed */
 
 /* Scale up typing dots when heart is collapsed - reduced by 2.5x */
 .logo-text-container.collapsed .typing-dots {
@@ -729,7 +759,7 @@ body.firefox-focus .heart-logo {
     background-color: rgba(255, 255, 255, 0.1);
     padding: 0.5rem 1rem;
     border-radius: var(--border-radius);
-    margin: 0 1rem;
+    margin: 0 auto 0 2rem; /* Center with left margin to account for left icons */
     transition: var(--transition);
 }
 
