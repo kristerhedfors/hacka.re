@@ -30,14 +30,9 @@
     <div class="app-container">
         <header>
             <span class="beta-tag">BETA</span>
-            <div class="logo">
-                <!-- Hidden elements for JavaScript compatibility -->
-                <h1 class="logo-text default-title" style="display: none;">hacka.re<span class="heart-logo">♥&#xFE0E;</span></h1>
-                <p class="tagline default-subtitle" style="display: none;">Free, open, för hackare, av hackare.</p>
-                
-                <!-- New three-line layout -->
-                <div class="logo-text-container default-layout">
-                    <div class="logo-line"><span class="heart-logo">♥&#xFE0E;
+            <div class="settings">
+                <button id="heart-btn" class="icon-btn" title="hacka.re Info">
+                    <span class="heart-logo">♥&#xFE0E;
                         <!-- SVG fallback for Firefox Focus -->
                         <svg class="firefox-focus-fallback" width="16" height="6" viewBox="0 0 16 6" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 3; display: none;">
                             <circle cx="3" cy="3" r="1.5" fill="#22CC22" />
@@ -45,53 +40,28 @@
                             <circle cx="13" cy="3" r="1.5" fill="#22CC22" />
                         </svg>
                         <div class="typing-dots"></div>
-                        <div class="tooltip">
-                            <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 10px; border-radius: 8px;">
-                                <p><strong><span style="font-family: 'Courier New', monospace;">hacka.re</span></strong>: Privacy-focused chat client that stores API keys, conversations, and settings locally in your browser.</p>
-                            </div>
-                            <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 10px; border-radius: 8px;">
-                                <p><strong>Features</strong>: Serverless, offline-capable, MIT licensed. Create encrypted, password-protected GPTs with custom prompts.</p>
-                            </div>
-                            <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 10px; border-radius: 8px;">
-                                <p><strong>Get started</strong>: Configure with base URL (OpenAI-compatible) and API key.</p>
-                            </div>
-                            <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 0; border-radius: 8px;">
-                                <p style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;"><i class="fas fa-magic"></i> <strong>Vibe-Coded</strong> with Claude 3.7 Sonnet | <a href="about/index.html">About</a> | <a href="about/development.html">Development</a> | <a href="about/disclaimer.html">Disclaimer</a></p>
+                        <div class="tooltip tree-menu">
+                            <div class="tree-content">
+                                <div class="logo-line hacka-re-font">hacka.re: serverless agency</div>
+                                <div class="logo-line">│</div>
+                                <div class="logo-line"><span class="tree-toggle" data-target="documentation">├─[+] Documentation</span></div>
+                                <div class="logo-line documentation-item" style="display: none;">│  ├─ <a href="about/index.html" class="tree-link">About</a></div>
+                                <div class="logo-line documentation-item" style="display: none;">│  ├─ <a href="about/development.html" class="tree-link">Development</a></div>
+                                <div class="logo-line documentation-item" style="display: none;">│  ├─ <a href="about/architecture.html" class="tree-link">Architecture</a></div>
+                                <div class="logo-line documentation-item" style="display: none;">│  ├─ <a href="about/local-llm-toolbox.html" class="tree-link">Local LLM Toolbox</a></div>
+                                <div class="logo-line documentation-item" style="display: none;">│  ├─ <a href="about/research-report.html" class="tree-link">Research Report</a></div>
+                                <div class="logo-line documentation-item" style="display: none;">│  └─ <a href="about/disclaimer.html" class="tree-link">Disclaimer</a></div>
+                                <div class="logo-line">├─ <span class="feature-link" data-feature="copy-chat">Copy Chat Content</span></div>
+                                <div class="logo-line">├─ <span class="feature-link" data-feature="mcp-servers">Model Context Protocol (Experimental)</span></div>
+                                <div class="logo-line">├─ <span class="feature-link" data-feature="function-calling">Function Calling</span></div>
+                                <div class="logo-line">├─ <span class="feature-link" data-feature="system-prompts">System Prompts</span></div>
+                                <div class="logo-line">├─ <span class="feature-link" data-feature="share">Share Configuration</span></div>
+                                <div class="logo-line">├─ <span class="feature-link" data-feature="theme">Theme Toggle</span></div>
+                                <div class="logo-line">└─ <span class="feature-link" data-feature="settings">Settings</span></div>
                             </div>
                         </div>
-                    </span> hacka.re</div>
-                    <div class="logo-line"><span class="tree-toggle" data-target="documentation">├─[+] Documentation</span></div>
-                    <div class="logo-line documentation-item" style="display: none;">│  ├─ <a href="about/index.html" class="tree-link">About</a></div>
-                    <div class="logo-line documentation-item" style="display: none;">│  ├─ <a href="about/development.html" class="tree-link">Development</a></div>
-                    <div class="logo-line documentation-item" style="display: none;">│  ├─ <a href="about/disclaimer.html" class="tree-link">Disclaimer</a></div>
-                    <div class="logo-line documentation-item" style="display: none;">│  ├─ <a href="about/architecture.html" class="tree-link">Architecture</a></div>
-                    <div class="logo-line documentation-item" style="display: none;">│  ├─ <a href="about/research-report.html" class="tree-link">Research Report</a></div>
-                    <div class="logo-line documentation-item" style="display: none;">│  └─ <a href="about/local-llm-toolbox.html" class="tree-link">Local LLM Toolbox</a></div>
-                    <div class="logo-line">├─ <span class="feature-link" data-feature="copy-chat">Copy Chat Content</span></div>
-                    <div class="logo-line">├─ <span class="feature-link" data-feature="mcp-servers">Model Context Protocol (Experimental)</span></div>
-                    <div class="logo-line">├─ <span class="feature-link" data-feature="function-calling">Function Calling</span></div>
-                    <div class="logo-line">├─ <span class="feature-link" data-feature="system-prompts">System Prompts</span></div>
-                    <div class="logo-line">├─ <span class="feature-link" data-feature="share">Share</span></div>
-                    <div class="logo-line">├─ <span class="feature-link" data-feature="theme">Theme Toggle</span></div>
-                    <div class="logo-line">└─ <span class="feature-link" data-feature="settings">Settings</span></div>
-                </div>
-            </div>
-            <div class="model-info">
-                <div class="model-name-display"></div>
-                <div class="model-stats">
-                    <span class="model-context"></span>
-                    <span class="context-usage">
-                        <div class="usage-bar">
-                            <div class="usage-fill" style="width: 0%"></div>
-                        </div>
-                        <span class="usage-text">0%</span>
                     </span>
-                    <span class="token-speed">
-                        <span class="token-speed-text">0 t/s</span>
-                    </span>
-                </div>
-            </div>
-            <div class="settings">
+                </button>
                 <button id="copy-chat-btn" class="icon-btn" title="Copy Chat Content">
                     <i class="fas fa-copy"></i>
                 </button>
@@ -113,6 +83,21 @@
                 <button id="settings-btn" class="icon-btn" title="Settings">
                     <i class="fas fa-cog"></i>
                 </button>
+            </div>
+            <div class="model-info">
+                <div class="model-name-display"></div>
+                <div class="model-stats">
+                    <span class="model-context"></span>
+                    <span class="context-usage">
+                        <div class="usage-bar">
+                            <div class="usage-fill" style="width: 0%"></div>
+                        </div>
+                        <span class="usage-text">0%</span>
+                    </span>
+                    <span class="token-speed">
+                        <span class="token-speed-text">0 t/s</span>
+                    </span>
+                </div>
             </div>
         </header>
 
@@ -600,7 +585,7 @@ async function getCurrentTimeInBerlin() {
         </main>
 
         <footer>
-            <p><a href="https://hacka.re" target="_blank" style="font-family: 'Courier New', monospace;">hacka.re</a> | <a href="about/index.html">About</a> | <a href="about/disclaimer.html">Disclaimer</a></p>
+            <p><span id="site-identifier" style="font-family: 'Courier New', monospace;"></span> | <a href="about/index.html">About</a> | <a href="about/disclaimer.html">Disclaimer</a></p>
         </footer>
     </div>
 
@@ -740,7 +725,8 @@ async function getCurrentTimeInBerlin() {
     <script src="js/themes.js"></script>
     <script src="js/copy-code.js"></script>
     <script src="js/logo-animation.js"></script>
-    <script src="js/logo-tooltip.js"></script>
+    <script src="js/ascii-tree-menu.js"></script>
+    <!-- <script src="js/logo-tooltip-modal.js"></script> -->
     <script src="js/settings-tooltip.js"></script>
     <script src="js/function-tooltip.js"></script>
     <!-- <script src="js/default-functions-tooltip.js"></script> -->

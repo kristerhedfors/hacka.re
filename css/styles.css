@@ -107,7 +107,6 @@ header {
     background-color: var(--primary-color);
     padding: 1rem 2rem;
     display: flex;
-    justify-content: space-between;
     align-items: center;
     box-shadow: var(--box-shadow);
     color: var(--light-text);
@@ -225,11 +224,11 @@ a[href="https://hacka.re/"] {
 }
 
 .heart-logo {
-    font-size: 1.5rem;
+    font-size: 1.4rem; /* Closer to original 1.5rem size */
     position: relative;
-    line-height: 0.8;
+    line-height: 1;
     display: inline-block;
-    margin-left: 5px;
+    margin: 0; /* Remove margin for icon button positioning */
     cursor: pointer;
     /* Apply sweeping gradient animation based on base color */
     animation: heartSweep 3s infinite alternate;
@@ -277,10 +276,10 @@ a[href="https://hacka.re/"] {
     text-align: left;
     border-radius: 6px;
     padding: 15px;
-    position: fixed; /* Use fixed position to stay at a fixed position on the screen */
+    position: absolute; /* Position relative to heart button */
     z-index: 1000;
-    top: 70px; /* Position below the header */
-    left: 10px; /* Fixed distance from the left edge of the screen */
+    top: 100%; /* Position below the heart button */
+    left: 0; /* Align with left edge of heart button */
     opacity: 0;
     transition: opacity 0.3s;
     font-size: 0.85rem;
@@ -291,6 +290,121 @@ a[href="https://hacka.re/"] {
     overflow-y: auto;
     max-height: 80vh;
     border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Tree menu styling inside heart tooltip - ADAPTIVE BACKGROUND */
+.heart-logo .tooltip.tree-menu {
+    background-color: var(--bg-color) !important;
+    color: var(--text-color) !important;
+    border: 1px solid var(--border-color);
+    font-family: 'Courier New', monospace;
+    min-width: 300px;
+}
+
+/* Modern theme light mode uses primary color background */
+html.theme-modern:not(.dark-mode) .heart-logo .tooltip.tree-menu {
+    background-color: var(--primary-color) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Modern theme dark mode uses dark background */
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu {
+    background-color: var(--bg-color-secondary) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Dark mode (non-modern) should have dark background */
+html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu {
+    background-color: var(--dark-color) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Dark mode (non-modern) text should be white */
+html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu *,
+html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu .tree-link,
+html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu .feature-link,
+html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu .tree-toggle,
+html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu .documentation-item,
+html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu .documentation-item a,
+html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu a {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    text-fill-color: #ffffff !important;
+}
+
+.heart-logo .tooltip.tree-menu .tree-content {
+    color: var(--text-color);
+    line-height: 1.2;
+    padding: 0;
+    margin: 0;
+}
+
+.heart-logo .tooltip.tree-menu .logo-line {
+    padding: 0;
+    margin: 0;
+    line-height: 1.2;
+    color: var(--text-color);
+}
+
+/* Apply monospace font to ALL text elements - ADAPTIVE TEXT COLOR */
+.heart-logo .tooltip.tree-menu *,
+.heart-logo .tooltip.tree-menu .tree-link,
+.heart-logo .tooltip.tree-menu .feature-link,
+.heart-logo .tooltip.tree-menu .tree-toggle,
+.heart-logo .tooltip.tree-menu .documentation-item,
+.heart-logo .tooltip.tree-menu .documentation-item a,
+.heart-logo .tooltip.tree-menu a {
+    font-family: 'Courier New', monospace !important;
+    color: var(--text-color) !important;
+    -webkit-text-fill-color: var(--text-color) !important;
+    text-fill-color: var(--text-color) !important;
+    text-decoration: none !important;
+}
+
+.heart-logo .tooltip.tree-menu .tree-link {
+    text-decoration: none;
+}
+
+.heart-logo .tooltip.tree-menu .tree-link:hover,
+.heart-logo .tooltip.tree-menu .feature-link:hover,
+.heart-logo .tooltip.tree-menu a:hover {
+    text-decoration: underline;
+}
+
+/* White text for tree menu in modern theme (both light and dark have dark backgrounds) */
+html.theme-modern .heart-logo .tooltip.tree-menu,
+html.theme-modern .heart-logo .tooltip.tree-menu *,
+html.theme-modern .heart-logo .tooltip.tree-menu .documentation-item,
+html.theme-modern .heart-logo .tooltip.tree-menu .documentation-item a,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu *,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item a {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    text-fill-color: #ffffff !important;
+}
+
+/* White text on hover for modern theme (both modes) */
+html.theme-modern .heart-logo .tooltip.tree-menu .tree-link:hover,
+html.theme-modern .heart-logo .tooltip.tree-menu .feature-link:hover,
+html.theme-modern .heart-logo .tooltip.tree-menu .tree-toggle:hover,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .tree-link:hover,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .feature-link:hover,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .tree-toggle:hover {
+    color: #ffffff !important;
+    text-decoration: underline;
+}
+
+/* Override any gradient effects for tree-toggle in modern theme (both modes) */
+html.theme-modern .heart-logo .tooltip.tree-menu .tree-toggle,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .tree-toggle {
+    background: none !important;
+    -webkit-background-clip: initial !important;
+    background-clip: initial !important;
+    -webkit-text-fill-color: #ffffff !important;
+    text-fill-color: #ffffff !important;
 }
 
 /* Ensure text inside the heart logo tooltip is visible with maximum specificity */
@@ -307,8 +421,8 @@ a[href="https://hacka.re/"] {
     -webkit-background-clip: initial !important;
 }
 
-/* Style links in the heart logo tooltip to match footer links */
-.heart-logo .tooltip a:not([href="https://hacka.re/"]) {
+/* Style links in the heart logo tooltip to match footer links - BUT NOT tree menu links */
+.heart-logo .tooltip:not(.tree-menu) a:not([href="https://hacka.re/"]) {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
     color: var(--primary-color) !important;
     -webkit-text-fill-color: var(--primary-color) !important;
@@ -316,7 +430,7 @@ a[href="https://hacka.re/"] {
     text-decoration: none !important;
 }
 
-.heart-logo .tooltip a:not([href="https://hacka.re/"]):hover {
+.heart-logo .tooltip:not(.tree-menu) a:not([href="https://hacka.re/"]):hover {
     color: var(--primary-dark) !important;
     -webkit-text-fill-color: var(--primary-dark) !important;
     text-fill-color: var(--primary-dark) !important;
@@ -574,12 +688,7 @@ body.firefox-focus .heart-logo {
     content: '';
 }
 
-/* Make heart 3x larger when collapsed */
-.logo-text-container.collapsed .heart-logo {
-    font-size: 3.3rem !important; /* 3x the original 1.1rem */
-    margin: 0;
-    transition: font-size 0.3s ease;
-}
+/* Heart logo is now in settings, no collapsed state needed */
 
 /* Scale up typing dots when heart is collapsed - reduced by 2.5x */
 .logo-text-container.collapsed .typing-dots {
@@ -662,6 +771,43 @@ body.firefox-focus .heart-logo {
     transform: translate(-50%, -50%) !important;
 }
 
+/* Documentation items in the tree view */
+.documentation-item {
+    line-height: inherit;
+    transition: all 0.3s ease;
+}
+
+/* Make documentation links easier to click */
+.documentation-item a {
+    padding: 3px 5px;
+    margin: -3px -5px;
+    display: inline-block;
+    color: var(--link-color);
+    text-decoration: none;
+}
+
+.documentation-item a:hover {
+    color: var(--link-hover-color);
+    text-decoration: underline;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 3px;
+}
+
+/* Make tree toggle clickable */
+.tree-toggle {
+    cursor: pointer;
+    user-select: none;
+    padding: 2px 4px;
+    margin: -2px -4px;
+    border-radius: 3px;
+    display: inline-block;
+}
+
+.tree-toggle:hover {
+    color: var(--primary-color);
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
 /* Override keyframes for larger dots - reduced movement */
 @keyframes heartbeatLubLarge {
     0% { transform: translateY(0) translateZ(0); opacity: 0; background-color: #22CC22; }
@@ -692,7 +838,7 @@ body.firefox-focus .heart-logo {
     background-color: rgba(255, 255, 255, 0.1);
     padding: 0.5rem 1rem;
     border-radius: var(--border-radius);
-    margin: 0 1rem;
+    margin: 0 auto 0 2rem; /* Center with left margin to account for left icons */
     transition: var(--transition);
 }
 
@@ -800,6 +946,7 @@ body.firefox-focus .heart-logo {
 .settings {
     display: flex;
     align-items: center;
+    gap: 0.125rem;
 }
 
 /* Responsive adjustments for model info */
@@ -856,7 +1003,7 @@ body.firefox-focus .heart-logo {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0.5rem;
+    padding: 0.375rem;
     border-radius: 50%;
     transition: var(--transition);
 }
@@ -1640,6 +1787,118 @@ footer a:hover {
     display: flex;
     justify-content: flex-end;
     gap: 1rem;
+}
+
+/* Logo Tree Modal - ASCII Tree Only */
+.logo-tree-modal-content {
+    max-width: 500px;
+    width: 400px;
+    max-height: 80vh;
+    background-color: var(--dark-color);
+    color: white;
+    position: absolute;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.logo-tree-modal-body {
+    overflow-y: auto;
+    overflow-x: auto;
+    padding: 15px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.2;
+}
+
+.logo-tree-modal-body .logo-text-container {
+    display: block;
+    cursor: default;
+    padding: 0;
+    margin: 0;
+}
+
+.logo-tree-modal-body .logo-line {
+    white-space: pre;
+    line-height: 1.2;
+    margin: 0;
+    padding: 0;
+    color: white;
+}
+
+.logo-tree-modal-body .heart-logo {
+    color: #e74c3c;
+}
+
+.logo-tree-modal-body .tree-toggle {
+    cursor: pointer;
+    color: white;
+    padding: 2px 4px;
+    margin: -2px -4px;
+    border-radius: 3px;
+    display: inline-block;
+    user-select: none;
+}
+
+.logo-tree-modal-body .tree-toggle:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.logo-tree-modal-body .feature-link {
+    cursor: pointer;
+    color: #87ceeb;
+    text-decoration: none;
+}
+
+.logo-tree-modal-body .feature-link:hover {
+    color: #add8e6;
+    text-decoration: underline;
+}
+
+.logo-tree-modal-body .documentation-item {
+    line-height: 1.2;
+    padding: 0;
+    margin: 0;
+}
+
+.logo-tree-modal-body .documentation-item a {
+    color: #87ceeb;
+    text-decoration: none;
+    padding: 1px 3px;
+    margin: -1px -3px;
+    display: inline-block;
+    border-radius: 3px;
+}
+
+.logo-tree-modal-body .documentation-item a:hover {
+    color: #add8e6;
+    text-decoration: underline;
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Close button */
+.logo-tree-modal-content .modal-close {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.3em;
+    cursor: pointer;
+    padding: 4px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    z-index: 10;
+}
+
+.logo-tree-modal-content .modal-close:hover {
+    background-color: rgba(255, 255, 255, 0.15);
 }
 
 /* ===== Model Dropdown ===== */
@@ -2898,4 +3157,26 @@ footer a:hover {
     margin-top: 1.5rem;
     padding-top: 1rem;
     border-top: 1px solid #e5e7eb;
+}
+
+/* FINAL OVERRIDE - ASCII Tree Menu White Text in Modern Theme ONLY */
+html.theme-modern .heart-logo .tooltip.tree-menu,
+html.theme-modern .heart-logo .tooltip.tree-menu div,
+html.theme-modern .heart-logo .tooltip.tree-menu span,
+html.theme-modern .heart-logo .tooltip.tree-menu a,
+html.theme-modern .heart-logo .tooltip.tree-menu *,
+html.theme-modern .heart-logo .tooltip.tree-menu .documentation-item,
+html.theme-modern .heart-logo .tooltip.tree-menu .documentation-item *,
+html.theme-modern .heart-logo .tooltip.tree-menu .documentation-item a,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu div,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu span,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu a,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu *,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item *,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item a {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    text-fill-color: #ffffff !important;
 }

@@ -32,6 +32,9 @@ document.addEventListener('DOMContentLoaded', function() {
         updateTitleAndSubtitle();
     }
     
+    // Initialize site identifier in footer
+    updateSiteIdentifier();
+    
     // Add event listener for message input to update context usage
     const messageInput = document.getElementById('message-input');
     if (messageInput) {
@@ -265,4 +268,25 @@ window.updateTitleAndSubtitle = function(forceUpdate = false) {
     document.title = title + ' - ' + subtitle;
     
     console.log(`Title and subtitle updated to: ${title} - ${subtitle}`);
+}
+
+/**
+ * Update the site identifier in the footer based on current URL
+ * Shows "hacka.re" only when at https://hacka.re, otherwise shows full path
+ */
+window.updateSiteIdentifier = function() {
+    const siteIdentifierElement = document.getElementById('site-identifier');
+    if (!siteIdentifierElement) {
+        return;
+    }
+    
+    const currentUrl = window.location.href;
+    
+    if (currentUrl === 'https://hacka.re/' || currentUrl === 'https://hacka.re') {
+        // Show as link when at the actual hacka.re site
+        siteIdentifierElement.innerHTML = '<a href="https://hacka.re" target="_blank">hacka.re</a>';
+    } else {
+        // Show full path as clickable link for all other locations (file://, localhost, etc.)
+        siteIdentifierElement.innerHTML = `<a href="${currentUrl}" target="_blank">${currentUrl}</a>`;
+    }
 }
