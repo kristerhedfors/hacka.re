@@ -52,6 +52,11 @@ window.BaseUrlManager = (function() {
                         }
                     }
                     
+                    // Handle special case for llamafile - auto-set API key to "no-key"
+                    if (selectedProvider === 'llamafile' && elements.apiKeyUpdate) {
+                        elements.apiKeyUpdate.value = 'no-key';
+                    }
+                    
                     // Show model dropdown and reload button for all providers
                     if (elements.modelSelect && elements.modelSelect.parentNode) {
                         elements.modelSelect.parentNode.style.display = 'flex';
