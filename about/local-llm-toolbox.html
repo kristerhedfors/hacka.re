@@ -267,12 +267,12 @@
 <body>
     <div class="app-container" style="max-width: none; width: 100%;">
         <div class="beta-tag">BETA</div>
-        <header>
+        <header style="position: relative;">
             <div class="logo">
                 <h1 style="line-height: 1.2;"><a href="../index.html" style="text-decoration: none; color: inherit; font-family: 'Courier New', monospace;">hacka.re</a><span style="font-size: 70%;">: serverless agency</span><br><span style="font-size: 60%; font-weight: normal;">Free, open, för hackare, av hackare.</span></h1>
             </div>
-            <div class="settings">
-                <a href="../index.html" class="btn secondary-btn" style="margin-right: 10px; color: #ffffff; background-color: rgba(0, 0, 0, 0.2); border: 1px solid #ffffff;">Back to Chat</a>
+            <div class="settings" style="position: absolute; top: 0; right: 35px;">
+                <a href="../index.html" class="btn secondary-btn" style="color: #ffffff; background-color: rgba(0, 0, 0, 0.2); border: 1px solid #ffffff;">Back to Chat</a>
             </div>
         </header>
 
@@ -316,8 +316,8 @@
                     As of June 2025, the local LLM ecosystem has matured significantly. Five major projects dominate the landscape for running models on personal hardware without cloud dependencies:
                 </p>
                 <ul>
-                    <li><strong>Ollama</strong> (Ollama Inc.) — The CLI-first approach</li>
                     <li><strong>Llamafile</strong> (Mozilla) — Single-executable simplicity</li>
+                    <li><strong>Ollama</strong> (Ollama Inc.) — The CLI-first approach</li>
                     <li><strong>GPT4All</strong> (Nomic AI) — Desktop app + CLI</li>
                     <li><strong>LM Studio</strong> (Element Labs) — GUI-first with SDK</li>
                     <li><strong>LocalAI</strong> (Community) — Go-based OpenAI shim</li>
@@ -328,7 +328,44 @@
             </div>
 
             <div class="runtime-section">
-                <h2>1. Ollama — The Developer's Choice</h2>
+                <h2>1. Llamafile — The Developer's Choice</h2>
+                
+                <div class="quick-start">
+                    <h3>Quick-start</h3>
+                    <div class="code-block">
+                        <button class="copy-button" onclick="copyToClipboard(this)" title="Copy to clipboard">Copy</button>
+                        <pre>wget https://huggingface.co/Mozilla/Qwen3-4B-llamafile/resolve/main/Qwen_Qwen3-4B-Q4_K_M.llamafile
+chmod +x Qwen_Qwen3-4B-Q4_K_M.llamafile
+./Qwen_Qwen3-4B-Q4_K_M.llamafile</pre>
+                    </div>
+                    <p>Point hacka.re to <code>http://localhost:8080/v1/chat/completions</code> (no API key required)</p>
+                </div>
+
+                <div class="pros-cons">
+                    <div class="pros">
+                        <h4>Pros</h4>
+                        <ul>
+                            <li><strong>True portability</strong>: Single file includes model + runtime</li>
+                            <li><strong>No installation</strong>: Download and run, that's it</li>
+                            <li><strong>Cross-platform binary</strong>: Same file works everywhere</li>
+                            <li><strong>Mozilla backing</strong>: Quality engineering, security focus</li>
+                            <li><strong>Cosmopolitan libc</strong>: Innovative polyglot executables</li>
+                        </ul>
+                    </div>
+                    <div class="cons">
+                        <h4>Cons</h4>
+                        <ul>
+                            <li>Large file sizes (model bundled with runtime)</li>
+                            <li>One model per executable (no model switching)</li>
+                            <li>Limited model selection vs. other platforms</li>
+                            <li>macOS Gatekeeper warnings on first run</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="runtime-section">
+                <h2>2. Ollama — CLI-First Approach</h2>
                 
                 <div class="quick-start">
                     <h3>Quick-start</h3>
@@ -367,43 +404,6 @@ ollama run llama3.3:7b</pre>
                             <li>macOS installation requires admin privileges</li>
                             <li>Model format locked to Ollama's structure</li>
                             <li>Limited Windows GPU support (CUDA only)</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <div class="runtime-section">
-                <h2>2. Llamafile — Zero-Dependency Portability</h2>
-                
-                <div class="quick-start">
-                    <h3>Quick-start</h3>
-                    <div class="code-block">
-                        <button class="copy-button" onclick="copyToClipboard(this)" title="Copy to clipboard">Copy</button>
-                        <pre>wget https://huggingface.co/Mozilla/Qwen3-4B-llamafile/resolve/main/Qwen_Qwen3-4B-Q4_K_M.llamafile
-chmod +x Qwen_Qwen3-4B-Q4_K_M.llamafile
-./Qwen_Qwen3-4B-Q4_K_M.llamafile</pre>
-                    </div>
-                    <p>Point hacka.re to <code>http://localhost:8080/v1/chat/completions</code> (no API key required)</p>
-                </div>
-
-                <div class="pros-cons">
-                    <div class="pros">
-                        <h4>Pros</h4>
-                        <ul>
-                            <li><strong>True portability</strong>: Single file includes model + runtime</li>
-                            <li><strong>No installation</strong>: Download and run, that's it</li>
-                            <li><strong>Cross-platform binary</strong>: Same file works everywhere</li>
-                            <li><strong>Mozilla backing</strong>: Quality engineering, security focus</li>
-                            <li><strong>Cosmopolitan libc</strong>: Innovative polyglot executables</li>
-                        </ul>
-                    </div>
-                    <div class="cons">
-                        <h4>Cons</h4>
-                        <ul>
-                            <li>Large file sizes (model bundled with runtime)</li>
-                            <li>One model per executable (no model switching)</li>
-                            <li>Limited model selection vs. other platforms</li>
-                            <li>macOS Gatekeeper warnings on first run</li>
                         </ul>
                     </div>
                 </div>
@@ -537,21 +537,21 @@ localai run stablelm-3b-4q</pre>
                     <tbody>
                         <tr>
                             <td><strong>Windows</strong></td>
+                            <td>Llamafile</td>
                             <td>GPT4All</td>
-                            <td>LM Studio</td>
-                            <td>GPT4All installer avoids WSL; LM Studio for GUI preference</td>
+                            <td>Single executable simplicity; GPT4All for GUI preference</td>
                         </tr>
                         <tr>
                             <td><strong>macOS</strong></td>
+                            <td>Llamafile</td>
                             <td>Ollama</td>
-                            <td>LM Studio</td>
-                            <td>Ollama integrates perfectly; LM Studio for non-developers</td>
+                            <td>No installation needed; Ollama for model management</td>
                         </tr>
                         <tr>
                             <td><strong>Linux</strong></td>
+                            <td>Llamafile</td>
                             <td>Ollama</td>
-                            <td>LocalAI</td>
-                            <td>Both headless-friendly; choose per admin preference</td>
+                            <td>True portability; Ollama for server deployment</td>
                         </tr>
                     </tbody>
                 </table>
