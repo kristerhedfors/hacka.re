@@ -12,6 +12,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const modal = document.createElement('div');
     modal.id = 'logo-tree-modal';
     modal.className = 'modal';
+    modal.style.background = 'transparent';
+    modal.style.alignItems = 'flex-start';
+    modal.style.justifyContent = 'flex-start';
     modal.innerHTML = `
         <div class="modal-content logo-tree-modal-content">
             <button class="modal-close" id="logo-tree-modal-close">&times;</button>
@@ -46,6 +49,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Re-attach event handlers for the cloned elements
         attachModalHandlers();
         
+        // Position modal underneath the heart
+        positionModalUnderHeart();
+        
         // Show modal
         modal.style.display = 'block';
         document.body.classList.add('modal-open');
@@ -55,6 +61,28 @@ document.addEventListener('DOMContentLoaded', function() {
     function hideTreeModal() {
         modal.style.display = 'none';
         document.body.classList.remove('modal-open');
+    }
+    
+    // Function to position modal underneath the heart
+    function positionModalUnderHeart() {
+        const heartRect = heartLogo.getBoundingClientRect();
+        const modalContent = modal.querySelector('.logo-tree-modal-content');
+        
+        // Position the modal like a dropdown
+        modalContent.style.position = 'absolute';
+        modalContent.style.top = (heartRect.bottom + window.scrollY + 60) + 'px';
+        modalContent.style.left = (heartRect.left + window.scrollX) + 'px';
+        modalContent.style.transform = 'none';
+        modalContent.style.margin = '0';
+        
+        // Adjust positioning if modal would go off-screen
+        const modalRect = modalContent.getBoundingClientRect();
+        if (modalRect.right > window.innerWidth) {
+            modalContent.style.left = (window.innerWidth - modalRect.width - 10) + 'px';
+        }
+        if (modalRect.bottom > window.innerHeight) {
+            modalContent.style.top = (heartRect.top + window.scrollY - modalRect.height - 5) + 'px';
+        }
     }
     
     // Attach handlers to cloned tree elements in modal
@@ -116,11 +144,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Heart logo opens modal
+    // Heart logo toggles modal
     heartLogo.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        showTreeModal();
+        
+        if (modal.style.display === 'block') {
+            hideTreeModal();
+        } else {
+            showTreeModal();
+        }
     });
     
     // Header click area for upper-left corner

@@ -1682,12 +1682,15 @@ footer a:hover {
 /* Logo Tree Modal - ASCII Tree Only */
 .logo-tree-modal-content {
     max-width: 500px;
-    width: 90%;
+    width: 400px;
     max-height: 80vh;
     background-color: var(--dark-color);
     color: white;
-    position: relative;
+    position: absolute;
     padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .logo-tree-modal-body {
