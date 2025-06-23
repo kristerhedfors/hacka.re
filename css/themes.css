@@ -1375,3 +1375,13 @@ header .settings .icon-btn i,
     0% { background-position: 0% center; }
     100% { background-position: 100% center; }
 }
+
+/* ASCII Tree Menu White Text Override for Modern Theme */
+.theme-modern .heart-logo .tooltip.tree-menu,
+.theme-modern .heart-logo .tooltip.tree-menu *,
+.theme-modern.dark-mode .heart-logo .tooltip.tree-menu,
+.theme-modern.dark-mode .heart-logo .tooltip.tree-menu * {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    text-fill-color: #ffffff !important;
+}

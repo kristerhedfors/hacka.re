@@ -224,7 +224,7 @@ a[href="https://hacka.re/"] {
 }
 
 .heart-logo {
-    font-size: 1.275rem; /* 15% smaller than 1.5rem */
+    font-size: 1.4rem; /* Closer to original 1.5rem size */
     position: relative;
     line-height: 1;
     display: inline-block;
@@ -326,6 +326,35 @@ a[href="https://hacka.re/"] {
 
 .heart-logo .tooltip.tree-menu .feature-link:hover {
     text-decoration: underline;
+}
+
+/* White text for tree menu ONLY in modern theme (light and dark modes) */
+html.theme-modern .heart-logo .tooltip.tree-menu,
+html.theme-modern .heart-logo .tooltip.tree-menu *,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu * {
+    color: #ffffff !important;
+}
+
+/* White text on hover for modern theme only */
+html.theme-modern .heart-logo .tooltip.tree-menu .tree-link:hover,
+html.theme-modern .heart-logo .tooltip.tree-menu .feature-link:hover,
+html.theme-modern .heart-logo .tooltip.tree-menu .tree-toggle:hover,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .tree-link:hover,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .feature-link:hover,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .tree-toggle:hover {
+    color: #ffffff !important;
+    text-decoration: underline;
+}
+
+/* Override any gradient effects for tree-toggle in modern theme only */
+html.theme-modern .heart-logo .tooltip.tree-menu .tree-toggle,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .tree-toggle {
+    background: none !important;
+    -webkit-background-clip: initial !important;
+    background-clip: initial !important;
+    -webkit-text-fill-color: #ffffff !important;
+    text-fill-color: #ffffff !important;
 }
 
 /* Ensure text inside the heart logo tooltip is visible with maximum specificity */
@@ -3078,4 +3107,20 @@ footer a:hover {
     margin-top: 1.5rem;
     padding-top: 1rem;
     border-top: 1px solid #e5e7eb;
+}
+
+/* FINAL OVERRIDE - ASCII Tree Menu White Text in Modern Theme ONLY */
+html.theme-modern .heart-logo .tooltip.tree-menu,
+html.theme-modern .heart-logo .tooltip.tree-menu div,
+html.theme-modern .heart-logo .tooltip.tree-menu span,
+html.theme-modern .heart-logo .tooltip.tree-menu a,
+html.theme-modern .heart-logo .tooltip.tree-menu *,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu div,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu span,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu a,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu * {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    text-fill-color: #ffffff !important;
 }
