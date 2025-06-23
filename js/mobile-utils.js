@@ -78,7 +78,10 @@ window.MobileUtils = (function() {
         const touchElements = document.querySelectorAll('button, a, .icon-btn');
         touchElements.forEach(el => {
             // Skip the heart button and its children - they have complex tooltip logic
-            if (el.id === 'heart-btn' || el.closest('#heart-btn')) {
+            // Also skip elements inside the heart tooltip to avoid interference
+            if (el.id === 'heart-btn' || 
+                el.closest('#heart-btn') || 
+                el.closest('.heart-logo .tooltip')) {
                 return;
             }
             

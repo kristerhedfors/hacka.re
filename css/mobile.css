@@ -362,11 +362,11 @@
     
     /* Convert heart logo tooltip to modal-style on mobile */
     .heart-logo .tooltip.active {
-        /* Modal-like positioning */
+        /* Modal-like positioning - just below header */
         position: fixed !important;
-        top: 50% !important;
+        top: calc(var(--header-height, 80px) + 10px) !important;
         left: 50% !important;
-        transform: translate(-50%, -50%) !important;
+        transform: translateX(-50%) !important;
         width: 90vw !important;
         max-width: 400px !important;
         max-height: 80vh !important;
@@ -395,11 +395,11 @@
     @keyframes slideInFromTop {
         0% {
             opacity: 0;
-            transform: translate(-50%, -60%);
+            transform: translateX(-50%) translateY(-20px);
         }
         100% {
             opacity: 1;
-            transform: translate(-50%, -50%);
+            transform: translateX(-50%) translateY(0);
         }
     }
     
@@ -445,6 +445,26 @@
     
     .heart-logo .tooltip .close-button:hover {
         background-color: var(--border-color) !important;
+    }
+    
+    /* Make tree menu elements touch-friendly on mobile */
+    .heart-logo .tooltip .tree-toggle,
+    .heart-logo .tooltip .feature-link,
+    .heart-logo .tooltip .tree-link {
+        display: inline-block !important;
+        min-height: 44px !important;
+        line-height: 44px !important;
+        padding: 0 8px !important;
+        margin: 2px 0 !important;
+        cursor: pointer !important;
+        border-radius: 4px !important;
+        transition: background-color 0.2s ease !important;
+    }
+    
+    .heart-logo .tooltip .tree-toggle:active,
+    .heart-logo .tooltip .feature-link:active,
+    .heart-logo .tooltip .tree-link:active {
+        background-color: rgba(255, 255, 255, 0.1) !important;
     }
     
     /* For very small screens, make it even more compact */

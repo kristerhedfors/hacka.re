@@ -34,6 +34,23 @@ class ASCIITreeMenu {
             }
         });
 
+        // Add touch support for mobile devices
+        this.container.addEventListener('touchend', (e) => {
+            e.preventDefault(); // Prevent double-tap zoom
+            
+            if (e.target.classList.contains('tree-toggle')) {
+                this.handleToggle(e.target);
+            } else if (e.target.classList.contains('feature-link')) {
+                this.handleFeatureLink(e.target);
+            } else if (e.target.tagName === 'A' || e.target.closest('a')) {
+                // Handle regular links
+                const link = e.target.tagName === 'A' ? e.target : e.target.closest('a');
+                if (link.href) {
+                    window.open(link.href, link.target || '_self');
+                }
+            }
+        });
+
         console.log('ASCII Tree Menu: Events bound');
     }
 
