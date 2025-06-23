@@ -360,30 +360,99 @@
         margin-left: 0;
     }
     
-    /* Optimize heart logo tooltip for mobile */
-    .heart-logo .tooltip {
-        width: 320px;
-        max-width: 95vw;
-        font-size: 0.9rem;
-        line-height: 1.4;
-        /* Fix positioning on mobile - center it properly */
+    /* Convert heart logo tooltip to modal-style on mobile */
+    .heart-logo .tooltip.active {
+        /* Modal-like positioning */
+        position: fixed !important;
+        top: 50% !important;
         left: 50% !important;
-        right: auto !important;
-        transform: translateX(-50%);
-        top: 100%;
-        margin-top: 8px;
-        /* Ensure it stays within viewport */
-        max-height: 70vh;
-        overflow-y: auto;
+        transform: translate(-50%, -50%) !important;
+        width: 90vw !important;
+        max-width: 400px !important;
+        max-height: 80vh !important;
+        z-index: 1001 !important;
+        
+        /* Modal-like styling */
+        background-color: var(--bg-color) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 8px !important;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+        padding: 1.5rem !important;
+        
+        /* Scrolling for long content */
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        
+        /* Typography */
+        font-size: 0.9rem !important;
+        line-height: 1.4 !important;
+        
+        /* Animation for smooth appearance */
+        animation: slideInFromTop 0.3s ease-out !important;
+    }
+    
+    /* Animation for modal appearance */
+    @keyframes slideInFromTop {
+        0% {
+            opacity: 0;
+            transform: translate(-50%, -60%);
+        }
+        100% {
+            opacity: 1;
+            transform: translate(-50%, -50%);
+        }
+    }
+    
+    /* Add backdrop overlay for mobile heart tooltip */
+    .heart-logo .tooltip.active::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: -1;
+        backdrop-filter: blur(2px);
+    }
+    
+    /* Prevent body scroll when heart tooltip modal is active */
+    body.heart-modal-open {
+        overflow: hidden !important;
+        position: fixed !important;
+        width: 100% !important;
+    }
+    
+    /* Add close button styling for mobile modal */
+    .heart-logo .tooltip .close-button {
+        position: absolute !important;
+        top: 10px !important;
+        right: 15px !important;
+        background: none !important;
+        border: none !important;
+        font-size: 1.5rem !important;
+        color: var(--text-color) !important;
+        cursor: pointer !important;
+        z-index: 1002 !important;
+        width: 30px !important;
+        height: 30px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 50% !important;
+        background-color: var(--bg-color-secondary) !important;
+    }
+    
+    .heart-logo .tooltip .close-button:hover {
+        background-color: var(--border-color) !important;
     }
     
     /* For very small screens, make it even more compact */
     @media (max-width: 380px) {
-        .heart-logo .tooltip {
-            width: 300px;
-            max-width: 98vw;
-            font-size: 0.85rem;
-            padding: 12px;
+        .heart-logo .tooltip.active {
+            width: 95vw !important;
+            padding: 1.25rem !important;
+            font-size: 0.85rem !important;
         }
     }
     

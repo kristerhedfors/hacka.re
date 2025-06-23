@@ -156,9 +156,15 @@ window.LogoAnimation = (function() {
                     if (tooltip.classList.contains('active')) {
                         tooltip.classList.remove('active');
                         tooltipActive = false;
+                        // Remove body class for mobile modal behavior
+                        document.body.classList.remove('heart-modal-open');
                     } else {
                         tooltip.classList.add('active');
                         tooltipActive = true;
+                        // Add body class for mobile modal behavior
+                        if (window.MobileUtils && window.MobileUtils.isMobileDevice()) {
+                            document.body.classList.add('heart-modal-open');
+                        }
                     }
                 }
                 
@@ -199,6 +205,8 @@ window.LogoAnimation = (function() {
                     if (tooltipActive) {
                         tooltip.classList.remove('active');
                         tooltipActive = false;
+                        // Remove body class for mobile modal behavior
+                        document.body.classList.remove('heart-modal-open');
                     }
                 });
                 
