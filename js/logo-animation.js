@@ -156,14 +156,31 @@ window.LogoAnimation = (function() {
                     if (tooltip.classList.contains('active')) {
                         tooltip.classList.remove('active');
                         tooltipActive = false;
+                        // Remove body class for mobile modal behavior
+                        document.body.classList.remove('heart-modal-open');
                     } else {
                         tooltip.classList.add('active');
                         tooltipActive = true;
+                        // Add body class for mobile modal behavior
+                        if (window.MobileUtils && window.MobileUtils.isMobileDevice()) {
+                            document.body.classList.add('heart-modal-open');
+                        }
                     }
                 }
                 
+                // Prevent clicks inside tooltip from closing it
+                tooltip.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+                
                 // Add click event listeners to all related elements
                 heartLogo.addEventListener('click', toggleTooltip);
+                
+                // Add touch support for mobile devices
+                heartLogo.addEventListener('touchend', function(e) {
+                    e.preventDefault(); // Prevent double-tap zoom
+                    toggleTooltip(e);
+                });
                 
                 // Add click event listeners to title, subtitle, and serverless agency text if they exist
                 if (logoText) {
@@ -188,6 +205,8 @@ window.LogoAnimation = (function() {
                     if (tooltipActive) {
                         tooltip.classList.remove('active');
                         tooltipActive = false;
+                        // Remove body class for mobile modal behavior
+                        document.body.classList.remove('heart-modal-open');
                     }
                 });
                 
@@ -375,3 +394,5 @@ window.LogoAnimation = (function() {
 
 // Initialize the logo animation
 LogoAnimation.init();
+
+// Tree menu functionality is now handled by ascii-tree-menu.js library
