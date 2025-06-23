@@ -30,9 +30,7 @@ echo "Copying essential files..."
 
 # Main files
 cp index.html "$TEMP_DIR/"
-cp README.md "$TEMP_DIR/"
 cp LICENSE "$TEMP_DIR/"
-cp CLAUDE.md "$TEMP_DIR/"
 
 # JavaScript files
 mkdir -p "$TEMP_DIR/js"
