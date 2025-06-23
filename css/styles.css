@@ -292,17 +292,49 @@ a[href="https://hacka.re/"] {
     border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-/* Tree menu styling inside heart tooltip - FIXED VERSION */
+/* Tree menu styling inside heart tooltip - ADAPTIVE BACKGROUND */
 .heart-logo .tooltip.tree-menu {
-    background-color: var(--primary-color);
-    color: var(--light-text);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background-color: var(--bg-color) !important;
+    color: var(--text-color) !important;
+    border: 1px solid var(--border-color);
     font-family: 'Courier New', monospace;
     min-width: 300px;
 }
 
+/* Modern theme light mode uses primary color background */
+html.theme-modern:not(.dark-mode) .heart-logo .tooltip.tree-menu {
+    background-color: var(--primary-color) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Modern theme dark mode uses dark background */
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu {
+    background-color: var(--bg-color-secondary) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Dark mode (non-modern) should have dark background */
+html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu {
+    background-color: var(--dark-color) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Dark mode (non-modern) text should be white */
+html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu *,
+html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu .tree-link,
+html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu .feature-link,
+html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu .tree-toggle,
+html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu .documentation-item,
+html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu .documentation-item a,
+html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu a {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    text-fill-color: #ffffff !important;
+}
+
 .heart-logo .tooltip.tree-menu .tree-content {
-    color: var(--light-text);
+    color: var(--text-color);
     line-height: 1.2;
     padding: 0;
     margin: 0;
@@ -312,18 +344,22 @@ a[href="https://hacka.re/"] {
     padding: 0;
     margin: 0;
     line-height: 1.2;
-    color: var(--light-text);
+    color: var(--text-color);
 }
 
-/* Apply monospace font to ALL text elements */
+/* Apply monospace font to ALL text elements - ADAPTIVE TEXT COLOR */
 .heart-logo .tooltip.tree-menu *,
 .heart-logo .tooltip.tree-menu .tree-link,
 .heart-logo .tooltip.tree-menu .feature-link,
 .heart-logo .tooltip.tree-menu .tree-toggle,
 .heart-logo .tooltip.tree-menu .documentation-item,
-.heart-logo .tooltip.tree-menu .documentation-item a {
+.heart-logo .tooltip.tree-menu .documentation-item a,
+.heart-logo .tooltip.tree-menu a {
     font-family: 'Courier New', monospace !important;
-    color: var(--light-text) !important;
+    color: var(--text-color) !important;
+    -webkit-text-fill-color: var(--text-color) !important;
+    text-fill-color: var(--text-color) !important;
+    text-decoration: none !important;
 }
 
 .heart-logo .tooltip.tree-menu .tree-link {
@@ -331,11 +367,12 @@ a[href="https://hacka.re/"] {
 }
 
 .heart-logo .tooltip.tree-menu .tree-link:hover,
-.heart-logo .tooltip.tree-menu .feature-link:hover {
+.heart-logo .tooltip.tree-menu .feature-link:hover,
+.heart-logo .tooltip.tree-menu a:hover {
     text-decoration: underline;
 }
 
-/* White text for tree menu ONLY in modern theme (light and dark modes) */
+/* White text for tree menu in modern theme (both light and dark have dark backgrounds) */
 html.theme-modern .heart-logo .tooltip.tree-menu,
 html.theme-modern .heart-logo .tooltip.tree-menu *,
 html.theme-modern .heart-logo .tooltip.tree-menu .documentation-item,
@@ -349,7 +386,7 @@ html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item a
     text-fill-color: #ffffff !important;
 }
 
-/* White text on hover for modern theme only */
+/* White text on hover for modern theme (both modes) */
 html.theme-modern .heart-logo .tooltip.tree-menu .tree-link:hover,
 html.theme-modern .heart-logo .tooltip.tree-menu .feature-link:hover,
 html.theme-modern .heart-logo .tooltip.tree-menu .tree-toggle:hover,
@@ -360,7 +397,7 @@ html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .tree-toggle:hover {
     text-decoration: underline;
 }
 
-/* Override any gradient effects for tree-toggle in modern theme only */
+/* Override any gradient effects for tree-toggle in modern theme (both modes) */
 html.theme-modern .heart-logo .tooltip.tree-menu .tree-toggle,
 html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .tree-toggle {
     background: none !important;
@@ -384,8 +421,8 @@ html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .tree-toggle {
     -webkit-background-clip: initial !important;
 }
 
-/* Style links in the heart logo tooltip to match footer links */
-.heart-logo .tooltip a:not([href="https://hacka.re/"]) {
+/* Style links in the heart logo tooltip to match footer links - BUT NOT tree menu links */
+.heart-logo .tooltip:not(.tree-menu) a:not([href="https://hacka.re/"]) {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
     color: var(--primary-color) !important;
     -webkit-text-fill-color: var(--primary-color) !important;
@@ -393,7 +430,7 @@ html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .tree-toggle {
     text-decoration: none !important;
 }
 
-.heart-logo .tooltip a:not([href="https://hacka.re/"]):hover {
+.heart-logo .tooltip:not(.tree-menu) a:not([href="https://hacka.re/"]):hover {
     color: var(--primary-dark) !important;
     -webkit-text-fill-color: var(--primary-dark) !important;
     text-fill-color: var(--primary-dark) !important;

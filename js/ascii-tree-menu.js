@@ -44,15 +44,26 @@ class ASCIITreeMenu {
             }
         });
 
-        // Add touch support for mobile devices (minimal approach)
+        // Add touch support for mobile devices
         this.container.addEventListener('touchend', (e) => {
-            // Only handle touch for specific elements, don't preventDefault globally
+            // Handle specific elements and prevent event bubbling
             if (e.target.classList.contains('tree-toggle')) {
+                e.preventDefault();
+                e.stopPropagation();
                 this.handleToggle(e.target);
             } else if (e.target.classList.contains('feature-link')) {
+                e.preventDefault();
+                e.stopPropagation();
                 this.handleFeatureLink(e.target);
+            } else if (e.target.tagName === 'A' || e.target.closest('a')) {
+                // For links, prevent bubbling but allow normal navigation
+                e.stopPropagation();
+                const link = e.target.tagName === 'A' ? e.target : e.target.closest('a');
+                if (link.href) {
+                    // Manually navigate to prevent modal close
+                    window.location.href = link.href;
+                }
             }
-            // Let links work naturally - no preventDefault
         });
 
         console.log('ASCII Tree Menu: Events bound');
