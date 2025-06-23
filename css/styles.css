@@ -668,6 +668,37 @@ body.firefox-focus .heart-logo {
     transition: all 0.3s ease;
 }
 
+/* Make documentation links easier to click */
+.documentation-item a {
+    padding: 3px 5px;
+    margin: -3px -5px;
+    display: inline-block;
+    color: var(--link-color);
+    text-decoration: none;
+}
+
+.documentation-item a:hover {
+    color: var(--link-hover-color);
+    text-decoration: underline;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 3px;
+}
+
+/* Make tree toggle clickable */
+.tree-toggle {
+    cursor: pointer;
+    user-select: none;
+    padding: 2px 4px;
+    margin: -2px -4px;
+    border-radius: 3px;
+    display: inline-block;
+}
+
+.tree-toggle:hover {
+    color: var(--primary-color);
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
 /* Override keyframes for larger dots - reduced movement */
 @keyframes heartbeatLubLarge {
     0% { transform: translateY(0) translateZ(0); opacity: 0; background-color: #22CC22; }
@@ -1646,6 +1677,115 @@ footer a:hover {
     display: flex;
     justify-content: flex-end;
     gap: 1rem;
+}
+
+/* Logo Tree Modal - ASCII Tree Only */
+.logo-tree-modal-content {
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    background-color: var(--dark-color);
+    color: white;
+    position: relative;
+    padding: 0;
+}
+
+.logo-tree-modal-body {
+    overflow-y: auto;
+    overflow-x: auto;
+    padding: 15px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.2;
+}
+
+.logo-tree-modal-body .logo-text-container {
+    display: block;
+    cursor: default;
+    padding: 0;
+    margin: 0;
+}
+
+.logo-tree-modal-body .logo-line {
+    white-space: pre;
+    line-height: 1.2;
+    margin: 0;
+    padding: 0;
+    color: white;
+}
+
+.logo-tree-modal-body .heart-logo {
+    color: #e74c3c;
+}
+
+.logo-tree-modal-body .tree-toggle {
+    cursor: pointer;
+    color: white;
+    padding: 2px 4px;
+    margin: -2px -4px;
+    border-radius: 3px;
+    display: inline-block;
+    user-select: none;
+}
+
+.logo-tree-modal-body .tree-toggle:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.logo-tree-modal-body .feature-link {
+    cursor: pointer;
+    color: #87ceeb;
+    text-decoration: none;
+}
+
+.logo-tree-modal-body .feature-link:hover {
+    color: #add8e6;
+    text-decoration: underline;
+}
+
+.logo-tree-modal-body .documentation-item {
+    line-height: 1.2;
+    padding: 0;
+    margin: 0;
+}
+
+.logo-tree-modal-body .documentation-item a {
+    color: #87ceeb;
+    text-decoration: none;
+    padding: 1px 3px;
+    margin: -1px -3px;
+    display: inline-block;
+    border-radius: 3px;
+}
+
+.logo-tree-modal-body .documentation-item a:hover {
+    color: #add8e6;
+    text-decoration: underline;
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Close button */
+.logo-tree-modal-content .modal-close {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.3em;
+    cursor: pointer;
+    padding: 4px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    z-index: 10;
+}
+
+.logo-tree-modal-content .modal-close:hover {
+    background-color: rgba(255, 255, 255, 0.15);
 }
 
 /* ===== Model Dropdown ===== */
