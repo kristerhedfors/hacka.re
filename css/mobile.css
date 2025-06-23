@@ -16,8 +16,9 @@
     
     /* Ensure consistent line spacing for documentation items on mobile */
     .logo-line.documentation-item {
-        line-height: 1.4;
-        padding: 0.15rem 0;
+        line-height: 1.5;
+        padding: 0.2rem 0;
+        margin: 0;
     }
     
     /* Logo text container adjustments for mobile */
@@ -218,11 +219,6 @@
         padding: 0.5rem;
     }
     
-    /* Fix line spacing for documentation items on mobile */
-    .logo-line.documentation-item {
-        line-height: 1.5;
-        padding: 0.2rem 0;
-    }
     
     .model-name {
         font-size: 1rem;
