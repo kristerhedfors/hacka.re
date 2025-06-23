@@ -14,8 +14,7 @@ cd "$PROJECT_ROOT"
 OUTPUT_DIR="$PROJECT_ROOT/releases"
 mkdir -p "$OUTPUT_DIR"
 
-TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
-ZIP_FILE="$OUTPUT_DIR/hacka-re-${TIMESTAMP}.zip"
+ZIP_FILE="$OUTPUT_DIR/hacka-re-latest.zip"
 
 echo "Building hacka.re release ZIP..."
 echo "Project root: $PROJECT_ROOT"
@@ -129,7 +128,5 @@ echo "   2. Users extract and open index.html"
 echo "   3. No server setup required!"
 echo ""
 
-# Create latest symlink
-cd "$OUTPUT_DIR"
-ln -sf "$(basename "$ZIP_FILE")" "hacka-re-latest.zip"
-echo "📎 Latest release symlink created: releases/hacka-re-latest.zip"
+# Note: File is already named hacka-re-latest.zip
+echo "📎 Latest release file: releases/hacka-re-latest.zip"
