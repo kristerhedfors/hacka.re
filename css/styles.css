@@ -292,7 +292,7 @@ a[href="https://hacka.re/"] {
     border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-/* Tree menu styling inside heart tooltip */
+/* Tree menu styling inside heart tooltip - FIXED VERSION */
 .heart-logo .tooltip.tree-menu {
     background-color: var(--primary-color);
     color: var(--light-text);
@@ -303,27 +303,34 @@ a[href="https://hacka.re/"] {
 
 .heart-logo .tooltip.tree-menu .tree-content {
     color: var(--light-text);
+    line-height: 1.2;
+    padding: 0;
+    margin: 0;
 }
 
 .heart-logo .tooltip.tree-menu .logo-line {
-    padding: 0.1rem 0;
+    padding: 0;
+    margin: 0;
+    line-height: 1.2;
     color: var(--light-text);
+}
+
+/* Apply monospace font to ALL text elements */
+.heart-logo .tooltip.tree-menu *,
+.heart-logo .tooltip.tree-menu .tree-link,
+.heart-logo .tooltip.tree-menu .feature-link,
+.heart-logo .tooltip.tree-menu .tree-toggle,
+.heart-logo .tooltip.tree-menu .documentation-item,
+.heart-logo .tooltip.tree-menu .documentation-item a {
+    font-family: 'Courier New', monospace !important;
+    color: var(--light-text) !important;
 }
 
 .heart-logo .tooltip.tree-menu .tree-link {
-    color: var(--light-text);
     text-decoration: none;
 }
 
-.heart-logo .tooltip.tree-menu .tree-link:hover {
-    text-decoration: underline;
-}
-
-.heart-logo .tooltip.tree-menu .feature-link {
-    color: var(--light-text);
-    cursor: pointer;
-}
-
+.heart-logo .tooltip.tree-menu .tree-link:hover,
 .heart-logo .tooltip.tree-menu .feature-link:hover {
     text-decoration: underline;
 }
