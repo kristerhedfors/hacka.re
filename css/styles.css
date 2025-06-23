@@ -662,6 +662,12 @@ body.firefox-focus .heart-logo {
     transform: translate(-50%, -50%) !important;
 }
 
+/* Documentation items in the tree view */
+.documentation-item {
+    line-height: inherit;
+    transition: all 0.3s ease;
+}
+
 /* Override keyframes for larger dots - reduced movement */
 @keyframes heartbeatLubLarge {
     0% { transform: translateY(0) translateZ(0); opacity: 0; background-color: #22CC22; }
