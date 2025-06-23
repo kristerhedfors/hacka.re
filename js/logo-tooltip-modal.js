@@ -49,6 +49,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Re-attach event handlers for the cloned elements
         attachModalHandlers();
         
+        // Ensure Documentation section is collapsed by default
+        ensureDocumentationCollapsed();
+        
         // Position modal underneath the heart
         positionModalUnderHeart();
         
@@ -82,6 +85,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         if (modalRect.bottom > window.innerHeight) {
             modalContent.style.top = (heartRect.top + window.scrollY - modalRect.height - 5) + 'px';
+        }
+    }
+    
+    // Function to ensure Documentation section is collapsed by default
+    function ensureDocumentationCollapsed() {
+        const modalTreeToggle = modalBody.querySelector('.tree-toggle');
+        if (modalTreeToggle) {
+            // Force Documentation section to be collapsed
+            const currentText = modalTreeToggle.textContent;
+            modalTreeToggle.textContent = currentText.replace(/\[[\−\-]\]/, '[+]');
+            
+            // Hide all documentation items
+            const items = modalBody.querySelectorAll('.documentation-item');
+            items.forEach(item => {
+                item.style.display = 'none';
+            });
         }
     }
     
