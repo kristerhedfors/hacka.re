@@ -23,6 +23,7 @@ class ASCIITreeMenu {
         // Handle tree toggle clicks
         this.container.addEventListener('click', (e) => {
             if (e.target.classList.contains('tree-toggle')) {
+                e.stopPropagation(); // Prevent document click handler
                 this.handleToggle(e.target);
             }
         });
@@ -30,27 +31,37 @@ class ASCIITreeMenu {
         // Handle feature link clicks
         this.container.addEventListener('click', (e) => {
             if (e.target.classList.contains('feature-link')) {
+                e.stopPropagation(); // Prevent document click handler
                 this.handleFeatureLink(e.target);
+            }
+        });
+
+        // Handle regular link clicks
+        this.container.addEventListener('click', (e) => {
+            if (e.target.tagName === 'A' || e.target.closest('a')) {
+                e.stopPropagation(); // Prevent document click handler
+                // Let the browser handle the link naturally
             }
         });
 
         // Add touch support for mobile devices
         this.container.addEventListener('touchend', (e) => {
-            // Only prevent default for non-link elements to avoid double-tap zoom
-            if (!e.target.closest('a')) {
-                e.preventDefault();
-            }
+            // Prevent double-tap zoom but allow normal behavior
+            e.preventDefault();
             
             if (e.target.classList.contains('tree-toggle')) {
-                e.preventDefault(); // Always prevent for toggles
+                e.stopPropagation(); // Prevent document click handler
                 this.handleToggle(e.target);
             } else if (e.target.classList.contains('feature-link')) {
-                e.preventDefault(); // Always prevent for feature links
+                e.stopPropagation(); // Prevent document click handler
                 this.handleFeatureLink(e.target);
             } else if (e.target.tagName === 'A' || e.target.closest('a')) {
-                // For regular links, let the browser handle navigation naturally
-                // Don't prevent default, let the link work normally
-                console.log('ASCII Tree Menu: Link touched, allowing default navigation');
+                e.stopPropagation(); // Prevent document click handler
+                // Handle regular links manually
+                const link = e.target.tagName === 'A' ? e.target : e.target.closest('a');
+                if (link.href) {
+                    window.open(link.href, link.target || '_self');
+                }
             }
         });
 
