@@ -376,6 +376,13 @@ window.MCPUIManager = (function() {
      */
     function showModal() {
         if (elements.mcpModal) {
+            // Close heart tooltip if open
+            const heartTooltip = document.querySelector('.heart-logo .tooltip');
+            if (heartTooltip && heartTooltip.classList.contains('active')) {
+                heartTooltip.classList.remove('active');
+                document.body.classList.remove('heart-modal-open');
+            }
+            
             elements.mcpModal.classList.add('active');
         }
     }

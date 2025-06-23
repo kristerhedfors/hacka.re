@@ -36,18 +36,21 @@ class ASCIITreeMenu {
 
         // Add touch support for mobile devices
         this.container.addEventListener('touchend', (e) => {
-            e.preventDefault(); // Prevent double-tap zoom
+            // Only prevent default for non-link elements to avoid double-tap zoom
+            if (!e.target.closest('a')) {
+                e.preventDefault();
+            }
             
             if (e.target.classList.contains('tree-toggle')) {
+                e.preventDefault(); // Always prevent for toggles
                 this.handleToggle(e.target);
             } else if (e.target.classList.contains('feature-link')) {
+                e.preventDefault(); // Always prevent for feature links
                 this.handleFeatureLink(e.target);
             } else if (e.target.tagName === 'A' || e.target.closest('a')) {
-                // Handle regular links
-                const link = e.target.tagName === 'A' ? e.target : e.target.closest('a');
-                if (link.href) {
-                    window.open(link.href, link.target || '_self');
-                }
+                // For regular links, let the browser handle navigation naturally
+                // Don't prevent default, let the link work normally
+                console.log('ASCII Tree Menu: Link touched, allowing default navigation');
             }
         });
 
