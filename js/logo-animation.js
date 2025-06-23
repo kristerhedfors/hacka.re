@@ -376,30 +376,34 @@ window.LogoAnimation = (function() {
 // Initialize the logo animation
 LogoAnimation.init();
 
-// Handle tree menu functionality
+// Handle tree menu functionality - SIMPLIFIED VERSION
 document.addEventListener('DOMContentLoaded', function() {
     // Tree toggle functionality
     document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('tree-toggle')) {
+        // Direct check for tree-toggle class
+        if (e.target && e.target.classList && e.target.classList.contains('tree-toggle')) {
             e.preventDefault();
             e.stopPropagation();
             
             const target = e.target.getAttribute('data-target');
             const tooltip = e.target.closest('.tooltip');
-            const items = tooltip.querySelectorAll('.' + target + '-item');
-            const currentText = e.target.textContent;
-            const isExpanded = currentText.includes('[−]') || currentText.includes('[-]');
             
-            if (isExpanded) {
-                e.target.textContent = currentText.replace(/\[[\−\-]\]/, '[+]');
-                items.forEach(item => {
-                    item.style.display = 'none';
-                });
-            } else {
-                e.target.textContent = currentText.replace('[+]', '[−]');
-                items.forEach(item => {
-                    item.style.display = 'block';
-                });
+            if (tooltip && target) {
+                const items = tooltip.querySelectorAll('.' + target + '-item');
+                const currentText = e.target.textContent;
+                const isExpanded = currentText.includes('[−]') || currentText.includes('[-]');
+                
+                if (isExpanded) {
+                    e.target.textContent = currentText.replace(/\[[\−\-]\]/, '[+]');
+                    items.forEach(item => {
+                        item.style.display = 'none';
+                    });
+                } else {
+                    e.target.textContent = currentText.replace('[+]', '[−]');
+                    items.forEach(item => {
+                        item.style.display = 'block';
+                    });
+                }
             }
         }
     });
