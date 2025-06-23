@@ -359,6 +359,24 @@
         right: 0;
         margin-left: 0;
     }
+    
+    /* Optimize heart logo tooltip for mobile */
+    .heart-logo .tooltip {
+        width: 280px;
+        max-width: 90vw;
+        left: auto;
+        right: 0;
+        margin-left: 0;
+        font-size: 0.9rem;
+        line-height: 1.4;
+    }
+    
+    /* Ensure heart button is touch-friendly */
+    #heart-btn {
+        min-width: 44px;
+        min-height: 44px;
+        padding: 0.5rem;
+    }
 }
 
 /* Fix for iOS Safari viewport height issues */

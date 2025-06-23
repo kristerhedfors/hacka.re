@@ -77,6 +77,11 @@ window.MobileUtils = (function() {
         // Fix for double-tap zoom on buttons and links
         const touchElements = document.querySelectorAll('button, a, .icon-btn');
         touchElements.forEach(el => {
+            // Skip the heart button and its children - they have complex tooltip logic
+            if (el.id === 'heart-btn' || el.closest('#heart-btn')) {
+                return;
+            }
+            
             el.addEventListener('touchend', function(e) {
                 // Prevent zoom on double-tap
                 e.preventDefault();
