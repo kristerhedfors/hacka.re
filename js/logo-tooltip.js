@@ -14,6 +14,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add click handler to the entire logo area
     logoContainer.addEventListener('click', function(e) {
         e.stopPropagation();
+        // Don't toggle if clicking on a link or feature-link
+        if (e.target.tagName === 'A' || e.target.closest('a') || 
+            e.target.classList.contains('feature-link') || 
+            e.target.classList.contains('tree-toggle')) {
+            return;
+        }
         toggleLogoExpansion();
     });
     
@@ -104,4 +110,58 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update cursor styles
     logoContainer.style.cursor = 'pointer';
     heartLogo.style.cursor = 'pointer';
+    
+    // Handle tree toggle for Documentation section
+    const treeToggle = document.querySelector('.tree-toggle');
+    if (treeToggle) {
+        treeToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const target = this.getAttribute('data-target');
+            const items = document.querySelectorAll('.' + target + '-item');
+            const currentText = this.textContent;
+            const isExpanded = currentText.includes('[−]') || currentText.includes('[-]');
+            
+            if (isExpanded) {
+                // Collapse
+                this.textContent = currentText.replace(/\[[\−\-]\]/, '[+]');
+                items.forEach(item => {
+                    item.style.display = 'none';
+                });
+            } else {
+                // Expand
+                this.textContent = currentText.replace('[+]', '[−]');
+                items.forEach(item => {
+                    item.style.display = 'block';
+                });
+            }
+        });
+    }
+    
+    // Handle clicks on feature links
+    document.querySelectorAll('.feature-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const feature = this.getAttribute('data-feature');
+            
+            // Map feature names to button IDs
+            const featureToButtonId = {
+                'copy-chat': 'copy-chat-btn',
+                'mcp-servers': 'mcp-servers-btn',
+                'function-calling': 'function-btn',
+                'system-prompts': 'prompts-btn',
+                'share': 'share-btn',
+                'theme': 'theme-toggle-btn',
+                'settings': 'settings-btn'
+            };
+            
+            const buttonId = featureToButtonId[feature];
+            if (buttonId) {
+                const button = document.getElementById(buttonId);
+                if (button) {
+                    button.click();
+                }
+            }
+        });
+    });
 });
