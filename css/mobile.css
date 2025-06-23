@@ -323,7 +323,7 @@
     }
     
     /* Fix for inline links in text */
-    p a, li a, span a {
+    p a, li a, span a, .logo-line a {
         display: inline;
         padding: 0;
         min-height: auto;
