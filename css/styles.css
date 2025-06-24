@@ -224,7 +224,7 @@ a[href="https://hacka.re/"] {
 }
 
 .heart-logo {
-    font-size: 1.4rem; /* Closer to original 1.5rem size */
+    font-size: 2.0rem; /* Extra large heart icon for maximum visibility */
     position: relative;
     line-height: 1;
     display: inline-block;
