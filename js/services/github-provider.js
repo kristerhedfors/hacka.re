@@ -38,8 +38,8 @@ class GitHubProvider extends window.MCPProviderInterface {
 
         // Tool definitions
         this.tools = new Map([
-            ['list_repos', {
-                name: 'list_repos',
+            ['github_list_repos', {
+                name: 'github_list_repos',
                 description: 'List repositories for the authenticated user',
                 parameters: {
                     type: 'object',
@@ -67,8 +67,8 @@ class GitHubProvider extends window.MCPProviderInterface {
                 handler: this.listRepos.bind(this),
                 requiredScopes: ['repo']
             }],
-            ['get_repo', {
-                name: 'get_repo',
+            ['github_get_repo', {
+                name: 'github_get_repo',
                 description: 'Get details of a specific repository',
                 parameters: {
                     type: 'object',
@@ -87,8 +87,8 @@ class GitHubProvider extends window.MCPProviderInterface {
                 handler: this.getRepo.bind(this),
                 requiredScopes: ['repo']
             }],
-            ['list_issues', {
-                name: 'list_issues',
+            ['github_list_issues', {
+                name: 'github_list_issues',
                 description: 'List issues in a repository',
                 parameters: {
                     type: 'object',
@@ -123,8 +123,8 @@ class GitHubProvider extends window.MCPProviderInterface {
                 handler: this.listIssues.bind(this),
                 requiredScopes: ['repo']
             }],
-            ['create_issue', {
-                name: 'create_issue',
+            ['github_create_issue', {
+                name: 'github_create_issue',
                 description: 'Create a new issue in a repository',
                 parameters: {
                     type: 'object',
@@ -161,8 +161,8 @@ class GitHubProvider extends window.MCPProviderInterface {
                 handler: this.createIssue.bind(this),
                 requiredScopes: ['repo']
             }],
-            ['get_file_content', {
-                name: 'get_file_content',
+            ['github_get_file_content', {
+                name: 'github_get_file_content',
                 description: 'Get content of a file from a repository',
                 parameters: {
                     type: 'object',
@@ -189,8 +189,8 @@ class GitHubProvider extends window.MCPProviderInterface {
                 handler: this.getFileContent.bind(this),
                 requiredScopes: ['repo']
             }],
-            ['list_pull_requests', {
-                name: 'list_pull_requests',
+            ['github_list_pull_requests', {
+                name: 'github_list_pull_requests',
                 description: 'List pull requests in a repository',
                 parameters: {
                     type: 'object',
@@ -229,8 +229,8 @@ class GitHubProvider extends window.MCPProviderInterface {
                 handler: this.listPullRequests.bind(this),
                 requiredScopes: ['repo']
             }],
-            ['get_pull_request', {
-                name: 'get_pull_request',
+            ['github_get_pull_request', {
+                name: 'github_get_pull_request',
                 description: 'Get details of a specific pull request',
                 parameters: {
                     type: 'object',
@@ -253,8 +253,8 @@ class GitHubProvider extends window.MCPProviderInterface {
                 handler: this.getPullRequest.bind(this),
                 requiredScopes: ['repo']
             }],
-            ['list_commits', {
-                name: 'list_commits',
+            ['github_list_commits', {
+                name: 'github_list_commits',
                 description: 'List commits in a repository',
                 parameters: {
                     type: 'object',
@@ -295,8 +295,8 @@ class GitHubProvider extends window.MCPProviderInterface {
                 handler: this.listCommits.bind(this),
                 requiredScopes: ['repo']
             }],
-            ['list_branches', {
-                name: 'list_branches',
+            ['github_list_branches', {
+                name: 'github_list_branches',
                 description: 'List branches in a repository',
                 parameters: {
                     type: 'object',
@@ -309,7 +309,7 @@ class GitHubProvider extends window.MCPProviderInterface {
                             type: 'string', 
                             description: 'Repository name' 
                         },
-                        protected: { 
+                        is_protected: { 
                             type: 'boolean', 
                             description: 'Filter by protected status' 
                         },
@@ -327,8 +327,8 @@ class GitHubProvider extends window.MCPProviderInterface {
             }],
             
             // Advanced Search Tools
-            ['search_code', {
-                name: 'search_code',
+            ['github_search_code', {
+                name: 'github_search_code',
                 description: 'Search for code across repositories with advanced filtering',
                 parameters: {
                     type: 'object',
@@ -384,8 +384,8 @@ class GitHubProvider extends window.MCPProviderInterface {
                 category: 'search',
                 tags: ['search', 'code', 'files']
             }],
-            ['search_commits', {
-                name: 'search_commits',
+            ['github_search_commits', {
+                name: 'github_search_commits',
                 description: 'Search commits with advanced criteria and filtering',
                 parameters: {
                     type: 'object',
@@ -447,8 +447,8 @@ class GitHubProvider extends window.MCPProviderInterface {
                 category: 'search',
                 tags: ['search', 'commits', 'history']
             }],
-            ['search_repositories', {
-                name: 'search_repositories',
+            ['github_search_repositories', {
+                name: 'github_search_repositories',
                 description: 'Search and discover repositories with comprehensive filtering',
                 parameters: {
                     type: 'object',
@@ -526,8 +526,8 @@ class GitHubProvider extends window.MCPProviderInterface {
                 category: 'search',
                 tags: ['search', 'repositories', 'discovery']
             }],
-            ['search_issues', {
-                name: 'search_issues',
+            ['github_search_issues', {
+                name: 'github_search_issues',
                 description: 'Advanced search for issues and pull requests',
                 parameters: {
                     type: 'object',
@@ -607,8 +607,8 @@ class GitHubProvider extends window.MCPProviderInterface {
                 category: 'search',
                 tags: ['search', 'issues', 'pull-requests']
             }],
-            ['search_users', {
-                name: 'search_users',
+            ['github_search_users', {
+                name: 'github_search_users',
                 description: 'Search for users and organizations on GitHub',
                 parameters: {
                     type: 'object',
@@ -667,8 +667,8 @@ class GitHubProvider extends window.MCPProviderInterface {
                 category: 'search',
                 tags: ['search', 'users', 'organizations']
             }],
-            ['search_topics', {
-                name: 'search_topics',
+            ['github_search_topics', {
+                name: 'github_search_topics',
                 description: 'Search for topics and explore trending repository tags',
                 parameters: {
                     type: 'object',
@@ -699,8 +699,8 @@ class GitHubProvider extends window.MCPProviderInterface {
                 category: 'search',
                 tags: ['search', 'topics', 'trending']
             }],
-            ['advanced_search', {
-                name: 'advanced_search',
+            ['github_advanced_search', {
+                name: 'github_advanced_search',
                 description: 'Multi-type GitHub search with unified results',
                 parameters: {
                     type: 'object',
@@ -932,7 +932,7 @@ class GitHubProvider extends window.MCPProviderInterface {
     }
 
     async listBranches(params, credentials) {
-        const { owner, repo, protected: isProtected, per_page } = params;
+        const { owner, repo, is_protected: isProtected, per_page } = params;
         const url = new URL(`${this.endpoints.api}/repos/${owner}/${repo}/branches`);
         
         if (typeof isProtected === 'boolean') {
