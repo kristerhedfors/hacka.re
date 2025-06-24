@@ -72,7 +72,7 @@ class AuthStrategy {
      */
     async storeCredentials(provider, credentials) {
         const key = this.getStorageKey(provider);
-        await this.storage.set(key, credentials);
+        return this.storage.setValue(key, credentials);
     }
 
     /**
@@ -82,7 +82,7 @@ class AuthStrategy {
      */
     async getStoredCredentials(provider) {
         const key = this.getStorageKey(provider);
-        return await this.storage.get(key);
+        return this.storage.getValue(key);
     }
 
     /**
@@ -92,7 +92,7 @@ class AuthStrategy {
      */
     async clearCredentials(provider) {
         const key = this.getStorageKey(provider);
-        await this.storage.delete(key);
+        return this.storage.removeValue(key);
     }
 
     /**
