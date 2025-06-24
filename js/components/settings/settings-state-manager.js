@@ -64,83 +64,63 @@ window.SettingsStateManager = (function() {
     
     /**
      * Delete all saved settings for the current namespace
+     * Uses CoreStorageService.clearAllData() which knows about all storage keys
      * @param {Object} elements - DOM elements
      * @param {Function} hideSettingsModal - Function to hide settings modal
      * @param {Function} addSystemMessage - Function to add system message
      */
     function clearAllSettings(elements, hideSettingsModal, addSystemMessage) {
-        // Save the current namespace before clearing settings
-        const currentNamespace = StorageService.getNamespace();
-        
-        // Define all storage keys to remove
-        const keysToRemove = [
-            StorageService.STORAGE_KEYS.API_KEY,
-            StorageService.STORAGE_KEYS.MODEL,
-            StorageService.STORAGE_KEYS.SYSTEM_PROMPT,
-            StorageService.STORAGE_KEYS.SHARE_OPTIONS,
-            StorageService.STORAGE_KEYS.BASE_URL,
-            StorageService.STORAGE_KEYS.BASE_URL_PROVIDER,
-            StorageService.STORAGE_KEYS.DEBUG_MODE,
-            StorageService.STORAGE_KEYS.HISTORY
-        ];
-        
-        // Define function tools storage keys to remove
-        const functionToolsKeysToRemove = [
-            'function_tools_enabled',
-            'js_functions',
-            'enabled_functions',
-            'function_collections',
-            'function_collection_metadata'
-        ];
-        
-        // Remove all settings from localStorage for the current namespace
-        keysToRemove.forEach(key => {
-            localStorage.removeItem(StorageService.getNamespacedKey(key));
-        });
-        
-        // Remove function tools settings from localStorage for the current namespace
-        functionToolsKeysToRemove.forEach(key => {
-            const namespacedKey = `hackare_${currentNamespace}_${key}`;
-            localStorage.removeItem(namespacedKey);
-            console.log(`Removed function tools key: ${namespacedKey}`);
-        });
-        
-        // Remove tool calling settings
-        localStorage.removeItem(`hackare_${currentNamespace}_tool_calling_enabled`);
-        
-        // Remove namespace-related entries
-        localStorage.removeItem(`hackare_${currentNamespace}_namespace`);
-        localStorage.removeItem(`hackare_${currentNamespace}_master_key`);
-        
-        // Reset the session key if ShareManager is available
-        if (window.aiHackare && window.aiHackare.shareManager) {
-            window.aiHackare.shareManager.setSessionKey(null);
-        }
-        
-        // Update UI elements
-        const uiElements = [
-            { element: elements.baseUrl, value: '' },
-            { element: elements.apiKeyUpdate, value: '' },
-            { element: elements.systemPromptInput, value: '' }
-        ];
-        
-        uiElements.forEach(({ element, value }) => {
-            if (element) {
-                element.value = value;
+        try {
+            // Use CoreStorageService to clear all data comprehensively
+            const result = CoreStorageService.clearAllData();
+            
+            if (result.success) {
+                console.log(`Successfully cleared ${result.clearedKeys.length} storage keys:`, result.clearedKeys);
+                
+                // Update UI elements to reflect cleared state
+                const uiElements = [
+                    { element: elements.baseUrl, value: '' },
+                    { element: elements.apiKeyUpdate, value: '' },
+                    { element: elements.systemPromptInput, value: '' }
+                ];
+                
+                uiElements.forEach(({ element, value }) => {
+                    if (element) {
+                        element.value = value;
+                    }
+                });
+                
+                // Hide modal if provided
+                if (hideSettingsModal) {
+                    hideSettingsModal();
+                }
+                
+                // Add confirmation message with details
+                if (addSystemMessage) {
+                    addSystemMessage(`All settings cleared successfully. Removed ${result.clearedKeys.length} storage keys for the current namespace.`);
+                }
+                
+                return true;
+            } else {
+                console.error('Failed to clear all settings:', result.error);
+                
+                // Add error message
+                if (addSystemMessage) {
+                    addSystemMessage(`Error clearing settings: ${result.message}`);
+                }
+                
+                return false;
             }
-        });
-        
-        // Hide modal if provided
-        if (hideSettingsModal) {
-            hideSettingsModal();
+        } catch (error) {
+            console.error('Exception during clearAllSettings:', error);
+            
+            // Add error message
+            if (addSystemMessage) {
+                addSystemMessage(`Failed to clear settings: ${error.message}`);
+            }
+            
+            return false;
         }
-        
-        // Add confirmation message
-        if (addSystemMessage) {
-            addSystemMessage('All settings for the current namespace have been deleted.');
-        }
-        
-        return true;
     }
     
     /**

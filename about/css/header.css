@@ -1,0 +1,58 @@
+/* Shared header styles for documentation pages */
+
+/* Header typography styles */
+.header-title {
+    font-size: 1.8rem;
+    line-height: 1.2;
+}
+
+.header-subtitle {
+    font-size: 1.26rem;
+}
+
+.header-tagline {
+    font-size: 1.08rem;
+    font-weight: normal;
+}
+
+.beta-tag {
+    font-size: 0.56rem !important; /* 20% smaller to match reduced header fonts */
+}
+
+.header-button {
+    font-size: 0.85rem;
+}
+
+/* Content typography styles */
+.page-title {
+    font-size: 1.6rem;
+}
+
+.page-tagline {
+    font-size: 1rem;
+    font-style: italic;
+    margin-bottom: 30px;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 480px) {
+    .header-title {
+        font-size: 1.4rem;
+    }
+    
+    .header-subtitle {
+        font-size: 0.98rem;
+    }
+    
+    .header-tagline {
+        font-size: 0.84rem;
+    }
+    
+    .page-title {
+        font-size: 1.12rem;
+    }
+    
+    .page-tagline {
+        font-size: 0.85rem;
+    }
+}
