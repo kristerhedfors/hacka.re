@@ -7,6 +7,7 @@
     <meta name="description" content="Simple guide to running LLMs locally with hacka.re">
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="css/themes.css">
+    <link rel="stylesheet" href="css/header.css">
     <!-- Font Awesome for icons (local) -->
     <link rel="stylesheet" href="../lib/font-awesome/all.min.css">
     <!-- Markdown parser (local) -->
@@ -269,17 +270,17 @@
         <div class="beta-tag">BETA</div>
         <header style="position: relative;">
             <div class="logo">
-                <h1 style="line-height: 1.2;"><a href="../index.html" style="text-decoration: none; color: inherit; font-family: 'Courier New', monospace;">hacka.re</a><span style="font-size: 70%;">: serverless agency</span><br><span style="font-size: 60%; font-weight: normal;">Free, open, för hackare, av hackare.</span></h1>
+                <h1 class="header-title"><a href="../index.html" style="text-decoration: none; color: inherit; font-family: 'Courier New', monospace;">hacka.re</a><span class="header-subtitle">: serverless agency</span><br><span class="header-tagline">Free, open, för hackare, av hackare.</span></h1>
             </div>
             <div class="settings" style="position: absolute; top: 0; right: 35px;">
-                <a href="../index.html" class="btn secondary-btn" style="color: #ffffff; background-color: rgba(0, 0, 0, 0.2); border: 1px solid #ffffff;">Back to Chat</a>
+                <a href="../index.html" class="btn secondary-btn header-button" style="color: #ffffff; background-color: rgba(0, 0, 0, 0.2); border: 1px solid #ffffff;">Back to Chat</a>
             </div>
         </header>
 
         <main style="overflow-y: auto; overflow-x: auto; padding: 2rem;">
             <div class="container" style="max-width: 1000px; margin: 0 auto;">
             
-            <h1>Local LLM Toolbox</h1>
+            <h2 class="page-title">Local LLMs</h2>
             
             <div class="page-nav">
                 <a href="index.html">About</a>
@@ -291,7 +292,6 @@
             </div>
 
             <div class="toolbox-header">
-                <h3>HACKA.RE - LOCAL LLM TOOLBOX</h3>
                 <p>Simple guide to running Large Language Models on your own hardware</p>
             </div>
 
@@ -313,7 +313,7 @@
             <div class="runtime-section">
                 <h2>Context</h2>
                 <p>
-                    As of June 2025, the local LLM ecosystem has matured significantly. Five major projects dominate the landscape for running models on personal hardware without cloud dependencies:
+                    The following five projects are among the most popular choises for running LLM inference on personal hardware without cloud dependencies:
                 </p>
                 <ul>
                     <li><strong>Llamafile</strong> (Mozilla) — Single-executable simplicity</li>
@@ -323,7 +323,7 @@
                     <li><strong>LocalAI</strong> (Community) — Go-based OpenAI shim</li>
                 </ul>
                 <p>
-                    All five expose OpenAI-compatible HTTP interfaces and prioritize privacy through offline operation, making them perfect companions for hacka.re's serverless architecture.
+                    All five expose OpenAI-compatible HTTP interfaces and prioritize privacy through offline operation, making them perfect companions for hacka.re's privacy-focused architecture.
                 </p>
             </div>
 
