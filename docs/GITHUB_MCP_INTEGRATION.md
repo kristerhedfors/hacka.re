@@ -93,9 +93,23 @@ The integration automatically attempts to reconnect using saved credentials when
 
 ## Requirements
 
+### ⚠️ **Current Limitation: CORS Restrictions**
+
+**As of December 2024, GitHub's official MCP server (`api.githubcopilot.com/mcp/`) appears to be restricted to official GitHub Copilot integrations only.**
+
+**Observed Issues:**
+- CORS errors even from legitimate HTTPS domains
+- Server returns duplicate `Access-Control-Allow-Origin` headers (`*, *`)
+- Connection fails with `net::ERR_FAILED` despite 200 OK response
+
+**This means the GitHub MCP integration may only work with:**
+- VS Code with GitHub Copilot extension
+- GitHub's official desktop applications
+- Other sanctioned GitHub Copilot clients
+
 ### GitHub Copilot Subscription
 
-The GitHub MCP server may require a GitHub Copilot subscription for full functionality. Without Copilot:
+If the CORS restrictions were resolved, the GitHub MCP server would likely require a GitHub Copilot subscription for full functionality. Without Copilot:
 - Connection may fail with 403 Forbidden
 - Limited or no tools may be available
 - Error messages will indicate subscription requirements
@@ -153,6 +167,40 @@ cd _tests/playwright
 - ✅ Server URL configuration
 - ⚠️ Actual connection requires valid credentials
 - ⚠️ Tool functionality depends on GitHub Copilot subscription
+
+## Alternative GitHub Integrations
+
+Since GitHub's official MCP server appears to be restricted to official clients, consider these alternatives for GitHub integration in hacka.re:
+
+### 1. Custom GitHub Tools via Function Calling
+Create custom JavaScript functions that use GitHub's REST API directly:
+
+```javascript
+/**
+ * @callable
+ * List GitHub repositories for authenticated user
+ */
+async function listGitHubRepos(token) {
+    const response = await fetch('https://api.github.com/user/repos', {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+        }
+    });
+    return await response.json();
+}
+```
+
+### 2. GitHub CLI Integration
+If you have GitHub CLI installed locally, you could create tools that shell out to `gh` commands.
+
+### 3. Third-Party MCP Servers
+Look for community-built MCP servers that provide GitHub integration:
+- Self-hosted MCP servers that use GitHub's REST API
+- Community MCP server implementations
+
+### 4. Wait for Policy Changes
+GitHub may update their CORS policies in the future to allow third-party MCP clients.
 
 ## Troubleshooting
 

@@ -3,6 +3,15 @@
  * 
  * Integrates the GitHub MCP Server with the existing MCP infrastructure,
  * providing seamless OAuth and PAT authentication flows.
+ * 
+ * CURRENT STATUS (Jun 2025):
+ * GitHub's official MCP server (api.githubcopilot.com/mcp/) appears to be
+ * restricted to official GitHub Copilot integrations only. CORS errors
+ * occur even from legitimate HTTPS domains, suggesting the server is
+ * intentionally locked down to VS Code extensions and official clients.
+ * 
+ * This implementation is standards-compliant and ready to work if/when
+ * GitHub opens their MCP server to third-party applications.
  */
 
 window.GitHubMCPIntegration = (function() {

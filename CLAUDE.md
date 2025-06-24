@@ -149,8 +149,9 @@ js/
 - **Dual Authentication**: Supports both OAuth and Personal Access Token authentication
 - **OAuth Flow**: Automatic token refresh with GitHub Copilot scopes (`repo`, `read:user`, `read:org`)
 - **PAT Support**: Personal Access Token with real-time validation and format checking
-- **Copilot Integration**: May require GitHub Copilot subscription for full functionality
-- **Replaces Custom Implementation**: No longer uses custom REST API wrapper - now proper MCP integration
+- **⚠️ Current Limitation**: GitHub's MCP server appears restricted to official Copilot integrations (CORS errors)
+- **Alternative Solutions**: Custom GitHub REST API functions via Function Calling system available
+- **Standards-Compliant**: Proper MCP protocol implementation ready for when restrictions are lifted
 
 ### Privacy & Security
 - All data encrypted in localStorage using TweetNaCl
