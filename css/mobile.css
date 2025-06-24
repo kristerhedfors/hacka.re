@@ -49,9 +49,10 @@
     
     /* Make settings buttons more touch-friendly */
     .settings {
-        margin-left: auto;
+        margin-left: 0;
         display: flex;
         gap: 0.125rem;
+        justify-self: flex-start;
     }
     
     .icon-btn {
