@@ -56,6 +56,7 @@ class MCPOAuthFlow {
                 console.log(`[MCP OAuth Flow] OAuth callback for namespace: ${namespaceId}`);
             }
             
+            // DEPRECATED: GitHub-specific OAuth handling - now handled by GitHubMCPServer
             // Check if this is a GitHub callback - we should ignore it since GitHub uses Device Flow
             if (this.oauthService) {
                 // Try to get the pending flow to check if it's GitHub
@@ -433,7 +434,7 @@ class MCPOAuthFlow {
     }
 
     /**
-     * Start OAuth Device Flow (recommended for GitHub)
+     * Start OAuth Device Flow (DEPRECATED for GitHub - use GitHubMCPServer instead)
      * @param {string} serverName - Server name
      */
     async startDeviceFlow(serverName) {
@@ -985,7 +986,7 @@ class MCPOAuthFlow {
     }
 
     /**
-     * Show GitHub device flow message
+     * DEPRECATED: Show GitHub device flow message (use GitHubMCPServer instead)
      * @param {Object} pendingFlow - Optional pending flow info
      */
     showGitHubDeviceFlowMessage(pendingFlow = null) {
@@ -1108,7 +1109,7 @@ class MCPOAuthFlow {
     }
 
     /**
-     * Show manual token entry for GitHub CORS issues
+     * DEPRECATED: Show manual token entry for GitHub CORS issues (use GitHubMCPServer instead)
      * @param {Object} errorData - Error data with token instructions
      */
     showManualTokenEntry(errorData) {

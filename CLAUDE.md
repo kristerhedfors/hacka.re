@@ -35,6 +35,10 @@ cd _tests/playwright
 ./run_tests.sh --headless --verbose
 ./run_tests.sh -k "function_calling or api"
 
+# GitHub MCP server integration tests (interactive)
+./run_github_mcp_tests.sh
+./run_github_mcp_tests.sh --headed --verbose
+
 # Project metrics
 ./scripts/project_metrics.sh
 ```
@@ -121,6 +125,10 @@ js/
 - `mcp-tool-registry.js` - Tool registration
 - `mcp-request-manager.js` - Request handling
 
+**GitHub MCP Integration (2 modules):**
+- `github-mcp-server.js` - Official GitHub MCP server connector
+- `github-mcp-integration.js` - Integration with existing MCP infrastructure
+
 **Additional Services:**
 - `link-sharing-service.js` - Encrypted sharing
 - `chat-streaming-service.js` - Chat streaming
@@ -135,6 +143,14 @@ js/
 - 8-module refactored architecture in `js/services/function-tools-*.js`
 - Functions tagged with `@callable` or `@tool` become available to models
 - Built-in RC4 encryption/decryption functions for testing
+
+### GitHub MCP Server Integration
+- **Official GitHub MCP Server**: Connects to `https://api.githubcopilot.com/mcp/` (GitHub's official MCP server)
+- **Dual Authentication**: Supports both OAuth and Personal Access Token authentication
+- **OAuth Flow**: Automatic token refresh with GitHub Copilot scopes (`repo`, `read:user`, `read:org`)
+- **PAT Support**: Personal Access Token with real-time validation and format checking
+- **Copilot Integration**: May require GitHub Copilot subscription for full functionality
+- **Replaces Custom Implementation**: No longer uses custom REST API wrapper - now proper MCP integration
 
 ### Privacy & Security
 - All data encrypted in localStorage using TweetNaCl
@@ -159,6 +175,7 @@ js/
 - **Core tests**: Basic UI, API configuration, chat functionality
 - **Feature tests**: Function calling, sharing, themes, model selection
 - **API integration**: Real function calling and model interaction tests
+- **GitHub MCP tests**: Official GitHub MCP server integration validation (requires user interaction)
 
 ### Test Setup Requirements
 ```bash

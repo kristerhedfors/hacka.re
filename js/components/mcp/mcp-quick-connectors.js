@@ -1,7 +1,7 @@
 /**
  * MCP Quick Connectors Component
  * 
- * Provides one-button connectors for popular services like GitHub, Gmail, 
+ * Provides one-button connectors for popular services like Gmail, 
  * Google Drive, and Google Calendar with pre-configured OAuth settings
  */
 
@@ -9,24 +9,22 @@ window.MCPQuickConnectors = (function() {
     // Service configurations
     console.log('[MCPQuickConnectors] Current window.location.origin:', window.location.origin);
     const QUICK_CONNECTORS = {
-        github: {
-            name: 'GitHub',
+        'github-mcp': {
+            name: 'GitHub MCP',
             icon: 'fab fa-github',
-            description: 'Access GitHub repositories, issues, and pull requests',
-            transport: 'service-connector',
-            authType: 'pat',
+            description: 'Access GitHub via official Copilot MCP server',
+            transport: 'github-mcp-integration',
+            authType: 'custom',
             setupInstructions: {
-                title: 'GitHub Personal Access Token Setup',
+                title: 'GitHub MCP Server Setup',
                 steps: [
-                    'Go to GitHub Settings > Developer settings > Personal access tokens > Tokens (classic)',
-                    'Click "Generate new token"',
-                    'Give your token a descriptive name like "hacka.re MCP Integration"',
-                    'Select scopes: "repo" for full repository access, "read:user" for user info',
-                    'Click "Generate token" and copy the token immediately',
-                    'Paste the token when prompted (it won\'t be shown again on GitHub)',
-                    'Note: Your token will be encrypted and stored locally'
+                    'Connect to GitHub\'s official Model Context Protocol server',
+                    'Choose between OAuth (recommended) or Personal Access Token authentication',
+                    'OAuth provides automatic token refresh and scope-limited access',
+                    'PAT is good for automation and long-term access',
+                    'May require GitHub Copilot subscription for full functionality'
                 ],
-                docUrl: 'https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token'
+                docUrl: 'https://docs.github.com/en/copilot/building-copilot-extensions/creating-a-copilot-extension/configuring-your-github-app-for-your-copilot-extension'
             }
         },
         gmail: {
@@ -187,7 +185,7 @@ window.MCPQuickConnectors = (function() {
     
     /**
      * Connect to a service
-     * @param {string} serviceKey - Service key (github, gmail, gdocs, calendar)
+     * @param {string} serviceKey - Service key (gmail, gdocs, calendar)
      */
     async function connectService(serviceKey) {
         const config = QUICK_CONNECTORS[serviceKey];
@@ -223,6 +221,37 @@ window.MCPQuickConnectors = (function() {
             }
         }
         
+        // Check if this is GitHub MCP integration
+        if (config.transport === 'github-mcp-integration') {
+            if (window.GitHubMCPIntegration) {
+                try {
+                    updateConnectorStatus(serviceKey, 'connecting');
+                    
+                    // Initialize if not already done
+                    await window.GitHubMCPIntegration.init();
+                    
+                    // Show connection dialog
+                    const result = await window.GitHubMCPIntegration.showConnectionDialog();
+                    if (result) {
+                        updateConnectorStatus(serviceKey, 'connected');
+                        saveConnectorState(serviceKey, 'connected');
+                        showNotification(`✅ Connected to ${config.name}`, 'success');
+                    } else {
+                        updateConnectorStatus(serviceKey, 'disconnected');
+                    }
+                } catch (error) {
+                    console.error(`[MCPQuickConnectors] GitHub MCP integration error:`, error);
+                    updateConnectorStatus(serviceKey, 'disconnected');
+                    showNotification(`❌ Failed to connect to ${config.name}: ${error.message}`, 'error');
+                }
+                return;
+            } else {
+                console.error('[MCPQuickConnectors] GitHubMCPIntegration not available');
+                showNotification('GitHub MCP integration not loaded. Please refresh the page.', 'error');
+                return;
+            }
+        }
+        
         // Original OAuth flow for other services
         const serverName = `mcp-${serviceKey}`;
         
@@ -238,42 +267,17 @@ window.MCPQuickConnectors = (function() {
             }
         }
         
-        // For GitHub, always check client ID specifically 
-        if (serviceKey === 'github') {
-            const savedConfig = oauthConfig.hasConfiguration(serverName) ? 
-                oauthConfig.getConfiguration(serverName) : null;
-            
-            if (!savedConfig || !savedConfig.clientId) {
-                console.log('[MCPQuickConnectors] GitHub requires Client ID setup');
-                showSetupDialog(serviceKey);
-                return;
-            }
-            
-            // Check if the saved config has the correct redirect URI
-            if (savedConfig.redirectUri && savedConfig.redirectUri.includes('/oauth/callback')) {
-                // Clear the old configuration with incorrect redirect URI
-                console.log('[MCPQuickConnectors] Clearing old OAuth config with incorrect redirect URI');
-                oauthConfig.configs.delete(serverName);
-                await oauthConfig.saveConfigs();
-                showSetupDialog(serviceKey);
-                return;
-            }
-        } else {
-            // For other services, use the original logic
-            if (!oauthConfig.hasConfiguration(serverName)) {
-                showSetupDialog(serviceKey);
-                return;
-            }
-            
-            const savedConfig = oauthConfig.getConfiguration(serverName);
-            if (!savedConfig.clientId) {
-                showSetupDialog(serviceKey);
-                return;
-            }
+        // Check if configuration exists
+        if (!oauthConfig.hasConfiguration(serverName)) {
+            showSetupDialog(serviceKey);
+            return;
         }
         
-        // Get saved config for use in the flow
         const savedConfig = oauthConfig.getConfiguration(serverName);
+        if (!savedConfig.clientId) {
+            showSetupDialog(serviceKey);
+            return;
+        }
         
         try {
             // Update status to connecting
@@ -299,9 +303,8 @@ window.MCPQuickConnectors = (function() {
                 updateConnectorStatus(serviceKey, 'authorizing');
                 console.log('[MCPQuickConnectors] Starting OAuth flow with config:', savedConfig);
                 
-                // Check if this service uses device flow (GitHub)
-                if (savedConfig.useDeviceFlow || savedConfig.provider === 'github' || serviceKey === 'github') {
-                    // Use device flow for GitHub
+                if (savedConfig.useDeviceFlow) {
+                    // Use device flow
                     const flowResult = await oauthService.startDeviceFlow(serverName, savedConfig);
                     
                     // Show device flow UI instead of opening a window
@@ -465,54 +468,10 @@ window.MCPQuickConnectors = (function() {
         // Close dialog
         closeSetupDialog();
         
-        // For GitHub, start device flow instead of direct connection
-        if (serviceKey === 'github') {
-            await startGitHubDeviceFlow(serviceKey, serverName, oauthConfigData);
-        } else {
-            // For other services, proceed with normal connection
-            await connectService(serviceKey);
-        }
+        // Proceed with normal connection
+        await connectService(serviceKey);
     }
     
-    /**
-     * Start GitHub device flow after Client ID is saved
-     * @param {string} serviceKey - Service key (github)
-     * @param {string} serverName - Server name (mcp-github)
-     * @param {Object} oauthConfigData - OAuth configuration
-     */
-    async function startGitHubDeviceFlow(serviceKey, serverName, oauthConfigData) {
-        try {
-            console.log('[MCPQuickConnectors] Starting GitHub device flow for', serviceKey);
-            updateConnectorStatus(serviceKey, 'authorizing');
-            
-            // Use the OAuth service to start device flow
-            if (!oauthFlow || !oauthFlow.oauthService) {
-                throw new Error('OAuth service not available');
-            }
-            
-            // Start device flow (this will handle CORS fallback to manual flow)
-            const flowResult = await oauthFlow.oauthService.startDeviceFlow(serverName, oauthConfigData);
-            console.log('[MCPQuickConnectors] Device flow started:', flowResult);
-            
-            // Show device flow UI (manual or automatic)
-            if (window.mcpOAuthFlow) {
-                window.mcpOAuthFlow.showDeviceFlowInstructions(flowResult);
-                
-                if (!flowResult.isManualFlow) {
-                    // Automatic flow - start polling
-                    window.mcpOAuthFlow.startDeviceFlowPolling(flowResult.deviceCode);
-                }
-                // For manual flow, the UI will handle the rest
-            } else {
-                throw new Error('Device flow UI not available');
-            }
-            
-        } catch (error) {
-            console.error('[MCPQuickConnectors] Failed to start GitHub device flow:', error);
-            updateConnectorStatus(serviceKey, 'disconnected');
-            showNotification(`❌ Failed to start GitHub authentication: ${error.message}`, 'error');
-        }
-    }
     
     /**
      * Close setup dialog
@@ -653,6 +612,8 @@ window.MCPQuickConnectors = (function() {
                 // Check if this is a service connector type
                 if (config.transport === 'service-connector' && window.MCPServiceConnectors) {
                     toolCount = window.MCPServiceConnectors.getToolCount(serviceKey);
+                } else if (config.transport === 'github-mcp-integration' && window.GitHubMCPIntegration) {
+                    toolCount = window.GitHubMCPIntegration.getAvailableTools().length;
                 } else {
                     // Regular MCP connection
                     const connectionInfo = mcpClient?.getConnectionInfo(serverName);
@@ -682,6 +643,8 @@ window.MCPQuickConnectors = (function() {
         try {
             if (config.transport === 'service-connector' && window.MCPServiceConnectors) {
                 await window.MCPServiceConnectors.disconnectService(serviceKey);
+            } else if (config.transport === 'github-mcp-integration' && window.GitHubMCPIntegration) {
+                await window.GitHubMCPIntegration.disconnect();
             } else if (mcpClient) {
                 const serverName = `mcp-${serviceKey}`;
                 const connectionInfo = mcpClient.getConnectionInfo(serverName);
@@ -716,6 +679,8 @@ window.MCPQuickConnectors = (function() {
             
             if (config.transport === 'service-connector' && window.MCPServiceConnectors) {
                 isConnected = window.MCPServiceConnectors.isConnected(serviceKey);
+            } else if (config.transport === 'github-mcp-integration' && window.GitHubMCPIntegration) {
+                isConnected = window.GitHubMCPIntegration.isConnected();
             } else if (mcpClient) {
                 const serverName = `mcp-${serviceKey}`;
                 const connectionInfo = mcpClient.getConnectionInfo(serverName);
@@ -964,7 +929,7 @@ Or error: bad request: unknown integration' rows="8" class="mcp-response-textare
     
     /**
      * Show manual OAuth flow with curl commands and paste fields
-     * @param {string} serviceKey - Service key (github, gmail, gdocs, calendar)
+     * @param {string} serviceKey - Service key (gmail, gdocs, calendar)
      * @param {Object} savedConfig - OAuth configuration
      * @param {Error} oauthError - Original OAuth error
      */
@@ -1043,9 +1008,7 @@ Or error: bad request: unknown integration' rows="8" class="mcp-response-textare
      * @returns {string} Curl command
      */
     function generateDeviceCodeCurl(config) {
-        const deviceUrl = config.provider === 'github' 
-            ? 'https://github.com/login/device/code'
-            : 'https://oauth2.googleapis.com/device/code';
+        const deviceUrl = 'https://oauth2.googleapis.com/device/code';
         
         const scope = Array.isArray(config.scope) ? config.scope.join(' ') : config.scope;
         
@@ -1108,9 +1071,7 @@ Or error: bad request: unknown integration' rows="8" class="mcp-response-textare
      * @returns {string} Curl command
      */
     function generateTokenCurl(config, deviceCode) {
-        const tokenUrl = config.provider === 'github'
-            ? 'https://github.com/login/oauth/access_token'
-            : 'https://oauth2.googleapis.com/token';
+        const tokenUrl = 'https://oauth2.googleapis.com/token';
         
         return `curl -X POST "${tokenUrl}" \\
   -H "Accept: application/json" \\
@@ -1274,11 +1235,7 @@ Or error: bad request: unknown integration' rows="8" class="mcp-response-textare
             closeManualConnectionUI();
             
             // Show the error message to user
-            const errorMsg = responseText.toLowerCase().includes('unknown integration') 
-                ? `GitHub MCP Server Error: "${responseText}"\n\nThe GitHub Copilot MCP server appears to require:\n• GitHub Copilot subscription\n• Copilot-specific authentication (not regular OAuth tokens)\n• Integration registration with GitHub\n\nThis service may be restricted to official GitHub Copilot integrations like VS Code.`
-                : `Server responded with error: "${responseText}"`;
-                
-            alert(errorMsg);
+            alert(`Server responded with error: "${responseText}"`);
             
             // Update status back to disconnected
             updateConnectorStatus(serviceKey, 'disconnected');

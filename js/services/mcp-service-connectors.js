@@ -11,90 +11,6 @@
 
     // Service-specific configurations
     const SERVICE_CONFIGS = {
-        github: {
-            name: 'GitHub',
-            icon: 'fab fa-github',
-            description: 'Access GitHub repositories, issues, and pull requests',
-            authType: 'pat', // Personal Access Token
-            apiBaseUrl: 'https://api.github.com',
-            requiredScopes: ['repo', 'read:user'],
-            setupInstructions: {
-                title: 'GitHub Personal Access Token Setup',
-                steps: [
-                    'Go to GitHub Settings > Developer settings > Personal access tokens > Tokens (classic)',
-                    'Click "Generate new token"',
-                    'Give your token a descriptive name like "hacka.re MCP Integration"',
-                    'Select scopes: "repo" for full repository access, "read:user" for user info',
-                    'Click "Generate token" and copy the token immediately',
-                    'Paste the token below (it won\'t be shown again on GitHub)',
-                    'Note: Your token will be encrypted and stored locally'
-                ],
-                docUrl: 'https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token'
-            },
-            tools: {
-                list_repos: {
-                    description: 'List repositories for the authenticated user',
-                    parameters: {
-                        type: 'object',
-                        properties: {
-                            type: { type: 'string', enum: ['all', 'owner', 'member'], default: 'all' },
-                            sort: { type: 'string', enum: ['created', 'updated', 'pushed', 'full_name'], default: 'updated' },
-                            per_page: { type: 'number', default: 30, maximum: 100 }
-                        }
-                    }
-                },
-                get_repo: {
-                    description: 'Get details of a specific repository',
-                    parameters: {
-                        type: 'object',
-                        properties: {
-                            owner: { type: 'string', description: 'Repository owner' },
-                            repo: { type: 'string', description: 'Repository name' }
-                        },
-                        required: ['owner', 'repo']
-                    }
-                },
-                list_issues: {
-                    description: 'List issues in a repository',
-                    parameters: {
-                        type: 'object',
-                        properties: {
-                            owner: { type: 'string' },
-                            repo: { type: 'string' },
-                            state: { type: 'string', enum: ['open', 'closed', 'all'], default: 'open' },
-                            labels: { type: 'string', description: 'Comma-separated list of labels' }
-                        },
-                        required: ['owner', 'repo']
-                    }
-                },
-                create_issue: {
-                    description: 'Create a new issue',
-                    parameters: {
-                        type: 'object',
-                        properties: {
-                            owner: { type: 'string' },
-                            repo: { type: 'string' },
-                            title: { type: 'string' },
-                            body: { type: 'string' },
-                            labels: { type: 'array', items: { type: 'string' } }
-                        },
-                        required: ['owner', 'repo', 'title']
-                    }
-                },
-                get_file_content: {
-                    description: 'Get content of a file from a repository',
-                    parameters: {
-                        type: 'object',
-                        properties: {
-                            owner: { type: 'string' },
-                            repo: { type: 'string' },
-                            path: { type: 'string', description: 'File path in repository' }
-                        },
-                        required: ['owner', 'repo', 'path']
-                    }
-                }
-            }
-        },
         gmail: {
             name: 'Gmail',
             icon: 'fas fa-envelope',
@@ -283,8 +199,6 @@
             console.log(`[MCP Service Connectors] Connecting to ${config.name}...`);
 
             switch (config.authType) {
-                case 'pat':
-                    return await this.connectWithPAT(serviceKey, config);
                 case 'oauth-device':
                     return await this.connectWithOAuthDevice(serviceKey, config);
                 case 'oauth-shared':
@@ -294,62 +208,6 @@
             }
         }
 
-        /**
-         * Connect using Personal Access Token (GitHub)
-         */
-        async connectWithPAT(serviceKey, config) {
-            // Check for existing token
-            const storageKey = `mcp_${serviceKey}_token`;
-            const existingToken = await window.CoreStorageService.getValue(storageKey);
-
-            if (existingToken) {
-                // Validate token by making a test API call
-                const isValid = await this.validateGitHubToken(existingToken);
-                if (isValid) {
-                    console.log(`[MCP Service Connectors] Using existing ${config.name} token`);
-                    return await this.createGitHubConnection(serviceKey, config, existingToken);
-                }
-            }
-
-            // Show token input UI
-            return await this.showPATInputDialog(serviceKey, config);
-        }
-
-        /**
-         * Validate GitHub PAT
-         */
-        async validateGitHubToken(token) {
-            try {
-                const response = await fetch('https://api.github.com/user', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
-                });
-                return response.ok;
-            } catch (error) {
-                console.error('[MCP Service Connectors] Token validation failed:', error);
-                return false;
-            }
-        }
-
-        /**
-         * Create GitHub connection
-         */
-        async createGitHubConnection(serviceKey, config, token) {
-            // Store connection info
-            this.connectedServices.set(serviceKey, { 
-                config: config, 
-                token: token, 
-                type: 'github'
-            });
-
-            // Register tools with function calling system
-            await this.registerServiceTools(serviceKey, config, token);
-            
-            console.log(`[MCP Service Connectors] ${config.name} connected successfully`);
-            return true;
-        }
 
         /**
          * Register service tools with function calling system
@@ -471,8 +329,6 @@
             const config = SERVICE_CONFIGS[serviceKey];
             
             switch (serviceKey) {
-                case 'github':
-                    return await this.executeGitHubTool(toolName, params, connection);
                 case 'gmail':
                     return await this.executeGmailTool(toolName, params, connection);
                 case 'gdocs':
@@ -482,78 +338,6 @@
             }
         }
 
-        /**
-         * Execute GitHub API calls
-         */
-        async executeGitHubTool(toolName, params, connection) {
-            const { token } = connection;
-            let url, method = 'GET', body = null;
-
-            switch (toolName) {
-                case 'list_repos':
-                    url = `https://api.github.com/user/repos?type=${params.type || 'all'}&sort=${params.sort || 'updated'}&per_page=${params.per_page || 30}`;
-                    break;
-                case 'get_repo':
-                    url = `https://api.github.com/repos/${params.owner}/${params.repo}`;
-                    break;
-                case 'list_issues':
-                    url = `https://api.github.com/repos/${params.owner}/${params.repo}/issues?state=${params.state || 'open'}`;
-                    if (params.labels) url += `&labels=${params.labels}`;
-                    break;
-                case 'create_issue':
-                    url = `https://api.github.com/repos/${params.owner}/${params.repo}/issues`;
-                    method = 'POST';
-                    body = JSON.stringify({
-                        title: params.title,
-                        body: params.body,
-                        labels: params.labels
-                    });
-                    break;
-                case 'get_file_content':
-                    url = `https://api.github.com/repos/${params.owner}/${params.repo}/contents/${params.path}`;
-                    break;
-                default:
-                    throw new Error(`Unknown GitHub tool: ${toolName}`);
-            }
-
-            // Add timeout to prevent hanging requests
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second timeout
-            
-            try {
-                const response = await fetch(url, {
-                    method,
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
-                    body,
-                    signal: controller.signal
-                });
-                
-                clearTimeout(timeoutId);
-
-                if (!response.ok) {
-                    throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
-                }
-
-                const data = await response.json();
-                
-                // Special handling for file content
-                if (toolName === 'get_file_content' && data.content) {
-                    data.decodedContent = atob(data.content);
-                }
-
-                return data;
-            } catch (error) {
-                clearTimeout(timeoutId);
-                if (error.name === 'AbortError') {
-                    throw new Error(`GitHub API request timed out after 45 seconds`);
-                }
-                throw error;
-            }
-        }
 
         /**
          * Connect using OAuth Device Flow (Gmail)
@@ -1100,91 +884,6 @@
             return null;
         }
 
-        /**
-         * Show PAT input dialog
-         */
-        async showPATInputDialog(serviceKey, config) {
-            return new Promise((resolve) => {
-                const modal = document.createElement('div');
-                modal.className = 'modal active';
-                modal.id = 'service-pat-modal';
-                
-                modal.innerHTML = `
-                    <div class="modal-content">
-                        <h3>${config.name} Personal Access Token</h3>
-                        
-                        <div class="token-setup-instructions">
-                            <h4>${config.setupInstructions.title}</h4>
-                            <ol>
-                                ${config.setupInstructions.steps.map(step => `<li>${step}</li>`).join('')}
-                            </ol>
-                            
-                            <p class="form-help">
-                                <a href="${config.setupInstructions.docUrl}" target="_blank">
-                                    View GitHub's official documentation <i class="fas fa-external-link-alt"></i>
-                                </a>
-                            </p>
-                        </div>
-                        
-                        <div class="token-input-form">
-                            <div class="form-group">
-                                <label for="${serviceKey}-pat-input">Personal Access Token</label>
-                                <input type="password" 
-                                       id="${serviceKey}-pat-input" 
-                                       placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" 
-                                       class="mcp-input" />
-                                <small class="form-help">Your token will be encrypted and stored locally</small>
-                            </div>
-                            
-                            <div class="form-actions">
-                                <button class="btn primary-btn" id="${serviceKey}-save-token">
-                                    Save & Connect
-                                </button>
-                                <button class="btn secondary-btn" onclick="document.getElementById('service-pat-modal').remove()">
-                                    Cancel
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-                document.body.appendChild(modal);
-                document.getElementById(`${serviceKey}-pat-input`).focus();
-                
-                // Handle save
-                document.getElementById(`${serviceKey}-save-token`).onclick = async () => {
-                    const token = document.getElementById(`${serviceKey}-pat-input`).value.trim();
-                    
-                    if (!token) {
-                        alert('Please enter a Personal Access Token');
-                        return;
-                    }
-                    
-                    // Validate token format for GitHub
-                    if (serviceKey === 'github' && !token.startsWith('ghp_')) {
-                        if (!confirm('This doesn\'t look like a GitHub Personal Access Token. Continue anyway?')) {
-                            return;
-                        }
-                    }
-                    
-                    // Validate token
-                    const isValid = await this.validateGitHubToken(token);
-                    if (!isValid) {
-                        alert('Invalid token. Please check and try again.');
-                        return;
-                    }
-                    
-                    // Save token
-                    const storageKey = `mcp_${serviceKey}_token`;
-                    await window.CoreStorageService.setValue(storageKey, token);
-                    
-                    // Close dialog and connect
-                    modal.remove();
-                    const result = await this.createGitHubConnection(serviceKey, config, token);
-                    resolve(result);
-                };
-            });
-        }
 
         /**
          * Disconnect a service
@@ -1282,38 +981,6 @@
             return Object.keys(config.tools).length;
         }
 
-        /**
-         * Quick connect method for GitHub (used by GitHub Token Manager)
-         * @param {string} serviceKey - Service key (usually 'github')
-         * @returns {Promise<boolean>} True if connected successfully
-         */
-        async quickConnect(serviceKey) {
-            try {
-                const config = SERVICE_CONFIGS[serviceKey];
-                if (!config) {
-                    throw new Error(`Unknown service: ${serviceKey}`);
-                }
-
-                // Try to connect without showing dialog
-                const storageKey = `mcp_${serviceKey}_token`;
-                const existingToken = await window.CoreStorageService.getValue(storageKey);
-
-                if (existingToken) {
-                    if (serviceKey === 'github') {
-                        const isValid = await this.validateGitHubToken(existingToken);
-                        if (isValid) {
-                            return await this.createGitHubConnection(serviceKey, config, existingToken);
-                        }
-                    }
-                }
-
-                console.warn(`[MCP Service Connectors] No valid token found for ${serviceKey}`);
-                return false;
-            } catch (error) {
-                console.error(`[MCP Service Connectors] Quick connect failed for ${serviceKey}:`, error);
-                return false;
-            }
-        }
     }
 
     // Export to global scope
