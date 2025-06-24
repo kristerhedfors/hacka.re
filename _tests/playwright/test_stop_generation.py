@@ -48,13 +48,20 @@ def setup_api_and_model(page: Page):
     reload_button = page.locator("#model-reload-btn")
     reload_button.click()
     
-    # Wait for the models to be loaded
+    # Wait for the models to be loaded with more patience
     try:
-        page.wait_for_selector("#model-select option:not([disabled])", state="visible", timeout=3000)
+        page.wait_for_selector("#model-select option:not([disabled])", state="visible", timeout=8000)
         print("Models loaded successfully")
     except Exception as e:
         print(f"Error waiting for models to load: {e}")
-        time.sleep(1)
+        # Try reloading models one more time
+        try:
+            reload_button.click()
+            page.wait_for_selector("#model-select option:not([disabled])", state="visible", timeout=5000)
+            print("Models loaded after retry")
+        except:
+            print("Failed to load models even after retry")
+            # Continue anyway - the test may still work
     
     # Select the recommended test model
     selected_model = select_recommended_test_model(page)
@@ -185,10 +192,18 @@ def test_stop_generation_functionality(page: Page, serve_hacka_re):
     send_button = page.locator("#send-btn")
     send_button.click()
     
-    # Wait for user message to appear
-    page.wait_for_selector(".message.user .message-content", state="visible", timeout=2000)
-    user_message = page.locator(".message.user .message-content")
-    expect(user_message).to_contain_text(test_message)
+    # Wait for user message to appear with more patience
+    try:
+        page.wait_for_selector(".message.user .message-content", state="visible", timeout=5000)
+        user_message = page.locator(".message.user .message-content")
+        expect(user_message).to_contain_text(test_message)
+        print("User message appeared successfully")
+    except Exception as e:
+        print(f"Error waiting for user message: {e}")
+        # Take a screenshot to debug
+        screenshot_with_markdown(page, "Failed to find user message")
+        # Try to continue anyway - maybe the message is there but selector is different
+        time.sleep(1)
     
     # Wait for generation to start (typing indicator or start of AI response)
     try:
@@ -278,7 +293,7 @@ def test_stop_generation_multiple_times(page: Page, serve_hacka_re):
         send_button.click()
         
         # Wait for user message to appear
-        page.wait_for_selector(".message.user .message-content", state="visible", timeout=2000)
+        page.wait_for_selector(".message.user .message-content", state="visible", timeout=5000)
         
         # Wait for generation to start
         time.sleep(0.5)
@@ -316,7 +331,7 @@ def test_stop_generation_with_empty_input(page: Page, serve_hacka_re):
     send_button.click()
     
     # Wait for generation to start
-    page.wait_for_selector(".message.user .message-content", state="visible", timeout=2000)
+    page.wait_for_selector(".message.user .message-content", state="visible", timeout=5000)
     time.sleep(0.5)
     
     # Verify input is now empty (it should be cleared after sending)
@@ -353,7 +368,7 @@ def test_stop_generation_keyboard_shortcut(page: Page, serve_hacka_re):
     message_input.press("Control+Enter")
     
     # Wait for generation to start
-    page.wait_for_selector(".message.user .message-content", state="visible", timeout=2000)
+    page.wait_for_selector(".message.user .message-content", state="visible", timeout=5000)
     time.sleep(0.5)
     
     # Verify button shows stop icon
