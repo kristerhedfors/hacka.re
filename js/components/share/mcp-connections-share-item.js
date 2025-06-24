@@ -7,7 +7,7 @@
  * Collect MCP connections data for sharing
  * @returns {Promise<Object|null>} MCP connections data or null if none available
  */
-export async function collectMcpConnectionsData() {
+async function collectMcpConnectionsData() {
     try {
         console.log('MCP Connections: Collecting data for sharing...');
         const mcpConnections = {};
@@ -23,9 +23,12 @@ export async function collectMcpConnectionsData() {
                 console.log('MCP Connections: Validating GitHub token...');
                 const isValid = await validateGitHubToken(githubToken);
                 if (isValid) {
+                    // Include ONLY the token - functions will be recreated on receiving end
                     mcpConnections.github = githubToken;
+                    console.log('MCP Connections: Using minimal token-only format for space efficiency');
+                    
                     foundConnections = true;
-                    console.log('MCP Connections: GitHub token added to share data');
+                    console.log('MCP Connections: GitHub connection data added to share');
                 } else {
                     console.warn('MCP Connections: GitHub token exists but is invalid, skipping');
                 }
@@ -79,7 +82,7 @@ export async function collectMcpConnectionsData() {
  * @param {Object} data - MCP connections data
  * @returns {Promise<void>}
  */
-export async function applyMcpConnectionsData(data) {
+async function applyMcpConnectionsData(data) {
     if (!data || typeof data !== 'object') {
         console.warn('MCP Connections: No valid data to apply');
         return;
@@ -93,13 +96,16 @@ export async function applyMcpConnectionsData(data) {
         for (const [serviceKey, connectionData] of Object.entries(data)) {
             try {
                 if (serviceKey === 'github') {
-                    // Handle GitHub PAT token
-                    if (typeof connectionData === 'string') {
+                    // Handle GitHub PAT token (minimal format)
+                    const token = connectionData; // Always expect just the token string
+                    console.log('MCP Connections: Received GitHub token');
+                    
+                    if (token && typeof token === 'string') {
                         // Validate token before storing
-                        const isValid = await validateGitHubToken(connectionData);
+                        const isValid = await validateGitHubToken(token);
                         if (isValid) {
                             console.log('MCP Connections: Storing GitHub token to storage...');
-                            await window.CoreStorageService.setValue('mcp_github_token', connectionData);
+                            await window.CoreStorageService.setValue('mcp_github_token', token);
                             console.log('MCP Connections: GitHub token stored successfully');
                             
                             // Verify we can read it back immediately
@@ -113,7 +119,7 @@ export async function applyMcpConnectionsData(data) {
                             appliedCount++;
                             results.push(`GitHub token applied successfully`);
                             
-                            // Try to auto-connect if MCP service connectors available
+                            // Auto-connect to recreate all 16 functions
                             await autoConnectGitHub();
                         } else {
                             results.push(`GitHub token is invalid and was not applied`);
@@ -163,7 +169,7 @@ export async function applyMcpConnectionsData(data) {
  * Estimate the size of MCP connections data
  * @returns {Promise<number>} Estimated size in bytes
  */
-export async function estimateMcpConnectionsSize() {
+async function estimateMcpConnectionsSize() {
     try {
         const data = await collectMcpConnectionsData();
         if (!data) return 0;
@@ -222,6 +228,7 @@ async function validateGitHubToken(token) {
     }
 }
 
+
 /**
  * Auto-connect GitHub if MCP service connectors available
  */
@@ -277,7 +284,7 @@ async function autoConnectGmail() {
  * Check if any MCP connections are available
  * @returns {Promise<boolean>} True if any connections exist
  */
-export async function hasMcpConnections() {
+async function hasMcpConnections() {
     try {
         const data = await collectMcpConnectionsData();
         return data !== null && Object.keys(data).length > 0;
@@ -291,7 +298,7 @@ export async function hasMcpConnections() {
  * Get summary of available MCP connections
  * @returns {Promise<Object>} Summary of connections
  */
-export async function getMcpConnectionsSummary() {
+async function getMcpConnectionsSummary() {
     try {
         const data = await collectMcpConnectionsData();
         if (!data) {
