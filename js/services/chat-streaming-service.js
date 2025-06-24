@@ -35,9 +35,24 @@ window.ChatStreamingService = (function() {
              * @param {string} content - New message content
              * @param {string} id - Message ID
              * @param {Function} updateContextUsage - Function to update context usage
+             * @param {Function} addAIMessageFn - Function to add AI message to messages array
+             * @param {Object} uiHandler - UI handler with addAIMessageToUI method
              */
-            updateStreamingMessage(content, id, updateContextUsage) {
-                const messageElement = document.querySelector(`.message[data-id="${id}"]`);
+            updateStreamingMessage(content, id, updateContextUsage, addAIMessageFn, uiHandler) {
+                let messageElement = document.querySelector(`.message[data-id="${id}"]`);
+                
+                // Create the AI message element if it doesn't exist (first content chunk)
+                if (!messageElement && content.trim()) {
+                    if (uiHandler && uiHandler.addAIMessageToUI) {
+                        uiHandler.addAIMessageToUI('', id);
+                    }
+                    // Also add to the messages array for the first time
+                    if (addAIMessageFn) {
+                        addAIMessageFn('', id);
+                    }
+                    messageElement = document.querySelector(`.message[data-id="${id}"]`);
+                }
+                
                 if (messageElement) {
                     const contentElement = messageElement.querySelector('.message-content');
                     
@@ -52,6 +67,18 @@ window.ChatStreamingService = (function() {
                     
                     // Update context usage less frequently during streaming
                     this.throttleContextUsageUpdate(messageElement, content, updateContextUsage);
+                }
+            },
+
+            /**
+             * Add AI message to the messages array - to be called by chat manager
+             * @param {string} content - Initial content (usually empty)
+             * @param {string} id - Message ID
+             * @param {Function} addAIMessageFn - Function to add AI message
+             */
+            addAIMessageToMessages(content, id, addAIMessageFn) {
+                if (addAIMessageFn) {
+                    addAIMessageFn(content, id);
                 }
             },
 
