@@ -91,6 +91,12 @@ window.ApiStreamProcessor = (function() {
         
         try {
             const data = JSON.parse(line.substring(6));
+            
+            // Check for API errors in the response
+            if (data.error) {
+                throw new Error(data.error.message || 'API Error');
+            }
+            
             const delta = data.choices?.[0]?.delta || {};
             
             // Handle content updates
@@ -108,6 +114,10 @@ window.ApiStreamProcessor = (function() {
             }
         } catch (e) {
             console.error('Error parsing SSE line:', e, 'Line:', line);
+            // Re-throw API errors to be handled by the main error handler
+            if (e.message && (e.message.includes('last message role must be') || e.message.includes('API Error'))) {
+                throw e;
+            }
         }
         
         return result;
