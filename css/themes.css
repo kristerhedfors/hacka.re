@@ -558,6 +558,16 @@ header .settings .icon-btn i,
     opacity: 0.7;
 }
 
+/* Heart logo animation for light theme */
+.theme-modern:not(.dark-mode) .heart-logo {
+    animation: heartSweep 3s infinite alternate;
+    background: linear-gradient(90deg, #ffffff, #9ca3af, #ffffff);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
 /* Fix for heart logo animation in dark mode */
 .theme-modern.dark-mode .heart-logo {
     animation: heartSweep 3s infinite alternate;
