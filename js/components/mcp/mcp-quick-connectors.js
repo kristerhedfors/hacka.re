@@ -198,8 +198,63 @@ window.MCPQuickConnectors = (function() {
 
         // Check if this is a service connector type
         if (config.transport === 'service-connector') {
-            // Use the new MCPServiceConnectors
-            if (window.MCPServiceConnectors) {
+            // Use the new provider integration for GitHub, fallback to old system for others
+            if (serviceKey === 'github' && window.MCPProviderIntegration) {
+                try {
+                    updateConnectorStatus(serviceKey, 'connecting');
+                    
+                    // Get existing token if available
+                    const existingToken = await window.CoreStorageService.getValue('mcp_github_token');
+                    
+                    if (existingToken) {
+                        // Use existing token with new provider system
+                        const result = await window.MCPProviderIntegration.connectProvider('github', {
+                            auth: {
+                                token: existingToken,
+                                skipValidation: false
+                            }
+                        });
+                        
+                        if (result.success) {
+                            updateConnectorStatus(serviceKey, 'connected');
+                            saveConnectorState(serviceKey, 'connected');
+                            showNotification(`✅ Connected to ${config.name} with ${result.toolCount} tools`, 'success');
+                        } else {
+                            throw new Error(result.error || 'Connection failed');
+                        }
+                    } else {
+                        // No token available, show simple PAT input dialog
+                        console.log('[MCPQuickConnectors] No existing token, showing PAT input dialog');
+                        const token = await showGitHubPATDialog();
+                        if (token) {
+                            // Try to connect with the new token
+                            const result = await window.MCPProviderIntegration.connectProvider('github', {
+                                auth: {
+                                    token: token,
+                                    skipValidation: false
+                                }
+                            });
+                            
+                            if (result.success) {
+                                // Store the token for future use
+                                await window.CoreStorageService.setValue('mcp_github_token', token);
+                                updateConnectorStatus(serviceKey, 'connected');
+                                saveConnectorState(serviceKey, 'connected');
+                                showNotification(`✅ Connected to ${config.name} with ${result.toolCount} tools`, 'success');
+                            } else {
+                                throw new Error(result.error || 'Connection failed');
+                            }
+                        } else {
+                            updateConnectorStatus(serviceKey, 'disconnected');
+                        }
+                    }
+                } catch (error) {
+                    console.error(`[MCPQuickConnectors] GitHub provider integration error:`, error);
+                    updateConnectorStatus(serviceKey, 'disconnected');
+                    showNotification(`❌ GitHub connection failed: ${error.message}`, 'error');
+                }
+            } else if (window.MCPServiceConnectors) {
+                // Use the old MCPServiceConnectors for non-GitHub services
                 try {
                     updateConnectorStatus(serviceKey, 'connecting');
                     const result = await window.MCPServiceConnectors.connectService(serviceKey);
@@ -215,12 +270,11 @@ window.MCPQuickConnectors = (function() {
                     updateConnectorStatus(serviceKey, 'disconnected');
                     showNotification(`❌ Failed to connect to ${config.name}: ${error.message}`, 'error');
                 }
-                return;
             } else {
                 console.error('[MCPQuickConnectors] MCPServiceConnectors not available');
                 showNotification('Service connectors not loaded. Please refresh the page.', 'error');
-                return;
             }
+            return; // Exit early for all service-connector types
         }
         
         // Original OAuth flow for other services
@@ -515,6 +569,92 @@ window.MCPQuickConnectors = (function() {
     }
     
     /**
+     * Show simple GitHub PAT input dialog
+     */
+    function showGitHubPATDialog() {
+        return new Promise((resolve) => {
+            const modal = document.createElement('div');
+            modal.className = 'modal active';
+            modal.id = 'github-pat-modal';
+            
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <h3><i class="fab fa-github"></i> GitHub Personal Access Token</h3>
+                    
+                    <div class="pat-instructions">
+                        <p><strong>To connect GitHub:</strong></p>
+                        <ol>
+                            <li>Go to <a href="https://github.com/settings/tokens/new" target="_blank">GitHub → Settings → Developer settings → Personal access tokens</a></li>
+                            <li>Click "Generate new token (classic)"</li>
+                            <li>Give it a name like "hacka.re MCP Integration"</li>
+                            <li>Select scopes: <code>repo</code> and <code>read:user</code></li>
+                            <li>Click "Generate token" and copy it</li>
+                            <li>Paste it below:</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="github-pat-input">Personal Access Token:</label>
+                        <input type="password" id="github-pat-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" 
+                               style="width: 100%; font-family: monospace;">
+                        <div class="form-help">Your token will be encrypted and stored locally.</div>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button id="github-pat-connect" class="btn-primary">
+                            <i class="fas fa-link"></i> Connect
+                        </button>
+                        <button id="github-pat-cancel" class="btn-secondary">Cancel</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            const tokenInput = modal.querySelector('#github-pat-input');
+            const connectBtn = modal.querySelector('#github-pat-connect');
+            const cancelBtn = modal.querySelector('#github-pat-cancel');
+            
+            // Focus the input
+            tokenInput.focus();
+            
+            // Handle connect
+            const handleConnect = () => {
+                const token = tokenInput.value.trim();
+                if (token) {
+                    modal.remove();
+                    resolve(token);
+                } else {
+                    tokenInput.style.borderColor = '#ff6b6b';
+                    tokenInput.focus();
+                }
+            };
+            
+            // Handle cancel
+            const handleCancel = () => {
+                modal.remove();
+                resolve(null);
+            };
+            
+            // Event listeners
+            connectBtn.addEventListener('click', handleConnect);
+            cancelBtn.addEventListener('click', handleCancel);
+            tokenInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    handleConnect();
+                }
+            });
+            
+            // Close on background click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    handleCancel();
+                }
+            });
+        });
+    }
+
+    /**
      * Close setup dialog
      */
     function closeSetupDialog() {
@@ -651,8 +791,15 @@ window.MCPQuickConnectors = (function() {
                 let toolCount = 0;
                 
                 // Check if this is a service connector type
-                if (config.transport === 'service-connector' && window.MCPServiceConnectors) {
-                    toolCount = window.MCPServiceConnectors.getToolCount(serviceKey);
+                if (config.transport === 'service-connector') {
+                    if (serviceKey === 'github' && window.MCPToolRegistry) {
+                        // Use new provider system for GitHub
+                        const githubTools = window.MCPToolRegistry.getProviderTools('github');
+                        toolCount = githubTools.length;
+                    } else if (window.MCPServiceConnectors) {
+                        // Use old system for other services
+                        toolCount = window.MCPServiceConnectors.getToolCount(serviceKey);
+                    }
                 } else {
                     // Regular MCP connection
                     const connectionInfo = mcpClient?.getConnectionInfo(serverName);
@@ -680,8 +827,14 @@ window.MCPQuickConnectors = (function() {
         const config = QUICK_CONNECTORS[serviceKey];
         
         try {
-            if (config.transport === 'service-connector' && window.MCPServiceConnectors) {
-                await window.MCPServiceConnectors.disconnectService(serviceKey);
+            if (config.transport === 'service-connector') {
+                if (serviceKey === 'github' && window.MCPProviderIntegration) {
+                    // Use new provider integration for GitHub
+                    await window.MCPProviderIntegration.disconnectProvider('github');
+                } else if (window.MCPServiceConnectors) {
+                    // Use old system for other services
+                    await window.MCPServiceConnectors.disconnectService(serviceKey);
+                }
             } else if (mcpClient) {
                 const serverName = `mcp-${serviceKey}`;
                 const connectionInfo = mcpClient.getConnectionInfo(serverName);
@@ -714,8 +867,15 @@ window.MCPQuickConnectors = (function() {
             const config = QUICK_CONNECTORS[serviceKey];
             let isConnected = false;
             
-            if (config.transport === 'service-connector' && window.MCPServiceConnectors) {
-                isConnected = window.MCPServiceConnectors.isConnected(serviceKey);
+            if (config.transport === 'service-connector') {
+                if (serviceKey === 'github' && window.MCPToolRegistry) {
+                    // Check if GitHub provider is connected via new system
+                    const githubProvider = window.MCPToolRegistry.getProvider('github');
+                    isConnected = githubProvider && githubProvider.connected;
+                } else if (window.MCPServiceConnectors) {
+                    // Use old system for other services
+                    isConnected = window.MCPServiceConnectors.isConnected(serviceKey);
+                }
             } else if (mcpClient) {
                 const serverName = `mcp-${serviceKey}`;
                 const connectionInfo = mcpClient.getConnectionInfo(serverName);
