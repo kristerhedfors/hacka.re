@@ -349,6 +349,38 @@ export class GitHubTokenManager {
     }
 
     /**
+     * Create a shareable link for the GitHub token
+     * @param {string} password - Password for encryption
+     * @param {Object} options - Sharing options
+     * @param {boolean} options.includeFunctionLibrary - Include function library
+     * @returns {Promise<string|null>} Shareable link or null if no token
+     */
+    async createShareableLink(password, options = {}) {
+        try {
+            const token = await this.getSavedToken();
+            if (!token) {
+                console.warn('GitHub Token Manager: No token available for sharing');
+                return null;
+            }
+            
+            // Use the new unified API with minimal payload for GitHub tokens
+            const shareableLink = await window.ShareService.createShareLink({
+                password: password,
+                mcpConnections: { github: token },
+                includeMcpConnections: true,
+                includeFunctionLibrary: options.includeFunctionLibrary || false
+            });
+            
+            console.log('GitHub Token Manager: Created shareable link with length:', shareableLink.length);
+            return shareableLink;
+            
+        } catch (error) {
+            console.error('GitHub Token Manager: Error creating shareable link:', error);
+            return null;
+        }
+    }
+
+    /**
      * Quick setup for GitHub token
      * @returns {Promise<boolean>} True if setup completed
      */
