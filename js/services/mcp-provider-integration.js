@@ -15,9 +15,7 @@ class MCPProviderIntegrationClass {
         this.initialized = false;
         this.registeredProviders = new Set();
         
-        // Reference to existing MCP components
-        this.functionToolsRegistry = null;
-        this.functionToolsStorage = null;
+        // Reference to existing services
         this.coreStorageService = null;
         
         console.log('[MCPProviderIntegration] Initialized');
@@ -35,8 +33,6 @@ class MCPProviderIntegrationClass {
 
         try {
             // Get references to existing systems
-            this.functionToolsRegistry = dependencies.functionToolsRegistry || window.FunctionToolsRegistry;
-            this.functionToolsStorage = dependencies.functionToolsStorage || window.FunctionToolsStorage;
             this.coreStorageService = dependencies.coreStorageService || window.CoreStorageService;
 
             // Register built-in providers
@@ -173,12 +169,21 @@ class MCPProviderIntegrationClass {
      * @param {Array} tools - Tool definitions
      */
     async registerProviderTools(provider, tools) {
-        if (!this.functionToolsRegistry || !this.functionToolsStorage) {
+        if (!window.FunctionToolsService) {
             console.warn('[MCPProviderIntegration] Function calling system not available');
             return;
         }
 
         try {
+            const collectionId = `mcp_${provider.name}_collection`;
+            const collectionMetadata = {
+                name: `${provider.metadata.displayName || provider.name} Tools`,
+                description: `Tools from ${provider.metadata.displayName || provider.name} MCP provider`,
+                provider: provider.name,
+                source: 'mcp_provider',
+                createdAt: Date.now()
+            };
+
             for (const tool of tools) {
                 // Create function wrapper
                 const functionName = tool.name;
@@ -187,8 +192,8 @@ class MCPProviderIntegrationClass {
                 // Add to global scope
                 window[functionName] = functionCode;
                 
-                // Register with function calling system
-                const functionDefinition = {
+                // Create tool definition for function calling system
+                const toolDefinition = {
                     type: "function",
                     function: {
                         name: functionName,
@@ -197,17 +202,22 @@ class MCPProviderIntegrationClass {
                     }
                 };
 
-                // Store in function tools system
-                await this.functionToolsStorage.storeFunctionDefinition(functionName, {
-                    name: functionName,
-                    description: tool.description,
-                    parameters: tool.parameters,
-                    code: functionCode.toString(),
-                    enabled: true,
-                    collection: `mcp_${provider.name}_collection`
-                });
+                // Register with function tools service
+                const success = window.FunctionToolsService.addJsFunction(
+                    functionName,
+                    functionCode.toString(),
+                    toolDefinition,
+                    collectionId,
+                    collectionMetadata
+                );
 
-                console.log(`[MCPProviderIntegration] Registered function: ${functionName}`);
+                if (success) {
+                    // Enable the function by default
+                    window.FunctionToolsService.enableJsFunction(functionName);
+                    console.log(`[MCPProviderIntegration] Registered function: ${functionName}`);
+                } else {
+                    console.warn(`[MCPProviderIntegration] Failed to register function: ${functionName}`);
+                }
             }
         } catch (error) {
             console.error('[MCPProviderIntegration] Failed to register provider tools:', error);
@@ -220,7 +230,7 @@ class MCPProviderIntegrationClass {
      * @param {string} providerType - Provider type
      */
     async unregisterProviderTools(providerType) {
-        if (!this.functionToolsStorage) {
+        if (!window.FunctionToolsService) {
             return;
         }
 
@@ -234,7 +244,7 @@ class MCPProviderIntegrationClass {
                 }
                 
                 // Remove from function tools system
-                await this.functionToolsStorage.deleteFunctionDefinition(tool.name);
+                window.FunctionToolsService.removeJsFunction(tool.name);
                 
                 console.log(`[MCPProviderIntegration] Unregistered function: ${tool.name}`);
             }
@@ -253,7 +263,7 @@ class MCPProviderIntegrationClass {
         return async (params = {}) => {
             try {
                 // Get stored credentials
-                const credentials = await this.coreStorageService?.get(provider.getStorageKeyPrefix() + '_credentials');
+                const credentials = await this.coreStorageService?.getValue(provider.getStorageKeyPrefix() + '_credentials');
                 
                 if (!credentials) {
                     throw new Error(`No credentials found for ${provider.name}`);
@@ -358,7 +368,7 @@ class MCPProviderIntegrationClass {
             registeredProviders: Array.from(this.registeredProviders),
             availableProviders: window.MCPProviderFactory.getAvailableProviders(),
             toolRegistryStats: window.MCPToolRegistry.getStats(),
-            functionCallingAvailable: !!(this.functionToolsRegistry && this.functionToolsStorage)
+            functionCallingAvailable: !!window.FunctionToolsService
         };
     }
 
@@ -374,7 +384,7 @@ class MCPProviderIntegrationClass {
             }
 
             // Check for existing GitHub token
-            const existingToken = await this.coreStorageService.get('mcp_github_token');
+            const existingToken = await this.coreStorageService.getValue('mcp_github_token');
             if (!existingToken) {
                 console.log('[MCPProviderIntegration] No existing GitHub token found');
                 return false;
