@@ -381,11 +381,17 @@ window.AIHackareComponent = (function() {
                 this.uiManager.hideFunctionModal();
             }
             
-            // Ctrl/Cmd + Enter to send message
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            // Enter to send message, Shift+Enter for newline
+            if (e.key === 'Enter') {
                 if (document.activeElement === this.elements.messageInput) {
-                    e.preventDefault();
-                    this.sendMessage();
+                    if (e.shiftKey) {
+                        // Shift+Enter: allow default behavior (newline)
+                        return;
+                    } else {
+                        // Plain Enter: send message
+                        e.preventDefault();
+                        this.sendMessage();
+                    }
                 }
             }
         });
