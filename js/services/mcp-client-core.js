@@ -45,7 +45,7 @@ window.MCPClientService = (function() {
         }
         
         if (window.MCPToolRegistry) {
-            toolRegistry = new window.MCPToolRegistry.ToolRegistry();
+            toolRegistry = window.MCPToolRegistry;
         }
 
         if (!connectionManager || !requestManager || !toolRegistry) {
