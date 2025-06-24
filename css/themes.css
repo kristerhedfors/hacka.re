@@ -678,6 +678,32 @@ header .settings .icon-btn i,
     scrollbar-gutter: stable;
     padding-right: 12px; /* Same as scrollbar width */
     margin-bottom: 0;
+    
+    /* Modern theme scrollbar styling */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+}
+
+/* Modern theme webkit scrollbar styling */
+.theme-modern #chat-messages::-webkit-scrollbar {
+    width: 12px;
+}
+
+.theme-modern #chat-messages::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 6px;
+}
+
+.theme-modern #chat-messages::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 6px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+.theme-modern #chat-messages::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.5);
+    background-clip: content-box;
 }
 
 /* Remove any bottom margin from the last message */
@@ -1182,6 +1208,44 @@ header .settings .icon-btn i,
     scrollbar-gutter: stable;
     padding-right: 12px; /* Same as scrollbar width */
     margin-bottom: 0;
+    
+    /* Dark theme scrollbar styling */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.4) transparent;
+}
+
+/* Dark theme webkit scrollbar styling */
+.theme-sunset #chat-messages::-webkit-scrollbar,
+.theme-ocean #chat-messages::-webkit-scrollbar,
+.theme-forest #chat-messages::-webkit-scrollbar,
+.theme-midnight #chat-messages::-webkit-scrollbar {
+    width: 12px;
+}
+
+.theme-sunset #chat-messages::-webkit-scrollbar-track,
+.theme-ocean #chat-messages::-webkit-scrollbar-track,
+.theme-forest #chat-messages::-webkit-scrollbar-track,
+.theme-midnight #chat-messages::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+}
+
+.theme-sunset #chat-messages::-webkit-scrollbar-thumb,
+.theme-ocean #chat-messages::-webkit-scrollbar-thumb,
+.theme-forest #chat-messages::-webkit-scrollbar-thumb,
+.theme-midnight #chat-messages::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 6px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+.theme-sunset #chat-messages::-webkit-scrollbar-thumb:hover,
+.theme-ocean #chat-messages::-webkit-scrollbar-thumb:hover,
+.theme-forest #chat-messages::-webkit-scrollbar-thumb:hover,
+.theme-midnight #chat-messages::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.6);
+    background-clip: content-box;
 }
 
 /* Remove any bottom margin from the last message */

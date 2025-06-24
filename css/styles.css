@@ -1054,6 +1054,32 @@ main {
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    
+    /* Scrollbar styling for better visibility */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+}
+
+/* Webkit scrollbar styling for Chrome/Safari */
+#chat-messages::-webkit-scrollbar {
+    width: 12px;
+}
+
+#chat-messages::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 6px;
+}
+
+#chat-messages::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 6px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+#chat-messages::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.5);
+    background-clip: content-box;
 }
 
 .message {
