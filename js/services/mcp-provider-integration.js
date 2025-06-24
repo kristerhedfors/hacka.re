@@ -270,7 +270,7 @@ class MCPProviderIntegrationClass {
                 }
 
                 // Execute tool
-                const result = await provider.executeTool(tool.originalName, params, { credentials });
+                const result = await provider.executeTool(tool.name, params, { credentials });
                 
                 return result;
             } catch (error) {
