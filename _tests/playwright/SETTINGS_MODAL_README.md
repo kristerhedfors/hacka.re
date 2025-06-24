@@ -280,7 +280,7 @@ To improve performance, models are cached:
 API keys are handled securely:
 - API keys are stored encrypted in localStorage
 - When displayed in the UI, they are masked with placeholder dots
-- They are only sent to the specified API endpoint, never to hacka.re servers
+- They are only sent to the specified API endpoint, never to Github Pages where hacka.re static files are hosted
 
 ## Conclusion
 
