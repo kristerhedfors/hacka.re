@@ -79,11 +79,89 @@ window.UIUtils = (function() {
     }
 
     /**
-     * Scroll an element to its bottom
-     * @param {HTMLElement} element - Element to scroll
+     * Smart autoscroll state management
      */
-    function scrollToBottom(element) {
-        element.scrollTop = element.scrollHeight;
+    const AutoscrollState = {
+        isEnabled: true,
+        scrollThreshold: 150, // pixels from bottom to re-enable autoscroll
+        detachThreshold: 50,  // pixels from bottom to detach autoscroll
+        attachedElements: new WeakMap() // track state per element
+    };
+
+    /**
+     * Initialize smart autoscroll for a chat element
+     * @param {HTMLElement} element - Chat messages container element
+     */
+    function initializeSmartAutoscroll(element) {
+        if (AutoscrollState.attachedElements.has(element)) {
+            return; // Already initialized
+        }
+
+        const state = {
+            isAutoScrollEnabled: true,
+            userScrollTimeout: null
+        };
+        
+        AutoscrollState.attachedElements.set(element, state);
+
+        // Detect user scroll up (disable autoscroll)
+        element.addEventListener('scroll', () => {
+            const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
+            
+            if (distanceFromBottom > AutoscrollState.detachThreshold && state.isAutoScrollEnabled) {
+                // User scrolled up - disable autoscroll (easier to trigger)
+                state.isAutoScrollEnabled = false;
+            } else if (distanceFromBottom <= AutoscrollState.scrollThreshold && !state.isAutoScrollEnabled) {
+                // User scrolled back to bottom - re-enable autoscroll
+                state.isAutoScrollEnabled = true;
+            }
+        });
+
+        // Detect mouse wheel up (disable autoscroll immediately)
+        element.addEventListener('wheel', (e) => {
+            if (e.deltaY < 0) { // Scrolling up
+                // Immediately disable autoscroll on any upward wheel movement
+                state.isAutoScrollEnabled = false;
+                
+                // Clear existing timeout
+                if (state.userScrollTimeout) {
+                    clearTimeout(state.userScrollTimeout);
+                }
+                
+                // Re-check scroll position after user stops scrolling
+                state.userScrollTimeout = setTimeout(() => {
+                    const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
+                    if (distanceFromBottom <= AutoscrollState.scrollThreshold) {
+                        state.isAutoScrollEnabled = true;
+                    }
+                }, 100); // Shorter delay for faster reattachment
+            }
+        });
+    }
+
+    /**
+     * Check if autoscroll is enabled for an element
+     * @param {HTMLElement} element - Element to check
+     * @returns {boolean} - Whether autoscroll is enabled
+     */
+    function isAutoscrollEnabled(element) {
+        const state = AutoscrollState.attachedElements.get(element);
+        return state ? state.isAutoScrollEnabled : true;
+    }
+
+    /**
+     * Scroll an element to its bottom (with smart autoscroll)
+     * @param {HTMLElement} element - Element to scroll
+     * @param {boolean} force - Force scroll even if autoscroll is disabled
+     */
+    function scrollToBottom(element, force = false) {
+        // Initialize smart autoscroll if not already done
+        initializeSmartAutoscroll(element);
+        
+        // Only scroll if autoscroll is enabled or forced
+        if (force || isAutoscrollEnabled(element)) {
+            element.scrollTop = element.scrollHeight;
+        }
     }
 
     /**
@@ -359,6 +437,8 @@ window.UIUtils = (function() {
         renderMarkdown,
         escapeHTML,
         scrollToBottom,
+        initializeSmartAutoscroll,
+        isAutoscrollEnabled,
         setupTextareaAutoResize,
         updateContextUsage,
         createMessageElement,
