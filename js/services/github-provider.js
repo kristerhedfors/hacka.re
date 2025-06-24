@@ -324,6 +324,426 @@ class GitHubProvider extends window.MCPProviderInterface {
                 },
                 handler: this.listBranches.bind(this),
                 requiredScopes: ['repo']
+            }],
+            
+            // Advanced Search Tools
+            ['search_code', {
+                name: 'search_code',
+                description: 'Search for code across repositories with advanced filtering',
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        q: {
+                            type: 'string',
+                            description: 'Search query with keywords and qualifiers (e.g., "function language:javascript")'
+                        },
+                        owner: {
+                            type: 'string',
+                            description: 'Limit search to specific user or organization repositories'
+                        },
+                        repo: {
+                            type: 'string',
+                            description: 'Limit search to specific repository (requires owner)'
+                        },
+                        language: {
+                            type: 'string',
+                            description: 'Filter by programming language'
+                        },
+                        filename: {
+                            type: 'string',
+                            description: 'Search within specific filename'
+                        },
+                        extension: {
+                            type: 'string',
+                            description: 'Filter by file extension'
+                        },
+                        path: {
+                            type: 'string',
+                            description: 'Search within specific path'
+                        },
+                        size: {
+                            type: 'string',
+                            description: 'Filter by file size (e.g., ">1000", "<500")'
+                        },
+                        per_page: {
+                            type: 'number',
+                            default: 30,
+                            maximum: 100,
+                            description: 'Number of results per page'
+                        },
+                        page: {
+                            type: 'number',
+                            default: 1,
+                            description: 'Page number of results'
+                        }
+                    },
+                    required: ['q']
+                },
+                handler: this.searchCode.bind(this),
+                requiredScopes: ['repo'],
+                category: 'search',
+                tags: ['search', 'code', 'files']
+            }],
+            ['search_commits', {
+                name: 'search_commits',
+                description: 'Search commits with advanced criteria and filtering',
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        q: {
+                            type: 'string',
+                            description: 'Search query with keywords and qualifiers'
+                        },
+                        owner: {
+                            type: 'string',
+                            description: 'Limit search to specific user or organization'
+                        },
+                        repo: {
+                            type: 'string',
+                            description: 'Limit search to specific repository (requires owner)'
+                        },
+                        author: {
+                            type: 'string',
+                            description: 'Filter by commit author'
+                        },
+                        committer: {
+                            type: 'string',
+                            description: 'Filter by committer'
+                        },
+                        author_date: {
+                            type: 'string',
+                            description: 'Filter by author date (e.g., "2023-01-01..2023-12-31")'
+                        },
+                        committer_date: {
+                            type: 'string',
+                            description: 'Filter by committer date'
+                        },
+                        merge: {
+                            type: 'boolean',
+                            description: 'Include only merge commits'
+                        },
+                        sort: {
+                            type: 'string',
+                            enum: ['author-date', 'committer-date'],
+                            description: 'Sort commits by date'
+                        },
+                        order: {
+                            type: 'string',
+                            enum: ['asc', 'desc'],
+                            default: 'desc',
+                            description: 'Sort order'
+                        },
+                        per_page: {
+                            type: 'number',
+                            default: 30,
+                            maximum: 100,
+                            description: 'Number of results per page'
+                        }
+                    },
+                    required: ['q']
+                },
+                handler: this.searchCommits.bind(this),
+                requiredScopes: ['repo'],
+                category: 'search',
+                tags: ['search', 'commits', 'history']
+            }],
+            ['search_repositories', {
+                name: 'search_repositories',
+                description: 'Search and discover repositories with comprehensive filtering',
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        q: {
+                            type: 'string',
+                            description: 'Search query with keywords and qualifiers'
+                        },
+                        owner: {
+                            type: 'string',
+                            description: 'Filter by repository owner'
+                        },
+                        language: {
+                            type: 'string',
+                            description: 'Filter by primary programming language'
+                        },
+                        topic: {
+                            type: 'string',
+                            description: 'Filter by repository topics'
+                        },
+                        stars: {
+                            type: 'string',
+                            description: 'Filter by star count (e.g., ">100", "10..50")'
+                        },
+                        forks: {
+                            type: 'string',
+                            description: 'Filter by fork count'
+                        },
+                        size: {
+                            type: 'string',
+                            description: 'Filter by repository size in KB'
+                        },
+                        created: {
+                            type: 'string',
+                            description: 'Filter by creation date'
+                        },
+                        pushed: {
+                            type: 'string',
+                            description: 'Filter by last push date'
+                        },
+                        license: {
+                            type: 'string',
+                            description: 'Filter by license type'
+                        },
+                        is_public: {
+                            type: 'boolean',
+                            description: 'Filter by public/private status'
+                        },
+                        archived: {
+                            type: 'boolean',
+                            description: 'Include archived repositories'
+                        },
+                        sort: {
+                            type: 'string',
+                            enum: ['stars', 'forks', 'help-wanted-issues', 'updated'],
+                            description: 'Sort repositories by metric'
+                        },
+                        order: {
+                            type: 'string',
+                            enum: ['asc', 'desc'],
+                            default: 'desc',
+                            description: 'Sort order'
+                        },
+                        per_page: {
+                            type: 'number',
+                            default: 30,
+                            maximum: 100,
+                            description: 'Number of results per page'
+                        }
+                    },
+                    required: ['q']
+                },
+                handler: this.searchRepositories.bind(this),
+                requiredScopes: ['repo'],
+                category: 'search',
+                tags: ['search', 'repositories', 'discovery']
+            }],
+            ['search_issues', {
+                name: 'search_issues',
+                description: 'Advanced search for issues and pull requests',
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        q: {
+                            type: 'string',
+                            description: 'Search query with keywords and qualifiers'
+                        },
+                        owner: {
+                            type: 'string',
+                            description: 'Limit search to specific user or organization'
+                        },
+                        repo: {
+                            type: 'string',
+                            description: 'Limit search to specific repository (requires owner)'
+                        },
+                        type: {
+                            type: 'string',
+                            enum: ['issue', 'pr'],
+                            description: 'Filter by issue type'
+                        },
+                        state: {
+                            type: 'string',
+                            enum: ['open', 'closed'],
+                            description: 'Filter by issue state'
+                        },
+                        labels: {
+                            type: 'string',
+                            description: 'Filter by labels (comma-separated)'
+                        },
+                        assignee: {
+                            type: 'string',
+                            description: 'Filter by assignee'
+                        },
+                        author: {
+                            type: 'string',
+                            description: 'Filter by author'
+                        },
+                        mentions: {
+                            type: 'string',
+                            description: 'Filter by mentioned users'
+                        },
+                        created: {
+                            type: 'string',
+                            description: 'Filter by creation date'
+                        },
+                        updated: {
+                            type: 'string',
+                            description: 'Filter by last update date'
+                        },
+                        closed: {
+                            type: 'string',
+                            description: 'Filter by closing date'
+                        },
+                        sort: {
+                            type: 'string',
+                            enum: ['comments', 'reactions', 'reactions-+1', 'reactions--1', 'reactions-smile', 'reactions-thinking_face', 'reactions-heart', 'reactions-tada', 'interactions', 'created', 'updated'],
+                            description: 'Sort issues by metric'
+                        },
+                        order: {
+                            type: 'string',
+                            enum: ['asc', 'desc'],
+                            default: 'desc',
+                            description: 'Sort order'
+                        },
+                        per_page: {
+                            type: 'number',
+                            default: 30,
+                            maximum: 100,
+                            description: 'Number of results per page'
+                        }
+                    },
+                    required: ['q']
+                },
+                handler: this.searchIssues.bind(this),
+                requiredScopes: ['repo'],
+                category: 'search',
+                tags: ['search', 'issues', 'pull-requests']
+            }],
+            ['search_users', {
+                name: 'search_users',
+                description: 'Search for users and organizations on GitHub',
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        q: {
+                            type: 'string',
+                            description: 'Search query with keywords and qualifiers'
+                        },
+                        type: {
+                            type: 'string',
+                            enum: ['user', 'org'],
+                            description: 'Filter by user type'
+                        },
+                        location: {
+                            type: 'string',
+                            description: 'Filter by location'
+                        },
+                        language: {
+                            type: 'string',
+                            description: 'Filter by programming language'
+                        },
+                        created: {
+                            type: 'string',
+                            description: 'Filter by account creation date'
+                        },
+                        followers: {
+                            type: 'string',
+                            description: 'Filter by follower count (e.g., ">100")'
+                        },
+                        repos: {
+                            type: 'string',
+                            description: 'Filter by repository count'
+                        },
+                        sort: {
+                            type: 'string',
+                            enum: ['followers', 'repositories', 'joined'],
+                            description: 'Sort users by metric'
+                        },
+                        order: {
+                            type: 'string',
+                            enum: ['asc', 'desc'],
+                            default: 'desc',
+                            description: 'Sort order'
+                        },
+                        per_page: {
+                            type: 'number',
+                            default: 30,
+                            maximum: 100,
+                            description: 'Number of results per page'
+                        }
+                    },
+                    required: ['q']
+                },
+                handler: this.searchUsers.bind(this),
+                requiredScopes: ['read:user'],
+                category: 'search',
+                tags: ['search', 'users', 'organizations']
+            }],
+            ['search_topics', {
+                name: 'search_topics',
+                description: 'Search for topics and explore trending repository tags',
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        q: {
+                            type: 'string',
+                            description: 'Search query for topics'
+                        },
+                        featured: {
+                            type: 'boolean',
+                            description: 'Filter to featured topics only'
+                        },
+                        curated: {
+                            type: 'boolean',
+                            description: 'Filter to curated topics only'
+                        },
+                        per_page: {
+                            type: 'number',
+                            default: 30,
+                            maximum: 100,
+                            description: 'Number of results per page'
+                        }
+                    },
+                    required: ['q']
+                },
+                handler: this.searchTopics.bind(this),
+                requiredScopes: ['repo'],
+                category: 'search',
+                tags: ['search', 'topics', 'trending']
+            }],
+            ['advanced_search', {
+                name: 'advanced_search',
+                description: 'Multi-type GitHub search with unified results',
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        q: {
+                            type: 'string',
+                            description: 'Search query to search across all GitHub entity types'
+                        },
+                        types: {
+                            type: 'array',
+                            items: {
+                                type: 'string',
+                                enum: ['repositories', 'code', 'commits', 'issues', 'users', 'topics']
+                            },
+                            default: ['repositories', 'issues'],
+                            description: 'Types of entities to search'
+                        },
+                        owner: {
+                            type: 'string',
+                            description: 'Limit search to specific user or organization'
+                        },
+                        repo: {
+                            type: 'string',
+                            description: 'Limit search to specific repository (requires owner)'
+                        },
+                        limit_per_type: {
+                            type: 'number',
+                            default: 10,
+                            maximum: 50,
+                            description: 'Maximum results per search type'
+                        },
+                        include_metadata: {
+                            type: 'boolean',
+                            default: true,
+                            description: 'Include rich metadata for results'
+                        }
+                    },
+                    required: ['q']
+                },
+                handler: this.advancedSearch.bind(this),
+                requiredScopes: ['repo'],
+                category: 'search',
+                tags: ['search', 'multi-type', 'comprehensive']
             }]
         ]);
     }
@@ -523,6 +943,417 @@ class GitHubProvider extends window.MCPProviderInterface {
         }
 
         return await this._makeApiRequest(url.toString(), 'GET', credentials);
+    }
+
+    // Advanced Search Tool Implementations
+
+    async searchCode(params, credentials) {
+        const { q, owner, repo, language, filename, extension, path, size, per_page, page } = params;
+        
+        // Build search query with qualifiers
+        let searchQuery = q;
+        if (owner && repo) {
+            searchQuery += ` repo:${owner}/${repo}`;
+        } else if (owner) {
+            searchQuery += ` user:${owner}`;
+        }
+        if (language) searchQuery += ` language:${language}`;
+        if (filename) searchQuery += ` filename:${filename}`;
+        if (extension) searchQuery += ` extension:${extension}`;
+        if (path) searchQuery += ` path:${path}`;
+        if (size) searchQuery += ` size:${size}`;
+
+        const url = new URL(`${this.endpoints.api}/search/code`);
+        url.searchParams.set('q', searchQuery);
+        if (per_page) url.searchParams.set('per_page', per_page.toString());
+        if (page) url.searchParams.set('page', page.toString());
+
+        const response = await this._makeApiRequest(url.toString(), 'GET', credentials);
+        
+        // Add enhanced metadata to results
+        if (response.items) {
+            response.items = response.items.map(item => ({
+                ...item,
+                search_metadata: {
+                    query: searchQuery,
+                    match_type: 'code',
+                    file_size: item.size || null,
+                    language: item.language || 'unknown'
+                }
+            }));
+        }
+        
+        return response;
+    }
+
+    async searchCommits(params, credentials) {
+        const { q, owner, repo, author, committer, author_date, committer_date, merge, sort, order, per_page } = params;
+        
+        // Build search query with qualifiers
+        let searchQuery = q;
+        if (owner && repo) {
+            searchQuery += ` repo:${owner}/${repo}`;
+        } else if (owner) {
+            searchQuery += ` user:${owner}`;
+        }
+        if (author) searchQuery += ` author:${author}`;
+        if (committer) searchQuery += ` committer:${committer}`;
+        if (author_date) searchQuery += ` author-date:${author_date}`;
+        if (committer_date) searchQuery += ` committer-date:${committer_date}`;
+        if (merge) searchQuery += ` merge:true`;
+
+        const url = new URL(`${this.endpoints.api}/search/commits`);
+        url.searchParams.set('q', searchQuery);
+        if (sort) url.searchParams.set('sort', sort);
+        if (order) url.searchParams.set('order', order);
+        if (per_page) url.searchParams.set('per_page', per_page.toString());
+
+        // Use preview header for commit search
+        const response = await this._makeApiRequest(url.toString(), 'GET', credentials);
+        
+        // Add enhanced metadata
+        if (response.items) {
+            response.items = response.items.map(item => ({
+                ...item,
+                search_metadata: {
+                    query: searchQuery,
+                    match_type: 'commit',
+                    files_changed: item.files ? item.files.length : null,
+                    commit_date: item.commit?.author?.date || null
+                }
+            }));
+        }
+        
+        return response;
+    }
+
+    async searchRepositories(params, credentials) {
+        const { q, owner, language, topic, stars, forks, size, created, pushed, license, is_public, archived, sort, order, per_page } = params;
+        
+        // Build search query with qualifiers
+        let searchQuery = q;
+        if (owner) searchQuery += ` user:${owner}`;
+        if (language) searchQuery += ` language:${language}`;
+        if (topic) searchQuery += ` topic:${topic}`;
+        if (stars) searchQuery += ` stars:${stars}`;
+        if (forks) searchQuery += ` forks:${forks}`;
+        if (size) searchQuery += ` size:${size}`;
+        if (created) searchQuery += ` created:${created}`;
+        if (pushed) searchQuery += ` pushed:${pushed}`;
+        if (license) searchQuery += ` license:${license}`;
+        if (typeof is_public === 'boolean') searchQuery += ` is:${is_public ? 'public' : 'private'}`;
+        if (archived) searchQuery += ` archived:${archived}`;
+
+        const url = new URL(`${this.endpoints.api}/search/repositories`);
+        url.searchParams.set('q', searchQuery);
+        if (sort) url.searchParams.set('sort', sort);
+        if (order) url.searchParams.set('order', order);
+        if (per_page) url.searchParams.set('per_page', per_page.toString());
+
+        const response = await this._makeApiRequest(url.toString(), 'GET', credentials);
+        
+        // Add enhanced metadata
+        if (response.items) {
+            response.items = response.items.map(item => ({
+                ...item,
+                search_metadata: {
+                    query: searchQuery,
+                    match_type: 'repository',
+                    activity_score: this._calculateActivityScore(item),
+                    health_score: this._calculateHealthScore(item)
+                }
+            }));
+        }
+        
+        return response;
+    }
+
+    async searchIssues(params, credentials) {
+        const { q, owner, repo, type, state, labels, assignee, author, mentions, created, updated, closed, sort, order, per_page } = params;
+        
+        // Build search query with qualifiers
+        let searchQuery = q;
+        if (owner && repo) {
+            searchQuery += ` repo:${owner}/${repo}`;
+        } else if (owner) {
+            searchQuery += ` user:${owner}`;
+        }
+        if (type) searchQuery += ` type:${type}`;
+        if (state) searchQuery += ` state:${state}`;
+        if (labels) searchQuery += ` label:${labels}`;
+        if (assignee) searchQuery += ` assignee:${assignee}`;
+        if (author) searchQuery += ` author:${author}`;
+        if (mentions) searchQuery += ` mentions:${mentions}`;
+        if (created) searchQuery += ` created:${created}`;
+        if (updated) searchQuery += ` updated:${updated}`;
+        if (closed) searchQuery += ` closed:${closed}`;
+
+        const url = new URL(`${this.endpoints.api}/search/issues`);
+        url.searchParams.set('q', searchQuery);
+        if (sort) url.searchParams.set('sort', sort);
+        if (order) url.searchParams.set('order', order);
+        if (per_page) url.searchParams.set('per_page', per_page.toString());
+
+        const response = await this._makeApiRequest(url.toString(), 'GET', credentials);
+        
+        // Add enhanced metadata
+        if (response.items) {
+            response.items = response.items.map(item => ({
+                ...item,
+                search_metadata: {
+                    query: searchQuery,
+                    match_type: item.pull_request ? 'pull_request' : 'issue',
+                    engagement_score: this._calculateEngagementScore(item),
+                    activity_status: this._getActivityStatus(item)
+                }
+            }));
+        }
+        
+        return response;
+    }
+
+    async searchUsers(params, credentials) {
+        const { q, type, location, language, created, followers, repos, sort, order, per_page } = params;
+        
+        // Build search query with qualifiers
+        let searchQuery = q;
+        if (type) searchQuery += ` type:${type}`;
+        if (location) searchQuery += ` location:${location}`;
+        if (language) searchQuery += ` language:${language}`;
+        if (created) searchQuery += ` created:${created}`;
+        if (followers) searchQuery += ` followers:${followers}`;
+        if (repos) searchQuery += ` repos:${repos}`;
+
+        const url = new URL(`${this.endpoints.api}/search/users`);
+        url.searchParams.set('q', searchQuery);
+        if (sort) url.searchParams.set('sort', sort);
+        if (order) url.searchParams.set('order', order);
+        if (per_page) url.searchParams.set('per_page', per_page.toString());
+
+        const response = await this._makeApiRequest(url.toString(), 'GET', credentials);
+        
+        // Add enhanced metadata
+        if (response.items) {
+            response.items = response.items.map(item => ({
+                ...item,
+                search_metadata: {
+                    query: searchQuery,
+                    match_type: item.type === 'Organization' ? 'organization' : 'user',
+                    influence_score: this._calculateInfluenceScore(item),
+                    activity_level: this._getUserActivityLevel(item)
+                }
+            }));
+        }
+        
+        return response;
+    }
+
+    async searchTopics(params, credentials) {
+        const { q, featured, curated, per_page } = params;
+        
+        // Build search query
+        let searchQuery = q;
+        if (featured) searchQuery += ` is:featured`;
+        if (curated) searchQuery += ` is:curated`;
+
+        const url = new URL(`${this.endpoints.api}/search/topics`);
+        url.searchParams.set('q', searchQuery);
+        if (per_page) url.searchParams.set('per_page', per_page.toString());
+
+        // Use preview header for topics search
+        const response = await this._makeApiRequest(url.toString(), 'GET', credentials);
+        
+        // Add enhanced metadata
+        if (response.items) {
+            response.items = response.items.map(item => ({
+                ...item,
+                search_metadata: {
+                    query: searchQuery,
+                    match_type: 'topic',
+                    popularity_score: item.score || 0,
+                    repository_count: item.repositories || 0
+                }
+            }));
+        }
+        
+        return response;
+    }
+
+    async advancedSearch(params, credentials) {
+        const { q, types, owner, repo, limit_per_type, include_metadata } = params;
+        const searchTypes = types || ['repositories', 'issues'];
+        const limit = Math.min(limit_per_type || 10, 50);
+
+        const results = {
+            query: q,
+            search_types: searchTypes,
+            total_results: 0,
+            results_by_type: {},
+            unified_results: [],
+            search_metadata: {
+                executed_at: new Date().toISOString(),
+                search_scope: owner && repo ? `${owner}/${repo}` : owner || 'global',
+                include_metadata: include_metadata
+            }
+        };
+
+        // Execute searches in parallel for better performance
+        const searchPromises = searchTypes.map(async (type) => {
+            try {
+                let searchResult;
+                const searchParams = { q, per_page: limit, owner, repo };
+
+                switch (type) {
+                    case 'repositories':
+                        searchResult = await this.searchRepositories(searchParams, credentials);
+                        break;
+                    case 'code':
+                        searchResult = await this.searchCode(searchParams, credentials);
+                        break;
+                    case 'commits':
+                        searchResult = await this.searchCommits(searchParams, credentials);
+                        break;
+                    case 'issues':
+                        searchResult = await this.searchIssues(searchParams, credentials);
+                        break;
+                    case 'users':
+                        searchResult = await this.searchUsers(searchParams, credentials);
+                        break;
+                    case 'topics':
+                        searchResult = await this.searchTopics(searchParams, credentials);
+                        break;
+                    default:
+                        return null;
+                }
+
+                if (searchResult && searchResult.items) {
+                    results.results_by_type[type] = {
+                        total_count: searchResult.total_count || 0,
+                        items: searchResult.items,
+                        search_metadata: searchResult.search_metadata || {}
+                    };
+                    
+                    results.total_results += searchResult.items.length;
+
+                    // Add to unified results with type annotation
+                    searchResult.items.forEach(item => {
+                        results.unified_results.push({
+                            ...item,
+                            _search_type: type,
+                            _relevance_score: item.score || 0
+                        });
+                    });
+                }
+
+                return { type, result: searchResult };
+            } catch (error) {
+                console.error(`Search failed for type ${type}:`, error);
+                results.results_by_type[type] = {
+                    error: error.message,
+                    total_count: 0,
+                    items: []
+                };
+                return null;
+            }
+        });
+
+        await Promise.all(searchPromises);
+
+        // Sort unified results by relevance
+        results.unified_results.sort((a, b) => (b._relevance_score || 0) - (a._relevance_score || 0));
+
+        // Limit unified results to prevent overwhelming responses
+        if (results.unified_results.length > limit * searchTypes.length) {
+            results.unified_results = results.unified_results.slice(0, limit * searchTypes.length);
+        }
+
+        return results;
+    }
+
+    // Helper methods for enhanced metadata
+
+    _calculateActivityScore(repo) {
+        if (!repo) return 0;
+        
+        const now = new Date();
+        const lastPush = new Date(repo.pushed_at || repo.updated_at);
+        const daysSinceLastPush = (now - lastPush) / (1000 * 60 * 60 * 24);
+        
+        // Score based on recency, stars, and activity
+        const recencyScore = Math.max(0, 100 - daysSinceLastPush / 7); // 100 for recent, decreases weekly
+        const popularityScore = Math.min(100, Math.log10((repo.stargazers_count || 0) + 1) * 20);
+        const activityScore = Math.min(100, (repo.open_issues_count || 0) / 10 * 20);
+        
+        return Math.round((recencyScore + popularityScore + activityScore) / 3);
+    }
+
+    _calculateHealthScore(repo) {
+        if (!repo) return 0;
+        
+        let score = 50; // Base score
+        
+        // Positive indicators
+        if (repo.description) score += 10;
+        if (repo.homepage) score += 5;
+        if (repo.license) score += 10;
+        if (repo.topics && repo.topics.length > 0) score += 10;
+        if (repo.stargazers_count > 10) score += 15;
+        
+        // Recent activity
+        const now = new Date();
+        const lastPush = new Date(repo.pushed_at || repo.updated_at);
+        const daysSinceLastPush = (now - lastPush) / (1000 * 60 * 60 * 24);
+        if (daysSinceLastPush < 30) score += 20;
+        else if (daysSinceLastPush < 90) score += 10;
+        
+        return Math.min(100, Math.max(0, score));
+    }
+
+    _calculateEngagementScore(issue) {
+        if (!issue) return 0;
+        
+        const comments = issue.comments || 0;
+        const reactions = issue.reactions ? issue.reactions.total_count || 0 : 0;
+        
+        return Math.min(100, (comments * 5) + (reactions * 10));
+    }
+
+    _getActivityStatus(issue) {
+        if (!issue.updated_at) return 'unknown';
+        
+        const now = new Date();
+        const lastUpdate = new Date(issue.updated_at);
+        const daysSinceUpdate = (now - lastUpdate) / (1000 * 60 * 60 * 24);
+        
+        if (daysSinceUpdate < 1) return 'very_active';
+        if (daysSinceUpdate < 7) return 'active';
+        if (daysSinceUpdate < 30) return 'moderate';
+        if (daysSinceUpdate < 90) return 'low';
+        return 'stale';
+    }
+
+    _calculateInfluenceScore(user) {
+        if (!user) return 0;
+        
+        const followers = user.followers || 0;
+        const publicRepos = user.public_repos || 0;
+        
+        // Logarithmic scale for followers, linear for repos
+        const followerScore = Math.min(70, Math.log10(followers + 1) * 20);
+        const repoScore = Math.min(30, publicRepos);
+        
+        return Math.round(followerScore + repoScore);
+    }
+
+    _getUserActivityLevel(user) {
+        const followers = user.followers || 0;
+        const repos = user.public_repos || 0;
+        
+        if (followers > 1000 || repos > 50) return 'very_high';
+        if (followers > 100 || repos > 20) return 'high';
+        if (followers > 10 || repos > 5) return 'moderate';
+        if (followers > 0 || repos > 0) return 'low';
+        return 'minimal';
     }
 
     // Private helper methods
