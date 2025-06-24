@@ -132,9 +132,8 @@ function setupGenerationState() {
     // Add typing indicator
     const typingIndicator = uiHandler.addTypingIndicator();
     
-    // Create AI message placeholder
+    // Create AI message placeholder (will be added when we receive first content)
     const aiMessageId = Date.now().toString();
-    addAIMessage('', aiMessageId);
     
     // Create AbortController for fetch
     controller = new AbortController();
@@ -175,7 +174,7 @@ async function generateAPIResponse(apiKey, currentModel, apiMessages, signal, ai
         currentModel,
         apiMessages,
         signal,
-        (content) => streamingHandler.updateStreamingMessage(content, aiMessageId, () => estimateContextUsage(updateContextUsage, currentModel)),
+        (content) => streamingHandler.updateStreamingMessage(content, aiMessageId, () => estimateContextUsage(updateContextUsage, currentModel), addAIMessage, uiHandler),
         systemPrompt,
         combinedToolsManager,
         addSystemMessage
@@ -218,6 +217,11 @@ function finalizeResponse(finalContent, typingIndicator) {
 function handleGenerationError(error, typingIndicator) {
     // Remove typing indicator
     uiHandler.removeTypingIndicator(typingIndicator);
+    
+    // Remove the empty assistant message if it was added (it might not be added yet with the new approach)
+    if (messages.length > 0 && messages[messages.length - 1].role === 'assistant' && messages[messages.length - 1].content === '') {
+        messages.pop();
+    }
     
     // Show error message
     if (error.name === 'AbortError') {
