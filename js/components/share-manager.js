@@ -289,12 +289,6 @@ window.ShareManager = (function() {
          */
         async function generateComprehensiveShareLink(apiKey, systemPrompt, currentModel, messages, generateShareQRCode, addSystemMessage) {
             console.log('ShareManager: generateComprehensiveShareLink called');
-            if (!apiKey) {
-                if (addSystemMessage) {
-                    addSystemMessage('Error: No API key available to share.');
-                }
-                return false;
-            }
             
             // Get password/session key
             const password = elements.sharePassword.value.trim();
@@ -315,15 +309,15 @@ window.ShareManager = (function() {
             // Check if title input exists and has a value
             if (elements.shareTitleInput && elements.shareTitleInput.value.trim()) {
                 title = elements.shareTitleInput.value.trim();
-                // Save the title to storage when generating a link
-                StorageService.saveTitle(title);
+                // DON'T save to storage - just use for the share link to avoid namespace changes
+                console.log('🔗 ShareManager: Using title for share link only (not saving to session):', title);
             }
             
             // Check if subtitle input exists and has a value
             if (elements.shareSubtitleInput && elements.shareSubtitleInput.value.trim()) {
                 subtitle = elements.shareSubtitleInput.value.trim();
-                // Save the subtitle to storage when generating a link
-                StorageService.saveSubtitle(subtitle);
+                // DON'T save to storage - just use for the share link to avoid namespace changes
+                console.log('🔗 ShareManager: Using subtitle for share link only (not saving to session):', subtitle);
             }
             
             // Debug: Check all checkbox states
@@ -366,30 +360,68 @@ window.ShareManager = (function() {
                 console.log('🎯 NO MCP checkbox found - defaulting to false');
             }
             
-            // Get options
+            // Collect MCP connections if needed
+            let mcpConnections = null;
+            if (mcpConnectionsChecked) {
+                console.log('🔌 ShareManager: Collecting MCP connections...');
+                try {
+                    // Use the share item collector which handles this properly
+                    if (window.collectMcpConnectionsData) {
+                        console.log('🔌 ShareManager: window.collectMcpConnectionsData is available, calling it...');
+                        const collectedData = await window.collectMcpConnectionsData();
+                        console.log('🔌 ShareManager: collectMcpConnectionsData returned:', collectedData);
+                        if (collectedData) {
+                            mcpConnections = collectedData;
+                            console.log('🔌 ShareManager: Collected MCP connections:', Object.keys(collectedData));
+                        } else {
+                            console.log('🔌 ShareManager: collectMcpConnectionsData returned null/empty');
+                        }
+                    } else {
+                        console.warn('🔌 ShareManager: window.collectMcpConnectionsData is NOT available, using fallback');
+                        // Fallback: Try to get GitHub token directly
+                        const githubToken = await window.CoreStorageService.getValue('mcp_github_token');
+                        if (githubToken) {
+                            mcpConnections = { github: githubToken };
+                            console.log('🔌 ShareManager: Found GitHub token via fallback');
+                        }
+                    }
+                } catch (error) {
+                    console.warn('🔌 ShareManager: Error collecting MCP connections:', error);
+                }
+            }
+            
+            // Build options for the new unified API
             const options = {
+                password: password,
                 baseUrl: baseUrl,
                 apiKey: apiKey,
                 systemPrompt: systemPrompt,
                 model: currentModel,
                 messages: messages,
+                messageCount: parseInt(elements.messageHistoryCount.value, 10) || 1,
+                title: title,
+                subtitle: subtitle,
+                mcpConnections: mcpConnections, // Pass the collected connections
                 includeBaseUrl: elements.shareBaseUrlCheckbox ? elements.shareBaseUrlCheckbox.checked : false,
                 includeApiKey: elements.shareApiKeyCheckbox ? elements.shareApiKeyCheckbox.checked : false,
                 includeSystemPrompt: false, // System prompt is now handled by prompt library
                 includeModel: elements.shareModelCheckbox ? elements.shareModelCheckbox.checked : false,
                 includeConversation: elements.shareConversationCheckbox ? elements.shareConversationCheckbox.checked : false,
-                messageCount: parseInt(elements.messageHistoryCount.value, 10) || 1,
+                includeTitle: !!title,
+                includeSubtitle: !!subtitle,
                 includePromptLibrary: elements.sharePromptLibraryCheckbox ? elements.sharePromptLibraryCheckbox.checked : false,
                 includeFunctionLibrary: elements.shareFunctionLibraryCheckbox ? elements.shareFunctionLibraryCheckbox.checked : false,
-                includeMcpConnections: mcpConnectionsChecked,
-                title: title,
-                subtitle: subtitle
+                includeMcpConnections: mcpConnectionsChecked
             };
             
             console.log('🎯 ShareManager: Final options object:', JSON.stringify(options, null, 2));
             
-            // Validate options
-            if (!options.includeBaseUrl && !options.includeApiKey && !options.includeSystemPrompt && !options.includeModel && !options.includeConversation && !options.includePromptLibrary && !options.includeFunctionLibrary && !options.includeMcpConnections) {
+            // Validate options - at least one item should be selected
+            const hasSelection = options.includeBaseUrl || options.includeApiKey || options.includeSystemPrompt || 
+                               options.includeModel || options.includeConversation || options.includePromptLibrary || 
+                               options.includeFunctionLibrary || options.includeMcpConnections;
+            
+            if (!hasSelection) {
                 if (addSystemMessage) {
                     addSystemMessage('Error: Please select at least one item to share.');
                 }
@@ -397,8 +429,8 @@ window.ShareManager = (function() {
             }
             
             try {
-                // Create shareable link
-                const shareableLink = await ShareService.createComprehensiveShareableLink(options, password);
+                // Use the new unified createShareLink function
+                const shareableLink = await ShareService.createShareLink(options);
                 
                 // Display the link
                 if (elements.generatedLink && elements.generatedLinkContainer) {

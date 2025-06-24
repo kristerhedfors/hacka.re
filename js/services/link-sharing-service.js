@@ -43,28 +43,7 @@ window.LinkSharingService = (function() {
         return `${baseUrl}#gpt=${encryptedData}`;
     }
     
-    /**
-     * Create a shareable link with encrypted API key and system prompt
-     * This creates a link that contains both the API key and system prompt,
-     * allowing the recipient to use your exact configuration.
-     * 
-     * @param {string} apiKey - The API key to share
-     * @param {string} systemPrompt - The system prompt to share
-     * @param {string} password - The password to use for encryption
-     * @returns {string} Shareable URL with #shared= fragment
-     */
-    function createInsecureShareableLink(apiKey, systemPrompt, password) {
-        // Create payload with API key and system prompt
-        const payload = { apiKey, systemPrompt };
-        
-        // Encrypt the payload
-        const encryptedData = CryptoUtils.encryptData(payload, password);
-        
-        // Create URL with hash fragment
-        const baseUrl = _location.href.split('#')[0];
-        return `${baseUrl}#gpt=${encryptedData}`;
-    }
-    
+
     /**
      * Create a custom shareable link with encrypted payload
      * This creates a link that contains any combination of data specified in the payload.
@@ -254,7 +233,6 @@ window.LinkSharingService = (function() {
     // Public API
     return {
         createShareableLink: createShareableLink,
-        createInsecureShareableLink: createInsecureShareableLink,
         createCustomShareableLink: createCustomShareableLink,
         hasSharedApiKey: hasSharedApiKey,
         extractSharedApiKey: extractSharedApiKey,

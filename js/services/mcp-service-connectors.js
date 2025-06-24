@@ -31,69 +31,7 @@
                 ],
                 docUrl: 'https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token'
             },
-            tools: {
-                list_repos: {
-                    description: 'List repositories for the authenticated user',
-                    parameters: {
-                        type: 'object',
-                        properties: {
-                            type: { type: 'string', enum: ['all', 'owner', 'member'], default: 'all' },
-                            sort: { type: 'string', enum: ['created', 'updated', 'pushed', 'full_name'], default: 'updated' },
-                            per_page: { type: 'number', default: 30, maximum: 100 }
-                        }
-                    }
-                },
-                get_repo: {
-                    description: 'Get details of a specific repository',
-                    parameters: {
-                        type: 'object',
-                        properties: {
-                            owner: { type: 'string', description: 'Repository owner' },
-                            repo: { type: 'string', description: 'Repository name' }
-                        },
-                        required: ['owner', 'repo']
-                    }
-                },
-                list_issues: {
-                    description: 'List issues in a repository',
-                    parameters: {
-                        type: 'object',
-                        properties: {
-                            owner: { type: 'string' },
-                            repo: { type: 'string' },
-                            state: { type: 'string', enum: ['open', 'closed', 'all'], default: 'open' },
-                            labels: { type: 'string', description: 'Comma-separated list of labels' }
-                        },
-                        required: ['owner', 'repo']
-                    }
-                },
-                create_issue: {
-                    description: 'Create a new issue',
-                    parameters: {
-                        type: 'object',
-                        properties: {
-                            owner: { type: 'string' },
-                            repo: { type: 'string' },
-                            title: { type: 'string' },
-                            body: { type: 'string' },
-                            labels: { type: 'array', items: { type: 'string' } }
-                        },
-                        required: ['owner', 'repo', 'title']
-                    }
-                },
-                get_file_content: {
-                    description: 'Get content of a file from a repository',
-                    parameters: {
-                        type: 'object',
-                        properties: {
-                            owner: { type: 'string' },
-                            repo: { type: 'string' },
-                            path: { type: 'string', description: 'File path in repository' }
-                        },
-                        required: ['owner', 'repo', 'path']
-                    }
-                }
-            }
+            tools: {} // Tools will be dynamically loaded from GitHubProvider
         },
         gmail: {
             name: 'Gmail',
@@ -358,9 +296,33 @@
             // Continue with registration even if some services aren't available
             // We'll check for each service individually when we need it
 
+            let toolsToRegister = config.tools;
+            
+            // For GitHub, use the comprehensive GitHubProvider instead of legacy config
+            if (serviceKey === 'github' && window.GitHubProvider) {
+                try {
+                    const githubProvider = new window.GitHubProvider();
+                    const providerTools = githubProvider.tools;
+                    
+                    // Convert provider tools to the format expected by this system
+                    toolsToRegister = {};
+                    for (const [toolName, toolConfig] of providerTools) {
+                        toolsToRegister[toolName] = {
+                            description: toolConfig.description,
+                            parameters: toolConfig.parameters
+                        };
+                    }
+                    console.log(`[MCP Service Connectors] Using GitHubProvider with ${Object.keys(toolsToRegister).length} tools`);
+                } catch (error) {
+                    console.warn(`[MCP Service Connectors] Failed to load GitHubProvider, falling back to config:`, error);
+                    toolsToRegister = config.tools;
+                }
+            }
+
             const tools = [];
-            for (const [toolName, toolConfig] of Object.entries(config.tools)) {
-                const functionName = `${serviceKey}_${toolName}`;
+            for (const [toolName, toolConfig] of Object.entries(toolsToRegister)) {
+                // For GitHub, toolName already includes the github_ prefix from GitHubProvider
+                const functionName = serviceKey === 'github' ? toolName : `${serviceKey}_${toolName}`;
                 const functionCode = this.generateServiceFunction(serviceKey, toolName, toolConfig, authToken);
                 tools.push({
                     name: functionName,
@@ -447,11 +409,16 @@
                 paramNames.push(...Object.keys(toolConfig.parameters.properties));
             }
 
-            return `async function ${serviceKey}_${toolName}(${paramNames.join(', ')}) {
+            // For GitHub, toolName already includes the github_ prefix
+            const functionName = serviceKey === 'github' ? toolName : `${serviceKey}_${toolName}`;
+            // For executeServiceTool, we need the base tool name without service prefix
+            const baseToolName = serviceKey === 'github' ? toolName.replace('github_', '') : toolName;
+
+            return `async function ${functionName}(${paramNames.join(', ')}) {
                 try {
                     const MCPServiceConnectors = window.MCPServiceConnectors;
                     const params = {${paramNames.map(name => `${name}: ${name}`).join(', ')}};
-                    const result = await MCPServiceConnectors.executeServiceTool('${serviceKey}', '${toolName}', params);
+                    const result = await MCPServiceConnectors.executeServiceTool('${serviceKey}', '${baseToolName}', params);
                     return { success: true, result: result };
                 } catch (error) {
                     return { success: false, error: error.message };
@@ -483,9 +450,32 @@
         }
 
         /**
-         * Execute GitHub API calls
+         * Execute GitHub API calls using GitHubProvider
          */
         async executeGitHubTool(toolName, params, connection) {
+            // Use GitHubProvider if available, otherwise fall back to legacy implementation
+            if (window.GitHubProvider) {
+                try {
+                    const githubProvider = new window.GitHubProvider();
+                    
+                    // Set up authentication
+                    githubProvider.credentials = { token: connection.token };
+                    
+                    // Get the tool handler from the provider (toolName has github_ prefix)
+                    const fullToolName = `github_${toolName}`;
+                    const toolConfig = githubProvider.tools.get(fullToolName);
+                    if (toolConfig && toolConfig.handler) {
+                        return await toolConfig.handler(params, githubProvider.credentials);
+                    } else {
+                        throw new Error(`Tool ${fullToolName} not found in GitHubProvider`);
+                    }
+                } catch (error) {
+                    console.warn(`[MCP Service Connectors] GitHubProvider failed for ${toolName}, falling back to legacy:`, error);
+                    // Fall through to legacy implementation
+                }
+            }
+
+            // Legacy implementation for fallback
             const { token } = connection;
             let url, method = 'GET', body = null;
 

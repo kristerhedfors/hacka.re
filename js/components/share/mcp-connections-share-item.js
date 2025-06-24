@@ -7,24 +7,36 @@
  * Collect MCP connections data for sharing
  * @returns {Promise<Object|null>} MCP connections data or null if none available
  */
-export async function collectMcpConnectionsData() {
+async function collectMcpConnectionsData() {
     try {
         console.log('MCP Connections: Collecting data for sharing...');
         const mcpConnections = {};
         let foundConnections = false;
         
         // Check for GitHub PAT token
-        const githubToken = await window.CoreStorageService.getValue('mcp_github_token');
-        if (githubToken) {
-            // Validate the token before including it
-            const isValid = await validateGitHubToken(githubToken);
-            if (isValid) {
-                mcpConnections.github = githubToken;
-                foundConnections = true;
-                console.log('MCP Connections: GitHub token added to share data');
+        console.log('MCP Connections: Attempting to retrieve GitHub token from storage...');
+        try {
+            const githubToken = await window.CoreStorageService.getValue('mcp_github_token');
+            console.log('MCP Connections: GitHub token retrieval result:', githubToken ? 'found token' : 'no token found');
+            if (githubToken) {
+                // Validate the token before including it
+                console.log('MCP Connections: Validating GitHub token...');
+                const isValid = await validateGitHubToken(githubToken);
+                if (isValid) {
+                    // Include ONLY the token - functions will be recreated on receiving end
+                    mcpConnections.github = githubToken;
+                    console.log('MCP Connections: Using minimal token-only format for space efficiency');
+                    
+                    foundConnections = true;
+                    console.log('MCP Connections: GitHub connection data added to share');
+                } else {
+                    console.warn('MCP Connections: GitHub token exists but is invalid, skipping');
+                }
             } else {
-                console.warn('MCP Connections: GitHub token exists but is invalid, skipping');
+                console.log('MCP Connections: No GitHub token found in storage');
             }
+        } catch (error) {
+            console.warn('MCP Connections: Error retrieving GitHub token from storage:', error);
         }
         
         // Check for other PAT-based services (expandable in the future)
@@ -35,18 +47,26 @@ export async function collectMcpConnectionsData() {
         // }
         
         // Check for Google OAuth tokens (Gmail/Docs)
-        const gmailOAuth = await window.CoreStorageService.getValue('mcp_gmail_oauth');
-        if (gmailOAuth && gmailOAuth.refreshToken) {
-            // Only include if the token is still valid and has a refresh token
-            mcpConnections.gmail = {
-                type: 'oauth',
-                refreshToken: gmailOAuth.refreshToken,
-                clientId: gmailOAuth.clientId,
-                clientSecret: gmailOAuth.clientSecret,
-                expiresAt: gmailOAuth.expiresAt
-            };
-            foundConnections = true;
-            console.log('MCP Connections: Gmail OAuth added to share data');
+        console.log('MCP Connections: Attempting to retrieve Gmail OAuth token from storage...');
+        try {
+            const gmailOAuth = await window.CoreStorageService.getValue('mcp_gmail_oauth');
+            console.log('MCP Connections: Gmail OAuth retrieval result:', gmailOAuth ? 'found oauth data' : 'no oauth data found');
+            if (gmailOAuth && gmailOAuth.refreshToken) {
+                // Only include if the token is still valid and has a refresh token
+                mcpConnections.gmail = {
+                    type: 'oauth',
+                    refreshToken: gmailOAuth.refreshToken,
+                    clientId: gmailOAuth.clientId,
+                    clientSecret: gmailOAuth.clientSecret,
+                    expiresAt: gmailOAuth.expiresAt
+                };
+                foundConnections = true;
+                console.log('MCP Connections: Gmail OAuth added to share data');
+            } else {
+                console.log('MCP Connections: No valid Gmail OAuth data found in storage');
+            }
+        } catch (error) {
+            console.warn('MCP Connections: Error retrieving Gmail OAuth from storage:', error);
         }
         
         return foundConnections ? mcpConnections : null;
@@ -62,7 +82,7 @@ export async function collectMcpConnectionsData() {
  * @param {Object} data - MCP connections data
  * @returns {Promise<void>}
  */
-export async function applyMcpConnectionsData(data) {
+async function applyMcpConnectionsData(data) {
     if (!data || typeof data !== 'object') {
         console.warn('MCP Connections: No valid data to apply');
         return;
@@ -76,16 +96,30 @@ export async function applyMcpConnectionsData(data) {
         for (const [serviceKey, connectionData] of Object.entries(data)) {
             try {
                 if (serviceKey === 'github') {
-                    // Handle GitHub PAT token
-                    if (typeof connectionData === 'string') {
+                    // Handle GitHub PAT token (minimal format)
+                    const token = connectionData; // Always expect just the token string
+                    console.log('MCP Connections: Received GitHub token');
+                    
+                    if (token && typeof token === 'string') {
                         // Validate token before storing
-                        const isValid = await validateGitHubToken(connectionData);
+                        const isValid = await validateGitHubToken(token);
                         if (isValid) {
-                            await window.CoreStorageService.setValue('mcp_github_token', connectionData);
+                            console.log('MCP Connections: Storing GitHub token to storage...');
+                            await window.CoreStorageService.setValue('mcp_github_token', token);
+                            console.log('MCP Connections: GitHub token stored successfully');
+                            
+                            // Verify we can read it back immediately
+                            try {
+                                const testRead = await window.CoreStorageService.getValue('mcp_github_token');
+                                console.log('MCP Connections: Immediate readback test:', testRead ? 'SUCCESS - token readable' : 'FAILED - token not readable');
+                            } catch (readError) {
+                                console.warn('MCP Connections: Immediate readback failed:', readError);
+                            }
+                            
                             appliedCount++;
                             results.push(`GitHub token applied successfully`);
                             
-                            // Try to auto-connect if MCP service connectors available
+                            // Auto-connect to recreate all 16 functions
                             await autoConnectGitHub();
                         } else {
                             results.push(`GitHub token is invalid and was not applied`);
@@ -135,7 +169,7 @@ export async function applyMcpConnectionsData(data) {
  * Estimate the size of MCP connections data
  * @returns {Promise<number>} Estimated size in bytes
  */
-export async function estimateMcpConnectionsSize() {
+async function estimateMcpConnectionsSize() {
     try {
         const data = await collectMcpConnectionsData();
         if (!data) return 0;
@@ -194,6 +228,7 @@ async function validateGitHubToken(token) {
     }
 }
 
+
 /**
  * Auto-connect GitHub if MCP service connectors available
  */
@@ -249,7 +284,7 @@ async function autoConnectGmail() {
  * Check if any MCP connections are available
  * @returns {Promise<boolean>} True if any connections exist
  */
-export async function hasMcpConnections() {
+async function hasMcpConnections() {
     try {
         const data = await collectMcpConnectionsData();
         return data !== null && Object.keys(data).length > 0;
@@ -263,7 +298,7 @@ export async function hasMcpConnections() {
  * Get summary of available MCP connections
  * @returns {Promise<Object>} Summary of connections
  */
-export async function getMcpConnectionsSummary() {
+async function getMcpConnectionsSummary() {
     try {
         const data = await collectMcpConnectionsData();
         if (!data) {
@@ -302,3 +337,10 @@ export async function getMcpConnectionsSummary() {
         };
     }
 }
+
+// Make functions available globally for use by other components
+window.collectMcpConnectionsData = collectMcpConnectionsData;
+window.applyMcpConnectionsData = applyMcpConnectionsData;
+window.estimateMcpConnectionsSize = estimateMcpConnectionsSize;
+window.hasMcpConnections = hasMcpConnections;
+window.getMcpConnectionsSummary = getMcpConnectionsSummary;
