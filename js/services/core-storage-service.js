@@ -254,6 +254,119 @@ window.CoreStorageService = (function() {
     }
     
     /**
+     * Clear all data for the current namespace
+     * This includes all encrypted storage keys, function tools, MCP data, prompts, and theme settings
+     * @returns {Object} Object with success status and list of cleared keys
+     */
+    function clearAllData() {
+        const currentNamespace = NamespaceService.getNamespace();
+        const clearedKeys = [];
+        
+        try {
+            // Define all encrypted storage keys that use NamespaceService.BASE_STORAGE_KEYS
+            const coreStorageKeys = [
+                NamespaceService.BASE_STORAGE_KEYS.API_KEY,
+                NamespaceService.BASE_STORAGE_KEYS.MODEL,
+                NamespaceService.BASE_STORAGE_KEYS.SYSTEM_PROMPT,
+                NamespaceService.BASE_STORAGE_KEYS.SHARE_OPTIONS,
+                NamespaceService.BASE_STORAGE_KEYS.BASE_URL,
+                NamespaceService.BASE_STORAGE_KEYS.BASE_URL_PROVIDER,
+                NamespaceService.BASE_STORAGE_KEYS.DEBUG_MODE,
+                NamespaceService.BASE_STORAGE_KEYS.HISTORY
+            ];
+            
+            // Define encrypted storage keys handled by CoreStorageService directly
+            const additionalEncryptedKeys = [
+                'prompts',
+                'selected_prompt_ids', 
+                'selected_default_prompts',
+                'mcp-oauth-tokens',
+                'mcp-oauth-pending-flows',
+                'mcp-oauth-configs',
+                'mcp_github_token',
+                'mcp_gmail_oauth'
+            ];
+            
+            // Define function tools storage keys (namespaced manually)
+            const functionToolsKeys = [
+                'function_tools_enabled',
+                'js_functions',
+                'enabled_functions',
+                'function_collections',
+                'function_collection_metadata',
+                'tool_calling_enabled'
+            ];
+            
+            // Clear core storage keys using NamespaceService.getNamespacedKey
+            coreStorageKeys.forEach(key => {
+                const namespacedKey = NamespaceService.getNamespacedKey(key);
+                localStorage.removeItem(namespacedKey);
+                clearedKeys.push(namespacedKey);
+                console.log(`Cleared core storage key: ${namespacedKey}`);
+            });
+            
+            // Clear additional encrypted keys using manual namespacing
+            additionalEncryptedKeys.forEach(key => {
+                const namespacedKey = `hackare_${currentNamespace}_${key}`;
+                localStorage.removeItem(namespacedKey);
+                clearedKeys.push(namespacedKey);
+                console.log(`Cleared encrypted key: ${namespacedKey}`);
+            });
+            
+            // Clear function tools keys using manual namespacing
+            functionToolsKeys.forEach(key => {
+                const namespacedKey = `hackare_${currentNamespace}_${key}`;
+                localStorage.removeItem(namespacedKey);
+                clearedKeys.push(namespacedKey);
+                console.log(`Cleared function tools key: ${namespacedKey}`);
+            });
+            
+            // Clear namespace-related entries
+            const namespaceKeys = [
+                `hackare_${currentNamespace}_namespace`,
+                `hackare_${currentNamespace}_master_key`
+            ];
+            
+            namespaceKeys.forEach(key => {
+                localStorage.removeItem(key);
+                clearedKeys.push(key);
+                console.log(`Cleared namespace key: ${key}`);
+            });
+            
+            // Clear global theme setting (not encrypted, stored globally)
+            localStorage.removeItem('hackare_theme_mode');
+            clearedKeys.push('hackare_theme_mode');
+            console.log('Cleared theme setting: hackare_theme_mode');
+            
+            // Clear MCP servers (stored globally)
+            localStorage.removeItem('hacka_re_mcp_servers');
+            clearedKeys.push('hacka_re_mcp_servers');
+            console.log('Cleared MCP servers: hacka_re_mcp_servers');
+            
+            // Reset the session key if ShareManager is available
+            if (window.aiHackare && window.aiHackare.shareManager) {
+                window.aiHackare.shareManager.setSessionKey(null);
+                console.log('Reset session key via ShareManager');
+            }
+            
+            return {
+                success: true,
+                clearedKeys: clearedKeys,
+                message: `Cleared ${clearedKeys.length} storage keys for namespace ${currentNamespace}`
+            };
+            
+        } catch (error) {
+            console.error('Error clearing all data:', error);
+            return {
+                success: false,
+                clearedKeys: clearedKeys,
+                error: error.message,
+                message: `Failed to clear all data: ${error.message}`
+            };
+        }
+    }
+    
+    /**
      * Initialize the storage service
      */
     function init() {
@@ -269,6 +382,7 @@ window.CoreStorageService = (function() {
         setValue: setValue,
         getValue: getValue,
         removeValue: removeValue,
+        clearAllData: clearAllData,
         init: init
     };
 })();
