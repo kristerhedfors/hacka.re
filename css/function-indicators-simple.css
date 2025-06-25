@@ -44,9 +44,9 @@
 
 /* Function call indicator - using mathematical italic f like header */
 .function-call-icon {
-    display: inline;
-    font-size: 1.1em; /* Slightly larger to match header proportion */
-    margin: 0 3px;
+    display: inline !important;
+    font-size: 1.1em !important; /* Slightly larger to match header proportion */
+    margin: 0 3px !important;
     /* Remove ALL styling that might interfere */
     color: inherit !important;
     background: none !important;
@@ -60,6 +60,7 @@
     line-height: inherit !important;
     vertical-align: baseline !important;
     position: relative !important;
+    cursor: help !important;
 }
 
 /* Function result indicator - using larger arrow */
@@ -74,6 +75,8 @@
     line-height: inherit !important;
     vertical-align: baseline !important;
     text-decoration: none !important;
+    position: relative !important;
+    cursor: help !important;
 }
 
 /* Simple color classes */
@@ -83,20 +86,59 @@
 .color-4 { color: #f39c12; }
 .color-5 { color: #9b59b6; }
 
-/* Hide tooltips completely to avoid multiple popups */
+/* Tooltip styling - clean and simple */
 .function-icon-tooltip {
-    display: none !important;
+    /* Positioning */
+    position: absolute !important;
+    bottom: 100% !important;
+    left: 50% !important;
+    transform: translateX(-50%) translateY(-8px) !important;
+    z-index: 10000 !important;
+    
+    /* Styling */
+    background: rgba(0, 0, 0, 0.9) !important;
+    color: white !important;
+    padding: 8px 12px !important;
+    border-radius: 6px !important;
+    font-size: 12px !important;
+    white-space: nowrap !important;
+    max-width: 400px !important;
+    min-width: 200px !important;
+    
+    /* Hidden by default */
     opacity: 0 !important;
     pointer-events: none !important;
     visibility: hidden !important;
+    transition: opacity 0.3s ease !important;
+    
+    /* Text styling */
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    font-style: normal !important;
+    line-height: 1.4 !important;
+    text-align: left !important;
+    font-weight: normal !important;
 }
 
-/* Override any hover effects from other CSS files */
-.function-call-icon:hover .function-icon-tooltip,
-.function-result-icon:hover .function-icon-tooltip,
-.function-call-icon .function-icon-tooltip:hover,
-.function-result-icon .function-icon-tooltip:hover {
-    display: none !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
+/* Tooltip arrow pointing down */
+.function-icon-tooltip::after {
+    content: '' !important;
+    position: absolute !important;
+    top: 100% !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 0 !important;
+    height: 0 !important;
+    border-style: solid !important;
+    border-width: 6px 6px 0 6px !important;
+    border-color: rgba(0, 0, 0, 0.9) transparent transparent transparent !important;
 }
+
+/* Show tooltip on hover */
+.function-call-icon:hover .function-icon-tooltip,
+.function-result-icon:hover .function-icon-tooltip {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+}
+
+/* Icons are now properly configured above */
