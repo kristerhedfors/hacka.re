@@ -13,7 +13,7 @@
     align-items: center !important;
     justify-content: center !important;
     letter-spacing: 0.05em !important;
-    color: var(--text-color) !important; /* Use theme color */
+    color: inherit !important; /* Inherit color like other icon buttons */
     opacity: 1 !important;
     visibility: visible !important;
     position: relative !important;
