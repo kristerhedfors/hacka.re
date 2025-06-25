@@ -1,0 +1,263 @@
+/**
+ * Smart Tooltip Positioner
+ * Dynamically positions tooltips to stay within the viewport
+ */
+
+window.SmartTooltipPositioner = (function() {
+    'use strict';
+    
+    // Configuration
+    const CONFIG = {
+        MARGIN: 10,        // Minimum margin from viewport edges
+        ARROW_SIZE: 6,     // Arrow size in pixels
+        PREFERRED_SIDE: 'right'  // Default preferred position
+    };
+    
+    /**
+     * Calculate the best position for a tooltip relative to an icon
+     * @param {HTMLElement} icon - The icon element
+     * @param {HTMLElement} tooltip - The tooltip element
+     * @returns {Object} - Position information
+     */
+    function calculateOptimalPosition(icon, tooltip) {
+        // Get icon position relative to viewport
+        const iconRect = icon.getBoundingClientRect();
+        const tooltipRect = tooltip.getBoundingClientRect();
+        
+        // Get viewport dimensions
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        
+        // Calculate available space in each direction
+        const spaceRight = viewportWidth - iconRect.right;
+        const spaceLeft = iconRect.left;
+        const spaceTop = iconRect.top;
+        const spaceBottom = viewportHeight - iconRect.bottom;
+        
+        // Determine the best position based on available space
+        let position = 'right'; // default
+        let x, y;
+        
+        // Check if tooltip fits on the right (preferred)
+        if (spaceRight >= tooltipRect.width + CONFIG.MARGIN) {
+            position = 'right';
+            x = iconRect.right + CONFIG.MARGIN;
+            y = Math.max(CONFIG.MARGIN, 
+                Math.min(iconRect.top + (iconRect.height / 2) - (tooltipRect.height / 2),
+                         viewportHeight - tooltipRect.height - CONFIG.MARGIN));
+        }
+        // Check if tooltip fits on the left
+        else if (spaceLeft >= tooltipRect.width + CONFIG.MARGIN) {
+            position = 'left';
+            x = iconRect.left - tooltipRect.width - CONFIG.MARGIN;
+            y = Math.max(CONFIG.MARGIN,
+                Math.min(iconRect.top + (iconRect.height / 2) - (tooltipRect.height / 2),
+                         viewportHeight - tooltipRect.height - CONFIG.MARGIN));
+        }
+        // Check if tooltip fits on top
+        else if (spaceTop >= tooltipRect.height + CONFIG.MARGIN) {
+            position = 'top';
+            x = Math.max(CONFIG.MARGIN,
+                Math.min(iconRect.left + (iconRect.width / 2) - (tooltipRect.width / 2),
+                         viewportWidth - tooltipRect.width - CONFIG.MARGIN));
+            y = iconRect.top - tooltipRect.height - CONFIG.MARGIN;
+        }
+        // Check if tooltip fits on bottom
+        else if (spaceBottom >= tooltipRect.height + CONFIG.MARGIN) {
+            position = 'bottom';
+            x = Math.max(CONFIG.MARGIN,
+                Math.min(iconRect.left + (iconRect.width / 2) - (tooltipRect.width / 2),
+                         viewportWidth - tooltipRect.width - CONFIG.MARGIN));
+            y = iconRect.bottom + CONFIG.MARGIN;
+        }
+        // Fallback: position with maximum available space
+        else {
+            const maxSpace = Math.max(spaceRight, spaceLeft, spaceTop, spaceBottom);
+            if (maxSpace === spaceRight) {
+                position = 'right';
+                x = iconRect.right + CONFIG.MARGIN;
+                y = CONFIG.MARGIN;
+            } else if (maxSpace === spaceLeft) {
+                position = 'left';
+                x = Math.max(CONFIG.MARGIN, iconRect.left - tooltipRect.width - CONFIG.MARGIN);
+                y = CONFIG.MARGIN;
+            } else if (maxSpace === spaceTop) {
+                position = 'top';
+                x = CONFIG.MARGIN;
+                y = Math.max(CONFIG.MARGIN, iconRect.top - tooltipRect.height - CONFIG.MARGIN);
+            } else {
+                position = 'bottom';
+                x = CONFIG.MARGIN;
+                y = iconRect.bottom + CONFIG.MARGIN;
+            }
+        }
+        
+        return {
+            position,
+            x: Math.round(x),
+            y: Math.round(y),
+            iconRect
+        };
+    }
+    
+    /**
+     * Position the tooltip arrow based on tooltip position
+     * @param {HTMLElement} tooltip - The tooltip element
+     * @param {Object} positionInfo - Position information from calculateOptimalPosition
+     */
+    function positionArrow(tooltip, positionInfo) {
+        const arrow = tooltip.querySelector('::after') || tooltip;
+        const { position, iconRect } = positionInfo;
+        const tooltipRect = tooltip.getBoundingClientRect();
+        
+        // Calculate arrow position relative to tooltip
+        let arrowStyles = '';
+        
+        switch (position) {
+            case 'right':
+                arrowStyles = `
+                    left: 0;
+                    top: 50%;
+                    transform: translateX(-50%) translateY(-50%);
+                    border-width: ${CONFIG.ARROW_SIZE}px ${CONFIG.ARROW_SIZE}px ${CONFIG.ARROW_SIZE}px 0;
+                    border-color: transparent rgba(0, 0, 0, 0.9) transparent transparent;
+                `;
+                break;
+            case 'left':
+                arrowStyles = `
+                    right: 0;
+                    top: 50%;
+                    transform: translateX(50%) translateY(-50%);
+                    border-width: ${CONFIG.ARROW_SIZE}px 0 ${CONFIG.ARROW_SIZE}px ${CONFIG.ARROW_SIZE}px;
+                    border-color: transparent transparent transparent rgba(0, 0, 0, 0.9);
+                `;
+                break;
+            case 'top':
+                arrowStyles = `
+                    bottom: 0;
+                    left: 50%;
+                    transform: translateX(-50%) translateY(50%);
+                    border-width: ${CONFIG.ARROW_SIZE}px ${CONFIG.ARROW_SIZE}px 0 ${CONFIG.ARROW_SIZE}px;
+                    border-color: rgba(0, 0, 0, 0.9) transparent transparent transparent;
+                `;
+                break;
+            case 'bottom':
+                arrowStyles = `
+                    top: 0;
+                    left: 50%;
+                    transform: translateX(-50%) translateY(-50%);
+                    border-width: 0 ${CONFIG.ARROW_SIZE}px ${CONFIG.ARROW_SIZE}px ${CONFIG.ARROW_SIZE}px;
+                    border-color: transparent transparent rgba(0, 0, 0, 0.9) transparent;
+                `;
+                break;
+        }
+        
+        // Apply arrow styles using CSS custom properties
+        tooltip.style.setProperty('--arrow-styles', arrowStyles);
+        
+        // Also apply via a style tag for ::after pseudo-element
+        const styleId = `tooltip-arrow-${Date.now()}`;
+        let styleElement = document.getElementById(styleId);
+        if (!styleElement) {
+            styleElement = document.createElement('style');
+            styleElement.id = styleId;
+            document.head.appendChild(styleElement);
+        }
+        
+        styleElement.textContent = `
+            .function-icon-tooltip[data-position="${position}"]::after {
+                ${arrowStyles}
+            }
+        `;
+        
+        tooltip.setAttribute('data-position', position);
+    }
+    
+    /**
+     * Position a tooltip relative to its icon
+     * @param {HTMLElement} icon - The icon element
+     * @param {HTMLElement} tooltip - The tooltip element
+     */
+    function positionTooltip(icon, tooltip) {
+        // Make tooltip visible but transparent to measure it
+        tooltip.style.visibility = 'visible';
+        tooltip.style.opacity = '0';
+        tooltip.style.pointerEvents = 'none';
+        
+        // Calculate optimal position
+        const positionInfo = calculateOptimalPosition(icon, tooltip);
+        
+        // Apply position
+        tooltip.style.left = `${positionInfo.x}px`;
+        tooltip.style.top = `${positionInfo.y}px`;
+        tooltip.style.transform = 'translate(0, 0)';
+        
+        // Position arrow
+        positionArrow(tooltip, positionInfo);
+        
+        // Show tooltip
+        requestAnimationFrame(() => {
+            tooltip.style.opacity = '1';
+            tooltip.style.pointerEvents = 'auto';
+        });
+    }
+    
+    /**
+     * Initialize smart positioning for all tooltips
+     */
+    function initializeSmartPositioning() {
+        // Override the default hover behavior
+        document.addEventListener('mouseenter', function(event) {
+            const icon = event.target;
+            if (!icon.classList.contains('function-call-icon') && 
+                !icon.classList.contains('function-result-icon')) {
+                return;
+            }
+            
+            const tooltip = icon.querySelector('.function-icon-tooltip');
+            if (!tooltip) return;
+            
+            // Position tooltip smartly
+            positionTooltip(icon, tooltip);
+        }, true);
+        
+        document.addEventListener('mouseleave', function(event) {
+            const icon = event.target;
+            if (!icon.classList.contains('function-call-icon') && 
+                !icon.classList.contains('function-result-icon')) {
+                return;
+            }
+            
+            const tooltip = icon.querySelector('.function-icon-tooltip');
+            if (!tooltip) return;
+            
+            // Hide tooltip
+            tooltip.style.opacity = '0';
+            tooltip.style.pointerEvents = 'none';
+            tooltip.style.visibility = 'hidden';
+        }, true);
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            // Hide all visible tooltips on resize
+            document.querySelectorAll('.function-icon-tooltip[style*="opacity: 1"]').forEach(tooltip => {
+                tooltip.style.opacity = '0';
+                tooltip.style.pointerEvents = 'none';
+                tooltip.style.visibility = 'hidden';
+            });
+        });
+    }
+    
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeSmartPositioning);
+    } else {
+        initializeSmartPositioning();
+    }
+    
+    // Public API
+    return {
+        positionTooltip,
+        calculateOptimalPosition
+    };
+})();
