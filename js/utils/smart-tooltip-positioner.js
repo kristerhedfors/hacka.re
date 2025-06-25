@@ -179,6 +179,8 @@ window.SmartTooltipPositioner = (function() {
      * @param {HTMLElement} tooltip - The tooltip element
      */
     function positionTooltip(icon, tooltip) {
+        console.log('[SmartTooltip] positionTooltip called', { icon, tooltip });
+        
         // Make tooltip visible but transparent to measure it
         tooltip.style.visibility = 'visible';
         tooltip.style.opacity = '0';
@@ -186,6 +188,7 @@ window.SmartTooltipPositioner = (function() {
         
         // Calculate optimal position
         const positionInfo = calculateOptimalPosition(icon, tooltip);
+        console.log('[SmartTooltip] Position calculated:', positionInfo);
         
         // Apply position
         tooltip.style.left = `${positionInfo.x}px`;
@@ -199,6 +202,7 @@ window.SmartTooltipPositioner = (function() {
         requestAnimationFrame(() => {
             tooltip.style.opacity = '1';
             tooltip.style.pointerEvents = 'auto';
+            console.log('[SmartTooltip] Tooltip should now be visible');
         });
     }
     
@@ -209,20 +213,44 @@ window.SmartTooltipPositioner = (function() {
         // Override the default hover behavior
         document.addEventListener('mouseenter', function(event) {
             const icon = event.target;
+            if (!icon || !icon.classList) {
+                return;
+            }
+            
+            // Skip header function button - it has its own tooltip
+            if (icon.closest('#function-btn') || icon.id === 'function-btn') {
+                return;
+            }
+            
             if (!icon.classList.contains('function-call-icon') && 
                 !icon.classList.contains('function-result-icon')) {
                 return;
             }
             
-            const tooltip = icon.querySelector('.function-icon-tooltip');
-            if (!tooltip) return;
+            console.log('[SmartTooltip] Mouse entered function icon:', icon.className);
             
+            const tooltip = icon.querySelector('.function-icon-tooltip');
+            if (!tooltip) {
+                console.log('[SmartTooltip] No tooltip found for icon');
+                return;
+            }
+            
+            console.log('[SmartTooltip] Tooltip found, positioning...');
             // Position tooltip smartly
             positionTooltip(icon, tooltip);
         }, true);
         
         document.addEventListener('mouseleave', function(event) {
             const icon = event.target;
+            if (!icon || !icon.classList) {
+                return;
+            }
+            
+            // Skip header function button - it has its own tooltip
+            if (icon.closest('#function-btn') || icon.id === 'function-btn') {
+                return;
+            }
+            
             if (!icon.classList.contains('function-call-icon') && 
                 !icon.classList.contains('function-result-icon')) {
                 return;

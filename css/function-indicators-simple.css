@@ -1,10 +1,10 @@
 /**
  * Simple Function Call & Result Indicators CSS
- * Matching the header icon styling exactly
- * Clean implementation without function-calling.css conflicts
+ * Clean implementation with smart tooltip positioning
+ * Header function icon styling is in function-calling-header-only.css
  */
 
-/* Function call indicator - using mathematical italic f like header */
+/* Clean function call indicator */
 .function-call-icon {
     display: inline;
     font-size: 1.1em;
@@ -14,7 +14,7 @@
     cursor: help;
 }
 
-/* Function result indicator - using arrow */
+/* Clean function result indicator */
 .function-result-icon {
     display: inline;
     font-size: 1.2em;
@@ -24,6 +24,7 @@
     cursor: help;
 }
 
+/* Arrow for result indicator */
 .function-result-icon::before {
     content: '→';
 }
@@ -35,15 +36,18 @@
 .color-4 { color: #f39c12; }
 .color-5 { color: #9b59b6; }
 
-/* Tooltip styling - with smart positioning */
+/* Clean tooltip styling with smart positioning */
 .function-icon-tooltip {
-    position: fixed; /* Use fixed positioning for viewport awareness */
+    /* Positioning controlled by JavaScript */
+    position: fixed;
     z-index: 10000;
-    
-    /* Initial positioning (will be adjusted by JavaScript) */
     top: 0;
     left: 0;
-    transform: translate(0, 0);
+    
+    /* Sizing */
+    min-width: 300px;
+    max-width: min(600px, 50vw);
+    max-height: min(500px, 70vh);
     
     /* Styling */
     background: rgba(0, 0, 0, 0.9);
@@ -52,13 +56,10 @@
     border-radius: 8px;
     font-size: 13px;
     white-space: pre-wrap;
-    min-width: 300px;
-    max-width: min(600px, 50vw); /* Responsive max width */
-    max-height: min(500px, 70vh); /* Responsive max height */
     overflow-y: auto;
     overflow-x: hidden;
     
-    /* Hidden by default */
+    /* Hidden by default - JavaScript will control visibility */
     opacity: 0;
     pointer-events: none;
     visibility: hidden;
@@ -68,6 +69,29 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     line-height: 1.4;
     text-align: left;
+}
+
+/* Force all text inside tooltips to be white */
+.function-icon-tooltip,
+.function-icon-tooltip *,
+.function-icon-tooltip strong,
+.function-icon-tooltip span,
+.function-icon-tooltip div,
+.function-icon-tooltip p,
+.function-icon-tooltip a,
+.function-icon-tooltip code,
+.function-icon-tooltip pre {
+    color: white !important;
+    text-decoration: none !important;
+}
+
+/* Remove any link styling in tooltips */
+.function-icon-tooltip a:link,
+.function-icon-tooltip a:visited,
+.function-icon-tooltip a:hover,
+.function-icon-tooltip a:active {
+    color: white !important;
+    text-decoration: none !important;
 }
 
 /* Custom scrollbar for tooltips */
@@ -99,11 +123,6 @@
     /* Arrow styling will be set dynamically based on tooltip position */
 }
 
-/* Tooltip hover is now handled by SmartTooltipPositioner JavaScript */
-/* CSS hover is disabled to prevent conflicts */
-.function-call-icon:hover .function-icon-tooltip,
-.function-result-icon:hover .function-icon-tooltip {
-    /* Handled by JavaScript */
-}
+/* Tooltips are controlled entirely by JavaScript - no CSS hover behavior */
 
 /* Clean, simple tooltip positioning to the right of icons */
