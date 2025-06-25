@@ -35,17 +35,15 @@
 .color-4 { color: #f39c12; }
 .color-5 { color: #9b59b6; }
 
-/* Tooltip styling - clean and simple */
+/* Tooltip styling - with smart positioning */
 .function-icon-tooltip {
-    position: absolute;
-    
-    /* Position to the right by default */
-    top: 50%;
-    left: 100%;
-    transform: translateY(-50%);
-    margin-left: 8px;
-    
+    position: fixed; /* Use fixed positioning for viewport awareness */
     z-index: 10000;
+    
+    /* Initial positioning (will be adjusted by JavaScript) */
+    top: 0;
+    left: 0;
+    transform: translate(0, 0);
     
     /* Styling */
     background: rgba(0, 0, 0, 0.9);
@@ -55,8 +53,8 @@
     font-size: 13px;
     white-space: pre-wrap;
     min-width: 300px;
-    max-width: 600px;
-    max-height: 500px;
+    max-width: min(600px, 50vw); /* Responsive max width */
+    max-height: min(500px, 70vh); /* Responsive max height */
     overflow-y: auto;
     overflow-x: hidden;
     
@@ -91,26 +89,21 @@
     background: rgba(255, 255, 255, 0.5) !important;
 }
 
-/* Tooltip arrow pointing left toward icon */
+/* Dynamic tooltip arrow (will be positioned by JavaScript) */
 .function-icon-tooltip::after {
     content: '';
     position: absolute;
-    top: 50%;
-    left: 0;
-    transform: translateX(-50%) translateY(-50%);
     width: 0;
     height: 0;
     border-style: solid;
-    border-width: 6px 6px 6px 0;
-    border-color: transparent rgba(0, 0, 0, 0.9) transparent transparent;
+    /* Arrow styling will be set dynamically based on tooltip position */
 }
 
-/* Show tooltip on hover */
+/* Tooltip hover is now handled by SmartTooltipPositioner JavaScript */
+/* CSS hover is disabled to prevent conflicts */
 .function-call-icon:hover .function-icon-tooltip,
 .function-result-icon:hover .function-icon-tooltip {
-    opacity: 1;
-    pointer-events: auto;
-    visibility: visible;
+    /* Handled by JavaScript */
 }
 
 /* Clean, simple tooltip positioning to the right of icons */
