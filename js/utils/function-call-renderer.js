@@ -118,10 +118,9 @@ window.FunctionCallRenderer = (function() {
         const { functionName, parameters = {} } = options;
         const formattedParams = formatParameters(parameters);
         
-        return `
-            <strong>Function:</strong> ${escapeHTML(functionName)}<br>
-            <strong>Parameters:</strong> ${escapeHTML(formattedParams)}
-        `.trim();
+        return `<strong>Function:</strong> ${escapeHTML(functionName)}
+<strong>Parameters:</strong>
+${escapeHTML(formattedParams)}`;
     }
     
     /**
@@ -134,12 +133,11 @@ window.FunctionCallRenderer = (function() {
         const displayValue = formatResultValue(resultValue, resultType);
         const timeFormatted = formatExecutionTime(executionTime);
         
-        return `
-            <strong>Result:</strong> ${escapeHTML(functionName)}<br>
-            <strong>Type:</strong> ${escapeHTML(resultType)}<br>
-            <strong>Time:</strong> ${timeFormatted}<br>
-            <strong>Value:</strong> ${escapeHTML(displayValue)}
-        `.trim();
+        return `<strong>Result:</strong> ${escapeHTML(functionName)}
+<strong>Type:</strong> ${escapeHTML(resultType)}
+<strong>Time:</strong> ${timeFormatted}
+<strong>Value:</strong>
+${escapeHTML(displayValue)}`;
     }
     
     /**
@@ -149,6 +147,9 @@ window.FunctionCallRenderer = (function() {
      */
     function formatParameters(parameters) {
         try {
+            if (Object.keys(parameters).length === 0) {
+                return '{}';
+            }
             return JSON.stringify(parameters, null, 2);
         } catch (e) {
             return String(parameters);
@@ -162,14 +163,27 @@ window.FunctionCallRenderer = (function() {
      * @returns {string} - Formatted value
      */
     function formatResultValue(value, type) {
-        if (type === 'object' || type === 'array') {
-            const stringified = JSON.stringify(value);
-            if (stringified.length > 100) {
-                return stringified.substring(0, 97) + '...';
+        try {
+            if (type === 'object' || type === 'array') {
+                // Pretty-print JSON with proper indentation
+                const formatted = JSON.stringify(value, null, 2);
+                
+                // If too long, show first part with better truncation
+                if (formatted.length > 800) {
+                    const lines = formatted.split('\n');
+                    if (lines.length > 20) {
+                        return lines.slice(0, 20).join('\n') + '\n... (truncated)';
+                    }
+                    return formatted.substring(0, 800) + '\n... (truncated)';
+                }
+                return formatted;
             }
-            return stringified;
+            
+            // For primitives, show the value directly
+            return String(value);
+        } catch (e) {
+            return String(value);
         }
-        return String(value);
     }
     
     /**
