@@ -1,6 +1,10 @@
 /**
  * Function Markers Processing
  * Handles processing of function call and result markers in text
+ * 
+ * Refactored to use FunctionCallRenderer for cleaner separation of concerns:
+ * - This module: Parses markers and manages state
+ * - FunctionCallRenderer: Creates visual elements
  */
 
 window.FunctionMarkers = (function() {
@@ -65,19 +69,31 @@ window.FunctionMarkers = (function() {
             const count = getOrIncrementCount(functionName);
             const colorClass = getColorClass(functionName);
             
-            // Decode and format the arguments
-            let formattedArgs = '{}';
+            // Decode and parse the arguments
+            let parameters = {};
             if (encodedArgs) {
                 try {
                     const decodedArgs = decodeURIComponent(encodedArgs);
-                    const argsObj = JSON.parse(decodedArgs);
-                    formattedArgs = JSON.stringify(argsObj, null, 2);
+                    parameters = JSON.parse(decodedArgs);
                 } catch (e) {
-                    formattedArgs = decodeURIComponent(encodedArgs);
+                    // If parsing fails, use the decoded string as-is
+                    parameters = { raw: decodeURIComponent(encodedArgs) };
                 }
             }
             
-            return `<span class="function-call-icon ${colorClass}">f<span class="function-icon-tooltip"><strong>Function:</strong> ${escapeHTML(functionName)}<br><strong>Parameters:</strong> ${escapeHTML(formattedArgs)}</span></span>`;
+            // Use the new renderer if available, fallback to old method
+            if (window.FunctionCallRenderer) {
+                const element = window.FunctionCallRenderer.createCallIndicator({
+                    functionName,
+                    parameters,
+                    colorClass
+                });
+                return element.outerHTML;
+            }
+            
+            // Fallback for backward compatibility
+            const formattedArgs = JSON.stringify(parameters, null, 2);
+            return `<span class="function-call-icon ${colorClass}">𝑓<span class="function-icon-tooltip"><strong>Function:</strong> ${escapeHTML(functionName)}<br><strong>Parameters:</strong> ${escapeHTML(formattedArgs)}</span></span>`;
         });
     }
     
@@ -191,11 +207,31 @@ window.FunctionMarkers = (function() {
     function processFunctionResultMarkers(text) {
         // New format: [FUNCTION_RESULT:name:type:encodedValue:executionTime]
         // Old format: [FUNCTION_RESULT:name:type:encodedValue] (for backward compatibility)
-        return text.replace(/\s*\[FUNCTION_RESULT:([^:]+):([^:]+):([^:]+)(?::([^\]]+))?\]\s*/g, (match, functionName, resultType, encodedResult, executionTime) => {
+        return text.replace(/\[FUNCTION_RESULT:([^:]+):([^:]+):([^:]+)(?::([^\]]+))?\]/g, (match, functionName, resultType, encodedResult, executionTime) => {
             const colorClass = getColorClass(functionName);
             
-            // Decode the result value
+            // Decode and parse the result value
             const decodedResult = decodeURIComponent(encodedResult);
+            let resultValue;
+            try {
+                resultValue = JSON.parse(decodedResult);
+            } catch (e) {
+                resultValue = decodedResult;
+            }
+            
+            // Use the new renderer if available, fallback to old method
+            if (window.FunctionCallRenderer) {
+                const element = window.FunctionCallRenderer.createResultIndicator({
+                    functionName,
+                    resultType,
+                    resultValue,
+                    executionTime: parseInt(executionTime) || 0,
+                    colorClass
+                });
+                return element.outerHTML;
+            }
+            
+            // Fallback for backward compatibility
             const { displayValue } = formatDisplayValue(decodedResult, resultType);
             const executionTimeFormatted = formatExecutionTime(executionTime);
             
@@ -209,6 +245,11 @@ window.FunctionMarkers = (function() {
      * @returns {string} - Text with markers replaced by HTML
      */
     function processMarkers(text) {
+        // Skip processing if text already contains processed markers (HTML elements)
+        if (text.includes('class="function-call-icon"') || text.includes('class="function-result-icon"')) {
+            return text;
+        }
+        
         // Debug: log if we're processing any text with markers
         if (text.includes('[FUNCTION_CALL:') || text.includes('[FUNCTION_RESULT:')) {
             console.log('[Function Markers] Processing text with markers');

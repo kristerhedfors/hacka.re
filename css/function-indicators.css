@@ -1,0 +1,219 @@
+/**
+ * Function Call & Result Indicators CSS
+ * 
+ * This file creates the visual symbols for function calls and results:
+ * - "ƒ" symbol: Italic "f" character styled to look like the mathematical function symbol
+ * - "→" arrow: Pure CSS arrow created with borders and rectangles
+ */
+
+/* ===========================
+   FUNCTION CALL INDICATOR: "ƒ"
+   =========================== */
+
+.function-call-icon {
+    /* Container styling */
+    display: inline-block;
+    position: relative;
+    cursor: help;
+    margin: 0 4px;
+    padding: 2px 6px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+    
+    /* The "f" character styled as "ƒ" */
+    font-family: 'Times New Roman', serif;
+    font-style: italic;
+    font-size: 16px;
+    font-weight: bold;
+    
+    /* Animated gradient text */
+    background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #ff6b6b);
+    background-size: 400% 400%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradientShift 3s ease infinite;
+}
+
+/* Hover state for function call icon */
+.function-call-icon:hover {
+    transform: scale(1.1);
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* ===========================
+   FUNCTION RESULT INDICATOR: "→"
+   =========================== */
+
+.function-result-icon {
+    /* Container styling */
+    display: inline-block;
+    position: relative;
+    cursor: help;
+    width: 20px;
+    height: 20px;
+    margin: 0 4px;
+    transition: all 0.3s ease;
+}
+
+/* Arrow shaft (horizontal line) */
+.function-result-icon::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 14px;
+    height: 2px;
+    background: currentColor;
+    transform: translateY(-50%);
+}
+
+/* Arrow head (triangle) */
+.function-result-icon::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 2px;
+    width: 0;
+    height: 0;
+    
+    /* Create triangle with borders */
+    border-style: solid;
+    border-width: 6px 0 6px 8px;
+    border-color: transparent transparent transparent currentColor;
+    transform: translateY(-50%);
+}
+
+/* Hover state for result icon */
+.function-result-icon:hover {
+    transform: scale(1.1);
+}
+
+/* ===========================
+   COLOR CLASSES
+   =========================== */
+
+/* Color palette for different function calls */
+.color-1 { color: #ff6b6b; }
+.color-2 { color: #4ecdc4; }
+.color-3 { color: #45b7d1; }
+.color-4 { color: #f39c12; }
+.color-5 { color: #9b59b6; }
+
+/* Apply colors to arrow components */
+.function-result-icon.color-1::before,
+.function-result-icon.color-1::after { background-color: #ff6b6b; border-color: transparent transparent transparent #ff6b6b; }
+
+.function-result-icon.color-2::before,
+.function-result-icon.color-2::after { background-color: #4ecdc4; border-color: transparent transparent transparent #4ecdc4; }
+
+.function-result-icon.color-3::before,
+.function-result-icon.color-3::after { background-color: #45b7d1; border-color: transparent transparent transparent #45b7d1; }
+
+.function-result-icon.color-4::before,
+.function-result-icon.color-4::after { background-color: #f39c12; border-color: transparent transparent transparent #f39c12; }
+
+.function-result-icon.color-5::before,
+.function-result-icon.color-5::after { background-color: #9b59b6; border-color: transparent transparent transparent #9b59b6; }
+
+/* ===========================
+   TOOLTIPS
+   =========================== */
+
+.function-icon-tooltip {
+    /* Positioning */
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-8px);
+    
+    /* Styling */
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    max-width: 400px;
+    min-width: 200px;
+    z-index: 10000;
+    
+    /* Hidden by default */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    
+    /* Text styling */
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-style: normal;
+    line-height: 1.4;
+    text-align: left;
+}
+
+/* Tooltip arrow pointing down */
+.function-icon-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 6px 6px 0 6px;
+    border-color: rgba(0, 0, 0, 0.9) transparent transparent transparent;
+}
+
+/* Show tooltip on hover */
+.function-call-icon:hover .function-icon-tooltip,
+.function-result-icon:hover .function-icon-tooltip {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* ===========================
+   ANIMATIONS
+   =========================== */
+
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* ===========================
+   RESPONSIVE & ACCESSIBILITY
+   =========================== */
+
+/* Ensure icons are visible in different themes */
+@media (prefers-color-scheme: dark) {
+    .function-call-icon {
+        background: rgba(255, 255, 255, 0.15);
+    }
+    
+    .function-call-icon:hover {
+        background: rgba(255, 255, 255, 0.25);
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .function-call-icon,
+    .function-result-icon {
+        border: 1px solid currentColor;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .function-call-icon {
+        animation: none;
+    }
+    
+    .function-call-icon,
+    .function-result-icon,
+    .function-icon-tooltip {
+        transition: none;
+    }
+}

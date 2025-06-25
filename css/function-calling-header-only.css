@@ -1,0 +1,29 @@
+/**
+ * Function Calling CSS - Header Icon Only
+ * Contains only the essential styling for the header function icon
+ * All tooltip and chat indicator functionality has been moved to function-indicators-simple.css
+ */
+
+/* Function calling menu item - ONLY target header button */
+#function-btn .function-icon {
+    font-style: normal !important;
+    font-weight: 900 !important;
+    font-size: 1.65rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    letter-spacing: 0.05em !important;
+    color: inherit !important; /* Inherit color like other icon buttons */
+    opacity: 1 !important;
+    visibility: visible !important;
+    position: relative !important;
+    
+    /* Reset any text hiding */
+    text-indent: 0 !important;
+    text-transform: none !important;
+    line-height: 1 !important;
+    
+    /* Make sure the element is properly sized */
+    min-width: 20px !important;
+    min-height: 20px !important;
+}
