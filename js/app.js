@@ -273,6 +273,7 @@ window.updateTitleAndSubtitle = function(forceUpdate = false) {
 /**
  * Update the site identifier in the footer based on current URL
  * Shows "hacka.re" only when at https://hacka.re, otherwise shows full path
+ * Truncates encrypted payloads in hash fragments for better readability
  */
 window.updateSiteIdentifier = function() {
     const siteIdentifierElement = document.getElementById('site-identifier');
@@ -286,7 +287,21 @@ window.updateSiteIdentifier = function() {
         // Show as link when at the actual hacka.re site
         siteIdentifierElement.innerHTML = '<a href="https://hacka.re" target="_blank">hacka.re</a>';
     } else {
-        // Show full path as clickable link for all other locations (file://, localhost, etc.)
-        siteIdentifierElement.innerHTML = `<a href="${currentUrl}" target="_blank">${currentUrl}</a>`;
+        // Check if URL contains a hash fragment (likely encrypted payload)
+        const hashIndex = currentUrl.indexOf('#');
+        let displayUrl = currentUrl;
+        
+        if (hashIndex !== -1) {
+            const baseUrl = currentUrl.substring(0, hashIndex + 1); // Include the #
+            const payload = currentUrl.substring(hashIndex + 1);
+            
+            // If payload is longer than 12 characters, truncate it
+            if (payload.length > 12) {
+                displayUrl = baseUrl + payload.substring(0, 8) + '[...]';
+            }
+        }
+        
+        // Show truncated path as clickable link, but preserve full URL in href
+        siteIdentifierElement.innerHTML = `<a href="${currentUrl}" target="_blank">${displayUrl}</a>`;
     }
 }
