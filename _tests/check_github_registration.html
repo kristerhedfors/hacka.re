@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Check GitHub Function Registration</title>
+</head>
+<body>
+    <h1>GitHub Function Registration Check</h1>
+    <button onclick="checkRegistration()">Check Registration</button>
+    <button onclick="forceReconnect()">Force Reconnect</button>
+    <pre id="output"></pre>
+
+    <script>
+        function log(msg) {
+            const output = document.getElementById('output');
+            output.textContent += new Date().toISOString() + ': ' + msg + '\n';
+            console.log(msg);
+        }
+
+        function checkRegistration() {
+            document.getElementById('output').textContent = '';
+            log('=== GitHub Registration Check ===');
+            
+            // Check if GitHub is connected
+            if (window.MCPServiceConnectors) {
+                const isConnected = window.MCPServiceConnectors.isConnected('github');
+                log(`GitHub connected: ${isConnected}`);
+            }
+            
+            // Check specific functions in window
+            const testFunctions = [
+                'github_advanced_search',
+                'github_search_repositories', 
+                'github_list_repos',
+                'github_get_repo'
+            ];
+            
+            log('\n=== Global Function Check ===');
+            testFunctions.forEach(fname => {
+                const exists = typeof window[fname] === 'function';
+                log(`${fname}: ${exists ? 'EXISTS' : 'MISSING'}`);
+                if (exists) {
+                    log(`  Type: ${typeof window[fname]}`);
+                    log(`  String preview: ${window[fname].toString().substring(0, 100)}...`);
+                }
+            });
+            
+            // Check function tools storage
+            log('\n=== Function Tools Storage ===');
+            if (window.FunctionToolsStorage) {
+                const jsFunctions = window.FunctionToolsStorage.getJsFunctions() || {};
+                const githubFuncs = Object.keys(jsFunctions).filter(k => k.startsWith('github_'));
+                log(`Stored GitHub functions: ${githubFuncs.length}`);
+                githubFuncs.forEach(f => log(`  - ${f}`));
+                
+                const enabledFunctions = window.FunctionToolsStorage.getEnabledFunctions() || [];
+                const enabledGithubFuncs = enabledFunctions.filter(f => f.startsWith('github_'));
+                log(`Enabled GitHub functions: ${enabledGithubFuncs.length}`);
+                enabledGithubFuncs.forEach(f => log(`  - ${f}`));
+            }
+            
+            // Try manual eval of a function
+            log('\n=== Manual Function Test ===');
+            try {
+                eval(`window.test_github_function = async function() { return "test"; }`);
+                if (typeof window.test_github_function === 'function') {
+                    log('Manual eval successful - can create functions');
+                    delete window.test_github_function;
+                } else {
+                    log('Manual eval failed - cannot create functions');
+                }
+            } catch (e) {
+                log(`Manual eval error: ${e.message}`);
+            }
+        }
+
+        async function forceReconnect() {
+            log('\n=== Force Reconnecting GitHub ===');
+            
+            if (!window.MCPServiceConnectors) {
+                log('MCPServiceConnectors not available');
+                return;
+            }
+            
+            try {
+                // Disconnect first
+                log('Disconnecting GitHub...');
+                await window.MCPServiceConnectors.disconnectService('github');
+                
+                // Wait a bit
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Reconnect
+                log('Reconnecting GitHub...');
+                const result = await window.MCPServiceConnectors.quickConnect('github');
+                log(`Reconnection result: ${result}`);
+                
+                // Check again
+                setTimeout(() => {
+                    log('\n=== After Reconnection ===');
+                    checkRegistration();
+                }, 2000);
+                
+            } catch (error) {
+                log(`Error during reconnection: ${error.message}`);
+            }
+        }
+
+        // Load scripts
+        const scripts = [
+            '/js/services/core-storage-service.js',
+            '/js/services/function-tools-storage.js', 
+            '/js/services/function-tools-registry.js',
+            '/js/services/github-provider.js',
+            '/js/services/mcp-service-connectors.js'
+        ];
+
+        async function loadScripts() {
+            for (const src of scripts) {
+                const script = document.createElement('script');
+                script.src = src;
+                await new Promise((resolve, reject) => {
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                });
+            }
+            log('All scripts loaded');
+            
+            // Auto-check on load
+            setTimeout(checkRegistration, 1000);
+        }
+
+        loadScripts().catch(err => log(`Script loading error: ${err}`));
+    </script>
+</body>
+</html>

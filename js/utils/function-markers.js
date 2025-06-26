@@ -10,6 +10,8 @@
 window.FunctionMarkers = (function() {
     // Track function calls to assign different colors
     const functionCallCounts = {};
+    // Track assigned colors to keep them stable during streaming
+    const assignedColors = {};
     
     // Global storage for function results (used by copy buttons)
     if (!window.functionResults) {
@@ -24,6 +26,8 @@ window.FunctionMarkers = (function() {
         Object.keys(functionCallCounts).forEach(key => {
             delete functionCallCounts[key];
         });
+        // Note: We don't reset assignedColors to keep colors stable across messages
+        console.log('[Function Markers] Function call counts reset, keeping assigned colors');
     }
     
     /**
@@ -42,8 +46,21 @@ window.FunctionMarkers = (function() {
      * @returns {string} - CSS color class
      */
     function getColorClass(functionName) {
-        const colorIndex = (functionCallCounts[functionName] % 5) || 5;
-        return `color-${colorIndex}`;
+        // If this function already has a color assigned, return it
+        if (assignedColors[functionName]) {
+            console.log(`[Function Markers] getColorClass(${functionName}): using existing color ${assignedColors[functionName]}`);
+            return assignedColors[functionName];
+        }
+        
+        // Assign a new color based on current count, but make it stable
+        const count = functionCallCounts[functionName] || 1;
+        const colorIndex = (count % 5) || 5;
+        const colorClass = `color-${colorIndex}`;
+        
+        // Store this assignment permanently
+        assignedColors[functionName] = colorClass;
+        console.log(`[Function Markers] getColorClass(${functionName}): assigned new color ${colorClass} (count=${count})`);
+        return colorClass;
     }
     
     /**
@@ -255,10 +272,8 @@ window.FunctionMarkers = (function() {
             console.log('[Function Markers] Processing text with markers');
         }
         
-        // Reset function call counts if this is a new message
-        if (!text.includes('[FUNCTION_CALL:') && !text.includes('[FUNCTION_RESULT:')) {
-            resetCounts();
-        }
+        // Only reset counts when processing a completely new message
+        // (not during streaming updates of the same message)
         
         // Process function call markers first
         text = processFunctionCallMarkers(text);
@@ -269,10 +284,21 @@ window.FunctionMarkers = (function() {
         return text;
     }
     
+    /**
+     * Clear all assigned colors (for complete reset)
+     */
+    function clearAssignedColors() {
+        Object.keys(assignedColors).forEach(key => {
+            delete assignedColors[key];
+        });
+        console.log('[Function Markers] All assigned colors cleared');
+    }
+    
     // Public API
     return {
         processMarkers,
         resetCounts,
+        clearAssignedColors,
         getColorClass,
         escapeHTML: escapeHTML
     };
