@@ -12,6 +12,10 @@
     color: inherit;
     position: relative;
     cursor: help;
+    font-weight: 900;
+    font-style: italic;
+    font-family: "Times New Roman", serif;
+    animation: textWave 2s ease-in-out infinite;
 }
 
 /* Clean function result indicator */
@@ -22,6 +26,8 @@
     color: inherit;
     position: relative;
     cursor: help;
+    font-weight: 900;
+    animation: textWave 2s ease-in-out infinite;
 }
 
 /* Arrow for result indicator */
@@ -29,12 +35,35 @@
     content: '→';
 }
 
-/* Simple color classes */
-.color-1 { color: #ff6b6b; }
-.color-2 { color: #4ecdc4; }
-.color-3 { color: #45b7d1; }
-.color-4 { color: #f39c12; }
-.color-5 { color: #9b59b6; }
+/* Wave animation for function icons */
+@keyframes textWave {
+    0%, 100% { transform: translateY(0); }
+    25% { transform: translateY(-2px); }
+    50% { transform: translateY(0); }
+    75% { transform: translateY(2px); }
+}
+
+/* Enhanced color classes with bold styling */
+.color-1 { 
+    color: #ff6b6b; 
+    text-shadow: 0.5px 0.5px 0 rgba(255, 107, 107, 0.5);
+}
+.color-2 { 
+    color: #4ecdc4; 
+    text-shadow: 0.5px 0.5px 0 rgba(78, 205, 196, 0.5);
+}
+.color-3 { 
+    color: #45b7d1; 
+    text-shadow: 0.5px 0.5px 0 rgba(69, 183, 209, 0.5);
+}
+.color-4 { 
+    color: #f39c12; 
+    text-shadow: 0.5px 0.5px 0 rgba(243, 156, 18, 0.5);
+}
+.color-5 { 
+    color: #9b59b6; 
+    text-shadow: 0.5px 0.5px 0 rgba(155, 89, 182, 0.5);
+}
 
 /* Clean tooltip styling with smart positioning */
 .function-icon-tooltip {
