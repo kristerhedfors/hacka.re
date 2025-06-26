@@ -198,63 +198,8 @@ window.MCPQuickConnectors = (function() {
 
         // Check if this is a service connector type
         if (config.transport === 'service-connector') {
-            // Use the new provider integration for GitHub, fallback to old system for others
-            if (serviceKey === 'github' && window.MCPProviderIntegration) {
-                try {
-                    updateConnectorStatus(serviceKey, 'connecting');
-                    
-                    // Get existing token if available
-                    const existingToken = await window.CoreStorageService.getValue('mcp_github_token');
-                    
-                    if (existingToken) {
-                        // Use existing token with new provider system
-                        const result = await window.MCPProviderIntegration.connectProvider('github', {
-                            auth: {
-                                token: existingToken,
-                                skipValidation: false
-                            }
-                        });
-                        
-                        if (result.success) {
-                            updateConnectorStatus(serviceKey, 'connected');
-                            saveConnectorState(serviceKey, 'connected');
-                            showNotification(`✅ Connected to ${config.name} with ${result.toolCount} tools`, 'success');
-                        } else {
-                            throw new Error(result.error || 'Connection failed');
-                        }
-                    } else {
-                        // No token available, show simple PAT input dialog
-                        console.log('[MCPQuickConnectors] No existing token, showing PAT input dialog');
-                        const token = await showGitHubPATDialog();
-                        if (token) {
-                            // Try to connect with the new token
-                            const result = await window.MCPProviderIntegration.connectProvider('github', {
-                                auth: {
-                                    token: token,
-                                    skipValidation: false
-                                }
-                            });
-                            
-                            if (result.success) {
-                                // Store the token for future use
-                                await window.CoreStorageService.setValue('mcp_github_token', token);
-                                updateConnectorStatus(serviceKey, 'connected');
-                                saveConnectorState(serviceKey, 'connected');
-                                showNotification(`✅ Connected to ${config.name} with ${result.toolCount} tools`, 'success');
-                            } else {
-                                throw new Error(result.error || 'Connection failed');
-                            }
-                        } else {
-                            updateConnectorStatus(serviceKey, 'disconnected');
-                        }
-                    }
-                } catch (error) {
-                    console.error(`[MCPQuickConnectors] GitHub provider integration error:`, error);
-                    updateConnectorStatus(serviceKey, 'disconnected');
-                    showNotification(`❌ GitHub connection failed: ${error.message}`, 'error');
-                }
-            } else if (window.MCPServiceConnectors) {
-                // Use the old MCPServiceConnectors for non-GitHub services
+            // Use MCPServiceConnectors for all service connections
+            if (window.MCPServiceConnectors) {
                 try {
                     updateConnectorStatus(serviceKey, 'connecting');
                     const result = await window.MCPServiceConnectors.connectService(serviceKey);
@@ -828,11 +773,8 @@ window.MCPQuickConnectors = (function() {
         
         try {
             if (config.transport === 'service-connector') {
-                if (serviceKey === 'github' && window.MCPProviderIntegration) {
-                    // Use new provider integration for GitHub
-                    await window.MCPProviderIntegration.disconnectProvider('github');
-                } else if (window.MCPServiceConnectors) {
-                    // Use old system for other services
+                if (window.MCPServiceConnectors) {
+                    // Use MCPServiceConnectors for all service connections
                     await window.MCPServiceConnectors.disconnectService(serviceKey);
                 }
             } else if (mcpClient) {
