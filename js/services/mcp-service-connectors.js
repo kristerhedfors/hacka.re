@@ -337,13 +337,29 @@
                     // Add the function to the global scope so it can be called
                     console.log(`[MCP Service Connectors] Registering function ${tool.name} globally...`);
                     console.log(`[MCP Service Connectors] Function code preview:`, tool.code.substring(0, 200) + '...');
-                    eval(`window.${tool.name} = ${tool.code}`);
                     
-                    // Verify the function was registered
-                    if (typeof window[tool.name] === 'function') {
-                        console.log(`[MCP Service Connectors] Successfully registered function: ${tool.name}`);
-                    } else {
-                        console.error(`[MCP Service Connectors] Failed to register function ${tool.name} - not found in window after eval`);
+                    try {
+                        // Try eval approach
+                        eval(`window.${tool.name} = ${tool.code}`);
+                        
+                        // Verify immediately
+                        if (typeof window[tool.name] === 'function') {
+                            console.log(`[MCP Service Connectors] Successfully registered function: ${tool.name}`);
+                        } else {
+                            console.error(`[MCP Service Connectors] Eval succeeded but function ${tool.name} not found in window`);
+                            
+                            // Try direct assignment as backup
+                            try {
+                                const func = new Function('return ' + tool.code)();
+                                window[tool.name] = func;
+                                console.log(`[MCP Service Connectors] Backup registration successful for: ${tool.name}`);
+                            } catch (backupError) {
+                                console.error(`[MCP Service Connectors] Backup registration failed for ${tool.name}:`, backupError);
+                            }
+                        }
+                    } catch (evalError) {
+                        console.error(`[MCP Service Connectors] Eval failed for ${tool.name}:`, evalError);
+                        console.error(`[MCP Service Connectors] Function code that failed:`, tool.code);
                     }
                     
                     // Also register with the Function Calling system
