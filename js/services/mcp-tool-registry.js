@@ -133,8 +133,10 @@ class MCPToolRegistryClass {
                 throw new Error('Tool must have a valid handler function');
             }
 
-            // Create full tool name with provider prefix
-            const fullToolName = `${providerName}_${toolDef.name}`;
+            // Create full tool name with provider prefix (avoid double-prefixing)
+            const fullToolName = toolDef.name.startsWith(`${providerName}_`) 
+                ? toolDef.name 
+                : `${providerName}_${toolDef.name}`;
             
             // Enhance tool metadata
             const enhancedTool = {
