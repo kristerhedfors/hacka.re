@@ -12,8 +12,6 @@ window.FunctionMarkers = (function() {
     const functionCallCounts = {};
     // Track assigned colors to keep them stable during streaming
     const assignedColors = {};
-    // Track function call instances for unique coloring
-    let callInstanceCounter = 0;
     
     // Global storage for function results (used by copy buttons)
     if (!window.functionResults) {
@@ -84,7 +82,7 @@ window.FunctionMarkers = (function() {
     function processFunctionCallMarkers(text) {
         // New format: [FUNCTION_CALL:functionName:encodedArgs:callId]
         // Legacy format: [FUNCTION_CALL:functionName:encodedArgs] or [FUNCTION_CALL:functionName]
-        return text.replace(/\s*\[FUNCTION_CALL:([^:\]]+)(?::([^:\]]+))?(?::([^\]]+))?\]\s*/g, (match, functionName, encodedArgs, callId) => {
+        return text.replace(/\s*\[FUNCTION_CALL:([^:\]]+)(?::([^:\]]+))?(?::([^\]]+))?\]\s*/g, (_, functionName, encodedArgs, callId) => {
             const count = getOrIncrementCount(functionName);
             // Use call ID for unique coloring if available, otherwise use function name
             const colorKey = callId ? callId : `${functionName}_${count}`;
@@ -228,7 +226,7 @@ window.FunctionMarkers = (function() {
     function processFunctionResultMarkers(text) {
         // New format: [FUNCTION_RESULT:name:type:encodedValue:executionTime:callId]
         // Legacy format: [FUNCTION_RESULT:name:type:encodedValue:executionTime] or [FUNCTION_RESULT:name:type:encodedValue]
-        return text.replace(/\[FUNCTION_RESULT:([^:]+):([^:]+):([^:]+)(?::([^:\]]+))?(?::([^\]]+))?\]/g, (match, functionName, resultType, encodedResult, executionTime, callId) => {
+        return text.replace(/\[FUNCTION_RESULT:([^:]+):([^:]+):([^:]+)(?::([^:\]]+))?(?::([^\]]+))?\]/g, (_, functionName, resultType, encodedResult, executionTime, callId) => {
             // Use call ID for unique coloring if available, otherwise use function name
             const colorKey = callId ? callId : functionName;
             const colorClass = getColorClass(colorKey);
