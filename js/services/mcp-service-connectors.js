@@ -335,8 +335,16 @@
             for (const tool of tools) {
                 try {
                     // Add the function to the global scope so it can be called
+                    console.log(`[MCP Service Connectors] Registering function ${tool.name} globally...`);
+                    console.log(`[MCP Service Connectors] Function code preview:`, tool.code.substring(0, 200) + '...');
                     eval(`window.${tool.name} = ${tool.code}`);
-                    console.log(`[MCP Service Connectors] Registered function: ${tool.name}`);
+                    
+                    // Verify the function was registered
+                    if (typeof window[tool.name] === 'function') {
+                        console.log(`[MCP Service Connectors] Successfully registered function: ${tool.name}`);
+                    } else {
+                        console.error(`[MCP Service Connectors] Failed to register function ${tool.name} - not found in window after eval`);
+                    }
                     
                     // Also register with the Function Calling system
                     try {
@@ -346,7 +354,14 @@
                         
                         if (window.FunctionToolsRegistry && window.FunctionToolsStorage) {
                             // Get the tool config for this specific tool
-                            const currentToolConfig = config.tools[tool.name.replace(`${serviceKey}_`, '')];
+                            let currentToolConfig;
+                            if (serviceKey === 'github') {
+                                // For GitHub, use the toolsToRegister that was populated from GitHubProvider
+                                currentToolConfig = toolsToRegister[tool.name];
+                            } else {
+                                // For other services, use config.tools
+                                currentToolConfig = config.tools[tool.name.replace(`${serviceKey}_`, '')];
+                            }
                             
                             // Generate tool definition for the function
                             const toolDefinition = {
