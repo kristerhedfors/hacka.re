@@ -11,6 +11,7 @@
     margin: 0 3px;
     color: inherit;
     position: relative;
+    z-index: 10;
     cursor: help;
     font-weight: 900;
     font-style: italic;
@@ -25,6 +26,7 @@
     margin: 0 3px;
     color: inherit;
     position: relative;
+    z-index: 10;
     cursor: help;
     font-weight: 900;
     animation: textWave 2s ease-in-out infinite;
@@ -69,7 +71,7 @@
 .function-icon-tooltip {
     /* Positioning controlled by JavaScript */
     position: fixed;
-    z-index: 10000;
+    z-index: 2147483647;
     top: 0;
     left: 0;
     
@@ -96,11 +98,13 @@
     
     /* Text styling */
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-weight: normal !important;
+    font-style: normal !important;
     line-height: 1.4;
     text-align: left;
 }
 
-/* Force all text inside tooltips to be white */
+/* Force all text inside tooltips to be white and remove bold/italic */
 .function-icon-tooltip,
 .function-icon-tooltip *,
 .function-icon-tooltip strong,
@@ -112,6 +116,8 @@
 .function-icon-tooltip pre {
     color: white !important;
     text-decoration: none !important;
+    font-weight: normal !important;
+    font-style: normal !important;
 }
 
 /* Remove any link styling in tooltips */

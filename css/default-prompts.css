@@ -356,7 +356,7 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     width: 300px;
     max-width: 90vw;
-    z-index: 1000;
+    z-index: 999999;
     overflow: hidden;
 }
 
