@@ -34,19 +34,6 @@ window.MCPManager = (function() {
             return;
         }
         
-        // Initialize the new provider integration system
-        if (window.MCPProviderIntegration) {
-            try {
-                window.MCPProviderIntegration.initialize({
-                    functionToolsRegistry: window.FunctionToolsRegistry,
-                    functionToolsStorage: window.FunctionToolsStorage,
-                    coreStorageService: window.CoreStorageService
-                });
-                console.log('[MCPManager] Provider integration initialized');
-            } catch (error) {
-                console.error('[MCPManager] Failed to initialize provider integration:', error);
-            }
-        }
         
         // Get component references
         uiManager = window.MCPUIManager;
