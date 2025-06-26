@@ -225,7 +225,7 @@ window.ApiToolCallHandler = (function() {
             if (toolCall.function && toolCall.function.name) {
                 const functionName = toolCall.function.name;
                 const encodedArgs = encodeURIComponent(toolCall.function.arguments || '{}');
-                const functionCallMarker = `[FUNCTION_CALL:${functionName}:${encodedArgs}]`;
+                const functionCallMarker = `[FUNCTION_CALL:${functionName}:${encodedArgs}:${toolCall.id}]`;
                 
                 updatedContent += functionCallMarker;
                 
@@ -267,7 +267,7 @@ window.ApiToolCallHandler = (function() {
             // Create the marker with function name, encoded result, and execution time
             const encodedResult = encodeURIComponent(result.content);
             const executionTime = result.executionTime || 0;
-            const functionResultMarker = `[FUNCTION_RESULT:${result.name}:${resultType}:${encodedResult}:${executionTime}]`;
+            const functionResultMarker = `[FUNCTION_RESULT:${result.name}:${resultType}:${encodedResult}:${executionTime}:${result.tool_call_id}]`;
             
             updatedContent += functionResultMarker;
             
