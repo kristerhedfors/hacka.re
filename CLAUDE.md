@@ -181,6 +181,12 @@ cp .env.example _tests/playwright/.env
 - **Utilities** provide shared helper functions (7 specialized modules)
 - **Default prompts** are modular components
 
+### Refactoring Philosophy
+- **REMOVE old functionality** when refactoring - do not keep old versions for backwards compatibility
+- Old code patterns tend to re-emerge if left in the codebase
+- Clean removal ensures the new architecture remains pure and maintainable
+- Delete deprecated functions, unused imports, and legacy code paths completely
+
 ### Testing Requirements
 - Always include debug information with screenshots using `screenshot_with_markdown()`
 - Function name fields are auto-populated from code editor (read-only)
