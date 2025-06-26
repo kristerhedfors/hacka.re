@@ -10,6 +10,8 @@
 window.FunctionMarkers = (function() {
     // Track function calls to assign different colors
     const functionCallCounts = {};
+    // Track assigned colors to keep them stable during streaming
+    const assignedColors = {};
     
     // Global storage for function results (used by copy buttons)
     if (!window.functionResults) {
@@ -24,6 +26,8 @@ window.FunctionMarkers = (function() {
         Object.keys(functionCallCounts).forEach(key => {
             delete functionCallCounts[key];
         });
+        // Note: We don't reset assignedColors to keep colors stable across messages
+        console.log('[Function Markers] Function call counts reset, keeping assigned colors');
     }
     
     /**
@@ -41,9 +45,22 @@ window.FunctionMarkers = (function() {
      * @param {string} functionName - Name of the function
      * @returns {string} - CSS color class
      */
-    function getColorClass(functionName) {
-        const colorIndex = (functionCallCounts[functionName] % 5) || 5;
-        return `color-${colorIndex}`;
+    function getColorClass(colorKey) {
+        // If this color key already has a color assigned, return it
+        if (assignedColors[colorKey]) {
+            console.log(`[Function Markers] getColorClass(${colorKey}): using existing color ${assignedColors[colorKey]}`);
+            return assignedColors[colorKey];
+        }
+        
+        // Assign a new color based on the number of assigned colors so far
+        const assignedCount = Object.keys(assignedColors).length;
+        const colorIndex = (assignedCount % 5) + 1; // Use 1-5 instead of 0-4
+        const colorClass = `color-${colorIndex}`;
+        
+        // Store this assignment permanently
+        assignedColors[colorKey] = colorClass;
+        console.log(`[Function Markers] getColorClass(${colorKey}): assigned new color ${colorClass} (assignedCount=${assignedCount})`);
+        return colorClass;
     }
     
     /**
@@ -63,11 +80,13 @@ window.FunctionMarkers = (function() {
      * @returns {string} - Text with function call markers replaced
      */
     function processFunctionCallMarkers(text) {
-        // New format: [FUNCTION_CALL:functionName:encodedArgs]
-        // Old format: [FUNCTION_CALL:functionName] (for backward compatibility)
-        return text.replace(/\s*\[FUNCTION_CALL:([^:\]]+)(?::([^\]]+))?\]\s*/g, (match, functionName, encodedArgs) => {
+        // New format: [FUNCTION_CALL:functionName:encodedArgs:callId]
+        // Legacy format: [FUNCTION_CALL:functionName:encodedArgs] or [FUNCTION_CALL:functionName]
+        return text.replace(/\s*\[FUNCTION_CALL:([^:\]]+)(?::([^:\]]+))?(?::([^\]]+))?\]\s*/g, (_, functionName, encodedArgs, callId) => {
             const count = getOrIncrementCount(functionName);
-            const colorClass = getColorClass(functionName);
+            // Use call ID for unique coloring if available, otherwise use function name
+            const colorKey = callId ? callId : `${functionName}_${count}`;
+            const colorClass = getColorClass(colorKey);
             
             // Decode and parse the arguments
             let parameters = {};
@@ -205,10 +224,12 @@ window.FunctionMarkers = (function() {
      * @returns {string} - Text with function result markers replaced
      */
     function processFunctionResultMarkers(text) {
-        // New format: [FUNCTION_RESULT:name:type:encodedValue:executionTime]
-        // Old format: [FUNCTION_RESULT:name:type:encodedValue] (for backward compatibility)
-        return text.replace(/\[FUNCTION_RESULT:([^:]+):([^:]+):([^:]+)(?::([^\]]+))?\]/g, (match, functionName, resultType, encodedResult, executionTime) => {
-            const colorClass = getColorClass(functionName);
+        // New format: [FUNCTION_RESULT:name:type:encodedValue:executionTime:callId]
+        // Legacy format: [FUNCTION_RESULT:name:type:encodedValue:executionTime] or [FUNCTION_RESULT:name:type:encodedValue]
+        return text.replace(/\[FUNCTION_RESULT:([^:]+):([^:]+):([^:]+)(?::([^:\]]+))?(?::([^\]]+))?\]/g, (_, functionName, resultType, encodedResult, executionTime, callId) => {
+            // Use call ID for unique coloring if available, otherwise use function name
+            const colorKey = callId ? callId : functionName;
+            const colorClass = getColorClass(colorKey);
             
             // Decode and parse the result value
             const decodedResult = decodeURIComponent(encodedResult);
@@ -255,10 +276,8 @@ window.FunctionMarkers = (function() {
             console.log('[Function Markers] Processing text with markers');
         }
         
-        // Reset function call counts if this is a new message
-        if (!text.includes('[FUNCTION_CALL:') && !text.includes('[FUNCTION_RESULT:')) {
-            resetCounts();
-        }
+        // Only reset counts when processing a completely new message
+        // (not during streaming updates of the same message)
         
         // Process function call markers first
         text = processFunctionCallMarkers(text);
@@ -269,10 +288,21 @@ window.FunctionMarkers = (function() {
         return text;
     }
     
+    /**
+     * Clear all assigned colors (for complete reset)
+     */
+    function clearAssignedColors() {
+        Object.keys(assignedColors).forEach(key => {
+            delete assignedColors[key];
+        });
+        console.log('[Function Markers] All assigned colors cleared');
+    }
+    
     // Public API
     return {
         processMarkers,
         resetCounts,
+        clearAssignedColors,
         getColorClass,
         escapeHTML: escapeHTML
     };
