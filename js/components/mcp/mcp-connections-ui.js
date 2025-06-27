@@ -3,7 +3,8 @@
  * Provides UI for managing MCP connections and their sharing
  */
 
-import { GitHubTokenManager } from './github-token-manager.js';
+// GitHub token manager is now available globally as window.GitHubTokenManager
+// from the new modular provider structure
 import { getMcpConnectionsSummary } from '../share/mcp-connections-share-item.js';
 
 export class MCPConnectionsUI {
@@ -20,9 +21,23 @@ export class MCPConnectionsUI {
         
         console.log('MCP Connections UI: Initializing...');
         
-        // Initialize GitHub token manager
-        this.githubManager = new GitHubTokenManager();
-        await this.githubManager.initialize();
+        // Initialize GitHub token manager (wait for it to be loaded)
+        if (window.GitHubTokenManager) {
+            this.githubManager = window.GitHubTokenManager;
+            await this.githubManager.initialize();
+        } else {
+            console.warn('MCP Connections UI: GitHubTokenManager not yet loaded, will retry later');
+            // Set up a retry mechanism
+            const retryInit = () => {
+                if (window.GitHubTokenManager) {
+                    this.githubManager = window.GitHubTokenManager;
+                    this.githubManager.initialize();
+                } else {
+                    setTimeout(retryInit, 100);
+                }
+            };
+            setTimeout(retryInit, 100);
+        }
         
         this.initialized = true;
         console.log('MCP Connections UI: Initialized');
