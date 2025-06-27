@@ -1,9 +1,11 @@
 /**
  * GitHub Tools Module
  * Defines all GitHub API tools and their implementations
+ * 
+ * Dependencies: None (standalone)
  */
 
-export class GitHubTools {
+window.GitHubTools = class GitHubTools {
     constructor(endpoints = {}) {
         this.endpoints = {
             api: 'https://api.github.com',
@@ -794,7 +796,7 @@ export class GitHubTools {
                 },
                 required: ['q']
             },
-            handler: this.advancedSearch.bind(this),
+            handler: null, // Will be bound by provider
             requiredScopes: ['repo'],
             category: 'search',
             tags: ['search', 'multi-type', 'comprehensive']
@@ -893,10 +895,6 @@ export class GitHubTools {
         return this._searchWithMetadata(params, credentials, 'topics');
     }
 
-    async advancedSearch(params, credentials) {
-        // This is complex enough that it stays in the main provider
-        throw new Error('advancedSearch should be called on the main provider');
-    }
 
     // Helper method for search with metadata
     async _searchWithMetadata(params, credentials, searchType) {
@@ -1016,5 +1014,5 @@ export class GitHubTools {
     }
 }
 
-// Export tools instance
-export const GITHUB_TOOLS = new GitHubTools();
+// Export tools instance globally
+window.GITHUB_TOOLS = new window.GitHubTools();

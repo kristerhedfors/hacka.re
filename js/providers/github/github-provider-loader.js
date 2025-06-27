@@ -1,31 +1,39 @@
 /**
- * GitHub Provider Loader
- * Loads all GitHub provider modules in the correct order
+ * GitHub Provider Initialization Script
+ * Initializes GitHub provider after all modules are loaded
+ * 
+ * Note: This script should be loaded AFTER all individual module scripts
  */
 
-(async function() {
+(function() {
     'use strict';
     
+    console.log('GitHub Provider: Starting initialization...');
+    
+    // Check if all required dependencies are available
+    const requiredClasses = ['GitHubAuth', 'GitHubTools', 'GitHubProvider', 'GitHubUI'];
+    const missingClasses = requiredClasses.filter(className => !window[className]);
+    
+    if (missingClasses.length > 0) {
+        console.error('GitHub Provider: Missing required classes:', missingClasses);
+        console.error('GitHub Provider: Make sure all module scripts are loaded before this initialization script');
+        return;
+    }
+    
     try {
-        console.log('GitHub Provider: Starting module loading...');
-        
-        // Load modules in dependency order
-        const { GitHubAuth } = await import('./github-auth.js');
-        const { GitHubTools } = await import('./github-tools.js');
-        const { GitHubProvider } = await import('./github-provider.js');
-        const { GitHubUI } = await import('./github-ui.js');
-        
         console.log('GitHub Provider: All modules loaded successfully');
         
-        // Make available globally for backward compatibility
-        window.GitHubProvider = GitHubProvider;
-        window.GitHubUI = GitHubUI;
-        window.GitHubAuth = GitHubAuth;
-        window.GitHubTools = GitHubTools;
-        
         // Initialize UI for backward compatibility
-        window.GitHubTokenManager = new GitHubUI();
-        await window.GitHubTokenManager.initialize();
+        if (!window.GitHubTokenManager) {
+            window.GitHubTokenManager = new window.GitHubUI();
+            
+            // Initialize asynchronously
+            window.GitHubTokenManager.initialize().then(() => {
+                console.log('GitHub Provider: GitHubTokenManager initialized');
+            }).catch(error => {
+                console.error('GitHub Provider: GitHubTokenManager initialization failed:', error);
+            });
+        }
         
         console.log('GitHub Provider (modular) loaded and initialized successfully');
         
@@ -33,18 +41,6 @@
         window.dispatchEvent(new CustomEvent('github-provider-ready'));
         
     } catch (error) {
-        console.error('GitHub Provider: Failed to load modules:', error);
-        
-        // Try to fall back to the old provider if it exists
-        if (window.location.search.includes('fallback=true')) {
-            console.log('GitHub Provider: Attempting fallback to legacy provider');
-            try {
-                const script = document.createElement('script');
-                script.src = '../../services/github-provider.js';
-                document.head.appendChild(script);
-            } catch (fallbackError) {
-                console.error('GitHub Provider: Fallback also failed:', fallbackError);
-            }
-        }
+        console.error('GitHub Provider: Initialization failed:', error);
     }
 })();
