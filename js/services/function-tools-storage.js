@@ -15,63 +15,33 @@ window.FunctionToolsStorage = (function() {
     
     const StorageManager = {
         load: function() {
-            console.log("FunctionToolsStorage.load() called");
-            
-            // Debug namespace info
-            if (window.NamespaceService) {
-                const namespace = window.NamespaceService.getNamespace();
-                const namespaceId = window.NamespaceService.getNamespaceId();
-                console.log(`- Current namespace: "${namespace}", ID: ${namespaceId}`);
-                console.log(`- JS_FUNCTIONS key: ${window.NamespaceService.getNamespacedKey(STORAGE_KEYS.JS_FUNCTIONS)}`);
-                console.log(`- ENABLED_FUNCTIONS key: ${window.NamespaceService.getNamespacedKey(STORAGE_KEYS.ENABLED_FUNCTIONS)}`);
-            }
-            
+            // Load functions from storage
             const storedFunctions = CoreStorageService.getValue(STORAGE_KEYS.JS_FUNCTIONS);
             if (storedFunctions) {
                 jsFunctions = storedFunctions;
-                console.log("- Loaded jsFunctions:", Object.keys(jsFunctions));
-            } else {
-                console.log("- No stored jsFunctions found");
             }
             
             const storedEnabledFunctions = CoreStorageService.getValue(STORAGE_KEYS.ENABLED_FUNCTIONS);
             if (storedEnabledFunctions) {
                 enabledFunctions = storedEnabledFunctions;
-                console.log("- Loaded enabledFunctions:", enabledFunctions);
-            } else {
-                console.log("- No stored enabledFunctions found");
             }
             
             const storedFunctionCollections = CoreStorageService.getValue(STORAGE_KEYS.FUNCTION_COLLECTIONS);
             if (storedFunctionCollections) {
                 functionCollections = storedFunctionCollections;
-                console.log("- Loaded functionCollections:", Object.keys(functionCollections));
-            } else {
-                console.log("- No stored functionCollections found");
             }
             
             const storedFunctionCollectionMetadata = CoreStorageService.getValue(STORAGE_KEYS.FUNCTION_COLLECTION_METADATA);
             if (storedFunctionCollectionMetadata) {
                 functionCollectionMetadata = storedFunctionCollectionMetadata;
-                console.log("- Loaded functionCollectionMetadata:", Object.keys(functionCollectionMetadata));
-            } else {
-                console.log("- No stored functionCollectionMetadata found");
             }
         },
         
         save: function() {
-            console.log("FunctionToolsStorage.save() called");
-            console.log("- Saving jsFunctions:", Object.keys(jsFunctions));
-            console.log("- Saving enabledFunctions:", enabledFunctions);
-            console.log("- Saving functionCollections:", Object.keys(functionCollections));
-            console.log("- Saving functionCollectionMetadata:", Object.keys(functionCollectionMetadata));
-            
             CoreStorageService.setValue(STORAGE_KEYS.JS_FUNCTIONS, jsFunctions);
             CoreStorageService.setValue(STORAGE_KEYS.ENABLED_FUNCTIONS, enabledFunctions);
             CoreStorageService.setValue(STORAGE_KEYS.FUNCTION_COLLECTIONS, functionCollections);
             CoreStorageService.setValue(STORAGE_KEYS.FUNCTION_COLLECTION_METADATA, functionCollectionMetadata);
-            
-            console.log("- Save complete");
         },
         
         isEnabled: function() {

@@ -38,7 +38,6 @@ window.ContextUtils = (function() {
     function getContextSize(currentModel) {
         // Check cache first
         if (contextSizeCache.has(currentModel)) {
-            console.log(`Using cached context size ${contextSizeCache.get(currentModel)} for model ${currentModel}`);
             return contextSizeCache.get(currentModel);
         }
         
@@ -47,20 +46,17 @@ window.ContextUtils = (function() {
         // Try to get context size from ModelInfoService
         if (window.ModelInfoService && typeof ModelInfoService.getContextSize === 'function') {
             contextSize = ModelInfoService.getContextSize(currentModel);
-            console.log(`Got context size ${contextSize} for model ${currentModel} from ModelInfoService.getContextSize`);
         }
         
         // If we couldn't get a context size from ModelInfoService.getContextSize,
         // try to get it directly from the contextWindowSizes object in ModelInfoService
         if (!contextSize && window.ModelInfoService && ModelInfoService.contextWindowSizes) {
             contextSize = ModelInfoService.contextWindowSizes[currentModel];
-            console.log(`Got context size ${contextSize} for model ${currentModel} from ModelInfoService.contextWindowSizes`);
         }
         
         // If we still don't have a context size, default to 8192
         if (!contextSize) {
             contextSize = 8192;
-            console.log(`No context size found for model ${currentModel}, defaulting to ${contextSize}`);
         }
         
         // Cache the context size for this model
@@ -75,7 +71,6 @@ window.ContextUtils = (function() {
      */
     function handleModelChange(currentModel) {
         if (lastModelUsed !== currentModel) {
-            console.log(`Model changed from ${lastModelUsed} to ${currentModel}, clearing context size cache`);
             contextSizeCache.clear();
             lastModelUsed = currentModel;
         }
@@ -166,12 +161,7 @@ window.ContextUtils = (function() {
      * @param {number} percentage - Usage percentage (0-100)
      */
     function updateContextUsage(fillElement, textElement, percentage) {
-        console.log("updateContextUsage called with percentage:", percentage);
-        console.log("fillElement:", fillElement);
-        console.log("textElement:", textElement);
-        
         if (!fillElement || !textElement) {
-            console.log("Missing fillElement or textElement, returning");
             return;
         }
         
@@ -198,7 +188,6 @@ window.ContextUtils = (function() {
         }
         
         fillElement.style.backgroundColor = color;
-        console.log("Context usage updated to:", percentage, "% with color:", color);
     }
     
     /**
@@ -208,7 +197,6 @@ window.ContextUtils = (function() {
         contextSizeCache.clear();
         tokenEstimateCache.clear();
         lastModelUsed = null;
-        console.log('Context usage caches cleared');
     }
     
     /**
