@@ -26,6 +26,12 @@ document.addEventListener('DOMContentLoaded', function() {
         DebugService.log('MCP Manager initialized');
     }
     
+    // Initialize Function Details Modal if available
+    if (window.FunctionDetailsModal) {
+        FunctionDetailsModal.init();
+        DebugService.log('Function Details Modal initialized');
+    }
+    
     // Initialize title and subtitle from localStorage if available
     if (window.StorageService) {
         // Update title and subtitle on page load
