@@ -298,21 +298,44 @@
 
             let toolsToRegister = config.tools;
             
-            // For GitHub, use the comprehensive GitHubProvider instead of legacy config
-            if (serviceKey === 'github' && window.GitHubProvider) {
+            // For GitHub, use the new modular GitHubProvider
+            if (serviceKey === 'github') {
                 try {
-                    const githubProvider = new window.GitHubProvider();
-                    const providerTools = githubProvider.tools;
-                    
-                    // Convert provider tools to the format expected by this system
-                    toolsToRegister = {};
-                    for (const [toolName, toolConfig] of providerTools) {
-                        toolsToRegister[toolName] = {
-                            description: toolConfig.description,
-                            parameters: toolConfig.parameters
-                        };
+                    // Try to use new modular provider structure first
+                    if (window.GitHubProvider) {
+                        const githubProvider = new window.GitHubProvider();
+                        const providerTools = githubProvider.tools;
+                        
+                        // Convert provider tools to the format expected by this system
+                        toolsToRegister = {};
+                        for (const [toolName, toolConfig] of providerTools) {
+                            toolsToRegister[toolName] = {
+                                description: toolConfig.description,
+                                parameters: toolConfig.parameters
+                            };
+                        }
+                        console.log(`[MCP Service Connectors] Using GitHubProvider with ${Object.keys(toolsToRegister).length} tools`);
+                    } else {
+                        // Fallback: Try to dynamically import the new provider structure
+                        try {
+                            const { GitHubProvider } = await import('../providers/github/index.js');
+                            const githubProvider = new GitHubProvider();
+                            const providerTools = await githubProvider.getToolDefinitions();
+                            
+                            // Convert to expected format
+                            toolsToRegister = {};
+                            for (const tool of providerTools) {
+                                toolsToRegister[tool.name] = {
+                                    description: tool.description,
+                                    parameters: tool.parameters
+                                };
+                            }
+                            console.log(`[MCP Service Connectors] Using new modular GitHubProvider with ${Object.keys(toolsToRegister).length} tools`);
+                        } catch (importError) {
+                            console.warn(`[MCP Service Connectors] Failed to import new GitHubProvider:`, importError);
+                            toolsToRegister = config.tools;
+                        }
                     }
-                    console.log(`[MCP Service Connectors] Using GitHubProvider with ${Object.keys(toolsToRegister).length} tools`);
                 } catch (error) {
                     console.warn(`[MCP Service Connectors] Failed to load GitHubProvider, falling back to config:`, error);
                     toolsToRegister = config.tools;
