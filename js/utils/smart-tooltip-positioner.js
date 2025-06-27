@@ -267,18 +267,14 @@ window.SmartTooltipPositioner = (function() {
         
         // Handle clicks on function icons
         document.addEventListener('click', function(event) {
-            const icon = event.target;
-            if (!icon || !icon.classList) {
+            // Find the actual icon element (event.target might be a child)
+            const icon = event.target.closest('.function-call-icon, .function-result-icon');
+            if (!icon) {
                 return;
             }
             
             // Skip header function button - it has its own handler
             if (icon.closest('#function-btn') || icon.id === 'function-btn') {
-                return;
-            }
-            
-            if (!icon.classList.contains('function-call-icon') && 
-                !icon.classList.contains('function-result-icon')) {
                 return;
             }
             
@@ -316,16 +312,60 @@ window.SmartTooltipPositioner = (function() {
                         
                         console.log('[SmartTooltip] Parsed from tooltip:', { parsedFunctionName, parsedType });
                         
-                        // Show modal with basic data
+                        let modalData = {
+                            functionName: parsedFunctionName,
+                            type: parsedType
+                        };
+                        
+                        if (parsedType === 'call') {
+                            // Parse parameters from tooltip
+                            const paramMatch = tooltipHtml.match(/<strong>Parameters:<\/strong>\s*<br>([^<]*(?:<br>[^<]*)*)/);
+                            if (paramMatch) {
+                                try {
+                                    const paramText = paramMatch[1].replace(/<br>/g, '\n').trim();
+                                    modalData.parameters = JSON.parse(paramText);
+                                } catch (e) {
+                                    modalData.parameters = {};
+                                }
+                            } else {
+                                modalData.parameters = {};
+                            }
+                        } else if (parsedType === 'result') {
+                            // Parse result data from tooltip
+                            const typeMatch = tooltipHtml.match(/<strong>Type:<\/strong>\s*([^<\n]+)/);
+                            const timeMatch = tooltipHtml.match(/<strong>Time:<\/strong>\s*([^<\n]+)/);
+                            const valueMatch = tooltipHtml.match(/<strong>Value:<\/strong>\s*<br>([^]*)/);
+                            
+                            modalData.resultType = typeMatch ? typeMatch[1].trim() : 'unknown';
+                            
+                            if (timeMatch) {
+                                const timeStr = timeMatch[1].trim();
+                                modalData.executionTime = timeStr.includes('ms') ? 
+                                    parseInt(timeStr.replace('ms', '')) : 0;
+                            } else {
+                                modalData.executionTime = 0;
+                            }
+                            
+                            if (valueMatch) {
+                                try {
+                                    const valueText = valueMatch[1]
+                                        .replace(/<br>/g, '\n')
+                                        .replace(/&lt;/g, '<')
+                                        .replace(/&gt;/g, '>')
+                                        .replace(/&quot;/g, '"')
+                                        .replace(/&amp;/g, '&')
+                                        .trim();
+                                    modalData.resultValue = JSON.parse(valueText);
+                                } catch (e) {
+                                    modalData.resultValue = valueMatch[1];
+                                }
+                            }
+                        }
+                        
+                        // Show modal with parsed data
                         if (window.FunctionDetailsModal) {
-                            window.FunctionDetailsModal.showModal({
-                                functionName: parsedFunctionName,
-                                type: parsedType,
-                                parameters: parsedType === 'call' ? {} : undefined,
-                                resultType: parsedType === 'result' ? 'unknown' : undefined,
-                                resultValue: parsedType === 'result' ? 'See tooltip for details' : undefined,
-                                executionTime: parsedType === 'result' ? 0 : undefined
-                            });
+                            console.log('[SmartTooltip] Showing modal with parsed data:', modalData);
+                            window.FunctionDetailsModal.showModal(modalData);
                         }
                         return;
                     }

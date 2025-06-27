@@ -88,16 +88,16 @@ window.FunctionDetailsModal = (function() {
             elements.functionName.textContent = functionName;
         }
         
-        // Always show parameters if available
-        if (parameters !== undefined) {
+        // Always show parameters if available (both for calls and results)
+        if (parameters !== undefined && parameters !== null) {
             elements.parametersGroup.style.display = 'block';
             elements.parameters.textContent = formatParameters(parameters);
         } else {
             elements.parametersGroup.style.display = 'none';
         }
         
-        // Show result section only if we have result data
-        if (type === 'result' && resultValue !== undefined) {
+        // Show result section if we have result data (only for results or completed calls)
+        if (resultValue !== undefined && resultValue !== null) {
             elements.resultGroup.style.display = 'block';
             elements.resultType.textContent = resultType || 'unknown';
             elements.executionTime.textContent = formatExecutionTime(executionTime);
