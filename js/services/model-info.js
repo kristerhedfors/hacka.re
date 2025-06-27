@@ -87,15 +87,11 @@ window.ModelInfoService = (function() {
     function getContextSize(modelId) {
         // Handle null or undefined modelId
         if (modelId === null || modelId === undefined) {
-            console.log('Getting context size for undefined or null model');
             return null;
         }
         
         // Convert to string if it's not already
         const modelIdStr = String(modelId);
-        
-        console.log(`Getting context size for model: ${modelIdStr}`);
-        console.log(`Model info for ${modelIdStr}:`, modelInfo[modelIdStr]);
         
         // If we have model info from the API, use that
         if (modelInfo[modelIdStr] && modelInfo[modelIdStr].context_window) {

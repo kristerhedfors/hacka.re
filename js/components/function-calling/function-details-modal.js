@@ -13,11 +13,8 @@ window.FunctionDetailsModal = (function() {
      * Initialize the function details modal
      */
     function init() {
-        console.log('Initializing FunctionDetailsModal...');
-        
         // Get modal elements
         modal = document.getElementById('function-details-modal');
-        console.log('Modal element found:', !!modal);
         
         elements = {
             modal: modal,
@@ -62,8 +59,6 @@ window.FunctionDetailsModal = (function() {
                 hideModal();
             }
         });
-        
-        console.log('Function Details Modal initialized');
     }
     
     /**
@@ -77,11 +72,8 @@ window.FunctionDetailsModal = (function() {
      * @param {string} data.type - 'call' or 'result'
      */
     function showModal(data) {
-        console.log('showModal called with data:', data);
-        
         if (!modal || !elements.functionName) {
             console.error('Function details modal not properly initialized');
-            console.error('Modal:', !!modal, 'Elements.functionName:', !!elements.functionName);
             return;
         }
         
@@ -179,7 +171,6 @@ window.FunctionDetailsModal = (function() {
      */
     function copyToClipboard(text, button) {
         if (!text) {
-            console.warn('No text to copy');
             return;
         }
         
