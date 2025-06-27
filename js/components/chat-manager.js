@@ -406,10 +406,6 @@ function cleanupGeneration(updateContextUsage, currentModel) {
         function estimateContextUsage(updateContextUsage, currentModel) {
             // Get system prompt
             const systemPrompt = StorageService.getSystemPrompt() || '';
-            console.log("ChatManager.estimateContextUsage called");
-            console.log("- currentModel:", currentModel);
-            console.log("- systemPrompt length:", systemPrompt ? systemPrompt.length : 0);
-            console.log("- messages count:", messages ? messages.length : 0);
             
             // Calculate usage using the utility function
             const usageInfo = UIUtils.estimateContextUsage(
@@ -419,14 +415,9 @@ function cleanupGeneration(updateContextUsage, currentModel) {
                 systemPrompt
             );
             
-            console.log("ChatManager: calculated usage info:", usageInfo);
-            
             // Update the display
             if (updateContextUsage) {
-                console.log("ChatManager: calling updateContextUsage with percentage:", usageInfo.percentage);
                 updateContextUsage(usageInfo.percentage, usageInfo.estimatedTokens, usageInfo.contextSize);
-            } else {
-                console.log("ChatManager: updateContextUsage function not provided");
             }
             
             return usageInfo;

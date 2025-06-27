@@ -131,7 +131,7 @@ window.MCPClientService = (function() {
             throw new Error(`Already connected to server: ${name}`);
         }
         
-        console.log(`[MCP Client] Connecting to ${name}...`);
+        // Attempting to connect to MCP server
         
         try {
             // Create transport
@@ -154,7 +154,6 @@ window.MCPClientService = (function() {
                 disconnect(name);
             };
             transport.onClose = () => {
-                console.log(`[MCP Client] Transport closed for ${name}`);
                 disconnect(name);
             };
             
@@ -189,15 +188,11 @@ window.MCPClientService = (function() {
             return;
         }
         
-        console.log(`[MCP Client] Disconnecting from ${name}...`);
-        
         // Clean up pending requests
         requestManager.clearPendingRequests(name);
         
         // Remove connection (this also handles cleanup)
         connectionManager.removeConnection(name, toolRegistry);
-        
-        console.log(`[MCP Client] Disconnected from ${name}`);
     }
     
     /**
@@ -335,8 +330,6 @@ window.MCPClientService = (function() {
             return;
         }
 
-        console.log('[MCP Client] Shutting down...');
-
         // Close all connections
         if (connectionManager) {
             connectionManager.closeAllConnections(toolRegistry);
@@ -347,8 +340,6 @@ window.MCPClientService = (function() {
         requestManager = null;
         toolRegistry = null;
         initialized = false;
-
-        console.log('[MCP Client] Shutdown complete');
     }
 
     /**

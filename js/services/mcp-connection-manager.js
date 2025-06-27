@@ -89,7 +89,6 @@ class Connection {
             );
 
             this.capabilities = initResponse.capabilities || {};
-            console.log(`[MCP Connection] Connected to ${this.name}, capabilities:`, this.capabilities);
 
             // Send initialized notification
             await this.send(requestManager.createJsonRpcNotification('notifications/initialized', {}));
@@ -121,7 +120,7 @@ class Connection {
                 const toolsRequest = requestManager.createJsonRpcRequest('tools/list', {});
                 const toolsResponse = await requestManager.sendRequest(this.name, this, toolsRequest);
                 this.tools = toolsResponse.tools || [];
-                console.log(`[MCP Connection] ${this.name} tools:`, this.tools);
+                // Tools loaded
                 
                 if (toolRegistry) {
                     toolRegistry.registerServerTools(this.name, this.tools, this.config);
@@ -133,7 +132,7 @@ class Connection {
                 const resourcesRequest = requestManager.createJsonRpcRequest('resources/list', {});
                 const resourcesResponse = await requestManager.sendRequest(this.name, this, resourcesRequest);
                 this.resources = resourcesResponse.resources || [];
-                console.log(`[MCP Connection] ${this.name} resources:`, this.resources);
+                // Resources loaded
             }
 
             // Refresh prompts
@@ -141,7 +140,7 @@ class Connection {
                 const promptsRequest = requestManager.createJsonRpcRequest('prompts/list', {});
                 const promptsResponse = await requestManager.sendRequest(this.name, this, promptsRequest);
                 this.prompts = promptsResponse.prompts || [];
-                console.log(`[MCP Connection] ${this.name} prompts:`, this.prompts);
+                // Prompts loaded
             }
         } catch (error) {
             console.error(`[MCP Connection] Failed to refresh capabilities for ${this.name}:`, error);
@@ -167,7 +166,7 @@ class Connection {
             arguments: params
         });
 
-        console.log(`[MCP Connection] Calling tool ${toolName} on ${this.name} with arguments:`, params);
+        // Calling MCP tool
 
         if (options.onProgress) {
             this.progressCallbacks[request.id] = options.onProgress;

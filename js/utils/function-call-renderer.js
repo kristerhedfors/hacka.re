@@ -48,6 +48,11 @@ window.FunctionCallRenderer = (function() {
         // Add the "f" symbol (styled as "ƒ" via CSS)
         iconElement.textContent = CONFIG.SYMBOL_CALL;
         
+        // Store function details as data attributes
+        iconElement.dataset.functionName = functionName;
+        iconElement.dataset.parameters = JSON.stringify(parameters);
+        iconElement.dataset.type = 'call';
+        
         // Create tooltip
         const tooltip = createTooltip({
             type: CONFIG.ICON_TYPE_CALL,
@@ -103,6 +108,13 @@ window.FunctionCallRenderer = (function() {
         iconElement.className = `${CONFIG.CLASS_RESULT_ICON} ${colorClass}`;
         
         // No text content - arrow is created via CSS ::before and ::after
+        
+        // Store function details as data attributes
+        iconElement.dataset.functionName = functionName;
+        iconElement.dataset.resultType = resultType || '';
+        iconElement.dataset.resultValue = JSON.stringify(resultValue);
+        iconElement.dataset.executionTime = executionTime || 0;
+        iconElement.dataset.type = 'result';
         
         // Create tooltip
         const tooltip = createTooltip({

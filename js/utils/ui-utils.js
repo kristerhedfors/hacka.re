@@ -182,12 +182,7 @@ window.UIUtils = (function() {
      * @param {number} percentage - Usage percentage (0-100)
      */
     function updateContextUsage(fillElement, textElement, percentage) {
-        console.log("updateContextUsage called with percentage:", percentage);
-        console.log("fillElement:", fillElement);
-        console.log("textElement:", textElement);
-        
         if (!fillElement || !textElement) {
-            console.log("Missing fillElement or textElement, returning");
             return;
         }
         
@@ -214,7 +209,6 @@ window.UIUtils = (function() {
         }
         
         fillElement.style.backgroundColor = color;
-        console.log("Context usage updated to:", percentage, "% with color:", color);
     }
 
     /**

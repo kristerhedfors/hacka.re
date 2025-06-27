@@ -265,6 +265,113 @@ window.SmartTooltipPositioner = (function() {
             tooltip.style.visibility = 'hidden';
         }, true);
         
+        // Handle clicks on function icons
+        document.addEventListener('click', function(event) {
+            const icon = event.target;
+            if (!icon || !icon.classList) {
+                return;
+            }
+            
+            // Skip header function button - it has its own handler
+            if (icon.closest('#function-btn') || icon.id === 'function-btn') {
+                return;
+            }
+            
+            if (!icon.classList.contains('function-call-icon') && 
+                !icon.classList.contains('function-result-icon')) {
+                return;
+            }
+            
+            console.log('[SmartTooltip] Click detected on function icon:', icon.className);
+            
+            // Hide all tooltips when clicking an icon
+            const allTooltips = document.querySelectorAll('.function-icon-tooltip');
+            allTooltips.forEach(tooltip => {
+                tooltip.style.opacity = '0';
+                tooltip.style.pointerEvents = 'none';
+                tooltip.style.visibility = 'hidden';
+            });
+            
+            // Extract function details from data attributes using getAttribute
+            const functionName = icon.getAttribute('data-function-name');
+            const type = icon.getAttribute('data-type');
+            
+            console.log('[SmartTooltip] Function data found:', { functionName, type });
+            
+            if (!functionName || !type) {
+                console.error('[SmartTooltip] Missing function data on icon, trying fallback method');
+                console.log('[SmartTooltip] Available attributes:', Array.from(icon.attributes).map(attr => attr.name));
+                
+                // Fallback: try to parse from tooltip content
+                const tooltip = icon.querySelector('.function-icon-tooltip');
+                if (tooltip) {
+                    const tooltipHtml = tooltip.innerHTML;
+                    console.log('[SmartTooltip] Tooltip HTML:', tooltipHtml);
+                    
+                    // Parse function name from tooltip
+                    const funcMatch = tooltipHtml.match(/<strong>(?:Function|Result):<\/strong>\s*([^<\n]+)/);
+                    if (funcMatch) {
+                        const parsedFunctionName = funcMatch[1].trim().replace(' (Result)', '');
+                        const parsedType = icon.classList.contains('function-call-icon') ? 'call' : 'result';
+                        
+                        console.log('[SmartTooltip] Parsed from tooltip:', { parsedFunctionName, parsedType });
+                        
+                        // Show modal with basic data
+                        if (window.FunctionDetailsModal) {
+                            window.FunctionDetailsModal.showModal({
+                                functionName: parsedFunctionName,
+                                type: parsedType,
+                                parameters: parsedType === 'call' ? {} : undefined,
+                                resultType: parsedType === 'result' ? 'unknown' : undefined,
+                                resultValue: parsedType === 'result' ? 'See tooltip for details' : undefined,
+                                executionTime: parsedType === 'result' ? 0 : undefined
+                            });
+                        }
+                        return;
+                    }
+                }
+                
+                console.error('[SmartTooltip] Could not extract function data from tooltip either');
+                return;
+            }
+            
+            let modalData = {
+                functionName,
+                type
+            };
+            
+            if (type === 'call') {
+                // Parse parameters from data attribute
+                const parametersAttr = icon.getAttribute('data-parameters');
+                try {
+                    modalData.parameters = JSON.parse(parametersAttr || '{}');
+                } catch (e) {
+                    console.warn('[SmartTooltip] Failed to parse parameters:', e);
+                    modalData.parameters = {};
+                }
+            } else if (type === 'result') {
+                // Parse result data from attributes
+                modalData.resultType = icon.getAttribute('data-result-type') || '';
+                modalData.executionTime = parseInt(icon.getAttribute('data-execution-time')) || 0;
+                
+                const resultValueAttr = icon.getAttribute('data-result-value');
+                try {
+                    modalData.resultValue = JSON.parse(resultValueAttr || 'null');
+                } catch (e) {
+                    console.warn('[SmartTooltip] Failed to parse result value:', e);
+                    modalData.resultValue = resultValueAttr;
+                }
+            }
+            
+            // Show the function details modal
+            if (window.FunctionDetailsModal) {
+                console.log('[SmartTooltip] Showing function details modal with data:', modalData);
+                window.FunctionDetailsModal.showModal(modalData);
+            } else {
+                console.error('[SmartTooltip] FunctionDetailsModal not available');
+            }
+        }, true);
+        
         // Handle window resize
         window.addEventListener('resize', function() {
             // Hide all visible tooltips on resize
