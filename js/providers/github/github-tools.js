@@ -1,9 +1,11 @@
 /**
  * GitHub Tools Module
  * Defines all GitHub API tools and their implementations
+ * 
+ * Dependencies: None (standalone)
  */
 
-export class GitHubTools {
+window.GitHubTools = class GitHubTools {
     constructor(endpoints = {}) {
         this.endpoints = {
             api: 'https://api.github.com',
@@ -415,7 +417,7 @@ export class GitHubTools {
                 },
                 required: ['q']
             },
-            handler: this.searchCode.bind(this),
+            handler: null, // Will be bound by provider
             requiredScopes: ['repo'],
             category: 'search',
             tags: ['search', 'code', 'files']
@@ -481,7 +483,7 @@ export class GitHubTools {
                 },
                 required: ['q']
             },
-            handler: this.searchCommits.bind(this),
+            handler: null, // Will be bound by provider
             requiredScopes: ['repo'],
             category: 'search',
             tags: ['search', 'commits', 'history']
@@ -563,7 +565,7 @@ export class GitHubTools {
                 },
                 required: ['q']
             },
-            handler: this.searchRepositories.bind(this),
+            handler: null, // Will be bound by provider
             requiredScopes: ['repo'],
             category: 'search',
             tags: ['search', 'repositories', 'discovery']
@@ -647,7 +649,7 @@ export class GitHubTools {
                 },
                 required: ['q']
             },
-            handler: this.searchIssues.bind(this),
+            handler: null, // Will be bound by provider
             requiredScopes: ['repo'],
             category: 'search',
             tags: ['search', 'issues', 'pull-requests']
@@ -710,7 +712,7 @@ export class GitHubTools {
                 },
                 required: ['q']
             },
-            handler: this.searchUsers.bind(this),
+            handler: null, // Will be bound by provider
             requiredScopes: ['read:user'],
             category: 'search',
             tags: ['search', 'users', 'organizations']
@@ -745,7 +747,7 @@ export class GitHubTools {
                 },
                 required: ['q']
             },
-            handler: this.searchTopics.bind(this),
+            handler: null, // Will be bound by provider
             requiredScopes: ['repo'],
             category: 'search',
             tags: ['search', 'topics', 'trending']
@@ -794,7 +796,7 @@ export class GitHubTools {
                 },
                 required: ['q']
             },
-            handler: this.advancedSearch.bind(this),
+            handler: null, // Will be bound by provider
             requiredScopes: ['repo'],
             category: 'search',
             tags: ['search', 'multi-type', 'comprehensive']
@@ -868,90 +870,8 @@ export class GitHubTools {
         return this._makeApiRequest(`${this.endpoints.api}/repos/${owner}/${repo}/branches`, 'GET', credentials, null, params);
     }
 
-    // Search method implementations
-    async searchCode(params, credentials) {
-        return this._searchWithMetadata(params, credentials, 'code');
-    }
-
-    async searchCommits(params, credentials) {
-        return this._searchWithMetadata(params, credentials, 'commits');
-    }
-
-    async searchRepositories(params, credentials) {
-        return this._searchWithMetadata(params, credentials, 'repositories');
-    }
-
-    async searchIssues(params, credentials) {
-        return this._searchWithMetadata(params, credentials, 'issues');
-    }
-
-    async searchUsers(params, credentials) {
-        return this._searchWithMetadata(params, credentials, 'users');
-    }
-
-    async searchTopics(params, credentials) {
-        return this._searchWithMetadata(params, credentials, 'topics');
-    }
-
-    async advancedSearch(params, credentials) {
-        // This is complex enough that it stays in the main provider
-        throw new Error('advancedSearch should be called on the main provider');
-    }
-
-    // Helper method for search with metadata
-    async _searchWithMetadata(params, credentials, searchType) {
-        const searchQuery = this._buildSearchQuery(params, searchType);
-        const url = this._buildSearchUrl(searchType, searchQuery, params);
-        
-        const response = await this._makeApiRequest(url, 'GET', credentials);
-        
-        // Add basic metadata
-        if (response.items) {
-            response.items = response.items.map(item => ({
-                ...item,
-                search_metadata: {
-                    query: searchQuery,
-                    match_type: searchType
-                }
-            }));
-        }
-        
-        return response;
-    }
-
-    _buildSearchQuery(params, searchType) {
-        const { q, owner, repo } = params;
-        let searchQuery = q;
-        
-        if (owner && repo) {
-            searchQuery += ` repo:${owner}/${repo}`;
-        } else if (owner) {
-            searchQuery += ` user:${owner}`;
-        }
-        
-        // Add type-specific qualifiers
-        if (searchType === 'code') {
-            if (params.language) searchQuery += ` language:${params.language}`;
-            if (params.filename) searchQuery += ` filename:${params.filename}`;
-            if (params.extension) searchQuery += ` extension:${params.extension}`;
-            if (params.path) searchQuery += ` path:${params.path}`;
-            if (params.size) searchQuery += ` size:${params.size}`;
-        }
-        
-        return searchQuery;
-    }
-
-    _buildSearchUrl(searchType, searchQuery, params) {
-        const url = new URL(`${this.endpoints.api}/search/${searchType}`);
-        url.searchParams.set('q', searchQuery);
-        
-        if (params.sort) url.searchParams.set('sort', params.sort);
-        if (params.order) url.searchParams.set('order', params.order);
-        if (params.per_page) url.searchParams.set('per_page', params.per_page.toString());
-        if (params.page) url.searchParams.set('page', params.page.toString());
-        
-        return url.toString();
-    }
+    // Search method implementations are handled by the main provider
+    // These methods are not implemented here to avoid duplication
 
     async _makeApiRequest(url, method = 'GET', credentials, body = null, params = {}) {
         const controller = new AbortController();
@@ -1016,5 +936,5 @@ export class GitHubTools {
     }
 }
 
-// Export tools instance
-export const GITHUB_TOOLS = new GitHubTools();
+// Export tools instance globally
+window.GITHUB_TOOLS = new window.GitHubTools();

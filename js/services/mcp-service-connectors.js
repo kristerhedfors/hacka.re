@@ -316,23 +316,27 @@
                         }
                         console.log(`[MCP Service Connectors] Using GitHubProvider with ${Object.keys(toolsToRegister).length} tools`);
                     } else {
-                        // Fallback: Try to dynamically import the new provider structure
+                        // Fallback: Try to use the globally available GitHubProvider from the new structure
                         try {
-                            const { GitHubProvider } = await import('../providers/github/index.js');
-                            const githubProvider = new GitHubProvider();
-                            const providerTools = await githubProvider.getToolDefinitions();
-                            
-                            // Convert to expected format
-                            toolsToRegister = {};
-                            for (const tool of providerTools) {
-                                toolsToRegister[tool.name] = {
-                                    description: tool.description,
-                                    parameters: tool.parameters
-                                };
+                            if (window.GitHubProvider) {
+                                const githubProvider = new window.GitHubProvider();
+                                const providerTools = await githubProvider.getToolDefinitions();
+                                
+                                // Convert to expected format
+                                toolsToRegister = {};
+                                for (const tool of providerTools) {
+                                    toolsToRegister[tool.name] = {
+                                        description: tool.description,
+                                        parameters: tool.parameters
+                                    };
+                                }
+                                console.log(`[MCP Service Connectors] Using new modular GitHubProvider with ${Object.keys(toolsToRegister).length} tools`);
+                            } else {
+                                console.warn(`[MCP Service Connectors] GitHubProvider not available globally, using fallback tools`);
+                                toolsToRegister = config.tools;
                             }
-                            console.log(`[MCP Service Connectors] Using new modular GitHubProvider with ${Object.keys(toolsToRegister).length} tools`);
-                        } catch (importError) {
-                            console.warn(`[MCP Service Connectors] Failed to import new GitHubProvider:`, importError);
+                        } catch (providerError) {
+                            console.warn(`[MCP Service Connectors] Failed to use GitHubProvider:`, providerError);
                             toolsToRegister = config.tools;
                         }
                     }
@@ -457,7 +461,7 @@
         /**
          * Generate JavaScript function code for service tools
          */
-        generateServiceFunction(serviceKey, toolName, toolConfig, authToken) {
+        generateServiceFunction(serviceKey, toolName, toolConfig) {
             const paramNames = [];
             if (toolConfig.parameters && toolConfig.parameters.properties) {
                 paramNames.push(...Object.keys(toolConfig.parameters.properties));
@@ -489,8 +493,6 @@
                 throw new Error(`Service ${serviceKey} not connected`);
             }
 
-            const config = SERVICE_CONFIGS[serviceKey];
-            
             switch (serviceKey) {
                 case 'github':
                     return await this.executeGitHubTool(toolName, params, connection);
@@ -521,11 +523,17 @@
                     if (toolConfig && toolConfig.handler) {
                         return await toolConfig.handler(params, githubProvider.credentials);
                     } else {
+                        console.warn(`[MCP Service Connectors] Tool ${fullToolName} not found in GitHubProvider, available tools:`, Array.from(githubProvider.tools.keys()));
                         throw new Error(`Tool ${fullToolName} not found in GitHubProvider`);
                     }
                 } catch (error) {
                     console.warn(`[MCP Service Connectors] GitHubProvider failed for ${toolName}, falling back to legacy:`, error);
-                    // Fall through to legacy implementation
+                    
+                    // For advanced tools that only exist in the provider, re-throw the error
+                    if (toolName === 'advanced_search' || toolName.includes('search_')) {
+                        throw new Error(`GitHub ${toolName} requires GitHubProvider: ${error.message}`);
+                    }
+                    // Fall through to legacy implementation for basic tools
                 }
             }
 
@@ -727,10 +735,10 @@
                 const deviceData = await deviceResponse.json();
                 
                 // Show device code to user
-                this.showDeviceCodeDialog(serviceKey, deviceData);
+                this.showDeviceCodeDialog(deviceData);
                 
                 // Poll for completion
-                const tokens = await this.pollForDeviceAuthorization(serviceKey, oauthConfig, deviceData);
+                const tokens = await this.pollForDeviceAuthorization(oauthConfig, deviceData);
                 
                 if (tokens) {
                     // Save tokens
@@ -756,7 +764,7 @@
         /**
          * Show device code dialog
          */
-        showDeviceCodeDialog(serviceKey, deviceData) {
+        showDeviceCodeDialog(deviceData) {
             const modal = document.createElement('div');
             modal.className = 'modal active';
             modal.id = 'device-code-modal';
@@ -793,7 +801,7 @@
         /**
          * Poll for device authorization completion
          */
-        async pollForDeviceAuthorization(serviceKey, oauthConfig, deviceData) {
+        async pollForDeviceAuthorization(oauthConfig, deviceData) {
             const pollInterval = (deviceData.interval || 5) * 1000;
             const expiresAt = Date.now() + (deviceData.expires_in * 1000);
             

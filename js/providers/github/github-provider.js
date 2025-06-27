@@ -1,12 +1,11 @@
 /**
  * GitHub Provider Core
  * Main provider class implementing the MCP provider interface
+ * 
+ * Dependencies: window.MCPProviderInterface, window.GitHubAuth, window.GitHubTools
  */
 
-import { GitHubAuth } from './github-auth.js';
-import { GitHubTools } from './github-tools.js';
-
-export class GitHubProvider extends window.MCPProviderInterface {
+window.GitHubProvider = class GitHubProvider extends window.MCPProviderInterface {
     constructor(config = {}) {
         const defaultConfig = {
             name: 'github',
@@ -28,12 +27,12 @@ export class GitHubProvider extends window.MCPProviderInterface {
         super({ ...defaultConfig, ...config });
         
         // Initialize auth and tools modules
-        this.auth = new GitHubAuth({
+        this.auth = new window.GitHubAuth({
             endpoints: this.endpoints,
             requiredScopes: this.requiredScopes
         });
         
-        this.githubTools = new GitHubTools(this.endpoints);
+        this.githubTools = new window.GitHubTools(this.endpoints);
         this.tools = this.githubTools.getToolDefinitions();
         
         // Set up tool handlers to use proper context
@@ -328,9 +327,22 @@ export class GitHubProvider extends window.MCPProviderInterface {
     _bindToolHandlers() {
         for (const [toolName, tool] of this.tools) {
             const originalHandler = tool.handler;
-            tool.handler = async (params, credentials) => {
-                return await originalHandler.call(this, params, credentials);
-            };
+            
+            // Special handling for search tools which need provider implementation
+            if (toolName.includes('_search')) {
+                const methodName = toolName.replace('github_', '');
+                const camelCaseMethod = methodName.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+                
+                if (this[camelCaseMethod]) {
+                    tool.handler = async (params, credentials) => {
+                        return await this[camelCaseMethod](params, credentials);
+                    };
+                }
+            } else if (originalHandler) {
+                tool.handler = async (params, credentials) => {
+                    return await originalHandler.call(this, params, credentials);
+                };
+            }
         }
     }
 
