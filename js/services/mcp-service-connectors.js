@@ -461,7 +461,7 @@
         /**
          * Generate JavaScript function code for service tools
          */
-        generateServiceFunction(serviceKey, toolName, toolConfig, authToken) {
+        generateServiceFunction(serviceKey, toolName, toolConfig) {
             const paramNames = [];
             if (toolConfig.parameters && toolConfig.parameters.properties) {
                 paramNames.push(...Object.keys(toolConfig.parameters.properties));
@@ -493,8 +493,6 @@
                 throw new Error(`Service ${serviceKey} not connected`);
             }
 
-            const config = SERVICE_CONFIGS[serviceKey];
-            
             switch (serviceKey) {
                 case 'github':
                     return await this.executeGitHubTool(toolName, params, connection);
@@ -737,10 +735,10 @@
                 const deviceData = await deviceResponse.json();
                 
                 // Show device code to user
-                this.showDeviceCodeDialog(serviceKey, deviceData);
+                this.showDeviceCodeDialog(deviceData);
                 
                 // Poll for completion
-                const tokens = await this.pollForDeviceAuthorization(serviceKey, oauthConfig, deviceData);
+                const tokens = await this.pollForDeviceAuthorization(oauthConfig, deviceData);
                 
                 if (tokens) {
                     // Save tokens
@@ -766,7 +764,7 @@
         /**
          * Show device code dialog
          */
-        showDeviceCodeDialog(serviceKey, deviceData) {
+        showDeviceCodeDialog(deviceData) {
             const modal = document.createElement('div');
             modal.className = 'modal active';
             modal.id = 'device-code-modal';
@@ -803,7 +801,7 @@
         /**
          * Poll for device authorization completion
          */
-        async pollForDeviceAuthorization(serviceKey, oauthConfig, deviceData) {
+        async pollForDeviceAuthorization(oauthConfig, deviceData) {
             const pollInterval = (deviceData.interval || 5) * 1000;
             const expiresAt = Date.now() + (deviceData.expires_in * 1000);
             

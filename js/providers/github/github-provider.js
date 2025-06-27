@@ -328,11 +328,16 @@ window.GitHubProvider = class GitHubProvider extends window.MCPProviderInterface
         for (const [toolName, tool] of this.tools) {
             const originalHandler = tool.handler;
             
-            // Special handling for advanced search which needs provider implementation
-            if (toolName === 'github_advanced_search') {
-                tool.handler = async (params, credentials) => {
-                    return await this.advancedSearch(params, credentials);
-                };
+            // Special handling for search tools which need provider implementation
+            if (toolName.includes('_search')) {
+                const methodName = toolName.replace('github_', '');
+                const camelCaseMethod = methodName.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+                
+                if (this[camelCaseMethod]) {
+                    tool.handler = async (params, credentials) => {
+                        return await this[camelCaseMethod](params, credentials);
+                    };
+                }
             } else if (originalHandler) {
                 tool.handler = async (params, credentials) => {
                     return await originalHandler.call(this, params, credentials);
