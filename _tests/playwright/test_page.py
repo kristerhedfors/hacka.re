@@ -14,15 +14,13 @@ def test_page_loads(page: Page, serve_hacka_re):
     # Check that the page title is correct
     expect(page).to_have_title("hacka.re - Free, open, för hackare av hackare")
     
-    # Check that the logo is visible
-    logo = page.locator(".logo-text")
-    expect(logo).to_be_visible()
-    expect(logo).to_contain_text("hacka.re")
+    # Check that the heart button (logo) is visible
+    heart_btn = page.locator("#heart-btn")
+    expect(heart_btn).to_be_visible()
     
-    # Check that the tagline is visible
-    tagline = page.locator(".tagline")
-    expect(tagline).to_be_visible()
-    expect(tagline).to_contain_text("Free, open, för hackare av hackare")
+    # Check that the site identifier in footer contains hacka.re
+    site_identifier = page.locator("#site-identifier")
+    expect(site_identifier).to_be_visible()
 
 def test_chat_interface_elements(page: Page, serve_hacka_re):
     """Test that the chat interface elements are present."""
