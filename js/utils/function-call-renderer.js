@@ -49,9 +49,16 @@ window.FunctionCallRenderer = (function() {
         iconElement.textContent = CONFIG.SYMBOL_CALL;
         
         // Store function details as data attributes
-        iconElement.dataset.functionName = functionName;
-        iconElement.dataset.parameters = JSON.stringify(parameters);
-        iconElement.dataset.type = 'call';
+        iconElement.setAttribute('data-function-name', functionName);
+        iconElement.setAttribute('data-parameters', JSON.stringify(parameters));
+        iconElement.setAttribute('data-type', 'call');
+        
+        // Debug: Log the element to verify attributes are set
+        console.log('[FunctionCallRenderer] Call indicator created:', {
+            functionName,
+            hasAttributes: iconElement.hasAttribute('data-function-name'),
+            outerHTML: iconElement.outerHTML.substring(0, 200)
+        });
         
         // Create tooltip
         const tooltip = createTooltip({
@@ -64,7 +71,6 @@ window.FunctionCallRenderer = (function() {
         
         // Add click handler to show detailed modal
         iconElement.addEventListener('click', (e) => {
-            console.log('Function call icon clicked:', functionName);
             e.preventDefault();
             e.stopPropagation();
             
@@ -73,14 +79,11 @@ window.FunctionCallRenderer = (function() {
             
             // Show detailed modal if available
             if (window.FunctionDetailsModal) {
-                console.log('Showing function details modal for call:', functionName);
                 window.FunctionDetailsModal.showModal({
                     functionName,
                     parameters,
                     type: 'call'
                 });
-            } else {
-                console.error('FunctionDetailsModal not available');
             }
         });
         
@@ -110,11 +113,19 @@ window.FunctionCallRenderer = (function() {
         // No text content - arrow is created via CSS ::before and ::after
         
         // Store function details as data attributes
-        iconElement.dataset.functionName = functionName;
-        iconElement.dataset.resultType = resultType || '';
-        iconElement.dataset.resultValue = JSON.stringify(resultValue);
-        iconElement.dataset.executionTime = executionTime || 0;
-        iconElement.dataset.type = 'result';
+        iconElement.setAttribute('data-function-name', functionName);
+        iconElement.setAttribute('data-result-type', resultType || '');
+        iconElement.setAttribute('data-result-value', JSON.stringify(resultValue));
+        iconElement.setAttribute('data-execution-time', executionTime || 0);
+        iconElement.setAttribute('data-type', 'result');
+        
+        // Debug: Log the element to verify attributes are set
+        console.log('[FunctionCallRenderer] Result indicator created:', {
+            functionName,
+            resultType,
+            hasAttributes: iconElement.hasAttribute('data-function-name'),
+            outerHTML: iconElement.outerHTML.substring(0, 200)
+        });
         
         // Create tooltip
         const tooltip = createTooltip({
@@ -129,7 +140,6 @@ window.FunctionCallRenderer = (function() {
         
         // Add click handler to show detailed modal
         iconElement.addEventListener('click', (e) => {
-            console.log('Function result icon clicked:', functionName);
             e.preventDefault();
             e.stopPropagation();
             
@@ -138,16 +148,17 @@ window.FunctionCallRenderer = (function() {
             
             // Show detailed modal if available
             if (window.FunctionDetailsModal) {
-                console.log('Showing function details modal for result:', functionName);
+                // Try to find the matching call indicator to get parameters
+                const callParameters = findMatchingCallParameters(iconElement, functionName);
+                
                 window.FunctionDetailsModal.showModal({
                     functionName,
+                    parameters: callParameters,
                     resultType,
                     resultValue,
                     executionTime,
                     type: 'result'
                 });
-            } else {
-                console.error('FunctionDetailsModal not available');
             }
         });
         
@@ -294,6 +305,37 @@ ${escapeHTML(displayValue)}`;
         if (tooltip) {
             tooltip.style.opacity = '0';
             tooltip.style.pointerEvents = 'none';
+        }
+    }
+    
+    /**
+     * Find matching call parameters for a result indicator
+     * @param {HTMLElement} resultElement - The result indicator element
+     * @param {string} functionName - Function name to match
+     * @returns {Object|null} - Parameters object or null if not found
+     */
+    function findMatchingCallParameters(resultElement, functionName) {
+        try {
+            const messageContainer = resultElement.closest('.message');
+            if (!messageContainer) {
+                return null;
+            }
+            
+            const callIndicators = messageContainer.querySelectorAll(`.${CONFIG.CLASS_CALL_ICON}`);
+            
+            for (const callIndicator of callIndicators) {
+                const callFunctionName = callIndicator.dataset.functionName;
+                if (callFunctionName === functionName) {
+                    const parametersJson = callIndicator.dataset.parameters;
+                    if (parametersJson) {
+                        return JSON.parse(parametersJson);
+                    }
+                }
+            }
+            
+            return null;
+        } catch (error) {
+            return null;
         }
     }
     
