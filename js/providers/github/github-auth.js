@@ -1,9 +1,11 @@
 /**
  * GitHub Authentication Module
  * Handles GitHub Personal Access Token authentication and validation
+ * 
+ * Dependencies: window.MCPAuthStrategies, window.CoreStorageService
  */
 
-export class GitHubAuth {
+window.GitHubAuth = class GitHubAuth {
     constructor(config = {}) {
         this.config = {
             endpoints: {

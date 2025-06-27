@@ -1,9 +1,11 @@
 /**
  * GitHub UI Components
  * Handles GitHub token setup, management, and sharing interfaces
+ * 
+ * Dependencies: window.CoreStorageService, window.MCPServiceConnectors
  */
 
-export class GitHubUI {
+window.GitHubUI = class GitHubUI {
     constructor() {
         this.initialized = false;
         this.auth = null;
@@ -632,7 +634,7 @@ export class GitHubUI {
 }
 
 // Create and export global instance (for backwards compatibility)
-export const gitHubUI = new GitHubUI();
+window.gitHubUI = new window.GitHubUI();
 
 // Also make it available globally
-window.GitHubTokenManager = gitHubUI;
+window.GitHubTokenManager = window.gitHubUI;
