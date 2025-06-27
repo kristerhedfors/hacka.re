@@ -48,7 +48,6 @@ window.FunctionMarkers = (function() {
     function getColorClass(colorKey) {
         // If this color key already has a color assigned, return it
         if (assignedColors[colorKey]) {
-            console.log(`[Function Markers] getColorClass(${colorKey}): using existing color ${assignedColors[colorKey]}`);
             return assignedColors[colorKey];
         }
         
@@ -271,10 +270,7 @@ window.FunctionMarkers = (function() {
             return text;
         }
         
-        // Debug: log if we're processing any text with markers
-        if (text.includes('[FUNCTION_CALL:') || text.includes('[FUNCTION_RESULT:')) {
-            console.log('[Function Markers] Processing text with markers');
-        }
+        // Process markers (removed excessive logging)
         
         // Only reset counts when processing a completely new message
         // (not during streaming updates of the same message)

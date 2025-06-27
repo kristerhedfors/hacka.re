@@ -56,6 +56,32 @@ window.FunctionCallRenderer = (function() {
         });
         
         iconElement.appendChild(tooltip);
+        
+        // Add click handler to show detailed modal
+        iconElement.addEventListener('click', (e) => {
+            console.log('Function call icon clicked:', functionName);
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Hide tooltip immediately when clicked
+            hideTooltip(iconElement);
+            
+            // Show detailed modal if available
+            if (window.FunctionDetailsModal) {
+                console.log('Showing function details modal for call:', functionName);
+                window.FunctionDetailsModal.showModal({
+                    functionName,
+                    parameters,
+                    type: 'call'
+                });
+            } else {
+                console.error('FunctionDetailsModal not available');
+            }
+        });
+        
+        // Add cursor pointer style
+        iconElement.style.cursor = 'pointer';
+        
         return iconElement;
     }
     
@@ -88,6 +114,34 @@ window.FunctionCallRenderer = (function() {
         });
         
         iconElement.appendChild(tooltip);
+        
+        // Add click handler to show detailed modal
+        iconElement.addEventListener('click', (e) => {
+            console.log('Function result icon clicked:', functionName);
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Hide tooltip immediately when clicked
+            hideTooltip(iconElement);
+            
+            // Show detailed modal if available
+            if (window.FunctionDetailsModal) {
+                console.log('Showing function details modal for result:', functionName);
+                window.FunctionDetailsModal.showModal({
+                    functionName,
+                    resultType,
+                    resultValue,
+                    executionTime,
+                    type: 'result'
+                });
+            } else {
+                console.error('FunctionDetailsModal not available');
+            }
+        });
+        
+        // Add cursor pointer style
+        iconElement.style.cursor = 'pointer';
+        
         return iconElement;
     }
     
@@ -219,11 +273,24 @@ ${escapeHTML(displayValue)}`;
         return `color-${colorIndex}`;
     }
     
+    /**
+     * Hide tooltip for a given icon element
+     * @param {HTMLElement} iconElement - Icon element containing tooltip
+     */
+    function hideTooltip(iconElement) {
+        const tooltip = iconElement.querySelector(`.${CONFIG.CLASS_TOOLTIP}`);
+        if (tooltip) {
+            tooltip.style.opacity = '0';
+            tooltip.style.pointerEvents = 'none';
+        }
+    }
+    
     // Public API
     return {
         createCallIndicator,
         createResultIndicator,
         getColorClass,
+        hideTooltip,
         CONFIG // Expose config for testing/debugging
     };
 })();

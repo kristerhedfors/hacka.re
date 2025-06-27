@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="css/function-indicators-simple.css">
     <link rel="stylesheet" href="css/default-functions.css">
     <link rel="stylesheet" href="css/function-calling-modal.css">
+    <link rel="stylesheet" href="css/function-details-modal.css">
     <link rel="stylesheet" href="css/checkbox-fix.css">
     <!-- Font Awesome for icons (local) -->
     <link rel="stylesheet" href="lib/font-awesome/all.min.css">
@@ -394,6 +395,46 @@ async function getCurrentTimeInBerlin() {
             </div>
         </div>
         
+        <div id="function-details-modal" class="modal">
+            <div class="modal-content">
+                <div class="settings-header">
+                    <h2 id="function-details-title">Function Call Details</h2>
+                </div>
+                <div class="function-details-container">
+                    <div class="function-details-section">
+                        <h3 id="function-details-function-name">Function Name</h3>
+                        <div class="function-details-content">
+                            <div class="function-details-group" id="function-details-parameters-group">
+                                <h4>Parameters</h4>
+                                <div class="function-details-value">
+                                    <pre id="function-details-parameters"></pre>
+                                    <button type="button" class="copy-btn" id="copy-parameters-btn" title="Copy parameters">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="function-details-group" id="function-details-result-group" style="display: none;">
+                                <h4>Result</h4>
+                                <div class="function-details-meta">
+                                    <span class="function-details-type">Type: <span id="function-details-result-type"></span></span>
+                                    <span class="function-details-time">Time: <span id="function-details-execution-time"></span></span>
+                                </div>
+                                <div class="function-details-value">
+                                    <pre id="function-details-result-value"></pre>
+                                    <button type="button" class="copy-btn" id="copy-result-btn" title="Copy result">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" id="close-function-details-modal" class="btn secondary-btn">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <div id="mcp-servers-modal" class="modal">
             <div class="modal-content">
                 <span class="experimental-tag">EXPERIMENTAL</span>
@@ -678,6 +719,7 @@ async function getCurrentTimeInBerlin() {
     <script src="js/components/ui-manager.js"></script>
     <!-- Function Calling Components -->
     <script src="js/components/function-calling/function-modal-manager.js"></script>
+    <script src="js/components/function-calling/function-details-modal.js"></script>
     <script src="js/components/function-calling/mcp-server-manager.js"></script>
     <script src="js/components/function-calling/function-list-renderer.js"></script>
     <!-- Modular function editor components (load in dependency order) -->
