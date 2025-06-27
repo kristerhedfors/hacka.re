@@ -1,22 +1,17 @@
 /**
  * GitHub Provider Package Entry Point
  * Provides clean exports and registration helpers for the GitHub MCP provider
+ * 
+ * Dependencies: window.GitHubProvider, window.GitHubUI, window.GitHubAuth, window.GITHUB_TOOLS
  */
-
-// Export all modules - these will be loaded when the modules are imported
-export { GitHubProvider } from './github-provider.js';
-export { GitHubUI } from './github-ui.js';
-export { GitHubAuth } from './github-auth.js';
-export { GITHUB_TOOLS } from './github-tools.js';
 
 /**
  * Create and configure a new GitHub provider instance
  * @param {Object} config - Provider configuration options
  * @returns {GitHubProvider} Configured provider instance
  */
-export const createGitHubProvider = async (config = {}) => {
-    const { GitHubProvider } = await import('./github-provider.js');
-    return new GitHubProvider(config);
+window.createGitHubProvider = async (config = {}) => {
+    return new window.GitHubProvider(config);
 };
 
 /**
@@ -25,8 +20,8 @@ export const createGitHubProvider = async (config = {}) => {
  * @param {Object} config - Provider configuration
  * @returns {GitHubProvider} Registered provider instance
  */
-export const registerGitHubProvider = async (mcpSystem, config = {}) => {
-    const provider = await createGitHubProvider(config);
+window.registerGitHubProvider = async (mcpSystem, config = {}) => {
+    const provider = await window.createGitHubProvider(config);
     if (mcpSystem.registerProvider) {
         mcpSystem.registerProvider('github', provider);
     }
@@ -36,7 +31,7 @@ export const registerGitHubProvider = async (mcpSystem, config = {}) => {
 /**
  * Provider metadata for discovery and registration
  */
-export const GITHUB_PROVIDER_METADATA = {
+window.GITHUB_PROVIDER_METADATA = {
     name: 'github',
     displayName: 'GitHub',
     description: 'Access GitHub repositories, issues, and pull requests',
