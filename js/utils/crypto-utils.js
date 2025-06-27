@@ -200,8 +200,6 @@ window.CryptoUtils = (function() {
      */
     function decryptData(encryptedData, password) {
         try {
-            console.log('Attempting to decrypt data');
-            
             // Convert from base64
             const data = nacl.util.decodeBase64(encryptedData);
             
@@ -226,7 +224,6 @@ window.CryptoUtils = (function() {
             );
             
             if (!plain) {
-                console.error('Decryption failed: secretbox.open returned null');
                 return null; // Decryption failed
             }
             
@@ -236,15 +233,13 @@ window.CryptoUtils = (function() {
             try {
                 // Parse JSON
                 const result = JSON.parse(plainText);
-                console.log('Successfully decrypted data:', result);
                 return result;
             } catch (jsonError) {
-                console.error('JSON parsing error after successful decryption:', jsonError);
-                console.log('Raw decrypted text:', plainText);
+                // JSON parsing failed
                 return null;
             }
         } catch (error) {
-            console.error('Decryption error:', error);
+            // Decryption failed
             return null;
         }
     }

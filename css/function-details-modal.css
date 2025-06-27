@@ -1,0 +1,160 @@
+/* 
+ * Function Details Modal CSS
+ * Styles for the function call details modal that appears when clicking function indicators
+ */
+
+.function-details-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.function-details-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.function-details-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.function-details-group {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: var(--bg-color);
+}
+
+.function-details-group h4 {
+    margin: 0;
+    padding: 12px 16px;
+    background-color: var(--bg-color-secondary);
+    border-bottom: 1px solid var(--border-color);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.function-details-meta {
+    display: flex;
+    gap: 1rem;
+    padding: 8px 16px;
+    background-color: var(--bg-color-hover, rgba(0, 0, 0, 0.02));
+    border-bottom: 1px solid var(--border-color);
+    font-size: 12px;
+    color: var(--text-color-secondary);
+}
+
+.function-details-meta span {
+    font-weight: 500;
+}
+
+.function-details-meta span span {
+    font-weight: normal;
+    color: var(--text-color);
+}
+
+.function-details-value {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+}
+
+.function-details-value pre {
+    flex: 1;
+    margin: 0;
+    padding: 16px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    line-height: 1.4;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-x: auto;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.function-details-value .copy-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: var(--bg-color-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-color-secondary);
+    transition: all 0.2s ease;
+    opacity: 0.7;
+}
+
+.function-details-value .copy-btn:hover {
+    opacity: 1;
+    background: var(--bg-color-hover, rgba(0, 0, 0, 0.05));
+    color: var(--text-color);
+    transform: scale(1.05);
+}
+
+.function-details-value .copy-btn:active {
+    transform: scale(0.95);
+}
+
+.function-details-value .copy-btn i {
+    font-size: 14px;
+}
+
+/* Success state for copy button */
+.function-details-value .copy-btn.copied {
+    background: var(--accent-color);
+    color: white;
+    opacity: 1;
+}
+
+.function-details-value .copy-btn.copied i::before {
+    content: "\f00c"; /* Font Awesome check icon */
+}
+
+/* Dark theme adjustments */
+@media (prefers-color-scheme: dark) {
+    .function-details-value pre {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    .function-details-value .copy-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    .function-details-value .copy-btn:hover {
+        background: rgba(255, 255, 255, 0.15);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .function-details-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .function-details-value pre {
+        font-size: 12px;
+        padding: 12px;
+    }
+    
+    .function-details-value .copy-btn {
+        top: 8px;
+        right: 8px;
+        width: 28px;
+        height: 28px;
+    }
+}
