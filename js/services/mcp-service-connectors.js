@@ -53,8 +53,8 @@
                 title: 'Gmail OAuth Setup',
                 steps: [
                     'Create a Google Cloud Project and enable Gmail API',
-                    'Create OAuth 2.0 credentials (Desktop application type)',
-                    'Copy your Client ID and Client Secret',
+                    'Create OAuth 2.0 credentials - MUST be "Desktop app" type (NOT "Web application")',
+                    'Copy your Client ID and Client Secret from the Desktop app credentials',
                     'Enter them below to start authentication',
                     'You\'ll be redirected to Google to authorize access',
                     'Copy the authorization code and paste it back here'
@@ -686,19 +686,26 @@
                         </div>
                         
                         <div class="oauth-credentials-form">
+                            ${serviceKey === 'gmail' ? `
+                                <div class="warning-box" style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 1rem; margin-bottom: 1rem; border-radius: 0.5rem;">
+                                    <strong>⚠️ Important:</strong> Gmail requires a "Desktop app" OAuth client type.<br>
+                                    Do NOT use "Web application" type or authentication will fail.
+                                </div>
+                            ` : ''}
+                            
                             <div class="form-group">
-                                <label for="${serviceKey}-client-id">OAuth Client ID</label>
+                                <label for="${serviceKey}-client-id">OAuth Client ID${serviceKey === 'gmail' ? ' (from Desktop app)' : ''}</label>
                                 <input type="text" 
                                        id="${serviceKey}-client-id" 
-                                       placeholder="Your OAuth Client ID" 
+                                       placeholder="${serviceKey === 'gmail' ? 'Desktop app Client ID' : 'Your OAuth Client ID'}" 
                                        class="mcp-input" />
                             </div>
                             
                             <div class="form-group">
-                                <label for="${serviceKey}-client-secret">OAuth Client Secret</label>
+                                <label for="${serviceKey}-client-secret">OAuth Client Secret${serviceKey === 'gmail' ? ' (from Desktop app)' : ''}</label>
                                 <input type="password" 
                                        id="${serviceKey}-client-secret" 
-                                       placeholder="Your OAuth Client Secret" 
+                                       placeholder="${serviceKey === 'gmail' ? 'Desktop app Client Secret' : 'Your OAuth Client Secret'}" 
                                        class="mcp-input" />
                                 <small class="form-help">Your credentials will be encrypted and stored locally</small>
                             </div>
@@ -744,7 +751,7 @@
                     
                     // Validate Google OAuth Client ID format
                     if (serviceKey === 'gmail' && !clientId.endsWith('.apps.googleusercontent.com')) {
-                        alert('Invalid Google OAuth Client ID format. It should end with .apps.googleusercontent.com');
+                        alert('Invalid Google OAuth Client ID format. It should end with .apps.googleusercontent.com\n\nMake sure you are using a "Desktop app" OAuth client, NOT a "Web application" client.');
                         return;
                     }
                     
@@ -798,19 +805,26 @@
                         </div>
                         
                         <div class="oauth-credentials-form">
+                            ${serviceKey === 'gmail' ? `
+                                <div class="warning-box" style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 1rem; margin-bottom: 1rem; border-radius: 0.5rem;">
+                                    <strong>⚠️ Important:</strong> Gmail requires a "Desktop app" OAuth client type.<br>
+                                    Do NOT use "Web application" type or authentication will fail.
+                                </div>
+                            ` : ''}
+                            
                             <div class="form-group">
-                                <label for="${serviceKey}-client-id">OAuth Client ID</label>
+                                <label for="${serviceKey}-client-id">OAuth Client ID${serviceKey === 'gmail' ? ' (from Desktop app)' : ''}</label>
                                 <input type="text" 
                                        id="${serviceKey}-client-id" 
-                                       placeholder="Your OAuth Client ID" 
+                                       placeholder="${serviceKey === 'gmail' ? 'Desktop app Client ID' : 'Your OAuth Client ID'}" 
                                        class="mcp-input" />
                             </div>
                             
                             <div class="form-group">
-                                <label for="${serviceKey}-client-secret">OAuth Client Secret</label>
+                                <label for="${serviceKey}-client-secret">OAuth Client Secret${serviceKey === 'gmail' ? ' (from Desktop app)' : ''}</label>
                                 <input type="password" 
                                        id="${serviceKey}-client-secret" 
-                                       placeholder="Your OAuth Client Secret" 
+                                       placeholder="${serviceKey === 'gmail' ? 'Desktop app Client Secret' : 'Your OAuth Client Secret'}" 
                                        class="mcp-input" />
                                 <small class="form-help">Your credentials will be encrypted and stored locally</small>
                             </div>
@@ -846,7 +860,7 @@
                     
                     // Validate Google OAuth Client ID format
                     if (!clientId.endsWith('.apps.googleusercontent.com')) {
-                        alert('Invalid Google OAuth Client ID format. It should end with .apps.googleusercontent.com');
+                        alert('Invalid Google OAuth Client ID format. It should end with .apps.googleusercontent.com\n\nMake sure you are using a "Desktop app" OAuth client, NOT a "Web application" client.');
                         return;
                     }
                     
