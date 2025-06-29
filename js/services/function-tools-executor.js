@@ -264,8 +264,17 @@ window.FunctionToolsExecutor = (function() {
                 functionData = enabledDefaultFunctions[name] || null;
             }
             
-            // Check if this is an MCP function (has collectionId = 'mcp_tools_collection')
-            const isMcpFunction = functionData && functionData.collectionId === 'mcp_tools_collection';
+            // Check if this is an MCP function by looking up the collection ID
+            let isMcpFunction = false;
+            if (functionData && window.FunctionToolsStorage) {
+                try {
+                    const functionCollections = window.FunctionToolsStorage.getFunctionCollections();
+                    const collectionId = functionCollections[name];
+                    isMcpFunction = collectionId === 'mcp_tools_collection';
+                } catch (error) {
+                    Logger.debug(`Error checking MCP function collection for ${name}:`, error);
+                }
+            }
             Logger.debug(`Function ${name} is MCP function: ${isMcpFunction}`);
             // More flexible regex to handle multiline function signatures
             // Look for function name and parameters, handling newlines and spaces
