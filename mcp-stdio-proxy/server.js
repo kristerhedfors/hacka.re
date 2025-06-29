@@ -100,7 +100,7 @@ class MCPServerProcess extends EventEmitter {
         // Handle process exit
         this.process.on('exit', (code, signal) => {
             console.log(`MCP server exited with code ${code}, signal ${signal}`);
-            debug(`[EXIT] Process ${this.process.pid} exited`);
+            debug(`[EXIT] Process ${this.process?.pid || 'unknown'} exited`);
             debug(`[EXIT] Final buffer state:`, JSON.stringify(this.buffer));
             this.connected = false;
             this.emit('exit', { code, signal });

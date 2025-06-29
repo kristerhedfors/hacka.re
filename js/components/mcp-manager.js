@@ -73,17 +73,18 @@ window.MCPManager = (function() {
         }
         
         // Initialize other components with dependencies
-        proxyManager.init({
-            uiManager: uiManager,
-            notificationHandler: utils.showNotification
-        });
-        
         serverManager.init({
             MCPClient: window.MCPClientService,
             proxyManager: proxyManager,
             uiManager: uiManager,
             notificationHandler: utils.showNotification,
             commandHistoryManager: commandHistory
+        });
+        
+        proxyManager.init({
+            uiManager: uiManager,
+            notificationHandler: utils.showNotification,
+            serverManager: serverManager
         });
         
         commandHistory.init({

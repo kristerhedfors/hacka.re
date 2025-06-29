@@ -12,16 +12,19 @@ window.MCPProxyManager = (function() {
     // References
     let uiManager = null;
     let notificationHandler = null;
+    let serverManager = null;
     
     /**
      * Initialize the proxy manager
      * @param {Object} config - Configuration object
      * @param {Object} config.uiManager - UI manager instance
      * @param {Function} config.notificationHandler - Function to show notifications
+     * @param {Object} config.serverManager - Server manager instance
      */
     function init(config) {
         uiManager = config.uiManager;
         notificationHandler = config.notificationHandler || console.log;
+        serverManager = config.serverManager;
         
         const elements = uiManager.getElements();
         if (elements.testProxyBtn) {
@@ -56,6 +59,11 @@ window.MCPProxyManager = (function() {
                 uiManager.updateProxyStatus('connected', `✅ Connected to MCP stdio proxy (${serverCount} servers running)`);
                 notificationHandler('Connected to MCP proxy - you can now add server configurations', 'success');
                 uiManager.updateServerInstructions(true);
+                
+                // Update servers list if server manager is available
+                if (serverManager && serverManager.updateServersList) {
+                    setTimeout(() => serverManager.updateServersList(), 500);
+                }
             } else {
                 throw new Error(`HTTP ${response.status}`);
             }
@@ -82,6 +90,11 @@ window.MCPProxyManager = (function() {
                 const serverCount = Array.isArray(data.servers) ? data.servers.length : (data.servers || 0);
                 uiManager.updateProxyStatus('connected', `✅ Connected to MCP stdio proxy (${serverCount} servers running)`);
                 uiManager.updateServerInstructions(true);
+                
+                // Update servers list if server manager is available
+                if (serverManager && serverManager.updateServersList) {
+                    setTimeout(() => serverManager.updateServersList(), 500);
+                }
                 return true;
             } else {
                 throw new Error('Not responding');

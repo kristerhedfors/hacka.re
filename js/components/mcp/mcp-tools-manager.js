@@ -31,9 +31,10 @@ window.MCPToolsManager = (function() {
      * Generate JavaScript function code for an MCP tool
      * @param {string} serverName - Name of the MCP server
      * @param {Object} tool - Tool definition
+     * @param {string} functionName - Cleaned function name to use
      * @returns {string} JavaScript function code
      */
-    function generateFunctionCode(serverName, tool) {
+    function generateFunctionCode(serverName, tool, functionName) {
         // Generate parameter documentation
         let paramDocs = '';
         if (tool.inputSchema && tool.inputSchema.properties) {
@@ -54,38 +55,39 @@ window.MCPToolsManager = (function() {
  * @returns {Promise<Object>} Tool execution result
  * @tool This function calls an MCP tool via the proxy
  */
-async function ${tool.name}(params) {
+async function ${functionName}(params = {}) {
     try {
         // Use the MCP Client Service to call the tool
         const MCPClient = window.MCPClientService;
         if (!MCPClient) {
+            console.error('[${functionName}] MCP Client Service not available');
             return { 
                 success: false, 
                 error: "MCP Client Service not available" 
             };
         }
         
-        // Call the tool through the proper MCP client
-        // If params is not an object, treat it as the first parameter
-        let args = params;
-        if (typeof params !== 'object' || params === null) {
-            // If tool expects parameters and a non-object was passed, 
-            // assume it's the first parameter
-            const firstParam = ${tool.inputSchema?.properties ? `Object.keys(${JSON.stringify(tool.inputSchema.properties)})[0]` : 'null'};
-            if (firstParam) {
-                args = { [firstParam]: params };
-            } else {
-                args = {};
-            }
-        }
+        // Use params directly as MCP expects an object
+        const args = params;
         
-        const result = await MCPClient.callTool('${serverName}', '${tool.name}', args || {});
+        console.log('[${functionName}] Function called with params object:', params);
+        console.log('[${functionName}] Args object for MCP:', args);
+        console.log('[${functionName}] Calling MCP tool:', {
+            serverName: '${serverName}',
+            toolName: '${tool.name}',
+            args: args
+        });
+        
+        const result = await MCPClient.callTool('${serverName}', '${tool.name}', args);
+        
+        console.log('[${functionName}] MCP tool result:', result);
         
         return {
             success: true,
             result: result
         };
     } catch (error) {
+        console.error('[${functionName}] MCP tool error:', error);
         return {
             success: false,
             error: error.message || "Tool execution failed"
@@ -106,11 +108,12 @@ async function ${tool.name}(params) {
             const info = MCPClient.getConnectionInfo(serverName);
             if (info && info.tools) {
                 for (const tool of info.tools) {
+                    const sanitizedName = tool.name.replace(/-/g, '_');
                     tools.push({
                         serverName,
                         tool,
-                        functionName: tool.name,
-                        functionCode: generateFunctionCode(serverName, tool)
+                        functionName: sanitizedName,
+                        functionCode: generateFunctionCode(serverName, tool, sanitizedName)
                     });
                 }
             }
@@ -130,12 +133,15 @@ async function ${tool.name}(params) {
             return [];
         }
         
-        return info.tools.map(tool => ({
-            serverName,
-            tool,
-            functionName: `mcp_${serverName}_${tool.name}`,
-            functionCode: generateFunctionCode(serverName, tool)
-        }));
+        return info.tools.map(tool => {
+            const sanitizedName = tool.name.replace(/-/g, '_');
+            return {
+                serverName,
+                tool,
+                functionName: sanitizedName,
+                functionCode: generateFunctionCode(serverName, tool, sanitizedName)
+            };
+        });
     }
     
     /**
@@ -144,7 +150,7 @@ async function ${tool.name}(params) {
      * @param {string} toolName - Name of the tool
      */
     function copyToolUsage(serverName, toolName) {
-        const functionName = toolName;
+        const functionName = toolName.replace(/-/g, '_');
         const usage = `${functionName}({ /* parameters */ })`;  // Note: MCP tool from ${serverName}
         
         navigator.clipboard.writeText(usage).then(() => {
@@ -169,7 +175,8 @@ async function ${tool.name}(params) {
             return;
         }
         
-        const functionCode = generateFunctionCode(serverName, tool);
+        const sanitizedName = tool.name.replace(/-/g, '_');
+        const functionCode = generateFunctionCode(serverName, tool, sanitizedName);
         
         navigator.clipboard.writeText(functionCode).then(() => {
             notificationHandler(`Copied ${toolName} function code to clipboard`, 'success');
@@ -214,19 +221,45 @@ async function ${tool.name}(params) {
         let registeredCount = 0;
         
         // Check if function calling manager exists
-        if (window.FunctionCallingManager && window.FunctionCallingManager.addFunction) {
+        const functionCallingManager = window.functionCallingManager || 
+                                     (window.aiHackare && window.aiHackare.functionCallingManager);
+        if (functionCallingManager && functionCallingManager.addFunction) {
             for (const toolInfo of tools) {
                 try {
-                    // Check for name collision before adding
-                    if (window.FunctionCallingManager.hasFunction && window.FunctionCallingManager.hasFunction(toolInfo.functionName)) {
-                        throw new Error(`Function name collision: "${toolInfo.functionName}" already exists`);
+                    // Check if function already exists and remove it if it's from MCP
+                    if (functionCallingManager.hasFunction && functionCallingManager.hasFunction(toolInfo.functionName)) {
+                        // Check if it's an MCP function by looking at the collection
+                        const functions = FunctionToolsService.getJsFunctions();
+                        const existingFunction = functions[toolInfo.functionName];
+                        if (existingFunction && existingFunction.collectionId === 'mcp_tools_collection') {
+                            // Remove the existing MCP function to re-register with updated code
+                            FunctionToolsService.removeJsFunction(toolInfo.functionName);
+                            console.log(`Removed existing MCP function "${toolInfo.functionName}" for re-registration`);
+                        } else {
+                            throw new Error(`Function name collision: "${toolInfo.functionName}" already exists as non-MCP function`);
+                        }
                     }
                     
-                    // Add the function to the function calling system
-                    window.FunctionCallingManager.addFunction(
+                    // Create proper tool definition with inputSchema
+                    const toolDefinition = {
+                        type: 'function',
+                        function: {
+                            name: toolInfo.functionName,
+                            description: toolInfo.tool.description || `MCP tool ${toolInfo.tool.name} from ${serverName}`,
+                            parameters: toolInfo.tool.inputSchema || {
+                                type: 'object',
+                                properties: {},
+                                required: []
+                            }
+                        }
+                    };
+                    
+                    // Add the function to the function calling system with custom tool definition
+                    functionCallingManager.addFunction(
                         toolInfo.functionName,
                         toolInfo.functionCode,
-                        `MCP tool from ${serverName}`
+                        `MCP tool from ${serverName}`,
+                        toolDefinition
                     );
                     registeredCount++;
                 } catch (error) {
@@ -243,7 +276,11 @@ async function ${tool.name}(params) {
                 notificationHandler(`Registered ${registeredCount} tools from ${serverName}`, 'success');
             }
         } else {
-            console.warn('[MCPToolsManager] FunctionCallingManager not available');
+            console.warn('[MCPToolsManager] FunctionCallingManager not available', {
+                'window.functionCallingManager': !!window.functionCallingManager,
+                'window.aiHackare': !!window.aiHackare,
+                'aiHackare.functionCallingManager': !!(window.aiHackare && window.aiHackare.functionCallingManager)
+            });
         }
     }
     
