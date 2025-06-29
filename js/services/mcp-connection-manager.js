@@ -124,6 +124,15 @@ class Connection {
                 
                 if (toolRegistry) {
                     toolRegistry.registerServerTools(this.name, this.tools, this.config);
+                    
+                    // Register tools with Function Calling Manager for UI display
+                    if (window.MCPToolsManager && window.MCPToolsManager.registerServerTools) {
+                        try {
+                            window.MCPToolsManager.registerServerTools(this.name);
+                        } catch (error) {
+                            console.warn(`Failed to register MCP tools with Function Calling Manager: ${error.message}`);
+                        }
+                    }
                 }
             }
 
@@ -232,9 +241,15 @@ class Connection {
     close(toolRegistry) {
         console.log(`[MCP Connection] Closing connection to ${this.name}`);
 
-        // Unregister tools
+        // Unregister tools with fallback for method compatibility
         if (toolRegistry) {
-            toolRegistry.unregisterServerTools(this.name);
+            if (typeof toolRegistry.unregisterServerTools === 'function') {
+                toolRegistry.unregisterServerTools(this.name);
+            } else if (typeof toolRegistry.unregisterProvider === 'function') {
+                toolRegistry.unregisterProvider(this.name);
+            } else {
+                console.warn(`[MCP Connection] Tool registry has no unregister method for ${this.name}`);
+            }
         }
 
         // Close transport
@@ -260,7 +275,11 @@ class Connection {
             capabilities: this.capabilities,
             connectedAt: this.connectedAt,
             lastError: this.lastError?.message || null,
-            tools: this.tools.map(t => ({ name: t.name, description: t.description })),
+            tools: this.tools.map(t => ({ 
+                name: t.name, 
+                description: t.description, 
+                inputSchema: t.inputSchema 
+            })),
             resources: this.resources.map(r => ({ uri: r.uri, name: r.name })),
             prompts: this.prompts.map(p => ({ name: p.name, description: p.description }))
         };

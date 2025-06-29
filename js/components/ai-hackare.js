@@ -22,6 +22,9 @@ window.AIHackareComponent = (function() {
             this.elements, 
             this.chatManager ? this.chatManager.addSystemMessage.bind(this.chatManager) : null
         );
+        
+        // Store globally for MCP and other components to access
+        window.functionCallingManager = this.functionCallingManager;
         this.promptsManager = PromptsManager.createPromptsManager(this.elements);
         
         // Make chatManager accessible globally for the close GPT button

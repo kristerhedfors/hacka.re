@@ -226,23 +226,30 @@ window.FunctionListRenderer = (function() {
             deleteCollectionButton.innerHTML = '<i class="fas fa-trash"></i>';
             deleteCollectionButton.title = 'Delete entire collection';
             deleteCollectionButton.style.marginLeft = 'auto';
-            deleteCollectionButton.addEventListener('click', (e) => {
+            
+            // Add click handler with proper event stopping
+            deleteCollectionButton.onclick = (e) => {
                 e.stopPropagation();
+                e.preventDefault();
                 
                 const confirmMessage = `Are you sure you want to delete the entire "${collection.metadata.name}" collection with ${callableFunctions.length} function${callableFunctions.length !== 1 ? 's' : ''}?`;
                 
-                if (confirm(confirmMessage)) {
-                    // Remove any function from the collection to trigger collection deletion
-                    if (callableFunctions.length > 0) {
-                        FunctionToolsService.removeJsFunction(callableFunctions[0]);
-                        renderMainFunctionList();
-                        
-                        if (addSystemMessage) {
-                            addSystemMessage(`Function collection "${collection.metadata.name}" removed.`);
+                // Use setTimeout to prevent multiple dialogs
+                setTimeout(() => {
+                    if (confirm(confirmMessage)) {
+                        // Remove any function from the collection to trigger collection deletion
+                        if (callableFunctions.length > 0) {
+                            FunctionToolsService.removeJsFunction(callableFunctions[0]);
+                            renderMainFunctionList();
+                            
+                            if (addSystemMessage) {
+                                addSystemMessage(`Function collection "${collection.metadata.name}" removed.`);
+                            }
                         }
                     }
-                }
-            });
+                }, 0);
+            };
+            
             collectionHeader.appendChild(deleteCollectionButton);
             
             return collectionHeader;
@@ -320,22 +327,28 @@ window.FunctionListRenderer = (function() {
             deleteButton.className = 'function-item-delete';
             deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
             deleteButton.title = 'Delete entire collection';
-            deleteButton.addEventListener('click', (e) => {
+            
+            // Add click handler with proper event stopping
+            deleteButton.onclick = (e) => {
                 e.stopPropagation();
+                e.preventDefault();
                 
                 const collectionMetadata = FunctionToolsService.getCollectionMetadata(collection.id);
                 const collectionName = collectionMetadata ? collectionMetadata.name : 'Untitled Collection';
                 const confirmMessage = `Are you sure you want to delete the entire "${collectionName}" collection?`;
                 
-                if (confirm(confirmMessage)) {
-                    FunctionToolsService.removeJsFunction(funcName);
-                    renderMainFunctionList();
-                    
-                    if (addSystemMessage) {
-                        addSystemMessage(`Function collection "${collectionName}" removed.`);
+                // Use setTimeout to prevent multiple dialogs
+                setTimeout(() => {
+                    if (confirm(confirmMessage)) {
+                        FunctionToolsService.removeJsFunction(funcName);
+                        renderMainFunctionList();
+                        
+                        if (addSystemMessage) {
+                            addSystemMessage(`Function collection "${collectionName}" removed.`);
+                        }
                     }
-                }
-            });
+                }, 0);
+            };
             
             // Assemble function item
             functionItem.appendChild(checkbox);

@@ -35,8 +35,8 @@ window.FunctionCallingManager = (function() {
             
             if (window.FunctionListRenderer) {
                 functionListRenderer = window.FunctionListRenderer.createFunctionListRenderer(elements, addSystemMessage);
-                // Store globally for other components to access
-                window.FunctionListRenderer = functionListRenderer;
+                // Store instance globally for other components to access
+                window.functionListRenderer = functionListRenderer;
             }
             
             if (window.FunctionEditorManager) {
@@ -63,9 +63,89 @@ window.FunctionCallingManager = (function() {
                 console.log('Default functions loaded');
             }
             
+            // Note: Event delegation removed - delete buttons are handled directly in function-list-renderer.js
+            
             console.log('Function Calling Manager initialized with all components');
         }
         
+        /**
+         * Set up event delegation for delete buttons to prevent multiple event listeners
+         */
+        function setupEventDelegation() {
+            // Use the parent modal container for delegation instead of the dynamic function list
+            const functionModal = document.getElementById('function-modal');
+            if (!functionModal) return;
+            
+            // Remove any existing event listener to prevent duplicates
+            functionModal.removeEventListener('click', handleDeleteClick);
+            
+            // Add single event listener with delegation on the stable parent
+            functionModal.addEventListener('click', handleDeleteClick);
+        }
+        
+        /**
+         * Handle delete button clicks with event delegation
+         */
+        function handleDeleteClick(e) {
+            // Handle collection delete buttons
+            if (e.target.closest('.function-collection-delete')) {
+                e.stopPropagation();
+                
+                const collectionHeader = e.target.closest('.function-collection-header');
+                if (!collectionHeader) return;
+                
+                const collectionName = collectionHeader.querySelector('h4')?.textContent || 'Untitled Collection';
+                const functionCount = collectionHeader.querySelector('.function-collection-count')?.textContent || '';
+                
+                const confirmMessage = `Are you sure you want to delete the entire "${collectionName}" collection ${functionCount}?`;
+                
+                if (confirm(confirmMessage)) {
+                    // Find the first function in this collection to trigger deletion
+                    const functionsContainer = collectionHeader.nextElementSibling;
+                    const firstFunctionItem = functionsContainer?.querySelector('.function-item');
+                    if (firstFunctionItem) {
+                        const functionName = firstFunctionItem.querySelector('.function-item-name')?.textContent;
+                        if (functionName) {
+                            FunctionToolsService.removeJsFunction(functionName);
+                            if (functionListRenderer) {
+                                functionListRenderer.renderFunctionList();
+                            }
+                            
+                            if (addSystemMessage) {
+                                addSystemMessage(`Function collection "${collectionName}" removed.`);
+                            }
+                        }
+                    }
+                }
+                return;
+            }
+            
+            // Handle individual function delete buttons
+            if (e.target.closest('.function-item-delete')) {
+                e.stopPropagation();
+                
+                const functionItem = e.target.closest('.function-item');
+                if (!functionItem) return;
+                
+                const functionName = functionItem.querySelector('.function-item-name')?.textContent;
+                if (!functionName) return;
+                
+                const collectionMetadata = FunctionToolsService.getCollectionMetadata();
+                const collectionName = collectionMetadata ? collectionMetadata.name : 'Untitled Collection';
+                const confirmMessage = `Are you sure you want to delete the entire "${collectionName}" collection?`;
+                
+                if (confirm(confirmMessage)) {
+                    FunctionToolsService.removeJsFunction(functionName);
+                    if (functionListRenderer) {
+                        functionListRenderer.renderFunctionList();
+                    }
+                    
+                    if (addSystemMessage) {
+                        addSystemMessage(`Function collection "${collectionName}" removed.`);
+                    }
+                }
+            }
+        }
         
         /**
          * Show the function modal
@@ -152,6 +232,60 @@ window.FunctionCallingManager = (function() {
         
         
         /**
+         * Add a function to the function calling system
+         * @param {string} name - Function name
+         * @param {string} code - JavaScript function code
+         * @param {string} description - Function description for the collection
+         * @returns {boolean} Success status
+         */
+        function addFunction(name, code, description, customToolDefinition = null) {
+            try {
+                // Use custom tool definition if provided (for MCP functions), otherwise generate from code
+                let toolDefinition = customToolDefinition;
+                if (!toolDefinition) {
+                    toolDefinition = FunctionToolsService.generateToolDefinition(code);
+                    if (!toolDefinition) {
+                        console.error(`Failed to generate tool definition for function: ${name}`);
+                        return false;
+                    }
+                }
+                
+                // Create collection metadata - use a single collection for all MCP functions
+                const collectionId = 'mcp_tools_collection';
+                const collectionMetadata = {
+                    name: 'MCP Tools',
+                    description: 'Functions from Model Context Protocol servers',
+                    source: 'mcp'
+                };
+                
+                // Add the function using the service
+                FunctionToolsService.addJsFunction(name, code, toolDefinition, collectionId, collectionMetadata);
+                
+                // Enable the function by default
+                FunctionToolsService.enableJsFunction(name);
+                
+                // Refresh the function list UI
+                renderFunctionList();
+                
+                console.log(`Successfully added and enabled MCP function: ${name}`);
+                return true;
+            } catch (error) {
+                console.error(`Failed to add function ${name}:`, error);
+                return false;
+            }
+        }
+        
+        /**
+         * Check if a function already exists
+         * @param {string} name - Function name to check
+         * @returns {boolean} Whether the function exists
+         */
+        function hasFunction(name) {
+            const functions = FunctionToolsService.getJsFunctions();
+            return functions.hasOwnProperty(name);
+        }
+        
+        /**
          * Get function definitions for API requests
          * @returns {Array} Array of function definitions
          */
@@ -164,10 +298,29 @@ window.FunctionCallingManager = (function() {
                 defaultFunctionToolDefinitions = window.DefaultFunctionsService.getEnabledDefaultFunctionToolDefinitions();
             }
             
-            // Combine both user-defined and default function tool definitions
-            const allToolDefinitions = [...userDefinedToolDefinitions, ...defaultFunctionToolDefinitions];
+            // Get MCP tool definitions
+            let mcpToolDefinitions = [];
+            if (window.MCPToolRegistry && typeof window.MCPToolRegistry.getAllTools === 'function') {
+                const mcpTools = window.MCPToolRegistry.getAllTools({ connectedOnly: true });
+                mcpToolDefinitions = mcpTools
+                    .filter(tool => tool.enabled && tool.isMCPTool)
+                    .map(tool => ({
+                        type: 'function',
+                        function: {
+                            name: tool.name,
+                            description: tool.description,
+                            parameters: tool.parameters || tool.mcpMetadata?.inputSchema || {
+                                type: 'object',
+                                properties: {}
+                            }
+                        }
+                    }));
+            }
             
-            console.log(`Combined tool definitions: ${userDefinedToolDefinitions.length} user-defined + ${defaultFunctionToolDefinitions.length} default = ${allToolDefinitions.length} total`);
+            // Combine all tool definitions
+            const allToolDefinitions = [...userDefinedToolDefinitions, ...defaultFunctionToolDefinitions, ...mcpToolDefinitions];
+            
+            console.log(`Combined tool definitions: ${userDefinedToolDefinitions.length} user-defined + ${defaultFunctionToolDefinitions.length} default + ${mcpToolDefinitions.length} MCP = ${allToolDefinitions.length} total`);
             
             return allToolDefinitions;
         }
@@ -181,7 +334,9 @@ window.FunctionCallingManager = (function() {
             hideMcpServersModal,
             renderFunctionList,
             getFunctionDefinitions,
-            validateFunction
+            validateFunction,
+            addFunction,
+            hasFunction
         };
     }
 
