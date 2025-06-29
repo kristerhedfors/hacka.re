@@ -471,3 +471,114 @@
     border-radius: 4px;
     transition: width 0.3s ease;
 }
+
+/* MCP Modal Expandable Sections - Using same pattern as default prompts */
+.mcp-advanced-section,
+.mcp-servers-section {
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.mcp-advanced-section:hover,
+.mcp-servers-section:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+.mcp-advanced-header,
+.mcp-servers-header {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    background-color: var(--bg-color-secondary);
+    cursor: pointer;
+    user-select: none;
+    border-left-width: 12px;
+    border-left-style: solid;
+    transition: background-color 0.2s ease;
+}
+
+.mcp-advanced-header {
+    border-left-color: var(--accent-color);
+}
+
+.mcp-servers-header {
+    border-left-color: var(--secondary-color);
+}
+
+.mcp-advanced-header:hover,
+.mcp-servers-header:hover {
+    background-color: var(--bg-color-hover, rgba(0, 0, 0, 0.03));
+}
+
+.mcp-advanced-header h4,
+.mcp-servers-header h4 {
+    margin: 0 0 0 10px;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    color: var(--text-color);
+}
+
+.mcp-advanced-header i,
+.mcp-servers-header i {
+    font-size: 14px;
+    transition: transform 0.2s ease;
+    color: var(--text-color-secondary);
+    min-width: 16px;
+}
+
+/* Rotate icon when expanded */
+.mcp-advanced-header i.fa-chevron-down,
+.mcp-servers-header i.fa-chevron-down {
+    transform: rotate(90deg);
+}
+
+.mcp-advanced-list,
+.mcp-servers-list {
+    padding: 0;
+    background-color: var(--bg-color);
+    border-top: 1px solid var(--border-color);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.mcp-advanced-list::before,
+.mcp-servers-list::before {
+    content: "";
+    position: absolute;
+    left: 12px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: var(--border-color);
+    opacity: 0.3;
+}
+
+/* Adjust padding for content inside expandable sections */
+.mcp-advanced-list > *,
+.mcp-servers-list > * {
+    padding: 1rem 1.5rem;
+}
+
+.mcp-advanced-list .mcp-server-config,
+.mcp-advanced-list .mcp-command-history-section {
+    padding: 1rem 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.mcp-advanced-list .mcp-server-config:last-child,
+.mcp-advanced-list .mcp-command-history-section:last-child {
+    margin-bottom: 0;
+}
+
+/* Server count badge styling */
+#mcp-servers-count {
+    font-weight: 600;
+    color: var(--secondary-color);
+}

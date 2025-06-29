@@ -195,6 +195,16 @@ window.MCPServerManager = (function() {
         try {
             const servers = await proxyManager.listServers();
             
+            // Update server count in the expandable header
+            if (window.MCPModalRenderer) {
+                window.MCPModalRenderer.updateServerCount(servers.length);
+                
+                // Auto-expand servers section if there are servers
+                if (servers.length > 0) {
+                    window.MCPModalRenderer.autoExpandSections({ hasServers: true });
+                }
+            }
+            
             if (servers.length === 0) {
                 elements.serversList.innerHTML = '<div class="empty-mcp-servers-state"><p>No servers running. Add a server above.</p></div>';
                 return;
@@ -212,6 +222,11 @@ window.MCPServerManager = (function() {
             console.error('[MCPServerManager] Failed to fetch proxy servers:', error);
             if (elements.serversList) {
                 elements.serversList.innerHTML = '<div class="empty-mcp-servers-state"><p>Failed to load servers list</p></div>';
+            }
+            
+            // Update count to 0 on error
+            if (window.MCPModalRenderer) {
+                window.MCPModalRenderer.updateServerCount(0);
             }
         }
     }
