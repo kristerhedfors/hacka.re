@@ -232,9 +232,15 @@ class Connection {
     close(toolRegistry) {
         console.log(`[MCP Connection] Closing connection to ${this.name}`);
 
-        // Unregister tools
+        // Unregister tools with fallback for method compatibility
         if (toolRegistry) {
-            toolRegistry.unregisterServerTools(this.name);
+            if (typeof toolRegistry.unregisterServerTools === 'function') {
+                toolRegistry.unregisterServerTools(this.name);
+            } else if (typeof toolRegistry.unregisterProvider === 'function') {
+                toolRegistry.unregisterProvider(this.name);
+            } else {
+                console.warn(`[MCP Connection] Tool registry has no unregister method for ${this.name}`);
+            }
         }
 
         // Close transport
