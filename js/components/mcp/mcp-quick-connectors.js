@@ -187,14 +187,14 @@ window.MCPQuickConnectors = (function() {
             </div>
         `;
         
-        // Find the advanced list and insert as the last child
-        const advancedList = container.querySelector('.mcp-advanced-list');
-        console.log('[MCPQuickConnectors] Advanced list found:', !!advancedList);
+        // Find the form actions (close button) and insert before it
+        const formActions = container.querySelector('.form-actions');
+        console.log('[MCPQuickConnectors] Form actions found:', !!formActions);
         
-        if (advancedList) {
-            // Insert at the end of advanced list
-            advancedList.appendChild(section);
-            console.log('[MCPQuickConnectors] Quick connectors section inserted into advanced list');
+        if (formActions) {
+            // Insert before the close button
+            formActions.parentNode.insertBefore(section, formActions);
+            console.log('[MCPQuickConnectors] Quick connectors section inserted before form actions');
         } else {
             // Fallback: append to the container
             container.appendChild(section);
