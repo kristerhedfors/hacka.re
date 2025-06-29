@@ -187,18 +187,24 @@ window.MCPQuickConnectors = (function() {
             </div>
         `;
         
-        // Find the form actions (close button) and insert before it
-        const formActions = container.querySelector('.form-actions');
-        console.log('[MCPQuickConnectors] Form actions found:', !!formActions);
+        // Find the quick connectors placeholder and replace it
+        const placeholder = container.querySelector('#mcp-quick-connectors-placeholder');
+        console.log('[MCPQuickConnectors] Quick connectors placeholder found:', !!placeholder);
         
-        if (formActions) {
-            // Insert before the close button
-            formActions.parentNode.insertBefore(section, formActions);
-            console.log('[MCPQuickConnectors] Quick connectors section inserted before form actions');
+        if (placeholder) {
+            // Replace the placeholder with the quick connectors section
+            placeholder.parentNode.replaceChild(section, placeholder);
+            console.log('[MCPQuickConnectors] Quick connectors section replaced placeholder');
         } else {
-            // Fallback: append to the container
-            container.appendChild(section);
-            console.log('[MCPQuickConnectors] Quick connectors section appended to main container');
+            // Fallback: find form actions and insert before it
+            const formActions = container.querySelector('.form-actions');
+            if (formActions) {
+                formActions.parentNode.insertBefore(section, formActions);
+                console.log('[MCPQuickConnectors] Quick connectors section inserted before form actions (fallback)');
+            } else {
+                container.appendChild(section);
+                console.log('[MCPQuickConnectors] Quick connectors section appended to main container (fallback)');
+            }
         }
         
         // Update connector statuses

@@ -37,6 +37,17 @@ window.MCPUIManager = (function() {
         addMCPStyles();
         setupProxyConnectionUI();
         
+        // Add quick connectors if available (independent of proxy setup)
+        if (window.MCPQuickConnectors) {
+            const modalContent = elements.mcpModal.querySelector('.modal-content');
+            if (modalContent) {
+                console.log('[MCPUIManager] Adding quick connectors to modal');
+                window.MCPQuickConnectors.createQuickConnectorsUI(modalContent);
+            }
+        } else {
+            console.warn('[MCPUIManager] MCPQuickConnectors not available');
+        }
+        
         return true;
     }
     
@@ -91,14 +102,6 @@ window.MCPUIManager = (function() {
         
         // Setup input mode toggle
         setupInputModeToggle();
-        
-        // Add quick connectors if available
-        if (window.MCPQuickConnectors) {
-            console.log('[MCPUIManager] Adding quick connectors to modal');
-            window.MCPQuickConnectors.createQuickConnectorsUI(modalContent);
-        } else {
-            console.warn('[MCPUIManager] MCPQuickConnectors not available');
-        }
     }
     
     /**
