@@ -152,6 +152,57 @@ window.FunctionCallingManager = (function() {
         
         
         /**
+         * Add a function to the function calling system
+         * @param {string} name - Function name
+         * @param {string} code - JavaScript function code
+         * @param {string} description - Function description for the collection
+         * @returns {boolean} Success status
+         */
+        function addFunction(name, code, description) {
+            try {
+                // Generate tool definition from the function code
+                const toolDefinition = FunctionToolsService.generateToolDefinition(code);
+                if (!toolDefinition) {
+                    console.error(`Failed to generate tool definition for function: ${name}`);
+                    return false;
+                }
+                
+                // Create collection metadata - use a single collection for all MCP functions
+                const collectionId = 'mcp_tools_collection';
+                const collectionMetadata = {
+                    name: 'MCP Tools',
+                    description: 'Functions from Model Context Protocol servers',
+                    source: 'mcp'
+                };
+                
+                // Add the function using the service
+                FunctionToolsService.addJsFunction(name, code, toolDefinition, collectionId, collectionMetadata);
+                
+                // Enable the function by default
+                FunctionToolsService.enableJsFunction(name);
+                
+                // Refresh the function list UI
+                renderFunctionList();
+                
+                console.log(`Successfully added and enabled MCP function: ${name}`);
+                return true;
+            } catch (error) {
+                console.error(`Failed to add function ${name}:`, error);
+                return false;
+            }
+        }
+        
+        /**
+         * Check if a function already exists
+         * @param {string} name - Function name to check
+         * @returns {boolean} Whether the function exists
+         */
+        function hasFunction(name) {
+            const functions = FunctionToolsService.getJsFunctions();
+            return functions.hasOwnProperty(name);
+        }
+        
+        /**
          * Get function definitions for API requests
          * @returns {Array} Array of function definitions
          */
@@ -164,10 +215,29 @@ window.FunctionCallingManager = (function() {
                 defaultFunctionToolDefinitions = window.DefaultFunctionsService.getEnabledDefaultFunctionToolDefinitions();
             }
             
-            // Combine both user-defined and default function tool definitions
-            const allToolDefinitions = [...userDefinedToolDefinitions, ...defaultFunctionToolDefinitions];
+            // Get MCP tool definitions
+            let mcpToolDefinitions = [];
+            if (window.MCPToolRegistry && typeof window.MCPToolRegistry.getAllTools === 'function') {
+                const mcpTools = window.MCPToolRegistry.getAllTools({ connectedOnly: true });
+                mcpToolDefinitions = mcpTools
+                    .filter(tool => tool.enabled && tool.isMCPTool)
+                    .map(tool => ({
+                        type: 'function',
+                        function: {
+                            name: tool.name,
+                            description: tool.description,
+                            parameters: tool.parameters || tool.mcpMetadata?.inputSchema || {
+                                type: 'object',
+                                properties: {}
+                            }
+                        }
+                    }));
+            }
             
-            console.log(`Combined tool definitions: ${userDefinedToolDefinitions.length} user-defined + ${defaultFunctionToolDefinitions.length} default = ${allToolDefinitions.length} total`);
+            // Combine all tool definitions
+            const allToolDefinitions = [...userDefinedToolDefinitions, ...defaultFunctionToolDefinitions, ...mcpToolDefinitions];
+            
+            console.log(`Combined tool definitions: ${userDefinedToolDefinitions.length} user-defined + ${defaultFunctionToolDefinitions.length} default + ${mcpToolDefinitions.length} MCP = ${allToolDefinitions.length} total`);
             
             return allToolDefinitions;
         }
@@ -181,7 +251,9 @@ window.FunctionCallingManager = (function() {
             hideMcpServersModal,
             renderFunctionList,
             getFunctionDefinitions,
-            validateFunction
+            validateFunction,
+            addFunction,
+            hasFunction
         };
     }
 

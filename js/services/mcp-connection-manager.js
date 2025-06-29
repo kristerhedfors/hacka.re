@@ -124,6 +124,15 @@ class Connection {
                 
                 if (toolRegistry) {
                     toolRegistry.registerServerTools(this.name, this.tools, this.config);
+                    
+                    // Register tools with Function Calling Manager for UI display
+                    if (window.MCPToolsManager && window.MCPToolsManager.registerServerTools) {
+                        try {
+                            window.MCPToolsManager.registerServerTools(this.name);
+                        } catch (error) {
+                            console.warn(`Failed to register MCP tools with Function Calling Manager: ${error.message}`);
+                        }
+                    }
                 }
             }
 
