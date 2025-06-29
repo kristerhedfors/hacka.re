@@ -35,8 +35,8 @@ window.FunctionModalManager = (function() {
                 elements.functionModal.classList.add('active');
                 
                 // Render function list when modal is opened
-                if (window.FunctionListRenderer) {
-                    window.FunctionListRenderer.renderFunctionList();
+                if (window.functionListRenderer) {
+                    window.functionListRenderer.renderFunctionList();
                 }
                 
                 // Focus on the function name field

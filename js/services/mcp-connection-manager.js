@@ -275,7 +275,11 @@ class Connection {
             capabilities: this.capabilities,
             connectedAt: this.connectedAt,
             lastError: this.lastError?.message || null,
-            tools: this.tools.map(t => ({ name: t.name, description: t.description })),
+            tools: this.tools.map(t => ({ 
+                name: t.name, 
+                description: t.description, 
+                inputSchema: t.inputSchema 
+            })),
             resources: this.resources.map(r => ({ uri: r.uri, name: r.name })),
             prompts: this.prompts.map(p => ({ name: p.name, description: p.description }))
         };
