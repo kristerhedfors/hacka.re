@@ -502,6 +502,14 @@ class MCPToolRegistryClass {
     }
 
     /**
+     * Unregister all tools for a server (alias for unregisterProvider)
+     * @param {string} serverName - Server/provider name
+     */
+    unregisterServerTools(serverName) {
+        this.unregisterProvider(serverName);
+    }
+
+    /**
      * Add event listener
      * @param {string} event - Event name
      * @param {Function} callback - Callback function
