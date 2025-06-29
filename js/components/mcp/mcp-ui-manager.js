@@ -139,42 +139,58 @@ window.MCPUIManager = (function() {
                 </div>
                 
                 <div id="command-examples">
-                    <p class="form-help"><strong>Example commands:</strong></p>
-                    <div style="background-color: var(--ai-msg-bg); padding: 0.75rem; border-radius: var(--border-radius); margin-bottom: 0.5rem; position: relative;">
-                        <strong>Filesystem (npx - specific user):</strong>
-                        <button class="btn secondary-btn" onclick="MCPManager.copyExampleCommand('npx -y @modelcontextprotocol/server-filesystem /Users/user')" 
-                                style="position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.25rem 0.5rem; font-size: 0.8rem;" 
-                                title="Copy command">
-                            <i class="fas fa-copy"></i>
-                        </button><br>
-                        <code style="font-size: 0.85rem;">npx -y @modelcontextprotocol/server-filesystem /Users/user</code>
+                    <p class="form-help"><strong>Quick Connect Commands:</strong></p>
+                    
+                    <div style="background-color: var(--ai-msg-bg); padding: 0.75rem; border-radius: var(--border-radius); margin-bottom: 0.75rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <strong>Filesystem (User Directory)</strong>
+                            <button class="btn primary-btn" onclick="MCPManager.quickConnectCommand('quick-cmd-1')" 
+                                    style="padding: 0.25rem 0.75rem; font-size: 0.8rem;" 
+                                    title="Connect with this command">
+                                <i class="fas fa-plug"></i> Connect
+                            </button>
+                        </div>
+                        <input type="text" id="quick-cmd-1" value="npx -y @modelcontextprotocol/server-filesystem /Users/user" 
+                               style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; font-family: monospace; font-size: 0.85rem;">
                     </div>
-                    <div style="background-color: var(--ai-msg-bg); padding: 0.75rem; border-radius: var(--border-radius); margin-bottom: 0.5rem; position: relative;">
-                        <strong>Filesystem (npx - Desktop):</strong>
-                        <button class="btn secondary-btn" onclick="MCPManager.copyExampleCommand('npx -y @modelcontextprotocol/server-filesystem /Users/user/Desktop')" 
-                                style="position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.25rem 0.5rem; font-size: 0.8rem;" 
-                                title="Copy command">
-                            <i class="fas fa-copy"></i>
-                        </button><br>
-                        <code style="font-size: 0.85rem;">npx -y @modelcontextprotocol/server-filesystem /Users/user/Desktop</code>
+                    
+                    <div style="background-color: var(--ai-msg-bg); padding: 0.75rem; border-radius: var(--border-radius); margin-bottom: 0.75rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <strong>Filesystem (Desktop)</strong>
+                            <button class="btn primary-btn" onclick="MCPManager.quickConnectCommand('quick-cmd-2')" 
+                                    style="padding: 0.25rem 0.75rem; font-size: 0.8rem;" 
+                                    title="Connect with this command">
+                                <i class="fas fa-plug"></i> Connect
+                            </button>
+                        </div>
+                        <input type="text" id="quick-cmd-2" value="npx -y @modelcontextprotocol/server-filesystem /Users/user/Desktop" 
+                               style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; font-family: monospace; font-size: 0.85rem;">
                     </div>
-                    <div style="background-color: var(--ai-msg-bg); padding: 0.75rem; border-radius: var(--border-radius); margin-bottom: 0.5rem; position: relative;">
-                        <strong>Memory Server:</strong>
-                        <button class="btn secondary-btn" onclick="MCPManager.copyExampleCommand('npx -y @modelcontextprotocol/server-memory')" 
-                                style="position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.25rem 0.5rem; font-size: 0.8rem;" 
-                                title="Copy command">
-                            <i class="fas fa-copy"></i>
-                        </button><br>
-                        <code style="font-size: 0.85rem;">npx -y @modelcontextprotocol/server-memory</code>
+                    
+                    <div style="background-color: var(--ai-msg-bg); padding: 0.75rem; border-radius: var(--border-radius); margin-bottom: 0.75rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <strong>Memory Server</strong>
+                            <button class="btn primary-btn" onclick="MCPManager.quickConnectCommand('quick-cmd-3')" 
+                                    style="padding: 0.25rem 0.75rem; font-size: 0.8rem;" 
+                                    title="Connect with this command">
+                                <i class="fas fa-plug"></i> Connect
+                            </button>
+                        </div>
+                        <input type="text" id="quick-cmd-3" value="npx -y @modelcontextprotocol/server-memory" 
+                               style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; font-family: monospace; font-size: 0.85rem;">
                     </div>
-                    <div style="background-color: var(--ai-msg-bg); padding: 0.75rem; border-radius: var(--border-radius); position: relative;">
-                        <strong>Filesystem (Docker):</strong>
-                        <button class="btn secondary-btn" onclick="MCPManager.copyExampleCommand('docker run -i --rm --mount type=bind,src=/Users/user/Desktop,dst=/projects/Desktop mcp/filesystem /projects')" 
-                                style="position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.25rem 0.5rem; font-size: 0.8rem;" 
-                                title="Copy command">
-                            <i class="fas fa-copy"></i>
-                        </button><br>
-                        <code style="font-size: 0.85rem;">docker run -i --rm --mount type=bind,src=/Users/user/Desktop,dst=/projects/Desktop mcp/filesystem /projects</code>
+                    
+                    <div style="background-color: var(--ai-msg-bg); padding: 0.75rem; border-radius: var(--border-radius);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <strong>Filesystem (Docker)</strong>
+                            <button class="btn primary-btn" onclick="MCPManager.quickConnectCommand('quick-cmd-4')" 
+                                    style="padding: 0.25rem 0.75rem; font-size: 0.8rem;" 
+                                    title="Connect with this command">
+                                <i class="fas fa-plug"></i> Connect
+                            </button>
+                        </div>
+                        <input type="text" id="quick-cmd-4" value="docker run -i --rm --mount type=bind,src=/Users/user/Desktop,dst=/projects/Desktop mcp/filesystem /projects" 
+                               style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; font-family: monospace; font-size: 0.85rem;">
                     </div>
                 </div>
                 
