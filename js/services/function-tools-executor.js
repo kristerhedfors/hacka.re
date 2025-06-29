@@ -255,36 +255,59 @@ window.FunctionToolsExecutor = (function() {
         _generateFunctionCall: function(name) {
             const jsFunctions = Storage.getJsFunctions();
             let functionCode = jsFunctions[name] ? jsFunctions[name].code : null;
+            let functionData = jsFunctions[name] || null;
             
             // If not found in user-defined functions, check default functions
             if (!functionCode && window.DefaultFunctionsService) {
                 const enabledDefaultFunctions = window.DefaultFunctionsService.getEnabledDefaultFunctions();
                 functionCode = enabledDefaultFunctions[name] ? enabledDefaultFunctions[name].code : null;
+                functionData = enabledDefaultFunctions[name] || null;
             }
-            const functionMatch = functionCode.match(/(?:^|\s|\/\*\*[\s\S]*?\*\/\s*)(async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(([^)]*)\)/);
+            
+            // Check if this is an MCP function (has collectionId = 'mcp_tools_collection')
+            const isMcpFunction = functionData && functionData.collectionId === 'mcp_tools_collection';
+            Logger.debug(`Function ${name} is MCP function: ${isMcpFunction}`);
+            // More flexible regex to handle multiline function signatures
+            // Look for function name and parameters, handling newlines and spaces
+            const functionMatch = functionCode.match(/function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(\s*([^)]*?)\s*\)/s);
+            const asyncMatch = functionCode.match(/async\s+function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(\s*([^)]*?)\s*\)/s);
             
             Logger.debug(`Function signature match: ${!!functionMatch}`);
+            Logger.debug(`Async function match: ${!!asyncMatch}`);
+            Logger.debug(`Function match details:`, functionMatch);
+            Logger.debug(`Async match details:`, asyncMatch);
             
-            // Check if the function is async
-            const isAsync = !!(functionMatch && functionMatch[1] && functionMatch[1].trim() === 'async');
-            Logger.debug(`Function is async: ${isAsync}`);
+            // Use async match if available, otherwise regular match
+            const match = asyncMatch || functionMatch;
             
-            // Use the actual function name from the code, not the original name which might have dashes
-            const actualFunctionName = functionMatch ? functionMatch[2] : name.replace(/[^a-zA-Z0-9_$]/g, '_');
-            
-            if (!functionMatch) {
+            if (!match) {
+                const actualFunctionName = name.replace(/[^a-zA-Z0-9_$]/g, '_');
                 return `return ${actualFunctionName}(args);`;
             }
             
-            const paramsString = functionMatch[3];
+            const isAsync = !!asyncMatch;
+            const actualFunctionName = match[1];
+            const paramsString = match[2];
+            
+            Logger.debug(`Function is async: ${isAsync}`);
+            Logger.debug(`Actual function name: ${actualFunctionName}`);
             Logger.debug(`Matched parameters: ${paramsString}`);
             
             if (!paramsString.trim()) {
                 return `return ${isAsync ? 'await ' : ''}${actualFunctionName}();`;
             }
             
+            // For MCP functions, pass the args object directly as params
+            if (isMcpFunction) {
+                Logger.debug(`Generating MCP function call - passing args as params object`);
+                return `return ${isAsync ? 'await ' : ''}${actualFunctionName}(args);`;
+            }
+            
+            // For non-MCP functions, extract individual parameters (existing behavior)
             // Extract parameter names more carefully
-            const params = paramsString.split(',').map(p => {
+            // First clean the string of any newlines and extra spaces
+            const cleanParamsString = paramsString.replace(/\s+/g, ' ').trim();
+            const params = cleanParamsString.split(',').map(p => {
                 let paramName = p.trim();
                 // Handle default values (e.g., "param = defaultValue")
                 if (paramName.includes('=')) {
@@ -297,7 +320,7 @@ window.FunctionToolsExecutor = (function() {
                     paramName = paramName.split(':')[0].trim();
                 }
                 return paramName;
-            });
+            }).filter(param => param.length > 0); // Filter out empty params
             
             Logger.debug(`Extracted parameters:`, params);
             
@@ -306,7 +329,11 @@ window.FunctionToolsExecutor = (function() {
                 return `args["${param}"]`;
             }).join(', ');
             
-            return `return ${isAsync ? 'await ' : ''}${actualFunctionName}(${paramExtractions});`;
+            Logger.debug(`Generated parameter extractions: ${paramExtractions}`);
+            const executionCode = `return ${isAsync ? 'await ' : ''}${actualFunctionName}(${paramExtractions});`;
+            Logger.debug(`Generated execution code: ${executionCode}`);
+            
+            return executionCode;
         },
         
         _enhanceError: function(error, name) {

@@ -2,6 +2,12 @@
 
 This directory contains browser-based tests for the hacka.re web client using Playwright and pytest.
 
+## Directory Structure
+
+- **Regular Tests**: Main test files for core functionality
+- **`debug_tests/`**: Temporary debugging tests organized by category (can be removed once issues are resolved)
+  - See `debug_tests/README.md` for details and usage instructions
+
 ## Setup
 
 The tests are set up to run in a Python virtual environment. The environment and dependencies are already configured.
