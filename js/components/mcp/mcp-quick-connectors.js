@@ -187,13 +187,14 @@ window.MCPQuickConnectors = (function() {
             </div>
         `;
         
-        // Find the mcp-servers-container and insert as the first child
-        const serversContainer = container.querySelector('.mcp-servers-container');
-        console.log('[MCPQuickConnectors] Servers container found:', !!serversContainer);
+        // Find the advanced list and insert as the last child
+        const advancedList = container.querySelector('.mcp-advanced-list');
+        console.log('[MCPQuickConnectors] Advanced list found:', !!advancedList);
         
-        if (serversContainer) {
-            serversContainer.insertBefore(section, serversContainer.firstChild);
-            console.log('[MCPQuickConnectors] Quick connectors section inserted into servers container');
+        if (advancedList) {
+            // Insert at the end of advanced list
+            advancedList.appendChild(section);
+            console.log('[MCPQuickConnectors] Quick connectors section inserted into advanced list');
         } else {
             // Fallback: append to the container
             container.appendChild(section);

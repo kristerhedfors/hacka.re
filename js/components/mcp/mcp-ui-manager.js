@@ -27,8 +27,16 @@ window.MCPUIManager = (function() {
             return false;
         }
         
-        setupProxyConnectionUI();
+        // Initialize expandable sections functionality first
+        if (window.MCPModalRenderer) {
+            window.MCPModalRenderer.initializeExpandCollapse();
+        } else {
+            console.warn('[MCPUIManager] MCPModalRenderer not available');
+        }
+        
         addMCPStyles();
+        setupProxyConnectionUI();
+        
         return true;
     }
     
@@ -65,15 +73,16 @@ window.MCPUIManager = (function() {
             return;
         }
         
-        const serversContainer = modalContent.querySelector('.mcp-servers-container');
-        if (!serversContainer) {
-            console.error('[MCPUIManager] Could not find servers container');
+        // Find the proxy section placeholder
+        const proxyPlaceholder = modalContent.querySelector('#mcp-proxy-section-placeholder');
+        if (!proxyPlaceholder) {
+            console.error('[MCPUIManager] Could not find proxy section placeholder');
             return;
         }
         
-        // Create proxy connection section
+        // Create proxy connection section and replace the placeholder
         const proxySection = createProxySection();
-        modalContent.insertBefore(proxySection, serversContainer);
+        proxyPlaceholder.parentNode.replaceChild(proxySection, proxyPlaceholder);
         
         // Get references to new elements
         elements.proxyUrlInput = document.getElementById('mcp-proxy-url');
