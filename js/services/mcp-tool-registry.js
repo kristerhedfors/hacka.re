@@ -129,8 +129,10 @@ class MCPToolRegistryClass {
                 throw new Error('Tool must have a valid name');
             }
 
-            if (!toolDef.handler || typeof toolDef.handler !== 'function') {
-                throw new Error('Tool must have a valid handler function');
+            // For MCP tools, handler is optional (they're executed remotely)
+            // For local tools, handler is required
+            if (toolDef.handler && typeof toolDef.handler !== 'function') {
+                throw new Error('Tool handler must be a function if provided');
             }
 
             // Create full tool name with provider prefix (avoid double-prefixing)
@@ -145,7 +147,7 @@ class MCPToolRegistryClass {
                 displayName: toolDef.displayName || toolDef.name,
                 description: toolDef.description || 'No description provided',
                 category: toolDef.category || TOOL_CATEGORIES.OTHER,
-                parameters: toolDef.parameters || { type: 'object', properties: {} },
+                parameters: toolDef.parameters || toolDef.inputSchema || { type: 'object', properties: {} },
                 handler: toolDef.handler,
                 requiredScopes: toolDef.requiredScopes || [],
                 tags: toolDef.tags || [],
@@ -153,7 +155,13 @@ class MCPToolRegistryClass {
                 examples: toolDef.examples || {},
                 enabled: toolDef.enabled !== false, // Default to enabled
                 priority: toolDef.priority || 100,
-                registeredAt: Date.now()
+                registeredAt: Date.now(),
+                // MCP-specific metadata
+                isMCPTool: !toolDef.handler, // Mark as MCP tool if no local handler
+                mcpMetadata: toolDef.handler ? null : {
+                    inputSchema: toolDef.inputSchema,
+                    schema: toolDef.schema
+                }
             };
 
             // Store tool globally
@@ -502,6 +510,35 @@ class MCPToolRegistryClass {
     }
 
     /**
+     * Register all tools for a server (alias for registerProvider)
+     * @param {string} serverName - Server/provider name
+     * @param {Array} tools - Array of tool definitions
+     * @param {Object} config - Optional server configuration
+     */
+    registerServerTools(serverName, tools, config = {}) {
+        if (!Array.isArray(tools)) {
+            console.error(`[MCPToolRegistry] Tools must be an array for server ${serverName}`);
+            return false;
+        }
+        
+        // Register provider first
+        this.registerProvider(serverName, {
+            name: serverName,
+            description: `MCP Server: ${serverName}`,
+            version: '1.0.0',
+            ...config
+        });
+        
+        // Register each tool
+        tools.forEach(tool => {
+            this.registerTool(serverName, tool);
+        });
+        
+        console.log(`[MCPToolRegistry] Registered ${tools.length} tools for server ${serverName}`);
+        return true;
+    }
+
+    /**
      * Unregister all tools for a server (alias for unregisterProvider)
      * @param {string} serverName - Server/provider name
      */
@@ -627,6 +664,10 @@ class MCPToolRegistryClass {
         off: toolRegistry.off.bind(toolRegistry),
         getStats: toolRegistry.getStats.bind(toolRegistry),
         clear: toolRegistry.clear.bind(toolRegistry),
+        
+        // Server-specific convenience methods
+        registerServerTools: toolRegistry.registerServerTools.bind(toolRegistry),
+        unregisterServerTools: toolRegistry.unregisterServerTools.bind(toolRegistry),
         
         // Constants
         TOOL_CATEGORIES: TOOL_CATEGORIES,
