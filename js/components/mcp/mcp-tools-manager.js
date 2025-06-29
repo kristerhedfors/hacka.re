@@ -108,11 +108,12 @@ async function ${functionName}(params = {}) {
             const info = MCPClient.getConnectionInfo(serverName);
             if (info && info.tools) {
                 for (const tool of info.tools) {
+                    const sanitizedName = tool.name.replace(/-/g, '_');
                     tools.push({
                         serverName,
                         tool,
-                        functionName: tool.name,
-                        functionCode: generateFunctionCode(serverName, tool)
+                        functionName: sanitizedName,
+                        functionCode: generateFunctionCode(serverName, tool, sanitizedName)
                     });
                 }
             }
@@ -132,12 +133,15 @@ async function ${functionName}(params = {}) {
             return [];
         }
         
-        return info.tools.map(tool => ({
-            serverName,
-            tool,
-            functionName: tool.name,
-            functionCode: generateFunctionCode(serverName, tool, tool.name)
-        }));
+        return info.tools.map(tool => {
+            const sanitizedName = tool.name.replace(/-/g, '_');
+            return {
+                serverName,
+                tool,
+                functionName: sanitizedName,
+                functionCode: generateFunctionCode(serverName, tool, sanitizedName)
+            };
+        });
     }
     
     /**
@@ -146,7 +150,7 @@ async function ${functionName}(params = {}) {
      * @param {string} toolName - Name of the tool
      */
     function copyToolUsage(serverName, toolName) {
-        const functionName = toolName;
+        const functionName = toolName.replace(/-/g, '_');
         const usage = `${functionName}({ /* parameters */ })`;  // Note: MCP tool from ${serverName}
         
         navigator.clipboard.writeText(usage).then(() => {
@@ -171,7 +175,8 @@ async function ${functionName}(params = {}) {
             return;
         }
         
-        const functionCode = generateFunctionCode(serverName, tool);
+        const sanitizedName = tool.name.replace(/-/g, '_');
+        const functionCode = generateFunctionCode(serverName, tool, sanitizedName);
         
         navigator.clipboard.writeText(functionCode).then(() => {
             notificationHandler(`Copied ${toolName} function code to clipboard`, 'success');
