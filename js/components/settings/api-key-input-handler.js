@@ -96,9 +96,15 @@ window.ApiKeyInputHandler = (function() {
             // Show detection result
             showDetection(detectionElement, detectionTextElement, detection);
             
-            // Auto-update provider in settings if available
+            // Auto-update provider and get default model
+            var defaultModel = null;
             if (componentManagers && componentManagers.baseUrl && componentManagers.baseUrl.updateProviderFromDetection) {
-                componentManagers.baseUrl.updateProviderFromDetection(detection.provider);
+                defaultModel = componentManagers.baseUrl.updateProviderFromDetection(detection);
+            }
+            
+            // Auto-select default model if available
+            if (defaultModel && componentManagers && componentManagers.model && componentManagers.model.selectModel) {
+                componentManagers.model.selectModel(defaultModel);
             }
         } else {
             hideDetection(detectionElement);
@@ -113,7 +119,11 @@ window.ApiKeyInputHandler = (function() {
      */
     function showDetection(detectionElement, detectionTextElement, detection) {
         if (detectionTextElement) {
-            detectionTextElement.textContent = detection.providerName + ' API key detected and auto-selected';
+            var message = detection.providerName + ' API key detected and auto-selected';
+            if (detection.defaultModel) {
+                message += ' (' + detection.defaultModel + ')';
+            }
+            detectionTextElement.textContent = message;
         }
         
         if (detectionElement) {
