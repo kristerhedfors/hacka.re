@@ -13,7 +13,6 @@ window.ModelSelectorModal = (function() {
     
     // Cache for models by provider (baseUrl + apiKey combination)
     let modelsCache = new Map();
-    let isFirstLoad = true;
 
     function createModelSelectorModal(domElements) {
         elements = domElements;
