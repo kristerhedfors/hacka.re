@@ -457,74 +457,96 @@ async function getCurrentTimeInBerlin() {
                         </div>
                     </span>
                 </div>
-                <div class="mcp-servers-container">
-                    <div class="mcp-servers-list-section">
-                        <h3>Connected Servers</h3>
+                
+                <!-- Advanced Section (Expandable) -->
+                <div class="mcp-advanced-section">
+                    <div class="mcp-advanced-header">
+                        <i class="fas fa-chevron-right"></i>
+                        <h4>Advanced</h4>
+                    </div>
+                    <div class="mcp-advanced-list" style="display: none;">
+                        <!-- Proxy connection UI will be inserted here by JavaScript -->
+                        <div id="mcp-proxy-section-placeholder"></div>
+                        
+                        <div class="mcp-server-config">
+                            <div class="mcp-server-config-header">
+                                <h4>Add MCP Server</h4>
+                            </div>
+                            <form id="mcp-server-form" novalidate>
+                                <div class="form-group">
+                                    <label for="mcp-server-name">Server Name</label>
+                                    <input type="text" id="mcp-server-name" placeholder="Enter MCP server name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="mcp-transport-type">Transport Type</label>
+                                    <select id="mcp-transport-type" class="mcp-select">
+                                        <option value="stdio">Stdio (Local via Proxy)</option>
+                                        <option value="sse">SSE (HTTP)</option>
+                                        <option value="oauth">OAuth (HTTP with OAuth 2.0)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group transport-stdio transport-oauth" style="display: none;">
+                                    <label for="mcp-server-command">Command</label>
+                                    <input type="text" id="mcp-server-command" placeholder="e.g., npx @modelcontextprotocol/server-filesystem">
+                                </div>
+                                <div class="form-group transport-sse transport-oauth" style="display: none;">
+                                    <label for="mcp-server-url">Server URL</label>
+                                    <input type="url" id="mcp-server-url" placeholder="Enter MCP server URL">
+                                </div>
+                                <div class="form-group">
+                                    <label for="mcp-server-description">Description (Optional)</label>
+                                    <textarea id="mcp-server-description" placeholder="Brief description of this MCP server" rows="2"></textarea>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn primary-btn">Connect Server</button>
+                                    <button type="button" id="mcp-oauth-config-btn" class="btn secondary-btn transport-oauth" style="display: none;">Configure OAuth</button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <div class="mcp-command-history-section">
+                            <h3>Command History</h3>
+                            <p class="form-help">Previously executed MCP server commands. Click to start again.</p>
+                            <div id="mcp-command-history">
+                                <div class="empty-history-state" id="empty-history-state">
+                                    <p>No command history yet. Start a server to build your history.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mcp-oauth-section" id="mcp-oauth-section" style="display: none;">
+                            <!-- OAuth configuration will be inserted here by JavaScript -->
+                        </div>
+                        
+                        <div class="mcp-oauth-status-section" id="mcp-oauth-status-section" style="display: none;">
+                            <!-- OAuth status will be inserted here by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Connected MCP Servers Section (Expandable) -->
+                <div class="mcp-servers-section">
+                    <div class="mcp-servers-header">
+                        <i class="fas fa-chevron-right"></i>
+                        <h4>Connected MCP Servers (<span id="mcp-servers-count">0</span>)</h4>
+                    </div>
+                    <div class="mcp-servers-list" style="display: none;">
                         <p class="form-help">Manage your connected MCP servers and their available tools.</p>
                         <div id="mcp-servers-list">
                             <div class="empty-mcp-servers-state" id="empty-mcp-servers-state">
-                                <p>No MCP servers connected. Add a server below.</p>
+                                <p>No MCP servers connected. Add a server above.</p>
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="mcp-command-history-section">
-                        <h3>Command History</h3>
-                        <p class="form-help">Previously executed MCP server commands. Click to start again.</p>
-                        <div id="mcp-command-history">
-                            <div class="empty-history-state" id="empty-history-state">
-                                <p>No command history yet. Start a server to build your history.</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mcp-server-config">
-                        <div class="mcp-server-config-header">
-                            <h4>Add MCP Server</h4>
-                        </div>
-                        <form id="mcp-server-form" novalidate>
-                            <div class="form-group">
-                                <label for="mcp-server-name">Server Name</label>
-                                <input type="text" id="mcp-server-name" placeholder="Enter MCP server name" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="mcp-transport-type">Transport Type</label>
-                                <select id="mcp-transport-type" class="mcp-select">
-                                    <option value="stdio">Stdio (Local via Proxy)</option>
-                                    <option value="sse">SSE (HTTP)</option>
-                                    <option value="oauth">OAuth (HTTP with OAuth 2.0)</option>
-                                </select>
-                            </div>
-                            <div class="form-group transport-stdio transport-oauth" style="display: none;">
-                                <label for="mcp-server-command">Command</label>
-                                <input type="text" id="mcp-server-command" placeholder="e.g., npx @modelcontextprotocol/server-filesystem">
-                            </div>
-                            <div class="form-group transport-sse transport-oauth" style="display: none;">
-                                <label for="mcp-server-url">Server URL</label>
-                                <input type="url" id="mcp-server-url" placeholder="Enter MCP server URL">
-                            </div>
-                            <div class="form-group">
-                                <label for="mcp-server-description">Description (Optional)</label>
-                                <textarea id="mcp-server-description" placeholder="Brief description of this MCP server" rows="2"></textarea>
-                            </div>
-                            <div class="form-actions">
-                                <button type="submit" class="btn primary-btn">Connect Server</button>
-                                <button type="button" id="mcp-oauth-config-btn" class="btn secondary-btn transport-oauth" style="display: none;">Configure OAuth</button>
-                            </div>
-                        </form>
-                    </div>
-                    
-                    <div class="mcp-oauth-section" id="mcp-oauth-section" style="display: none;">
-                        <!-- OAuth configuration will be inserted here by JavaScript -->
-                    </div>
-                    
-                    <div class="mcp-oauth-status-section" id="mcp-oauth-status-section" style="display: none;">
-                        <!-- OAuth status will be inserted here by JavaScript -->
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="button" id="close-mcp-servers-modal" class="btn secondary-btn">Close</button>
-                    </div>
+                </div>
+                
+                <!-- Quick Connectors Section (outside expandables) -->
+                <div id="mcp-quick-connectors-placeholder">
+                    <!-- Quick connectors will be inserted here by JavaScript -->
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" id="close-mcp-servers-modal" class="btn secondary-btn">Close</button>
                 </div>
             </div>
         </div>
@@ -740,6 +762,7 @@ async function getCurrentTimeInBerlin() {
     <script src="js/components/function-calling-manager.js"></script>
     <!-- MCP Components (refactored into multiple modules) -->
     <script src="js/components/mcp/mcp-utils.js"></script>
+    <script src="js/components/mcp/mcp-modal-renderer.js"></script>
     <script src="js/components/mcp/mcp-ui-manager.js"></script>
     <script src="js/components/mcp/mcp-proxy-manager.js"></script>
     <script src="js/components/mcp/mcp-command-history.js"></script>

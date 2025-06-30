@@ -8,6 +8,7 @@ window.FunctionDetailsModal = (function() {
     
     let modal = null;
     let elements = {};
+    let currentData = {}; // Store current modal data for copying
     
     /**
      * Initialize the function details modal
@@ -37,11 +38,19 @@ window.FunctionDetailsModal = (function() {
         }
         
         if (elements.copyParametersBtn) {
-            elements.copyParametersBtn.addEventListener('click', () => copyToClipboard(elements.parameters.textContent, elements.copyParametersBtn));
+            elements.copyParametersBtn.addEventListener('click', () => {
+                // Copy compact JSON instead of display text
+                const compactJson = getCompactParametersJson();
+                copyToClipboard(compactJson, elements.copyParametersBtn);
+            });
         }
         
         if (elements.copyResultBtn) {
-            elements.copyResultBtn.addEventListener('click', () => copyToClipboard(elements.resultValue.textContent, elements.copyResultBtn));
+            elements.copyResultBtn.addEventListener('click', () => {
+                // Copy compact JSON instead of display text
+                const compactJson = getCompactResultJson();
+                copyToClipboard(compactJson, elements.copyResultBtn);
+            });
         }
         
         // Close modal when clicking outside
@@ -78,6 +87,9 @@ window.FunctionDetailsModal = (function() {
         }
         
         const { functionName, parameters, resultType, resultValue, executionTime, type } = data;
+        
+        // Store current data for copying
+        currentData = { functionName, parameters, resultType, resultValue, executionTime, type };
         
         // Set title and function name
         if (type === 'result') {
@@ -143,11 +155,65 @@ window.FunctionDetailsModal = (function() {
      */
     function formatResultValue(value, type) {
         try {
+            // Handle different value types properly
+            if (value === null) {
+                return 'null';
+            }
+            
+            if (value === undefined) {
+                return 'undefined';
+            }
+            
+            // If it's already a string, check if it's a JSON string that was double-encoded
+            if (typeof value === 'string') {
+                // Handle <br> tags differently based on whether this is JSON or plain text
+                let cleanValue = value;
+                if (cleanValue.toLowerCase().includes('<br')) {
+                    // First, try to parse as JSON with escaped newlines for <br> tags
+                    const jsonCleanValue = cleanValue.replace(/<br\s*\/?>/gi, '\\n');
+                    try {
+                        const parsed = JSON.parse(jsonCleanValue);
+                        // If parsing succeeds and type suggests object/array, pretty-print
+                        if ((type === 'object' || type === 'array') && (typeof parsed === 'object' && parsed !== null)) {
+                            console.log('[Modal] Converted <br> tags to escaped newlines and pretty-printed JSON');
+                            return JSON.stringify(parsed, null, 2);
+                        }
+                        // For other JSON values, return the parsed and re-stringified version
+                        console.log('[Modal] Converted <br> tags to escaped newlines in JSON');
+                        return JSON.stringify(parsed);
+                    } catch (e) {
+                        // Not valid JSON, treat as plain text and convert <br> to actual newlines
+                        cleanValue = cleanValue.replace(/<br\s*\/?>/gi, '\n');
+                        console.log('[Modal] Converted <br> tags to newlines in plain text');
+                        return cleanValue;
+                    }
+                }
+                
+                try {
+                    // Try to parse the string to see if it's JSON (without <br> tags)
+                    const parsed = JSON.parse(cleanValue);
+                    // If it parses successfully and the type suggests it should be an object/array,
+                    // display the parsed version with pretty formatting
+                    if ((type === 'object' || type === 'array') && (typeof parsed === 'object' && parsed !== null)) {
+                        return JSON.stringify(parsed, null, 2);
+                    }
+                    // Otherwise, if it's a simple JSON value, just return the cleaned string
+                    return cleanValue;
+                } catch (e) {
+                    // Not a JSON string, return the cleaned string as-is
+                    return cleanValue;
+                }
+            }
+            
+            // For actual objects/arrays, stringify with pretty formatting
             if (type === 'object' || type === 'array') {
                 return JSON.stringify(value, null, 2);
             }
+            
+            // For other types, convert to string
             return String(value);
         } catch (e) {
+            console.error('Error formatting result value:', e);
             return String(value);
         }
     }
@@ -162,6 +228,71 @@ window.FunctionDetailsModal = (function() {
         
         const time = parseInt(timeMs) || 0;
         return time < 1000 ? `${time}ms` : `${(time / 1000).toFixed(2)}s`;
+    }
+    
+    /**
+     * Get compact JSON representation of current parameters for copying
+     * @returns {string} - Compact JSON string
+     */
+    function getCompactParametersJson() {
+        try {
+            if (!currentData.parameters || Object.keys(currentData.parameters).length === 0) {
+                return '{}';
+            }
+            return JSON.stringify(currentData.parameters);
+        } catch (e) {
+            console.error('Error creating compact JSON:', e);
+            return String(currentData.parameters);
+        }
+    }
+    
+    /**
+     * Get compact JSON representation of current result for copying
+     * @returns {string} - Compact JSON string
+     */
+    function getCompactResultJson() {
+        try {
+            if (currentData.resultValue === undefined || currentData.resultValue === null) {
+                return '';
+            }
+            
+            // If it's already a string, return it as-is (unless it's a JSON string that needs parsing)
+            if (typeof currentData.resultValue === 'string') {
+                // Handle <br> tags for copying
+                let cleanValue = currentData.resultValue;
+                if (cleanValue.toLowerCase().includes('<br')) {
+                    // First, try to parse as JSON with escaped newlines for <br> tags
+                    const jsonCleanValue = cleanValue.replace(/<br\s*\/?>/gi, '\\n');
+                    try {
+                        const parsed = JSON.parse(jsonCleanValue);
+                        // If parsing succeeds, re-stringify compactly
+                        console.log('[Modal] Converted <br> tags to escaped newlines for JSON copying');
+                        return JSON.stringify(parsed);
+                    } catch (e) {
+                        // Not valid JSON, treat as plain text and convert <br> to actual newlines
+                        cleanValue = cleanValue.replace(/<br\s*\/?>/gi, '\n');
+                        console.log('[Modal] Converted <br> tags to newlines for plain text copying');
+                        return cleanValue;
+                    }
+                }
+                
+                // Try to parse it to see if it's a JSON string (without <br> tags)
+                try {
+                    const parsed = JSON.parse(cleanValue);
+                    // If parsing succeeds, re-stringify compactly
+                    return JSON.stringify(parsed);
+                } catch (e) {
+                    // Not a JSON string, return the cleaned value as-is
+                    return cleanValue;
+                }
+            }
+            
+            // For objects/arrays, stringify compactly
+            return JSON.stringify(currentData.resultValue);
+        } catch (e) {
+            console.error('Error creating compact result JSON:', e);
+            return String(currentData.resultValue);
+        }
     }
     
     /**

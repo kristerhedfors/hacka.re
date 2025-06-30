@@ -101,6 +101,7 @@ window.FunctionMarkers = (function() {
             
             // Use the new renderer if available, fallback to old method
             if (window.FunctionCallRenderer) {
+                console.log('[FunctionMarkers] Using FunctionCallRenderer for call:', functionName);
                 const element = window.FunctionCallRenderer.createCallIndicator({
                     functionName,
                     parameters,
@@ -109,9 +110,10 @@ window.FunctionMarkers = (function() {
                 return element.outerHTML;
             }
             
-            // Fallback for backward compatibility
+            // Fallback for backward compatibility (add data attributes)
+            console.log('[FunctionMarkers] Using fallback HTML for call:', functionName);
             const formattedArgs = JSON.stringify(parameters, null, 2);
-            return `<span class="function-call-icon ${colorClass}">𝑓<span class="function-icon-tooltip"><strong>Function:</strong> ${escapeHTML(functionName)}<br><strong>Parameters:</strong> ${escapeHTML(formattedArgs)}</span></span>`;
+            return `<span class="function-call-icon ${colorClass}" data-function-name="${escapeHTML(functionName)}" data-parameters="${escapeHTML(JSON.stringify(parameters))}" data-type="call">𝑓<span class="function-icon-tooltip"><strong>Function:</strong> ${escapeHTML(functionName)}<br><strong>Parameters:</strong> ${escapeHTML(formattedArgs)}</span></span>`;
         });
     }
     
@@ -241,6 +243,7 @@ window.FunctionMarkers = (function() {
             
             // Use the new renderer if available, fallback to old method
             if (window.FunctionCallRenderer) {
+                console.log('[FunctionMarkers] Using FunctionCallRenderer for result:', functionName);
                 const element = window.FunctionCallRenderer.createResultIndicator({
                     functionName,
                     resultType,
@@ -251,11 +254,12 @@ window.FunctionMarkers = (function() {
                 return element.outerHTML;
             }
             
-            // Fallback for backward compatibility
+            // Fallback for backward compatibility (add data attributes)
+            console.log('[FunctionMarkers] Using fallback HTML for result:', functionName);
             const { displayValue } = formatDisplayValue(decodedResult, resultType);
             const executionTimeFormatted = formatExecutionTime(executionTime);
             
-            return `<span class="function-result-icon ${colorClass}"><span class="function-icon-tooltip"><strong>Result:</strong> ${escapeHTML(functionName)}<br><strong>Type:</strong> ${escapeHTML(resultType)}<br><strong>Time:</strong> ${executionTimeFormatted}<br><strong>Value:</strong> ${escapeHTML(displayValue)}</span></span>`;
+            return `<span class="function-result-icon ${colorClass}" data-function-name="${escapeHTML(functionName)}" data-result-type="${escapeHTML(resultType)}" data-result-value="${escapeHTML(JSON.stringify(decodedResult))}" data-execution-time="${executionTime || 0}" data-type="result"><span class="function-icon-tooltip"><strong>Result:</strong> ${escapeHTML(functionName)}<br><strong>Type:</strong> ${escapeHTML(resultType)}<br><strong>Time:</strong> ${executionTimeFormatted}<br><strong>Value:</strong> ${escapeHTML(displayValue)}</span></span>`;
         });
     }
     
