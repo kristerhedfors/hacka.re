@@ -95,9 +95,16 @@ window.SettingsCoordinator = (function() {
         const newApiKey = elements.apiKeyInput && elements.apiKeyInput.value.trim();
         
         if (newApiKey) {
-            // Create update provider callback
+            // Create update provider callback that handles model selection too
             var updateProvider = componentManagers.baseUrl && componentManagers.baseUrl.updateProviderFromDetection
-                ? function(provider) { return componentManagers.baseUrl.updateProviderFromDetection(provider); }
+                ? function(detection) { 
+                    var defaultModel = componentManagers.baseUrl.updateProviderFromDetection(detection);
+                    // Auto-select default model if available
+                    if (defaultModel && componentManagers.model && componentManagers.model.selectModel) {
+                        componentManagers.model.selectModel(defaultModel);
+                    }
+                    return defaultModel;
+                }
                 : null;
             
             // Save API key using the API key manager

@@ -119,9 +119,13 @@ window.BaseUrlManager = (function() {
 
         /**
          * Update provider from API key detection
-         * @param {string} detectedProvider - The detected provider from API key
+         * @param {Object} detection - The detection result object
          */
-        function updateProviderFromDetection(detectedProvider) {
+        function updateProviderFromDetection(detection) {
+            if (!detection || !detection.provider) return;
+            
+            var detectedProvider = detection.provider;
+            
             // Map detection results to provider values
             var providerMapping = {
                 'openai': 'openai',
@@ -151,6 +155,9 @@ window.BaseUrlManager = (function() {
                 }
                 elements.baseUrlSelect.dispatchEvent(changeEvent);
             }
+            
+            // Return the default model if available
+            return detection.defaultModel;
         }
         
         // Public API

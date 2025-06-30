@@ -49,12 +49,18 @@ def test_api_key_detection_simple(page: Page, serve_hacka_re):
     # Wait for detection to appear
     expect(detection_element).to_be_visible(timeout=2000)
     expect(detection_text).to_contain_text("GroqCloud")
-    print("✅ GroqCloud API key detected")
+    expect(detection_text).to_contain_text("qwen3-32b")
+    print("✅ GroqCloud API key detected with model info")
     
     # Check provider dropdown
     provider_select = page.locator('#base-url-select')
     expect(provider_select).to_have_value('groq')
     print("✅ Provider auto-selected to 'groq'")
+    
+    # Check model dropdown for default Groq model
+    model_select = page.locator('#model-select')
+    expect(model_select).to_have_value('qwen3-32b')
+    print("✅ Default model auto-selected: qwen3-32b")
     
     # Clear and test OpenAI key
     api_key_input.clear()
@@ -67,11 +73,16 @@ def test_api_key_detection_simple(page: Page, serve_hacka_re):
     # Check detection message changed
     expect(detection_element).to_be_visible()
     expect(detection_text).to_contain_text("OpenAI")
-    print("✅ OpenAI API key detected")
+    expect(detection_text).to_contain_text("gpt-4.1-mini")
+    print("✅ OpenAI API key detected with model info")
     
     # Check provider dropdown changed
     expect(provider_select).to_have_value('openai')
     print("✅ Provider auto-selected to 'openai'")
+    
+    # Check model dropdown for default OpenAI model
+    expect(model_select).to_have_value('gpt-4.1-mini')
+    print("✅ Default model auto-selected: gpt-4.1-mini")
 
 
 if __name__ == "__main__":
