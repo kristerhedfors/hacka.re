@@ -112,6 +112,10 @@
                     <div class="form-group">
                         <label for="api-key">API Key</label>
                         <input type="password" id="api-key" placeholder="Enter your API key" required>
+                        <div id="api-key-detection" class="api-key-detection" style="display: none; margin-top: 5px; font-size: 0.9em; color: var(--text-color-secondary);">
+                            <i class="fas fa-check-circle" style="color: #28a745; margin-right: 5px;"></i>
+                            <span id="api-key-detection-text"></span>
+                        </div>
                     </div>
                     <div class="form-actions">
                         <button type="submit" class="btn primary-btn">Save API Key</button>
@@ -596,6 +600,10 @@ async function getCurrentTimeInBerlin() {
                     <div class="form-group">
                         <label for="api-key-update">API Key</label>
                         <input type="password" id="api-key-update" name="api-key-update" placeholder="Update your API key" aria-label="API Key Input">
+                        <div id="api-key-update-detection" class="api-key-detection" style="display: none; margin-top: 5px; font-size: 0.9em; color: var(--text-color-secondary);">
+                            <i class="fas fa-check-circle" style="color: #28a745; margin-right: 5px;"></i>
+                            <span id="api-key-update-detection-text"></span>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="model-select">Model</label>
@@ -779,7 +787,9 @@ async function getCurrentTimeInBerlin() {
     <script src="js/services/chat-ui-service.js"></script>
     <script src="js/components/chat-manager.js"></script>
     <!-- Settings Manager Components -->
+    <script src="js/utils/api-key-detector.js"></script>
     <script src="js/components/settings/api-key-manager.js"></script>
+    <script src="js/components/settings/api-key-input-handler.js"></script>
     <script src="js/components/settings/model-manager.js"></script>
     <script src="js/components/settings/system-prompt-manager.js"></script>
     <script src="js/components/settings/base-url-manager.js"></script>
