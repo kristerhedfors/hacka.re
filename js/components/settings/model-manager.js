@@ -356,6 +356,11 @@ window.ModelManager = (function() {
                     updateContextUsage();
                 }
                 
+                // Notify other components that models have been updated
+                document.dispatchEvent(new CustomEvent('models-updated', { 
+                    detail: { count: fetchedModelIds.length } 
+                }));
+                
                 return { success: true };
                 
             } catch (error) {
