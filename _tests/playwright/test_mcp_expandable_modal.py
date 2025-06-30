@@ -8,6 +8,7 @@ import pytest
 from playwright.sync_api import sync_playwright, expect
 import os
 import time
+import re
 
 def test_mcp_expandable_modal():
     """Test the new MCP modal with expandable sections"""
@@ -88,7 +89,7 @@ def test_mcp_expandable_modal():
         
         # Check that chevron icon rotated
         advanced_icon = page.locator('.mcp-advanced-header i')
-        expect(advanced_icon).to_have_class(/fa-chevron-down/)
+        expect(advanced_icon).to_have_class(re.compile(r'fa-chevron-down'))
         
         print("✅ Advanced section expanded successfully")
         
@@ -112,7 +113,7 @@ def test_mcp_expandable_modal():
         expect(advanced_list).to_have_css('display', 'none')
         
         # Check that chevron icon rotated back
-        expect(advanced_icon).to_have_class(/fa-chevron-right/)
+        expect(advanced_icon).to_have_class(re.compile(r'fa-chevron-right'))
         
         print("✅ Advanced section collapsed successfully")
         
@@ -125,7 +126,7 @@ def test_mcp_expandable_modal():
         
         # Check that chevron icon rotated
         servers_icon = page.locator('.mcp-servers-header i')
-        expect(servers_icon).to_have_class(/fa-chevron-down/)
+        expect(servers_icon).to_have_class(re.compile(r'fa-chevron-down'))
         
         print("✅ Connected Servers section expanded successfully")
         
@@ -147,7 +148,7 @@ def test_mcp_expandable_modal():
         expect(servers_list).to_have_css('display', 'none')
         
         # Check that chevron icon rotated back
-        expect(servers_icon).to_have_class(/fa-chevron-right/)
+        expect(servers_icon).to_have_class(re.compile(r'fa-chevron-right'))
         
         print("✅ Connected Servers section collapsed successfully")
         
