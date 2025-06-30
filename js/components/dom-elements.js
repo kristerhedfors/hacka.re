@@ -122,7 +122,12 @@ window.DOMElements = (function() {
             modelStats: document.querySelector('.model-stats'),
             usageFill: document.querySelector('.usage-fill'),
             usageText: document.querySelector('.usage-text'),
-            tokenSpeedText: document.querySelector('.token-speed-text')
+            tokenSpeedText: document.querySelector('.token-speed-text'),
+            
+            // Model selector modal elements
+            modelSelectorModal: document.getElementById('model-selector-modal'),
+            modelSearchInput: document.getElementById('model-search-input'),
+            modelListContainer: document.getElementById('model-list-container')
         };
     }
 
