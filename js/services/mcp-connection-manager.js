@@ -128,6 +128,11 @@ class Connection {
                     // Register tools with Function Calling Manager for UI display
                     if (window.MCPToolsManager && window.MCPToolsManager.registerServerTools) {
                         try {
+                            // First unregister existing tools to avoid collisions
+                            if (window.MCPToolsManager.unregisterServerTools) {
+                                window.MCPToolsManager.unregisterServerTools(this.name);
+                            }
+                            // Then register the refreshed tools
                             window.MCPToolsManager.registerServerTools(this.name);
                         } catch (error) {
                             console.warn(`Failed to register MCP tools with Function Calling Manager: ${error.message}`);

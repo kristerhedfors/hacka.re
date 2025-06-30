@@ -292,11 +292,17 @@ async function ${functionName}(params = {}) {
         const tools = getServerTools(serverName);
         let unregisteredCount = 0;
         
-        if (window.FunctionCallingManager && window.FunctionCallingManager.deleteFunction) {
+        // Use FunctionToolsService to remove functions directly
+        if (window.FunctionToolsService && window.FunctionToolsService.removeJsFunction) {
             for (const toolInfo of tools) {
                 try {
-                    window.FunctionCallingManager.deleteFunction(toolInfo.functionName);
-                    unregisteredCount++;
+                    // Check if the function exists before trying to remove it
+                    const functions = window.FunctionToolsService.getJsFunctions();
+                    if (functions[toolInfo.functionName]) {
+                        window.FunctionToolsService.removeJsFunction(toolInfo.functionName);
+                        unregisteredCount++;
+                        console.log(`Unregistered MCP tool "${toolInfo.functionName}" from ${serverName}`);
+                    }
                 } catch (error) {
                     console.error(`Failed to unregister tool ${toolInfo.tool.name}:`, error);
                 }
@@ -305,6 +311,8 @@ async function ${functionName}(params = {}) {
             if (unregisteredCount > 0) {
                 notificationHandler(`Unregistered ${unregisteredCount} tools from ${serverName}`, 'info');
             }
+        } else {
+            console.warn('[MCPToolsManager] FunctionToolsService not available for unregistering tools');
         }
     }
     

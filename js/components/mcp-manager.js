@@ -194,6 +194,57 @@ window.MCPManager = (function() {
         
         // Utilities
         copyExampleCommand: (command) => utils.copyToClipboard(command, 'Example copied to clipboard'),
+        quickConnectCommand: (inputId) => {
+            const input = document.getElementById(inputId);
+            if (!input) {
+                console.error('[MCPManager] Quick connect input not found:', inputId);
+                return;
+            }
+            const command = input.value.trim();
+            if (!command) {
+                utils.showNotification('Please enter a command first', 'error');
+                return;
+            }
+            
+            // Fill the command into the main form and submit
+            const commandInput = document.getElementById('mcp-server-command');
+            const commandModeRadio = document.querySelector('input[name="input-mode"][value="command"]');
+            
+            if (commandInput && commandModeRadio) {
+                // Switch to command mode
+                commandModeRadio.checked = true;
+                commandModeRadio.dispatchEvent(new Event('change'));
+                
+                // Fill the command
+                commandInput.value = command;
+                
+                // Auto-extract server name from command
+                const serverNameInput = document.getElementById('mcp-server-name');
+                if (serverNameInput) {
+                    let serverName = '';
+                    if (command.includes('server-filesystem')) {
+                        serverName = 'filesystem';
+                    } else if (command.includes('server-memory')) {
+                        serverName = 'memory';
+                    } else if (command.includes('mcp/filesystem')) {
+                        serverName = 'filesystem-docker';
+                    } else {
+                        serverName = 'mcp-server';
+                    }
+                    serverNameInput.value = serverName;
+                }
+                
+                // Submit the form
+                const form = document.getElementById('mcp-server-form');
+                if (form) {
+                    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+                } else {
+                    console.error('[MCPManager] Could not find MCP server form');
+                }
+            } else {
+                console.error('[MCPManager] Could not find command form elements');
+            }
+        },
         
         // Tool management
         copyToolUsage: (serverName, toolName) => toolsManager.copyToolUsage(serverName, toolName),

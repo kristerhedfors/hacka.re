@@ -27,8 +27,27 @@ window.MCPUIManager = (function() {
             return false;
         }
         
-        setupProxyConnectionUI();
+        // Initialize expandable sections functionality first
+        if (window.MCPModalRenderer) {
+            window.MCPModalRenderer.initializeExpandCollapse();
+        } else {
+            console.warn('[MCPUIManager] MCPModalRenderer not available');
+        }
+        
         addMCPStyles();
+        setupProxyConnectionUI();
+        
+        // Add quick connectors if available (independent of proxy setup)
+        if (window.MCPQuickConnectors) {
+            const modalContent = elements.mcpModal.querySelector('.modal-content');
+            if (modalContent) {
+                console.log('[MCPUIManager] Adding quick connectors to modal');
+                window.MCPQuickConnectors.createQuickConnectorsUI(modalContent);
+            }
+        } else {
+            console.warn('[MCPUIManager] MCPQuickConnectors not available');
+        }
+        
         return true;
     }
     
@@ -65,15 +84,16 @@ window.MCPUIManager = (function() {
             return;
         }
         
-        const serversContainer = modalContent.querySelector('.mcp-servers-container');
-        if (!serversContainer) {
-            console.error('[MCPUIManager] Could not find servers container');
+        // Find the proxy section placeholder
+        const proxyPlaceholder = modalContent.querySelector('#mcp-proxy-section-placeholder');
+        if (!proxyPlaceholder) {
+            console.error('[MCPUIManager] Could not find proxy section placeholder');
             return;
         }
         
-        // Create proxy connection section
+        // Create proxy connection section and replace the placeholder
         const proxySection = createProxySection();
-        modalContent.insertBefore(proxySection, serversContainer);
+        proxyPlaceholder.parentNode.replaceChild(proxySection, proxyPlaceholder);
         
         // Get references to new elements
         elements.proxyUrlInput = document.getElementById('mcp-proxy-url');
@@ -82,14 +102,6 @@ window.MCPUIManager = (function() {
         
         // Setup input mode toggle
         setupInputModeToggle();
-        
-        // Add quick connectors if available
-        if (window.MCPQuickConnectors) {
-            console.log('[MCPUIManager] Adding quick connectors to modal');
-            window.MCPQuickConnectors.createQuickConnectorsUI(modalContent);
-        } else {
-            console.warn('[MCPUIManager] MCPQuickConnectors not available');
-        }
     }
     
     /**
@@ -127,42 +139,58 @@ window.MCPUIManager = (function() {
                 </div>
                 
                 <div id="command-examples">
-                    <p class="form-help"><strong>Example commands:</strong></p>
-                    <div style="background-color: var(--ai-msg-bg); padding: 0.75rem; border-radius: var(--border-radius); margin-bottom: 0.5rem; position: relative;">
-                        <strong>Filesystem (npx - specific user):</strong>
-                        <button class="btn secondary-btn" onclick="MCPManager.copyExampleCommand('npx -y @modelcontextprotocol/server-filesystem /Users/user')" 
-                                style="position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.25rem 0.5rem; font-size: 0.8rem;" 
-                                title="Copy command">
-                            <i class="fas fa-copy"></i>
-                        </button><br>
-                        <code style="font-size: 0.85rem;">npx -y @modelcontextprotocol/server-filesystem /Users/user</code>
+                    <p class="form-help"><strong>Quick Connect Commands:</strong></p>
+                    
+                    <div style="background-color: var(--ai-msg-bg); padding: 0.75rem; border-radius: var(--border-radius); margin-bottom: 0.75rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <strong>Filesystem (User Directory)</strong>
+                            <button class="btn primary-btn" onclick="MCPManager.quickConnectCommand('quick-cmd-1')" 
+                                    style="padding: 0.25rem 0.75rem; font-size: 0.8rem;" 
+                                    title="Connect with this command">
+                                <i class="fas fa-plug"></i> Connect
+                            </button>
+                        </div>
+                        <input type="text" id="quick-cmd-1" value="npx -y @modelcontextprotocol/server-filesystem /Users/user" 
+                               style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; font-family: monospace; font-size: 0.85rem;">
                     </div>
-                    <div style="background-color: var(--ai-msg-bg); padding: 0.75rem; border-radius: var(--border-radius); margin-bottom: 0.5rem; position: relative;">
-                        <strong>Filesystem (npx - Desktop):</strong>
-                        <button class="btn secondary-btn" onclick="MCPManager.copyExampleCommand('npx -y @modelcontextprotocol/server-filesystem /Users/user/Desktop')" 
-                                style="position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.25rem 0.5rem; font-size: 0.8rem;" 
-                                title="Copy command">
-                            <i class="fas fa-copy"></i>
-                        </button><br>
-                        <code style="font-size: 0.85rem;">npx -y @modelcontextprotocol/server-filesystem /Users/user/Desktop</code>
+                    
+                    <div style="background-color: var(--ai-msg-bg); padding: 0.75rem; border-radius: var(--border-radius); margin-bottom: 0.75rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <strong>Filesystem (Desktop)</strong>
+                            <button class="btn primary-btn" onclick="MCPManager.quickConnectCommand('quick-cmd-2')" 
+                                    style="padding: 0.25rem 0.75rem; font-size: 0.8rem;" 
+                                    title="Connect with this command">
+                                <i class="fas fa-plug"></i> Connect
+                            </button>
+                        </div>
+                        <input type="text" id="quick-cmd-2" value="npx -y @modelcontextprotocol/server-filesystem /Users/user/Desktop" 
+                               style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; font-family: monospace; font-size: 0.85rem;">
                     </div>
-                    <div style="background-color: var(--ai-msg-bg); padding: 0.75rem; border-radius: var(--border-radius); margin-bottom: 0.5rem; position: relative;">
-                        <strong>Memory Server:</strong>
-                        <button class="btn secondary-btn" onclick="MCPManager.copyExampleCommand('npx -y @modelcontextprotocol/server-memory')" 
-                                style="position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.25rem 0.5rem; font-size: 0.8rem;" 
-                                title="Copy command">
-                            <i class="fas fa-copy"></i>
-                        </button><br>
-                        <code style="font-size: 0.85rem;">npx -y @modelcontextprotocol/server-memory</code>
+                    
+                    <div style="background-color: var(--ai-msg-bg); padding: 0.75rem; border-radius: var(--border-radius); margin-bottom: 0.75rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <strong>Memory Server</strong>
+                            <button class="btn primary-btn" onclick="MCPManager.quickConnectCommand('quick-cmd-3')" 
+                                    style="padding: 0.25rem 0.75rem; font-size: 0.8rem;" 
+                                    title="Connect with this command">
+                                <i class="fas fa-plug"></i> Connect
+                            </button>
+                        </div>
+                        <input type="text" id="quick-cmd-3" value="npx -y @modelcontextprotocol/server-memory" 
+                               style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; font-family: monospace; font-size: 0.85rem;">
                     </div>
-                    <div style="background-color: var(--ai-msg-bg); padding: 0.75rem; border-radius: var(--border-radius); position: relative;">
-                        <strong>Filesystem (Docker):</strong>
-                        <button class="btn secondary-btn" onclick="MCPManager.copyExampleCommand('docker run -i --rm --mount type=bind,src=/Users/user/Desktop,dst=/projects/Desktop mcp/filesystem /projects')" 
-                                style="position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.25rem 0.5rem; font-size: 0.8rem;" 
-                                title="Copy command">
-                            <i class="fas fa-copy"></i>
-                        </button><br>
-                        <code style="font-size: 0.85rem;">docker run -i --rm --mount type=bind,src=/Users/user/Desktop,dst=/projects/Desktop mcp/filesystem /projects</code>
+                    
+                    <div style="background-color: var(--ai-msg-bg); padding: 0.75rem; border-radius: var(--border-radius);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <strong>Filesystem (Docker)</strong>
+                            <button class="btn primary-btn" onclick="MCPManager.quickConnectCommand('quick-cmd-4')" 
+                                    style="padding: 0.25rem 0.75rem; font-size: 0.8rem;" 
+                                    title="Connect with this command">
+                                <i class="fas fa-plug"></i> Connect
+                            </button>
+                        </div>
+                        <input type="text" id="quick-cmd-4" value="docker run -i --rm --mount type=bind,src=/Users/user/Desktop,dst=/projects/Desktop mcp/filesystem /projects" 
+                               style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; font-family: monospace; font-size: 0.85rem;">
                     </div>
                 </div>
                 
@@ -188,55 +216,6 @@ window.MCPUIManager = (function() {
                 </div>
                 
                 <p class="form-help"><strong>💡 Note:</strong> The form below adapts to your chosen input mode. Server name will be auto-detected or extracted from config.</p>
-            </div>
-            <div style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 0.75rem; border-radius: var(--border-radius); margin: 1rem 0;">
-                <h4 style="margin: 0 0 0.5rem 0;">🚀 One-Liner Commands (Standalone)</h4>
-                <p class="form-help" style="margin: 0 0 0.75rem 0;">Copy these standalone commands - no separate proxy needed:</p>
-                
-                <div style="background-color: var(--ai-msg-bg); padding: 0.75rem; border-radius: var(--border-radius); margin-bottom: 0.5rem; position: relative;">
-                    <strong>Filesystem Server (User Directory):</strong>
-                    <button class="btn secondary-btn" onclick="MCPManager.copyExampleCommand('node mcp-stdio-proxy/mcp-http-wrapper.js npx @modelcontextprotocol/server-filesystem /Users/user')" 
-                            style="position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.25rem 0.5rem; font-size: 0.8rem;" 
-                            title="Copy one-liner command">
-                        <i class="fas fa-copy"></i>
-                    </button><br>
-                    <code style="font-size: 0.85rem;">node mcp-stdio-proxy/mcp-http-wrapper.js npx @modelcontextprotocol/server-filesystem /Users/user</code>
-                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
-                        Standalone filesystem server for user directory on port 3001
-                    </div>
-                </div>
-                
-                <div style="background-color: var(--ai-msg-bg); padding: 0.75rem; border-radius: var(--border-radius); margin-bottom: 0.5rem; position: relative;">
-                    <strong>Memory Server:</strong>
-                    <button class="btn secondary-btn" onclick="MCPManager.copyExampleCommand('node mcp-stdio-proxy/mcp-http-wrapper.js npx @modelcontextprotocol/server-memory')" 
-                            style="position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.25rem 0.5rem; font-size: 0.8rem;" 
-                            title="Copy one-liner command">
-                        <i class="fas fa-copy"></i>
-                    </button><br>
-                    <code style="font-size: 0.85rem;">node mcp-stdio-proxy/mcp-http-wrapper.js npx @modelcontextprotocol/server-memory</code>
-                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
-                        Standalone memory server on port 3001
-                    </div>
-                </div>
-                
-                <div style="background-color: var(--ai-msg-bg); padding: 0.75rem; border-radius: var(--border-radius); margin-bottom: 0.5rem; position: relative;">
-                    <strong>Custom Directory with Debug:</strong>
-                    <button class="btn secondary-btn" onclick="MCPManager.copyExampleCommand('node mcp-stdio-proxy/mcp-http-wrapper.js npx @modelcontextprotocol/server-filesystem /Users/user/Documents --port=8080 --debug')" 
-                            style="position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.25rem 0.5rem; font-size: 0.8rem;" 
-                            title="Copy one-liner command">
-                        <i class="fas fa-copy"></i>
-                    </button><br>
-                    <code style="font-size: 0.85rem;">node mcp-stdio-proxy/mcp-http-wrapper.js npx @modelcontextprotocol/server-filesystem /Users/user/Documents --port=8080 --debug</code>
-                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
-                        Documents directory on custom port with debug output
-                    </div>
-                </div>
-                
-                <div style="font-size: 0.85rem; margin-top: 0.75rem; padding: 0.5rem; background-color: rgba(0,0,0,0.05); border-radius: 4px;">
-                    <strong>How it works:</strong> Run these commands from the hacka.re directory. Each command starts an MCP server + HTTP wrapper in one process. 
-                    Connect hacka.re directly to the port (default 3001) - no separate proxy needed!
-                    <br><strong>Usage:</strong> Copy and paste the full command including <code>node mcp-stdio-proxy/mcp-http-wrapper.js</code> prefix.
-                </div>
             </div>
         `;
         return proxySection;
