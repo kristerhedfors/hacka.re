@@ -32,6 +32,14 @@ document.addEventListener('DOMContentLoaded', function() {
         DebugService.log('Function Details Modal initialized');
     }
     
+    // Initialize Model Selector Modal if available
+    if (window.ModelSelectorModal && window.DOMElements) {
+        const elements = DOMElements.getElements();
+        const modelSelectorModal = ModelSelectorModal.createModelSelectorModal(elements);
+        window.modelSelectorModal = modelSelectorModal;
+        DebugService.log('Model Selector Modal initialized');
+    }
+    
     // Initialize title and subtitle from localStorage if available
     if (window.StorageService) {
         // Update title and subtitle on page load
