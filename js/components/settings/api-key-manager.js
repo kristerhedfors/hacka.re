@@ -14,10 +14,17 @@ window.ApiKeyManager = (function() {
          * @param {string} apiKey - The API key to save
          * @param {Function} hideApiKeyModal - Function to hide API key modal
          * @param {Function} addSystemMessage - Function to add system message
+         * @param {Function} updateProvider - Function to update provider if auto-detected
          * @returns {boolean} True if API key was saved successfully
          */
-        function saveApiKey(apiKey, hideApiKeyModal, addSystemMessage) {
+        function saveApiKey(apiKey, hideApiKeyModal, addSystemMessage, updateProvider) {
             if (apiKey) {
+                // Auto-detect provider and update if detected
+                var detection = window.ApiKeyDetector ? window.ApiKeyDetector.detectProvider(apiKey) : null;
+                if (detection && updateProvider) {
+                    updateProvider(detection.provider);
+                }
+                
                 // Save API key to local storage
                 StorageService.saveApiKey(apiKey);
                 
@@ -26,9 +33,12 @@ window.ApiKeyManager = (function() {
                     hideApiKeyModal();
                 }
                 
-                // Add welcome message
+                // Add welcome message with provider info if detected
                 if (addSystemMessage) {
-                    addSystemMessage('API key saved. You can now start chatting with AI models.');
+                    var message = detection 
+                        ? 'API key saved and ' + detection.providerName + ' provider auto-selected. You can now start chatting with AI models.'
+                        : 'API key saved. You can now start chatting with AI models.';
+                    addSystemMessage(message);
                 }
                 
                 return true;
@@ -64,12 +74,22 @@ window.ApiKeyManager = (function() {
             
             return `${first4}${maskedPart}${last4}`;
         }
+
+        /**
+         * Get provider detection info for an API key
+         * @param {string} apiKey - The API key to analyze
+         * @returns {Object|null} Detection result with provider info
+         */
+        function getProviderDetection(apiKey) {
+            return window.ApiKeyDetector ? window.ApiKeyDetector.detectProvider(apiKey) : null;
+        }
         
         // Public API
         return {
             saveApiKey,
             getApiKey,
-            maskApiKey
+            maskApiKey,
+            getProviderDetection
         };
     }
 

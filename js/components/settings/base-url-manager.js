@@ -116,6 +116,42 @@ window.BaseUrlManager = (function() {
                 return DataService.getDefaultBaseUrlForProvider(selectedProvider);
             }
         }
+
+        /**
+         * Update provider from API key detection
+         * @param {string} detectedProvider - The detected provider from API key
+         */
+        function updateProviderFromDetection(detectedProvider) {
+            // Map detection results to provider values
+            var providerMapping = {
+                'openai': 'openai',
+                'groq': 'groq'
+            };
+
+            var mappedProvider = providerMapping[detectedProvider];
+            if (!mappedProvider) return;
+
+            // Always save the base URL and provider when detected
+            var newBaseUrl = DataService.getDefaultBaseUrlForProvider(mappedProvider);
+            saveBaseUrl(newBaseUrl, mappedProvider);
+            
+            // Update the UI if the dropdown exists (in settings modal)
+            if (elements.baseUrlSelect && elements.baseUrlSelect.value !== mappedProvider) {
+                // Update the provider dropdown
+                elements.baseUrlSelect.value = mappedProvider;
+                
+                // Trigger the change event to update the UI properly
+                var changeEvent;
+                if (typeof Event === 'function') {
+                    changeEvent = new Event('change', { bubbles: true });
+                } else {
+                    // IE11 fallback
+                    changeEvent = document.createEvent('Event');
+                    changeEvent.initEvent('change', true, true);
+                }
+                elements.baseUrlSelect.dispatchEvent(changeEvent);
+            }
+        }
         
         // Public API
         return {
@@ -124,7 +160,8 @@ window.BaseUrlManager = (function() {
             saveBaseUrl,
             getBaseUrlProvider,
             getDefaultBaseUrlForProvider,
-            determineBaseUrl
+            determineBaseUrl,
+            updateProviderFromDetection
         };
     }
 
