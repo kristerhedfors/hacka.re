@@ -20,6 +20,8 @@ window.DOMElements = (function() {
             apiKeyModal: document.getElementById('api-key-modal'),
             apiKeyForm: document.getElementById('api-key-form'),
             apiKeyInput: document.getElementById('api-key'),
+            apiKeyDetection: document.getElementById('api-key-detection'),
+            apiKeyDetectionText: document.getElementById('api-key-detection-text'),
             
             // Share modal elements
             shareBtn: document.getElementById('share-btn'),
@@ -102,6 +104,8 @@ window.DOMElements = (function() {
             modelSelect: document.getElementById('model-select'),
             modelReloadBtn: document.getElementById('model-reload-btn'),
             apiKeyUpdate: document.getElementById('api-key-update'),
+            apiKeyUpdateDetection: document.getElementById('api-key-update-detection'),
+            apiKeyUpdateDetectionText: document.getElementById('api-key-update-detection-text'),
             baseUrlSelect: document.getElementById('base-url-select'),
             baseUrl: document.getElementById('base-url'),
             customBaseUrlGroup: document.getElementById('custom-base-url-group'),

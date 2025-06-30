@@ -42,11 +42,17 @@ window.SettingsStateManager = (function() {
     /**
      * Initialize component managers for settings functionality
      * @param {Object} componentManagers - Component managers object
+     * @param {Object} elements - DOM elements for initialization
      */
-    function initializeComponents(componentManagers) {
+    function initializeComponents(componentManagers, elements) {
         componentManagers.model.init();
         componentManagers.systemPrompt.init();
         componentManagers.baseUrl.init();
+        
+        // Initialize API key input handlers for auto-detection
+        if (window.ApiKeyInputHandler && elements) {
+            window.ApiKeyInputHandler.setupApiKeyInputHandlers(elements, componentManagers);
+        }
     }
     
     /**

@@ -41,7 +41,7 @@ window.SettingsManager = (function() {
             SettingsStateManager.updateStateCallbacks(state, sessionKeyGetter, messagesUpdater, updateModelInfoDisplay);
             
             // Initialize component managers
-            SettingsStateManager.initializeComponents(componentManagers);
+            SettingsStateManager.initializeComponents(componentManagers, elements);
             
             // Process shared link initialization or normal initialization
             SettingsInitialization.processSharedLinkInitialization(
