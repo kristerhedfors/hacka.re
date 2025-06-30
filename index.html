@@ -632,6 +632,31 @@ async function getCurrentTimeInBerlin() {
             </div>
         </div>
 
+        <!-- Model Selector Modal -->
+        <div id="model-selector-modal" class="modal">
+            <div class="modal-content">
+                <div class="settings-header">
+                    <h2>Select Model</h2>
+                    <span class="info-icon" id="model-selector-info-icon">
+                        <i class="fas fa-info-circle"></i>
+                        <div class="tooltip">
+                            <div class="tooltip-content">
+                                <strong>Model Selector</strong><br>
+                                Type to search and filter models. Use arrow keys to navigate, Enter to select, or Escape to cancel.
+                            </div>
+                        </div>
+                    </span>
+                </div>
+                
+                <div class="model-selector-content">
+                    <input type="text" id="model-search-input" class="model-search-input" placeholder="Type to search models..." autocomplete="off">
+                    <div id="model-list-container" class="model-list-container">
+                        <!-- Models will be populated dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <main>
             <div id="chat-container">
                 <div id="chat-messages">
@@ -749,6 +774,7 @@ async function getCurrentTimeInBerlin() {
     <script src="js/components/ui/modal-manager.js"></script>
     <script src="js/components/ui/context-usage-display.js"></script>
     <script src="js/components/ui/model-info-display.js"></script>
+    <script src="js/components/ui/model-selector-modal.js"></script>
     <script src="js/components/ui/share-ui-manager.js"></script>
     <script src="js/components/ui/ui-coordinator.js"></script>
     <!-- Legacy UI manager wrapper -->
