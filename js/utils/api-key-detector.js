@@ -11,12 +11,14 @@ window.ApiKeyDetector = (function() {
         openai: {
             pattern: /^sk-proj-[A-Za-z0-9\-_]{50,}$/,
             providerValue: 'openai',
-            providerName: 'OpenAI'
+            providerName: 'OpenAI',
+            defaultModel: 'gpt-4.1-mini'
         },
         groqcloud: {
             pattern: /^gsk_[A-Za-z0-9]{32,}$/,
             providerValue: 'groq',
-            providerName: 'GroqCloud'
+            providerName: 'GroqCloud',
+            defaultModel: 'qwen/qwen3-32b'
         }
     };
 
@@ -41,6 +43,7 @@ window.ApiKeyDetector = (function() {
                     return {
                         provider: config.providerValue,
                         providerName: config.providerName,
+                        defaultModel: config.defaultModel,
                         detected: true
                     };
                 }
