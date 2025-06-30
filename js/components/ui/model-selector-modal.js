@@ -376,23 +376,39 @@ window.ModelSelectorModal = (function() {
 
     function selectModel(model) {
         try {
+            console.log(`Selecting model: ${model}`);
+            
             // Save the selected model using StorageService (which ModelManager uses)
             if (window.StorageService && window.StorageService.saveModel) {
                 window.StorageService.saveModel(model);
+                console.log('Model saved to storage');
             }
 
             // Update the model select dropdown if it exists
             const modelSelect = document.getElementById('model-select');
             if (modelSelect) {
+                console.log(`Setting dropdown value from ${modelSelect.value} to ${model}`);
                 modelSelect.value = model;
                 // Trigger change event to notify other components
                 const changeEvent = new Event('change', { bubbles: true });
                 modelSelect.dispatchEvent(changeEvent);
+                console.log('Dropdown updated and change event dispatched');
+            } else {
+                console.warn('Model select dropdown not found');
+            }
+
+            // Also use the settings manager's model component (like settings modal does)
+            if (window.aiHackare?.settingsManager?.saveModel) {
+                window.aiHackare.settingsManager.saveModel(model);
+                console.log('Model saved via SettingsManager');
+            } else {
+                console.log('SettingsManager.saveModel not available');
             }
 
             // Update the UI using ModelInfoDisplay
             if (window.ModelInfoDisplay && window.ModelInfoDisplay.updateModelInfoDisplay) {
                 window.ModelInfoDisplay.updateModelInfoDisplay();
+                console.log('Model info display updated');
             }
 
             // Update context usage if chat manager is available
@@ -401,9 +417,10 @@ window.ModelSelectorModal = (function() {
                     window.aiHackare.uiManager.updateContextUsage.bind(window.aiHackare.uiManager),
                     model
                 );
+                console.log('Context usage updated');
             }
 
-            console.log('Model selected:', model);
+            console.log('Model selection completed successfully');
         } catch (error) {
             console.error('Error selecting model:', error);
         }
