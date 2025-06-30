@@ -10,14 +10,20 @@ window.ModelSelectorModal = (function() {
     let filteredModels = [];
     let highlightedIndex = -1;
     let searchQuery = '';
+    
+    // Cache for models by provider (baseUrl + apiKey combination)
+    let modelsCache = new Map();
+    let isFirstLoad = true;
 
     function createModelSelectorModal(domElements) {
         elements = domElements;
         attachEventListeners();
+        setupModelUpdateListener();
         return {
             show: showModal,
             hide: hideModal,
-            setModels: setAvailableModels
+            setModels: setAvailableModels,
+            clearCache: clearModelsCache
         };
     }
 
@@ -101,27 +107,43 @@ window.ModelSelectorModal = (function() {
         }
     }
 
-    function showModal() {
+    async function showModal() {
         if (!elements.modelSelectorModal) return;
 
-        // Load available models
-        loadAvailableModels().then(() => {
-            // Reset search state
-            searchQuery = '';
-            highlightedIndex = -1;
+        // Reset search state
+        searchQuery = '';
+        highlightedIndex = -1;
+        
+        // Show modal immediately
+        elements.modelSelectorModal.classList.add('active');
+        
+        // Focus search input
+        if (elements.modelSearchInput) {
+            elements.modelSearchInput.value = '';
+            elements.modelSearchInput.focus();
+        }
+        
+        // Show loading state
+        if (elements.modelListContainer) {
+            elements.modelListContainer.innerHTML = '<div class="model-item"><div class="model-name">Loading models...</div></div>';
+        }
+
+        try {
+            // Clear cache to force fresh check of dropdown
+            console.log('Clearing cache to check for fresh models');
+            modelsCache.clear();
             
-            // Show modal
-            elements.modelSelectorModal.classList.add('active');
+            // Load available models (fresh from dropdown or API)
+            await loadAvailableModels();
             
-            // Focus search input
-            if (elements.modelSearchInput) {
-                elements.modelSearchInput.value = '';
-                elements.modelSearchInput.focus();
-            }
-            
-            // Render all models initially
+            // Render all models
             filterAndRenderModels();
-        });
+        } catch (error) {
+            console.error('Error loading models:', error);
+            if (elements.modelListContainer) {
+                elements.modelListContainer.innerHTML = '<div class="model-item"><div class="model-name">Error loading models</div></div>';
+            }
+        }
     }
 
     function hideModal() {
@@ -143,44 +165,94 @@ window.ModelSelectorModal = (function() {
         }
     }
 
-    async function loadAvailableModels() {
-        try {
-            // Get models from the model select dropdown if available (populated by ModelManager)
-            const modelSelect = document.getElementById('model');
-            if (modelSelect && modelSelect.options.length > 0) {
-                const models = [];
-                for (let i = 0; i < modelSelect.options.length; i++) {
-                    const option = modelSelect.options[i];
-                    if (option.value && option.value !== '') {
-                        models.push(option.value);
-                    }
+    function getCacheKey() {
+        const apiKey = window.StorageService?.getApiKey();
+        const baseUrl = window.StorageService?.getBaseUrl();
+        // Include timestamp to force cache refresh when models are updated
+        const modelSelect = document.getElementById('model-select');
+        const dropdownCount = modelSelect ? modelSelect.options.length : 0;
+        return `${baseUrl || 'default'}:${apiKey ? apiKey.substring(0, 10) : 'no-key'}:${dropdownCount}`;
+    }
+
+    function loadAvailableModels() {
+        const cacheKey = getCacheKey();
+        
+        // Check cache first
+        if (modelsCache.has(cacheKey)) {
+            console.log('Using cached models for provider');
+            availableModels = modelsCache.get(cacheKey);
+            return Promise.resolve();
+        }
+
+        // FIRST: Try to get models from the model select dropdown (most reliable)
+        const modelSelect = document.getElementById('model-select');
+        console.log('Debug dropdown:', modelSelect ? `${modelSelect.options.length} options` : 'not found');
+        
+        if (modelSelect && modelSelect.options.length > 1) {
+            const models = [];
+            console.log('Dropdown options:');
+            for (let i = 0; i < modelSelect.options.length; i++) {
+                const option = modelSelect.options[i];
+                console.log(`  ${i}: "${option.value}" - "${option.textContent}" (disabled: ${option.disabled})`);
+                
+                if (option.value && option.value !== '' && 
+                    !option.disabled && 
+                    !option.textContent.includes('Loading') && 
+                    !option.textContent.includes('Failed to fetch') &&
+                    !option.textContent.includes('check API key')) {
+                    models.push(option.value);
                 }
+            }
+            
+            console.log(`Found ${models.length} valid models in dropdown`);
+            if (models.length > 2) { // Need more than a couple options to be sure it's populated
                 availableModels = models;
-            } else {
-                // Fallback: try to fetch models using existing API
+                // Cache the models from dropdown
+                modelsCache.set(cacheKey, models);
+                console.log(`Using ${models.length} models from populated dropdown`);
+                return Promise.resolve();
+            }
+        }
+
+        // SECOND: Try API fetch if running from HTTP server and have API key
+        return new Promise(async (resolve) => {
+            try {
                 const apiKey = window.StorageService?.getApiKey();
                 const baseUrl = window.StorageService?.getBaseUrl();
                 
-                if (apiKey && window.ApiService?.fetchAvailableModels) {
+                if (apiKey && window.ApiService?.fetchAvailableModels && window.location.protocol !== 'file:') {
+                    console.log('Fetching models from API...');
                     const fetchedModels = await window.ApiService.fetchAvailableModels(apiKey, baseUrl);
-                    availableModels = fetchedModels.map(model => model.id || model);
-                } else {
-                    // Last resort: use hardcoded models from ModelInfoService
-                    availableModels = [
-                        'gpt-4.1', 'gpt-4o', 'gpt-4o-mini', 'gpt-3.5-turbo',
-                        'llama-3.1-8b-instant', 'llama-3.3-70b-versatile',
-                        'claude-3-sonnet-20240229', 'claude-3-opus-20240229'
-                    ];
+                    
+                    if (fetchedModels && Array.isArray(fetchedModels)) {
+                        const models = fetchedModels.map(model => model.id || model);
+                        availableModels = models;
+                        modelsCache.set(cacheKey, models);
+                        console.log(`Fetched and cached ${models.length} models from API`);
+                        resolve();
+                        return;
+                    }
                 }
+            } catch (error) {
+                console.log('API fetch failed, using fallback models');
             }
-        } catch (error) {
-            console.error('Error loading available models:', error);
-            // Use fallback models
-            availableModels = [
-                'gpt-4.1', 'gpt-4o', 'gpt-4o-mini', 'gpt-3.5-turbo',
-                'llama-3.1-8b-instant', 'llama-3.3-70b-versatile'
-            ];
-        }
+
+            // THIRD: Fallback to default models
+            const hasApiKey = window.StorageService?.getApiKey();
+            if (!hasApiKey) {
+                availableModels = [
+                    '⚠️ Set API key in Settings to see your models',
+                    'gpt-4o', 'gpt-4o-mini', 'gpt-3.5-turbo'
+                ];
+            } else {
+                availableModels = [
+                    '⚠️ Run from HTTP server for full model list',
+                    'gpt-4o', 'gpt-4o-mini', 'gpt-3.5-turbo'
+                ];
+            }
+            modelsCache.set(cacheKey, availableModels);
+            resolve();
+        });
     }
 
     function filterAndRenderModels() {
@@ -256,8 +328,13 @@ window.ModelSelectorModal = (function() {
             ${contextInfo ? `<div class="model-context">${contextInfo}</div>` : ''}
         `;
 
-        // Click handler
-        modelDiv.addEventListener('click', () => selectModel(model));
+        // Click handler - only allow selection of actual models (not warnings)
+        if (!model.includes('⚠️') && !model.includes('❌')) {
+            modelDiv.addEventListener('click', () => selectModel(model));
+        } else {
+            modelDiv.style.cursor = 'default';
+            modelDiv.style.opacity = '0.7';
+        }
 
         return modelDiv;
     }
@@ -305,7 +382,7 @@ window.ModelSelectorModal = (function() {
             }
 
             // Update the model select dropdown if it exists
-            const modelSelect = document.getElementById('model');
+            const modelSelect = document.getElementById('model-select');
             if (modelSelect) {
                 modelSelect.value = model;
                 // Trigger change event to notify other components
@@ -333,6 +410,20 @@ window.ModelSelectorModal = (function() {
 
         // Hide modal
         hideModal();
+    }
+
+    function clearModelsCache() {
+        modelsCache.clear();
+        console.log('Model cache cleared');
+    }
+
+    // Listen for model updates from the settings system
+    function setupModelUpdateListener() {
+        // Clear cache when models are successfully fetched by settings
+        document.addEventListener('models-updated', function() {
+            console.log('Models updated event received, clearing cache');
+            clearModelsCache();
+        });
     }
 
     // Public API
