@@ -22,7 +22,7 @@ window.ApiKeyManager = (function() {
                 // Auto-detect provider and update if detected
                 var detection = window.ApiKeyDetector ? window.ApiKeyDetector.detectProvider(apiKey) : null;
                 if (detection && updateProvider) {
-                    updateProvider(detection.provider);
+                    updateProvider(detection);
                 }
                 
                 // Save API key to local storage
@@ -35,9 +35,16 @@ window.ApiKeyManager = (function() {
                 
                 // Add welcome message with provider info if detected
                 if (addSystemMessage) {
-                    var message = detection 
-                        ? 'API key saved and ' + detection.providerName + ' provider auto-selected. You can now start chatting with AI models.'
-                        : 'API key saved. You can now start chatting with AI models.';
+                    var message;
+                    if (detection) {
+                        message = 'API key saved and ' + detection.providerName + ' provider auto-selected';
+                        if (detection.defaultModel) {
+                            message += ' with ' + detection.defaultModel + ' model';
+                        }
+                        message += '. You can now start chatting with AI models.';
+                    } else {
+                        message = 'API key saved. You can now start chatting with AI models.';
+                    }
                     addSystemMessage(message);
                 }
                 

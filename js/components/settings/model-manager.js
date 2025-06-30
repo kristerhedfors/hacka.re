@@ -392,11 +392,46 @@ window.ModelManager = (function() {
             elements.modelSelect.appendChild(hintOption);
         }
         
+        /**
+         * Select a model by ID (used for auto-selection)
+         * @param {string} modelId - The model ID to select
+         */
+        function selectModel(modelId) {
+            if (!modelId) return;
+            
+            console.log('Auto-selecting model:', modelId);
+            
+            // Update the dropdown if it exists and has the option
+            if (elements.modelSelect) {
+                var optionExists = false;
+                for (var i = 0; i < elements.modelSelect.options.length; i++) {
+                    if (elements.modelSelect.options[i].value === modelId) {
+                        elements.modelSelect.value = modelId;
+                        optionExists = true;
+                        break;
+                    }
+                }
+                
+                // If option doesn't exist, add it as a temporary option
+                if (!optionExists) {
+                    var option = document.createElement('option');
+                    option.value = modelId;
+                    option.textContent = modelId;
+                    elements.modelSelect.appendChild(option);
+                    elements.modelSelect.value = modelId;
+                }
+            }
+            
+            // Save the model
+            saveModel(modelId);
+        }
+        
         // Public API
         return {
             init,
             getCurrentModel,
             saveModel,
+            selectModel,
             setPendingSharedModel,
             fetchAvailableModels,
             populateDefaultModels
