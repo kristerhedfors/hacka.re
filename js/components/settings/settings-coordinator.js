@@ -95,10 +95,16 @@ window.SettingsCoordinator = (function() {
         const newApiKey = elements.apiKeyInput && elements.apiKeyInput.value.trim();
         
         if (newApiKey) {
-            // Save API key using the API key manager
-            componentManagers.apiKey.saveApiKey(newApiKey, hideApiKeyModal, addSystemMessage);
+            // Create update provider callback
+            var updateProvider = componentManagers.baseUrl && componentManagers.baseUrl.updateProviderFromDetection
+                ? function(provider) { return componentManagers.baseUrl.updateProviderFromDetection(provider); }
+                : null;
             
-            // Make sure base URL is loaded before fetching models
+            // Save API key using the API key manager
+            componentManagers.apiKey.saveApiKey(newApiKey, hideApiKeyModal, addSystemMessage, updateProvider);
+            
+            // Make sure base URL is loaded AFTER provider update
+            // Need to get fresh base URL in case it was just updated by auto-detection
             const baseUrl = componentManagers.baseUrl.getBaseUrl();
             
             // Fetch available models with the new API key and update storage
