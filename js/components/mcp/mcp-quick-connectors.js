@@ -49,6 +49,7 @@ window.MCPQuickConnectors = (function() {
                 docUrl: 'https://developers.google.com/gmail/api/quickstart/js'
             }
         },
+        /* TODO: Re-enable after testing
         gdocs: {
             name: 'Google Docs',
             icon: 'fas fa-file-alt',
@@ -98,6 +99,7 @@ window.MCPQuickConnectors = (function() {
                 docUrl: 'https://developers.google.com/calendar/api/guides/auth'
             }
         },
+        */
         context7: {
             name: 'Context7',
             icon: 'fas fa-book',
