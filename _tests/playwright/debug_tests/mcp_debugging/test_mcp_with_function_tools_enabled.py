@@ -26,7 +26,7 @@ def test_mcp_with_function_tools_enabled(page: Page, serve_hacka_re, api_key):
     page.locator("#api-key-update").fill(api_key)
     page.locator("#base-url-select").select_option("openai")
     page.locator("#model-reload-btn").click()
-    page.wait_for_timeout(2000)
+    page.wait_for_timeout(1000)
     page.locator("#model-select").select_option("gpt-4o-mini")
     page.keyboard.press("Escape")
     page.wait_for_selector("#settings-modal", state="hidden")
@@ -67,12 +67,12 @@ def test_mcp_with_function_tools_enabled(page: Page, serve_hacka_re, api_key):
     page.wait_for_selector("#mcp-servers-modal", state="visible")
     page.fill("#mcp-proxy-url", "http://localhost:3001")
     page.click("#test-proxy-btn")
-    page.wait_for_timeout(2000)
+    page.wait_for_timeout(1000)
     page.fill("#mcp-server-name", "mcp-server")
     page.select_option("#mcp-transport-type", "stdio") 
     page.fill("#mcp-server-command", "npx @modelcontextprotocol/server-filesystem /Users/user")
     page.click("#mcp-server-form button[type='submit']")
-    page.wait_for_timeout(3000)
+    page.wait_for_timeout(1000)
     
     try:
         page.click("#close-mcp-servers-modal")
@@ -105,7 +105,7 @@ def test_mcp_with_function_tools_enabled(page: Page, serve_hacka_re, api_key):
     page.click("#send-btn")
     
     print("Waiting for response...")
-    page.wait_for_timeout(15000)
+    page.wait_for_timeout(1000)
     
     # Check results
     function_icons = page.locator('.function-call-icon')

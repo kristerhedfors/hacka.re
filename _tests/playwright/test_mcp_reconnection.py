@@ -28,7 +28,7 @@ def test_mcp_proxy_connection_status_updates(page: Page, serve_hacka_re):
     # Test connection
     test_proxy_btn = page.locator("#test-proxy-btn")
     test_proxy_btn.click()
-    time.sleep(1)
+    time.sleep(0.5)
     
     # Should show connected status
     expect(proxy_status).to_contain_text("Connected")
@@ -59,7 +59,7 @@ def test_mcp_proxy_reconnection_flow(page: Page, serve_hacka_re):
     
     test_proxy_btn = page.locator("#test-proxy-btn")
     test_proxy_btn.click()
-    time.sleep(1)
+    time.sleep(0.5)
     
     proxy_status = page.locator("#proxy-status")
     expect(proxy_status).to_contain_text("Connected")
@@ -72,7 +72,7 @@ def test_mcp_proxy_reconnection_flow(page: Page, serve_hacka_re):
     
     # Test reconnection
     test_proxy_btn.click()
-    time.sleep(1)
+    time.sleep(0.5)
     
     # Should show connected with server count
     expect(proxy_status).to_contain_text("Connected")
@@ -103,7 +103,7 @@ def test_mcp_server_form_after_connection(page: Page, serve_hacka_re):
     
     # Connect to proxy
     page.locator("#test-proxy-btn").click()
-    time.sleep(1)
+    time.sleep(0.5)
     
     # Test server form functionality after connection
     url_input = page.locator("#mcp-server-url")
@@ -147,7 +147,7 @@ def test_mcp_modal_close_and_reopen(page: Page, serve_hacka_re):
     
     # Connect
     page.locator("#test-proxy-btn").click()
-    time.sleep(1)
+    time.sleep(0.5)
     
     # Close modal
     page.locator("#close-mcp-servers-modal").click()
@@ -185,7 +185,7 @@ def test_mcp_connection_error_handling(page: Page, serve_hacka_re):
     # Try to connect
     test_proxy_btn = page.locator("#test-proxy-btn")
     test_proxy_btn.click()
-    time.sleep(1)
+    time.sleep(0.5)
     
     # Should show some error state
     proxy_status = page.locator("#proxy-status")
@@ -199,7 +199,7 @@ def test_mcp_connection_error_handling(page: Page, serve_hacka_re):
     
     # Test recovery
     test_proxy_btn.click()
-    time.sleep(1)
+    time.sleep(0.5)
     
     # Should show connected status
     expect(proxy_status).to_contain_text("Connected")
@@ -234,7 +234,7 @@ def test_mcp_server_list_visibility(page: Page, serve_hacka_re):
     
     # Connect
     page.locator("#test-proxy-btn").click()
-    time.sleep(1)
+    time.sleep(0.5)
     
     # Server list should still be visible after connection
     expect(server_list).to_be_visible()

@@ -16,7 +16,7 @@ def test_settings_modal(page: Page, serve_hacka_re):
     
     # Click the settings button with strict timeout
     settings_button = page.locator("#settings-btn")
-    settings_button.click(timeout=1000)
+    settings_button.click(timeout=2000)
     
     # Check that the settings modal is visible
     settings_modal = page.locator("#settings-modal")
@@ -91,7 +91,7 @@ def test_share_modal(page: Page, serve_hacka_re):
     share_button.click()
     
     # Wait for the share modal to become visible
-    page.wait_for_selector("#share-modal", state="visible", timeout=5000)
+    page.wait_for_selector("#share-modal", state="visible", timeout=2000)
     
     # Check that the share modal is visible
     share_modal = page.locator("#share-modal")

@@ -34,7 +34,7 @@ def test_github_manual_token_entry_cors_fallback(page: Page, serve_hacka_re):
     page.click('button:has-text("Save & Connect")')
     
     # Wait for manual device flow modal
-    page.wait_for_selector('.device-flow-modal.manual-device-flow', state='visible', timeout=10000)
+    page.wait_for_selector('.device-flow-modal.manual-device-flow', state='visible', timeout=2000)
     
     # Process manual device response to get to automatic flow
     mock_device_response = {
@@ -52,11 +52,11 @@ def test_github_manual_token_entry_cors_fallback(page: Page, serve_hacka_re):
     process_button.click()
     
     # Should transition to automatic device flow
-    page.wait_for_selector('.device-flow-modal:not(.manual-device-flow)', state='visible', timeout=5000)
+    page.wait_for_selector('.device-flow-modal:not(.manual-device-flow)', state='visible', timeout=2000)
     
     # Wait for polling to fail and show manual token entry
     print("Waiting for CORS polling error and manual token entry...")
-    page.wait_for_selector('.manual-token-entry', state='visible', timeout=15000)
+    page.wait_for_selector('.manual-token-entry', state='visible', timeout=2000)
     
     # Take screenshot of manual token entry
     screenshot_with_markdown(
@@ -105,7 +105,7 @@ def test_github_manual_token_entry_cors_fallback(page: Page, serve_hacka_re):
     
     # Should show success or transition to success state
     # Wait for either success modal or removal of manual token entry
-    page.wait_for_timeout(2000)
+    page.wait_for_timeout(1000)
     
     # Check console for successful token storage
     token_storage_messages = [msg for msg in console_messages if 'manual token' in msg.lower()]

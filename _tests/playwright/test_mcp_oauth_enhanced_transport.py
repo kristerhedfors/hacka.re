@@ -17,7 +17,7 @@ class TestMCPOAuthEnhancedTransport:
         dismiss_welcome_modal(page)
         
         # Wait for services to load
-        page.wait_for_timeout(2000)
+        page.wait_for_timeout(1000)
         
         transport_test = page.evaluate("""
             () => {

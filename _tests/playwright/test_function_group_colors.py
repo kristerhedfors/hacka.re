@@ -93,7 +93,7 @@ def test_function_collection_colors(page: Page, serve_hacka_re, api_key):
     
     # Wait for validation result
     validation_result = page.locator("#function-validation-result")
-    validation_result.wait_for(state="visible", timeout=5000)
+    validation_result.wait_for(state="visible", timeout=2000)
     
     # Submit the form
     page.locator("#function-editor-form button[type='submit']").click()

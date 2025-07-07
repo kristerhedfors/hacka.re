@@ -18,7 +18,7 @@ def setup_api_and_model(page: Page):
     
     # Click the settings button
     settings_button = page.locator("#settings-btn")
-    settings_button.click(timeout=1000)
+    settings_button.click(timeout=2000)
     
     # Wait for the settings modal to become visible
     page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
@@ -39,7 +39,7 @@ def setup_api_and_model(page: Page):
     try:
         page.wait_for_selector("#model-select option:not([disabled])", state="visible", timeout=2000)
     except Exception:
-        time.sleep(1)
+        time.sleep(0.5)
     
     # Select the recommended test model
     selected_model = select_recommended_test_model(page)
@@ -103,7 +103,7 @@ def test_stop_generation_no_console_errors(page: Page, serve_hacka_re):
     initial_error_count = len(console_errors)
     
     # Wait a moment to let some generation happen
-    time.sleep(1)
+    time.sleep(0.5)
     
     # Click the stop button
     send_button.click()
@@ -111,7 +111,7 @@ def test_stop_generation_no_console_errors(page: Page, serve_hacka_re):
     screenshot_with_markdown(page, "Clicked stop button")
     
     # Wait for stop to complete
-    time.sleep(1)
+    time.sleep(0.5)
     
     # Check that button reverted to send state
     final_icon = send_button.locator("i")

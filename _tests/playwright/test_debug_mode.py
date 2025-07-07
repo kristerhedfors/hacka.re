@@ -24,7 +24,7 @@ def test_debug_mode_checkbox_exists(page, serve_hacka_re):
     
     # Wait for debug mode checkbox to be added dynamically
     debug_checkbox = page.locator("#debug-mode")
-    debug_checkbox.wait_for(state="visible", timeout=5000)
+    debug_checkbox.wait_for(state="visible", timeout=2000)
     
     # Check if the label text is correct
     debug_label = page.locator("label[for='debug-mode']")
@@ -54,7 +54,7 @@ def test_debug_mode_toggle(page, serve_hacka_re):
     
     # Wait for and get the debug mode checkbox
     debug_checkbox = page.locator("#debug-mode")
-    debug_checkbox.wait_for(state="visible", timeout=5000)
+    debug_checkbox.wait_for(state="visible", timeout=2000)
     
     # Check initial state (should be unchecked by default)
     initial_checked = debug_checkbox.is_checked()
@@ -94,7 +94,7 @@ def test_debug_mode_persistence(page, serve_hacka_re):
     
     # Wait for and get the debug mode checkbox
     debug_checkbox = page.locator("#debug-mode")
-    debug_checkbox.wait_for(state="visible", timeout=5000)
+    debug_checkbox.wait_for(state="visible", timeout=2000)
     
     # Set to a known state (checked)
     if not debug_checkbox.is_checked():

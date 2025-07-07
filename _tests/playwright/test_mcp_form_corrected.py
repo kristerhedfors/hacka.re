@@ -41,7 +41,7 @@ def test_mcp_stdio_form_functionality(page: Page, serve_hacka_re):
     
     # Submit the form (it may fail, but should not crash)
     submit_btn.click()
-    time.sleep(1)
+    time.sleep(0.5)
     
     # Verify that the server list area is visible
     expect(page.locator("#mcp-servers-list")).to_be_visible()
@@ -90,7 +90,7 @@ def test_mcp_filesystem_server_form(page: Page, serve_hacka_re):
     # Submit the form
     submit_btn = page.locator("#mcp-server-form button[type='submit']")
     submit_btn.click()
-    time.sleep(1)
+    time.sleep(0.5)
     
     # Verify server list area is visible
     server_list = page.locator("#mcp-servers-list")

@@ -18,7 +18,7 @@ def test_github_mcp_server_configuration(page: Page, serve_hacka_re):
     dismiss_settings_modal(page)
     
     # Wait for components to load
-    page.wait_for_timeout(2000)
+    page.wait_for_timeout(1000)
     
     # Open MCP modal
     page.click("#mcp-servers-btn")
@@ -50,7 +50,7 @@ def test_github_mcp_server_url_configuration(page: Page, serve_hacka_re):
     page.goto("http://localhost:8000")
     
     # Wait for components to load
-    page.wait_for_timeout(2000)
+    page.wait_for_timeout(1000)
     
     # Check the configuration through JavaScript
     result = page.evaluate("""
@@ -102,7 +102,7 @@ def test_github_mcp_server_transport_type(page: Page, serve_hacka_re):
     page.click('button:has-text("Save & Connect")')
     
     # Wait a moment for connection attempt
-    page.wait_for_timeout(3000)
+    page.wait_for_timeout(1000)
     
     # Check console for transport-related messages
     transport_messages = [

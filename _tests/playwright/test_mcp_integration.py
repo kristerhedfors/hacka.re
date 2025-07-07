@@ -115,7 +115,7 @@ def test_mcp_filesystem_server_integration(page: Page, serve_hacka_re, mcp_proxy
     # Wait for connection (with timeout)
     proxy_status = page.locator("#proxy-status")
     try:
-        expect(proxy_status).to_contain_text("Connected", timeout=10000)
+        expect(proxy_status).to_contain_text("Connected", timeout=2000)
     except:
         pytest.skip("Could not connect to MCP proxy")
     
@@ -147,7 +147,7 @@ def test_mcp_filesystem_server_integration(page: Page, serve_hacka_re, mcp_proxy
     submit_btn.click()
     
     # Wait for server to potentially start
-    time.sleep(3)
+    time.sleep(0.5)
     
     # Check if server appears in list (may or may not work)
     server_list = page.locator("#mcp-servers-list")
@@ -176,7 +176,7 @@ def test_mcp_tool_execution(page: Page, serve_hacka_re, mcp_proxy):
     
     # Test proxy connection
     page.locator("#test-proxy-btn").click()
-    time.sleep(2)
+    time.sleep(0.5)
     
     # Check if we can access function calling interface
     page.locator("#close-mcp-servers-modal").click()
@@ -229,7 +229,7 @@ def test_mcp_multiple_servers(page: Page, serve_hacka_re, mcp_proxy):
     expect(command_input).to_be_visible()
     command_input.fill("echo 'test server 1'")
     submit_btn.click()
-    time.sleep(1)
+    time.sleep(0.5)
     
     # Submit second server command
     name_input.clear()
@@ -237,7 +237,7 @@ def test_mcp_multiple_servers(page: Page, serve_hacka_re, mcp_proxy):
     command_input.clear()
     command_input.fill("echo 'test server 2'")
     submit_btn.click()
-    time.sleep(1)
+    time.sleep(0.5)
     
     # Verify server list area is visible
     server_list = page.locator("#mcp-servers-list")
