@@ -158,7 +158,7 @@ def test_mcp_stdio_form_submission(page: Page, serve_hacka_re):
     command_input.fill("npx -y @modelcontextprotocol/server-filesystem /tmp")
     
     submit_btn.click()
-    time.sleep(1)
+    time.sleep(0.5)
     
     # Check that the server list is visible (whether or not the server actually connects)
     server_list = page.locator("#mcp-servers-list")

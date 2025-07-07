@@ -34,7 +34,7 @@ def test_github_mcp_connection_after_manual_token_entry(page: Page, serve_hacka_
     page.click('button:has-text("Save & Connect")')
     
     # Wait for manual device flow modal
-    page.wait_for_selector('.device-flow-modal.manual-device-flow', state='visible', timeout=10000)
+    page.wait_for_selector('.device-flow-modal.manual-device-flow', state='visible', timeout=2000)
     
     # Process manual device response to get to automatic flow
     mock_device_response = {
@@ -52,11 +52,11 @@ def test_github_mcp_connection_after_manual_token_entry(page: Page, serve_hacka_
     process_button.click()
     
     # Should transition to automatic device flow
-    page.wait_for_selector('.device-flow-modal:not(.manual-device-flow)', state='visible', timeout=5000)
+    page.wait_for_selector('.device-flow-modal:not(.manual-device-flow)', state='visible', timeout=2000)
     
     # Wait for polling to fail and show manual token entry
     print("Waiting for CORS polling error and manual token entry...")
-    page.wait_for_selector('.manual-token-entry', state='visible', timeout=15000)
+    page.wait_for_selector('.manual-token-entry', state='visible', timeout=2000)
     
     # Enter a valid GitHub token
     valid_token = 'ghp_1234567890abcdef1234567890abcdef12345678'
@@ -67,7 +67,7 @@ def test_github_mcp_connection_after_manual_token_entry(page: Page, serve_hacka_
     save_button.click()
     
     # Wait for success and check for connection completion
-    page.wait_for_timeout(3000)
+    page.wait_for_timeout(1000)
     
     # Check console logs for our specific connection completion messages
     connection_messages = [
@@ -102,7 +102,7 @@ def test_github_mcp_connection_completion_function_exists(page: Page, serve_hack
     page.goto("http://localhost:8000")
     
     # Wait for all components to load
-    page.wait_for_timeout(2000)
+    page.wait_for_timeout(1000)
     
     # Check if the completeConnectionAfterAuth function exists
     result = page.evaluate("""
@@ -143,7 +143,7 @@ def test_mcp_oauth_flow_completion_callback(page: Page, serve_hacka_re):
     page.on("console", lambda msg: console_messages.append(f"{msg.type}: {msg.text}"))
     
     # Wait for components to load
-    page.wait_for_timeout(2000)
+    page.wait_for_timeout(1000)
     
     # Mock the MCPQuickConnectors.completeConnectionAfterAuth function to track calls
     page.evaluate("""

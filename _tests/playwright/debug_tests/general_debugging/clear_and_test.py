@@ -20,7 +20,7 @@ async def clear_and_test():
         await page.goto('file:///Users/user/dev/hacka.re/index.html')
         
         # Wait for initialization
-        await page.wait_for_timeout(5000)
+        await page.wait_for_timeout(1000)
         
         print('Clearing existing functions and forcing MCP reconnection...')
         
@@ -45,7 +45,7 @@ async def clear_and_test():
         print(f'Clear result: {result}')
         
         # Wait a bit then trigger MCP reconnection
-        await page.wait_for_timeout(2000)
+        await page.wait_for_timeout(1000)
         
         print('Opening MCP modal to trigger reconnection...')
         await page.click('#mcp-servers-btn')
@@ -53,7 +53,7 @@ async def clear_and_test():
         
         # Close modal
         await page.keyboard.press('Escape')
-        await page.wait_for_timeout(2000)
+        await page.wait_for_timeout(1000)
         
         print('Now test the list_directory function...')
         print('Browser is ready for testing - watch console for debug output')

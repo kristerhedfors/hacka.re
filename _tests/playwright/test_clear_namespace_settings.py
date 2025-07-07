@@ -51,7 +51,7 @@ def test_clear_namespace_settings(page: Page, serve_hacka_re):
     # Click the settings button
     print("Clicking settings button to open settings modal")
     settings_button = page.locator("#settings-btn")
-    settings_button.click(timeout=5000)  # Reduced timeout for faster failure
+    settings_button.click(timeout=2000)  # Reduced timeout for faster failure
     
     # Wait for the settings modal to become visible
     page.wait_for_selector("#settings-modal.active", state="visible")
@@ -85,7 +85,7 @@ def test_clear_namespace_settings(page: Page, serve_hacka_re):
         print("Settings modal is already open, no need to click settings button")
     else:
         print("Clicking settings button to open settings modal again")
-        settings_button.click(timeout=5000)  # Reduced timeout for faster failure
+        settings_button.click(timeout=2000)  # Reduced timeout for faster failure
         page.wait_for_selector("#settings-modal.active", state="visible")
     
     # STEP 6: Verify the button text has been updated
@@ -158,7 +158,7 @@ def test_clear_namespace_settings(page: Page, serve_hacka_re):
     clear_settings_link.click()
     
     # Wait a moment for the dialog and processing
-    time.sleep(3)  # Give it more time to show dialog and process
+    time.sleep(0.5)  # Give it more time to show dialog and process
     
     print(f"Dialog was shown: {dialog_shown}")
     
@@ -192,7 +192,7 @@ def test_clear_namespace_settings(page: Page, serve_hacka_re):
             close_button = page.locator("#close-settings")
             if close_button.is_visible():
                 print("Close button is visible, clicking it")
-                close_button.click(force=True, timeout=1000)
+                close_button.click(force=True, timeout=2000)
                 time.sleep(0.5)  # Give it a moment to close
             else:
                 print("Close button is not visible")
@@ -241,7 +241,7 @@ def test_clear_namespace_settings(page: Page, serve_hacka_re):
                 const messages = document.querySelectorAll('.message.system .message-content p');
                 return messages.length >= 2;
             }""",
-            timeout=5000
+            timeout=2000
         )
     except Exception as e:
         print(f"Error waiting for new system messages: {e}")
@@ -338,7 +338,7 @@ def test_clear_namespace_settings(page: Page, serve_hacka_re):
         print("Settings modal is already open, no need to click settings button")
     else:
         print("Clicking settings button to open settings modal for verification")
-        settings_button.click(timeout=5000)  # Reduced timeout for faster failure
+        settings_button.click(timeout=2000)  # Reduced timeout for faster failure
         page.wait_for_selector("#settings-modal.active", state="visible")
     
     # STEP 11: Verify API key field is empty

@@ -93,7 +93,7 @@ def test_github_mcp_connection_no_cors(page: Page, serve_hacka_re):
     
     # Look for GitHub quick connector
     github_section = page.locator('.quick-connector-card[data-service="github"]')
-    expect(github_section).to_be_visible(timeout=5000)
+    expect(github_section).to_be_visible(timeout=2000)
     
     # Check that GitHub shows as available (not errored)
     github_status = github_section.locator('.connection-status').text_content()

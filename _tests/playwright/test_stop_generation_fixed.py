@@ -52,7 +52,7 @@ def setup_api_and_model_robust(page: Page):
     try:
         page.wait_for_selector("#model-select option:not([disabled])", state="visible", timeout=3000)
     except:
-        time.sleep(1)
+        time.sleep(0.5)
     
     # Select test model
     selected_model = select_recommended_test_model(page)

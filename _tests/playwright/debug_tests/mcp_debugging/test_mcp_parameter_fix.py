@@ -33,7 +33,7 @@ def configure_api_key_and_model(page: Page, api_key: str):
         print("Could not select OpenAI provider, continuing...")
     
     # Wait for models to load
-    page.wait_for_timeout(3000)
+    page.wait_for_timeout(1000)
     
     # Select gpt-4.1 model if available (good for function calling)
     try:
@@ -97,12 +97,12 @@ def test_mcp_parameter_fix(page: Page, serve_hacka_re, api_key):
                 if test_proxy_btn.is_visible():
                     print("Connecting to MCP proxy...")
                     test_proxy_btn.click()
-                    page.wait_for_timeout(2000)
+                    page.wait_for_timeout(1000)
     except:
         print("Could not check proxy status, continuing...")
     
     # Wait for MCP tools to be registered
-    page.wait_for_timeout(5000)
+    page.wait_for_timeout(1000)
     
     # Close MCP modal more aggressively
     print("Closing MCP modal...")
@@ -152,7 +152,7 @@ def test_mcp_parameter_fix(page: Page, serve_hacka_re, api_key):
         print("⚠ Warning: Modal may still be open")
     
     print("MCP setup complete, waiting for function loading...")
-    page.wait_for_timeout(3000)
+    page.wait_for_timeout(1000)
     
     # 4. Check if MCP functions are loaded
     # Open function modal to verify functions exist
@@ -199,9 +199,9 @@ def test_mcp_parameter_fix(page: Page, serve_hacka_re, api_key):
         # Try clicking MCP button to trigger connection
         try:
             page.click("#mcp-servers-btn")
-            page.wait_for_timeout(2000)
+            page.wait_for_timeout(1000)
             page.keyboard.press("Escape")
-            page.wait_for_timeout(3000)
+            page.wait_for_timeout(1000)
         except:
             print("Could not access MCP servers button")
         
@@ -245,7 +245,7 @@ def test_mcp_parameter_fix(page: Page, serve_hacka_re, api_key):
     page.click("#send-btn")
     
     # Wait for function call to complete
-    page.wait_for_timeout(5000)
+    page.wait_for_timeout(1000)
     
     # 6. Verify the function call worked
     # Check for function call indicators in chat

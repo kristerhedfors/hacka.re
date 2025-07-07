@@ -109,14 +109,14 @@ def test_clear_chat_confirmation_dialog(page: Page, serve_hacka_re, api_key):
         message_input.press("Enter")
         
         # Wait a short time
-        time.sleep(1)
+        time.sleep(0.5)
         
         # Check if message appeared
         if not page.locator(".message.user .message-content").is_visible(timeout=2000):
             # Method 2: Click the send button
             send_button = page.locator("#send-btn")
             send_button.click()
-            time.sleep(1)
+            time.sleep(0.5)
             
             # Check again
             if not page.locator(".message.user .message-content").is_visible(timeout=2000):
@@ -127,7 +127,7 @@ def test_clear_chat_confirmation_dialog(page: Page, serve_hacka_re, api_key):
                         form.dispatchEvent(new Event('submit'));
                     }
                 }""")
-                time.sleep(1)
+                time.sleep(0.5)
     except Exception as e:
         print(f"Error sending message: {e}")
     

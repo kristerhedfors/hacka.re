@@ -25,7 +25,7 @@ def test_context_window_scaling(page: Page, serve_hacka_re):
     # Configure API key and model
     # Click the settings button
     settings_button = page.locator("#settings-btn")
-    settings_button.click(timeout=1000)
+    settings_button.click(timeout=2000)
     
     # Wait for the settings modal to become visible
     page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
@@ -50,7 +50,7 @@ def test_context_window_scaling(page: Page, serve_hacka_re):
     except Exception as e:
         print(f"Error waiting for models to load: {e}")
         # Force a longer wait time
-        time.sleep(1)
+        time.sleep(0.5)
         
         # Check if there are any options in the model select
         options_count = page.evaluate("""() => {
@@ -64,7 +64,7 @@ def test_context_window_scaling(page: Page, serve_hacka_re):
             # Try clicking the reload button again
             print("No options found, clicking reload button again")
             reload_button.click()
-            time.sleep(1)
+            time.sleep(0.5)
     
     # Select the recommended test model
     selected_model = select_recommended_test_model(page)
@@ -81,7 +81,7 @@ def test_context_window_scaling(page: Page, serve_hacka_re):
     page.wait_for_selector("#settings-modal.active", state="hidden", timeout=2000)
     
     # Wait for the model info to update
-    time.sleep(1)
+    time.sleep(0.5)
     
     # Check if the model context element is displayed
     model_context_element = page.locator(".model-context")
@@ -92,7 +92,7 @@ def test_context_window_scaling(page: Page, serve_hacka_re):
         page.wait_for_function("""() => {
             const element = document.querySelector('.model-context');
             return element && (element.textContent.trim() !== '' || element.offsetParent !== null);
-        }""", timeout=5000)
+        }""", timeout=2000)
     except:
         # If the element doesn't become visible/populated, try triggering the context update manually
         print("Context element not populated, triggering manual update...")

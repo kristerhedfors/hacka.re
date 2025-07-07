@@ -92,7 +92,7 @@ def test_github_oauth_callback_handling(page: Page, serve_hacka_re):
     device_flow_message = page.locator('.github-device-flow-message-modal, .modal:has-text("Device Flow Required")')
     
     try:
-        device_flow_message.wait_for(timeout=5000)
+        device_flow_message.wait_for(timeout=2000)
         
         screenshot_with_markdown(
             page,
@@ -217,7 +217,7 @@ def test_github_oauth_configuration_ui(page: Page, serve_hacka_re):
             provider_select.select_option('github')
             
             # Should show device flow hints for GitHub
-            time.sleep(1)
+            time.sleep(0.5)
             
             screenshot_with_markdown(
                 page,
@@ -261,7 +261,7 @@ def test_github_oauth_configuration_ui(page: Page, serve_hacka_re):
                 
                 # Wait for success message
                 try:
-                    expect(page.locator('.oauth-status.success')).to_be_visible(timeout=5000)
+                    expect(page.locator('.oauth-status.success')).to_be_visible(timeout=2000)
                     print("✅ OAuth configuration saved successfully")
                 except:
                     print("⚠️ Save success message not detected")
@@ -307,7 +307,7 @@ def test_github_device_flow_initiation(page: Page, serve_hacka_re):
             save_btn = page.locator('button:has-text("Save Configuration")')
             if save_btn.is_visible():
                 save_btn.click()
-                time.sleep(1)
+                time.sleep(0.5)
     
     # Look for and click the Authorize button
     authorize_button = page.locator('button:has-text("Authorize")').first
@@ -327,7 +327,7 @@ def test_github_device_flow_initiation(page: Page, serve_hacka_re):
         # Wait for device flow modal
         device_modal = page.locator('.device-flow-modal, .modal:has-text("Device Flow")')
         try:
-            device_modal.wait_for(timeout=10000)
+            device_modal.wait_for(timeout=2000)
             
             screenshot_with_markdown(
                 page,
@@ -481,7 +481,7 @@ def test_end_to_end_github_oauth_flow(page: Page, serve_hacka_re):
     # Should show device flow guidance
     device_guidance = page.locator('.github-device-flow-message-modal')
     try:
-        device_guidance.wait_for(timeout=5000)
+        device_guidance.wait_for(timeout=2000)
         
         screenshot_with_markdown(
             page,

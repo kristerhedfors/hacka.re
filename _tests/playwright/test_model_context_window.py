@@ -26,7 +26,7 @@ def test_model_context_window_display(page: Page, serve_hacka_re):
     # Configure API key and model
     # Click the settings button
     settings_button = page.locator("#settings-btn")
-    settings_button.click(timeout=1000)
+    settings_button.click(timeout=2000)
     
     # Wait for the settings modal to become visible
     page.wait_for_selector("#settings-modal.active", state="visible", timeout=2500)
@@ -51,7 +51,7 @@ def test_model_context_window_display(page: Page, serve_hacka_re):
     except Exception as e:
         print(f"Error waiting for models to load: {e}")
         # Force a shorter wait time
-        time.sleep(1)
+        time.sleep(0.5)
         
         # Check if there are any options in the model select
         options_count = page.evaluate("""() => {
@@ -65,7 +65,7 @@ def test_model_context_window_display(page: Page, serve_hacka_re):
             # Try clicking the reload button again
             print("No options found, clicking reload button again")
             reload_button.click()
-            time.sleep(1)
+            time.sleep(0.5)
     
     # Select the recommended test model
     from test_utils import select_recommended_test_model, RECOMMENDED_TEST_MODEL
@@ -92,10 +92,10 @@ def test_model_context_window_display(page: Page, serve_hacka_re):
     time.sleep(0.5)
     
     # Wait for the model selection menu to appear
-    page.wait_for_selector("#model-selection-menu.active", state="visible", timeout=5000)
+    page.wait_for_selector("#model-selection-menu.active", state="visible", timeout=2000)
     
     # Wait for the API call to complete and the context window to be displayed
-    time.sleep(1)
+    time.sleep(0.5)
     
     # Check if the context window size is displayed
     # First, get all model properties

@@ -69,7 +69,7 @@ def test_github_device_flow(page: Page, serve_hacka_re):
     # Wait for device flow modal to appear (should be manual due to CORS)
     try:
         print("Waiting for device flow modal...")
-        page.wait_for_selector('.device-flow-modal', state='visible', timeout=5000)
+        page.wait_for_selector('.device-flow-modal', state='visible', timeout=2000)
         device_flow_modal = page.locator('.device-flow-modal')
         print("Device flow modal appeared!")
         
@@ -182,7 +182,7 @@ def test_github_redirect_intercept(page: Page, serve_hacka_re):
     page.goto("http://localhost:8000/?code=test_code&state=test_state:uAZq54AQ")
     
     # Wait for the GitHub device flow message modal
-    device_flow_message = page.wait_for_selector('.github-device-flow-message-modal', state='visible', timeout=10000)
+    device_flow_message = page.wait_for_selector('.github-device-flow-message-modal', state='visible', timeout=2000)
     
     # Verify the modal content
     expect(device_flow_message).to_contain_text('GitHub OAuth - Device Flow Required')

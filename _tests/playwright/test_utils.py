@@ -5,7 +5,7 @@ import inspect
 from playwright.sync_api import Page, expect
 
 # Maximum allowed time for any operation (in seconds)
-MAX_OPERATION_TIME = 2.0
+MAX_OPERATION_TIME = 1.5
 
 # Import OPENAI_API_MODEL from conftest
 import os
@@ -105,7 +105,7 @@ def dismiss_modal(page, modal_id):
                 print(f"Found close button with selector: {selector}")
                 try:
                     # Use first() to avoid strict mode violations when multiple elements match
-                    close_button.first.click(force=True, timeout=1000)
+                    close_button.first.click(force=True, timeout=2000)
                     print("Clicked close button")
                     # Check if modal is still visible
                     if not modal.is_visible():
@@ -120,7 +120,7 @@ def dismiss_modal(page, modal_id):
                 # Use the specific ID for the close button
                 close_settings = page.locator("#close-settings")
                 if close_settings.is_visible():
-                    close_settings.click(force=True, timeout=1000)
+                    close_settings.click(force=True, timeout=2000)
                     print("Clicked close-settings button")
                     if not modal.is_visible():
                         print("Settings modal closed successfully")
