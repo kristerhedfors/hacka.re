@@ -125,8 +125,8 @@ window.FunctionExecutor = (function() {
             
             if (success) {
                 // Update the function list display
-                if (window.FunctionListRenderer) {
-                    window.FunctionListRenderer.renderFunctionList();
+                if (window.functionListRenderer) {
+                    window.functionListRenderer.renderFunctionList();
                 }
                 
                 return { success: true };
