@@ -14,8 +14,8 @@ OPENAI_API_BASE = os.getenv("OPENAI_API_BASE", "https://api.openai.com/v1")
 def page(browser):
     """Create a new page for each test."""
     page = browser.new_page()
-    # Set default timeout to 7 seconds instead of 30
-    page.set_default_timeout(7000)
+    # Set realistic timeout for modular app (152 JS files + 13 CSS files to load)
+    page.set_default_timeout(10000)
     yield page
     page.close()
 
@@ -44,7 +44,7 @@ def serve_hacka_re(page):
     )
     
     # Give the server a minimal moment to start
-    time.sleep(0.2)
+    time.sleep(0.1)
     
     # Set the base URL for tests
     base_url = "http://localhost:8000"

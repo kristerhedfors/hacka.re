@@ -26,14 +26,14 @@ def test_context7_integration(page: Page, serve_hacka_re, api_key):
     page.locator("#api-key-update").fill(api_key)
     page.locator("#base-url-select").select_option("openai")
     page.locator("#model-reload-btn").click()
-    page.wait_for_timeout(3000)
+    page.wait_for_timeout(1000)
     page.locator("#model-select").select_option("gpt-4o-mini")
     
     # Save settings explicitly
     save_btn = page.locator("#save-settings-btn")
     if save_btn.is_visible():
         save_btn.click()
-        page.wait_for_timeout(2000)
+        page.wait_for_timeout(1000)
     
     page.keyboard.press("Escape")
     page.wait_for_selector("#settings-modal", state="hidden")
@@ -52,7 +52,7 @@ def test_context7_integration(page: Page, serve_hacka_re, api_key):
     page.wait_for_selector("#mcp-servers-modal", state="visible")
     page.fill("#mcp-proxy-url", "http://localhost:3001")
     page.click("#test-proxy-btn")
-    page.wait_for_timeout(3000)
+    page.wait_for_timeout(1000)
     
     # Check that both servers are detected
     proxy_status = page.evaluate("""() => {
@@ -131,7 +131,7 @@ def test_context7_integration(page: Page, serve_hacka_re, api_key):
             else:
                 page.click('[data-server-name="context7"]')
             print("✅ Clicked Context7 connector")
-            page.wait_for_timeout(2000)
+            page.wait_for_timeout(1000)
         except Exception as e:
             print(f"⚠️ Could not click Context7 connector: {e}")
     
@@ -143,7 +143,7 @@ def test_context7_integration(page: Page, serve_hacka_re, api_key):
         page.select_option("#mcp-transport-type", "stdio") 
         page.fill("#mcp-server-command", "npx -y @upstash/context7-mcp@latest")
         page.click("#mcp-server-form button[type='submit']")
-        page.wait_for_timeout(3000)
+        page.wait_for_timeout(1000)
         print("✅ Added Context7 server manually")
     except Exception as e:
         print(f"⚠️ Manual Context7 setup failed: {e}")
@@ -202,7 +202,7 @@ def test_context7_integration(page: Page, serve_hacka_re, api_key):
         page.click("#send-btn")
         
         print("Waiting for Context7 response...")
-        page.wait_for_timeout(15000)
+        page.wait_for_timeout(1000)
         
         # Check for function calls
         function_icons = page.locator('.function-call-icon')

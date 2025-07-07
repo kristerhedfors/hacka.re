@@ -25,7 +25,7 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
     
     # Click the settings button
     settings_button = page.locator("#settings-btn")
-    settings_button.click(timeout=1000)
+    settings_button.click(timeout=2000)
     
     # Wait for the settings modal to become visible
     page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
@@ -50,7 +50,7 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
     except Exception as e:
         print(f"Error waiting for models to load: {e}")
         # Force a shorter wait time
-        time.sleep(1)
+        time.sleep(0.5)
         
         # Check if there are any options in the model select
         options_count = page.evaluate("""() => {
@@ -64,7 +64,7 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
             # Try clicking the reload button again
             print("No options found, clicking reload button again")
             reload_button.click()
-            time.sleep(1)
+            time.sleep(0.5)
     
     # Select the recommended test model
     from test_utils import select_recommended_test_model
@@ -113,7 +113,7 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
             
             # Reopen settings
             settings_button = page.locator("#settings-btn")
-            settings_button.click(timeout=1000)
+            settings_button.click(timeout=2000)
             
             # Wait for the settings modal to become visible
             page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
@@ -159,13 +159,13 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
     # Try pressing Enter in the message input to submit the form
     print("Pressing Enter in the message input")
     message_input.press("Enter")
-    time.sleep(1)
+    time.sleep(0.5)
     
     # If that doesn't work, try clicking the button directly
     print("Clicking send button directly")
     send_button = page.locator("#send-btn")
     send_button.click(force=True)
-    time.sleep(1)
+    time.sleep(0.5)
     
     # If that doesn't work, try using JavaScript to submit the form
     print("Submitting form using JavaScript")
@@ -178,7 +178,7 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
             console.error('Form not found');
         }
     }""")
-    time.sleep(1)
+    time.sleep(0.5)
     
     # Check if the API key modal appears
     api_key_modal = page.locator("#api-key-modal")
@@ -265,7 +265,7 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
         page.wait_for_selector(".message.assistant .message-content", state="visible", timeout=2500)
         
         # Wait a short time to ensure content is fully loaded
-        time.sleep(1)
+        time.sleep(0.5)
         
         # Get all assistant messages
         assistant_messages = page.locator(".message.assistant .message-content")
@@ -318,7 +318,7 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
             # Try to force the chat completion to appear by checking the network requests
             print("Checking network requests for chat completion...")
             # Wait a short time for any pending requests to complete
-            time.sleep(1)
+            time.sleep(0.5)
             # Skip the test if we still can't find the response
             pytest.skip("Expected assistant response not found in any messages")
     except Exception as e:

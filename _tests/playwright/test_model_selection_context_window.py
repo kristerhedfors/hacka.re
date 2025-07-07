@@ -25,7 +25,7 @@ def test_context_window_updates_on_model_selection(page: Page, serve_hacka_re):
     # Configure API key and model
     # Click the settings button
     settings_button = page.locator("#settings-btn")
-    settings_button.click(timeout=1000)
+    settings_button.click(timeout=2000)
     
     # Wait for the settings modal to become visible
     page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
@@ -50,7 +50,7 @@ def test_context_window_updates_on_model_selection(page: Page, serve_hacka_re):
     except Exception as e:
         print(f"Error waiting for models to load: {e}")
         # Force a longer wait time
-        time.sleep(1)
+        time.sleep(0.5)
         
         # Check if there are any options in the model select
         options_count = page.evaluate("""() => {
@@ -64,7 +64,7 @@ def test_context_window_updates_on_model_selection(page: Page, serve_hacka_re):
             # Try clicking the reload button again
             print("No options found, clicking reload button again")
             reload_button.click()
-            time.sleep(1)
+            time.sleep(0.5)
     
     # Get available models
     available_models = page.evaluate("""() => {

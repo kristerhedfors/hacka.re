@@ -21,7 +21,7 @@ def test_stop_generation_debug(page: Page, serve_hacka_re):
     
     # Click the settings button
     settings_button = page.locator("#settings-btn")
-    settings_button.click(timeout=1000)
+    settings_button.click(timeout=2000)
     
     # Wait for the settings modal to become visible
     page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
@@ -47,7 +47,7 @@ def test_stop_generation_debug(page: Page, serve_hacka_re):
         print("Models loaded successfully")
     except Exception:
         print("Models load timeout, continuing...")
-        time.sleep(1)
+        time.sleep(0.5)
     
     # Select the recommended test model
     selected_model = select_recommended_test_model(page)

@@ -17,7 +17,7 @@ class TestMCPOAuthIntegration:
         dismiss_welcome_modal(page)
         
         # Wait for all services to load
-        page.wait_for_timeout(3000)
+        page.wait_for_timeout(1000)
         
         complete_flow_test = page.evaluate("""
             async () => {
@@ -148,7 +148,7 @@ class TestMCPOAuthIntegration:
         dismiss_welcome_modal(page)
         
         # Wait for services to load
-        page.wait_for_timeout(2000)
+        page.wait_for_timeout(1000)
         
         ui_integration_test = page.evaluate("""
             async () => {
@@ -316,12 +316,12 @@ class TestMCPOAuthIntegration:
         
         # Open MCP modal to test real UI integration
         mcp_button = page.locator("#mcp-servers-btn")
-        expect(mcp_button).to_be_visible(timeout=5000)
+        expect(mcp_button).to_be_visible(timeout=2000)
         mcp_button.click()
         
         # Wait for modal to open
         modal = page.locator("#mcp-servers-modal")
-        expect(modal).to_be_visible(timeout=5000)
+        expect(modal).to_be_visible(timeout=2000)
         
         screenshot_with_markdown(page, "MCP modal opened for OAuth testing")
         

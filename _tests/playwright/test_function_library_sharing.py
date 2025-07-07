@@ -166,7 +166,7 @@ def test_function_library_sharing(page: Page, serve_hacka_re):
     generate_link_btn.click()
     
     # Wait a moment for the link generation process
-    page.wait_for_timeout(2000)
+    page.wait_for_timeout(1000)
     
     # Take a screenshot after clicking generate button
     screenshot_with_markdown(page, "function_library_sharing_after_generate", {
@@ -236,7 +236,7 @@ def test_function_library_sharing(page: Page, serve_hacka_re):
     page.goto(generated_link)
     
     # Wait a moment for the page to load and process the link
-    page.wait_for_timeout(3000)
+    page.wait_for_timeout(1000)
     
     # Check if hasSharedApiKey function detects the link
     has_shared_link = page.evaluate("""() => {
@@ -297,7 +297,7 @@ def test_function_library_sharing(page: Page, serve_hacka_re):
         password_form.evaluate("form => form.dispatchEvent(new Event('submit', {bubbles: true, cancelable: true}))")
         
         # Wait for the password modal to close
-        page.wait_for_selector("#password-modal", state="hidden", timeout=10000)
+        page.wait_for_selector("#password-modal", state="hidden", timeout=2000)
     
     # Wait for the system message indicating the function library was loaded
     # (This might already be present if auto-processed)

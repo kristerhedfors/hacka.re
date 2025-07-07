@@ -39,7 +39,7 @@ async def test_mcp_parameter_fix_live():
         await page.goto('file:///Users/user/dev/hacka.re/index.html')
         
         # Wait for initialization
-        await page.wait_for_timeout(3000)
+        await page.wait_for_timeout(1000)
         
         # Close any modals
         print("📱 Closing modals...")
@@ -63,7 +63,7 @@ async def test_mcp_parameter_fix_live():
         await page.fill('#api-key-update', 'sk-test-dummy-key-for-testing')
         await page.select_option('#base-url-select', 'openai')
         await page.click('#model-reload-btn')
-        await page.wait_for_timeout(2000)
+        await page.wait_for_timeout(1000)
         
         # Select any available model
         try:
@@ -93,7 +93,7 @@ async def test_mcp_parameter_fix_live():
         
         # Close MCP modal
         await page.keyboard.press('Escape')
-        await page.wait_for_timeout(2000)
+        await page.wait_for_timeout(1000)
         
         print("🧪 Testing function call...")
         print("=" * 60)
@@ -105,7 +105,7 @@ async def test_mcp_parameter_fix_live():
         await page.click('#send-btn')
         
         # Wait for function execution to complete
-        await page.wait_for_timeout(8000)
+        await page.wait_for_timeout(1000)
         
         print("\n" + "=" * 60)
         print("📊 ANALYSIS OF CONSOLE LOGS")

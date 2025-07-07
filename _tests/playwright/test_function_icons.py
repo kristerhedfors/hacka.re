@@ -54,7 +54,7 @@ def test_function_calling_icons(page: Page, serve_hacka_re, api_key):
     try:
         page.wait_for_selector(".message.assistant .message-content", 
                               state="visible", 
-                              timeout=5000)
+                              timeout=2000)
         
         # Take a screenshot of the initial response
         screenshot_with_markdown(page, "assistant_response_initial", 
@@ -62,7 +62,7 @@ def test_function_calling_icons(page: Page, serve_hacka_re, api_key):
         
         # Wait for function call icon to appear
         try:
-            page.wait_for_selector(".function-call-icon", state="visible", timeout=10000)
+            page.wait_for_selector(".function-call-icon", state="visible", timeout=2000)
             
             # Take a screenshot showing the function call icon
             screenshot_with_markdown(page, "function_call_icon", 
@@ -111,7 +111,7 @@ def test_function_calling_icons(page: Page, serve_hacka_re, api_key):
         
         # Wait for function result icon to appear
         try:
-            page.wait_for_selector(".function-result-icon", state="visible", timeout=10000)
+            page.wait_for_selector(".function-result-icon", state="visible", timeout=2000)
             
             # Take a screenshot showing the function result icon
             screenshot_with_markdown(page, "function_result_icon", 
@@ -209,17 +209,17 @@ def test_multiple_function_calls_colors(page: Page, serve_hacka_re, api_key):
     try:
         page.wait_for_selector(".message.assistant .message-content", 
                               state="visible", 
-                              timeout=5000)
+                              timeout=2000)
         
         # Wait for function call icons to appear
-        page.wait_for_selector(".function-call-icon", state="visible", timeout=10000)
+        page.wait_for_selector(".function-call-icon", state="visible", timeout=2000)
         
         # Wait for at least 2 function call icons (may take some time)
         try:
             # Wait for the second function call icon
             page.wait_for_function(
                 """() => document.querySelectorAll('.function-call-icon').length >= 2""",
-                timeout=15000
+                timeout=2000
             )
             
             # Take a screenshot showing multiple function call icons

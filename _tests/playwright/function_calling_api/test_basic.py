@@ -47,7 +47,7 @@ def test_function_calling_with_api_key(page: Page, serve_hacka_re, api_key):
     
     # Wait for the page to be fully loaded
     try:
-        page.wait_for_load_state("networkidle", timeout=5000)
+        page.wait_for_load_state("networkidle", timeout=2000)
         print("Network idle state reached")
     except Exception as e:
         print(f"Error waiting for network idle: {e}")
@@ -73,7 +73,7 @@ def test_function_calling_with_api_key(page: Page, serve_hacka_re, api_key):
         try:
             page.goto(index_url, wait_until="domcontentloaded")
             print("Direct navigation to index.html successful")
-            page.wait_for_load_state("networkidle", timeout=5000)
+            page.wait_for_load_state("networkidle", timeout=2000)
             title = page.title()
             print(f"After direct navigation, page title: {title}")
         except Exception as e:
@@ -103,7 +103,7 @@ def test_function_calling_with_api_key(page: Page, serve_hacka_re, api_key):
         # Try to wait a bit longer and check again
         print("Settings button not immediately visible, waiting longer...")
         try:
-            page.wait_for_selector("#settings-btn", state="visible", timeout=5000)
+            page.wait_for_selector("#settings-btn", state="visible", timeout=2000)
             print("Settings button became visible after waiting")
         except Exception as e:
             print(f"Error waiting for settings button: {e}")
