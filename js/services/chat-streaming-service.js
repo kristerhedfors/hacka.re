@@ -15,6 +15,7 @@ window.ChatStreamingService = (function() {
         let generationStartTime = null;
         let lastUpdateTime = null;
         let tokenCount = 0;
+        let tokenTimestamps = []; // Array to track token timestamps for sliding window
 
         return {
             /**
@@ -25,6 +26,7 @@ window.ChatStreamingService = (function() {
                 generationStartTime = null;
                 lastUpdateTime = null;
                 tokenCount = 0;
+                tokenTimestamps = [];
                 if (elements.tokenSpeedText) {
                     elements.tokenSpeedText.textContent = '0 t/s';
                 }
@@ -106,7 +108,17 @@ window.ChatStreamingService = (function() {
                 const newTokenCount = Math.ceil(content.length / 4);
                 
                 // Calculate tokens added since last update
+                const tokensAdded = newTokenCount - tokenCount;
                 tokenCount = newTokenCount;
+                
+                // Add timestamps for new tokens to our sliding window
+                for (let i = 0; i < tokensAdded; i++) {
+                    tokenTimestamps.push(now);
+                }
+                
+                // Remove timestamps older than 2 seconds from the sliding window
+                const twoSecondsAgo = now - 2000;
+                tokenTimestamps = tokenTimestamps.filter(timestamp => timestamp > twoSecondsAgo);
                 
                 // Only update the display every 500ms to reduce UI updates
                 if (now - lastUpdateTime < 500) {
@@ -116,12 +128,13 @@ window.ChatStreamingService = (function() {
                 // Update the last update time
                 lastUpdateTime = now;
                 
-                // Calculate time since start in seconds
-                const timeSinceStart = (now - generationStartTime) / 1000;
+                // Calculate tokens per second based on the last 2 seconds
+                const tokensInWindow = tokenTimestamps.length;
+                const windowDuration = Math.min(2, (now - generationStartTime) / 1000); // Cap at 2 seconds
                 
-                if (timeSinceStart > 0 && tokenCount > 0) {
-                    // Calculate tokens per second
-                    const tokensPerSecond = Math.round(tokenCount / timeSinceStart);
+                if (windowDuration > 0 && tokensInWindow > 0) {
+                    // Calculate tokens per second for the current 2-second window
+                    const tokensPerSecond = Math.round(tokensInWindow / windowDuration);
                     
                     // Update the display using requestAnimationFrame to avoid blocking the main thread
                     if (elements.tokenSpeedText) {
