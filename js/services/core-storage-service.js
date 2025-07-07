@@ -272,7 +272,8 @@ window.CoreStorageService = (function() {
                 NamespaceService.BASE_STORAGE_KEYS.BASE_URL,
                 NamespaceService.BASE_STORAGE_KEYS.BASE_URL_PROVIDER,
                 NamespaceService.BASE_STORAGE_KEYS.DEBUG_MODE,
-                NamespaceService.BASE_STORAGE_KEYS.HISTORY
+                NamespaceService.BASE_STORAGE_KEYS.HISTORY,
+                NamespaceService.BASE_STORAGE_KEYS.THEME_MODE
             ];
             
             // Define encrypted storage keys handled by CoreStorageService directly
@@ -333,10 +334,7 @@ window.CoreStorageService = (function() {
                 console.log(`Cleared namespace key: ${key}`);
             });
             
-            // Clear global theme setting (not encrypted, stored globally)
-            localStorage.removeItem('hackare_theme_mode');
-            clearedKeys.push('hackare_theme_mode');
-            console.log('Cleared theme setting: hackare_theme_mode');
+            // Theme settings are now encrypted and namespaced, so they're cleared with other namespace keys
             
             // Clear MCP servers (stored globally)
             localStorage.removeItem('hacka_re_mcp_servers');

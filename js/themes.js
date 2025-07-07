@@ -4,7 +4,7 @@
  */
 
 window.ThemeService = (function() {
-    const THEME_STORAGE_KEY = 'hackare_theme_mode';
+    const THEME_STORAGE_KEY = NamespaceService.BASE_STORAGE_KEYS.THEME_MODE;
     
     // Define the theme cycle order - include light and dark modes
     const themeOrder = ['light', 'dark', 'sunset', 'ocean', 'forest', 'midnight'];
@@ -18,7 +18,15 @@ window.ThemeService = (function() {
         createThemeToggle();
         
         // Get saved theme preference or use system preference
-        const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+        // Check if CoreStorageService is available and try to get saved theme
+        let savedTheme = null;
+        if (window.CoreStorageService && typeof window.CoreStorageService.getValue === 'function') {
+            try {
+                savedTheme = CoreStorageService.getValue(THEME_STORAGE_KEY);
+            } catch (error) {
+                console.log('Theme: CoreStorageService not ready yet, will use default theme');
+            }
+        }
         
         // Apply theme based on saved preference or default to light mode
         if (savedTheme) {
@@ -26,6 +34,29 @@ window.ThemeService = (function() {
         } else {
             // Default to light mode regardless of system preference
             enableLightMode();
+        }
+        
+        // Set up a delayed save to ensure theme preference is persisted once storage is ready
+        // Only save if no theme was loaded from storage (i.e., this is the default theme)
+        if (!savedTheme) {
+            setTimeout(() => {
+                const currentTheme = getThemeMode();
+                saveThemePreference(currentTheme);
+            }, 1000);
+        }
+    }
+    
+    /**
+     * Save theme preference to encrypted storage
+     * @param {string} themeName - The theme name to save
+     */
+    function saveThemePreference(themeName) {
+        if (window.CoreStorageService && typeof window.CoreStorageService.setValue === 'function') {
+            try {
+                CoreStorageService.setValue(THEME_STORAGE_KEY, themeName);
+            } catch (error) {
+                console.log('Theme: Unable to save theme preference, storage not ready');
+            }
         }
         
         // Add keyboard shortcuts for cycling themes (Alt+Shift+T)
@@ -42,7 +73,7 @@ window.ThemeService = (function() {
             // Listen for changes to system preference
             prefersDarkMode.addEventListener('change', (e) => {
                 // Only apply system preference if no saved preference exists
-                if (!localStorage.getItem(THEME_STORAGE_KEY)) {
+                if (window.CoreStorageService && !CoreStorageService.getValue(THEME_STORAGE_KEY)) {
                     if (e.matches) {
                         enableDarkMode();
                     } else {
@@ -105,7 +136,7 @@ window.ThemeService = (function() {
         removeAllThemeClasses();
         document.documentElement.classList.add('theme-modern');
         document.documentElement.classList.add('dark-mode');
-        localStorage.setItem(THEME_STORAGE_KEY, 'dark');
+        saveThemePreference('dark');
         updateThemeDropdown('dark');
     }
     
@@ -115,7 +146,7 @@ window.ThemeService = (function() {
     function enableLightMode() {
         removeAllThemeClasses();
         document.documentElement.classList.add('theme-modern');
-        localStorage.setItem(THEME_STORAGE_KEY, 'light');
+        saveThemePreference('light');
         updateThemeDropdown('light');
     }
     
@@ -125,7 +156,7 @@ window.ThemeService = (function() {
     function enableSunsetTheme() {
         removeAllThemeClasses();
         document.documentElement.classList.add('theme-sunset');
-        localStorage.setItem(THEME_STORAGE_KEY, 'sunset');
+        saveThemePreference('sunset');
         updateThemeDropdown('sunset');
     }
     
@@ -136,7 +167,7 @@ window.ThemeService = (function() {
         try {
             removeAllThemeClasses();
             document.documentElement.classList.add('theme-ocean');
-            localStorage.setItem(THEME_STORAGE_KEY, 'ocean');
+            saveThemePreference('ocean');
             updateThemeDropdown('ocean');
         } catch (error) {
         }
@@ -148,7 +179,7 @@ window.ThemeService = (function() {
     function enableForestTheme() {
         removeAllThemeClasses();
         document.documentElement.classList.add('theme-forest');
-        localStorage.setItem(THEME_STORAGE_KEY, 'forest');
+        saveThemePreference('forest');
         updateThemeDropdown('forest');
     }
     
@@ -158,9 +189,8 @@ window.ThemeService = (function() {
     function enableMidnightTheme() {
         removeAllThemeClasses();
         document.documentElement.classList.add('theme-midnight');
-        // Still save to localStorage for compatibility with other functions
-        // but this won't matter since we always use midnight on reload
-        localStorage.setItem(THEME_STORAGE_KEY, 'midnight');
+        // Store encrypted theme preference
+        saveThemePreference('midnight');
         updateThemeDropdown('midnight');
     }
     
