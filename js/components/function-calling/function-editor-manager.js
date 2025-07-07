@@ -312,8 +312,8 @@ function get_weather(location, units = "metric") {
                 });
                 
                 // Render updated list
-                if (window.FunctionListRenderer) {
-                    window.FunctionListRenderer.renderFunctionList();
+                if (window.functionListRenderer) {
+                    window.functionListRenderer.renderFunctionList();
                 }
                 
                 // Add system message
