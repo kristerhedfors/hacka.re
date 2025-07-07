@@ -21,6 +21,7 @@ window.NamespaceService = (function() {
         TITLE: 'hackare_title',
         SUBTITLE: 'hackare_subtitle',
         DEBUG_MODE: 'debug_mode',
+        THEME_MODE: 'theme_mode',
     };
     
     // Special keys that don't get namespaced (to avoid circular dependency)
