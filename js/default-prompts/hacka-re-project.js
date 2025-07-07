@@ -23,50 +23,232 @@ hacka.re is a privacy-focused, serverless chat interface for OpenAI-compatible A
 ### Core Structure
 hacka.re implements a **modular component-based architecture** with specialized manager classes:
 
-```
-Project Structure:
-├── 80+ JavaScript modules across components and services
-├── 39 UI component managers with focused responsibilities  
-├── 33 service modules with single responsibilities
-├── 15 settings system modules
-├── 12 MCP (Model Context Protocol) modules
-├── 11 function calling system modules
-├── 12 utility modules
-└── 12 default prompt components
-```
+\`\`\`
+hacka.re JavaScript Architecture (js/)
+│
+├── 📱 Core Application Files
+│   ├── app.js                              # Application initialization and bootstrap
+│   ├── script.js                           # Legacy main script file
+│   ├── ascii-tree-menu.js                  # ASCII tree menu component
+│   ├── button-tooltips.js                  # Global button tooltip system
+│   ├── copy-code.js                        # Code copying functionality
+│   ├── default-functions-tooltip.js        # Default functions tooltip
+│   ├── function-tooltip.js                 # Function tooltips
+│   ├── link-sharing-tooltip.js             # Link sharing tooltips
+│   ├── logo-animation.js                   # Logo animation effects
+│   ├── mobile-utils.js                     # Mobile device utilities
+│   ├── modal-effects.js                    # Modal visual effects
+│   ├── settings-tooltip.js                 # Settings tooltips
+│   └── themes.js                           # Theme switching system
+│
+├── 🧩 Component Managers (39 files)
+│   ├── ai-hackare.js                       # Main AI interface coordinator
+│   ├── api-tools-manager.js                # API tools management
+│   ├── chat-manager.js                     # Chat interface orchestration
+│   ├── dom-elements.js                     # DOM element management
+│   ├── function-calling-manager.js         # Function calling coordinator
+│   ├── mcp-manager.js                      # MCP system management
+│   ├── prompts-event-handlers.js           # Prompts event handling
+│   ├── prompts-manager.js                  # Prompts system coordination
+│   ├── prompts-modal-renderer.js           # Prompts modal rendering
+│   ├── share-manager.js                    # Secure sharing coordinator
+│   ├── ui-manager.js                       # Global UI coordination
+│   │
+│   ├── 🔧 Function Calling System (11 files)
+│   │   ├── function-calling/
+│   │   │   ├── default-functions-manager.js     # Default functions handling
+│   │   │   ├── function-code-editor.js          # Code editor component
+│   │   │   ├── function-copy-manager.js         # Function copying utilities
+│   │   │   ├── function-details-modal.js        # Function details modal
+│   │   │   ├── function-editor-manager.js       # Function editor coordination
+│   │   │   ├── function-executor.js             # Function execution engine
+│   │   │   ├── function-library-manager.js      # Function library management
+│   │   │   ├── function-list-renderer.js        # Function list display
+│   │   │   ├── function-modal-manager.js        # Function modal UI management
+│   │   │   ├── function-parser.js               # Function parsing logic
+│   │   │   ├── function-validator.js            # Function validation
+│   │   │   └── mcp-server-manager.js            # MCP server integration
+│   │
+│   ├── 🔧 Settings System (15 files)
+│   │   ├── settings/
+│   │   │   ├── api-key-input-handler.js         # API key input handling
+│   │   │   ├── api-key-manager.js               # API key management
+│   │   │   ├── base-url-manager.js              # Base URL configuration
+│   │   │   ├── model-manager.js                 # Model selection management
+│   │   │   ├── settings-coordinator.js          # Core settings coordination
+│   │   │   ├── settings-initialization.js       # Settings initialization
+│   │   │   ├── settings-manager.js              # Settings system management
+│   │   │   ├── settings-state-manager.js        # Settings state management
+│   │   │   ├── shared-link-data-processor.js    # Shared link data processing
+│   │   │   ├── shared-link-manager.js           # Shared link management
+│   │   │   ├── shared-link-modal-manager.js     # Shared link modal UI
+│   │   │   ├── system-prompt-manager.js         # System prompt management
+│   │   │   ├── title-subtitle-manager.js        # Title/subtitle management
+│   │   │   ├── tool-calling-manager.js          # Tool calling settings
+│   │   │   └── welcome-manager.js               # Welcome modal management
+│   │
+│   ├── 🌐 MCP (Model Context Protocol) (12 files)
+│   │   ├── mcp/
+│   │   │   ├── mcp-command-history.js           # MCP command history tracking
+│   │   │   ├── mcp-connections-ui.js            # MCP connections UI
+│   │   │   ├── mcp-modal-renderer.js            # MCP modal rendering
+│   │   │   ├── mcp-oauth-config.js              # MCP OAuth configuration
+│   │   │   ├── mcp-oauth-flow.js                # MCP OAuth flow handling
+│   │   │   ├── mcp-oauth-integration.js         # MCP OAuth integration
+│   │   │   ├── mcp-proxy-manager.js             # MCP proxy management
+│   │   │   ├── mcp-quick-connectors.js          # MCP quick connection UI
+│   │   │   ├── mcp-server-manager.js            # MCP server management
+│   │   │   ├── mcp-tools-manager.js             # MCP tools management
+│   │   │   ├── mcp-ui-manager.js                # MCP UI coordination
+│   │   │   └── mcp-utils.js                     # MCP utility functions
+│   │
+│   ├── 💬 Prompts System (2 files)
+│   │   ├── prompts/
+│   │   │   ├── prompts-list-manager.js          # Prompts list management
+│   │   │   └── prompts-token-manager.js         # Prompts token management
+│   │
+│   ├── 🔗 Share System (2 files)
+│   │   ├── share/
+│   │   │   ├── mcp-connections-share-item.js    # MCP connections sharing
+│   │   │   └── share-item.js                    # Share item base class
+│   │
+│   └── 🎨 UI Components (6 files)
+│       ├── ui/
+│       │   ├── context-usage-display.js         # Context window visualization
+│       │   ├── modal-manager.js                 # Modal system management
+│       │   ├── model-info-display.js            # Model information display
+│       │   ├── share-ui-manager-v2.js           # Share UI management v2
+│       │   ├── share-ui-manager.js              # Share UI management
+│       │   └── ui-coordinator.js                # UI coordination layer
+│
+├── 🔧 Service Layer (33 files)
+│   ├── services/
+│   │   │
+│   │   ├── 🌐 API Services (7 files)
+│   │   │   ├── api-debugger.js                  # API debugging utilities
+│   │   │   ├── api-request-builder.js           # HTTP request construction
+│   │   │   ├── api-response-parser.js           # API response parsing
+│   │   │   ├── api-service.js                   # Main API communication layer
+│   │   │   ├── api-stream-processor.js          # Streaming response handling
+│   │   │   ├── api-tool-call-handler.js         # Tool call processing
+│   │   │   └── api-tools-service.js             # API tools integration
+│   │   │
+│   │   ├── 🛠️ Function Tools System (8 files)
+│   │   │   ├── function-tools-config.js         # Function tools configuration
+│   │   │   ├── function-tools-executor.js       # Sandboxed function execution
+│   │   │   ├── function-tools-logger.js         # Function execution logging
+│   │   │   ├── function-tools-parser.js         # Function argument parsing
+│   │   │   ├── function-tools-processor.js      # Function call processing
+│   │   │   ├── function-tools-registry.js       # Function registry management
+│   │   │   ├── function-tools-service.js        # Main function tools orchestrator
+│   │   │   └── function-tools-storage.js        # Function storage operations
+│   │   │
+│   │   ├── 🌐 MCP Services (11 files)
+│   │   │   ├── mcp-auth-strategies.js           # MCP authentication strategies
+│   │   │   ├── mcp-client-core.js               # Core MCP client implementation
+│   │   │   ├── mcp-client-registration.js       # MCP client registration
+│   │   │   ├── mcp-connection-manager.js        # MCP connection management
+│   │   │   ├── mcp-metadata-discovery.js        # MCP metadata discovery
+│   │   │   ├── mcp-oauth-service.js             # MCP OAuth service
+│   │   │   ├── mcp-provider-factory.js          # MCP provider factory
+│   │   │   ├── mcp-provider-interface.js        # MCP provider interface
+│   │   │   ├── mcp-request-manager.js           # MCP request management
+│   │   │   ├── mcp-service-connectors.js        # MCP service connectors
+│   │   │   ├── mcp-tool-registry.js             # MCP tool registry
+│   │   │   └── mcp-transport-service.js         # MCP transport layer
+│   │   │
+│   │   ├── 💾 Storage Services (4 files)
+│   │   │   ├── core-storage-service.js          # Core storage operations
+│   │   │   ├── encryption-service.js            # TweetNaCl encryption service
+│   │   │   ├── namespace-service.js             # Multi-tenant data isolation
+│   │   │   └── storage-service.js               # Main storage interface
+│   │   │
+│   │   └── 🔧 Additional Services (7 files)
+│   │       ├── chat-streaming-service.js        # Chat streaming service
+│   │       ├── chat-tools-service.js            # Chat tools service
+│   │       ├── chat-ui-service.js               # Chat UI service
+│   │       ├── context-usage-service.js         # Context usage tracking
+│   │       ├── data-service.js                  # Data service layer
+│   │       ├── debug-service.js                 # Debug service
+│   │       ├── default-functions-service.js     # Default functions service
+│   │       ├── default-prompts-service.js       # Default prompts service
+│   │       ├── link-sharing-service.js          # Encrypted link sharing
+│   │       ├── model-info.js                    # Model information service
+│   │       ├── prompts-service.js               # Prompts management service
+│   │       ├── share-item-registry.js           # Share item registry
+│   │       ├── share-service-v2.js              # Share service v2
+│   │       ├── share-service.js                 # Share service
+│   │       └── system-prompt-coordinator.js     # System prompt coordination
+│
+├── 🛠️ Utility Functions (13 files)
+│   ├── utils/
+│   │   ├── api-key-detector.js              # API key auto-detection
+│   │   ├── clipboard-utils.js               # Clipboard operations
+│   │   ├── context-utils.js                 # Context window utilities
+│   │   ├── crypto-utils.js                  # Cryptographic utilities
+│   │   ├── function-call-renderer.js        # Function call rendering
+│   │   ├── function-icon-fix.js             # Function icon fixes
+│   │   ├── function-markers.js              # Function marker utilities
+│   │   ├── mcp-size-estimator-global.js     # Global MCP size estimation
+│   │   ├── mcp-size-estimator.js            # MCP size estimation
+│   │   ├── rc4-utils.js                     # RC4 utility functions
+│   │   ├── smart-tooltip-positioner.js      # Intelligent tooltip positioning
+│   │   ├── tooltip-utils.js                 # Tooltip utilities
+│   │   └── ui-utils.js                      # UI utility functions
+│
+├── 🔧 Default Functions (4 files)
+│   ├── default-functions/
+│   │   ├── api-auth-client.js               # API authentication client
+│   │   ├── math-utilities.js                # Mathematical utility functions
+│   │   ├── mcp-example.js                   # MCP example functions
+│   │   └── rc4-encryption.js                # RC4 encryption/decryption
+│
+├── 📝 Default Prompts (12 files)
+│   ├── default-prompts/
+│   │   ├── agent-orchestration.js           # Agent orchestration prompts
+│   │   ├── api-auth-libsodium-core.js       # LibSodium core documentation
+│   │   ├── api-auth-libsodium-documentation.js # LibSodium documentation
+│   │   ├── api-auth-libsodium-examples.js   # LibSodium examples
+│   │   ├── api-auth-libsodium.js            # LibSodium integration
+│   │   ├── code-section.js                  # Code section prompts
+│   │   ├── function-calling.js              # Function calling guidance
+│   │   ├── function-library.js              # Function library prompts
+│   │   ├── hacka-re-project.js              # Project information (this file)
+│   │   ├── interpretability-urgency.js      # AI interpretability prompts
+│   │   ├── mcp-sdk-readme.js                # MCP SDK documentation
+│   │   ├── openai-proxies-python.js         # OpenAI proxy documentation
+│   │   └── owasp-llm-top10.js               # OWASP LLM security guidelines
+│
+├── 🔌 External Providers (6 files)
+│   ├── providers/
+│   │   └── github/
+│   │       ├── github-auth.js               # GitHub authentication
+│   │       ├── github-provider-loader.js    # GitHub provider loader
+│   │       ├── github-provider.js           # Main GitHub provider
+│   │       ├── github-tools.js              # GitHub API tools
+│   │       ├── github-ui.js                 # GitHub UI components
+│   │       └── index.js                     # GitHub provider index
+│
+├── ⚙️ Configuration (2 files)
+│   ├── config/
+│   │   ├── share-config.js                  # Sharing system configuration
+│   │   └── share-items-registry.js          # Share items registry
+│
+├── 🔌 Plugins (1 file)
+│   ├── plugins/
+│   │   └── share-plugin-manager.js          # Share plugin management
+│
+└── 🎭 Demo (1 file)
+    └── demo/
+        └── share-refactor-demo.js           # Share system refactor demo
+
+Total: 147 JavaScript files across 12 specialized categories
+\`\`\`
 
 ### Service-Oriented Design
 The architecture follows a **service layer pattern** with clear separation of concerns:
 
-#### API Services (7 modules)
-- **api-service.js**: Main API communication layer
-- **api-request-builder.js**: Request construction
-- **api-response-parser.js**: Response parsing
-- **api-stream-processor.js**: Streaming response handling
-- **api-tool-call-handler.js**: Tool call processing
-- **api-debugger.js**: API debugging utilities
-- **api-tools-service.js**: API tools integration
-
-#### Function Tools System (8 modules)
-- **function-tools-service.js**: Main orchestrator
-- **function-tools-executor.js**: Sandboxed execution engine
-- **function-tools-parser.js**: Argument parsing
-- **function-tools-registry.js**: Function registry
-- **function-tools-storage.js**: Storage operations
-- Plus 3 additional specialized modules
-
-#### Storage Services (4 modules)
-- **storage-service.js**: Main storage interface
-- **encryption-service.js**: TweetNaCl-based encryption
-- **namespace-service.js**: Multi-tenant data isolation
-- **core-storage-service.js**: Core storage operations
-
-#### MCP Services (9 modules)
-- **mcp-client-core.js**: Core MCP functionality
-- **mcp-connection-manager.js**: Connection management
-- **mcp-oauth-service.js**: OAuth integration
-- **mcp-transport-service.js**: Transport layer
-- Plus 5 additional MCP services
+The service layer implements specialized modules as detailed in the ASCII architecture above, with each service handling specific responsibilities within the overall system architecture.
 
 ### Recent Architectural Refactoring
 The project underwent a **major architectural refactoring** (~50 new files) from monolithic to modular design:
@@ -98,16 +280,16 @@ The project underwent a **major architectural refactoring** (~50 new files) from
 ### Function Calling System
 The function calling feature allows JavaScript functions to be executed by AI models:
 
-```javascript
+\`\`\`javascript
 // Functions tagged with @callable or @tool become available to models
 // Built-in RC4 encryption/decryption functions for testing
 // 8-module refactored architecture in js/services/function-tools-*.js
-```
+\`\`\`
 
 ### Secure Sharing Mechanism
 Pack complete GPT configurations into encrypted links:
 
-```
+\`\`\`
 Sharing Options:
 - API Provider configuration
 - API Key (encrypted)
@@ -116,19 +298,19 @@ Sharing Options:
 - Function Library
 - Conversation History
 - QR Code generation for paper backup
-```
+\`\`\`
 
 ## Security and Privacy
 
 ### Cryptographic Implementation
-```
+\`\`\`
 Technical Specifications:
 - Algorithm: XSalsa20-Poly1305 (TweetNaCl secretbox)
 - Key Derivation: 10,000 iterations of SHA-512 with salt
 - Key Size: 256 bits (32 bytes)
 - Nonce Size: 192 bits (24 bytes)
 - Authentication: Poly1305 MAC integrated
-```
+\`\`\`
 
 ### Privacy Architecture
 - **Client-Side Only**: Pure static web application
@@ -138,7 +320,7 @@ Technical Specifications:
 - **Direct API Communication**: Browser → API Provider (no intermediary)
 
 ### Security Considerations
-```
+\`\`\`
 Privacy Guarantees:
 ✓ GitHub Pages hosted (static files only)
 ✓ API key encrypted in localStorage
@@ -151,7 +333,7 @@ Privacy Limitations:
 ⚠ Chat content sent to API provider servers
 ⚠ Subject to API provider privacy policies
 ⚠ GitHub Pages hosting infrastructure
-```
+\`\`\`
 
 ## Development and Testing
 
@@ -162,7 +344,7 @@ Privacy Limitations:
 - **API integration**: Real function calling and model interaction tests
 
 ### Test Categories
-```
+\`\`\`
 Test Suite Structure:
 ├── Core Tests: Basic UI, API configuration, chat functionality
 ├── Feature Tests: Function calling, sharing, themes, model selection
@@ -170,17 +352,17 @@ Test Suite Structure:
 ├── MCP Tests: Model Context Protocol integration
 ├── Security Tests: Encryption, storage, sharing mechanisms
 └── UI Tests: Modal system, tooltips, responsive design
-```
+\`\`\`
 
 ### Development Practices
-```
+\`\`\`
 Code Organization:
 - Specialized component managers with focused responsibilities
 - Modular services with single responsibilities
 - Manager pattern with coordinators
 - Service layer architecture with clear dependencies
 - Component categories: function-calling, settings, mcp, prompts, ui
-```
+\`\`\`
 
 ### Refactoring Philosophy
 When refactoring, **REMOVE old functionality** completely:
@@ -193,7 +375,7 @@ When refactoring, **REMOVE old functionality** completely:
 
 hacka.re implements an **experimental MCP implementation** for external tool integration:
 
-```
+\`\`\`
 MCP Architecture:
 ├── Zero-dependency MCP client implementation
 ├── JSON-RPC 2.0 protocol support
@@ -202,7 +384,7 @@ MCP Architecture:
 ├── Server capability detection
 ├── OAuth 2.1 compliant authentication
 └── Browser-based stdio proxy bridge
-```
+\`\`\`
 
 ### MCP Features
 - **Pure client-side**: No external dependencies
@@ -214,15 +396,15 @@ MCP Architecture:
 ## Default Functions and Prompts
 
 ### Built-in Functions (4 modules)
-```javascript
+\`\`\`javascript
 // RC4 encryption/decryption for testing
 // Mathematical utilities
 // API authentication helpers
 // MCP example functions
-```
+\`\`\`
 
 ### Default Prompts (12 modules)
-```
+\`\`\`
 Available Prompts:
 - Project information (this prompt)
 - Function calling guidance
@@ -231,7 +413,7 @@ Available Prompts:
 - API authentication patterns
 - MCP SDK documentation
 - Plus 6 additional specialized prompts
-```
+\`\`\`
 
 ## Deployment and Portability
 
@@ -252,17 +434,17 @@ Available Prompts:
 ### Project Research
 The project includes comprehensive research documentation:
 
-```
+\`\`\`
 Research Components:
 - Technical architecture analysis
 - Security implementation evaluation
 - Privacy-focused design principles
 - Serverless architecture benefits
 - Competitive analysis of similar tools
-```
+\`\`\`
 
 ### Development Metrics
-```
+\`\`\`
 Project Scale:
 - 80+ JavaScript modules
 - 100+ test files
@@ -270,7 +452,7 @@ Project Scale:
 - 4 external libraries (locally hosted)
 - 12 CSS stylesheets
 - 6 font files
-```
+\`\`\`
 
 ## Community and Contributions
 
@@ -281,14 +463,14 @@ Project Scale:
 - **Extensible Design**: Plugin architecture for community extensions
 
 ### Development Tools
-```
+\`\`\`
 Development Environment:
 - Python testing framework
 - Playwright browser automation
 - Security verification tools
 - Project metrics tracking
 - Release packaging scripts
-```
+\`\`\`
 
 This comprehensive overview represents the complete hacka.re project - a privacy-focused, serverless, and highly modular chat interface built by whitehat hackers for the whitehat hacker community.`
 };
