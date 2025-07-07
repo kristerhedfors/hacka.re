@@ -160,8 +160,8 @@ window.DefaultFunctionsManager = (function() {
                 const wasSelected = DefaultFunctionsService.toggleIndividualFunctionSelection(functionId);
                 
                 // Update only the main function list without affecting the default functions tree
-                if (window.FunctionListRenderer) {
-                    window.FunctionListRenderer.renderMainFunctionList();
+                if (window.functionListRenderer) {
+                    window.functionListRenderer.renderMainFunctionList();
                 }
                 
                 // Add system message
