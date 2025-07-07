@@ -147,7 +147,7 @@ function get_weather(location, units = "metric") {
             // Set the editing flag
             editingFunctionName = name;
             
-            // Set the function name
+            // Set the function name to the specific function being edited
             if (elements.functionName) {
                 elements.functionName.value = name;
                 // Make it read-only since it's auto-completed
@@ -180,6 +180,14 @@ function get_weather(location, units = "metric") {
                 // Trigger any event listeners that might be attached to the code editor
                 const event = new Event('input', { bubbles: true });
                 elements.functionCode.dispatchEvent(event);
+                
+                // Re-set the function name to the specific function being edited
+                // after event handlers run, to prevent auto-extraction from overriding it
+                setTimeout(() => {
+                    if (elements.functionName) {
+                        elements.functionName.value = name;
+                    }
+                }, 50);
             }
             
             // Scroll to the editor form
@@ -213,12 +221,20 @@ function get_weather(location, units = "metric") {
             const code = elements.functionCode.value.trim();
             
             let collectionId;
+            let collectionMetadata = null;
+            let isEditingExistingFunction = false;
             
             // If we're in edit mode, handle it differently
             if (editingFunctionName) {
                 // Get the original collection ID to preserve it
                 const functionCollections = FunctionToolsService.getFunctionCollections();
                 collectionId = functionCollections[editingFunctionName];
+                isEditingExistingFunction = true;
+                
+                // Get the original collection metadata to preserve it
+                if (collectionId) {
+                    collectionMetadata = FunctionToolsService.getCollectionMetadata(collectionId);
+                }
                 
                 // Remove the old function collection
                 FunctionToolsService.removeJsFunction(editingFunctionName);
@@ -233,7 +249,6 @@ function get_weather(location, units = "metric") {
                 const addedFunctions = [];
                 
                 // Generate a unique collection ID for this set of functions (or use existing one if editing)
-                let collectionMetadata = null;
                 if (!collectionId) {
                     collectionId = 'collection_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
                     

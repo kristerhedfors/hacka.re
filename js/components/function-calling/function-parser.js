@@ -14,50 +14,49 @@ window.FunctionParser = (function() {
         if (!code) return [];
         
         try {
-            // Normalize indentation
-            const normalizedCode = code.replace(/^[ \t]+/gm, '');
-            
-            // Find all function declarations in the code
-            const functionRegex = /(\/\*\*[\s\S]*?\*\/\s*)?(\/\/.*?(?:\n\s*|$))?(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(([^)]*)\)[\s\S]*?(?=\/\*\*|\s*\/\/|\s*function\s+[a-zA-Z_$]|\s*$|$)/g;
+            // Use original code and a different approach that preserves whitespace
+            // Split the code into logical sections and extract functions from each
+            const functionRegex = /(\/\*\*[\s\S]*?\*\/\s*)?(\/\/.*?(?:\n\s*|$))?(?:async\s+)?function\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(([^)]*)\)\s*{/g;
             
             console.log('Extracting functions with regex:', functionRegex.source);
             
             const functions = [];
             let match;
             
-            while ((match = functionRegex.exec(normalizedCode)) !== null) {
+            while ((match = functionRegex.exec(code)) !== null) {
                 const jsDoc = match[1] || '';
                 const singleLineComment = match[2] || '';
                 const functionName = match[3];
                 const params = match[4];
                 
-                // Get the full function code by finding the opening brace and matching closing brace
-                const functionStartIndex = match.index + (jsDoc ? jsDoc.length : 0);
-                const functionDeclaration = normalizedCode.substring(functionStartIndex);
+                // Find the start of the function (including JSDoc)
+                const functionStartIndex = match.index;
+                const functionDeclarationStart = functionStartIndex + (jsDoc ? jsDoc.length : 0);
+                
+                // Extract from the opening brace position
+                const braceIndex = match.index + match[0].length - 1; // Position of opening brace
                 
                 // Find the function body by matching braces
-                let braceCount = 0;
-                let endIndex = 0;
-                let foundOpeningBrace = false;
+                let braceCount = 1; // Start with 1 since we're at the opening brace
+                let endIndex = braceIndex + 1;
                 
-                for (let i = 0; i < functionDeclaration.length; i++) {
-                    const char = functionDeclaration[i];
+                for (let i = braceIndex + 1; i < code.length; i++) {
+                    const char = code[i];
                     
                     if (char === '{') {
-                        foundOpeningBrace = true;
                         braceCount++;
                     } else if (char === '}') {
                         braceCount--;
                         
-                        if (foundOpeningBrace && braceCount === 0) {
+                        if (braceCount === 0) {
                             endIndex = i + 1;
                             break;
                         }
                     }
                 }
                 
-                // Extract the full function code including JSDoc
-                const fullFunctionCode = (jsDoc || '') + functionDeclaration.substring(0, endIndex);
+                // Extract the full function code including JSDoc from original code
+                const fullFunctionCode = code.substring(functionStartIndex, endIndex);
                 
                 // Check if the function is marked as callable with any of the supported markers
                 const hasCallableMarker = jsDoc && (
