@@ -2,7 +2,7 @@
 
 ## Overview
 
-hacka.re implements comprehensive Model Context Protocol (MCP) integration that allows AI models to access external tools and resources through MCP servers. The integration is built as a pure client-side implementation with no external dependencies, following hacka.re's privacy-focused architecture.
+hacka.re implements an experimental Model Context Protocol (MCP) implementation, that allows AI models to access external tools and resources through MCP servers. The integration is built as a pure client-side implementation with no external dependencies, following hacka.re's privacy-focused architecture.
 
 ## Architecture
 
