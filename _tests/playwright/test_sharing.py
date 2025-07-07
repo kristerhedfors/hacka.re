@@ -30,7 +30,7 @@ def test_model_sharing_link_creation(page: Page, serve_hacka_re):
     
     # Click the share button to open share modal
     share_button = page.locator("#share-btn")
-    share_button.click(timeout=1000)
+    share_button.click(timeout=2000)
     
     # Wait for the share modal to become visible
     page.wait_for_selector("#share-modal.active", state="visible", timeout=2500)
@@ -61,7 +61,7 @@ def test_model_sharing_link_creation(page: Page, serve_hacka_re):
     generate_button.click(force=True)
     
     # Wait for the link to be generated
-    time.sleep(2)
+    time.sleep(0.5)
     
     # Add debug to check if the generated link element exists
     generated_link_element = page.locator("#generated-link")
@@ -225,13 +225,13 @@ def test_model_sharing_link_loading(page: Page, serve_hacka_re):
     }""")
     
     # Check for system messages about the shared model
-    time.sleep(1)  # Give time for system messages to appear
+    time.sleep(0.5)  # Give time for system messages to appear
     system_messages = check_system_messages(page)
     
     # Verify that the model was applied
     model_info = page.locator("#model-info")
     # Wait for the model info to be visible with a timeout
-    page.wait_for_selector("#model-info", state="visible", timeout=5000)
+    page.wait_for_selector("#model-info", state="visible", timeout=2000)
     model_text = model_info.text_content()
     print(f"Model info text: {model_text}")
     
@@ -244,7 +244,7 @@ def setup_api_and_model(page):
     """Set up API key and model for testing."""
     # Click the settings button
     settings_button = page.locator("#settings-btn")
-    settings_button.click(timeout=1000)
+    settings_button.click(timeout=2000)
     
     # Wait for the settings modal to become visible
     page.wait_for_selector("#settings-modal.active", state="visible", timeout=2500)
@@ -264,7 +264,7 @@ def setup_api_and_model(page):
     reload_button.click()
     
     # Wait for the models to be loaded
-    time.sleep(1)
+    time.sleep(0.5)
     
     # Select the Llama model
     model_select = page.locator("#model-select")

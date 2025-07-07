@@ -50,14 +50,14 @@ def setup_api_and_model(page: Page):
     
     # Wait for the models to be loaded with more patience
     try:
-        page.wait_for_selector("#model-select option:not([disabled])", state="visible", timeout=8000)
+        page.wait_for_selector("#model-select option:not([disabled])", state="visible", timeout=2000)
         print("Models loaded successfully")
     except Exception as e:
         print(f"Error waiting for models to load: {e}")
         # Try reloading models one more time
         try:
             reload_button.click()
-            page.wait_for_selector("#model-select option:not([disabled])", state="visible", timeout=5000)
+            page.wait_for_selector("#model-select option:not([disabled])", state="visible", timeout=2000)
             print("Models loaded after retry")
         except:
             print("Failed to load models even after retry")
@@ -153,7 +153,7 @@ def test_stop_generation_button_ui_changes(page: Page, serve_hacka_re):
         expect(send_button).to_have_attribute("title", "Stop generation")
     
     # Wait a moment to ensure generation is actually happening
-    time.sleep(1)
+    time.sleep(0.5)
     
     # Click the stop button
     send_button.click()
@@ -194,7 +194,7 @@ def test_stop_generation_functionality(page: Page, serve_hacka_re):
     
     # Wait for user message to appear with more patience
     try:
-        page.wait_for_selector(".message.user .message-content", state="visible", timeout=5000)
+        page.wait_for_selector(".message.user .message-content", state="visible", timeout=2000)
         user_message = page.locator(".message.user .message-content")
         expect(user_message).to_contain_text(test_message)
         print("User message appeared successfully")
@@ -203,7 +203,7 @@ def test_stop_generation_functionality(page: Page, serve_hacka_re):
         # Take a screenshot to debug
         screenshot_with_markdown(page, "Failed to find user message")
         # Try to continue anyway - maybe the message is there but selector is different
-        time.sleep(1)
+        time.sleep(0.5)
     
     # Wait for generation to start (typing indicator or start of AI response)
     try:
@@ -218,7 +218,7 @@ def test_stop_generation_functionality(page: Page, serve_hacka_re):
     screenshot_with_markdown(page, "Generation started - about to click stop")
     
     # Wait a short time to let some generation happen
-    time.sleep(1)
+    time.sleep(0.5)
     
     # Click the stop button (which should be showing stop icon now)
     send_button.click()
@@ -259,7 +259,7 @@ def test_stop_generation_functionality(page: Page, serve_hacka_re):
         initial_content = ai_message.text_content() if ai_message.count() > 0 else ""
         
         # Wait a bit and check if content changed (it shouldn't)
-        time.sleep(2)
+        time.sleep(0.5)
         final_content = ai_message.text_content() if ai_message.count() > 0 else ""
         
         print(f"Initial content length: {len(initial_content)}")
@@ -293,7 +293,7 @@ def test_stop_generation_multiple_times(page: Page, serve_hacka_re):
         send_button.click()
         
         # Wait for user message to appear
-        page.wait_for_selector(".message.user .message-content", state="visible", timeout=5000)
+        page.wait_for_selector(".message.user .message-content", state="visible", timeout=2000)
         
         # Wait for generation to start
         time.sleep(0.5)
@@ -331,7 +331,7 @@ def test_stop_generation_with_empty_input(page: Page, serve_hacka_re):
     send_button.click()
     
     # Wait for generation to start
-    page.wait_for_selector(".message.user .message-content", state="visible", timeout=5000)
+    page.wait_for_selector(".message.user .message-content", state="visible", timeout=2000)
     time.sleep(0.5)
     
     # Verify input is now empty (it should be cleared after sending)
@@ -368,7 +368,7 @@ def test_stop_generation_keyboard_shortcut(page: Page, serve_hacka_re):
     message_input.press("Control+Enter")
     
     # Wait for generation to start
-    page.wait_for_selector(".message.user .message-content", state="visible", timeout=5000)
+    page.wait_for_selector(".message.user .message-content", state="visible", timeout=2000)
     time.sleep(0.5)
     
     # Verify button shows stop icon

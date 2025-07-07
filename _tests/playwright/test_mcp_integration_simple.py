@@ -122,7 +122,7 @@ def test_mcp_proxy_connection(page: Page, serve_hacka_re, mcp_proxy):
     
     # Should show connected status (might take a moment)
     try:
-        expect(proxy_status).to_contain_text("Connected", timeout=10000)
+        expect(proxy_status).to_contain_text("Connected", timeout=2000)
         connection_success = True
     except:
         # Connection failed - this is okay for testing
@@ -175,7 +175,7 @@ def test_mcp_server_form_with_proxy(page: Page, serve_hacka_re, mcp_proxy):
     submit_btn.click()
     
     # Wait a moment for any response
-    time.sleep(1)
+    time.sleep(0.5)
     
     screenshot_with_markdown(page, "mcp_server_form", {
         "Status": "Server form tested with proxy running",
@@ -223,7 +223,7 @@ def test_mcp_filesystem_server_attempt(page: Page, serve_hacka_re, mcp_proxy):
     submit_btn.click()
     
     # Wait for server to potentially start
-    time.sleep(3)
+    time.sleep(0.5)
     
     # Check if server appears in list (may or may not work)
     server_list = page.locator("#mcp-servers-list")
@@ -261,7 +261,7 @@ def test_mcp_modal_ui_with_proxy(page: Page, serve_hacka_re, mcp_proxy):
     
     # Test proxy connection button
     page.locator("#test-proxy-btn").click()
-    time.sleep(1)
+    time.sleep(0.5)
     
     # Check status updated
     status = page.locator("#proxy-status")
@@ -307,11 +307,11 @@ def test_mcp_proxy_health_endpoint(page: Page, serve_hacka_re, mcp_proxy):
     if proxy_working:
         # Test the UI connection
         page.locator("#test-proxy-btn").click()
-        time.sleep(2)
+        time.sleep(0.5)
         
         # Should show connected
         status = page.locator("#proxy-status")
-        expect(status).to_contain_text("Connected", timeout=5000)
+        expect(status).to_contain_text("Connected", timeout=2000)
     
     screenshot_with_markdown(page, "mcp_proxy_health", {
         "Status": f"Proxy health check {'passed' if proxy_working else 'failed'}",

@@ -41,7 +41,7 @@ def test_function_validation_errors_with_api(page: Page, serve_hacka_re, api_key
     
     # Wait for the page to be fully loaded
     try:
-        page.wait_for_load_state("networkidle", timeout=5000)
+        page.wait_for_load_state("networkidle", timeout=2000)
         print("Network idle state reached")
     except Exception as e:
         print(f"Error waiting for network idle: {e}")
@@ -65,7 +65,7 @@ def test_function_validation_errors_with_api(page: Page, serve_hacka_re, api_key
         try:
             page.goto(index_url, wait_until="domcontentloaded")
             print("Direct navigation to index.html successful")
-            page.wait_for_load_state("networkidle", timeout=5000)
+            page.wait_for_load_state("networkidle", timeout=2000)
             title = page.title()
             print(f"After direct navigation, page title: {title}")
         except Exception as e:
@@ -111,7 +111,7 @@ def test_function_validation_errors_with_api(page: Page, serve_hacka_re, api_key
     
     function_modal = page.locator("#function-modal")
     try:
-        expect(function_modal).to_be_visible(timeout=5000)
+        expect(function_modal).to_be_visible(timeout=2000)
         print("Function modal is visible")
     except Exception as e:
         print(f"Error waiting for function modal to be visible: {e}")

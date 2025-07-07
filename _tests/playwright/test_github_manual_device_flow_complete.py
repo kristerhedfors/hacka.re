@@ -37,7 +37,7 @@ def test_github_manual_device_flow_complete_workflow(page: Page, serve_hacka_re)
     page.click('button:has-text("Save & Connect")')
     
     # Wait for manual device flow modal
-    page.wait_for_selector('.device-flow-modal.manual-device-flow', state='visible', timeout=10000)
+    page.wait_for_selector('.device-flow-modal.manual-device-flow', state='visible', timeout=2000)
     manual_flow_modal = page.locator('.device-flow-modal.manual-device-flow')
     
     # Verify it's the manual flow

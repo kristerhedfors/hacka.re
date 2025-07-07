@@ -16,7 +16,7 @@ class TestMCPOAuthEnhancedService:
         dismiss_welcome_modal(page)
         
         # Wait for page to load and services to initialize
-        page.wait_for_timeout(2000)
+        page.wait_for_timeout(1000)
         
         # Check enhanced OAuth service capabilities
         service_capabilities = page.evaluate("""

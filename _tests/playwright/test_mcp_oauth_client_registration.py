@@ -16,7 +16,7 @@ class TestMCPOAuthClientRegistration:
         dismiss_welcome_modal(page)
         
         # Wait for page to load and services to initialize
-        page.wait_for_timeout(2000)
+        page.wait_for_timeout(1000)
         
         # Check that client registration service is available
         service_available = page.evaluate("""

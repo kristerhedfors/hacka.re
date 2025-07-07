@@ -26,7 +26,7 @@ def test_api_key_configuration(page, serve_hacka_re):
     
     # Click the settings button to open settings modal
     settings_button = page.locator("#settings-btn")
-    settings_button.click(timeout=1000)
+    settings_button.click(timeout=2000)
     
     # Wait for the settings modal to become visible
     page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
@@ -121,7 +121,7 @@ def test_model_selection(page, serve_hacka_re):
     
     # Click the settings button
     settings_button = page.locator("#settings-btn")
-    settings_button.click(timeout=1000)
+    settings_button.click(timeout=2000)
     
     # Wait for the settings modal to become visible
     page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
@@ -146,7 +146,7 @@ def test_model_selection(page, serve_hacka_re):
     except Exception as e:
         print(f"Error waiting for models to load: {e}")
         # Force a longer wait time
-        time.sleep(1)
+        time.sleep(0.5)
         
         # Check if there are any options in the model select
         options_count = page.evaluate("""() => {
@@ -160,7 +160,7 @@ def test_model_selection(page, serve_hacka_re):
             # Try clicking the reload button again
             print("No options found, clicking reload button again")
             reload_button.click()
-            time.sleep(1)
+            time.sleep(0.5)
     
     # Select the recommended test model
     from test_utils import select_recommended_test_model

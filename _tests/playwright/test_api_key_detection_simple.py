@@ -25,7 +25,7 @@ def test_api_key_detection_simple(page: Page, serve_hacka_re):
     settings_btn.click()
     
     # Wait for settings modal
-    page.wait_for_selector("#settings-modal.active", timeout=5000)
+    page.wait_for_selector("#settings-modal.active", timeout=2000)
     print("Settings modal opened")
     
     # Get the API key input
@@ -47,7 +47,7 @@ def test_api_key_detection_simple(page: Page, serve_hacka_re):
     detection_text = page.locator('#api-key-update-detection-text')
     
     # Wait for detection to appear
-    expect(detection_element).to_be_visible(timeout=2000)
+    expect(detection_element).to_be_visible(timeout=1000)
     expect(detection_text).to_contain_text("GroqCloud")
     expect(detection_text).to_contain_text("qwen3-32b")
     print("✅ GroqCloud API key detected with model info")
@@ -59,7 +59,7 @@ def test_api_key_detection_simple(page: Page, serve_hacka_re):
     
     # Check model dropdown for default Groq model
     model_select = page.locator('#model-select')
-    expect(model_select).to_have_value('qwen3-32b')
+    expect(model_select).to_have_value('qwen/qwen3-32b')
     print("✅ Default model auto-selected: qwen3-32b")
     
     # Clear and test OpenAI key

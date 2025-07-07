@@ -14,10 +14,10 @@ API_KEY = os.getenv("OPENAI_API_KEY")
 # Test fixed - now properly detects the system message in .message-content div
 def test_clear_namespace_settings(page: Page, serve_hacka_re):
     """
-    Test the 'Delete all saved settings for current GPT namespace' functionality.
+    Test the 'Delete current namespace and settings' functionality.
     
     This test verifies that:
-    1. The button text has been updated to 'Delete all saved settings for current GPT namespace'
+    1. The button text is 'Delete current namespace and settings'
     2. Clicking the button clears only the settings for the current namespace
     3. The confirmation message is displayed correctly
     """
@@ -51,7 +51,7 @@ def test_clear_namespace_settings(page: Page, serve_hacka_re):
     # Click the settings button
     print("Clicking settings button to open settings modal")
     settings_button = page.locator("#settings-btn")
-    settings_button.click(timeout=5000)  # Reduced timeout for faster failure
+    settings_button.click(timeout=2000)  # Reduced timeout for faster failure
     
     # Wait for the settings modal to become visible
     page.wait_for_selector("#settings-modal.active", state="visible")
@@ -75,7 +75,7 @@ def test_clear_namespace_settings(page: Page, serve_hacka_re):
     screenshot_with_markdown(page, "clear_namespace_settings_start.png", {
         "Status": "Test started",
         "Test Name": "Clear Namespace Settings Test",
-        "Description": "Testing the 'Delete all saved settings for current GPT namespace' functionality"
+        "Description": "Testing the 'Delete current namespace and settings' functionality"
     })
     
     # STEP 5: Open settings modal again
@@ -85,12 +85,12 @@ def test_clear_namespace_settings(page: Page, serve_hacka_re):
         print("Settings modal is already open, no need to click settings button")
     else:
         print("Clicking settings button to open settings modal again")
-        settings_button.click(timeout=5000)  # Reduced timeout for faster failure
+        settings_button.click(timeout=2000)  # Reduced timeout for faster failure
         page.wait_for_selector("#settings-modal.active", state="visible")
     
     # STEP 6: Verify the button text has been updated
     clear_settings_link = page.locator("#clear-all-settings")
-    expect(clear_settings_link).to_have_text("Delete GPT namespace and settings")
+    expect(clear_settings_link).to_have_text("Delete current namespace and settings")
     
     # STEP 7: Click the button to clear settings
     # Set up a dialog handler to accept any confirmation dialog
@@ -107,7 +107,7 @@ def test_clear_namespace_settings(page: Page, serve_hacka_re):
     screenshot_with_markdown(page, "before_clear_settings_click", {
         "Status": "Before clicking clear settings button",
         "Test Name": "Clear Namespace Settings Test",
-        "Description": "About to click the Delete GPT namespace and settings button"
+        "Description": "About to click the Delete current namespace and settings button"
     })
     
     # Set up debugging to track if the clearAllSettings function is called
@@ -154,11 +154,11 @@ def test_clear_namespace_settings(page: Page, serve_hacka_re):
     }""")
     
     # Click the button and wait for the dialog
-    print("Clicking the 'Delete GPT namespace and settings' button")
+    print("Clicking the 'Delete current namespace and settings' button")
     clear_settings_link.click()
     
     # Wait a moment for the dialog and processing
-    time.sleep(3)  # Give it more time to show dialog and process
+    time.sleep(0.5)  # Give it more time to show dialog and process
     
     print(f"Dialog was shown: {dialog_shown}")
     
@@ -192,7 +192,7 @@ def test_clear_namespace_settings(page: Page, serve_hacka_re):
             close_button = page.locator("#close-settings")
             if close_button.is_visible():
                 print("Close button is visible, clicking it")
-                close_button.click(force=True, timeout=1000)
+                close_button.click(force=True, timeout=2000)
                 time.sleep(0.5)  # Give it a moment to close
             else:
                 print("Close button is not visible")
@@ -241,7 +241,7 @@ def test_clear_namespace_settings(page: Page, serve_hacka_re):
                 const messages = document.querySelectorAll('.message.system .message-content p');
                 return messages.length >= 2;
             }""",
-            timeout=5000
+            timeout=2000
         )
     except Exception as e:
         print(f"Error waiting for new system messages: {e}")
@@ -338,7 +338,7 @@ def test_clear_namespace_settings(page: Page, serve_hacka_re):
         print("Settings modal is already open, no need to click settings button")
     else:
         print("Clicking settings button to open settings modal for verification")
-        settings_button.click(timeout=5000)  # Reduced timeout for faster failure
+        settings_button.click(timeout=2000)  # Reduced timeout for faster failure
         page.wait_for_selector("#settings-modal.active", state="visible")
     
     # STEP 11: Verify API key field is empty

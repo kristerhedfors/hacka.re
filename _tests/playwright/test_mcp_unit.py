@@ -55,7 +55,7 @@ def test_mcp_proxy_connection_states_mocked(page: Page, serve_hacka_re):
     ))
     
     page.locator("#test-proxy-btn").click()
-    time.sleep(1)  # Give it a moment to process
+    time.sleep(0.5)  # Give it a moment to process
     expect(proxy_status).to_contain_text("Connected")
     
     screenshot_with_markdown(page, "mcp_proxy_states", {
@@ -153,7 +153,7 @@ def test_mcp_proxy_button_interaction(page: Page, serve_hacka_re):
     
     # Click test button
     test_proxy_btn.click()
-    time.sleep(1)  # Give it time to process
+    time.sleep(0.5)  # Give it time to process
     
     # Should show some kind of status update
     proxy_status = page.locator("#proxy-status")

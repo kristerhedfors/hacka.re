@@ -53,7 +53,7 @@ def test_function_bundle_preservation_when_editing(page: Page, serve_hacka_re):
     page.wait_for_selector("#settings-modal", state="hidden")
     
     # Wait a moment for UI to update
-    time.sleep(1)
+    time.sleep(0.5)
     
     # Open Function Modal (should be visible by default)
     function_button = page.locator("#function-btn")
@@ -102,7 +102,7 @@ function subtract(a, b) {
     add_function_button.click()
     
     # Wait for validation message  
-    page.wait_for_selector("#function-validation-result", state="visible", timeout=5000)
+    page.wait_for_selector("#function-validation-result", state="visible", timeout=2000)
     
     # Verify all three functions are listed
     function_list = page.locator("#function-list")
@@ -120,7 +120,7 @@ function subtract(a, b) {
     add_function_item.click()
     
     # Wait for the function to load into the editor
-    time.sleep(1)
+    time.sleep(0.5)
     
     # Verify all three functions are loaded into the editor
     editor_content = function_code_textarea.input_value()
@@ -141,7 +141,7 @@ function subtract(a, b) {
     add_function_button.click()
     
     # Wait for validation message
-    page.wait_for_selector("#function-validation-result", state="visible", timeout=5000)
+    page.wait_for_selector("#function-validation-result", state="visible", timeout=2000)
     
     # Verify all three functions are still present
     final_count = function_items.count()
@@ -159,7 +159,7 @@ function subtract(a, b) {
     add_function_item.click()
     
     # Wait for the function to load
-    time.sleep(1)
+    time.sleep(0.5)
     
     # Verify the modification is present and all functions are still there
     final_editor_content = function_code_textarea.input_value()

@@ -26,7 +26,7 @@ def test_mcp_function_calls_with_parameters(page: Page, serve_hacka_re, api_key)
     page.locator("#api-key-update").fill(api_key)
     page.locator("#base-url-select").select_option("openai")
     page.locator("#model-reload-btn").click()
-    page.wait_for_timeout(2000)
+    page.wait_for_timeout(1000)
     
     # Select a model
     try:
@@ -81,11 +81,11 @@ def test_mcp_function_calls_with_parameters(page: Page, serve_hacka_re, api_key)
     print("3. Test will continue automatically")
     
     # Wait for modal to be closed (user will close it)
-    page.wait_for_selector("#mcp-servers-modal", state="hidden", timeout=30000)
+    page.wait_for_selector("#mcp-servers-modal", state="hidden", timeout=2000)
     print("MCP modal closed, continuing with test...")
     
     # Wait a bit for MCP functions to load
-    page.wait_for_timeout(3000)
+    page.wait_for_timeout(1000)
     
     # Test function call
     print("Testing MCP function call with 'list files in /Users/user'...")
@@ -95,7 +95,7 @@ def test_mcp_function_calls_with_parameters(page: Page, serve_hacka_re, api_key)
     page.click("#send-btn")
     
     # Wait for function call to complete
-    page.wait_for_timeout(10000)
+    page.wait_for_timeout(1000)
     
     # Check for function call indicators
     function_icons = page.locator('.function-call-icon')

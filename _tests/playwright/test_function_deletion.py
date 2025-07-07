@@ -114,7 +114,7 @@ function multiply_numbers(a, b) {
     
     # Wait for validation result with timeout
     validation_result = page.locator("#function-validation-result")
-    validation_result.wait_for(state="visible", timeout=5000)
+    validation_result.wait_for(state="visible", timeout=2000)
     expect(validation_result).to_contain_text("Library validated successfully")
     
     # Submit the form
@@ -161,7 +161,7 @@ function multiply_numbers(a, b) {
     
     # Delete the first function (getCurrentTimeInBerlin)
     delete_button = function_list.locator(".function-item:has-text('getCurrentTimeInBerlin') .function-item-delete")
-    delete_button.wait_for(state="visible", timeout=5000)
+    delete_button.wait_for(state="visible", timeout=2000)
     delete_button.click()
     
     # Wait for the function to be deleted
@@ -264,7 +264,7 @@ async function getCurrentTimeInBerlin() {
     # Validate and submit the first function collection
     page.locator("#function-validate-btn").click()
     validation_result = page.locator("#function-validation-result")
-    validation_result.wait_for(state="visible", timeout=5000)
+    validation_result.wait_for(state="visible", timeout=2000)
     page.locator("#function-editor-form button[type='submit']").click()
     
     # Check if the first callable function was added to the list
@@ -314,7 +314,7 @@ function calculate_rectangle_area(width, height) {
     # Validate and submit the second function collection
     page.locator("#function-validate-btn").click()
     validation_result = page.locator("#function-validation-result")
-    validation_result.wait_for(state="visible", timeout=5000)
+    validation_result.wait_for(state="visible", timeout=2000)
     page.locator("#function-editor-form button[type='submit']").click()
     
     # Check if both callable functions are in the list
@@ -347,7 +347,7 @@ function calculate_rectangle_area(width, height) {
     
     # Delete getCurrentTimeInBerlin (this deletes the entire first collection)
     delete_button = function_list.locator(".function-item:has-text('getCurrentTimeInBerlin') .function-item-delete")
-    delete_button.wait_for(state="visible", timeout=5000)
+    delete_button.wait_for(state="visible", timeout=2000)
     delete_button.click()
     
     # Wait for the function to be deleted

@@ -28,7 +28,7 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
     
     # Click the settings button
     settings_button = page.locator("#settings-btn")
-    settings_button.click(timeout=1000)
+    settings_button.click(timeout=2000)
     
     # Wait for the settings modal to become visible
     page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
@@ -58,7 +58,7 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
     print("Waiting for model reload to complete...")
     try:
         # Wait for the button to be re-enabled (indicating the operation completed)
-        page.wait_for_selector("#model-reload-btn:not([disabled])", state="visible", timeout=10000)
+        page.wait_for_selector("#model-reload-btn:not([disabled])", state="visible", timeout=2000)
         print("Model reload completed")
         
         # Then wait for models to be loaded
@@ -86,17 +86,17 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
                 # Try clicking the reload button again if it's enabled
                 print("Button is enabled, trying reload again")
                 reload_button.click()
-                time.sleep(2)
+                time.sleep(0.5)
                 
                 # Wait for operation to complete again
                 try:
-                    page.wait_for_selector("#model-reload-btn:not([disabled])", state="visible", timeout=10000)
+                    page.wait_for_selector("#model-reload-btn:not([disabled])", state="visible", timeout=2000)
                     page.wait_for_selector("#model-select option:not([disabled])", state="visible", timeout=2000)
                 except:
                     pass
             else:
                 print("Button is still disabled, waiting for operation to complete")
-                time.sleep(2)
+                time.sleep(0.5)
     
     # Select the recommended test model
     from test_utils import select_recommended_test_model
@@ -162,7 +162,7 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
             
             # Reopen settings
             settings_button = page.locator("#settings-btn")
-            settings_button.click(timeout=1000)
+            settings_button.click(timeout=2000)
             
             # Wait for the settings modal to become visible
             page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
@@ -208,13 +208,13 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
     # Try pressing Enter in the message input to submit the form
     print("Pressing Enter in the message input")
     message_input.press("Enter")
-    time.sleep(1)
+    time.sleep(0.5)
     
     # If that doesn't work, try clicking the button directly
     print("Clicking send button directly")
     send_button = page.locator("#send-btn")
     send_button.click(force=True)
-    time.sleep(1)
+    time.sleep(0.5)
     
     # If that doesn't work, try using JavaScript to submit the form
     print("Submitting form using JavaScript")
@@ -227,7 +227,7 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
             console.error('Form not found');
         }
     }""")
-    time.sleep(1)
+    time.sleep(0.5)
     
     # Check if the API key modal appears
     api_key_modal = page.locator("#api-key-modal")
@@ -322,7 +322,7 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
         page.wait_for_selector(".message.assistant .message-content", state="visible", timeout=2500)
         
         # Wait a short time to ensure content is fully loaded
-        time.sleep(1)
+        time.sleep(0.5)
         
         # Get all assistant messages
         assistant_messages = page.locator(".message.assistant .message-content")
@@ -375,7 +375,7 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
             # Try to force the chat completion to appear by checking the network requests
             print("Checking network requests for chat completion...")
             # Wait a short time for any pending requests to complete
-            time.sleep(1)
+            time.sleep(0.5)
             # Skip the test if we still can't find the response
             pytest.skip("Expected assistant response not found in any messages")
     except Exception as e:
