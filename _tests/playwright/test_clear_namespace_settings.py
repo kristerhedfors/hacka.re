@@ -14,10 +14,10 @@ API_KEY = os.getenv("OPENAI_API_KEY")
 # Test fixed - now properly detects the system message in .message-content div
 def test_clear_namespace_settings(page: Page, serve_hacka_re):
     """
-    Test the 'Delete all saved settings for current GPT namespace' functionality.
+    Test the 'Delete current namespace and settings' functionality.
     
     This test verifies that:
-    1. The button text has been updated to 'Delete all saved settings for current GPT namespace'
+    1. The button text is 'Delete current namespace and settings'
     2. Clicking the button clears only the settings for the current namespace
     3. The confirmation message is displayed correctly
     """
@@ -75,7 +75,7 @@ def test_clear_namespace_settings(page: Page, serve_hacka_re):
     screenshot_with_markdown(page, "clear_namespace_settings_start.png", {
         "Status": "Test started",
         "Test Name": "Clear Namespace Settings Test",
-        "Description": "Testing the 'Delete all saved settings for current GPT namespace' functionality"
+        "Description": "Testing the 'Delete current namespace and settings' functionality"
     })
     
     # STEP 5: Open settings modal again
@@ -90,7 +90,7 @@ def test_clear_namespace_settings(page: Page, serve_hacka_re):
     
     # STEP 6: Verify the button text has been updated
     clear_settings_link = page.locator("#clear-all-settings")
-    expect(clear_settings_link).to_have_text("Delete GPT namespace and settings")
+    expect(clear_settings_link).to_have_text("Delete current namespace and settings")
     
     # STEP 7: Click the button to clear settings
     # Set up a dialog handler to accept any confirmation dialog
@@ -107,7 +107,7 @@ def test_clear_namespace_settings(page: Page, serve_hacka_re):
     screenshot_with_markdown(page, "before_clear_settings_click", {
         "Status": "Before clicking clear settings button",
         "Test Name": "Clear Namespace Settings Test",
-        "Description": "About to click the Delete GPT namespace and settings button"
+        "Description": "About to click the Delete current namespace and settings button"
     })
     
     # Set up debugging to track if the clearAllSettings function is called
@@ -154,7 +154,7 @@ def test_clear_namespace_settings(page: Page, serve_hacka_re):
     }""")
     
     # Click the button and wait for the dialog
-    print("Clicking the 'Delete GPT namespace and settings' button")
+    print("Clicking the 'Delete current namespace and settings' button")
     clear_settings_link.click()
     
     # Wait a moment for the dialog and processing
