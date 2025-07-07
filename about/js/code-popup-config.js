@@ -7,6 +7,7 @@ window.CodePopupConfig = (function() {
     // Map of module names to file paths
     const moduleToFilePath = {
         'EncryptionService': 'js/services/encryption-service.js',
+        'CryptoUtils': 'js/utils/crypto-utils.js',
         'NamespaceService': 'js/services/namespace-service.js',
         'CoreStorageService': 'js/services/core-storage-service.js',
         'DataService': 'js/services/data-service.js',
@@ -18,6 +19,10 @@ window.CodePopupConfig = (function() {
         'PromptsManager': 'js/components/prompts-manager.js',
         'ShareManager': 'js/components/share-manager.js',
         'ApiToolsManager': 'js/components/api-tools-manager.js',
+        'LinkSharingService': 'js/services/link-sharing-service.js',
+        'ShareService': 'js/services/share-service.js',
+        'PromptsService': 'js/services/prompts-service.js',
+        'ApiToolsService': 'js/services/api-tools-service.js',
         'window.EncryptionService': 'js/services/encryption-service.js',
         'window.NamespaceService': 'js/services/namespace-service.js',
         'window.CoreStorageService': 'js/services/core-storage-service.js',
@@ -182,6 +187,68 @@ window.EncryptionService = (function() {
         encrypt: encrypt,
         decrypt: decrypt,
         initEncryption: initEncryption
+    };
+})();`,
+
+        'js/utils/crypto-utils.js': `/**
+ * Crypto Utilities
+ * Provides encryption and decryption functionality using TweetNaCl
+ */
+
+window.CryptoUtils = (function() {
+    // Constants
+    const SALT_LENGTH = 16; // 16 bytes for salt
+    const NONCE_LENGTH = nacl.box.nonceLength;
+    const KEY_LENGTH = 32; // seed and secretKey length
+    const KEY_ITERATIONS = 10000; // Number of iterations for key derivation
+    const NAMESPACE_PREFIX = 'hackare_namespace_';
+    const MASTER_KEY_PREFIX = 'hackare_master_key_';
+    
+    /**
+     * Generate a SHA-256 hash of a string
+     * @param {string} input - The string to hash
+     * @returns {string} Hex string of the hash
+     */
+    function sha256(input) {
+        // Convert input string to Uint8Array
+        const inputBytes = nacl.util.decodeUTF8(input);
+        
+        // Use TweetNaCl's hash function (SHA-512) and take first 32 bytes (256 bits)
+        const hashBytes = nacl.hash(inputBytes).slice(0, 32);
+        
+        // Convert to hex string
+        return Array.from(hashBytes)
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
+    }
+    
+    /**
+     * Generate a random alphanumeric string of specified length
+     * @param {number} length - The length of the string to generate
+     * @returns {string} Random alphanumeric string
+     */
+    function generateRandomAlphaNum(length) {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let result = '';
+        const randomValues = nacl.randomBytes(length);
+        
+        for (let i = 0; i < length; i++) {
+            // Use modulo to ensure we get a valid index for the chars string
+            const randomIndex = randomValues[i] % chars.length;
+            result += chars.charAt(randomIndex);
+        }
+        
+        return result;
+    }
+    
+    // Public API
+    return {
+        sha256,
+        generateRandomAlphaNum,
+        encryptData,
+        decryptData,
+        deriveKeyFromPassword,
+        generateNamespaceKey
     };
 })();`,
 
@@ -687,6 +754,225 @@ window.DataService = (function() {
         getTitle: getTitle,
         saveSubtitle: saveSubtitle,
         getSubtitle: getSubtitle
+    };
+})();`,
+
+        'js/services/link-sharing-service.js': `/**
+ * Link Sharing Service
+ * Handles creation and parsing of encrypted shareable links
+ */
+
+window.LinkSharingService = (function() {
+    /**
+     * Create a shareable link with encrypted data
+     * @param {Object} data - The data to include in the link
+     * @param {string} sessionKey - The session key for encryption
+     * @returns {string} The shareable link
+     */
+    function createShareableLink(data, sessionKey) {
+        try {
+            // Encrypt the data using the session key
+            const encryptedData = CryptoUtils.encryptData(JSON.stringify(data), sessionKey);
+            
+            // Create the link with encrypted data in URL fragment
+            const baseUrl = window.location.origin + window.location.pathname;
+            return baseUrl + '#' + encodeURIComponent(encryptedData);
+        } catch (error) {
+            console.error('Error creating shareable link:', error);
+            throw error;
+        }
+    }
+    
+    /**
+     * Parse a shareable link and decrypt its data
+     * @param {string} link - The shareable link
+     * @param {string} sessionKey - The session key for decryption
+     * @returns {Object} The decrypted data
+     */
+    function parseShareableLink(link, sessionKey) {
+        try {
+            // Extract encrypted data from URL fragment
+            const urlParts = link.split('#');
+            if (urlParts.length < 2) {
+                throw new Error('Invalid shareable link format');
+            }
+            
+            const encryptedData = decodeURIComponent(urlParts[1]);
+            
+            // Decrypt the data
+            const decryptedData = CryptoUtils.decryptData(encryptedData, sessionKey);
+            return JSON.parse(decryptedData);
+        } catch (error) {
+            console.error('Error parsing shareable link:', error);
+            throw error;
+        }
+    }
+    
+    // Public API
+    return {
+        createShareableLink,
+        parseShareableLink
+    };
+})();`,
+
+        'js/services/share-service.js': `/**
+ * Share Service
+ * High-level facade for sharing operations
+ */
+
+window.ShareService = (function() {
+    /**
+     * Generate a shareable link with selected data
+     * @param {Object} options - Sharing options
+     * @returns {string} The shareable link
+     */
+    function generateShareableLink(options) {
+        const shareData = {};
+        
+        // Include selected data based on options
+        if (options.includeApiKey) {
+            shareData.apiKey = StorageService.getApiKey();
+        }
+        
+        if (options.includeBaseUrl) {
+            shareData.baseUrl = StorageService.getBaseUrl();
+        }
+        
+        if (options.includeModel) {
+            shareData.model = StorageService.getModel();
+        }
+        
+        if (options.includeSystemPrompt) {
+            shareData.systemPrompt = StorageService.getSystemPrompt();
+        }
+        
+        if (options.includeConversation && options.messageCount > 0) {
+            const messages = StorageService.getChatHistory();
+            shareData.conversation = messages.slice(-options.messageCount);
+        }
+        
+        return LinkSharingService.createShareableLink(shareData, options.sessionKey);
+    }
+    
+    // Public API
+    return {
+        generateShareableLink
+    };
+})();`,
+
+        'js/services/prompts-service.js': `/**
+ * Prompts Service
+ * Handles storage and management of labeled prompts with encryption
+ */
+
+window.PromptsService = (function() {
+    // Storage key for prompts
+    const PROMPTS_STORAGE_KEY = 'prompts';
+    const SELECTED_PROMPT_IDS_KEY = 'selected_prompt_ids';
+    
+    /**
+     * Save a prompt to local storage with encryption
+     * @param {Object} prompt - The prompt object to save
+     * @returns {Object} The saved prompt
+     */
+    function savePrompt(prompt) {
+        // Ensure prompt has an ID
+        if (!prompt.id) {
+            prompt.id = generateId();
+        }
+        
+        // Get existing prompts
+        const prompts = getPrompts();
+        
+        // Find if prompt already exists
+        const existingIndex = prompts.findIndex(p => p.id === prompt.id);
+        
+        if (existingIndex >= 0) {
+            prompts[existingIndex] = prompt;
+        } else {
+            prompts.push(prompt);
+        }
+        
+        // Save to storage with encryption
+        CoreStorageService.setValue(PROMPTS_STORAGE_KEY, prompts);
+        return prompt;
+    }
+    
+    /**
+     * Get all prompts from local storage with decryption
+     * @returns {Array} Array of prompt objects
+     */
+    function getPrompts() {
+        const prompts = CoreStorageService.getValue(PROMPTS_STORAGE_KEY);
+        return prompts || [];
+    }
+    
+    /**
+     * Get selected prompts
+     * @returns {Array} Array of selected prompt objects
+     */
+    function getSelectedPrompts() {
+        const selectedIds = getSelectedPromptIds();
+        const allPrompts = getPrompts();
+        return allPrompts.filter(prompt => selectedIds.includes(prompt.id));
+    }
+    
+    // Public API
+    return {
+        savePrompt,
+        getPrompts,
+        getSelectedPrompts,
+        togglePromptSelection,
+        applySelectedPromptsAsSystem
+    };
+})();`,
+
+        'js/services/api-tools-service.js': `/**
+ * API Tools Service
+ * Provides utilities for API interactions and tool calling
+ */
+
+window.ApiToolsService = (function() {
+    /**
+     * Format function definitions for API tool calling
+     * @param {Array} functions - Array of function objects
+     * @returns {Array} Formatted tool definitions
+     */
+    function formatToolDefinitions(functions) {
+        return functions.map(func => ({
+            type: 'function',
+            function: {
+                name: func.name,
+                description: func.description || func.name,
+                parameters: func.parameters || {
+                    type: 'object',
+                    properties: {},
+                    required: []
+                }
+            }
+        }));
+    }
+    
+    /**
+     * Execute a tool call
+     * @param {Object} toolCall - The tool call object
+     * @returns {Promise} Tool execution result
+     */
+    async function executeToolCall(toolCall) {
+        const { name, arguments: args } = toolCall.function;
+        
+        // Find and execute the function
+        if (window.FunctionToolsService) {
+            return await window.FunctionToolsService.executeFunction(name, args);
+        }
+        
+        throw new Error('Function execution service not available');
+    }
+    
+    // Public API
+    return {
+        formatToolDefinitions,
+        executeToolCall
     };
 })();`
     };

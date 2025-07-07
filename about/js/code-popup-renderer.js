@@ -51,6 +51,11 @@ window.CodePopupRenderer = (function() {
             
             // Then, process list items that might contain module names in strong tags
             section.querySelectorAll('li strong').forEach(strongElement => {
+                // Skip if this strong element already contains a code-popup-trigger
+                if (strongElement.querySelector('.code-popup-trigger')) {
+                    return;
+                }
+                
                 const text = strongElement.textContent;
                 for (const moduleName in moduleToFilePath) {
                     // Check if the strong tag contains exactly the module name (with optional colon)
@@ -98,12 +103,15 @@ window.CodePopupRenderer = (function() {
      * @param {string} sourceCode - The source code content
      */
     function showCodePopup(element, filePath, moduleName, sourceCode) {
-        // Remove any existing popups
-        removeExistingPopups();
+        console.info(`Showing code popup for ${moduleName}`);
         
-        // Create the popup container
-        const popup = document.createElement('div');
-        popup.className = 'code-popup';
+        try {
+            // Remove any existing popups
+            removeExistingPopups();
+            
+            // Create the popup container
+            const popup = document.createElement('div');
+            popup.className = 'code-popup';
         
         // Create the popup header
         const header = document.createElement('div');
@@ -163,16 +171,21 @@ window.CodePopupRenderer = (function() {
             content.querySelectorAll('pre code').forEach(block => hljs.highlightElement(block));
         }
         
-        popup.appendChild(content);
-        
-        // Position the popup near the element
-        positionPopup(popup, element);
-        
-        // Add the popup to the document
-        document.body.appendChild(popup);
-        
-        // Add event listener to close popup when clicking outside
-        document.addEventListener('click', handleOutsideClick);
+            popup.appendChild(content);
+            
+            // Position the popup near the element
+            positionPopup(popup, element);
+            
+            // Add the popup to the document
+            document.body.appendChild(popup);
+            
+            // Add event listener to close popup when clicking outside
+            document.addEventListener('click', handleOutsideClick);
+            
+        } catch (error) {
+            console.error('Error in showCodePopup:', error);
+            console.error('Stack trace:', error.stack);
+        }
     }
 
     /**
@@ -181,44 +194,50 @@ window.CodePopupRenderer = (function() {
      * @param {HTMLElement} element - The element that triggered the popup
      */
     function positionPopup(popup, element) {
-        // Get the element's position
-        const rect = element.getBoundingClientRect();
-        
-        // Set initial position
-        popup.style.position = 'absolute';
-        popup.style.zIndex = '1000';
-        
-        // Add the popup to the document temporarily to get its dimensions
-        popup.style.visibility = 'hidden';
-        document.body.appendChild(popup);
-        
-        const popupRect = popup.getBoundingClientRect();
-        
-        // Remove the popup
-        document.body.removeChild(popup);
-        popup.style.visibility = 'visible';
-        
-        // Calculate position
-        let top = rect.bottom + window.scrollY + 10; // 10px below the element
-        let left = rect.left + window.scrollX;
-        
-        // Adjust if popup would go off the right edge
-        if (left + popupRect.width > window.innerWidth) {
-            left = window.innerWidth - popupRect.width - 20;
+        try {
+            // Get the element's position
+            const rect = element.getBoundingClientRect();
+            
+            // Set initial position
+            popup.style.position = 'absolute';
+            popup.style.zIndex = '1000';
+            
+            // Add the popup to the document temporarily to get its dimensions
+            popup.style.visibility = 'hidden';
+            document.body.appendChild(popup);
+            
+            const popupRect = popup.getBoundingClientRect();
+            
+            // Remove the popup
+            document.body.removeChild(popup);
+            popup.style.visibility = 'visible';
+            
+            // Calculate position
+            let top = rect.bottom + window.scrollY + 10; // 10px below the element
+            let left = rect.left + window.scrollX;
+            
+            // Adjust if popup would go off the right edge
+            if (left + popupRect.width > window.innerWidth) {
+                left = window.innerWidth - popupRect.width - 20;
+            }
+            
+            // Adjust if popup would go off the bottom edge
+            if (top + popupRect.height > window.scrollY + window.innerHeight) {
+                // Place above the element instead
+                top = rect.top + window.scrollY - popupRect.height - 10;
+            }
+            
+            // Ensure popup is not positioned off-screen
+            left = Math.max(20, left);
+            top = Math.max(20, top);
+            
+            popup.style.top = `${top}px`;
+            popup.style.left = `${left}px`;
+            
+        } catch (error) {
+            console.error('Error in positionPopup:', error);
+            console.error('Stack trace:', error.stack);
         }
-        
-        // Adjust if popup would go off the bottom edge
-        if (top + popupRect.height > window.scrollY + window.innerHeight) {
-            // Place above the element instead
-            top = rect.top + window.scrollY - popupRect.height - 10;
-        }
-        
-        // Ensure popup is not positioned off-screen
-        left = Math.max(20, left);
-        top = Math.max(20, top);
-        
-        popup.style.top = `${top}px`;
-        popup.style.left = `${left}px`;
     }
 
     /**
@@ -227,14 +246,26 @@ window.CodePopupRenderer = (function() {
      */
     function handleOutsideClick(event) {
         const popup = document.querySelector('.code-popup');
-        if (!popup) return;
+        if (!popup) {
+            return;
+        }
         
         // Check if the click was inside the popup
-        if (popup.contains(event.target)) return;
+        if (popup.contains(event.target)) {
+            return;
+        }
         
         // Check if the click was on a code module reference
-        if (event.target.classList.contains('code-module-reference')) return;
+        if (event.target.classList.contains('code-module-reference')) {
+            return;
+        }
         
+        // Check if the click was on a code popup trigger
+        if (event.target.classList.contains('code-popup-trigger')) {
+            return;
+        }
+        
+        console.info('Closing code popup due to outside click');
         // Remove the popup
         removeExistingPopups();
     }
@@ -244,6 +275,9 @@ window.CodePopupRenderer = (function() {
      */
     function removeExistingPopups() {
         const popups = document.querySelectorAll('.code-popup');
+        if (popups.length > 0) {
+            console.info(`Removing ${popups.length} existing popup(s)`);
+        }
         popups.forEach(popup => {
             popup.remove();
         });
