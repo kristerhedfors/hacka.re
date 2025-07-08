@@ -196,7 +196,9 @@ window.DataService = (function() {
      */
     function saveTitle(title) {
         // Title is not namespaced to avoid circular dependency
-        sessionStorage.setItem(STORAGE_KEYS.TITLE, title);
+        // Use dynamic storage based on storage type
+        const storage = StorageTypeService ? StorageTypeService.getStorage() : sessionStorage;
+        storage.setItem(STORAGE_KEYS.TITLE, title);
         
         // Reset namespace cache since title changed
         NamespaceService.resetNamespaceCache();
@@ -211,7 +213,9 @@ window.DataService = (function() {
      */
     function getTitle() {
         // Title is not namespaced to avoid circular dependency
-        return sessionStorage.getItem(STORAGE_KEYS.TITLE) || "hacka.re";
+        // Use dynamic storage based on storage type
+        const storage = StorageTypeService ? StorageTypeService.getStorage() : sessionStorage;
+        return storage.getItem(STORAGE_KEYS.TITLE) || "hacka.re";
     }
 
     /**
@@ -220,7 +224,9 @@ window.DataService = (function() {
      */
     function saveSubtitle(subtitle) {
         // Subtitle is not namespaced to avoid circular dependency
-        sessionStorage.setItem(STORAGE_KEYS.SUBTITLE, subtitle);
+        // Use dynamic storage based on storage type
+        const storage = StorageTypeService ? StorageTypeService.getStorage() : sessionStorage;
+        storage.setItem(STORAGE_KEYS.SUBTITLE, subtitle);
         
         // Reset namespace cache since subtitle changed
         NamespaceService.resetNamespaceCache();
@@ -235,7 +241,9 @@ window.DataService = (function() {
      */
     function getSubtitle() {
         // Subtitle is not namespaced to avoid circular dependency
-        return sessionStorage.getItem(STORAGE_KEYS.SUBTITLE) || "Free, open, för hackare av hackare";
+        // Use dynamic storage based on storage type
+        const storage = StorageTypeService ? StorageTypeService.getStorage() : sessionStorage;
+        return storage.getItem(STORAGE_KEYS.SUBTITLE) || "Free, open, för hackare av hackare";
     }
     
     /**
