@@ -202,6 +202,14 @@ window.ModelSelectionManager = (function() {
         }
         
         resetModalState();
+        
+        // Focus the message input after modal closes
+        setTimeout(() => {
+            const messageInput = document.getElementById('message-input');
+            if (messageInput) {
+                messageInput.focus();
+            }
+        }, 100);
     }
     
     /**
