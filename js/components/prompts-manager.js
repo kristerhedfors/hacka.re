@@ -106,6 +106,14 @@ window.PromptsManager = (function() {
             
             // Clear current prompt
             currentPrompt = null;
+            
+            // Focus the message input after modal closes
+            setTimeout(() => {
+                const messageInput = document.getElementById('message-input');
+                if (messageInput) {
+                    messageInput.focus();
+                }
+            }, 100);
         }
         
         /**
