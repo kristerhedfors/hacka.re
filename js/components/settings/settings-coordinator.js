@@ -37,6 +37,11 @@ window.SettingsCoordinator = (function() {
         elements.modelReloadBtn.addEventListener('click', function(e) {
             e.preventDefault();
             
+            // Invalidate model selection cache
+            if (window.ModelSelectionManager && window.ModelSelectionManager.invalidateCache) {
+                window.ModelSelectionManager.invalidateCache();
+            }
+            
             // Clear the model select and show loading state
             if (elements.modelSelect) {
                 elements.modelSelect.innerHTML = '<option disabled selected>Loading models...</option>';
@@ -175,6 +180,11 @@ window.SettingsCoordinator = (function() {
         if (apiKeyChanged || baseUrlChanged) {
             console.log("API key or base URL changed, resetting model fetch cache");
             state.lastModelsFetchTime = 0;
+            
+            // Invalidate model selection cache
+            if (window.ModelSelectionManager && window.ModelSelectionManager.invalidateCache) {
+                window.ModelSelectionManager.invalidateCache();
+            }
         }
         
         // Fetch models with the new values and update storage
