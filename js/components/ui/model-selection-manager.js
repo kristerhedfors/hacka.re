@@ -354,7 +354,6 @@ window.ModelSelectionManager = (function() {
         // Add click listeners to model items
         elements.modelListContainer.querySelectorAll('.model-item').forEach(item => {
             item.addEventListener('click', () => {
-                const modelId = item.dataset.modelId;
                 const index = parseInt(item.dataset.index);
                 highlightedIndex = index;
                 updateHighlight();
@@ -504,6 +503,16 @@ window.ModelSelectionManager = (function() {
         console.log('🔧 Selecting model:', selectedModel.id);
         
         try {
+            // Save through settings manager first to ensure proper coordination
+            if (window.aiHackare && window.aiHackare.settingsManager && window.aiHackare.settingsManager.saveModel) {
+                window.aiHackare.settingsManager.saveModel(selectedModel.id);
+            } else if (window.StorageService && window.StorageService.saveModel) {
+                // Fallback to direct storage service
+                window.StorageService.saveModel(selectedModel.id);
+            } else {
+                console.error('❌ No method available to save model');
+            }
+            
             // Update the main model select dropdown
             const modelSelect = document.getElementById('model-select');
             if (modelSelect) {
@@ -512,11 +521,6 @@ window.ModelSelectionManager = (function() {
                 // Trigger change event to update the application
                 const changeEvent = new Event('change', { bubbles: true });
                 modelSelect.dispatchEvent(changeEvent);
-            }
-            
-            // Save to storage
-            if (window.StorageService && window.StorageService.saveModel) {
-                window.StorageService.saveModel(selectedModel.id);
             }
             
             // Update UI display
