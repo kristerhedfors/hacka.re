@@ -142,7 +142,6 @@ window.ModelSelectionManager = (function() {
         filterModels();
         highlightedIndex = currentSearchTerm ? 0 : -1; // Auto-highlight first result
         updateHighlight();
-        updateModelInfo();
     }
     
     /**
@@ -265,7 +264,6 @@ window.ModelSelectionManager = (function() {
             
             console.log(`✅ Loaded ${availableModels.length} models`);
             renderModels();
-            updateModelInfo();
             
         } catch (error) {
             console.error('❌ Error fetching models:', error);
@@ -505,63 +503,12 @@ window.ModelSelectionManager = (function() {
     }
     
     /**
-     * Update model info display
-     */
-    function updateModelInfo() {
-        if (!elements.modelCardInfo) return;
-        
-        const currentModel = window.aiHackare?.settingsManager?.getCurrentModel();
-        const model = selectedModel || availableModels.find(m => m.id === currentModel) || availableModels[0];
-        
-        if (!model) {
-            elements.modelCardInfo.innerHTML = '<div class="no-models-found">No model information available</div>';
-            return;
-        }
-        
-        const baseUrl = window.aiHackare?.settingsManager?.getBaseUrl() || '';
-        const displayName = window.ModelInfoService?.getDisplayName?.(model.id) || model.name;
-        
-        let html = `
-            <div class="model-property">
-                <div class="property-name">Model ID:</div>
-                <div class="property-value">${escapeHtml(model.id)}</div>
-            </div>
-        `;
-        
-        if (displayName !== model.id) {
-            html += `
-                <div class="model-property">
-                    <div class="property-name">Display Name:</div>
-                    <div class="property-value">${escapeHtml(displayName)}</div>
-                </div>
-            `;
-        }
-        
-        html += `
-            <div class="model-property">
-                <div class="property-name">Provider:</div>
-                <div class="property-value">${escapeHtml(model.provider)}</div>
-            </div>
-            <div class="model-property">
-                <div class="property-name">API Endpoint:</div>
-                <div class="property-value">${escapeHtml(baseUrl)}</div>
-            </div>
-        `;
-        
-        elements.modelCardInfo.innerHTML = html;
-    }
-    
-    /**
      * Show error message
      * @param {string} message - Error message
      */
     function showError(message) {
         if (elements.modelListContainer) {
             elements.modelListContainer.innerHTML = `<div class="no-models-found">${escapeHtml(message)}</div>`;
-        }
-        
-        if (elements.modelCardInfo) {
-            elements.modelCardInfo.innerHTML = `<div class="model-property"><div class="property-name">Error:</div><div class="property-value">${escapeHtml(message)}</div></div>`;
         }
     }
     

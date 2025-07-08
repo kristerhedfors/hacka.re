@@ -128,7 +128,6 @@ window.DOMElements = (function() {
             modelSelectionModal: document.getElementById('model-selection-modal'),
             closeModelSelectionModal: document.getElementById('close-model-selection-modal'),
             modelSearchInput: document.getElementById('model-search-input'),
-            modelCardInfo: document.getElementById('model-card-info'),
             modelListContainer: document.getElementById('model-list-container'),
             modelSelectionCancel: document.getElementById('model-selection-cancel'),
             modelSelectionSelect: document.getElementById('model-selection-select')
