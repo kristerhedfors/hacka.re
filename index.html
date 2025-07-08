@@ -555,6 +555,31 @@ async function getCurrentTimeInBerlin() {
             </div>
         </div>
         
+        <!-- Model selection modal with live search -->
+        <div id="model-selection-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Select Model</h2>
+                    <button type="button" class="close-btn" id="close-model-selection-modal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="model-selection-body">
+                    <div class="model-search-container">
+                        <input type="text" id="model-search-input" class="model-search-input" placeholder="Type to search models..." autocomplete="off">
+                    </div>
+                    <div id="model-card-info" class="model-info-display"></div>
+                    <div id="model-list-container" class="model-list-container">
+                        <div class="loading-models">Loading models...</div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn secondary-btn" id="model-selection-cancel">Cancel</button>
+                    <button type="button" class="btn primary-btn" id="model-selection-select">Select Model</button>
+                </div>
+            </div>
+        </div>
+
         <div id="settings-modal" class="modal">
             <div class="modal-content">
                 <div class="settings-header">
@@ -749,6 +774,7 @@ async function getCurrentTimeInBerlin() {
     <script src="js/components/ui/modal-manager.js"></script>
     <script src="js/components/ui/context-usage-display.js"></script>
     <script src="js/components/ui/model-info-display.js"></script>
+    <script src="js/components/ui/model-selection-manager.js"></script>
     <script src="js/components/ui/share-ui-manager.js"></script>
     <script src="js/components/ui/ui-coordinator.js"></script>
     <!-- Legacy UI manager wrapper -->

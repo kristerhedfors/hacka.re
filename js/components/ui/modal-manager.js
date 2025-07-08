@@ -161,6 +161,30 @@ window.ModalManager = (function() {
             }
         }
         
+        /**
+         * Show the model selection modal
+         */
+        function showModelSelectorModal() {
+            if (window.ModelSelectionManager) {
+                console.log('🔧 ModalManager: Using ModelSelectionManager.showModal');
+                window.ModelSelectionManager.showModal();
+            } else {
+                console.log('❌ ModalManager: ModelSelectionManager not available');
+            }
+        }
+        
+        /**
+         * Hide the model selection modal
+         */
+        function hideModelSelectorModal() {
+            if (window.ModelSelectionManager) {
+                console.log('🔧 ModalManager: Using ModelSelectionManager.hideModal');
+                window.ModelSelectionManager.hideModal();
+            } else {
+                console.log('❌ ModalManager: ModelSelectionManager not available');
+            }
+        }
+        
         // Public API
         return {
             showApiKeyModal,
@@ -170,7 +194,9 @@ window.ModalManager = (function() {
             showShareModal,
             hideShareModal,
             showFunctionModal,
-            hideFunctionModal
+            hideFunctionModal,
+            showModelSelectorModal,
+            hideModelSelectorModal
         };
     }
     

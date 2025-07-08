@@ -32,6 +32,16 @@ document.addEventListener('DOMContentLoaded', function() {
         DebugService.log('Function Details Modal initialized');
     }
     
+    // Initialize Model Selection Manager after aiHackare is ready
+    setTimeout(() => {
+        if (window.ModelSelectionManager && window.aiHackare && window.aiHackare.elements) {
+            window.ModelSelectionManager.init(window.aiHackare.elements);
+            DebugService.log('Model Selection Manager initialized');
+        } else {
+            DebugService.log('Model Selection Manager initialization deferred - dependencies not ready');
+        }
+    }, 1000);
+    
     // Initialize title and subtitle from localStorage if available
     if (window.StorageService) {
         // Update title and subtitle on page load
