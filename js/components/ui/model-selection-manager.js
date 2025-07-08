@@ -10,6 +10,11 @@ window.ModelSelectionManager = (function() {
     let selectedModel = null;
     let currentSearchTerm = '';
     let highlightedIndex = -1;
+    let modelsCache = {
+        models: [],
+        lastFetched: 0,
+        cacheTimeout: 5 * 60 * 1000 // 5 minutes
+    };
     
     /**
      * Initialize the model selection manager
@@ -96,8 +101,8 @@ window.ModelSelectionManager = (function() {
             return;
         }
         
-        // Handle navigation in modal
-        if (isModalVisible()) {
+        // Handle navigation in modal (but not if search input is focused and already handled)
+        if (isModalVisible() && !e.defaultPrevented) {
             handleModalKeyboard(e);
         }
     }
@@ -149,8 +154,10 @@ window.ModelSelectionManager = (function() {
      * @param {KeyboardEvent} e - Keyboard event
      */
     function handleSearchKeydown(e) {
-        // Don't let these bubble up to modal keyboard handler
+        // Handle navigation keys and prevent them from bubbling to global handler
         if (['ArrowDown', 'ArrowUp', 'Enter'].includes(e.key)) {
+            e.preventDefault(); // Prevent default browser behavior
+            e.stopPropagation(); // Prevent global handler from also processing this
             handleModalKeyboard(e);
         }
     }
@@ -166,21 +173,20 @@ window.ModelSelectionManager = (function() {
             return;
         }
         
-        // Load models and show modal
-        loadAvailableModels().then(() => {
-            elements.modelSelectionModal.classList.add('active');
-            resetModalState();
-            
-            // Focus search input
-            if (elements.modelSearchInput) {
-                setTimeout(() => {
-                    elements.modelSearchInput.focus();
-                }, 100);
-            }
-        }).catch(error => {
+        // Show modal immediately
+        elements.modelSelectionModal.classList.add('active');
+        resetModalState();
+        
+        // Focus search input
+        if (elements.modelSearchInput) {
+            setTimeout(() => {
+                elements.modelSearchInput.focus();
+            }, 100);
+        }
+        
+        // Load models (cached or fresh)
+        loadAvailableModels().catch(error => {
             console.error('❌ Error loading models:', error);
-            // Show modal anyway with error message
-            elements.modelSelectionModal.classList.add('active');
             showError('Failed to load models. Please check your API configuration.');
         });
     }
@@ -220,55 +226,86 @@ window.ModelSelectionManager = (function() {
     }
     
     /**
-     * Load available models from API
+     * Load available models from cache or API
      * @returns {Promise} Promise that resolves when models are loaded
      */
     async function loadAvailableModels() {
         console.log('🔧 Loading available models...');
         
-        // Show loading state
-        if (elements.modelListContainer) {
-            elements.modelListContainer.innerHTML = '<div class="loading-models">Loading models...</div>';
+        // Check if we have cached models that are still valid
+        const now = Date.now();
+        const isCacheValid = modelsCache.models.length > 0 && 
+                           (now - modelsCache.lastFetched) < modelsCache.cacheTimeout;
+        
+        if (isCacheValid) {
+            console.log('📦 Using cached models');
+            availableModels = modelsCache.models;
+            renderModels();
+            return;
         }
         
-        // Get current settings
+        // Try to get models from existing dropdown first (immediate fallback)
+        loadModelsFromDropdown();
+        
+        // If we have models from dropdown, render them immediately
+        if (availableModels.length > 0) {
+            console.log('⚡ Using models from dropdown');
+            renderModels();
+            // Update cache with dropdown models
+            modelsCache.models = [...availableModels];
+            modelsCache.lastFetched = now;
+        } else {
+            // Show loading state only if no models available
+            if (elements.modelListContainer) {
+                elements.modelListContainer.innerHTML = '<div class="loading-models">Loading models...</div>';
+            }
+        }
+        
+        // Fetch fresh models in background (if API is configured)
         const apiKey = window.aiHackare?.settingsManager?.getApiKey();
         const baseUrl = window.aiHackare?.settingsManager?.getBaseUrl();
         
-        if (!apiKey || !baseUrl) {
-            throw new Error('API key or base URL not configured');
-        }
-        
-        try {
-            // Use the settings manager to fetch models
-            const settingsManager = window.aiHackare?.settingsManager;
-            if (settingsManager && settingsManager.fetchAvailableModels) {
-                await settingsManager.fetchAvailableModels(apiKey, baseUrl, false);
-                
-                // Get models from the model select dropdown
-                const modelSelect = document.getElementById('model-select');
-                if (modelSelect) {
-                    availableModels = Array.from(modelSelect.options)
-                        .filter(option => !option.disabled && option.value)
-                        .map(option => ({
-                            id: option.value,
-                            name: option.textContent,
-                            provider: getProviderFromBaseUrl(baseUrl)
-                        }));
+        if (apiKey && baseUrl) {
+            try {
+                const settingsManager = window.aiHackare?.settingsManager;
+                if (settingsManager && settingsManager.fetchAvailableModels) {
+                    await settingsManager.fetchAvailableModels(apiKey, baseUrl, false);
+                    
+                    // Refresh models from dropdown after API call
+                    loadModelsFromDropdown();
+                    
+                    // Update cache
+                    modelsCache.models = [...availableModels];
+                    modelsCache.lastFetched = now;
+                    
+                    console.log(`✅ Refreshed ${availableModels.length} models from API`);
+                    renderModels();
+                }
+            } catch (error) {
+                console.error('❌ Error fetching fresh models:', error);
+                // Continue with existing models from dropdown
+                if (availableModels.length === 0) {
+                    throw error;
                 }
             }
-            
-            if (availableModels.length === 0) {
-                throw new Error('No models available');
-            }
-            
-            console.log(`✅ Loaded ${availableModels.length} models`);
-            renderModels();
-            
-        } catch (error) {
-            console.error('❌ Error fetching models:', error);
-            throw error;
         }
+    }
+    
+    /**
+     * Load models from the existing model dropdown
+     */
+    function loadModelsFromDropdown() {
+        const modelSelect = document.getElementById('model-select');
+        if (!modelSelect) return;
+        
+        const baseUrl = window.aiHackare?.settingsManager?.getBaseUrl() || '';
+        availableModels = Array.from(modelSelect.options)
+            .filter(option => !option.disabled && option.value)
+            .map(option => ({
+                id: option.value,
+                name: option.textContent,
+                provider: getProviderFromBaseUrl(baseUrl)
+            }));
     }
     
     /**
@@ -532,11 +569,21 @@ window.ModelSelectionManager = (function() {
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
     
+    /**
+     * Invalidate the models cache to force refresh on next modal open
+     */
+    function invalidateCache() {
+        modelsCache.models = [];
+        modelsCache.lastFetched = 0;
+        console.log('🔄 Models cache invalidated');
+    }
+    
     // Public API
     return {
         init: init,
         showModal: showModal,
         hideModal: hideModal,
-        isModalVisible: isModalVisible
+        isModalVisible: isModalVisible,
+        invalidateCache: invalidateCache
     };
 })();

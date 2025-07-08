@@ -895,6 +895,11 @@ window.AIHackareComponent = (function() {
     AIHackare.prototype.reloadModels = function() {
         console.log('🚀 AIHackare: Reloading models...');
         
+        // Invalidate model selection cache
+        if (window.ModelSelectionManager && window.ModelSelectionManager.invalidateCache) {
+            window.ModelSelectionManager.invalidateCache();
+        }
+        
         if (this.settingsManager?.componentManagers?.model) {
             const apiKey = StorageService.getApiKey();
             const baseUrl = StorageService.getBaseUrl();
