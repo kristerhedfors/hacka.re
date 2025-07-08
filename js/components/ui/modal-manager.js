@@ -23,6 +23,14 @@ window.ModalManager = (function() {
          */
         function hideApiKeyModal() {
             elements.apiKeyModal.classList.remove('active');
+            
+            // Focus the message input after modal closes
+            setTimeout(() => {
+                const messageInput = document.getElementById('message-input');
+                if (messageInput) {
+                    messageInput.focus();
+                }
+            }, 100);
         }
         
         /**
@@ -70,6 +78,14 @@ window.ModalManager = (function() {
             }
             
             elements.settingsModal.classList.remove('active');
+            
+            // Focus the message input after modal closes
+            setTimeout(() => {
+                const messageInput = document.getElementById('message-input');
+                if (messageInput) {
+                    messageInput.focus();
+                }
+            }, 100);
         }
         
         /**
@@ -141,6 +157,14 @@ window.ModalManager = (function() {
          */
         function hideShareModal() {
             elements.shareModal.classList.remove('active');
+            
+            // Focus the message input after modal closes
+            setTimeout(() => {
+                const messageInput = document.getElementById('message-input');
+                if (messageInput) {
+                    messageInput.focus();
+                }
+            }, 100);
         }
         
         /**
@@ -159,6 +183,38 @@ window.ModalManager = (function() {
             if (elements.functionModal) {
                 elements.functionModal.classList.remove('active');
             }
+            
+            // Focus the message input after modal closes
+            setTimeout(() => {
+                const messageInput = document.getElementById('message-input');
+                if (messageInput) {
+                    messageInput.focus();
+                }
+            }, 100);
+        }
+        
+        /**
+         * Show the model selection modal
+         */
+        function showModelSelectorModal() {
+            if (window.ModelSelectionManager) {
+                console.log('🔧 ModalManager: Using ModelSelectionManager.showModal');
+                window.ModelSelectionManager.showModal();
+            } else {
+                console.log('❌ ModalManager: ModelSelectionManager not available');
+            }
+        }
+        
+        /**
+         * Hide the model selection modal
+         */
+        function hideModelSelectorModal() {
+            if (window.ModelSelectionManager) {
+                console.log('🔧 ModalManager: Using ModelSelectionManager.hideModal');
+                window.ModelSelectionManager.hideModal();
+            } else {
+                console.log('❌ ModalManager: ModelSelectionManager not available');
+            }
         }
         
         // Public API
@@ -170,7 +226,9 @@ window.ModalManager = (function() {
             showShareModal,
             hideShareModal,
             showFunctionModal,
-            hideFunctionModal
+            hideFunctionModal,
+            showModelSelectorModal,
+            hideModelSelectorModal
         };
     }
     

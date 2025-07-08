@@ -2013,6 +2013,145 @@ footer a:hover {
     margin-top: 1rem;
 }
 
+/* ===== Model Selection Modal ===== */
+#model-selection-modal .modal-content {
+    max-width: 600px;
+    width: 95%;
+    max-height: 80vh;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.modal-header h2 {
+    margin: 0;
+    color: var(--primary-color);
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-color);
+    padding: 0.25rem;
+    line-height: 1;
+}
+
+.close-btn:hover {
+    color: var(--primary-color);
+}
+
+.model-selection-body {
+    margin-bottom: 2rem;
+}
+
+.model-search-container {
+    margin-bottom: 1.5rem;
+}
+
+.model-search-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    background-color: var(--light-color);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.model-search-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.model-list-container {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background-color: var(--light-color);
+}
+
+.loading-models {
+    padding: 2rem;
+    text-align: center;
+    color: var(--secondary-text-color);
+    font-style: italic;
+}
+
+.model-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.model-item:last-child {
+    border-bottom: none;
+}
+
+.model-item:hover {
+    background-color: rgba(99, 102, 241, 0.05);
+}
+
+.model-item.selected {
+    background-color: rgba(99, 102, 241, 0.1);
+    border-left: 4px solid var(--primary-color);
+    padding-left: calc(1rem - 4px);
+}
+
+.model-item.highlighted {
+    background-color: rgba(99, 102, 241, 0.15);
+}
+
+.model-name {
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.model-name .highlight {
+    background-color: rgba(255, 235, 59, 0.6);
+    padding: 0 2px;
+    border-radius: 2px;
+    font-weight: bold;
+}
+
+.model-provider {
+    font-size: 0.8rem;
+    color: var(--secondary-text-color);
+    font-style: italic;
+}
+
+.model-item.filtered-out {
+    display: none;
+}
+
+.no-models-found {
+    padding: 2rem;
+    text-align: center;
+    color: var(--secondary-text-color);
+    font-style: italic;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
 /* ===== Responsive Design ===== */
 @media (max-width: 768px) {
     header {

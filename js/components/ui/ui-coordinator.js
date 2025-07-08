@@ -17,6 +17,42 @@ window.UICoordinator = (function() {
         const modelInfoDisplay = ModelInfoDisplay.createModelInfoDisplay(elements);
         const shareUIManager = ShareUIManager.createShareUIManager(elements);
         
+        // Create model selector manager (needs to be done after modalManager is created)
+        let modelSelectorManager;
+        
+        // Function to initialize model selector manager
+        function initializeModelSelectorManager() {
+            console.log('🔧 UICoordinator: Attempting to initialize model selector manager...');
+            console.log('🔧 UICoordinator: window.aiHackare available:', !!window.aiHackare);
+            
+            if (window.aiHackare && window.aiHackare.settingsManager && window.aiHackare.settingsManager.componentManagers) {
+                const modelManager = window.aiHackare.settingsManager.componentManagers.model;
+                console.log('🔧 UICoordinator: modelManager found:', !!modelManager);
+                
+                if (modelManager) {
+                    console.log('🔧 UICoordinator: Creating model selector manager...');
+                    modelSelectorManager = ModelSelectorManager.createModelSelectorManager(elements, modalManager, modelManager);
+                    modelSelectorManager.init();
+                    console.log('🔧 UICoordinator: Model selector manager initialized successfully');
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        // Try to initialize immediately, then retry if needed
+        setTimeout(() => {
+            if (!initializeModelSelectorManager()) {
+                console.log('🔧 UICoordinator: First attempt failed, retrying in 500ms...');
+                setTimeout(() => {
+                    if (!initializeModelSelectorManager()) {
+                        console.log('🔧 UICoordinator: Second attempt failed, retrying in 1000ms...');
+                        setTimeout(initializeModelSelectorManager, 1000);
+                    }
+                }, 500);
+            }
+        }, 100);
+        
         /**
          * Show the API key modal
          */
@@ -109,6 +145,36 @@ window.UICoordinator = (function() {
         }
         
         /**
+         * Show the model selector modal
+         */
+        function showModelSelectorModal() {
+            console.log('🔧 UICoordinator: showModelSelectorModal called');
+            console.log('🔧 UICoordinator: modelSelectorManager available:', !!modelSelectorManager);
+            
+            if (modelSelectorManager) {
+                console.log('🔧 UICoordinator: Using modelSelectorManager');
+                return modelSelectorManager.showModelSelectorModal();
+            } else {
+                console.log('🔧 UICoordinator: modelSelectorManager not available, trying to initialize...');
+                // Try to initialize if not done yet
+                if (initializeModelSelectorManager()) {
+                    console.log('🔧 UICoordinator: Initialization successful, showing modal');
+                    return modelSelectorManager.showModelSelectorModal();
+                } else {
+                    console.log('🔧 UICoordinator: Initialization failed, using basic modal manager');
+                    return modalManager.showModelSelectorModal();
+                }
+            }
+        }
+        
+        /**
+         * Hide the model selector modal
+         */
+        function hideModelSelectorModal() {
+            return modalManager.hideModelSelectorModal();
+        }
+        
+        /**
          * Toggle password visibility in share modal
          */
         function togglePasswordVisibility() {
@@ -197,6 +263,8 @@ window.UICoordinator = (function() {
             hideShareModal,
             showFunctionModal,
             hideFunctionModal,
+            showModelSelectorModal,
+            hideModelSelectorModal,
             
             // Share UI management
             togglePasswordVisibility,
