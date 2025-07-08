@@ -29,6 +29,15 @@ window.AIHackareComponent = (function() {
         
         // Make chatManager accessible globally for the close GPT button
         window.aiHackare = this;
+        
+        // Initialize model selector functionality after everything is loaded
+        this.initializeModelSelection();
+        
+        // Add global test function
+        window.testModelSelector = () => {
+            console.log('🧪 Testing model selector modal...');
+            this.showModelSelectorModal();
+        };
     }
     
     /**
@@ -379,7 +388,7 @@ window.AIHackareComponent = (function() {
                     this.settingsManager.getCurrentModel(),
                     this.settingsManager.getSystemPrompt()
                 );
-                this.hideModelSelectionMenu();
+                this.hideModelSelectorModal();
                 this.promptsManager.hidePromptsModal();
                 this.uiManager.hideFunctionModal();
             }
@@ -593,11 +602,325 @@ window.AIHackareComponent = (function() {
     };
     
     /**
-     * Hide the model selection menu (stub for compatibility)
+     * Initialize model selection functionality
      */
-    AIHackare.prototype.hideModelSelectionMenu = function() {
-        // This is kept as a stub for compatibility with existing code
-        // that might call this method, but the actual functionality has been removed
+    AIHackare.prototype.initializeModelSelection = function() {
+        console.log('🚀 AIHackare: Initializing model selection manager...');
+        
+        // Initialize the ModelSelectionManager with DOM elements
+        if (window.ModelSelectionManager) {
+            // Use setTimeout to ensure elements are ready
+            setTimeout(() => {
+                window.ModelSelectionManager.init(this.elements);
+                console.log('✅ AIHackare: ModelSelectionManager initialized');
+            }, 100);
+        } else {
+            console.error('❌ AIHackare: ModelSelectionManager not available');
+        }
+    };
+    
+    /**
+     * Initialize model selector functionality (legacy)
+     */
+    AIHackare.prototype.initializeModelSelector = function() {
+        console.log('🚀 AIHackare: Initializing model selector...');
+        
+        // Wait for DOM to be ready
+        setTimeout(() => {
+            console.log('🚀 AIHackare: Adding model selector event listeners...');
+            
+            // Add click handlers to model info elements
+            const modelNameDisplay = this.elements.modelNameDisplay;
+            const modelContextElement = this.elements.modelContextElement;
+            const modelStats = this.elements.modelStats;
+            
+            console.log('🚀 AIHackare: Elements check:');
+            console.log('  - modelNameDisplay:', !!modelNameDisplay);
+            console.log('  - modelContextElement:', !!modelContextElement);
+            console.log('  - modelStats:', !!modelStats);
+            
+            if (modelNameDisplay) {
+                modelNameDisplay.addEventListener('click', () => {
+                    console.log('🚀 AIHackare: Model name clicked!');
+                    this.showModelSelectorModal();
+                });
+                modelNameDisplay.style.cursor = 'pointer';
+                modelNameDisplay.title = 'Click to select model (Ctrl+Shift+M or Alt+M)';
+                console.log('🚀 AIHackare: Model name display click handler added');
+            }
+            
+            if (modelContextElement) {
+                modelContextElement.addEventListener('click', () => {
+                    console.log('🚀 AIHackare: Model context clicked!');
+                    this.showModelSelectorModal();
+                });
+                modelContextElement.style.cursor = 'pointer';
+                modelContextElement.title = 'Click to select model (Ctrl+Shift+M or Alt+M)';
+                console.log('🚀 AIHackare: Model context click handler added');
+            }
+            
+            if (modelStats) {
+                modelStats.addEventListener('click', () => {
+                    console.log('🚀 AIHackare: Model stats clicked!');
+                    this.showModelSelectorModal();
+                });
+                modelStats.style.cursor = 'pointer';
+                modelStats.title = 'Click to select model (Ctrl+Shift+M or Alt+M)';
+                console.log('🚀 AIHackare: Model stats click handler added');
+            }
+            
+            // Add keyboard shortcut
+            document.addEventListener('keydown', (e) => {
+                // Ctrl+Shift+M or Alt+M
+                if ((e.ctrlKey && e.shiftKey && (e.key === 'm' || e.key === 'M')) ||
+                    (e.altKey && (e.key === 'm' || e.key === 'M'))) {
+                    console.log('🚀 AIHackare: Model selector keyboard shortcut triggered!');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.showModelSelectorModal();
+                }
+            });
+            
+            console.log('🚀 AIHackare: Model selector initialization complete');
+        }, 1000); // Wait 1 second for everything to be ready
+    };
+    
+    /**
+     * Show the model selector modal
+     */
+    AIHackare.prototype.showModelSelectorModal = function() {
+        console.log('🚀 AIHackare: showModelSelectorModal called');
+        
+        // Try UI manager first
+        if (this.uiManager && this.uiManager.showModelSelectorModal) {
+            console.log('🚀 AIHackare: Calling uiManager.showModelSelectorModal');
+            this.uiManager.showModelSelectorModal();
+            return;
+        }
+        
+        // Fallback: directly show the modal
+        console.log('🚀 AIHackare: UI manager not available, trying direct modal show');
+        const modal = document.getElementById('model-selector-modal');
+        if (modal) {
+            console.log('🚀 AIHackare: Found modal, adding active class');
+            modal.classList.add('active');
+            
+            // Populate the modal with current models and setup handlers
+            this.populateModelSelectorModal();
+            
+            // Add ESC key handler
+            const escapeHandler = (e) => {
+                if (e.key === 'Escape') {
+                    console.log('🚀 AIHackare: Escape key pressed, closing modal');
+                    this.hideModelSelectorModal();
+                    document.removeEventListener('keydown', escapeHandler);
+                }
+            };
+            document.addEventListener('keydown', escapeHandler);
+            
+        } else {
+            console.error('🚀 AIHackare: Model selector modal element not found');
+        }
+    };
+    
+    /**
+     * Hide the model selector modal
+     */
+    AIHackare.prototype.hideModelSelectorModal = function() {
+        if (this.uiManager && this.uiManager.hideModelSelectorModal) {
+            this.uiManager.hideModelSelectorModal();
+        } else {
+            // Fallback: directly hide the modal
+            const modal = document.getElementById('model-selector-modal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
+        }
+    };
+    
+    /**
+     * Populate the model selector modal with available models
+     */
+    AIHackare.prototype.populateModelSelectorModal = function() {
+        console.log('🚀 AIHackare: Populating model selector modal');
+        
+        const modelSelectorSelect = document.getElementById('model-selector-select');
+        const mainModelSelect = this.elements.modelSelect;
+        
+        if (!modelSelectorSelect || !mainModelSelect) {
+            console.error('🚀 AIHackare: Required select elements not found');
+            return;
+        }
+        
+        // Clear existing options
+        modelSelectorSelect.innerHTML = '';
+        
+        // Copy options from main model select
+        const currentModel = this.settingsManager?.componentManagers?.model?.getCurrentModel();
+        console.log('🚀 AIHackare: Current model:', currentModel);
+        
+        for (let i = 0; i < mainModelSelect.options.length; i++) {
+            const option = mainModelSelect.options[i];
+            const newOption = document.createElement('option');
+            newOption.value = option.value;
+            newOption.textContent = option.textContent;
+            newOption.disabled = option.disabled;
+            
+            if (option.value === currentModel) {
+                newOption.selected = true;
+            }
+            
+            // Handle optgroups
+            if (option.parentNode.tagName === 'OPTGROUP') {
+                let optgroup = modelSelectorSelect.querySelector(`optgroup[label="${option.parentNode.label}"]`);
+                if (!optgroup) {
+                    optgroup = document.createElement('optgroup');
+                    optgroup.label = option.parentNode.label;
+                    modelSelectorSelect.appendChild(optgroup);
+                }
+                optgroup.appendChild(newOption);
+            } else {
+                modelSelectorSelect.appendChild(newOption);
+            }
+        }
+        
+        // Add event listeners for modal buttons
+        this.setupModelSelectorModalListeners();
+    };
+    
+    /**
+     * Setup event listeners for model selector modal buttons
+     */
+    AIHackare.prototype.setupModelSelectorModalListeners = function() {
+        console.log('🚀 AIHackare: Setting up modal button listeners...');
+        
+        const applyBtn = document.getElementById('model-selector-apply-btn');
+        const cancelBtn = document.getElementById('model-selector-cancel-btn');
+        const reloadBtn = document.getElementById('model-selector-reload-btn');
+        const modal = document.getElementById('model-selector-modal');
+        
+        console.log('🚀 AIHackare: Button elements found:');
+        console.log('  - applyBtn:', !!applyBtn);
+        console.log('  - cancelBtn:', !!cancelBtn);
+        console.log('  - reloadBtn:', !!reloadBtn);
+        console.log('  - modal:', !!modal);
+        
+        // Store reference to this for use in event handlers
+        const self = this;
+        
+        if (applyBtn) {
+            // Remove any existing listeners by cloning
+            const newApplyBtn = applyBtn.cloneNode(true);
+            applyBtn.parentNode.replaceChild(newApplyBtn, applyBtn);
+            newApplyBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🚀 AIHackare: Apply button clicked');
+                self.applyModelSelection();
+            });
+            console.log('🚀 AIHackare: Apply button listener added');
+        }
+        
+        if (cancelBtn) {
+            const newCancelBtn = cancelBtn.cloneNode(true);
+            cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+            newCancelBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🚀 AIHackare: Cancel button clicked');
+                self.hideModelSelectorModal();
+            });
+            console.log('🚀 AIHackare: Cancel button listener added');
+        }
+        
+        if (reloadBtn) {
+            const newReloadBtn = reloadBtn.cloneNode(true);
+            reloadBtn.parentNode.replaceChild(newReloadBtn, reloadBtn);
+            newReloadBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🚀 AIHackare: Reload button clicked');
+                self.reloadModels();
+            });
+            console.log('🚀 AIHackare: Reload button listener added');
+        }
+        
+        // Close modal when clicking outside
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    console.log('🚀 AIHackare: Clicked outside modal, closing');
+                    self.hideModelSelectorModal();
+                }
+            });
+            console.log('🚀 AIHackare: Modal outside click listener added');
+        }
+        
+        console.log('🚀 AIHackare: All modal listeners setup complete');
+    };
+    
+    /**
+     * Apply the selected model from the modal
+     */
+    AIHackare.prototype.applyModelSelection = function() {
+        const modelSelectorSelect = document.getElementById('model-selector-select');
+        if (!modelSelectorSelect) return;
+        
+        const selectedModel = modelSelectorSelect.value;
+        console.log('🚀 AIHackare: Applying model selection:', selectedModel);
+        
+        if (selectedModel && this.settingsManager?.componentManagers?.model) {
+            this.settingsManager.componentManagers.model.saveModel(selectedModel);
+            
+            // Update main model select
+            if (this.elements.modelSelect) {
+                this.elements.modelSelect.value = selectedModel;
+            }
+            
+            // Update context usage if available
+            if (this.chatManager && this.uiManager) {
+                this.chatManager.estimateContextUsage(
+                    this.uiManager.updateContextUsage.bind(this.uiManager),
+                    selectedModel
+                );
+            }
+        }
+        
+        this.hideModelSelectorModal();
+    };
+    
+    /**
+     * Reload models from API
+     */
+    AIHackare.prototype.reloadModels = function() {
+        console.log('🚀 AIHackare: Reloading models...');
+        
+        // Invalidate model selection cache
+        if (window.ModelSelectionManager && window.ModelSelectionManager.invalidateCache) {
+            window.ModelSelectionManager.invalidateCache();
+        }
+        
+        if (this.settingsManager?.componentManagers?.model) {
+            const apiKey = StorageService.getApiKey();
+            const baseUrl = StorageService.getBaseUrl();
+            
+            if (apiKey) {
+                this.settingsManager.componentManagers.model.fetchAvailableModels(apiKey, baseUrl, false)
+                    .then((result) => {
+                        if (result.success) {
+                            console.log('🚀 AIHackare: Models reloaded successfully');
+                            this.populateModelSelectorModal();
+                        } else {
+                            console.error('🚀 AIHackare: Failed to reload models:', result.error);
+                        }
+                    })
+                    .catch((error) => {
+                        console.error('🚀 AIHackare: Error reloading models:', error);
+                    });
+            } else {
+                console.error('🚀 AIHackare: No API key available for reloading models');
+            }
+        }
     };
     
     /**

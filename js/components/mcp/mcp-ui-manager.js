@@ -366,6 +366,14 @@ window.MCPUIManager = (function() {
         if (elements.mcpModal) {
             elements.mcpModal.classList.remove('active');
         }
+        
+        // Focus the message input after modal closes
+        setTimeout(() => {
+            const messageInput = document.getElementById('message-input');
+            if (messageInput) {
+                messageInput.focus();
+            }
+        }, 100);
     }
     
     /**
