@@ -6,12 +6,16 @@ Simple test for API Key Auto-Detection Feature
 import pytest
 from playwright.sync_api import Page, expect
 import time
+from test_utils import setup_test_environment
 
 def test_api_key_detection_simple(page: Page, serve_hacka_re):
     """Test API key detection shows correct messages"""
     # Navigate to the application
     page.goto(serve_hacka_re)
     print("Navigated to hacka.re")
+    
+    # Set up test environment to prevent welcome modal
+    setup_test_environment(page)
     
     # Wait for page to load
     page.wait_for_load_state("networkidle")
