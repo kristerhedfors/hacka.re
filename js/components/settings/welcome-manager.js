@@ -15,10 +15,10 @@ window.WelcomeManager = (function() {
          * @param {Function} onContinue - Function to call when the user clicks continue
          */
         function showWelcomeModalIfFirstTime(onContinue) {
-            // Check if this is the first visit by looking for any hackare_ localStorage variables
-            const userHasVisitedBefore = hasVisitedBefore();
+            // Check if welcome modal should be shown (hackare_visited === 'true')
+            const shouldShowWelcome = localStorage.getItem('hackare_visited') === 'true';
             
-            if (!userHasVisitedBefore) {
+            if (shouldShowWelcome) {
                 // No need to mark as visited - any localStorage operations will create hackare_ variables
                 
                 // Create a welcome modal
@@ -113,6 +113,28 @@ window.WelcomeManager = (function() {
         }
         
         /**
+         * Check if the welcome modal is disabled via URL parameter
+         * @returns {boolean} True if welcome modal should be disabled
+         */
+        function isWelcomeDisabled() {
+            const hash = window.location.hash;
+            if (!hash) return false;
+            
+            // Parse the hash for welcome parameter
+            // Support both #welcome=false and other parameters like #welcome=false&other=param
+            const hashParams = new URLSearchParams(hash.substring(1));
+            const welcomeParam = hashParams.get('welcome');
+            
+            // Also check if hash starts with #welcome=false (for simple case)
+            if (hash === '#welcome=false') {
+                return true;
+            }
+            
+            // Check if welcome parameter is explicitly set to 'false'
+            return welcomeParam === 'false';
+        }
+        
+        /**
          * Check if the user has visited before by looking for any hackare_ localStorage variables
          * Also alerts if there are any localStorage variables without "hackare_" in their names
          * @returns {boolean} True if the user has visited before
@@ -122,19 +144,22 @@ window.WelcomeManager = (function() {
             let hasHackareVar = false;
             let nonHackareVars = [];
             
+            // Keys that are allowed to exist without "hackare_" prefix
+            const allowedKeys = ['hackare_visited'];
+            
             // Check all localStorage variables
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key) {
                     if (key.includes('hackare_')) {
                         hasHackareVar = true;
-                    } else {
+                    } else if (!allowedKeys.includes(key)) {
                         nonHackareVars.push(key);
                     }
                 }
             }
             
-            // Alert if there are any localStorage variables without "hackare_" in their names
+            // Alert if there are any localStorage variables without "hackare_" in their names (excluding allowed keys)
             if (nonHackareVars.length > 0) {
                 console.error('ALERT: Found localStorage variables without "hackare_" in their names:', nonHackareVars);
                 alert('ALERT: Found localStorage variables without "hackare_" in their names: ' + nonHackareVars.join(', '));
@@ -157,7 +182,8 @@ window.WelcomeManager = (function() {
         return {
             showWelcomeModalIfFirstTime,
             hasVisitedBefore,
-            markAsVisited
+            markAsVisited,
+            isWelcomeDisabled
         };
     }
 

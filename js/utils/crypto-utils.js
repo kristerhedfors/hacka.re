@@ -31,6 +31,15 @@ window.CryptoUtils = (function() {
     }
     
     /**
+     * Generate a hash of a string (alias for sha256)
+     * @param {string} input - The string to hash
+     * @returns {string} Hex string of the hash
+     */
+    function hashString(input) {
+        return sha256(input);
+    }
+    
+    /**
      * Generate a random alphanumeric string of specified length
      * @param {number} length - The length of the string to generate
      * @returns {string} Random alphanumeric string
@@ -72,6 +81,14 @@ window.CryptoUtils = (function() {
         return Array.from(keyBytes)
             .map(b => b.toString(16).padStart(2, '0'))
             .join('');
+    }
+    
+    /**
+     * Generate a secret key (alias for generateMasterKey)
+     * @returns {string} A strong random key as hex string
+     */
+    function generateSecretKey() {
+        return generateMasterKey();
     }
     
     /**
@@ -251,9 +268,11 @@ window.CryptoUtils = (function() {
         encryptData: encryptData,
         decryptData: decryptData,
         sha256: sha256,
+        hashString: hashString,
         generateRandomAlphaNum: generateRandomAlphaNum,
         generateNamespaceHash: generateNamespaceHash,
         generateMasterKey: generateMasterKey,
+        generateSecretKey: generateSecretKey,
         createNamespaceEntry: createNamespaceEntry,
         getMasterKeyStorageKey: getMasterKeyStorageKey,
         NAMESPACE_PREFIX: NAMESPACE_PREFIX,

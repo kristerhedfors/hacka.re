@@ -65,3 +65,10 @@ def api_key():
     if not OPENAI_API_KEY:
         pytest.skip("API key is required for function calling tests")
     return OPENAI_API_KEY
+
+@pytest.fixture(scope="function", autouse=True)
+def setup_test_environment(page):
+    """Set up test environment to prevent welcome modal by default."""
+    # This fixture runs before each test to configure the environment
+    # The actual localStorage setup happens in the test utilities
+    pass

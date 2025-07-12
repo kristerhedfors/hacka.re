@@ -93,7 +93,10 @@ window.NamespaceService = (function() {
             // Store the encrypted hash in the namespace entry
             const encryptedData = EncryptionService.encrypt(namespaceHash, encryptionKey);
             const namespaceStorageKey = getNamespaceStorageKey(namespaceId);
-            localStorage.setItem(namespaceStorageKey, encryptedData);
+            
+            // Use dynamic storage based on storage type
+            const storage = StorageTypeService ? StorageTypeService.getStorage() : localStorage;
+            storage.setItem(namespaceStorageKey, encryptedData);
             
             // Store the master key in a separate entry
             const masterKeyStorageKey = CryptoUtils.getMasterKeyStorageKey(namespaceId);
@@ -107,7 +110,7 @@ window.NamespaceService = (function() {
             
             // Encrypt the master key with the session key or namespace hash
             const encryptedMasterKey = EncryptionService.encrypt(masterKey, encryptionKey);
-            localStorage.setItem(masterKeyStorageKey, encryptedMasterKey);
+            storage.setItem(masterKeyStorageKey, encryptedMasterKey);
         } catch (error) {
             console.error('Failed to store namespace data:', error);
         }
@@ -122,7 +125,9 @@ window.NamespaceService = (function() {
     function getMasterKey(namespaceId, namespaceHash) {
         try {
             const masterKeyStorageKey = CryptoUtils.getMasterKeyStorageKey(namespaceId);
-            const encryptedMasterKey = localStorage.getItem(masterKeyStorageKey);
+            // Use dynamic storage based on storage type
+            const storage = StorageTypeService ? StorageTypeService.getStorage() : localStorage;
+            const encryptedMasterKey = storage.getItem(masterKeyStorageKey);
             
             if (!encryptedMasterKey) {
                 addSystemMessage(`[CRYPTO] ERROR: No encrypted master key found for ${namespaceId}`);
@@ -183,8 +188,11 @@ window.NamespaceService = (function() {
     function getAllNamespaceIds() {
         const namespaceIds = [];
         
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
+        // Use dynamic storage based on storage type
+        const storage = StorageTypeService ? StorageTypeService.getStorage() : localStorage;
+        
+        for (let i = 0; i < storage.length; i++) {
+            const key = storage.key(i);
             const match = key && key.match(NAMESPACE_PATTERN);
             
             if (match) {
@@ -246,7 +254,9 @@ window.NamespaceService = (function() {
         for (const namespaceId of namespaceIds) {
             try {
                 const namespaceStorageKey = getNamespaceStorageKey(namespaceId);
-                const encryptedData = localStorage.getItem(namespaceStorageKey);
+                // Use dynamic storage based on storage type
+                const storage = StorageTypeService ? StorageTypeService.getStorage() : localStorage;
+                const encryptedData = storage.getItem(namespaceStorageKey);
                 
                 if (!encryptedData) {
                     continue;
@@ -297,9 +307,52 @@ window.NamespaceService = (function() {
             };
         }
         
-        // Get title and subtitle directly from sessionStorage to avoid circular dependency
-        const title = sessionStorage.getItem(BASE_STORAGE_KEYS.TITLE) || "hacka.re";
-        const subtitle = sessionStorage.getItem(BASE_STORAGE_KEYS.SUBTITLE) || "Free, open, för hackare av hackare";
+        // Initialize storage type service if needed
+        if (StorageTypeService && !StorageTypeService.isInitialized) {
+            StorageTypeService.init();
+        }
+        
+        // Check if we're using a shared link
+        if (StorageTypeService && StorageTypeService.isUsingLocalStorage()) {
+            // For shared links, use namespace from hash of encrypted blob
+            const sharedLinkNamespace = StorageTypeService.getSharedLinkNamespace();
+            if (sharedLinkNamespace) {
+                addSystemMessage(`[CRYPTO] Using shared link namespace: ${sharedLinkNamespace}`);
+                
+                // Create a simple namespace for shared links
+                state.current.namespaceId = sharedLinkNamespace;
+                state.current.namespaceHash = sharedLinkNamespace; // Use namespace ID as hash for simplicity
+                state.current.namespaceKey = CryptoUtils.generateSecretKey(); // Generate a new key
+                
+                return {
+                    namespaceId: state.current.namespaceId,
+                    namespaceHash: state.current.namespaceHash,
+                    masterKey: state.current.namespaceKey
+                };
+            }
+        }
+        
+        // For direct entry (sessionStorage) or fallback
+        if (StorageTypeService && StorageTypeService.isUsingSessionStorage()) {
+            // Use default namespace for sessionStorage
+            const defaultNamespace = StorageTypeService.getDefaultNamespace();
+            addSystemMessage(`[CRYPTO] Using default session namespace: ${defaultNamespace}`);
+            
+            state.current.namespaceId = defaultNamespace;
+            state.current.namespaceHash = defaultNamespace; // Use namespace ID as hash for simplicity
+            state.current.namespaceKey = CryptoUtils.generateSecretKey(); // Generate a new key
+            
+            return {
+                namespaceId: state.current.namespaceId,
+                namespaceHash: state.current.namespaceHash,
+                masterKey: state.current.namespaceKey
+            };
+        }
+        
+        // Fallback to original logic if StorageTypeService is not available
+        const storage = StorageTypeService ? StorageTypeService.getStorage() : sessionStorage;
+        const title = storage.getItem(BASE_STORAGE_KEYS.TITLE) || "hacka.re";
+        const subtitle = storage.getItem(BASE_STORAGE_KEYS.SUBTITLE) || "Free, open, för hackare av hackare";
         
         addSystemMessage(`[CRYPTO] Getting or creating namespace for title "${title}" and subtitle "${subtitle}"`);
         
@@ -442,8 +495,11 @@ window.NamespaceService = (function() {
     function getKeysToReEncrypt(oldNamespaceId) {
         const keysToReEncrypt = [];
         
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
+        // Use dynamic storage based on storage type
+        const storage = StorageTypeService ? StorageTypeService.getStorage() : localStorage;
+        
+        for (let i = 0; i < storage.length; i++) {
+            const key = storage.key(i);
             
             // Skip special keys
             if (NON_NAMESPACED_KEYS.includes(key)) {

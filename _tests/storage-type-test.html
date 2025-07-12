@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Storage Type Service Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 3px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <h1>Storage Type Service Test</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Direct Entry (No Hash)</h2>
+        <div id="test1-results"></div>
+        <button onclick="runTest1()">Run Test 1</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 2: Shared Link Detection</h2>
+        <div id="test2-results"></div>
+        <button onclick="runTest2()">Run Test 2</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 3: Storage Type Switching</h2>
+        <div id="test3-results"></div>
+        <button onclick="runTest3()">Run Test 3</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 4: Namespace Generation</h2>
+        <div id="test4-results"></div>
+        <button onclick="runTest4()">Run Test 4</button>
+    </div>
+
+    <!-- Dependencies -->
+    <script src="../lib/tweetnacl/nacl-fast.min.js"></script>
+    <script src="../lib/tweetnacl/nacl-util.min.js"></script>
+    <script src="../js/utils/crypto-utils.js"></script>
+    <script src="../js/services/encryption-service.js"></script>
+    <script src="../js/services/storage-type-service.js"></script>
+    <script src="../js/services/namespace-service.js"></script>
+    <script src="../js/services/core-storage-service.js"></script>
+    <script src="../js/services/data-service.js"></script>
+    <script src="../js/services/storage-service.js"></script>
+
+    <script>
+        function addResult(testId, message, type = 'info') {
+            const container = document.getElementById(testId + '-results');
+            const div = document.createElement('div');
+            div.className = 'test-result ' + type;
+            div.textContent = message;
+            container.appendChild(div);
+        }
+
+        function clearResults(testId) {
+            const container = document.getElementById(testId + '-results');
+            container.innerHTML = '';
+        }
+
+        function runTest1() {
+            clearResults('test1');
+            addResult('test1', 'Testing direct entry (no hash in URL)...', 'info');
+            
+            try {
+                // Reset StorageTypeService
+                StorageTypeService._reset();
+                
+                // Set up clean URL with no hash
+                delete window.location.hash;
+                
+                // Initialize storage type service
+                StorageTypeService.init();
+                
+                // Test storage type detection
+                const storageType = StorageTypeService.getStorageType();
+                const isSessionStorage = StorageTypeService.isUsingSessionStorage();
+                const namespace = StorageTypeService.getNamespace();
+                
+                addResult('test1', `Storage type: ${storageType}`, storageType === 'sessionStorage' ? 'success' : 'error');
+                addResult('test1', `Is using sessionStorage: ${isSessionStorage}`, isSessionStorage ? 'success' : 'error');
+                addResult('test1', `Namespace: ${namespace}`, namespace === 'default_session' ? 'success' : 'error');
+                
+                // Test storage access
+                const storage = StorageTypeService.getStorage();
+                addResult('test1', `Storage object: ${storage === sessionStorage ? 'sessionStorage' : 'other'}`, storage === sessionStorage ? 'success' : 'error');
+                
+                addResult('test1', 'Test 1 completed successfully', 'success');
+            } catch (error) {
+                addResult('test1', `Error: ${error.message}`, 'error');
+            }
+        }
+
+        function runTest2() {
+            clearResults('test2');
+            addResult('test2', 'Testing shared link detection...', 'info');
+            
+            try {
+                // Reset StorageTypeService
+                StorageTypeService._reset();
+                
+                // Simulate shared link in URL
+                const originalLocation = window.location;
+                Object.defineProperty(window, 'location', {
+                    value: {
+                        hash: '#gpt=encrypted_data_here_12345'
+                    },
+                    writable: true
+                });
+                
+                // Initialize storage type service
+                StorageTypeService.init();
+                
+                // Test storage type detection
+                const storageType = StorageTypeService.getStorageType();
+                const isLocalStorage = StorageTypeService.isUsingLocalStorage();
+                const hasSharedLink = StorageTypeService.hasSharedLink();
+                
+                addResult('test2', `Storage type: ${storageType}`, storageType === 'localStorage' ? 'success' : 'error');
+                addResult('test2', `Is using localStorage: ${isLocalStorage}`, isLocalStorage ? 'success' : 'error');
+                addResult('test2', `Has shared link: ${hasSharedLink}`, hasSharedLink ? 'success' : 'error');
+                
+                // Test shared link namespace
+                const sharedNamespace = StorageTypeService.getSharedLinkNamespace();
+                addResult('test2', `Shared namespace: ${sharedNamespace}`, sharedNamespace && sharedNamespace.length === 8 ? 'success' : 'error');
+                
+                // Test storage access
+                const storage = StorageTypeService.getStorage();
+                addResult('test2', `Storage object: ${storage === localStorage ? 'localStorage' : 'other'}`, storage === localStorage ? 'success' : 'error');
+                
+                // Restore original location
+                Object.defineProperty(window, 'location', {
+                    value: originalLocation,
+                    writable: true
+                });
+                
+                addResult('test2', 'Test 2 completed successfully', 'success');
+            } catch (error) {
+                addResult('test2', `Error: ${error.message}`, 'error');
+            }
+        }
+
+        function runTest3() {
+            clearResults('test3');
+            addResult('test3', 'Testing storage type switching...', 'info');
+            
+            try {
+                // Test 1: Direct entry
+                StorageTypeService._reset();
+                const originalLocation = window.location;
+                Object.defineProperty(window, 'location', {
+                    value: { hash: '' },
+                    writable: true
+                });
+                
+                StorageTypeService.init();
+                addResult('test3', `Direct entry -> ${StorageTypeService.getStorageType()}`, 'info');
+                
+                // Test 2: Shared link
+                StorageTypeService._reset();
+                Object.defineProperty(window, 'location', {
+                    value: { hash: '#gpt=test_data' },
+                    writable: true
+                });
+                
+                StorageTypeService.init();
+                addResult('test3', `Shared link -> ${StorageTypeService.getStorageType()}`, 'info');
+                
+                // Test 3: Another shared link format
+                StorageTypeService._reset();
+                Object.defineProperty(window, 'location', {
+                    value: { hash: '#shared=other_data' },
+                    writable: true
+                });
+                
+                StorageTypeService.init();
+                addResult('test3', `Shared link (old format) -> ${StorageTypeService.getStorageType()}`, 'info');
+                
+                // Restore original location
+                Object.defineProperty(window, 'location', {
+                    value: originalLocation,
+                    writable: true
+                });
+                
+                addResult('test3', 'Test 3 completed successfully', 'success');
+            } catch (error) {
+                addResult('test3', `Error: ${error.message}`, 'error');
+            }
+        }
+
+        function runTest4() {
+            clearResults('test4');
+            addResult('test4', 'Testing namespace generation...', 'info');
+            
+            try {
+                // Test namespace generation for shared links
+                StorageTypeService._reset();
+                const originalLocation = window.location;
+                Object.defineProperty(window, 'location', {
+                    value: { hash: '#gpt=test_encrypted_data_1234567890' },
+                    writable: true
+                });
+                
+                StorageTypeService.init();
+                const sharedNamespace = StorageTypeService.getSharedLinkNamespace();
+                addResult('test4', `Shared namespace: ${sharedNamespace}`, 'info');
+                addResult('test4', `Shared namespace length: ${sharedNamespace.length}`, sharedNamespace.length === 8 ? 'success' : 'error');
+                
+                // Test namespace for direct entry
+                StorageTypeService._reset();
+                Object.defineProperty(window, 'location', {
+                    value: { hash: '' },
+                    writable: true
+                });
+                
+                StorageTypeService.init();
+                const directNamespace = StorageTypeService.getDefaultNamespace();
+                addResult('test4', `Direct entry namespace: ${directNamespace}`, directNamespace === 'default_session' ? 'success' : 'error');
+                
+                // Test namespace getter
+                const currentNamespace = StorageTypeService.getNamespace();
+                addResult('test4', `Current namespace: ${currentNamespace}`, currentNamespace === 'default_session' ? 'success' : 'error');
+                
+                // Restore original location
+                Object.defineProperty(window, 'location', {
+                    value: originalLocation,
+                    writable: true
+                });
+                
+                addResult('test4', 'Test 4 completed successfully', 'success');
+            } catch (error) {
+                addResult('test4', `Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-run tests on page load
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                runTest1();
+                setTimeout(() => runTest2(), 500);
+                setTimeout(() => runTest3(), 1000);
+                setTimeout(() => runTest4(), 1500);
+            }, 100);
+        });
+    </script>
+</body>
+</html>
