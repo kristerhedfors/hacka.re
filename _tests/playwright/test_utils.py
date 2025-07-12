@@ -4,6 +4,12 @@ import os
 import inspect
 from playwright.sync_api import Page, expect
 
+def setup_test_environment(page):
+    """Set up test environment after page navigation to prevent welcome modal."""
+    # Set hackare_visited to false to prevent welcome modal in tests
+    page.evaluate("localStorage.setItem('hackare_visited', 'false')")
+    print("Test environment configured: hackare_visited=false")
+
 # Maximum allowed time for any operation (in seconds)
 MAX_OPERATION_TIME = 1.5
 

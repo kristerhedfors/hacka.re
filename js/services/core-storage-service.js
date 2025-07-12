@@ -56,7 +56,9 @@ window.CoreStorageService = (function() {
             }
             
             const encryptedValue = EncryptionService.encrypt(value, passphrase);
-            localStorage.setItem(key, encryptedValue);
+            // Use dynamic storage based on storage type
+            const storage = StorageTypeService.getStorage();
+            storage.setItem(key, encryptedValue);
             return true;
         } catch (error) {
             // Create error object with safe properties
@@ -97,7 +99,9 @@ window.CoreStorageService = (function() {
      * @returns {*} The decrypted value or null if not found/decryption fails
      */
     function secureGet(key) {
-        const encryptedValue = localStorage.getItem(key);
+        // Use dynamic storage based on storage type
+        const storage = StorageTypeService.getStorage();
+        const encryptedValue = storage.getItem(key);
         if (!encryptedValue) return null;
         
         try {
@@ -166,7 +170,9 @@ window.CoreStorageService = (function() {
                 const valueToStore = typeof value === 'object' && value !== null 
                     ? JSON.stringify(value) 
                     : value;
-                localStorage.setItem(key, valueToStore);
+                // Use dynamic storage based on storage type
+                const storage = StorageTypeService.getStorage();
+                storage.setItem(key, valueToStore);
                 return true;
             } catch (error) {
                 console.error('Error storing value:', error);
@@ -190,7 +196,9 @@ window.CoreStorageService = (function() {
         if (shouldEncrypt(key)) {
             value = secureGet(key);
         } else {
-            const rawValue = localStorage.getItem(key);
+            // Use dynamic storage based on storage type
+            const storage = StorageTypeService.getStorage();
+            const rawValue = storage.getItem(key);
             
             // Try to parse JSON for non-encrypted values
             if (rawValue) {
@@ -212,7 +220,9 @@ window.CoreStorageService = (function() {
             if (shouldEncrypt(legacyKey)) {
                 legacyValue = secureGet(legacyKey);
             } else {
-                const rawLegacyValue = localStorage.getItem(legacyKey);
+                // Use dynamic storage based on storage type
+                const storage = StorageTypeService.getStorage();
+                const rawLegacyValue = storage.getItem(legacyKey);
                 
                 // Try to parse JSON for non-encrypted values
                 if (rawLegacyValue) {
@@ -245,7 +255,9 @@ window.CoreStorageService = (function() {
     function removeValue(baseKey) {
         try {
             const key = NamespaceService.getNamespacedKey(baseKey);
-            localStorage.removeItem(key);
+            // Use dynamic storage based on storage type
+            const storage = StorageTypeService.getStorage();
+            storage.removeItem(key);
             return true;
         } catch (error) {
             console.error('Error removing value:', error);
@@ -298,10 +310,13 @@ window.CoreStorageService = (function() {
                 'tool_calling_enabled'
             ];
             
+            // Get the appropriate storage based on storage type
+            const storage = StorageTypeService ? StorageTypeService.getStorage() : localStorage;
+            
             // Clear core storage keys using NamespaceService.getNamespacedKey
             coreStorageKeys.forEach(key => {
                 const namespacedKey = NamespaceService.getNamespacedKey(key);
-                localStorage.removeItem(namespacedKey);
+                storage.removeItem(namespacedKey);
                 clearedKeys.push(namespacedKey);
                 console.log(`Cleared core storage key: ${namespacedKey}`);
             });
@@ -309,7 +324,7 @@ window.CoreStorageService = (function() {
             // Clear additional encrypted keys using manual namespacing
             additionalEncryptedKeys.forEach(key => {
                 const namespacedKey = `hackare_${currentNamespace}_${key}`;
-                localStorage.removeItem(namespacedKey);
+                storage.removeItem(namespacedKey);
                 clearedKeys.push(namespacedKey);
                 console.log(`Cleared encrypted key: ${namespacedKey}`);
             });
@@ -317,7 +332,7 @@ window.CoreStorageService = (function() {
             // Clear function tools keys using manual namespacing
             functionToolsKeys.forEach(key => {
                 const namespacedKey = `hackare_${currentNamespace}_${key}`;
-                localStorage.removeItem(namespacedKey);
+                storage.removeItem(namespacedKey);
                 clearedKeys.push(namespacedKey);
                 console.log(`Cleared function tools key: ${namespacedKey}`);
             });
@@ -329,14 +344,14 @@ window.CoreStorageService = (function() {
             ];
             
             namespaceKeys.forEach(key => {
-                localStorage.removeItem(key);
+                storage.removeItem(key);
                 clearedKeys.push(key);
                 console.log(`Cleared namespace key: ${key}`);
             });
             
             // Theme settings are now encrypted and namespaced, so they're cleared with other namespace keys
             
-            // Clear MCP servers (stored globally)
+            // Clear MCP servers (stored globally) - always use localStorage for this
             localStorage.removeItem('hacka_re_mcp_servers');
             clearedKeys.push('hacka_re_mcp_servers');
             console.log('Cleared MCP servers: hacka_re_mcp_servers');
@@ -368,6 +383,11 @@ window.CoreStorageService = (function() {
      * Initialize the storage service
      */
     function init() {
+        // Initialize storage type service
+        if (StorageTypeService) {
+            StorageTypeService.init();
+        }
+        
         // Initialize encryption
         EncryptionService.initEncryption();
     }

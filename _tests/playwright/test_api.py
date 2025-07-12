@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 from playwright.sync_api import Page, expect
 
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, check_system_messages
+from test_utils import dismiss_welcome_modal, dismiss_settings_modal, check_system_messages, setup_test_environment
 
 # Load environment variables from .env file in the current directory
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
@@ -15,6 +15,9 @@ def test_api_key_configuration(page, serve_hacka_re):
     """Test the API key configuration functionality."""
     # Navigate to the application
     page.goto(serve_hacka_re)
+    
+    # Set up test environment to prevent welcome modal
+    setup_test_environment(page)
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
@@ -80,31 +83,56 @@ def test_api_key_configuration(page, serve_hacka_re):
         }""")
         time.sleep(0.5)  # Wait a moment for the DOM to update
     
-    # Verify that the API key was saved by printing all localStorage contents
-    print("Printing all localStorage contents for debugging:")
-    localStorage_contents = page.evaluate("""() => {
+    # Verify that the API key was saved by checking both localStorage and sessionStorage
+    print("Checking storage contents for debugging:")
+    storage_contents = page.evaluate("""() => {
+        const result = {
+            localStorage: {},
+            sessionStorage: {}
+        };
+        
         // Get all localStorage keys and values
-        const result = {};
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             const value = localStorage.getItem(key);
-            result[key] = value;
+            result.localStorage[key] = value;
         }
+        
+        // Get all sessionStorage keys and values
+        for (let i = 0; i < sessionStorage.length; i++) {
+            const key = sessionStorage.key(i);
+            const value = sessionStorage.getItem(key);
+            result.sessionStorage[key] = value;
+        }
+        
         return result;
     }""")
 
-    # Print each key-value pair
-    for key, value in localStorage_contents.items():
+    # Print localStorage contents
+    print("localStorage contents:")
+    for key, value in storage_contents['localStorage'].items():
         print(f"Key: {key}")
         print(f"Value: {value}")
         print("-" * 50)
     
-    # Check if there are any items in localStorage
-    if localStorage_contents:
-        print("API key configuration test passed - localStorage contains items")
+    # Print sessionStorage contents
+    print("sessionStorage contents:")
+    for key, value in storage_contents['sessionStorage'].items():
+        print(f"Key: {key}")
+        print(f"Value: {value}")
+        print("-" * 50)
+    
+    # Check if there are any items in either storage (prioritize sessionStorage for direct entry)
+    total_items = len(storage_contents['localStorage']) + len(storage_contents['sessionStorage'])
+    if total_items > 0:
+        print(f"API key configuration test passed - found {total_items} storage items")
+        if storage_contents['sessionStorage']:
+            print("Data stored in sessionStorage (expected for direct entry)")
+        elif storage_contents['localStorage']:
+            print("Data stored in localStorage (expected for shared links)")
     else:
-        print("WARNING: No items found in localStorage")
-        assert False, "No items found in localStorage"
+        print("WARNING: No items found in either localStorage or sessionStorage")
+        assert False, "No items found in storage"
 
 def test_model_selection(page, serve_hacka_re):
     """Test the model selection functionality."""
