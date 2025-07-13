@@ -63,7 +63,7 @@ This document summarizes the features and achievements of hacka.re as of Release
 - **Customizable Sharing**: Checkboxes to select exactly what to include in the shared link
 - **QR Code Generation**: QR codes for easy sharing of links with size warnings
 - **Session Key Management**: Generate strong session keys, toggle visibility, copy to clipboard, and lock for team sharing
-- **NaCl Encryption**: Strong encryption for shared data
+- **NaCl Encryption**: Encryption for shared data
 - **Session Key-Based Key Derivation**: Improved security through key derivation
 
 ## Technical Achievements
