@@ -48,6 +48,9 @@ window.NamespaceService = (function() {
         usingFallbackForMasterKey: false
     };
     
+    // Flag to track if we've attempted session cleanup for this page load
+    let hasAttemptedSessionCleanup = false;
+    
     // Helper functions
     function getSessionKey() {
         if (window.ShareManager && typeof window.ShareManager.getSessionKey === 'function') {
@@ -336,6 +339,26 @@ window.NamespaceService = (function() {
         if (StorageTypeService && StorageTypeService.isUsingSessionStorage()) {
             // Use default namespace for sessionStorage
             const defaultNamespace = StorageTypeService.getDefaultNamespace();
+            
+            // Check if sessionStorage has any encrypted data that might be from a previous session
+            // If so, and we haven't attempted cleanup yet, clear everything and start fresh
+            if (!hasAttemptedSessionCleanup && sessionStorage.length > 0) {
+                // Check if there's any encrypted data that would fail to decrypt
+                const hasEncryptedData = Object.keys(sessionStorage).some(key => {
+                    const value = sessionStorage.getItem(key);
+                    // Check if this looks like encrypted data (base64-like strings over certain length)
+                    return value && value.length > 50 && /^[A-Za-z0-9+/=]+$/.test(value);
+                });
+                
+                if (hasEncryptedData) {
+                    addSystemMessage(`[CRYPTO] Detected encrypted data from previous session - clearing sessionStorage and starting fresh`);
+                    sessionStorage.clear();
+                    hasAttemptedSessionCleanup = true;
+                } else {
+                    hasAttemptedSessionCleanup = true;
+                }
+            }
+            
             addSystemMessage(`[CRYPTO] Using default session namespace: ${defaultNamespace}`);
             
             state.current.namespaceId = defaultNamespace;

@@ -258,7 +258,7 @@ window.DefaultFunctionsService = (function() {
         let result;
         
         const [groupId, functionName] = functionId.split(':');
-        const group = getDefaultFunctionGroupById(groupId);
+        const group = getDefaultFunctionCollectionById(groupId);
         const func = group?.functions?.find(f => f.name === functionName);
         
         if (index >= 0) {
@@ -356,7 +356,7 @@ window.DefaultFunctionsService = (function() {
         
         selectedFunctionIds.forEach(functionId => {
             const [groupId, functionName] = functionId.split(':');
-            const group = getDefaultFunctionGroupById(groupId);
+            const group = getDefaultFunctionCollectionById(groupId);
             const func = group?.functions?.find(f => f.name === functionName);
             
             console.log(`Processing function ${functionId}: found=${!!func}`);
