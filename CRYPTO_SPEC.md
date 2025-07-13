@@ -21,7 +21,7 @@ The hacka.re application uses a robust cryptographic system to secure user data 
 
 - **Privacy**: All sensitive data is encrypted before being stored in localStorage
 - **Isolation**: Different GPT configurations are isolated using namespaces
-- **Security**: Strong encryption with proper key derivation and salting
+- **Security**: Encryption with proper key derivation and salting
 - **Usability**: Transparent encryption/decryption for the user
 - **Shareability**: Secure sharing of configurations with other users
 
@@ -219,7 +219,7 @@ When accessing data, the system:
 ### Strengths
 
 - **Zero server-side storage**: All data remains in the browser
-- **Strong encryption**: XSalsa20-Poly1305 authenticated encryption
+- **Encryption**: XSalsa20-Poly1305 authenticated encryption
 - **Key derivation**: Multiple iterations of SHA-512 with salt
 - **Namespace isolation**: Different GPTs have separate encryption contexts
 - **Master key system**: Adds an additional layer of security
