@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-hacka.re is a privacy-focused, serverless chat interface for OpenAI-compatible APIs built with pure HTML, CSS, and JavaScript. It runs entirely client-side with no backend server, ensuring user privacy and data control.
+hacka.re is a privacy-focused, serverless chat interface for OpenAI-compatible APIs built with pure HTML, CSS, and ES6 JavaScript. It runs entirely client-side with no backend server, no build system, no TypeScript compilation, and no server-side processing beyond serving static files, ensuring user privacy and data control.
 
 ## Development Commands
 
@@ -147,18 +147,188 @@ js/
 - Real-time context window visualization
 - Token counting and usage tracking
 
-## Testing Approach
+## Playwright Testing Infrastructure
 
 ### Test Philosophy
 - **No mocking** - all tests use real API calls to validate actual functionality
 - Uses `gpt-4o-mini` model for cost efficiency
-- Playwright browser automation for comprehensive UI testing
-- API key configured in `_tests/playwright/.env`
+- Playwright + pytest browser automation for comprehensive UI testing
+- **Screenshot-driven debugging** with contextual metadata capture
+- **Multi-level output capture** for development and CI/CD integration
 
-### Test Categories
-- **Core tests**: Basic UI, API configuration, chat functionality
-- **Feature tests**: Function calling, sharing, themes, model selection
-- **API integration**: Real function calling and model interaction tests
+### Test Architecture
+```
+_tests/playwright/
+├── conftest.py                    # Core pytest fixtures and configuration
+├── test_utils.py                  # Common utilities and helper functions
+├── pytest.ini                    # pytest configuration
+├── requirements.txt               # Python dependencies
+├── screenshots/                   # Screenshot capture directory
+├── screenshots_data/              # Screenshot metadata in markdown
+├── function_calling_api/          # Specialized API testing suite
+│   ├── conftest.py               # API-specific fixtures
+│   ├── helpers/                  # Modular helper functions
+│   └── test_*.py                 # API integration tests
+├── debug_tests/                   # Temporary debugging tests
+├── run_*.sh                      # Test execution scripts
+└── test_*.py                     # Main test files (80+ tests)
+```
+
+### Test Categories and Execution
+
+**Core Tests (Quick validation - `./run_core_tests.sh`):**
+- `test_page.py` - Basic UI and page loading
+- `test_api.py` - API configuration and model selection
+- `test_chat.py` - Basic chat functionality
+- `test_welcome_modal.py` - Welcome modal behavior
+
+**Feature Tests (Advanced functionality - `./run_feature_tests.sh`):**
+- `test_function_*.py` - Function calling system (multiple files)
+- `test_mcp_*.py` - Model Context Protocol integration
+- `test_sharing.py` - Secure sharing functionality
+- `test_themes.py` - Theme switching and mobile responsiveness
+- `test_modals.py` - Modal interactions
+
+**API Integration Tests:**
+- `function_calling_api/` - Real OpenAI API function calling tests
+- Uses `gpt-4o-mini` model for cost efficiency
+- No mocking - validates actual API responses
+
+**Specialized Test Suites:**
+```bash
+./run_mcp_tests.sh              # All MCP tests (26 tests)
+./run_mcp_tests.sh --unit       # Unit tests only (18 tests)
+./run_mcp_tests.sh --integration # Integration tests (8 tests)
+./run_oauth_tests.sh            # OAuth-specific test suite
+./run_github_oauth_tests.sh     # GitHub provider tests
+```
+
+### Test Execution Options
+```bash
+# Core functionality tests (quick validation)
+./run_core_tests.sh [--headless] [--firefox] [--webkit] [-v] [--timeout <ms>]
+
+# Advanced feature tests 
+./run_feature_tests.sh [options]
+
+# All tests (comprehensive - 377 total tests)
+./run_tests.sh [options]
+
+# Specific filtering
+./run_tests.sh -k "function_calling_api or test_api"
+./run_tests.sh --test-file test_my_feature.py
+
+# Manual server management
+./run_tests.sh --skip-server
+```
+
+### Development and Debugging Capabilities
+
+**Multi-Level Output Capture:**
+1. **Raw Terminal Output** - Complete stdout/stderr with interruption handling
+2. **Test-Specific Output** - Direct pytest output with console messages
+3. **Debug Screenshots** - Contextual screenshots with metadata
+
+**Screenshot-Driven Debugging:**
+```python
+from test_utils import screenshot_with_markdown
+
+screenshot_with_markdown(page, "test_phase", {
+    "Status": "After clicking button",
+    "Component": "Function Calling Modal", 
+    "Error": error_message if error else "None",
+    "API Key": "Configured" if api_key else "None"
+})
+```
+
+**Console Logging and Browser Debugging:**
+```python
+# Setup real-time console logging
+def setup_console_logging(page):
+    def log_console_message(msg):
+        print(f"Console {msg.type}: {msg.text}")
+    page.on("console", log_console_message)
+
+# Interactive debugging
+page.pause()  # Opens browser inspector
+
+# State inspection
+debug_info = {
+    "LocalStorage": str(page.evaluate("() => Object.keys(localStorage)")),
+    "API Key Set": str(page.evaluate("() => !!localStorage.getItem('openai_api_key')")),
+    "Current URL": page.url
+}
+```
+
+**Automated Report Generation:**
+- `bundle_test_results.sh` generates markdown reports after test completion
+- `test_results.md` - Test output + screenshots
+- `run_tests.out_bundle.md` - Complete output bundle
+- Compatible with markdown viewers like `glow`
+
+### Writing New Playwright Tests
+
+**Standard Test Pattern:**
+```python
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
+from playwright.sync_api import Page, expect
+
+def test_feature(page: Page, serve_hacka_re):
+    """Clear test description"""
+    # 1. Navigate and setup
+    page.goto(serve_hacka_re)
+    dismiss_welcome_modal(page)
+    
+    # 2. Test implementation
+    element = page.locator("#element-id")
+    element.scroll_into_view_if_needed()
+    expect(element).to_be_visible()
+    element.click()
+    
+    # 3. Wait for specific conditions (NEVER arbitrary timeouts)
+    page.wait_for_selector("#result:not(:empty)", state="visible", timeout=5000)
+    
+    # 4. Assert and debug
+    screenshot_with_markdown(page, "test_completion", {
+        "Status": "Test completed successfully",
+        "Component": "Component name"
+    })
+```
+
+**Modal Management Best Practices:**
+```python
+# Always dismiss modals at start
+dismiss_welcome_modal(page)
+dismiss_settings_modal(page)  # If needed
+
+# Handle dialogs proactively  
+page.on("dialog", lambda dialog: dialog.accept())
+delete_button.click()
+```
+
+**Essential Waiting Strategies:**
+```python
+# ✅ Good - Wait for specific conditions
+page.wait_for_selector("#element", state="visible", timeout=5000)
+page.wait_for_selector("#validation-result:not(:empty)", state="visible")
+
+# ❌ Avoid - Arbitrary timeouts
+page.wait_for_timeout(500)  # Not recommended unless necessary
+```
+
+**Function Name Auto-Population Pattern:**
+```python
+# For function calling tests - function name field is READ-ONLY and auto-populated
+# 1. Set function code first
+function_code.fill("""function test_function() { ... }""")
+
+# 2. Trigger auto-population
+page.evaluate("document.getElementById('function-code').dispatchEvent(new Event('input'))")
+
+# 3. Wait and verify
+page.wait_for_timeout(500)  # Brief wait for auto-population
+expect(page.locator("#function-name")).to_have_value("test_function")
+```
 
 ### Test Setup Requirements
 ```bash
@@ -168,7 +338,98 @@ cp .env.example _tests/playwright/.env
 
 # Tests automatically start/stop HTTP server on port 8000
 # Use --skip-server flag if managing server manually
+
+# Environment is automatically managed by test scripts:
+# - Creates Python virtual environment
+# - Installs dependencies via requirements.txt
+# - Handles server lifecycle
+# - Captures all output to log files
 ```
+
+### Integration with Development Workflow
+
+**For Unit Testing:**
+- Create focused test files for specific components
+- Use `debug_tests/` directory for temporary debugging
+- Include comprehensive debug information with screenshots
+- Test against real APIs to validate actual functionality
+
+**As Development Tool:**
+- Run tests in headed mode for visual debugging
+- Use `page.pause()` for interactive inspection
+- Capture browser state and console output
+- Generate detailed reports for issue investigation
+
+**For CI/CD Integration:**
+- Headless mode execution with comprehensive logging
+- Screenshot capture for failure investigation
+- Markdown report generation for automated processing
+- Multi-browser testing support (Chromium, Firefox, WebKit)
+
+### Debugging Production Issues with Playwright
+
+**Console Log Capture and Analysis:**
+The Playwright testing infrastructure is designed to support debugging production issues through comprehensive console logging and real-time inspection:
+
+```python
+# Setup console logging for debugging
+console_messages = []
+def setup_console_logging(page):
+    def log_console_message(msg):
+        timestamp = time.strftime("%H:%M:%S.%f")[:-3]
+        console_messages.append({
+            'timestamp': timestamp,
+            'type': msg.type,
+            'text': msg.text,
+            'location': msg.location
+        })
+        print(f"[{timestamp}] Console {msg.type.upper()}: {msg.text}")
+    page.on("console", log_console_message)
+```
+
+**Real-time Debugging Workflow:**
+1. **Create debug script** in `debug_tests/` directory 
+2. **Run with visible browser** for interactive debugging: `python debug_script.py`
+3. **Use `page.pause()`** to open browser inspector at any point
+4. **Capture state** with `screenshot_with_debug()` including contextual metadata
+5. **Save console logs** to JSON files for analysis and sharing with LLM assistants
+
+**Example Debug Script Pattern:**
+```python
+# Navigate to issue area
+page.goto(issue_url)
+dismiss_welcome_modal(page)
+dismiss_settings_modal(page)
+
+# Capture before state
+screenshot_with_debug(page, "before_action", {
+    "Component": "Share Modal",
+    "Expected": "Welcome message should appear",
+    "API Key": "Configured" if api_key else "None"
+})
+
+# Perform action and wait for results
+action_button.click()
+page.wait_for_selector("#result", timeout=5000)
+
+# Capture after state with debug info
+screenshot_with_debug(page, "after_action", {
+    "Result": "Action completed",
+    "Console Messages": str(len(console_messages)),
+    "Error": error_msg if error else "None"
+})
+
+# Save full console log for analysis
+with open("debug_console.json", 'w') as f:
+    json.dump(console_messages, f, indent=2)
+```
+
+**Console Log Analysis for LLM Debugging:**
+The multi-level output capture generates markdown-compatible reports that can be shared with LLM assistants for analysis:
+- **Raw console messages** with timestamps and source locations
+- **Screenshot metadata** with contextual debug information
+- **Test execution flow** with success/failure points
+- **JavaScript errors and warnings** captured in real-time
 
 ## Development Practices
 
@@ -187,11 +448,17 @@ cp .env.example _tests/playwright/.env
 - Clean removal ensures the new architecture remains pure and maintainable
 - Delete deprecated functions, unused imports, and legacy code paths completely
 
-### Testing Requirements
-- Always include debug information with screenshots using `screenshot_with_markdown()`
-- Function name fields are auto-populated from code editor (read-only)
-- Use proper waiting strategies: `page.wait_for_selector()` not `page.wait_for_timeout()`
-- Dismiss welcome modal in tests with `dismiss_welcome_modal()`
+### Playwright Testing Requirements
+- **Always include debug information** with screenshots using `screenshot_with_markdown()`
+- **Function name fields are auto-populated** from code editor (read-only)
+- **Use proper waiting strategies**: `page.wait_for_selector()` not arbitrary `page.wait_for_timeout()`
+- **Dismiss welcome modal** in tests with `dismiss_welcome_modal()` after page navigation
+- **Test against real APIs** - no mocking, use `gpt-4o-mini` for cost efficiency
+- **Include comprehensive debug context** in screenshot metadata for LLM-assisted debugging
+- **Use multi-level output capture** - terminal output, test logs, and screenshot reports
+- **Handle modals proactively** with `page.on("dialog")` handlers before triggering actions
+- **Wait for specific conditions** rather than arbitrary timeouts when possible
+- **Organize tests by complexity** - core, feature, and API integration categories
 
 ### Security Considerations
 - Never commit API keys or secrets
@@ -199,20 +466,20 @@ cp .env.example _tests/playwright/.env
 - Encrypted storage for sensitive data
 - Secure sharing mechanism for credentials and conversations
 
-## Linting and Validation
+## Validation
 
-No traditional build system - this is a static web application. Run these for validation:
+**Pure Static Web Application** - No build system, no TypeScript, no linting required. Validation is done through:
 
 ```bash
-# Python code quality (in hacka_re_verifier/)
-python -m flake8
-python -m black --check .
-
 # Security verification
 python run_verifier.py
 
-# Test suite serves as validation
+# Test suite serves as primary validation
 cd _tests/playwright && ./run_core_tests.sh
+
+# Python code quality (for verifier tool only)
+cd hacka_re_verifier && python -m flake8
+cd hacka_re_verifier && python -m black --check .
 ```
 
 ## Common Development Tasks
@@ -223,10 +490,14 @@ cd _tests/playwright && ./run_core_tests.sh
 3. Tag with `@callable` or `@tool` if selective calling enabled
 
 ### Adding Tests
-1. Create new test file in `_tests/playwright/`
-2. Follow existing patterns with `conftest.py` fixtures
-3. Always include `dismiss_welcome_modal()` after page navigation
-4. Include debug information with screenshots
+1. **Create new test file** in `_tests/playwright/` following naming conventions
+2. **Use standard test pattern** with `conftest.py` fixtures (`serve_hacka_re`, `api_key`)
+3. **Follow modal management best practices** - always dismiss welcome modal after navigation
+4. **Include comprehensive debug information** with contextual screenshots and metadata
+5. **Choose appropriate test category** - core (quick validation), feature (advanced), or API integration
+6. **Use proper waiting strategies** - wait for specific conditions, avoid arbitrary timeouts
+7. **Test against real APIs** using `gpt-4o-mini` model for actual functionality validation
+8. **Run tests with multiple execution options** - headless/headed, single/batch, filtered by keywords
 
 ### Modifying Services
 1. **Service modules** are in `js/services/` (33+ specialized files)

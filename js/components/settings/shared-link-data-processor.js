@@ -22,34 +22,17 @@ function createSharedLinkDataProcessor() {
     }
     
     /**
-     * Apply title and subtitle from shared data
+     * Apply welcome message from shared data
      * @param {Object} sharedData - Shared data object
      * @param {Function} addSystemMessage - Function to add system messages
      */
-    function applyTitleAndSubtitle(sharedData, addSystemMessage) {
-        let titleOrSubtitleChanged = false;
-        
-        // If there's a title, save it and update the UI FIRST
-        if (sharedData.title) {
-            StorageService.saveTitle(sharedData.title);
+    function applyWelcomeMessage(sharedData, addSystemMessage) {
+        // If there's a welcome message, display it as a system message
+        if (sharedData.welcomeMessage) {
             if (addSystemMessage) {
-                addSystemMessage(`Shared title "${sharedData.title}" has been applied.`);
+                // Display the welcome message directly as a system message
+                addSystemMessage(sharedData.welcomeMessage);
             }
-            titleOrSubtitleChanged = true;
-        }
-        
-        // If there's a subtitle, save it and update the UI FIRST
-        if (sharedData.subtitle) {
-            StorageService.saveSubtitle(sharedData.subtitle);
-            if (addSystemMessage) {
-                addSystemMessage(`Shared subtitle "${sharedData.subtitle}" has been applied.`);
-            }
-            titleOrSubtitleChanged = true;
-        }
-        
-        // Update title and subtitle in the UI if either was changed
-        if (titleOrSubtitleChanged) {
-            window.updateTitleAndSubtitle(true); // Force update even if there's a shared link
         }
     }
     
@@ -299,7 +282,7 @@ function createSharedLinkDataProcessor() {
         const { addSystemMessage, setMessages, elements } = options;
         
         // Apply data in order of dependency
-        applyTitleAndSubtitle(sharedData, addSystemMessage);
+        applyWelcomeMessage(sharedData, addSystemMessage);
         applyApiConfiguration(sharedData, addSystemMessage);
         const pendingSharedModel = applyModelConfiguration(sharedData, addSystemMessage);
         applyChatMessages(sharedData, addSystemMessage, setMessages);
@@ -313,7 +296,7 @@ function createSharedLinkDataProcessor() {
     
     return {
         maskApiKey,
-        applyTitleAndSubtitle,
+        applyWelcomeMessage,
         applyApiConfiguration,
         applyModelConfiguration,
         applyChatMessages,

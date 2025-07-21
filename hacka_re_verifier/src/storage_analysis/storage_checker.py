@@ -485,9 +485,8 @@ class StorageChecker:
         # Wait for share modal to appear
         await page.wait_for_selector('#share-modal', state='visible', timeout=self.timeout)
         
-        # Change title and subtitle
-        await page.fill('#share-title', 'Test Title')
-        await page.fill('#share-subtitle', 'Test Subtitle')
+        # Set welcome message
+        await page.fill('#share-welcome-message', 'Welcome to my test environment!')
         
         # Generate link
         await page.click('#generate-share-link-btn')
@@ -548,7 +547,7 @@ class StorageChecker:
             issue = {
                 'type': 'namespace_not_found',
                 'severity': 'high',
-                'message': "Namespace information not found in localStorage after changing title/subtitle",
+                'message': "Namespace information not found in localStorage after changing welcome message",
                 'details': {
                     'storage_items': list(updated_storage.keys())
                 }

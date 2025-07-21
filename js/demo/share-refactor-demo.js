@@ -67,8 +67,8 @@ export class ShareRefactorDemo {
         return {
             shareForm: document.getElementById('share-form'),
             sharePassword: document.getElementById('share-password'),
-            shareTitleInput: document.getElementById('share-title'),
-            shareSubtitleInput: document.getElementById('share-subtitle'),
+            shareWelcomeMessageCheckbox: document.getElementById('share-welcome-message-checkbox'),
+            shareWelcomeMessageInput: document.getElementById('share-welcome-message'),
             lockSessionKeyCheckbox: document.getElementById('lock-session-key'),
             passwordInputContainer: document.querySelector('.password-input-container'),
             togglePasswordVisibilityBtn: document.getElementById('toggle-password-visibility'),
