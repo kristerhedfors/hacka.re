@@ -18,7 +18,7 @@ window.ShareUIManager = (function() {
          * @param {Object} config - Configuration options
          */
         function initializeShareModal(config) {
-            const { apiKey, sessionKey, isSessionKeyLocked, loadShareOptions } = config;
+            const { apiKey, sessionKey, isSessionKeyLocked, sharedWelcomeMessage, loadShareOptions } = config;
             
             // Reset form
             if (elements.shareForm) {
@@ -30,6 +30,9 @@ window.ShareUIManager = (function() {
             
             // Handle password setup
             setupPassword(sessionKey, isSessionKeyLocked);
+            
+            // Handle welcome message setup
+            setupWelcomeMessage(sharedWelcomeMessage);
             
             // Load share options from storage
             if (loadShareOptions) {
@@ -126,6 +129,22 @@ window.ShareUIManager = (function() {
                 // Ensure the lock checkbox is unchecked
                 if (elements.lockSessionKeyCheckbox) {
                     elements.lockSessionKeyCheckbox.checked = false;
+                }
+            }
+        }
+        
+        /**
+         * Setup welcome message pre-population
+         * @param {string|null} sharedWelcomeMessage - Welcome message from shared link
+         */
+        function setupWelcomeMessage(sharedWelcomeMessage) {
+            if (sharedWelcomeMessage && elements.shareWelcomeMessageInput) {
+                // Pre-populate the welcome message field
+                elements.shareWelcomeMessageInput.value = sharedWelcomeMessage;
+                
+                // Enable the welcome message checkbox if it exists
+                if (elements.shareWelcomeMessageCheckbox) {
+                    elements.shareWelcomeMessageCheckbox.checked = true;
                 }
             }
         }

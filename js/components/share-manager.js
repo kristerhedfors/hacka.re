@@ -10,8 +10,9 @@ window.ShareManager = (function() {
      * @returns {Object} Share Manager instance
      */
     function createShareManager(elements) {
-        // Session key storage
+        // Session key and welcome message storage
         let sessionKey = null;
+        let sharedWelcomeMessage = null;
         
         /**
          * Initialize the share manager
@@ -309,12 +310,18 @@ window.ShareManager = (function() {
             const baseUrl = StorageService.getBaseUrl();
             
             // Get welcome message from input if it exists
-            let welcomeMessage = 'Welcome to hacka.re! Start a conversation with AI models.';
+            let welcomeMessage = null;
             
             // Check if welcome message input exists and has a value
             if (elements.shareWelcomeMessageInput && elements.shareWelcomeMessageInput.value.trim()) {
                 welcomeMessage = elements.shareWelcomeMessageInput.value.trim();
                 console.log('🔗 ShareManager: Using custom welcome message for share link:', welcomeMessage.substring(0, 50) + '...');
+            } else {
+                // Only use default message if welcome message checkbox is checked but no custom message provided
+                if (elements.shareWelcomeMessageCheckbox && elements.shareWelcomeMessageCheckbox.checked) {
+                    welcomeMessage = 'Welcome to hacka.re! Start a conversation with AI models.';
+                    console.log('🔗 ShareManager: Using default welcome message for share link');
+                }
             }
             
             // Debug: Check all checkbox states
@@ -403,7 +410,7 @@ window.ShareManager = (function() {
                 includeSystemPrompt: false, // System prompt is now handled by prompt library
                 includeModel: elements.shareModelCheckbox ? elements.shareModelCheckbox.checked : false,
                 includeConversation: elements.shareConversationCheckbox ? elements.shareConversationCheckbox.checked : false,
-                includeWelcomeMessage: elements.shareWelcomeMessageCheckbox ? elements.shareWelcomeMessageCheckbox.checked : false,
+                includeWelcomeMessage: (elements.shareWelcomeMessageCheckbox ? elements.shareWelcomeMessageCheckbox.checked : false) && welcomeMessage,
                 includePromptLibrary: elements.sharePromptLibraryCheckbox ? elements.sharePromptLibraryCheckbox.checked : false,
                 includeFunctionLibrary: elements.shareFunctionLibraryCheckbox ? elements.shareFunctionLibraryCheckbox.checked : false,
                 includeMcpConnections: mcpConnectionsChecked
@@ -552,6 +559,22 @@ window.ShareManager = (function() {
                    elements.passwordInputContainer.classList.contains('locked');
         }
         
+        /**
+         * Get the shared welcome message
+         * @returns {string|null} Shared welcome message
+         */
+        function getSharedWelcomeMessage() {
+            return sharedWelcomeMessage;
+        }
+        
+        /**
+         * Set the shared welcome message
+         * @param {string} message - Welcome message from shared link
+         */
+        function setSharedWelcomeMessage(message) {
+            sharedWelcomeMessage = message;
+        }
+        
         // Public API
         return {
             init,
@@ -563,6 +586,8 @@ window.ShareManager = (function() {
             getSessionKey,
             setSessionKey,
             isSessionKeyLocked,
+            getSharedWelcomeMessage,
+            setSharedWelcomeMessage,
             saveShareOptions,
             loadShareOptions
         };

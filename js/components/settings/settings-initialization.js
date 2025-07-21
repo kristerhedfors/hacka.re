@@ -99,6 +99,11 @@ window.SettingsInitialization = (function() {
                                     addSystemMessage(`Warning: Shared model "${displayName}" is not available with your API key. Using default model instead.`);
                                 }
                             }
+                            
+                            // Display deferred welcome message last, after all other system messages
+                            if (SharedLinkDataProcessor.displayDeferredWelcomeMessage) {
+                                SharedLinkDataProcessor.displayDeferredWelcomeMessage();
+                            }
                         });
                     } else {
                         // No shared model, just fetch models
@@ -111,7 +116,12 @@ window.SettingsInitialization = (function() {
                             baseUrl, 
                             true, 
                             SettingsCoordinator.createContextUsageCallback(state, componentManagers)
-                        );
+                        ).then(() => {
+                            // Display deferred welcome message last, after all other system messages
+                            if (SharedLinkDataProcessor.displayDeferredWelcomeMessage) {
+                                SharedLinkDataProcessor.displayDeferredWelcomeMessage();
+                            }
+                        });
                     }
                 } else {
                     // Decryption failed or was cancelled
@@ -120,6 +130,8 @@ window.SettingsInitialization = (function() {
             });
         } else {
             // No shared link, perform normal initialization
+            // Mark password verification as complete (no shared link means no password needed)
+            window._passwordVerificationComplete = true;
             handleInitialApiKeyCheck(elements, componentManagers, showApiKeyModal, updateModelInfoDisplay);
         }
     }
