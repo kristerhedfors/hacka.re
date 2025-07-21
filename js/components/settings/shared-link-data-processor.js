@@ -22,7 +22,7 @@ function createSharedLinkDataProcessor() {
     }
     
     /**
-     * Apply welcome message from shared data
+     * Apply welcome message from shared data - should be called last
      * @param {Object} sharedData - Shared data object
      * @param {Function} addSystemMessage - Function to add system messages
      */
@@ -30,8 +30,8 @@ function createSharedLinkDataProcessor() {
         // If there's a welcome message, display it as a system message
         if (sharedData.welcomeMessage) {
             if (addSystemMessage) {
-                // Display the welcome message directly as a system message
-                addSystemMessage(sharedData.welcomeMessage);
+                // Display the welcome message with markdown rendering and special styling
+                addSystemMessage(sharedData.welcomeMessage, 'welcome-message');
             }
         }
     }
@@ -281,8 +281,7 @@ function createSharedLinkDataProcessor() {
     async function processSharedData(sharedData, password, options = {}) {
         const { addSystemMessage, setMessages, elements } = options;
         
-        // Apply data in order of dependency
-        applyWelcomeMessage(sharedData, addSystemMessage);
+        // Apply data in order of dependency - welcome message LAST
         applyApiConfiguration(sharedData, addSystemMessage);
         const pendingSharedModel = applyModelConfiguration(sharedData, addSystemMessage);
         applyChatMessages(sharedData, addSystemMessage, setMessages);
@@ -290,6 +289,9 @@ function createSharedLinkDataProcessor() {
         applyFunctions(sharedData, addSystemMessage);
         await applyMcpConnections(sharedData, addSystemMessage);
         applySessionKey(password, elements, addSystemMessage);
+        
+        // Apply welcome message LAST so it appears at the bottom
+        applyWelcomeMessage(sharedData, addSystemMessage);
         
         return pendingSharedModel;
     }

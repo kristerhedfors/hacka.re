@@ -99,7 +99,8 @@ window.ChatUIService = (function() {
              * @returns {HTMLElement} The created message element
              */
             addSystemMessageToUI(content, className) {
-                const messageElement = UIUtils.createMessageElement('system', content);
+                // Pass className to createMessageElement so it can handle markdown rendering for welcome messages
+                const messageElement = UIUtils.createMessageElement('system', content, null, className);
                 
                 // Add custom class if provided
                 if (className) {

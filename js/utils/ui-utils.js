@@ -216,9 +216,10 @@ window.UIUtils = (function() {
      * @param {string} role - Message role ('user', 'assistant', or 'system')
      * @param {string} content - Message content
      * @param {string} [id] - Optional ID for the message element
+     * @param {string} [className] - Optional class name for special rendering
      * @returns {HTMLElement} - The created message element
      */
-    function createMessageElement(role, content, id = null) {
+    function createMessageElement(role, content, id = null, className = null) {
         const messageElement = document.createElement('div');
         messageElement.className = `message ${role}`;
         
@@ -233,16 +234,25 @@ window.UIUtils = (function() {
                 </div>
             `;
         } else if (role === 'system') {
-            // For system messages, preserve newlines by using innerHTML with <br> tags
-            // First escape HTML to prevent XSS, then replace newlines with <br>
-            const escapedContent = escapeHTML(content);
-            const contentWithLineBreaks = escapedContent.replace(/\n/g, '<br>');
-            
-            messageElement.innerHTML = `
-                <div class="message-content" style="font-family: 'Courier New', monospace;">
-                    ${contentWithLineBreaks}
-                </div>
-            `;
+            // For welcome messages, render as markdown like assistant messages
+            if (className && className.includes('welcome-message')) {
+                messageElement.innerHTML = `
+                    <div class="message-content markdown-content">
+                        ${content ? renderMarkdown(content) : ''}
+                    </div>
+                `;
+            } else {
+                // For other system messages, preserve newlines by using innerHTML with <br> tags
+                // First escape HTML to prevent XSS, then replace newlines with <br>
+                const escapedContent = escapeHTML(content);
+                const contentWithLineBreaks = escapedContent.replace(/\n/g, '<br>');
+                
+                messageElement.innerHTML = `
+                    <div class="message-content" style="font-family: 'Courier New', monospace;">
+                        ${contentWithLineBreaks}
+                    </div>
+                `;
+            }
         } else {
             messageElement.innerHTML = `
                 <div class="message-content">
