@@ -367,6 +367,7 @@ window.ShareUIManager = (function() {
             
             // Add prompt library if selected
             if (elements.sharePromptLibraryCheckbox && elements.sharePromptLibraryCheckbox.checked) {
+                // Count USER prompts (full content is included in shared URLs)
                 const prompts = PromptsService.getPrompts();
                 const selectedPromptIds = PromptsService.getSelectedPromptIds();
                 
@@ -378,6 +379,15 @@ window.ShareUIManager = (function() {
                 
                 if (selectedPromptIds && selectedPromptIds.length > 0) {
                     estimatedLength += selectedPromptIds.join(',').length + 20;
+                }
+                
+                // Count DEFAULT prompt selection state (only IDs are shared, not content)
+                // Only include when selections deviate from default (empty) state
+                const selectedDefaultPromptIds = window.DefaultPromptsService ? 
+                    window.DefaultPromptsService.getSelectedDefaultPromptIds() : [];
+                    
+                if (selectedDefaultPromptIds && selectedDefaultPromptIds.length > 0) {
+                    estimatedLength += selectedDefaultPromptIds.join(',').length + 25; // field name + IDs
                 }
             }
             
