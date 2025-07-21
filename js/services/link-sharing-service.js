@@ -68,12 +68,21 @@ window.LinkSharingService = (function() {
             const selectedPromptIds = PromptsService.getSelectedPromptIds();
             finalPayload.selectedPromptIds = selectedPromptIds;
             
+            // Get selected default prompt IDs - only include if they deviate from default (empty)
+            const selectedDefaultPromptIds = window.DefaultPromptsService ? 
+                window.DefaultPromptsService.getSelectedDefaultPromptIds() : [];
+            if (selectedDefaultPromptIds.length > 0) {
+                finalPayload.selectedDefaultPromptIds = selectedDefaultPromptIds;
+            }
+            
             // Log for debugging
             console.log('Including prompt library in shared link:', {
                 promptsCount: prompts.length,
                 selectedIdsCount: selectedPromptIds.length,
+                selectedDefaultIdsCount: selectedDefaultPromptIds.length,
                 prompts: prompts,
-                selectedPromptIds: selectedPromptIds
+                selectedPromptIds: selectedPromptIds,
+                selectedDefaultPromptIds: selectedDefaultPromptIds
             });
         }
         
