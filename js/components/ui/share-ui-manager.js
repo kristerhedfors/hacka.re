@@ -18,7 +18,7 @@ window.ShareUIManager = (function() {
          * @param {Object} config - Configuration options
          */
         function initializeShareModal(config) {
-            const { apiKey, sessionKey, isSessionKeyLocked, sharedWelcomeMessage, loadShareOptions } = config;
+            const { apiKey, sessionKey, isSessionKeyLocked, sharedWelcomeMessage, loadShareOptions, sharedLinkOptions } = config;
             
             // Reset form
             if (elements.shareForm) {
@@ -34,8 +34,11 @@ window.ShareUIManager = (function() {
             // Handle welcome message setup
             setupWelcomeMessage(sharedWelcomeMessage);
             
-            // Load share options from storage
-            if (loadShareOptions) {
+            // Load share options - prioritize shared link options over saved options
+            if (sharedLinkOptions) {
+                console.log('🔗 Using shared link options for pre-population:', sharedLinkOptions);
+                setShareOptionsFromSharedLink(sharedLinkOptions);
+            } else if (loadShareOptions) {
                 loadShareOptions();
             } else {
                 setDefaultShareOptions();
@@ -150,11 +153,79 @@ window.ShareUIManager = (function() {
         }
         
         /**
-         * Set default share options
+         * Set share options based on shared link options (what brought us here)
+         * @param {Object} sharedLinkOptions - Options from the shared link
+         */
+        function setShareOptionsFromSharedLink(sharedLinkOptions) {
+            // Set checkboxes based on what was included in the shared link
+            if (elements.shareBaseUrlCheckbox) {
+                elements.shareBaseUrlCheckbox.checked = sharedLinkOptions.includeBaseUrl || false;
+            }
+            
+            if (elements.shareApiKeyCheckbox) {
+                elements.shareApiKeyCheckbox.checked = sharedLinkOptions.includeApiKey || false;
+            }
+            
+            if (elements.shareModelCheckbox) {
+                elements.shareModelCheckbox.checked = sharedLinkOptions.includeModel || false;
+            }
+            
+            if (elements.shareSystemPromptCheckbox) {
+                elements.shareSystemPromptCheckbox.checked = sharedLinkOptions.includeSystemPrompt || false;
+            }
+            
+            if (elements.shareConversationCheckbox) {
+                elements.shareConversationCheckbox.checked = sharedLinkOptions.includeConversation || false;
+                // Update message history input state
+                if (sharedLinkOptions.includeConversation && elements.messageHistoryCount) {
+                    elements.messageHistoryCount.disabled = false;
+                    elements.messageHistoryCount.value = Math.max(1, sharedLinkOptions.messageCount || 1);
+                    if (elements.messageHistoryContainer) {
+                        elements.messageHistoryContainer.classList.add('active');
+                    }
+                } else {
+                    if (elements.messageHistoryCount) {
+                        elements.messageHistoryCount.disabled = true;
+                        elements.messageHistoryCount.value = '1';
+                    }
+                    if (elements.messageHistoryContainer) {
+                        elements.messageHistoryContainer.classList.remove('active');
+                    }
+                }
+            }
+            
+            if (elements.sharePromptLibraryCheckbox) {
+                elements.sharePromptLibraryCheckbox.checked = sharedLinkOptions.includePromptLibrary || false;
+            }
+            
+            if (elements.shareFunctionLibraryCheckbox) {
+                elements.shareFunctionLibraryCheckbox.checked = sharedLinkOptions.includeFunctionLibrary || false;
+            }
+            
+            if (elements.shareMcpConnectionsCheckbox) {
+                elements.shareMcpConnectionsCheckbox.checked = sharedLinkOptions.includeMcpConnections || false;
+            }
+            
+            if (elements.shareWelcomeMessageCheckbox) {
+                elements.shareWelcomeMessageCheckbox.checked = sharedLinkOptions.includeWelcomeMessage || false;
+            }
+        }
+        
+        /**
+         * Set default share options (for direct visits to hacka.re)
          */
         function setDefaultShareOptions() {
+            // For direct visits, check API key, base URL/provider, and model by default
+            if (elements.shareBaseUrlCheckbox) {
+                elements.shareBaseUrlCheckbox.checked = true;
+            }
+            
             if (elements.shareApiKeyCheckbox) {
                 elements.shareApiKeyCheckbox.checked = true;
+            }
+            
+            if (elements.shareModelCheckbox) {
+                elements.shareModelCheckbox.checked = true;
             }
             
             if (elements.shareSystemPromptCheckbox) {
@@ -165,8 +236,20 @@ window.ShareUIManager = (function() {
                 elements.shareConversationCheckbox.checked = false;
             }
             
+            if (elements.sharePromptLibraryCheckbox) {
+                elements.sharePromptLibraryCheckbox.checked = false;
+            }
+            
+            if (elements.shareFunctionLibraryCheckbox) {
+                elements.shareFunctionLibraryCheckbox.checked = false;
+            }
+            
             if (elements.shareMcpConnectionsCheckbox) {
                 elements.shareMcpConnectionsCheckbox.checked = false;
+            }
+            
+            if (elements.shareWelcomeMessageCheckbox) {
+                elements.shareWelcomeMessageCheckbox.checked = false;
             }
             
             // Disable message history input

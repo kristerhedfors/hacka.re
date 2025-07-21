@@ -292,6 +292,12 @@ function createSharedLinkDataProcessor() {
     async function processSharedData(sharedData, password, options = {}) {
         const { addSystemMessage, setMessages, elements, displayWelcomeMessage = true } = options;
         
+        // Analyze and store what options were included in the shared data
+        const sharedLinkOptions = analyzeSharedDataOptions(sharedData);
+        if (window.aiHackare && window.aiHackare.shareManager) {
+            window.aiHackare.shareManager.setSharedLinkOptions(sharedLinkOptions);
+        }
+        
         // Apply data in order of dependency - welcome message LAST
         applyApiConfiguration(sharedData, addSystemMessage);
         const pendingSharedModel = applyModelConfiguration(sharedData, addSystemMessage);
@@ -324,6 +330,29 @@ function createSharedLinkDataProcessor() {
         }
     }
     
+    /**
+     * Analyze shared data and determine what options were included
+     * @param {Object} sharedData - The shared data object
+     * @returns {Object} Options object indicating what was included
+     */
+    function analyzeSharedDataOptions(sharedData) {
+        const options = {
+            includeBaseUrl: !!sharedData.baseUrl,
+            includeApiKey: !!sharedData.apiKey,
+            includeSystemPrompt: !!sharedData.systemPrompt,
+            includeModel: !!sharedData.model,
+            includeConversation: !!(sharedData.messages && sharedData.messages.length > 0),
+            messageCount: sharedData.messages ? sharedData.messages.length : 0,
+            includePromptLibrary: !!(sharedData.prompts && sharedData.prompts.length > 0),
+            includeFunctionLibrary: !!(sharedData.functions && Object.keys(sharedData.functions).length > 0),
+            includeMcpConnections: !!(sharedData.mcpConnections && Object.keys(sharedData.mcpConnections).length > 0),
+            includeWelcomeMessage: !!sharedData.welcomeMessage
+        };
+        
+        console.log('🔍 Analyzed shared data options:', options);
+        return options;
+    }
+    
     return {
         maskApiKey,
         applyWelcomeMessage,
@@ -335,7 +364,8 @@ function createSharedLinkDataProcessor() {
         applyMcpConnections,
         applySessionKey,
         processSharedData,
-        displayDeferredWelcomeMessage
+        displayDeferredWelcomeMessage,
+        analyzeSharedDataOptions
     };
 }
 

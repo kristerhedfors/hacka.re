@@ -478,7 +478,8 @@ window.AIHackareComponent = (function() {
             this.shareManager.getSessionKey(),
             this.shareManager.isSessionKeyLocked(),
             this.shareManager.getSharedWelcomeMessage(),
-            this.shareManager.loadShareOptions.bind(this.shareManager)
+            this.shareManager.loadShareOptions.bind(this.shareManager),
+            this.shareManager.getSharedLinkOptions()
         );
         
         // Add a warning message if no API key is configured

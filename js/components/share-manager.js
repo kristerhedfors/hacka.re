@@ -13,6 +13,7 @@ window.ShareManager = (function() {
         // Session key and welcome message storage
         let sessionKey = null;
         let sharedWelcomeMessage = null;
+        let sharedLinkOptions = null; // Store what was included in the shared link that brought us here
         
         /**
          * Initialize the share manager
@@ -575,6 +576,22 @@ window.ShareManager = (function() {
             sharedWelcomeMessage = message;
         }
         
+        /**
+         * Get the shared link options (what was included in the link that brought us here)
+         * @returns {Object|null} Shared link options
+         */
+        function getSharedLinkOptions() {
+            return sharedLinkOptions;
+        }
+        
+        /**
+         * Set the shared link options (what was included in the link that brought us here)
+         * @param {Object} options - Options from the shared link
+         */
+        function setSharedLinkOptions(options) {
+            sharedLinkOptions = options;
+        }
+        
         // Public API
         return {
             init,
@@ -588,6 +605,8 @@ window.ShareManager = (function() {
             isSessionKeyLocked,
             getSharedWelcomeMessage,
             setSharedWelcomeMessage,
+            getSharedLinkOptions,
+            setSharedLinkOptions,
             saveShareOptions,
             loadShareOptions
         };
