@@ -36,12 +36,10 @@ window.ShareUIManager = (function() {
             
             // Load share options - prioritize shared link options over saved options
             if (sharedLinkOptions) {
-                console.log('🔗 Using shared link options for pre-population:', sharedLinkOptions);
                 setShareOptionsFromSharedLink(sharedLinkOptions);
             } else if (loadShareOptions) {
                 loadShareOptions();
             } else {
-                console.log('🏠 Using default share options for direct visit, API key available:', !!apiKey);
                 setDefaultShareOptions(apiKey);
             }
             
@@ -199,8 +197,6 @@ window.ShareUIManager = (function() {
             const hasApiKey = apiKey && apiKey.trim().length > 0;
             
             if (hasApiKey) {
-                console.log('🔧 API key configured - ensuring core options are checked');
-                
                 // Always check these core options when API key is available
                 if (elements.shareApiKeyCheckbox) {
                     elements.shareApiKeyCheckbox.checked = true;
@@ -213,8 +209,6 @@ window.ShareUIManager = (function() {
                 if (elements.shareModelCheckbox) {
                     elements.shareModelCheckbox.checked = true;
                 }
-            } else {
-                console.log('🚫 No API key configured - core options remain as set by other methods');
             }
         }
         
