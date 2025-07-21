@@ -84,9 +84,7 @@ window.SettingsInitialization = (function() {
                             if (modelResult.success && modelResult.model) {
                                 // If a shared model was applied successfully
                                 const displayName = ModelInfoService.getDisplayName(modelResult.model);
-                                if (addSystemMessage) {
-                                    addSystemMessage(`Shared model "${displayName}" has been applied.`);
-                                }
+                                // Skip showing system message about model being applied
                                 
                                 // Update model info display
                                 if (updateModelInfoDisplay) {

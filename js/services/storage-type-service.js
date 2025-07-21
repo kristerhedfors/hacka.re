@@ -14,23 +14,47 @@ window.StorageTypeService = (function() {
     
     // State
     let storageType = null;
+    let initialStorageType = null; // Store original decision
     let isInitialized = false;
+    let wasInitiallySharedLink = false; // Remember original context
+    
+    // Key to store the storage type decision across page navigations
+    const STORAGE_TYPE_KEY = '__hacka_re_storage_type__';
     
     /**
      * Initialize storage type detection
      */
     function init() {
         if (isInitialized) {
+            return; // Don't re-detect
+        }
+        
+        // First check if we already have a storage type decision from this browser session
+        const existingDecision = sessionStorage.getItem(STORAGE_TYPE_KEY);
+        if (existingDecision) {
+            storageType = existingDecision;
+            initialStorageType = existingDecision;
+            console.log(`[StorageTypeService] Restored previous decision - using ${existingDecision} (LOCKED)`);
+            isInitialized = true;
             return;
         }
         
-        // Detect storage type based on URL
-        if (hasSharedLink()) {
+        // Store initial context
+        wasInitiallySharedLink = hasSharedLink();
+        
+        // Detect storage type based on URL and lock it for the session
+        if (wasInitiallySharedLink) {
             storageType = STORAGE_TYPES.LOCAL;
-            console.log('[StorageTypeService] Detected shared link - using localStorage');
+            initialStorageType = STORAGE_TYPES.LOCAL; // Store original
+            // Persist decision across page navigations
+            sessionStorage.setItem(STORAGE_TYPE_KEY, STORAGE_TYPES.LOCAL);
+            console.log('[StorageTypeService] Detected shared link - using localStorage (LOCKED)');
         } else {
             storageType = STORAGE_TYPES.SESSION;
-            console.log('[StorageTypeService] Detected direct entry - using sessionStorage');
+            initialStorageType = STORAGE_TYPES.SESSION; // Store original
+            // Persist decision across page navigations
+            sessionStorage.setItem(STORAGE_TYPE_KEY, STORAGE_TYPES.SESSION);
+            console.log('[StorageTypeService] Detected direct entry - using sessionStorage (LOCKED)');
         }
         
         isInitialized = true;
@@ -53,7 +77,8 @@ window.StorageTypeService = (function() {
         if (!isInitialized) {
             init();
         }
-        return storageType;
+        // Always return the initial decision, not the current detection
+        return initialStorageType || storageType;
     }
     
     /**
