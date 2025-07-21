@@ -316,12 +316,10 @@ window.ShareManager = (function() {
             // Check if welcome message input exists and has a value
             if (elements.shareWelcomeMessageInput && elements.shareWelcomeMessageInput.value.trim()) {
                 welcomeMessage = elements.shareWelcomeMessageInput.value.trim();
-                console.log('🔗 ShareManager: Using custom welcome message for share link:', welcomeMessage.substring(0, 50) + '...');
             } else {
                 // Only use default message if welcome message checkbox is checked but no custom message provided
                 if (elements.shareWelcomeMessageCheckbox && elements.shareWelcomeMessageCheckbox.checked) {
                     welcomeMessage = 'Welcome to hacka.re! Start a conversation with AI models.';
-                    console.log('🔗 ShareManager: Using default welcome message for share link');
                 }
             }
             

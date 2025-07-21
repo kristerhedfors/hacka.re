@@ -42,7 +42,6 @@ function createSharedLinkDataProcessor() {
                     message: sharedData.welcomeMessage,
                     displayFunction: addSystemMessage
                 };
-                console.log('Welcome message stored for deferred display');
             }
         }
     }
@@ -324,9 +323,6 @@ function createSharedLinkDataProcessor() {
             displayFunction(message, 'welcome-message');
             // Clear the deferred message
             window._deferredWelcomeMessage = null;
-            console.log('Deferred welcome message displayed after password verification');
-        } else if (window._deferredWelcomeMessage) {
-            console.log('Welcome message deferred - waiting for password verification to complete');
         }
     }
     
@@ -349,7 +345,6 @@ function createSharedLinkDataProcessor() {
             includeWelcomeMessage: !!sharedData.welcomeMessage
         };
         
-        console.log('🔍 Analyzed shared data options:', options);
         return options;
     }
     
