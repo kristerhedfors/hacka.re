@@ -149,8 +149,26 @@ function createSharedLinkDataProcessor() {
             if (addSystemMessage) {
                 addSystemMessage(`Shared prompt selections have been applied.`);
             }
-            
-            // Apply the selected prompts as system prompt
+        }
+        
+        // Apply shared default prompt selections (or reset to default if not present)
+        if (window.DefaultPromptsService) {
+            if (sharedData.selectedDefaultPromptIds && Array.isArray(sharedData.selectedDefaultPromptIds)) {
+                // Apply specific default prompt selections from shared data
+                window.DefaultPromptsService.setSelectedDefaultPromptIds(sharedData.selectedDefaultPromptIds);
+                
+                if (addSystemMessage) {
+                    addSystemMessage(`Shared default prompt selections have been applied.`);
+                }
+            } else {
+                // No default prompt selections in shared data means default state (none selected)
+                window.DefaultPromptsService.setSelectedDefaultPromptIds([]);
+            }
+        }
+        
+        // Apply all selected prompts (both user and default) as system prompt
+        if ((sharedData.selectedPromptIds && sharedData.selectedPromptIds.length > 0) || 
+            (sharedData.selectedDefaultPromptIds && sharedData.selectedDefaultPromptIds.length > 0)) {
             PromptsService.applySelectedPromptsAsSystem();
         }
     }
