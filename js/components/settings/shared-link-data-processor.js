@@ -25,13 +25,24 @@ function createSharedLinkDataProcessor() {
      * Apply welcome message from shared data - should be called last
      * @param {Object} sharedData - Shared data object
      * @param {Function} addSystemMessage - Function to add system messages
+     * @param {boolean} displayMessage - Whether to display the message or just store it
      */
-    function applyWelcomeMessage(sharedData, addSystemMessage) {
-        // If there's a welcome message, display it as a system message
+    function applyWelcomeMessage(sharedData, addSystemMessage, displayMessage = true) {
+        // If there's a welcome message, handle it appropriately
         if (sharedData.welcomeMessage) {
-            if (addSystemMessage) {
-                // Display the welcome message with markdown rendering and special styling
-                addSystemMessage(sharedData.welcomeMessage, 'welcome-message');
+            // Store the welcome message in the share manager for future use (for share modal pre-population)
+            if (window.aiHackare && window.aiHackare.shareManager) {
+                window.aiHackare.shareManager.setSharedWelcomeMessage(sharedData.welcomeMessage);
+            }
+            
+            // Store the welcome message for deferred display instead of displaying immediately
+            if (displayMessage && addSystemMessage) {
+                // Store the message and display function for later use
+                window._deferredWelcomeMessage = {
+                    message: sharedData.welcomeMessage,
+                    displayFunction: addSystemMessage
+                };
+                console.log('Welcome message stored for deferred display');
             }
         }
     }
@@ -279,7 +290,7 @@ function createSharedLinkDataProcessor() {
      * @returns {Promise<string|null>} Pending shared model
      */
     async function processSharedData(sharedData, password, options = {}) {
-        const { addSystemMessage, setMessages, elements } = options;
+        const { addSystemMessage, setMessages, elements, displayWelcomeMessage = true } = options;
         
         // Apply data in order of dependency - welcome message LAST
         applyApiConfiguration(sharedData, addSystemMessage);
@@ -291,9 +302,26 @@ function createSharedLinkDataProcessor() {
         applySessionKey(password, elements, addSystemMessage);
         
         // Apply welcome message LAST so it appears at the bottom
-        applyWelcomeMessage(sharedData, addSystemMessage);
+        // Only display if this is not during password verification phase
+        applyWelcomeMessage(sharedData, addSystemMessage, displayWelcomeMessage);
         
         return pendingSharedModel;
+    }
+    
+    /**
+     * Display any deferred welcome message (only after password verification is complete)
+     */
+    function displayDeferredWelcomeMessage() {
+        if (window._deferredWelcomeMessage && window._passwordVerificationComplete) {
+            const { message, displayFunction } = window._deferredWelcomeMessage;
+            // Display the welcome message with markdown rendering and special styling
+            displayFunction(message, 'welcome-message');
+            // Clear the deferred message
+            window._deferredWelcomeMessage = null;
+            console.log('Deferred welcome message displayed after password verification');
+        } else if (window._deferredWelcomeMessage) {
+            console.log('Welcome message deferred - waiting for password verification to complete');
+        }
     }
     
     return {
@@ -306,7 +334,8 @@ function createSharedLinkDataProcessor() {
         applyFunctions,
         applyMcpConnections,
         applySessionKey,
-        processSharedData
+        processSharedData,
+        displayDeferredWelcomeMessage
     };
 }
 

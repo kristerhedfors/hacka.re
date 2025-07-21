@@ -477,6 +477,7 @@ window.AIHackareComponent = (function() {
             this.updateLinkLengthBar.bind(this),
             this.shareManager.getSessionKey(),
             this.shareManager.isSessionKeyLocked(),
+            this.shareManager.getSharedWelcomeMessage(),
             this.shareManager.loadShareOptions.bind(this.shareManager)
         );
         

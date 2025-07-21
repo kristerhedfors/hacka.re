@@ -43,8 +43,13 @@ window.SharedLinkManager = (function() {
                     return null;
                 }
                 
+                // Store welcome message for share modal pre-population only (don't display)
+                if (sharedData.welcomeMessage && window.aiHackare && window.aiHackare.shareManager) {
+                    window.aiHackare.shareManager.setSharedWelcomeMessage(sharedData.welcomeMessage);
+                }
+                
                 const processedModel = SharedLinkDataProcessor.processSharedData(
-                    sharedData, sessionKey, { addSystemMessage, setMessages, elements }
+                    sharedData, sessionKey, { addSystemMessage, setMessages, elements, displayWelcomeMessage: true }
                 );
                 
                 if (processedModel) {
@@ -53,6 +58,9 @@ window.SharedLinkManager = (function() {
                 
                 // Clear the shared data from the URL
                 LinkSharingService.clearSharedApiKeyFromUrl();
+                
+                // Mark password verification as complete (session key worked)
+                window._passwordVerificationComplete = true;
                 
                 return Promise.resolve({
                     success: true,
@@ -86,8 +94,13 @@ window.SharedLinkManager = (function() {
                         const sharedData = LinkSharingService.extractSharedApiKey(password);
                         
                         if (sharedData && sharedData.apiKey) {
+                            // Store welcome message for share modal pre-population only (don't display)
+                            if (sharedData.welcomeMessage && window.aiHackare && window.aiHackare.shareManager) {
+                                window.aiHackare.shareManager.setSharedWelcomeMessage(sharedData.welcomeMessage);
+                            }
+                            
                             const processedModel = SharedLinkDataProcessor.processSharedData(
-                                sharedData, password, { addSystemMessage, setMessages, elements }
+                                sharedData, password, { addSystemMessage, setMessages, elements, displayWelcomeMessage: true }
                             );
                             
                             if (processedModel) {
@@ -99,6 +112,9 @@ window.SharedLinkManager = (function() {
                             
                             // Remove the password modal
                             modalElements.modal.remove();
+                            
+                            // Mark password verification as complete
+                            window._passwordVerificationComplete = true;
                             
                             resolve({
                                 success: true,
