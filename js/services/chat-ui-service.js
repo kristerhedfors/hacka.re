@@ -142,6 +142,9 @@ window.ChatUIService = (function() {
                     } else if (message.role === 'assistant') {
                         const messageElement = UIUtils.createMessageElement('assistant', message.content);
                         elements.chatMessages.appendChild(messageElement);
+                    } else if (message.role === 'system') {
+                        const messageElement = UIUtils.createMessageElement('system', message.content, null, message.className);
+                        elements.chatMessages.appendChild(messageElement);
                     }
                 });
                 

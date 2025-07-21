@@ -115,13 +115,20 @@ function createSharedLinkDataProcessor() {
      * @param {Function} addSystemMessage - Function to add system messages
      * @param {Function} setMessages - Function to set chat messages
      */
-    function applyChatMessages(sharedData, addSystemMessage, setMessages) {
+    function applyChatMessages(sharedData, addSystemMessage, setMessages, systemMessages = []) {
         // If there are shared messages, update the chat
         if (sharedData.messages && sharedData.messages.length > 0 && setMessages) {
-            setMessages(sharedData.messages);
+            // Add system message about conversation loading
             if (addSystemMessage) {
                 addSystemMessage(`Shared conversation history with ${sharedData.messages.length} messages has been loaded.`);
             }
+            
+            // Combine system messages with shared conversation history
+            const allMessages = [...systemMessages, ...sharedData.messages];
+            setMessages(allMessages);
+        } else if (systemMessages.length > 0 && setMessages) {
+            // Even if no conversation history, show system messages
+            setMessages(systemMessages);
         }
     }
     
@@ -315,18 +322,30 @@ function createSharedLinkDataProcessor() {
             window.aiHackare.shareManager.setSharedLinkOptions(sharedLinkOptions);
         }
         
-        // Apply data in order of dependency - welcome message LAST
-        applyApiConfiguration(sharedData, addSystemMessage);
-        const pendingSharedModel = applyModelConfiguration(sharedData, addSystemMessage);
-        applyChatMessages(sharedData, addSystemMessage, setMessages);
-        applyPrompts(sharedData, addSystemMessage);
-        applyFunctions(sharedData, addSystemMessage);
-        await applyMcpConnections(sharedData, addSystemMessage);
-        applySessionKey(password, elements, addSystemMessage);
+        // Collect system messages to display before conversation history
+        const systemMessages = [];
+        const collectSystemMessage = (message) => {
+            systemMessages.push({ role: 'system', content: message });
+        };
         
-        // Apply welcome message LAST so it appears at the bottom
-        // Only display if this is not during password verification phase
-        applyWelcomeMessage(sharedData, addSystemMessage, displayWelcomeMessage);
+        // Add user-defined welcome message FIRST (with markdown rendering)
+        if (sharedData.welcomeMessage && displayWelcomeMessage) {
+            systemMessages.push({ role: 'system', content: sharedData.welcomeMessage, className: 'welcome-message' });
+        }
+        
+        // Apply data and collect system messages
+        applyApiConfiguration(sharedData, collectSystemMessage);
+        const pendingSharedModel = applyModelConfiguration(sharedData, collectSystemMessage);
+        applyPrompts(sharedData, collectSystemMessage);
+        applyFunctions(sharedData, collectSystemMessage);
+        await applyMcpConnections(sharedData, collectSystemMessage);
+        applySessionKey(password, elements, collectSystemMessage);
+        
+        // Apply welcome message processing (for storage in share manager)
+        applyWelcomeMessage(sharedData, () => {}, false); // Don't display, just process
+        
+        // Apply conversation history with system messages prepended
+        applyChatMessages(sharedData, collectSystemMessage, setMessages, systemMessages);
         
         return pendingSharedModel;
     }
