@@ -319,7 +319,7 @@ window.ShareManager = (function() {
             } else {
                 // Only use default message if welcome message checkbox is checked but no custom message provided
                 if (elements.shareWelcomeMessageCheckbox && elements.shareWelcomeMessageCheckbox.checked) {
-                    welcomeMessage = 'Welcome to hacka.re! Start a conversation with AI models.';
+                    welcomeMessage = 'Welcome to <span class="terminal-font">hacka.re</span>! Start a conversation with AI models.';
                 }
             }
             
