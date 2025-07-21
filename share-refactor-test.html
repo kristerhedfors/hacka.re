@@ -344,8 +344,8 @@ Ready for testing...
         <div id="qr-code-warning"></div>
         <div id="generated-link-container"></div>
         <form id="share-form"></form>
-        <input id="share-title" placeholder="hacka.re">
-        <input id="share-subtitle" placeholder="Free, open, för hackare av hackare">
+        <input id="share-welcome-message-checkbox" type="checkbox">
+        <textarea id="share-welcome-message" placeholder="Welcome to hacka.re! Start a conversation with AI models." rows="3"></textarea>
         <input id="lock-session-key" type="checkbox">
         <div class="password-input-container"></div>
         <button id="toggle-password-visibility-btn"></button>
@@ -411,8 +411,8 @@ Ready for testing...
                 const elements = {
                     shareForm: document.getElementById('share-form'),
                     sharePassword: document.getElementById('share-password'),
-                    shareTitleInput: document.getElementById('share-title'),
-                    shareSubtitleInput: document.getElementById('share-subtitle'),
+                    shareWelcomeMessageCheckbox: document.getElementById('share-welcome-message-checkbox'),
+                    shareWelcomeMessageInput: document.getElementById('share-welcome-message'),
                     lockSessionKeyCheckbox: document.getElementById('lock-session-key'),
                     passwordInputContainer: document.querySelector('.password-input-container'),
                     togglePasswordVisibilityBtn: document.getElementById('toggle-password-visibility-btn'),

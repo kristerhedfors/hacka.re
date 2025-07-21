@@ -105,15 +105,19 @@ window.UICoordinator = (function() {
          * @param {Function} updateLinkLengthBar - Function to update link length bar
          * @param {string} sessionKey - Session key (if any)
          * @param {boolean} isSessionKeyLocked - Whether the session key is locked
+         * @param {string} sharedWelcomeMessage - Welcome message from shared link (if any)
          * @param {Function} loadShareOptions - Function to load share options from storage
+         * @param {Object} sharedLinkOptions - Options from shared link that brought us here (if any)
          */
-        function showShareModal(apiKey, updateLinkLengthBar, sessionKey, isSessionKeyLocked, loadShareOptions) {
+        function showShareModal(apiKey, updateLinkLengthBar, sessionKey, isSessionKeyLocked, sharedWelcomeMessage, loadShareOptions, sharedLinkOptions) {
             // Initialize share modal UI
             shareUIManager.initializeShareModal({
                 apiKey,
                 sessionKey,
                 isSessionKeyLocked,
-                loadShareOptions
+                sharedWelcomeMessage,
+                loadShareOptions,
+                sharedLinkOptions
             });
             
             // Initialize link length bar

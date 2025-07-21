@@ -43,8 +43,8 @@ The Share Modal is a key component of the hacka.re interface that allows users t
 | `#share-function-library-checkbox` | Checkbox to include function library in shared link | |
 | `#message-history-count` | Input for number of messages to include | Enabled when conversation checkbox is checked |
 | `#message-history-container` | Container for message history count | Gets 'active' class when conversation checkbox is checked |
-| `#share-title-input` | Input field for custom title | |
-| `#share-subtitle-input` | Input field for custom subtitle | |
+| `#share-welcome-message-checkbox` | Checkbox to include welcome message in shared link | |
+| `#share-welcome-message` | Textarea for custom welcome message | |
 | `#generate-share-link` | Button to generate the shareable link | |
 | `#generated-link-container` | Container for the generated link | Hidden until link is generated |
 | `#generated-link` | Input field containing the generated link | |
@@ -167,9 +167,9 @@ page.locator("#share-conversation-checkbox").check()
 # Set message history count
 page.locator("#message-history-count").fill("5")
 
-# Set custom title and subtitle
-page.locator("#share-title-input").fill("Custom Title")
-page.locator("#share-subtitle-input").fill("Custom Subtitle")
+# Check welcome message checkbox and set custom welcome message
+page.locator("#share-welcome-message-checkbox").check()
+page.locator("#share-welcome-message").fill("Welcome to my custom AI assistant!")
 ```
 
 ### Generating and Copying a Link

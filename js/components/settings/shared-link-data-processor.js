@@ -22,34 +22,27 @@ function createSharedLinkDataProcessor() {
     }
     
     /**
-     * Apply title and subtitle from shared data
+     * Apply welcome message from shared data - should be called last
      * @param {Object} sharedData - Shared data object
      * @param {Function} addSystemMessage - Function to add system messages
+     * @param {boolean} displayMessage - Whether to display the message or just store it
      */
-    function applyTitleAndSubtitle(sharedData, addSystemMessage) {
-        let titleOrSubtitleChanged = false;
-        
-        // If there's a title, save it and update the UI FIRST
-        if (sharedData.title) {
-            StorageService.saveTitle(sharedData.title);
-            if (addSystemMessage) {
-                addSystemMessage(`Shared title "${sharedData.title}" has been applied.`);
+    function applyWelcomeMessage(sharedData, addSystemMessage, displayMessage = true) {
+        // If there's a welcome message, handle it appropriately
+        if (sharedData.welcomeMessage) {
+            // Store the welcome message in the share manager for future use (for share modal pre-population)
+            if (window.aiHackare && window.aiHackare.shareManager) {
+                window.aiHackare.shareManager.setSharedWelcomeMessage(sharedData.welcomeMessage);
             }
-            titleOrSubtitleChanged = true;
-        }
-        
-        // If there's a subtitle, save it and update the UI FIRST
-        if (sharedData.subtitle) {
-            StorageService.saveSubtitle(sharedData.subtitle);
-            if (addSystemMessage) {
-                addSystemMessage(`Shared subtitle "${sharedData.subtitle}" has been applied.`);
+            
+            // Store the welcome message for deferred display instead of displaying immediately
+            if (displayMessage && addSystemMessage) {
+                // Store the message and display function for later use
+                window._deferredWelcomeMessage = {
+                    message: sharedData.welcomeMessage,
+                    displayFunction: addSystemMessage
+                };
             }
-            titleOrSubtitleChanged = true;
-        }
-        
-        // Update title and subtitle in the UI if either was changed
-        if (titleOrSubtitleChanged) {
-            window.updateTitleAndSubtitle(true); // Force update even if there's a shared link
         }
     }
     
@@ -296,10 +289,15 @@ function createSharedLinkDataProcessor() {
      * @returns {Promise<string|null>} Pending shared model
      */
     async function processSharedData(sharedData, password, options = {}) {
-        const { addSystemMessage, setMessages, elements } = options;
+        const { addSystemMessage, setMessages, elements, displayWelcomeMessage = true } = options;
         
-        // Apply data in order of dependency
-        applyTitleAndSubtitle(sharedData, addSystemMessage);
+        // Analyze and store what options were included in the shared data
+        const sharedLinkOptions = analyzeSharedDataOptions(sharedData);
+        if (window.aiHackare && window.aiHackare.shareManager) {
+            window.aiHackare.shareManager.setSharedLinkOptions(sharedLinkOptions);
+        }
+        
+        // Apply data in order of dependency - welcome message LAST
         applyApiConfiguration(sharedData, addSystemMessage);
         const pendingSharedModel = applyModelConfiguration(sharedData, addSystemMessage);
         applyChatMessages(sharedData, addSystemMessage, setMessages);
@@ -308,12 +306,51 @@ function createSharedLinkDataProcessor() {
         await applyMcpConnections(sharedData, addSystemMessage);
         applySessionKey(password, elements, addSystemMessage);
         
+        // Apply welcome message LAST so it appears at the bottom
+        // Only display if this is not during password verification phase
+        applyWelcomeMessage(sharedData, addSystemMessage, displayWelcomeMessage);
+        
         return pendingSharedModel;
+    }
+    
+    /**
+     * Display any deferred welcome message (only after password verification is complete)
+     */
+    function displayDeferredWelcomeMessage() {
+        if (window._deferredWelcomeMessage && window._passwordVerificationComplete) {
+            const { message, displayFunction } = window._deferredWelcomeMessage;
+            // Display the welcome message with markdown rendering and special styling
+            displayFunction(message, 'welcome-message');
+            // Clear the deferred message
+            window._deferredWelcomeMessage = null;
+        }
+    }
+    
+    /**
+     * Analyze shared data and determine what options were included
+     * @param {Object} sharedData - The shared data object
+     * @returns {Object} Options object indicating what was included
+     */
+    function analyzeSharedDataOptions(sharedData) {
+        const options = {
+            includeBaseUrl: !!sharedData.baseUrl,
+            includeApiKey: !!sharedData.apiKey,
+            includeSystemPrompt: !!sharedData.systemPrompt,
+            includeModel: !!sharedData.model,
+            includeConversation: !!(sharedData.messages && sharedData.messages.length > 0),
+            messageCount: sharedData.messages ? sharedData.messages.length : 0,
+            includePromptLibrary: !!(sharedData.prompts && sharedData.prompts.length > 0),
+            includeFunctionLibrary: !!(sharedData.functions && Object.keys(sharedData.functions).length > 0),
+            includeMcpConnections: !!(sharedData.mcpConnections && Object.keys(sharedData.mcpConnections).length > 0),
+            includeWelcomeMessage: !!sharedData.welcomeMessage
+        };
+        
+        return options;
     }
     
     return {
         maskApiKey,
-        applyTitleAndSubtitle,
+        applyWelcomeMessage,
         applyApiConfiguration,
         applyModelConfiguration,
         applyChatMessages,
@@ -321,7 +358,9 @@ function createSharedLinkDataProcessor() {
         applyFunctions,
         applyMcpConnections,
         applySessionKey,
-        processSharedData
+        processSharedData,
+        displayDeferredWelcomeMessage,
+        analyzeSharedDataOptions
     };
 }
 

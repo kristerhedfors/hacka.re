@@ -159,7 +159,7 @@ window.LinkSharingService = (function() {
                 
                 // Check if the decrypted data contains at least one valid field
                 // We no longer require apiKey to be present, allowing sharing of just conversation or model
-                if (!data.apiKey && !data.messages && !data.model && !data.systemPrompt && !data.prompts && !data.mcpConnections) {
+                if (!data.apiKey && !data.messages && !data.model && !data.systemPrompt && !data.prompts && !data.mcpConnections && !data.welcomeMessage) {
                     console.error('Decrypted data does not contain any valid fields');
                     return null;
                 }
@@ -203,13 +203,10 @@ window.LinkSharingService = (function() {
                     console.log('Extracted MCP connections from shared link:', Object.keys(data.mcpConnections));
                 }
                 
-                // Only include title and subtitle if they are actually present in the data
-                if (data.title) {
-                    result.title = data.title;
-                }
-                
-                if (data.subtitle) {
-                    result.subtitle = data.subtitle;
+                // Include welcome message if present
+                if (data.welcomeMessage) {
+                    result.welcomeMessage = data.welcomeMessage;
+                    console.log('Extracted welcome message from shared link:', data.welcomeMessage.substring(0, 50) + '...');
                 }
                 
                 return result;
