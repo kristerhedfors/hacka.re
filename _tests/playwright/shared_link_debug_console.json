@@ -1,0 +1,1542 @@
+[
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "[StorageTypeService] Detected direct entry - using sessionStorage",
+    "location": {
+      "url": "http://localhost:8000/js/services/storage-type-service.js",
+      "lineNumber": 32,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "[MCPProviderFactory] Initialized (built-in providers will be registered by modules)",
+    "location": {
+      "url": "http://localhost:8000/js/services/mcp-provider-factory.js",
+      "lineNumber": 269,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "[MCPToolRegistry] Initialized enhanced tool registry",
+    "location": {
+      "url": "http://localhost:8000/js/services/mcp-tool-registry.js",
+      "lineNumber": 76,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "GitHub Provider: Starting initialization...",
+    "location": {
+      "url": "http://localhost:8000/js/providers/github/github-provider-loader.js",
+      "lineNumber": 10,
+      "columnNumber": 12
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "GitHub Provider: All modules loaded successfully",
+    "location": {
+      "url": "http://localhost:8000/js/providers/github/github-provider-loader.js",
+      "lineNumber": 23,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "GitHub Provider (modular) loaded and initialized successfully",
+    "location": {
+      "url": "http://localhost:8000/js/providers/github/github-provider-loader.js",
+      "lineNumber": 37,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "[MCP Client] Initialized successfully",
+    "location": {
+      "url": "http://localhost:8000/js/services/mcp-client-core.js",
+      "lineNumber": 55,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "Loading Code Section prompt...",
+    "location": {
+      "url": "http://localhost:8000/js/default-prompts/code-section.js",
+      "lineNumber": 5,
+      "columnNumber": 8
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "Adding OpenAI Proxies Python prompt to Code section: {id: openai-proxies-python, name: OpenAI Proxy - Python, content: OpenAI Proxies - Python\n\nThree minimal Python prox\u2026ncies: starlette, uvicorn, flask, httpx, requests}",
+    "location": {
+      "url": "http://localhost:8000/js/services/default-prompts-service.js",
+      "lineNumber": 59,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "Loaded 4 default prompts",
+    "location": {
+      "url": "http://localhost:8000/js/services/default-prompts-service.js",
+      "lineNumber": 132,
+      "columnNumber": 12
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "Default prompts structure: [Object, Object, Object, Object]",
+    "location": {
+      "url": "http://localhost:8000/js/services/default-prompts-service.js",
+      "lineNumber": 133,
+      "columnNumber": 12
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "Code section found with items: [Object, Object, Object, Object, Object]",
+    "location": {
+      "url": "http://localhost:8000/js/services/default-prompts-service.js",
+      "lineNumber": 138,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "Code section items count: 5",
+    "location": {
+      "url": "http://localhost:8000/js/services/default-prompts-service.js",
+      "lineNumber": 139,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "Loaded 3 default function collections: [RC4 Encryption, Math Utilities, MCP Examples]",
+    "location": {
+      "url": "http://localhost:8000/js/services/default-functions-service.js",
+      "lineNumber": 41,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "MCP Size Estimator: Global functions registered",
+    "location": {
+      "url": "http://localhost:8000/js/utils/mcp-size-estimator-global.js",
+      "lineNumber": 125,
+      "columnNumber": 12
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "[MCPQuickConnectors] Current window.location.origin: http://localhost:8000",
+    "location": {
+      "url": "http://localhost:8000/js/components/mcp/mcp-quick-connectors.js",
+      "lineNumber": 9,
+      "columnNumber": 12
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "Initializing copy buttons",
+    "location": {
+      "url": "http://localhost:8000/js/utils/clipboard-utils.js",
+      "lineNumber": 224,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "Copy button event listener initialized",
+    "location": {
+      "url": "http://localhost:8000/js/utils/clipboard-utils.js",
+      "lineNumber": 252,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\ude80 AIHackare: Initializing model selection manager...",
+    "location": {
+      "url": "http://localhost:8000/js/components/ai-hackare.js",
+      "lineNumber": 608,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "No context window size found for model: ",
+    "location": {
+      "url": "http://localhost:8000/js/services/model-info.js",
+      "lineNumber": 108,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "Empty default system prompt loaded successfully",
+    "location": {
+      "url": "http://localhost:8000/js/components/settings/system-prompt-manager.js",
+      "lineNumber": 135,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "API Tools Manager initialized",
+    "location": {
+      "url": "http://localhost:8000/js/components/api-tools-manager.js",
+      "lineNumber": 17,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "Function Modal Manager initialized",
+    "location": {
+      "url": "http://localhost:8000/js/components/function-calling/function-modal-manager.js",
+      "lineNumber": 26,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "MCP Server Manager initialized",
+    "location": {
+      "url": "http://localhost:8000/js/components/function-calling/mcp-server-manager.js",
+      "lineNumber": 30,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "Function Editor Manager initialized with modular components",
+    "location": {
+      "url": "http://localhost:8000/js/components/function-calling/function-editor-manager.js",
+      "lineNumber": 55,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "Function Copy Manager initialized",
+    "location": {
+      "url": "http://localhost:8000/js/components/function-calling/function-copy-manager.js",
+      "lineNumber": 31,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "=== Loading selected default functions ===",
+    "location": {
+      "url": "http://localhost:8000/js/services/default-functions-service.js",
+      "lineNumber": 350,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "Selected function IDs from storage: []",
+    "location": {
+      "url": "http://localhost:8000/js/services/default-functions-service.js",
+      "lineNumber": 354,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "Loaded 0 individual default functions",
+    "location": {
+      "url": "http://localhost:8000/js/services/default-functions-service.js",
+      "lineNumber": 393,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "All enabled functions after loading default functions: []",
+    "location": {
+      "url": "http://localhost:8000/js/services/default-functions-service.js",
+      "lineNumber": 398,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "Default functions loaded",
+    "location": {
+      "url": "http://localhost:8000/js/components/function-calling-manager.js",
+      "lineNumber": 62,
+      "columnNumber": 24
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "Function Calling Manager initialized with all components",
+    "location": {
+      "url": "http://localhost:8000/js/components/function-calling-manager.js",
+      "lineNumber": 67,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "PromptsService.applySelectedPromptsAsSystem called",
+    "location": {
+      "url": "http://localhost:8000/js/services/prompts-service.js",
+      "lineNumber": 176,
+      "columnNumber": 12
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "Prompts manager context usage update needed",
+    "location": {
+      "url": "http://localhost:8000/js/services/system-prompt-coordinator.js",
+      "lineNumber": 107,
+      "columnNumber": 24
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "System prompt updated, length: 0",
+    "location": {
+      "url": "http://localhost:8000/js/services/system-prompt-coordinator.js",
+      "lineNumber": 80,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "System prompt applied via coordinator, has content: false",
+    "location": {
+      "url": "http://localhost:8000/js/services/prompts-service.js",
+      "lineNumber": 183,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\u2705 MCP checkbox event listener attached successfully",
+    "location": {
+      "url": "http://localhost:8000/js/components/ai-hackare.js",
+      "lineNumber": 206,
+      "columnNumber": 24
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "AIHackare: Generate share link button found, adding event listener",
+    "location": {
+      "url": "http://localhost:8000/js/components/ai-hackare.js",
+      "lineNumber": 241,
+      "columnNumber": 24
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "System prompt updated, length: 0",
+    "location": {
+      "url": "http://localhost:8000/js/services/system-prompt-coordinator.js",
+      "lineNumber": 80,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "SystemPromptCoordinator initialized",
+    "location": {
+      "url": "http://localhost:8000/js/services/system-prompt-coordinator.js",
+      "lineNumber": 203,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "[MCPUIManager] Adding quick connectors to modal",
+    "location": {
+      "url": "http://localhost:8000/js/components/mcp/mcp-ui-manager.js",
+      "lineNumber": 43,
+      "columnNumber": 24
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "[MCPQuickConnectors] Creating quick connectors UI JSHandle@node",
+    "location": {
+      "url": "http://localhost:8000/js/components/mcp/mcp-quick-connectors.js",
+      "lineNumber": 164,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "[MCPQuickConnectors] Quick connectors placeholder found: true",
+    "location": {
+      "url": "http://localhost:8000/js/components/mcp/mcp-quick-connectors.js",
+      "lineNumber": 193,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "[MCPQuickConnectors] Quick connectors section replaced placeholder",
+    "location": {
+      "url": "http://localhost:8000/js/components/mcp/mcp-quick-connectors.js",
+      "lineNumber": 198,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "[MCPOAuthIntegration] Initialized",
+    "location": {
+      "url": "http://localhost:8000/js/components/mcp/mcp-oauth-integration.js",
+      "lineNumber": 41,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "[MCPManager] OAuth integration initialized",
+    "location": {
+      "url": "http://localhost:8000/js/components/mcp-manager.js",
+      "lineNumber": 102,
+      "columnNumber": 24
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "[MCPManager] Attempting to initialize quick connectors",
+    "location": {
+      "url": "http://localhost:8000/js/components/mcp-manager.js",
+      "lineNumber": 110,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "[MCPQuickConnectors] Initializing...",
+    "location": {
+      "url": "http://localhost:8000/js/components/mcp/mcp-quick-connectors.js",
+      "lineNumber": 132,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "[MCPQuickConnectors] Service availability check: {storageService: true, oauthConfig: true, oauthFlow: true, mcpClient: true}",
+    "location": {
+      "url": "http://localhost:8000/js/components/mcp/mcp-quick-connectors.js",
+      "lineNumber": 140,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "[MCPQuickConnectors] Initialized successfully",
+    "location": {
+      "url": "http://localhost:8000/js/components/mcp/mcp-quick-connectors.js",
+      "lineNumber": 155,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "[MCPManager] Quick connectors initialized",
+    "location": {
+      "url": "http://localhost:8000/js/components/mcp-manager.js",
+      "lineNumber": 112,
+      "columnNumber": 24
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "[MCPManager] Initialization complete",
+    "location": {
+      "url": "http://localhost:8000/js/components/mcp-manager.js",
+      "lineNumber": 125,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "Title and subtitle updated to: hacka.re - Free, open, f\u00f6r hackare av hackare",
+    "location": {
+      "url": "http://localhost:8000/js/app.js",
+      "lineNumber": 285,
+      "columnNumber": 12
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "ASCII Tree Menu: Initializing...",
+    "location": {
+      "url": "http://localhost:8000/js/ascii-tree-menu.js",
+      "lineNumber": 17,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "ASCII Tree Menu: Events bound",
+    "location": {
+      "url": "http://localhost:8000/js/ascii-tree-menu.js",
+      "lineNumber": 68,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "ModalEffects: Initializing",
+    "location": {
+      "url": "http://localhost:8000/js/modal-effects.js",
+      "lineNumber": 10,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "ModalEffects: Found 12 modals",
+    "location": {
+      "url": "http://localhost:8000/js/modal-effects.js",
+      "lineNumber": 14,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "ModalEffects: Setting up observer for modal 1",
+    "location": {
+      "url": "http://localhost:8000/js/modal-effects.js",
+      "lineNumber": 18,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "ModalEffects: Setting up observer for modal 2",
+    "location": {
+      "url": "http://localhost:8000/js/modal-effects.js",
+      "lineNumber": 18,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "ModalEffects: Setting up observer for modal 3",
+    "location": {
+      "url": "http://localhost:8000/js/modal-effects.js",
+      "lineNumber": 18,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "ModalEffects: Setting up observer for modal 4",
+    "location": {
+      "url": "http://localhost:8000/js/modal-effects.js",
+      "lineNumber": 18,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "ModalEffects: Setting up observer for modal 5",
+    "location": {
+      "url": "http://localhost:8000/js/modal-effects.js",
+      "lineNumber": 18,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "ModalEffects: Setting up observer for modal 6",
+    "location": {
+      "url": "http://localhost:8000/js/modal-effects.js",
+      "lineNumber": 18,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "ModalEffects: Setting up observer for modal 7",
+    "location": {
+      "url": "http://localhost:8000/js/modal-effects.js",
+      "lineNumber": 18,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "ModalEffects: Setting up observer for modal 8",
+    "location": {
+      "url": "http://localhost:8000/js/modal-effects.js",
+      "lineNumber": 18,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "ModalEffects: Setting up observer for modal 9",
+    "location": {
+      "url": "http://localhost:8000/js/modal-effects.js",
+      "lineNumber": 18,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "ModalEffects: Setting up observer for modal 10",
+    "location": {
+      "url": "http://localhost:8000/js/modal-effects.js",
+      "lineNumber": 18,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "ModalEffects: Setting up observer for modal 11",
+    "location": {
+      "url": "http://localhost:8000/js/modal-effects.js",
+      "lineNumber": 18,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "ModalEffects: Setting up observer for modal 12",
+    "location": {
+      "url": "http://localhost:8000/js/modal-effects.js",
+      "lineNumber": 18,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "Highlight.js initialized successfully",
+    "location": {
+      "url": "http://localhost:8000/",
+      "lineNumber": 870,
+      "columnNumber": 24
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "verbose",
+    "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"new-password\"): (More info: https://goo.gl/9p2vKq) %o",
+    "location": {
+      "url": "http://localhost:8000/",
+      "lineNumber": 0,
+      "columnNumber": 0
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "verbose",
+    "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"new-password\"): (More info: https://goo.gl/9p2vKq) %o",
+    "location": {
+      "url": "http://localhost:8000/",
+      "lineNumber": 0,
+      "columnNumber": 0
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "verbose",
+    "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o",
+    "location": {
+      "url": "http://localhost:8000/",
+      "lineNumber": 0,
+      "columnNumber": 0
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+    "location": {
+      "url": "http://localhost:3001/health",
+      "lineNumber": 0,
+      "columnNumber": 0
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\udd27 UICoordinator: Attempting to initialize model selector manager...",
+    "location": {
+      "url": "http://localhost:8000/js/components/ui/ui-coordinator.js",
+      "lineNumber": 24,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\udd27 UICoordinator: window.aiHackare available: true",
+    "location": {
+      "url": "http://localhost:8000/js/components/ui/ui-coordinator.js",
+      "lineNumber": 25,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\udd27 UICoordinator: First attempt failed, retrying in 500ms...",
+    "location": {
+      "url": "http://localhost:8000/js/components/ui/ui-coordinator.js",
+      "lineNumber": 45,
+      "columnNumber": 24
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\ude80 ModelSelectionManager initialized",
+    "location": {
+      "url": "http://localhost:8000/js/components/ui/model-selection-manager.js",
+      "lineNumber": 25,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\u2705 AIHackare: ModelSelectionManager initialized",
+    "location": {
+      "url": "http://localhost:8000/js/components/ai-hackare.js",
+      "lineNumber": 615,
+      "columnNumber": 24
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "error",
+    "text": "Failed to load resource: the server responded with a status of 404 (File not found)",
+    "location": {
+      "url": "http://localhost:8000/favicon.ico",
+      "lineNumber": 0,
+      "columnNumber": 0
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "Extracting functions with regex: (\\/\\*\\*[\\s\\S]*?\\*\\/\\s*)?(\\/\\/.*?(?:\\n\\s*|$))?(?:async\\s+)?function\\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\\s*\\(([^)]*)\\)\\s*{",
+    "location": {
+      "url": "http://localhost:8000/js/components/function-calling/function-parser.js",
+      "lineNumber": 20,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\udd27 ModalManager: Using ModelSelectionManager.hideModal",
+    "location": {
+      "url": "http://localhost:8000/js/components/ui/modal-manager.js",
+      "lineNumber": 212,
+      "columnNumber": 24
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\udd27 Closing model selection modal",
+    "location": {
+      "url": "http://localhost:8000/js/components/ui/model-selection-manager.js",
+      "lineNumber": 197,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "ModalEffects: All modals closed, removing modal-open class from body",
+    "location": {
+      "url": "http://localhost:8000/js/modal-effects.js",
+      "lineNumber": 31,
+      "columnNumber": 40
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "ModalEffects: All modals closed, removing modal-open class from body",
+    "location": {
+      "url": "http://localhost:8000/js/modal-effects.js",
+      "lineNumber": 31,
+      "columnNumber": 40
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "ModalEffects: All modals closed, removing modal-open class from body",
+    "location": {
+      "url": "http://localhost:8000/js/modal-effects.js",
+      "lineNumber": 31,
+      "columnNumber": 40
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "ModalEffects: All modals closed, removing modal-open class from body",
+    "location": {
+      "url": "http://localhost:8000/js/modal-effects.js",
+      "lineNumber": 31,
+      "columnNumber": 40
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "ModalEffects: All modals closed, removing modal-open class from body",
+    "location": {
+      "url": "http://localhost:8000/js/modal-effects.js",
+      "lineNumber": 31,
+      "columnNumber": 40
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\udd27 UICoordinator: Attempting to initialize model selector manager...",
+    "location": {
+      "url": "http://localhost:8000/js/components/ui/ui-coordinator.js",
+      "lineNumber": 24,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\udd27 UICoordinator: window.aiHackare available: true",
+    "location": {
+      "url": "http://localhost:8000/js/components/ui/ui-coordinator.js",
+      "lineNumber": 25,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\udd27 UICoordinator: Second attempt failed, retrying in 1000ms...",
+    "location": {
+      "url": "http://localhost:8000/js/components/ui/ui-coordinator.js",
+      "lineNumber": 48,
+      "columnNumber": 32
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "ModalEffects: Modal opened, adding modal-open class to body",
+    "location": {
+      "url": "http://localhost:8000/js/modal-effects.js",
+      "lineNumber": 25,
+      "columnNumber": 36
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "Auto-selecting model: gpt-4.1-mini",
+    "location": {
+      "url": "http://localhost:8000/js/components/settings/model-manager.js",
+      "lineNumber": 401,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "Saving model: gpt-4.1-mini",
+    "location": {
+      "url": "http://localhost:8000/js/components/settings/model-manager.js",
+      "lineNumber": 86,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "Saving model: gpt-4.1-mini",
+    "location": {
+      "url": "http://localhost:8000/js/components/settings/model-manager.js",
+      "lineNumber": 86,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "API key or base URL changed, resetting model fetch cache",
+    "location": {
+      "url": "http://localhost:8000/js/components/settings/settings-coordinator.js",
+      "lineNumber": 180,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\udd04 Models cache invalidated",
+    "location": {
+      "url": "http://localhost:8000/js/components/ui/model-selection-manager.js",
+      "lineNumber": 589,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "[API Debug] Making request to: Models API",
+    "location": {
+      "url": "http://localhost:8000/js/services/api-debugger.js",
+      "lineNumber": 17,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "[API Debug] Request options: {method: GET, headers: Object, hasBody: false}",
+    "location": {
+      "url": "http://localhost:8000/js/services/api-debugger.js",
+      "lineNumber": 15,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "ModalEffects: All modals closed, removing modal-open class from body",
+    "location": {
+      "url": "http://localhost:8000/js/modal-effects.js",
+      "lineNumber": 31,
+      "columnNumber": 40
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\ude80 ModelSelectionManager initialized",
+    "location": {
+      "url": "http://localhost:8000/js/components/ui/model-selection-manager.js",
+      "lineNumber": 25,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\udd27 ShareManager: getSharedWelcomeMessage called, returning: null",
+    "location": {
+      "url": "http://localhost:8000/js/components/share-manager.js",
+      "lineNumber": 560,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\udd27 ShareUIManager: setupWelcomeMessage called with: null",
+    "location": {
+      "url": "http://localhost:8000/js/components/ui/share-ui-manager.js",
+      "lineNumber": 140,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\u274c ShareUIManager: No welcome message to pre-populate or element not found",
+    "location": {
+      "url": "http://localhost:8000/js/components/ui/share-ui-manager.js",
+      "lineNumber": 152,
+      "columnNumber": 24
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "AIHackare: updateLinkLengthBar called",
+    "location": {
+      "url": "http://localhost:8000/js/components/ai-hackare.js",
+      "lineNumber": 493,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "AIHackare: uiManager available: true",
+    "location": {
+      "url": "http://localhost:8000/js/components/ai-hackare.js",
+      "lineNumber": 494,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "AIHackare: uiManager.updateLinkLengthBar available: true",
+    "location": {
+      "url": "http://localhost:8000/js/components/ai-hackare.js",
+      "lineNumber": 495,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "AIHackare: About to call uiManager.updateLinkLengthBar...",
+    "location": {
+      "url": "http://localhost:8000/js/components/ai-hackare.js",
+      "lineNumber": 498,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83c\udf9b\ufe0f UICoordinator: updateLinkLengthBar called with: {apiKey: missing, systemPrompt: empty, currentModel: gpt-4.1-mini, messages: 0 messages}",
+    "location": {
+      "url": "http://localhost:8000/js/components/ui/ui-coordinator.js",
+      "lineNumber": 200,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83c\udf9b\ufe0f UICoordinator: shareUIManager available: true",
+    "location": {
+      "url": "http://localhost:8000/js/components/ui/ui-coordinator.js",
+      "lineNumber": 207,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83c\udf9b\ufe0f UICoordinator: shareUIManager.updateLinkLengthBar available: true",
+    "location": {
+      "url": "http://localhost:8000/js/components/ui/ui-coordinator.js",
+      "lineNumber": 208,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83c\udf9b\ufe0f UICoordinator: About to call shareUIManager.updateLinkLengthBar...",
+    "location": {
+      "url": "http://localhost:8000/js/components/ui/ui-coordinator.js",
+      "lineNumber": 211,
+      "columnNumber": 24
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83c\udf9b\ufe0f UICoordinator: shareUIManager.updateLinkLengthBar call completed",
+    "location": {
+      "url": "http://localhost:8000/js/components/ui/ui-coordinator.js",
+      "lineNumber": 218,
+      "columnNumber": 24
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "AIHackare: uiManager.updateLinkLengthBar call completed",
+    "location": {
+      "url": "http://localhost:8000/js/components/ai-hackare.js",
+      "lineNumber": 506,
+      "columnNumber": 24
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "ModalEffects: Modal opened, adding modal-open class to body",
+    "location": {
+      "url": "http://localhost:8000/js/modal-effects.js",
+      "lineNumber": 25,
+      "columnNumber": 36
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\ude80 NUCLEAR FIX: MCP checkbox event listener force-attached",
+    "location": {
+      "url": "http://localhost:8000/js/components/ui/modal-manager.js",
+      "lineNumber": 147,
+      "columnNumber": 28
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "[API Debug] Response received: 200 ",
+    "location": {
+      "url": "http://localhost:8000/js/services/api-debugger.js",
+      "lineNumber": 17,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "[API Debug] Response contains 83 items",
+    "location": {
+      "url": "http://localhost:8000/js/services/api-debugger.js",
+      "lineNumber": 17,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "[API Debug] Performance: fetchAvailableModels took 566ms: {modelCount: 83}",
+    "location": {
+      "url": "http://localhost:8000/js/services/api-debugger.js",
+      "lineNumber": 15,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "Updating context usage after fetching models",
+    "location": {
+      "url": "http://localhost:8000/js/components/settings/model-manager.js",
+      "lineNumber": 354,
+      "columnNumber": 28
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "Using hardcoded context window size for gpt-4.1-mini: 1048576",
+    "location": {
+      "url": "http://localhost:8000/js/services/model-info.js",
+      "lineNumber": 103,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\udd27 UICoordinator: Attempting to initialize model selector manager...",
+    "location": {
+      "url": "http://localhost:8000/js/components/ui/ui-coordinator.js",
+      "lineNumber": 24,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\udd27 UICoordinator: window.aiHackare available: true",
+    "location": {
+      "url": "http://localhost:8000/js/components/ui/ui-coordinator.js",
+      "lineNumber": 25,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "AIHackare: Generate share link button clicked!",
+    "location": {
+      "url": "http://localhost:8000/js/components/ai-hackare.js",
+      "lineNumber": 243,
+      "columnNumber": 28
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "AIHackare: generateComprehensiveShareLink called",
+    "location": {
+      "url": "http://localhost:8000/js/components/ai-hackare.js",
+      "lineNumber": 580,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "ShareManager: generateComprehensiveShareLink called",
+    "location": {
+      "url": "http://localhost:8000/js/components/share-manager.js",
+      "lineNumber": 297,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\udd17 ShareManager: Using custom welcome message for share link: \ud83c\udf89 Welcome to our shared AI workspace! This link c...",
+    "location": {
+      "url": "http://localhost:8000/js/components/share-manager.js",
+      "lineNumber": 317,
+      "columnNumber": 24
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83c\udf9b\ufe0f SHAREMANAGER: CHECKBOX STATE COLLECTION \ud83c\udf9b\ufe0f",
+    "location": {
+      "url": "http://localhost:8000/js/components/share-manager.js",
+      "lineNumber": 321,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550",
+    "location": {
+      "url": "http://localhost:8000/js/components/share-manager.js",
+      "lineNumber": 322,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\udccb Base URL checkbox: true - checked: false",
+    "location": {
+      "url": "http://localhost:8000/js/components/share-manager.js",
+      "lineNumber": 324,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\udd11 API Key checkbox: true - checked: true",
+    "location": {
+      "url": "http://localhost:8000/js/components/share-manager.js",
+      "lineNumber": 325,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83e\udd16 Model checkbox: true - checked: false",
+    "location": {
+      "url": "http://localhost:8000/js/components/share-manager.js",
+      "lineNumber": 326,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\udcac Conversation checkbox: true - checked: false",
+    "location": {
+      "url": "http://localhost:8000/js/components/share-manager.js",
+      "lineNumber": 327,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\udcda Prompt Library checkbox: true - checked: false",
+    "location": {
+      "url": "http://localhost:8000/js/components/share-manager.js",
+      "lineNumber": 328,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\u2699\ufe0f Function Library checkbox: true - checked: false",
+    "location": {
+      "url": "http://localhost:8000/js/components/share-manager.js",
+      "lineNumber": 329,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\udd0c MCP Connections checkbox (elements): true - checked: false",
+    "location": {
+      "url": "http://localhost:8000/js/components/share-manager.js",
+      "lineNumber": 330,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\udd0c MCP Connections checkbox (FRESH QUERY): true - checked: false",
+    "location": {
+      "url": "http://localhost:8000/js/components/share-manager.js",
+      "lineNumber": 334,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\udd0c MCP checkbox elements are same object: false",
+    "location": {
+      "url": "http://localhost:8000/js/components/share-manager.js",
+      "lineNumber": 338,
+      "columnNumber": 24
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\udea8 WARNING: Different MCP checkbox elements detected!",
+    "location": {
+      "url": "http://localhost:8000/js/components/share-manager.js",
+      "lineNumber": 340,
+      "columnNumber": 28
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\udea8 elements.shareMcpConnectionsCheckbox: JSHandle@node",
+    "location": {
+      "url": "http://localhost:8000/js/components/share-manager.js",
+      "lineNumber": 341,
+      "columnNumber": 28
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\udea8 Fresh query result: JSHandle@node",
+    "location": {
+      "url": "http://localhost:8000/js/components/share-manager.js",
+      "lineNumber": 342,
+      "columnNumber": 28
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550",
+    "location": {
+      "url": "http://localhost:8000/js/components/share-manager.js",
+      "lineNumber": 346,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83c\udfaf Using FRESH QUERY for MCP checkbox state: false",
+    "location": {
+      "url": "http://localhost:8000/js/components/share-manager.js",
+      "lineNumber": 352,
+      "columnNumber": 24
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83c\udfaf ShareManager: Final options object: {\n  \"password\": \"qhf3RlRH3yF1\",\n  \"baseUrl\": \"https://api.openai.com/v1\",\n  \"apiKey\": \"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\",\n  \"systemPrompt\": \"\",\n  \"model\": \"gpt-4.1-mini\",\n  \"messages\": [],\n  \"messageCount\": 1,\n  \"welcomeMessage\": \"\ud83c\udf89 Welcome to our shared AI workspace! This link contains pre-configured settings to get you started.\",\n  \"mcpConnections\": null,\n  \"includeBaseUrl\": false,\n  \"includeApiKey\": true,\n  \"includeSystemPrompt\": false,\n  \"includeModel\": false,\n  \"includeConversation\": false,\n  \"includeWelcomeMessage\": true,\n  \"includePromptLibrary\": false,\n  \"includeFunctionLibrary\": false,\n  \"includeMcpConnections\": false\n}",
+    "location": {
+      "url": "http://localhost:8000/js/components/share-manager.js",
+      "lineNumber": 412,
+      "columnNumber": 20
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\udd17 SHARE LINK CREATION STARTED \ud83d\udd17",
+    "location": {
+      "url": "http://localhost:8000/js/services/share-service.js",
+      "lineNumber": 65,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\udccb ShareService: Input options: {\n  \"password\": \"qhf3RlRH3yF1\",\n  \"baseUrl\": \"https://api.openai.com/v1\",\n  \"apiKey\": \"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\",\n  \"systemPrompt\": \"\",\n  \"model\": \"gpt-4.1-mini\",\n  \"messages\": [],\n  \"messageCount\": 1,\n  \"welcomeMessage\": \"\ud83c\udf89 Welcome to our shared AI workspace! This link contains pre-configured settings to get you started.\",\n  \"mcpConnections\": null,\n  \"includeBaseUrl\": false,\n  \"includeApiKey\": true,\n  \"includeSystemPrompt\": false,\n  \"includeModel\": false,\n  \"includeConversation\": false,\n  \"includeWelcomeMessage\": true,\n  \"includePromptLibrary\": false,\n  \"includeFunctionLibrary\": false,\n  \"includeMcpConnections\": false\n}",
+    "location": {
+      "url": "http://localhost:8000/js/services/share-service.js",
+      "lineNumber": 66,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83e\uddea ShareService: Building payload from options...",
+    "location": {
+      "url": "http://localhost:8000/js/services/share-service.js",
+      "lineNumber": 78,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\udcca FINAL SUMMARY - ITEMS INCLUDED IN SHARE LINK:",
+    "location": {
+      "url": "http://localhost:8000/js/services/share-service.js",
+      "lineNumber": 179,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550",
+    "location": {
+      "url": "http://localhost:8000/js/services/share-service.js",
+      "lineNumber": 180,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "1. \u2705 API KEY (164 chars)",
+    "location": {
+      "url": "http://localhost:8000/js/services/share-service.js",
+      "lineNumber": 183,
+      "columnNumber": 24
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "2. \u2705 WELCOME MESSAGE (101 chars)",
+    "location": {
+      "url": "http://localhost:8000/js/services/share-service.js",
+      "lineNumber": 183,
+      "columnNumber": 24
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550",
+    "location": {
+      "url": "http://localhost:8000/js/services/share-service.js",
+      "lineNumber": 188,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\udd17 ShareService: Generated link length: 503 characters",
+    "location": {
+      "url": "http://localhost:8000/js/services/share-service.js",
+      "lineNumber": 205,
+      "columnNumber": 16
+    }
+  },
+  {
+    "timestamp": "17:36:3",
+    "type": "log",
+    "text": "\ud83d\udd17 SHARE LINK CREATION COMPLETED \ud83d\udd17",
+    "location": {
+      "url": "http://localhost:8000/js/services/share-service.js",
+      "lineNumber": 206,
+      "columnNumber": 16
+    }
+  }
+]

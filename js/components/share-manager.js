@@ -10,8 +10,10 @@ window.ShareManager = (function() {
      * @returns {Object} Share Manager instance
      */
     function createShareManager(elements) {
-        // Session key storage
+        // Session key and welcome message storage
         let sessionKey = null;
+        let sharedWelcomeMessage = null;
+        let sharedLinkOptions = null; // Store what was included in the shared link that brought us here
         
         /**
          * Initialize the share manager
@@ -37,7 +39,8 @@ window.ShareManager = (function() {
                     messageCount: parseInt(elements.messageHistoryCount.value, 10) || 1,
                     includePromptLibrary: elements.sharePromptLibraryCheckbox ? elements.sharePromptLibraryCheckbox.checked : false,
                     includeFunctionLibrary: elements.shareFunctionLibraryCheckbox ? elements.shareFunctionLibraryCheckbox.checked : false,
-                    includeMcpConnections: elements.shareMcpConnectionsCheckbox ? elements.shareMcpConnectionsCheckbox.checked : false
+                    includeMcpConnections: elements.shareMcpConnectionsCheckbox ? elements.shareMcpConnectionsCheckbox.checked : false,
+                    includeWelcomeMessage: elements.shareWelcomeMessageCheckbox ? elements.shareWelcomeMessageCheckbox.checked : false
                 };
                 
                 StorageService.saveShareOptions(options);
@@ -73,6 +76,11 @@ window.ShareManager = (function() {
                 // Set MCP connections checkbox if it exists
                 if (elements.shareMcpConnectionsCheckbox) {
                     elements.shareMcpConnectionsCheckbox.checked = options.includeMcpConnections || false;
+                }
+                
+                // Set welcome message checkbox if it exists
+                if (elements.shareWelcomeMessageCheckbox) {
+                    elements.shareWelcomeMessageCheckbox.checked = options.includeWelcomeMessage || false;
                 }
                 
                 // Update message history input state
@@ -302,22 +310,17 @@ window.ShareManager = (function() {
             // Get base URL
             const baseUrl = StorageService.getBaseUrl();
             
-            // Get title and subtitle values from inputs if they exist, otherwise use defaults
-            let title = StorageService.getTitle();
-            let subtitle = StorageService.getSubtitle();
+            // Get welcome message from input if it exists
+            let welcomeMessage = null;
             
-            // Check if title input exists and has a value
-            if (elements.shareTitleInput && elements.shareTitleInput.value.trim()) {
-                title = elements.shareTitleInput.value.trim();
-                // DON'T save to storage - just use for the share link to avoid namespace changes
-                console.log('🔗 ShareManager: Using title for share link only (not saving to session):', title);
-            }
-            
-            // Check if subtitle input exists and has a value
-            if (elements.shareSubtitleInput && elements.shareSubtitleInput.value.trim()) {
-                subtitle = elements.shareSubtitleInput.value.trim();
-                // DON'T save to storage - just use for the share link to avoid namespace changes
-                console.log('🔗 ShareManager: Using subtitle for share link only (not saving to session):', subtitle);
+            // Check if welcome message input exists and has a value
+            if (elements.shareWelcomeMessageInput && elements.shareWelcomeMessageInput.value.trim()) {
+                welcomeMessage = elements.shareWelcomeMessageInput.value.trim();
+            } else {
+                // Only use default message if welcome message checkbox is checked but no custom message provided
+                if (elements.shareWelcomeMessageCheckbox && elements.shareWelcomeMessageCheckbox.checked) {
+                    welcomeMessage = 'Welcome to hacka.re! Start a conversation with AI models.';
+                }
             }
             
             // Debug: Check all checkbox states
@@ -399,16 +402,14 @@ window.ShareManager = (function() {
                 model: currentModel,
                 messages: messages,
                 messageCount: parseInt(elements.messageHistoryCount.value, 10) || 1,
-                title: title,
-                subtitle: subtitle,
+                welcomeMessage: welcomeMessage,
                 mcpConnections: mcpConnections, // Pass the collected connections
                 includeBaseUrl: elements.shareBaseUrlCheckbox ? elements.shareBaseUrlCheckbox.checked : false,
                 includeApiKey: elements.shareApiKeyCheckbox ? elements.shareApiKeyCheckbox.checked : false,
                 includeSystemPrompt: false, // System prompt is now handled by prompt library
                 includeModel: elements.shareModelCheckbox ? elements.shareModelCheckbox.checked : false,
                 includeConversation: elements.shareConversationCheckbox ? elements.shareConversationCheckbox.checked : false,
-                includeTitle: !!title,
-                includeSubtitle: !!subtitle,
+                includeWelcomeMessage: (elements.shareWelcomeMessageCheckbox ? elements.shareWelcomeMessageCheckbox.checked : false) && welcomeMessage,
                 includePromptLibrary: elements.sharePromptLibraryCheckbox ? elements.sharePromptLibraryCheckbox.checked : false,
                 includeFunctionLibrary: elements.shareFunctionLibraryCheckbox ? elements.shareFunctionLibraryCheckbox.checked : false,
                 includeMcpConnections: mcpConnectionsChecked
@@ -419,7 +420,7 @@ window.ShareManager = (function() {
             // Validate options - at least one item should be selected
             const hasSelection = options.includeBaseUrl || options.includeApiKey || options.includeSystemPrompt || 
                                options.includeModel || options.includeConversation || options.includePromptLibrary || 
-                               options.includeFunctionLibrary || options.includeMcpConnections;
+                               options.includeFunctionLibrary || options.includeMcpConnections || options.includeWelcomeMessage;
             
             if (!hasSelection) {
                 if (addSystemMessage) {
@@ -557,6 +558,38 @@ window.ShareManager = (function() {
                    elements.passwordInputContainer.classList.contains('locked');
         }
         
+        /**
+         * Get the shared welcome message
+         * @returns {string|null} Shared welcome message
+         */
+        function getSharedWelcomeMessage() {
+            return sharedWelcomeMessage;
+        }
+        
+        /**
+         * Set the shared welcome message
+         * @param {string} message - Welcome message from shared link
+         */
+        function setSharedWelcomeMessage(message) {
+            sharedWelcomeMessage = message;
+        }
+        
+        /**
+         * Get the shared link options (what was included in the link that brought us here)
+         * @returns {Object|null} Shared link options
+         */
+        function getSharedLinkOptions() {
+            return sharedLinkOptions;
+        }
+        
+        /**
+         * Set the shared link options (what was included in the link that brought us here)
+         * @param {Object} options - Options from the shared link
+         */
+        function setSharedLinkOptions(options) {
+            sharedLinkOptions = options;
+        }
+        
         // Public API
         return {
             init,
@@ -568,6 +601,10 @@ window.ShareManager = (function() {
             getSessionKey,
             setSessionKey,
             isSessionKeyLocked,
+            getSharedWelcomeMessage,
+            setSharedWelcomeMessage,
+            getSharedLinkOptions,
+            setSharedLinkOptions,
             saveShareOptions,
             loadShareOptions
         };

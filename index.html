@@ -220,20 +220,22 @@
                                 <label for="message-history-count">Messages to include:</label>
                                 <input type="number" id="message-history-count" value="1" min="1" disabled>
                             </div>
+                            
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="share-welcome-message-checkbox">
+                                <label for="share-welcome-message-checkbox">Welcome message</label>
+                            </div>
                         </div>
                     </div>
                     
                     <div class="form-group">
-                        <label>Branding</label>
+                        <label>Welcome Message</label>
                         <div class="branding-options">
                             <div class="input-group">
-                                <label for="share-title">Title:</label>
-                                <input type="text" id="share-title" placeholder="hacka.re" style="font-family: 'Courier New', monospace;">
-                            </div>
-                            
-                            <div class="input-group">
-                                <label for="share-subtitle">Subtitle:</label>
-                                <input type="text" id="share-subtitle" placeholder="Free, open, för hackare, av hackare">
+                                <textarea id="share-welcome-message" 
+                                          placeholder="Welcome to hacka.re! Start a conversation with AI models."
+                                          rows="3"
+                                          style="font-family: inherit; resize: vertical; width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
                             </div>
                         </div>
                     </div>

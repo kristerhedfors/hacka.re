@@ -18,25 +18,33 @@ window.ShareUIManager = (function() {
          * @param {Object} config - Configuration options
          */
         function initializeShareModal(config) {
-            const { apiKey, sessionKey, isSessionKeyLocked, loadShareOptions } = config;
+            const { apiKey, sessionKey, isSessionKeyLocked, sharedWelcomeMessage, loadShareOptions, sharedLinkOptions } = config;
             
             // Reset form
             if (elements.shareForm) {
                 elements.shareForm.reset();
             }
             
-            // Handle title and subtitle
-            setupTitleAndSubtitle();
-            
             // Handle password setup
             setupPassword(sessionKey, isSessionKeyLocked);
             
-            // Load share options from storage
-            if (loadShareOptions) {
+            // Handle welcome message setup
+            setupWelcomeMessage(sharedWelcomeMessage);
+            
+            // Load share options - prioritize shared link options over saved options
+            if (sharedLinkOptions) {
+                setShareOptionsFromSharedLink(sharedLinkOptions);
+            } else if (loadShareOptions) {
                 loadShareOptions();
             } else {
-                setDefaultShareOptions();
+                setDefaultShareOptions(apiKey);
             }
+            
+            // Always setup API key checkbox state regardless of which option loading method was used
+            setupApiKeyCheckboxState(apiKey);
+            
+            // Always ensure core options are checked when API key is configured
+            ensureCoreOptionsWhenApiKeyConfigured(apiKey);
             
             // Hide generated link container
             if (elements.generatedLinkContainer) {
@@ -54,35 +62,6 @@ window.ShareUIManager = (function() {
             }
         }
         
-        /**
-         * Setup title and subtitle inputs
-         */
-        function setupTitleAndSubtitle() {
-            const currentTitle = StorageService.getTitle();
-            const currentSubtitle = StorageService.getSubtitle();
-            const defaultTitle = "hacka.re";
-            const defaultSubtitle = "Free, open, för hackare av hackare";
-            
-            // Set title input - use placeholder for default values, actual value for custom values
-            if (elements.shareTitleInput) {
-                if (currentTitle === defaultTitle) {
-                    elements.shareTitleInput.value = '';
-                    elements.shareTitleInput.placeholder = defaultTitle;
-                } else {
-                    elements.shareTitleInput.value = currentTitle;
-                }
-            }
-            
-            // Set subtitle input - use placeholder for default values, actual value for custom values
-            if (elements.shareSubtitleInput) {
-                if (currentSubtitle === defaultSubtitle) {
-                    elements.shareSubtitleInput.value = '';
-                    elements.shareSubtitleInput.placeholder = defaultSubtitle;
-                } else {
-                    elements.shareSubtitleInput.value = currentSubtitle;
-                }
-            }
-        }
         
         /**
          * Setup password field
@@ -131,11 +110,153 @@ window.ShareUIManager = (function() {
         }
         
         /**
-         * Set default share options
+         * Setup welcome message pre-population
+         * @param {string|null} sharedWelcomeMessage - Welcome message from shared link
          */
-        function setDefaultShareOptions() {
+        function setupWelcomeMessage(sharedWelcomeMessage) {
+            if (sharedWelcomeMessage && elements.shareWelcomeMessageInput) {
+                // Pre-populate the welcome message field
+                elements.shareWelcomeMessageInput.value = sharedWelcomeMessage;
+                
+                // Enable the welcome message checkbox if it exists
+                if (elements.shareWelcomeMessageCheckbox) {
+                    elements.shareWelcomeMessageCheckbox.checked = true;
+                }
+            }
+        }
+        
+        /**
+         * Setup API key checkbox state based on whether API key is configured
+         * @param {string} apiKey - Current API key (if any)
+         */
+        function setupApiKeyCheckboxState(apiKey) {
+            const hasApiKey = apiKey && apiKey.trim().length > 0;
+            
             if (elements.shareApiKeyCheckbox) {
-                elements.shareApiKeyCheckbox.checked = true;
+                if (hasApiKey) {
+                    elements.shareApiKeyCheckbox.disabled = false;
+                    elements.shareApiKeyCheckbox.style.opacity = '1';
+                    // Remove any disabled styling from the parent label
+                    const label = elements.shareApiKeyCheckbox.parentNode.querySelector('label');
+                    if (label) {
+                        label.style.opacity = '1';
+                        label.style.color = '';
+                    }
+                } else {
+                    elements.shareApiKeyCheckbox.checked = false; // Uncheck if no API key
+                    elements.shareApiKeyCheckbox.disabled = true;
+                    elements.shareApiKeyCheckbox.style.opacity = '0.5';
+                    // Gray out the associated label too
+                    const label = elements.shareApiKeyCheckbox.parentNode.querySelector('label');
+                    if (label) {
+                        label.style.opacity = '0.5';
+                        label.style.color = '#999';
+                    }
+                }
+            }
+        }
+        
+        /**
+         * Ensure core options (API key, provider, model) are checked when API key is configured
+         * This applies regardless of which option loading method was used
+         * @param {string} apiKey - Current API key (if any)
+         */
+        function ensureCoreOptionsWhenApiKeyConfigured(apiKey) {
+            const hasApiKey = apiKey && apiKey.trim().length > 0;
+            
+            if (hasApiKey) {
+                // Always check these core options when API key is available
+                if (elements.shareApiKeyCheckbox) {
+                    elements.shareApiKeyCheckbox.checked = true;
+                }
+                
+                if (elements.shareBaseUrlCheckbox) {
+                    elements.shareBaseUrlCheckbox.checked = true;
+                }
+                
+                if (elements.shareModelCheckbox) {
+                    elements.shareModelCheckbox.checked = true;
+                }
+            }
+        }
+        
+        /**
+         * Set share options based on shared link options (what brought us here)
+         * @param {Object} sharedLinkOptions - Options from the shared link
+         */
+        function setShareOptionsFromSharedLink(sharedLinkOptions) {
+            // Set checkboxes based on what was included in the shared link
+            if (elements.shareBaseUrlCheckbox) {
+                elements.shareBaseUrlCheckbox.checked = sharedLinkOptions.includeBaseUrl || false;
+            }
+            
+            if (elements.shareApiKeyCheckbox) {
+                elements.shareApiKeyCheckbox.checked = sharedLinkOptions.includeApiKey || false;
+            }
+            
+            if (elements.shareModelCheckbox) {
+                elements.shareModelCheckbox.checked = sharedLinkOptions.includeModel || false;
+            }
+            
+            if (elements.shareSystemPromptCheckbox) {
+                elements.shareSystemPromptCheckbox.checked = sharedLinkOptions.includeSystemPrompt || false;
+            }
+            
+            if (elements.shareConversationCheckbox) {
+                elements.shareConversationCheckbox.checked = sharedLinkOptions.includeConversation || false;
+                // Update message history input state
+                if (sharedLinkOptions.includeConversation && elements.messageHistoryCount) {
+                    elements.messageHistoryCount.disabled = false;
+                    elements.messageHistoryCount.value = Math.max(1, sharedLinkOptions.messageCount || 1);
+                    if (elements.messageHistoryContainer) {
+                        elements.messageHistoryContainer.classList.add('active');
+                    }
+                } else {
+                    if (elements.messageHistoryCount) {
+                        elements.messageHistoryCount.disabled = true;
+                        elements.messageHistoryCount.value = '1';
+                    }
+                    if (elements.messageHistoryContainer) {
+                        elements.messageHistoryContainer.classList.remove('active');
+                    }
+                }
+            }
+            
+            if (elements.sharePromptLibraryCheckbox) {
+                elements.sharePromptLibraryCheckbox.checked = sharedLinkOptions.includePromptLibrary || false;
+            }
+            
+            if (elements.shareFunctionLibraryCheckbox) {
+                elements.shareFunctionLibraryCheckbox.checked = sharedLinkOptions.includeFunctionLibrary || false;
+            }
+            
+            if (elements.shareMcpConnectionsCheckbox) {
+                elements.shareMcpConnectionsCheckbox.checked = sharedLinkOptions.includeMcpConnections || false;
+            }
+            
+            if (elements.shareWelcomeMessageCheckbox) {
+                elements.shareWelcomeMessageCheckbox.checked = sharedLinkOptions.includeWelcomeMessage || false;
+            }
+        }
+        
+        /**
+         * Set default share options (for direct visits to hacka.re)
+         * @param {string} apiKey - Current API key (if any)
+         */
+        function setDefaultShareOptions(apiKey) {
+            const hasApiKey = apiKey && apiKey.trim().length > 0;
+            
+            // For direct visits, check API key, base URL/provider, and model by default if API key is configured
+            if (elements.shareBaseUrlCheckbox) {
+                elements.shareBaseUrlCheckbox.checked = hasApiKey;
+            }
+            
+            if (elements.shareApiKeyCheckbox) {
+                elements.shareApiKeyCheckbox.checked = hasApiKey;
+            }
+            
+            if (elements.shareModelCheckbox) {
+                elements.shareModelCheckbox.checked = hasApiKey;
             }
             
             if (elements.shareSystemPromptCheckbox) {
@@ -146,8 +267,20 @@ window.ShareUIManager = (function() {
                 elements.shareConversationCheckbox.checked = false;
             }
             
+            if (elements.sharePromptLibraryCheckbox) {
+                elements.sharePromptLibraryCheckbox.checked = false;
+            }
+            
+            if (elements.shareFunctionLibraryCheckbox) {
+                elements.shareFunctionLibraryCheckbox.checked = false;
+            }
+            
             if (elements.shareMcpConnectionsCheckbox) {
                 elements.shareMcpConnectionsCheckbox.checked = false;
+            }
+            
+            if (elements.shareWelcomeMessageCheckbox) {
+                elements.shareWelcomeMessageCheckbox.checked = false;
             }
             
             // Disable message history input

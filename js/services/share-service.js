@@ -45,8 +45,7 @@ window.ShareService = (function() {
      * @param {string} [options.model] - The model ID to share
      * @param {Array} [options.messages] - The conversation messages to share
      * @param {number} [options.messageCount] - Number of recent messages to include (default: all)
-     * @param {string} [options.title] - Custom title for the share
-     * @param {string} [options.subtitle] - Custom subtitle for the share
+     * @param {string} [options.welcomeMessage] - Custom welcome message for the share
      * @param {Object} [options.mcpConnections] - MCP connections to share
      * @param {Object} [options.functions] - Functions to share
      * @param {Array} [options.enabledFunctions] - Enabled function names
@@ -57,8 +56,7 @@ window.ShareService = (function() {
      * @param {boolean} [options.includeSystemPrompt] - Whether to include the system prompt
      * @param {boolean} [options.includeModel] - Whether to include the model
      * @param {boolean} [options.includeConversation] - Whether to include conversation
-     * @param {boolean} [options.includeTitle] - Whether to include title
-     * @param {boolean} [options.includeSubtitle] - Whether to include subtitle
+     * @param {boolean} [options.includeWelcomeMessage] - Whether to include welcome message
      * @param {boolean} [options.includeMcpConnections] - Whether to include MCP connections
      * @param {boolean} [options.includeFunctionLibrary] - Whether to include function library
      * @param {boolean} [options.includePromptLibrary] - Whether to include prompt library
@@ -108,14 +106,9 @@ window.ShareService = (function() {
             itemsIncluded.push(`✅ CONVERSATION (${payload.messages.length} messages)`);
         }
         
-        if (options.includeTitle && options.title && options.title.trim()) {
-            payload.title = options.title;
-            itemsIncluded.push(`✅ TITLE (${options.title})`);
-        }
-        
-        if (options.includeSubtitle && options.subtitle && options.subtitle.trim()) {
-            payload.subtitle = options.subtitle;
-            itemsIncluded.push(`✅ SUBTITLE (${options.subtitle})`);
+        if (options.includeWelcomeMessage && options.welcomeMessage && options.welcomeMessage.trim()) {
+            payload.welcomeMessage = options.welcomeMessage;
+            itemsIncluded.push(`✅ WELCOME MESSAGE (${options.welcomeMessage.length} chars)`);
         }
         
         // Handle MCP connections
@@ -245,15 +238,13 @@ window.ShareService = (function() {
             model: options.model,
             messages: options.messages,
             messageCount: options.messageCount,
-            title: options.title,
-            subtitle: options.subtitle,
+            welcomeMessage: options.welcomeMessage,
             includeBaseUrl: options.includeBaseUrl,
             includeApiKey: options.includeApiKey,
             includeSystemPrompt: options.includeSystemPrompt,
             includeModel: options.includeModel,
             includeConversation: options.includeConversation,
-            includeTitle: true, // Always include if provided
-            includeSubtitle: true, // Always include if provided
+            includeWelcomeMessage: options.includeWelcomeMessage,
             includeMcpConnections: options.includeMcpConnections,
             includeFunctionLibrary: options.includeFunctionLibrary,
             includePromptLibrary: options.includePromptLibrary
