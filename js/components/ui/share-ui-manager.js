@@ -41,8 +41,15 @@ window.ShareUIManager = (function() {
             } else if (loadShareOptions) {
                 loadShareOptions();
             } else {
-                setDefaultShareOptions();
+                console.log('🏠 Using default share options for direct visit, API key available:', !!apiKey);
+                setDefaultShareOptions(apiKey);
             }
+            
+            // Always setup API key checkbox state regardless of which option loading method was used
+            setupApiKeyCheckboxState(apiKey);
+            
+            // Always ensure core options are checked when API key is configured
+            ensureCoreOptionsWhenApiKeyConfigured(apiKey);
             
             // Hide generated link container
             if (elements.generatedLinkContainer) {
@@ -153,6 +160,65 @@ window.ShareUIManager = (function() {
         }
         
         /**
+         * Setup API key checkbox state based on whether API key is configured
+         * @param {string} apiKey - Current API key (if any)
+         */
+        function setupApiKeyCheckboxState(apiKey) {
+            const hasApiKey = apiKey && apiKey.trim().length > 0;
+            
+            if (elements.shareApiKeyCheckbox) {
+                if (hasApiKey) {
+                    elements.shareApiKeyCheckbox.disabled = false;
+                    elements.shareApiKeyCheckbox.style.opacity = '1';
+                    // Remove any disabled styling from the parent label
+                    const label = elements.shareApiKeyCheckbox.parentNode.querySelector('label');
+                    if (label) {
+                        label.style.opacity = '1';
+                        label.style.color = '';
+                    }
+                } else {
+                    elements.shareApiKeyCheckbox.checked = false; // Uncheck if no API key
+                    elements.shareApiKeyCheckbox.disabled = true;
+                    elements.shareApiKeyCheckbox.style.opacity = '0.5';
+                    // Gray out the associated label too
+                    const label = elements.shareApiKeyCheckbox.parentNode.querySelector('label');
+                    if (label) {
+                        label.style.opacity = '0.5';
+                        label.style.color = '#999';
+                    }
+                }
+            }
+        }
+        
+        /**
+         * Ensure core options (API key, provider, model) are checked when API key is configured
+         * This applies regardless of which option loading method was used
+         * @param {string} apiKey - Current API key (if any)
+         */
+        function ensureCoreOptionsWhenApiKeyConfigured(apiKey) {
+            const hasApiKey = apiKey && apiKey.trim().length > 0;
+            
+            if (hasApiKey) {
+                console.log('🔧 API key configured - ensuring core options are checked');
+                
+                // Always check these core options when API key is available
+                if (elements.shareApiKeyCheckbox) {
+                    elements.shareApiKeyCheckbox.checked = true;
+                }
+                
+                if (elements.shareBaseUrlCheckbox) {
+                    elements.shareBaseUrlCheckbox.checked = true;
+                }
+                
+                if (elements.shareModelCheckbox) {
+                    elements.shareModelCheckbox.checked = true;
+                }
+            } else {
+                console.log('🚫 No API key configured - core options remain as set by other methods');
+            }
+        }
+        
+        /**
          * Set share options based on shared link options (what brought us here)
          * @param {Object} sharedLinkOptions - Options from the shared link
          */
@@ -213,19 +279,22 @@ window.ShareUIManager = (function() {
         
         /**
          * Set default share options (for direct visits to hacka.re)
+         * @param {string} apiKey - Current API key (if any)
          */
-        function setDefaultShareOptions() {
-            // For direct visits, check API key, base URL/provider, and model by default
+        function setDefaultShareOptions(apiKey) {
+            const hasApiKey = apiKey && apiKey.trim().length > 0;
+            
+            // For direct visits, check API key, base URL/provider, and model by default if API key is configured
             if (elements.shareBaseUrlCheckbox) {
-                elements.shareBaseUrlCheckbox.checked = true;
+                elements.shareBaseUrlCheckbox.checked = hasApiKey;
             }
             
             if (elements.shareApiKeyCheckbox) {
-                elements.shareApiKeyCheckbox.checked = true;
+                elements.shareApiKeyCheckbox.checked = hasApiKey;
             }
             
             if (elements.shareModelCheckbox) {
-                elements.shareModelCheckbox.checked = true;
+                elements.shareModelCheckbox.checked = hasApiKey;
             }
             
             if (elements.shareSystemPromptCheckbox) {
