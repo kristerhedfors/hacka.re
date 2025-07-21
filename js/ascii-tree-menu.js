@@ -60,8 +60,14 @@ class ASCIITreeMenu {
                 e.stopPropagation();
                 const link = e.target.tagName === 'A' ? e.target : e.target.closest('a');
                 if (link.href) {
-                    // Manually navigate to prevent modal close
-                    window.location.href = link.href;
+                    // Check if link should open in new tab
+                    if (link.target === '_blank') {
+                        // Open in new tab
+                        window.open(link.href, '_blank', 'noopener,noreferrer');
+                    } else {
+                        // Manually navigate to prevent modal close
+                        window.location.href = link.href;
+                    }
                 }
             }
         });

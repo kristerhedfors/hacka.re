@@ -56,7 +56,7 @@ window.WelcomeManager = (function() {
                 thirdNotice.className = 'important-notice';
                 thirdNotice.style.cssText = 'background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 0; border-radius: 8px;';
                 thirdNotice.innerHTML = `
-                    <p><a href="about/index.html">About</a> | <a href="about/development.html">Development</a> | <a href="about/disclaimer.html">Disclaimer</a></p>
+                    <p><a href="about/index.html" target="_blank" rel="noopener noreferrer">About</a> | <a href="about/development.html" target="_blank" rel="noopener noreferrer">Development</a> | <a href="about/disclaimer.html" target="_blank" rel="noopener noreferrer">Disclaimer</a></p>
                 `;
                 
                 // Add all notices to the container
