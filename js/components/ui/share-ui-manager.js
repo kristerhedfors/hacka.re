@@ -25,9 +25,6 @@ window.ShareUIManager = (function() {
                 elements.shareForm.reset();
             }
             
-            // Handle title and subtitle
-            setupTitleAndSubtitle();
-            
             // Handle password setup
             setupPassword(sessionKey, isSessionKeyLocked);
             
@@ -65,35 +62,6 @@ window.ShareUIManager = (function() {
             }
         }
         
-        /**
-         * Setup title and subtitle inputs
-         */
-        function setupTitleAndSubtitle() {
-            const currentTitle = StorageService.getTitle();
-            const currentSubtitle = StorageService.getSubtitle();
-            const defaultTitle = "hacka.re";
-            const defaultSubtitle = "Free, open, för hackare av hackare";
-            
-            // Set title input - use placeholder for default values, actual value for custom values
-            if (elements.shareTitleInput) {
-                if (currentTitle === defaultTitle) {
-                    elements.shareTitleInput.value = '';
-                    elements.shareTitleInput.placeholder = defaultTitle;
-                } else {
-                    elements.shareTitleInput.value = currentTitle;
-                }
-            }
-            
-            // Set subtitle input - use placeholder for default values, actual value for custom values
-            if (elements.shareSubtitleInput) {
-                if (currentSubtitle === defaultSubtitle) {
-                    elements.shareSubtitleInput.value = '';
-                    elements.shareSubtitleInput.placeholder = defaultSubtitle;
-                } else {
-                    elements.shareSubtitleInput.value = currentSubtitle;
-                }
-            }
-        }
         
         /**
          * Setup password field
