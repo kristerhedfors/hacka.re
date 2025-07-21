@@ -64,10 +64,8 @@ window.SettingsInitialization = (function() {
         if (componentManagers.sharedLink.hasSharedLink()) {
             // Show password prompt for decryption
             componentManagers.sharedLink.promptForDecryptionPassword(
-                state.getSessionKey, 
-                state.setMessages, 
-                updateModelInfoDisplay, 
-                addSystemMessage
+                addSystemMessage, 
+                state.setMessages
             ).then(result => {
                 if (result.success) {
                     // If a shared model was provided, fetch models to check if it's available

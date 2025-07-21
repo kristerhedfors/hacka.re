@@ -37,7 +37,8 @@ window.ShareManager = (function() {
                     messageCount: parseInt(elements.messageHistoryCount.value, 10) || 1,
                     includePromptLibrary: elements.sharePromptLibraryCheckbox ? elements.sharePromptLibraryCheckbox.checked : false,
                     includeFunctionLibrary: elements.shareFunctionLibraryCheckbox ? elements.shareFunctionLibraryCheckbox.checked : false,
-                    includeMcpConnections: elements.shareMcpConnectionsCheckbox ? elements.shareMcpConnectionsCheckbox.checked : false
+                    includeMcpConnections: elements.shareMcpConnectionsCheckbox ? elements.shareMcpConnectionsCheckbox.checked : false,
+                    includeWelcomeMessage: elements.shareWelcomeMessageCheckbox ? elements.shareWelcomeMessageCheckbox.checked : false
                 };
                 
                 StorageService.saveShareOptions(options);
@@ -73,6 +74,11 @@ window.ShareManager = (function() {
                 // Set MCP connections checkbox if it exists
                 if (elements.shareMcpConnectionsCheckbox) {
                     elements.shareMcpConnectionsCheckbox.checked = options.includeMcpConnections || false;
+                }
+                
+                // Set welcome message checkbox if it exists
+                if (elements.shareWelcomeMessageCheckbox) {
+                    elements.shareWelcomeMessageCheckbox.checked = options.includeWelcomeMessage || false;
                 }
                 
                 // Update message history input state
@@ -302,22 +308,13 @@ window.ShareManager = (function() {
             // Get base URL
             const baseUrl = StorageService.getBaseUrl();
             
-            // Get title and subtitle values from inputs if they exist, otherwise use defaults
-            let title = StorageService.getTitle();
-            let subtitle = StorageService.getSubtitle();
+            // Get welcome message from input if it exists
+            let welcomeMessage = 'Welcome to hacka.re! Start a conversation with AI models.';
             
-            // Check if title input exists and has a value
-            if (elements.shareTitleInput && elements.shareTitleInput.value.trim()) {
-                title = elements.shareTitleInput.value.trim();
-                // DON'T save to storage - just use for the share link to avoid namespace changes
-                console.log('🔗 ShareManager: Using title for share link only (not saving to session):', title);
-            }
-            
-            // Check if subtitle input exists and has a value
-            if (elements.shareSubtitleInput && elements.shareSubtitleInput.value.trim()) {
-                subtitle = elements.shareSubtitleInput.value.trim();
-                // DON'T save to storage - just use for the share link to avoid namespace changes
-                console.log('🔗 ShareManager: Using subtitle for share link only (not saving to session):', subtitle);
+            // Check if welcome message input exists and has a value
+            if (elements.shareWelcomeMessageInput && elements.shareWelcomeMessageInput.value.trim()) {
+                welcomeMessage = elements.shareWelcomeMessageInput.value.trim();
+                console.log('🔗 ShareManager: Using custom welcome message for share link:', welcomeMessage.substring(0, 50) + '...');
             }
             
             // Debug: Check all checkbox states
@@ -399,16 +396,14 @@ window.ShareManager = (function() {
                 model: currentModel,
                 messages: messages,
                 messageCount: parseInt(elements.messageHistoryCount.value, 10) || 1,
-                title: title,
-                subtitle: subtitle,
+                welcomeMessage: welcomeMessage,
                 mcpConnections: mcpConnections, // Pass the collected connections
                 includeBaseUrl: elements.shareBaseUrlCheckbox ? elements.shareBaseUrlCheckbox.checked : false,
                 includeApiKey: elements.shareApiKeyCheckbox ? elements.shareApiKeyCheckbox.checked : false,
                 includeSystemPrompt: false, // System prompt is now handled by prompt library
                 includeModel: elements.shareModelCheckbox ? elements.shareModelCheckbox.checked : false,
                 includeConversation: elements.shareConversationCheckbox ? elements.shareConversationCheckbox.checked : false,
-                includeTitle: !!title,
-                includeSubtitle: !!subtitle,
+                includeWelcomeMessage: elements.shareWelcomeMessageCheckbox ? elements.shareWelcomeMessageCheckbox.checked : false,
                 includePromptLibrary: elements.sharePromptLibraryCheckbox ? elements.sharePromptLibraryCheckbox.checked : false,
                 includeFunctionLibrary: elements.shareFunctionLibraryCheckbox ? elements.shareFunctionLibraryCheckbox.checked : false,
                 includeMcpConnections: mcpConnectionsChecked
@@ -419,7 +414,7 @@ window.ShareManager = (function() {
             // Validate options - at least one item should be selected
             const hasSelection = options.includeBaseUrl || options.includeApiKey || options.includeSystemPrompt || 
                                options.includeModel || options.includeConversation || options.includePromptLibrary || 
-                               options.includeFunctionLibrary || options.includeMcpConnections;
+                               options.includeFunctionLibrary || options.includeMcpConnections || options.includeWelcomeMessage;
             
             if (!hasSelection) {
                 if (addSystemMessage) {
