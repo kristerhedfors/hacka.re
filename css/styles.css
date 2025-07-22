@@ -1071,8 +1071,8 @@ main {
 }
 
 .chat-action-btn i {
-    -webkit-text-stroke: 2px var(--text-color);
-    text-stroke: 2px var(--text-color);
+    -webkit-text-stroke: 1px #ffffff;
+    text-stroke: 1px #ffffff;
     color: transparent;
 }
 
@@ -1081,15 +1081,15 @@ main {
 }
 
 .chat-action-btn:hover i {
-    -webkit-text-stroke: 2px var(--primary-color);
-    text-stroke: 2px var(--primary-color);
+    -webkit-text-stroke: 1px var(--primary-color);
+    text-stroke: 1px var(--primary-color);
 }
 
-/* Make copy button more grayish in light theme */
-.theme-modern .chat-action-btn i,
+/* Black stroke on light themes only */
+.theme-modern:not(.dark-mode) .chat-action-btn i,
 .theme-default .chat-action-btn i {
-    -webkit-text-stroke: 2px #6b7280;
-    text-stroke: 2px #6b7280;
+    -webkit-text-stroke: 1px #000000;
+    text-stroke: 1px #000000;
 }
 
 #chat-messages {
