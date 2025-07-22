@@ -492,12 +492,7 @@ window.AIHackareComponent = (function() {
      * Update the link length bar
      */
     AIHackare.prototype.updateLinkLengthBar = function() {
-        console.log('AIHackare: updateLinkLengthBar called');
-        console.log('AIHackare: uiManager available:', !!this.uiManager);
-        console.log('AIHackare: uiManager.updateLinkLengthBar available:', !!(this.uiManager && this.uiManager.updateLinkLengthBar));
-        
-        if (this.uiManager && this.uiManager.updateLinkLengthBar) {
-            console.log('AIHackare: About to call uiManager.updateLinkLengthBar...');
+        if (this.uiManager?.updateLinkLengthBar) {
             try {
                 this.uiManager.updateLinkLengthBar(
                     this.settingsManager.getApiKey(),
@@ -505,13 +500,9 @@ window.AIHackareComponent = (function() {
                     this.settingsManager.getCurrentModel(),
                     this.chatManager.getMessages()
                 );
-                console.log('AIHackare: uiManager.updateLinkLengthBar call completed');
             } catch (error) {
-                console.error('AIHackare: Error calling uiManager.updateLinkLengthBar:', error);
-                console.error('AIHackare: Error stack:', error.stack);
+                console.error('Error updating link length:', error);
             }
-        } else {
-            console.error('AIHackare: uiManager or updateLinkLengthBar not available');
         }
     };
     
