@@ -1128,6 +1128,10 @@ main {
     padding: 1rem;
     border-radius: var(--border-radius);
     box-shadow: var(--box-shadow);
+    word-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
+    overflow-wrap: break-word;
 }
 
 .user .message-content {

@@ -200,28 +200,13 @@ window.UICoordinator = (function() {
          * @param {Array} messages - Current messages
          */
         function updateLinkLengthBar(apiKey, systemPrompt, currentModel, messages) {
-            console.log('🎛️ UICoordinator: updateLinkLengthBar called with:', {
-                apiKey: apiKey ? 'present' : 'missing',
-                systemPrompt: systemPrompt ? `${systemPrompt.length} chars` : 'empty',
-                currentModel: currentModel || 'undefined',
-                messages: messages ? `${messages.length} messages` : 'undefined'
-            });
-            
-            console.log('🎛️ UICoordinator: shareUIManager available:', !!shareUIManager);
-            console.log('🎛️ UICoordinator: shareUIManager.updateLinkLengthBar available:', !!(shareUIManager && shareUIManager.updateLinkLengthBar));
-            
-            if (shareUIManager && shareUIManager.updateLinkLengthBar) {
-                console.log('🎛️ UICoordinator: About to call shareUIManager.updateLinkLengthBar...');
-                const result = shareUIManager.updateLinkLengthBar({
+            if (shareUIManager?.updateLinkLengthBar) {
+                return shareUIManager.updateLinkLengthBar({
                     apiKey,
                     systemPrompt,
                     currentModel,
                     messages
                 });
-                console.log('🎛️ UICoordinator: shareUIManager.updateLinkLengthBar call completed');
-                return result;
-            } else {
-                console.error('🎛️ UICoordinator: shareUIManager or updateLinkLengthBar not available');
             }
         }
         
