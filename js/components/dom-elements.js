@@ -53,7 +53,6 @@ window.DOMElements = (function() {
             linkLengthText: document.getElementById('link-length-text'),
             linkLengthWarning: document.getElementById('link-length-warning'),
             linkLengthFill: document.querySelector('.link-length-fill'),
-            lockSessionKeyCheckbox: document.getElementById('lock-session-key'),
             passwordInputContainer: document.querySelector('.password-input-container'),
             qrCodeContainer: document.getElementById('share-qr-code-container'),
             

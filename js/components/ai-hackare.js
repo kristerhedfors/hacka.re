@@ -146,12 +146,6 @@ window.AIHackareComponent = (function() {
                 });
             }
             
-            // Lock session key checkbox
-            if (this.elements.lockSessionKeyCheckbox) {
-                this.elements.lockSessionKeyCheckbox.addEventListener('change', () => {
-                    this.shareManager.toggleSessionKeyLock(this.chatManager.addSystemMessage.bind(this.chatManager));
-                });
-            }
             
             // Add event listeners for link length calculation only (not saving options)
             if (this.elements.shareBaseUrlCheckbox) {

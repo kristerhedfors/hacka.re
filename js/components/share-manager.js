@@ -171,31 +171,6 @@ window.ShareManager = (function() {
             }, 15); // Adjust speed as needed (lower = faster)
         }
         
-        /**
-         * Toggle session key lock
-         * @param {Function} addSystemMessage - Function to add system message
-         */
-        function toggleSessionKeyLock(addSystemMessage) {
-            if (elements.lockSessionKeyCheckbox && elements.passwordInputContainer) {
-                if (elements.lockSessionKeyCheckbox.checked) {
-                    // Lock the session key
-                    elements.passwordInputContainer.classList.add('locked');
-                    elements.sharePassword.readOnly = true;
-                    
-                    // Save the session key for future use
-                    sessionKey = elements.sharePassword.value;
-                    
-                    // Show a message
-                    if (addSystemMessage) {
-                        addSystemMessage('Session key locked. It will be remembered for this session.');
-                    }
-                } else {
-                    // Unlock the session key
-                    elements.passwordInputContainer.classList.remove('locked');
-                    elements.sharePassword.readOnly = false;
-                }
-            }
-        }
         
         /**
          * Copy password/session key to clipboard
@@ -594,7 +569,6 @@ window.ShareManager = (function() {
         return {
             init,
             regeneratePassword,
-            toggleSessionKeyLock,
             copyPassword,
             generateComprehensiveShareLink,
             copyGeneratedLink,
