@@ -483,6 +483,14 @@ window.ShareUIManager = (function() {
                 });
             }
             
+            // Add welcome message if selected
+            if (elements.shareWelcomeMessageCheckbox && elements.shareWelcomeMessageCheckbox.checked && elements.shareWelcomeMessageInput) {
+                const welcomeMessage = elements.shareWelcomeMessageInput.value;
+                if (welcomeMessage && welcomeMessage.trim()) {
+                    estimatedLength += welcomeMessage.length + 20; // Welcome message + JSON structure overhead
+                }
+            }
+            
             // Account for base64 encoding (which increases size by ~33%)
             estimatedLength = Math.ceil(estimatedLength * 1.33);
             

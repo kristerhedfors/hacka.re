@@ -149,6 +149,41 @@ window.ModalManager = (function() {
                 } else {
                     console.error('❌ NUCLEAR FIX: MCP checkbox still not found');
                 }
+                
+                // Initialize welcome message link length calculation
+                const shareWelcomeMessage = document.getElementById('share-welcome-message');
+                const shareWelcomeMessageCheckbox = document.getElementById('share-welcome-message-checkbox');
+                
+                if (shareWelcomeMessage && shareWelcomeMessageCheckbox && !shareWelcomeMessage._linkLengthInitialized) {
+                    // Debounce function for welcome message - longer delay for better performance
+                    let welcomeDebounceTimeout;
+                    const welcomeDebounceDelay = 500; // Increased to 500ms for better performance
+                    
+                    // Optimized function to update link length bar (minimal logging)
+                    const updateWelcomeLinkLength = function() {
+                        if (window.aiHackare?.updateLinkLengthBar) {
+                            try {
+                                window.aiHackare.updateLinkLengthBar();
+                            } catch (error) {
+                                console.error('Welcome message link length error:', error);
+                            }
+                        }
+                    };
+                    
+                    // Optimized input event listener with better debouncing
+                    shareWelcomeMessage.addEventListener('input', function() {
+                        clearTimeout(welcomeDebounceTimeout);
+                        
+                        // Always use debouncing - no immediate updates for performance
+                        welcomeDebounceTimeout = setTimeout(updateWelcomeLinkLength, welcomeDebounceDelay);
+                    });
+                    
+                    // Checkbox change updates immediately (less frequent)
+                    shareWelcomeMessageCheckbox.addEventListener('change', updateWelcomeLinkLength);
+                    
+                    // Mark as initialized to prevent duplicate listeners
+                    shareWelcomeMessage._linkLengthInitialized = true;
+                }
             }, 50);
         }
         
