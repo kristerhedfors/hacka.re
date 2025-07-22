@@ -70,24 +70,15 @@ window.ShareUIManager = (function() {
          */
         function setupPassword(sessionKey, isSessionKeyLocked) {
             if (sessionKey) {
-                // Set the session key value
+                // Set the session key value but never make it read-only since we removed lock functionality
                 if (elements.sharePassword) {
                     elements.sharePassword.value = sessionKey;
-                    elements.sharePassword.readOnly = isSessionKeyLocked;
+                    elements.sharePassword.readOnly = false; // Always allow editing
                 }
                 
-                // Set the lock checkbox
-                if (elements.lockSessionKeyCheckbox) {
-                    elements.lockSessionKeyCheckbox.checked = isSessionKeyLocked;
-                }
-                
-                // Add or remove the locked class
+                // Remove any locked class since we removed lock functionality
                 if (elements.passwordInputContainer) {
-                    if (isSessionKeyLocked) {
-                        elements.passwordInputContainer.classList.add('locked');
-                    } else {
-                        elements.passwordInputContainer.classList.remove('locked');
-                    }
+                    elements.passwordInputContainer.classList.remove('locked');
                 }
             } else {
                 // Generate a random password only if there's no session key
@@ -100,11 +91,6 @@ window.ShareUIManager = (function() {
                 // Remove the locked class
                 if (elements.passwordInputContainer) {
                     elements.passwordInputContainer.classList.remove('locked');
-                }
-                
-                // Ensure the lock checkbox is unchecked
-                if (elements.lockSessionKeyCheckbox) {
-                    elements.lockSessionKeyCheckbox.checked = false;
                 }
             }
         }
