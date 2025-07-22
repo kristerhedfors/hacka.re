@@ -136,6 +136,18 @@ window.AIHackareComponent = (function() {
             });
         }
         
+        // Agent configuration modal event listeners
+        if (this.elements.agentConfigBtn) {
+            this.elements.agentConfigBtn.addEventListener('click', () => {
+                this.elements.agentConfigModal.style.display = 'block';
+            });
+        }
+        
+        if (this.elements.closeAgentConfigModal) {
+            this.elements.closeAgentConfigModal.addEventListener('click', () => {
+                this.elements.agentConfigModal.style.display = 'none';
+            });
+        }
         
         // Share modal event listeners
         if (this.elements.shareModal) {
@@ -355,6 +367,9 @@ window.AIHackareComponent = (function() {
             }
             if (e.target === this.elements.promptsModal) {
                 this.promptsManager.hidePromptsModal();
+            }
+            if (e.target === this.elements.agentConfigModal) {
+                this.elements.agentConfigModal.style.display = 'none';
             }
             if (e.target === this.elements.mcpServersModal) {
                 this.functionCallingManager.hideMcpServersModal();

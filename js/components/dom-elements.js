@@ -66,6 +66,11 @@ window.DOMElements = (function() {
             // Copy chat button
             copyChatBtn: document.getElementById('copy-chat-btn'),
             
+            // Agent configuration elements
+            agentConfigBtn: document.getElementById('agent-config-btn'),
+            agentConfigModal: document.getElementById('agent-config-modal'),
+            closeAgentConfigModal: document.getElementById('close-agent-config-modal'),
+            
             // Function calling elements
             functionBtn: document.getElementById('function-btn'),
             functionModal: document.getElementById('function-modal'),

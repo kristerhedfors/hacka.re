@@ -65,8 +65,8 @@
                         </div>
                     </span>
                 </button>
-                <button id="copy-chat-btn" class="icon-btn" title="Copy Chat Content">
-                    <i class="fas fa-copy"></i>
+                <button id="agent-config-btn" class="icon-btn" title="Agent Configuration">
+                    <i class="fas fa-robot"></i>
                 </button>
                 <button id="mcp-servers-btn" class="icon-btn" title="Model Context Protocol">
                     <span class="mcp-icon">MCP</span>
@@ -253,6 +253,20 @@
                     </div>
                     <div id="share-qr-code-container" style="margin-top: 15px; text-align: center;"></div>
                     <div id="qr-code-warning" style="display: none; margin-top: 10px; color: #856404; background-color: #fff3cd; padding: 10px; border-radius: 5px;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="agent-config-modal" class="modal">
+            <div class="modal-content">
+                <div class="settings-header">
+                    <h2>Agent Configuration</h2>
+                </div>
+                <div class="agent-config-container">
+                    <!-- Agent configuration content will be added here -->
+                </div>
+                <div class="form-actions">
+                    <button type="button" id="close-agent-config-modal" class="btn secondary-btn">Close</button>
                 </div>
             </div>
         </div>
@@ -657,6 +671,11 @@ async function getCurrentTimeInBerlin() {
 
         <main>
             <div id="chat-container">
+                <div id="chat-header">
+                    <button id="copy-chat-btn" class="icon-btn chat-action-btn" title="Copy Chat Content">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
                 <div id="chat-messages">
                     <div class="message system">
                         <div class="message-content">
