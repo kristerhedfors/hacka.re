@@ -4,21 +4,20 @@
 function createSharedLinkDataProcessor() {
     
     /**
-     * Mask an API key, showing only first and last 4 bytes
+     * Mask an API key, showing first 10 and last 4 characters
      * @param {string} apiKey - The API key to mask
      * @returns {string} Masked API key
      */
     function maskApiKey(apiKey) {
-        if (!apiKey || apiKey.length < 8) {
+        if (!apiKey || apiKey.length < 14) {
             return "Invalid API key format";
         }
         
-        const first4 = apiKey.substring(0, 4);
+        const first10 = apiKey.substring(0, 10);
         const last4 = apiKey.substring(apiKey.length - 4);
-        const maskedLength = apiKey.length - 8;
-        const maskedPart = '*'.repeat(maskedLength);
+        const maskedPart = '*'.repeat(16); // Fixed 16 asterisks regardless of key length
         
-        return `${first4}${maskedPart}${last4}`;
+        return `${first10}${maskedPart}${last4}`;
     }
     
     /**
