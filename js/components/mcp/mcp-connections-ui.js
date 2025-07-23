@@ -5,7 +5,7 @@
 
 // GitHub token manager is now available globally as window.GitHubTokenManager
 // from the new modular provider structure
-import { getMcpConnectionsSummary } from '../share/mcp-connections-share-item.js';
+// getMcpConnectionsSummary is available globally from mcp-connections-share-item.js
 
 export class MCPConnectionsUI {
     constructor() {
@@ -54,7 +54,7 @@ export class MCPConnectionsUI {
         modal.id = 'mcp-connections-modal';
         
         // Get current connections summary
-        const summary = await getMcpConnectionsSummary();
+        const summary = await window.getMcpConnectionsSummary();
         
         modal.innerHTML = `
             <div class="modal-content">
@@ -272,7 +272,7 @@ export class MCPConnectionsUI {
         if (statusContainer) {
             statusContainer.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
             
-            const summary = await getMcpConnectionsSummary();
+            const summary = await window.getMcpConnectionsSummary();
             statusContainer.innerHTML = await this.generateConnectionsStatus(summary);
         }
     }

@@ -58,11 +58,25 @@ window.ModelManager = (function() {
             const storedModel = StorageService.getModel();
             
             // If we have a current model in memory and it doesn't match storage,
-            // update storage with our current model (this helps with model persistence issues)
+            // we need to decide which one to trust. 
             if (currentModel && currentModel !== storedModel) {
-                console.log(`Model mismatch detected: memory=${currentModel}, storage=${storedModel}. Updating storage.`);
-                StorageService.saveModel(currentModel);
-                return currentModel;
+                console.log(`Model mismatch detected: memory=${currentModel}, storage=${storedModel}.`);
+                
+                // If storage was recently updated (like from agent loading), trust storage
+                // Check if the stored model looks like it was recently set by comparing timestamps
+                const storageTimestamp = localStorage.getItem('model_last_updated') || sessionStorage.getItem('model_last_updated');
+                const now = Date.now();
+                const recentlyUpdated = storageTimestamp && (now - parseInt(storageTimestamp)) < 5000; // 5 seconds
+                
+                if (recentlyUpdated) {
+                    console.log('Storage was recently updated, using stored model:', storedModel);
+                    currentModel = storedModel;
+                    return storedModel;
+                } else {
+                    console.log('Using memory model and updating storage:', currentModel);
+                    StorageService.saveModel(currentModel);
+                    return currentModel;
+                }
             }
             
             // If we have a stored model but no current model in memory, update our memory

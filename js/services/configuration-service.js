@@ -249,20 +249,20 @@ window.ConfigurationService = (function() {
     function applyLLMConfiguration(llmConfig) {
         if (!llmConfig) return;
         
-        if (llmConfig.apiKey && DataService && typeof DataService.setApiKey === 'function') {
-            DataService.setApiKey(llmConfig.apiKey);
+        if (llmConfig.apiKey && DataService && typeof DataService.saveApiKey === 'function') {
+            DataService.saveApiKey(llmConfig.apiKey);
         }
         
-        if (llmConfig.model && DataService && typeof DataService.setModel === 'function') {
-            DataService.setModel(llmConfig.model);
+        if (llmConfig.model && DataService && typeof DataService.saveModel === 'function') {
+            DataService.saveModel(llmConfig.model);
         }
         
-        if (llmConfig.baseUrl && DataService && typeof DataService.setBaseUrl === 'function') {
-            DataService.setBaseUrl(llmConfig.baseUrl);
+        if (llmConfig.baseUrl && DataService && typeof DataService.saveBaseUrl === 'function') {
+            DataService.saveBaseUrl(llmConfig.baseUrl);
         }
         
-        if (llmConfig.provider && DataService && typeof DataService.setBaseUrlProvider === 'function') {
-            DataService.setBaseUrlProvider(llmConfig.provider);
+        if (llmConfig.provider && DataService && typeof DataService.saveBaseUrlProvider === 'function') {
+            DataService.saveBaseUrlProvider(llmConfig.provider);
         }
     }
     
