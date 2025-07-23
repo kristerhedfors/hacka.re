@@ -1030,7 +1030,8 @@ window.AIHackareComponent = (function() {
             return;
         }
         
-        const agents = AgentService.listAgents();
+        // Get full agent data with config instead of just summaries
+        const agents = Object.values(AgentService.getAllAgents());
         
         if (agents.length === 0) {
             this.elements.savedAgentsList.innerHTML = '<div class="no-agents">No saved agents yet. Use the form above to save your first agent.</div>';
@@ -1041,16 +1042,8 @@ window.AIHackareComponent = (function() {
             <div class="agent-item-card" data-agent="${this.escapeHtml(agent.name)}">
                 <div class="agent-item-info">
                     <h4>${this.escapeHtml(agent.name)}</h4>
-                    <p>${this.escapeHtml(agent.description) || 'No description'}</p>
-                    <div class="agent-meta">
-                        <span class="agent-type">${this.escapeHtml(agent.agentType)}</span>
-                        <span class="agent-date">Created: ${new Date(agent.createdAt).toLocaleDateString()}</span>
-                    </div>
-                    <div class="agent-features">
-                        ${agent.hasLLMConfig ? '<span class="feature-tag">API</span>' : ''}
-                        ${agent.hasPrompts ? '<span class="feature-tag">Prompts</span>' : ''}
-                        ${agent.hasFunctions ? '<span class="feature-tag">Functions</span>' : ''}
-                        ${agent.hasMCP ? '<span class="feature-tag">MCP</span>' : ''}
+                    <div class="agent-details">
+                        ${this.escapeHtml(agent.config?.llm?.provider || 'Unknown provider')} using ${this.escapeHtml(agent.config?.llm?.model || 'unknown model')} with ${this.getMCPServerNames(agent)} MCP server(s) and ${this.getToolsCount(agent)} tools available.
                     </div>
                 </div>
                 <div class="agent-item-actions">
@@ -1059,6 +1052,46 @@ window.AIHackareComponent = (function() {
                 </div>
             </div>
         `).join('');
+    };
+
+    /**
+     * Get MCP server names from agent configuration
+     */
+    AIHackare.prototype.getMCPServerNames = function(agent) {
+        // Check the correct path based on configuration service structure
+        const mcpConnections = agent.config?.mcp?.connections;
+        if (!mcpConnections || typeof mcpConnections !== 'object') {
+            return 'None';
+        }
+        
+        const serverNames = Object.keys(mcpConnections);
+        if (serverNames.length === 0) {
+            return 'None';
+        }
+        
+        return serverNames.join(', ');
+    };
+
+    /**
+     * Get tools count from agent configuration
+     */
+    AIHackare.prototype.getToolsCount = function(agent) {
+        let toolsCount = 0;
+        
+        // Count MCP tools
+        const mcpConnections = agent.config?.mcp?.connections;
+        if (mcpConnections && typeof mcpConnections === 'object') {
+            // Rough estimate: each MCP server provides multiple tools
+            toolsCount += Object.keys(mcpConnections).length * 10; // Approximate
+        }
+        
+        // Count function tools
+        const functions = agent.config?.functions?.library;
+        if (functions && typeof functions === 'object') {
+            toolsCount += Object.keys(functions).length;
+        }
+        
+        return toolsCount > 0 ? toolsCount.toString() : '0';
     };
 
     /**
