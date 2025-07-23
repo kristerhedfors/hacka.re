@@ -139,13 +139,13 @@ window.AIHackareComponent = (function() {
         // Agent configuration modal event listeners
         if (this.elements.agentConfigBtn) {
             this.elements.agentConfigBtn.addEventListener('click', () => {
-                this.elements.agentConfigModal.style.display = 'block';
+                this.elements.agentConfigModal.classList.add('active');
             });
         }
         
         if (this.elements.closeAgentConfigModal) {
             this.elements.closeAgentConfigModal.addEventListener('click', () => {
-                this.elements.agentConfigModal.style.display = 'none';
+                this.elements.agentConfigModal.classList.remove('active');
             });
         }
         
@@ -369,7 +369,7 @@ window.AIHackareComponent = (function() {
                 this.promptsManager.hidePromptsModal();
             }
             if (e.target === this.elements.agentConfigModal) {
-                this.elements.agentConfigModal.style.display = 'none';
+                this.elements.agentConfigModal.classList.remove('active');
             }
             if (e.target === this.elements.mcpServersModal) {
                 this.functionCallingManager.hideMcpServersModal();
