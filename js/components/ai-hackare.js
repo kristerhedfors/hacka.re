@@ -1064,10 +1064,10 @@ window.AIHackareComponent = (function() {
     /**
      * Load an agent configuration
      */
-    AIHackare.prototype.loadAgent = function(agentName) {
+    AIHackare.prototype.loadAgent = async function(agentName) {
         if (confirm(`Load agent "${agentName}" configuration? This will replace your current settings.`)) {
             if (AgentService) {
-                const success = AgentService.applyAgent(agentName);
+                const success = await AgentService.applyAgent(agentName);
                 
                 if (success) {
                     alert(`Agent "${agentName}" loaded successfully!`);

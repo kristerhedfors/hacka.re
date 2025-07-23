@@ -53,7 +53,11 @@ function createSharedLinkDataProcessor() {
     function applyApiConfiguration(sharedData, addSystemMessage) {
         // Save the shared API key
         if (sharedData.apiKey) {
-            StorageService.saveApiKey(sharedData.apiKey);
+            if (DataService && typeof DataService.saveApiKey === 'function') {
+                DataService.saveApiKey(sharedData.apiKey);
+            } else {
+                StorageService.saveApiKey(sharedData.apiKey);
+            }
             const maskedApiKey = maskApiKey(sharedData.apiKey);
             if (addSystemMessage) {
                 addSystemMessage(`Shared API key (${maskedApiKey}) has been applied.`);
@@ -62,7 +66,11 @@ function createSharedLinkDataProcessor() {
         
         // If there's a base URL, save it too
         if (sharedData.baseUrl) {
-            StorageService.saveBaseUrl(sharedData.baseUrl);
+            if (DataService && typeof DataService.saveBaseUrl === 'function') {
+                DataService.saveBaseUrl(sharedData.baseUrl);
+            } else {
+                StorageService.saveBaseUrl(sharedData.baseUrl);
+            }
             if (addSystemMessage) {
                 addSystemMessage(`Shared base URL has been applied.`);
             }
@@ -70,9 +78,48 @@ function createSharedLinkDataProcessor() {
         
         // If there's a system prompt, save it too
         if (sharedData.systemPrompt) {
-            StorageService.saveSystemPrompt(sharedData.systemPrompt);
+            if (DataService && typeof DataService.saveSystemPrompt === 'function') {
+                DataService.saveSystemPrompt(sharedData.systemPrompt);
+            } else {
+                StorageService.saveSystemPrompt(sharedData.systemPrompt);
+            }
             if (addSystemMessage) {
                 addSystemMessage(`Shared system prompt has been applied.`);
+            }
+        }
+        
+        // If there's a provider, save it and set the appropriate base URL
+        if (sharedData.provider) {
+            if (DataService && typeof DataService.saveBaseUrlProvider === 'function') {
+                DataService.saveBaseUrlProvider(sharedData.provider);
+            } else if (StorageService && typeof StorageService.saveBaseUrlProvider === 'function') {
+                StorageService.saveBaseUrlProvider(sharedData.provider);
+            }
+            
+            // Also set the appropriate base URL for the provider if not explicitly provided
+            if (!sharedData.baseUrl) {
+                let defaultBaseUrl = null;
+                if (DataService && typeof DataService.getDefaultBaseUrlForProvider === 'function') {
+                    defaultBaseUrl = DataService.getDefaultBaseUrlForProvider(sharedData.provider);
+                }
+                if (defaultBaseUrl) {
+                    if (DataService && typeof DataService.saveBaseUrl === 'function') {
+                        DataService.saveBaseUrl(defaultBaseUrl);
+                    } else {
+                        StorageService.saveBaseUrl(defaultBaseUrl);
+                    }
+                    if (addSystemMessage) {
+                        addSystemMessage(`Shared provider (${sharedData.provider}) with default base URL has been applied.`);
+                    }
+                } else {
+                    if (addSystemMessage) {
+                        addSystemMessage(`Shared provider (${sharedData.provider}) has been applied.`);
+                    }
+                }
+            } else {
+                if (addSystemMessage) {
+                    addSystemMessage(`Shared provider (${sharedData.provider}) has been applied.`);
+                }
             }
         }
     }
@@ -96,7 +143,12 @@ function createSharedLinkDataProcessor() {
             }
             
             // Save the model to storage immediately to ensure it's available for API requests
-            StorageService.saveModel(sharedData.model);
+            // Use DataService instead of StorageService to ensure timestamp is set properly
+            if (DataService && typeof DataService.saveModel === 'function') {
+                DataService.saveModel(sharedData.model);
+            } else {
+                StorageService.saveModel(sharedData.model);
+            }
             
             // If we have a model manager, set the pending shared model there too
             if (window.aiHackare && window.aiHackare.settingsManager && 

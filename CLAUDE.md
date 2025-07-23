@@ -15,7 +15,17 @@ hacka.re is a privacy-focused, serverless chat interface for OpenAI-compatible A
 
 # Activate environment in new terminals
 source _venv/bin/activate
+
+# To deactivate the environment
+deactivate
 ```
+
+**Important Environment Notes:**
+- The setup script creates a virtual environment at `_venv/` in the project root
+- Always activate the environment before running tests: `source _venv/bin/activate`
+- The environment includes Playwright, pytest, and all required dependencies
+- API keys should be configured in `_tests/playwright/.env` (copy from `.env.example`)
+- Playwright browsers are automatically installed during setup
 
 ### Testing
 ```bash
