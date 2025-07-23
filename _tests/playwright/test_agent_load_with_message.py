@@ -32,7 +32,6 @@ def test_agent_load_with_message_sending(page: Page, serve_hacka_re, api_key):
     page.locator('#agent-config-btn').click()
     page.wait_for_timeout(500)
     page.locator('#quick-agent-name').fill('test-openai')
-    page.on("dialog", lambda dialog: dialog.accept())
     page.locator('#quick-save-agent').click()
     page.wait_for_timeout(1000)
     page.locator('#close-agent-config-modal').click()

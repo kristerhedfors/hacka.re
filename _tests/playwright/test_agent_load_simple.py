@@ -37,12 +37,6 @@ def test_agent_load_button_exists_and_triggers(page: Page, serve_hacka_re, api_k
     agent_name_input = page.locator('#quick-agent-name')
     agent_name_input.fill('test-load-agent')
     
-    # Handle the success alert by dismissing it
-    def handle_dialog(dialog):
-        dialog.accept()
-    
-    page.on("dialog", handle_dialog)
-    
     save_btn = page.locator('#quick-save-agent')
     save_btn.click()
     page.wait_for_timeout(1500)  # Wait for save to complete

@@ -51,8 +51,6 @@ def test_agent_load_button_with_session_storage(page: Page, serve_hacka_re, api_
     agent_name_input = page.locator('#quick-agent-name')
     agent_name_input.fill('sessionStorage-test-agent')
     
-    page.on("dialog", lambda dialog: dialog.accept())
-    
     save_btn = page.locator('#quick-save-agent')
     save_btn.click()
     page.wait_for_timeout(2000)
@@ -197,8 +195,6 @@ def test_verify_storage_persistence_in_session(page: Page, serve_hacka_re, api_k
     
     agent_name_input = page.locator('#quick-agent-name')
     agent_name_input.fill('persistence-test-agent')
-    
-    page.on("dialog", lambda dialog: dialog.accept())
     
     save_btn = page.locator('#quick-save-agent')
     save_btn.click()

@@ -67,10 +67,6 @@ def test_agent_save_and_load_functionality(page: Page, serve_hacka_re, api_key):
     save_btn = page.locator('#quick-save-agent')
     save_btn.click()
     
-    # Handle the success alert
-    page.wait_for_timeout(500)
-    page.on("dialog", lambda dialog: dialog.accept())
-    
     # Wait for save to complete
     page.wait_for_timeout(1000)
     
@@ -110,8 +106,6 @@ def test_agent_save_and_load_functionality(page: Page, serve_hacka_re, api_key):
     load_btn = page.locator('button:has-text("Load")').first
     expect(load_btn).to_be_visible()
     
-    # Handle confirmation dialog
-    page.on("dialog", lambda dialog: dialog.accept())
     load_btn.click()
     
     # Wait for load to complete
@@ -172,7 +166,6 @@ def test_agent_load_with_different_api_key(page: Page, serve_hacka_re, api_key):
     agent_name_input = page.locator('#quick-agent-name')
     agent_name_input.fill('api-key-test-agent')
     
-    page.on("dialog", lambda dialog: dialog.accept())
     save_btn = page.locator('#quick-save-agent')
     save_btn.click()
     page.wait_for_timeout(1000)
@@ -195,7 +188,6 @@ def test_agent_load_with_different_api_key(page: Page, serve_hacka_re, api_key):
     page.wait_for_timeout(500)
     
     load_btn = page.locator('button:has-text("Load")').first
-    page.on("dialog", lambda dialog: dialog.accept())
     load_btn.click()
     page.wait_for_timeout(2000)
     
