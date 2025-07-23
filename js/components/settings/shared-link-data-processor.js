@@ -519,54 +519,97 @@ function createSharedLinkDataProcessor() {
      * @param {Function} addSystemMessage - Function to add system messages
      */
     async function cleanSlateForAgent(addSystemMessage) {
-        // Disconnect all MCP connections
+        // Disconnect ALL MCP connections
         if (window.MCPServiceConnectors) {
             try {
-                // Disconnect all known service types
-                const serviceTypes = ['github', 'gmail', 'filesystem']; // Add other known services
-                for (const serviceType of serviceTypes) {
+                // Get all currently connected services dynamically
+                const serviceKeys = [];
+                if (typeof window.MCPServiceConnectors.getConnectedServices === 'function') {
+                    const services = window.MCPServiceConnectors.getConnectedServices();
+                    serviceKeys.push(...services.map(service => service.key));
+                    console.log(`🧹 Found ${serviceKeys.length} connected services: ${serviceKeys.join(', ')}`);
+                } else {
+                    // Fallback to known service types
+                    serviceKeys.push('github', 'gmail', 'filesystem', 'google-docs');
+                    console.log(`🧹 Using fallback service list: ${serviceKeys.join(', ')}`);
+                }
+                
+                // Disconnect each service
+                for (const serviceKey of serviceKeys) {
                     if (typeof window.MCPServiceConnectors.disconnectService === 'function') {
-                        await window.MCPServiceConnectors.disconnectService(serviceType);
+                        try {
+                            await window.MCPServiceConnectors.disconnectService(serviceKey);
+                            console.log(`🧹 Disconnected MCP service: ${serviceKey}`);
+                        } catch (error) {
+                            console.warn(`Failed to disconnect MCP service ${serviceKey}:`, error);
+                        }
                     }
                 }
-                console.log('🧹 Disconnected all MCP connections for clean agent loading');
+                console.log(`🧹 Disconnected ${serviceKeys.length} MCP connections for clean agent loading`);
             } catch (error) {
                 console.warn('Failed to disconnect MCP connections:', error);
             }
         }
         
-        // Clear all function collections
+        // Clear ALL function collections completely
         if (window.FunctionToolsService) {
             try {
-                // Get all functions and remove them (this will remove entire collections)
-                const allFunctions = window.FunctionToolsService.getJsFunctions();
-                const functionNames = Object.keys(allFunctions);
-                
-                if (functionNames.length > 0) {
-                    // Remove the first function from each collection to clear all collections
-                    const processedCollections = new Set();
-                    const functionCollections = window.FunctionToolsService.getFunctionCollections();
+                // Method 1: Try to clear all collections using the service's clear method
+                if (typeof window.FunctionToolsService.clearAllCollections === 'function') {
+                    window.FunctionToolsService.clearAllCollections();
+                    console.log('🧹 Cleared all function collections using clearAllCollections()');
+                } else {
+                    // Method 2: Get all functions and remove ALL of them
+                    const allFunctions = window.FunctionToolsService.getJsFunctions();
+                    const functionNames = Object.keys(allFunctions);
                     
-                    functionNames.forEach(functionName => {
-                        const collectionId = functionCollections[functionName];
-                        if (collectionId && !processedCollections.has(collectionId)) {
-                            window.FunctionToolsService.removeJsFunction(functionName);
-                            processedCollections.add(collectionId);
-                        }
-                    });
-                    
-                    console.log(`🧹 Cleared ${processedCollections.size} function collections for clean agent loading`);
+                    if (functionNames.length > 0) {
+                        console.log(`🧹 Clearing ${functionNames.length} individual functions from collections`);
+                        
+                        // Remove each function individually to ensure complete cleanup
+                        functionNames.forEach(functionName => {
+                            try {
+                                window.FunctionToolsService.removeJsFunction(functionName);
+                                console.log(`🧹 Removed function: ${functionName}`);
+                            } catch (error) {
+                                console.warn(`Failed to remove function ${functionName}:`, error);
+                            }
+                        });
+                        
+                        console.log(`🧹 Cleared all ${functionNames.length} functions for clean agent loading`);
+                    }
                 }
                 
                 // Disable function tools
                 window.FunctionToolsService.setFunctionToolsEnabled(false);
+                console.log('🧹 Disabled function tools for clean agent loading');
             } catch (error) {
                 console.warn('Failed to clean function collections:', error);
             }
         }
         
+        // Clear any cached MCP tool registrations
+        if (window.MCPToolRegistry && typeof window.MCPToolRegistry.clearAll === 'function') {
+            try {
+                window.MCPToolRegistry.clearAll();
+                console.log('🧹 Cleared MCP tool registry');
+            } catch (error) {
+                console.warn('Failed to clear MCP tool registry:', error);
+            }
+        }
+        
+        // Clear any UI state that might be holding onto old connections
+        if (window.MCPQuickConnectors && typeof window.MCPQuickConnectors.clearAllStates === 'function') {
+            try {
+                window.MCPQuickConnectors.clearAllStates();
+                console.log('🧹 Cleared MCP quick connector states');
+            } catch (error) {
+                console.warn('Failed to clear MCP quick connector states:', error);
+            }
+        }
+        
         if (addSystemMessage) {
-            addSystemMessage('Previous MCP connections and functions cleared for clean agent loading.');
+            addSystemMessage('Previous MCP connections, function collections, and related state cleared for clean agent loading.');
         }
     }
     
