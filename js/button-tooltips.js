@@ -6,7 +6,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Define the buttons and their tooltip texts
     const buttons = [
-        { id: 'agent-config-btn', text: 'Agent Configuration' },
+        { id: 'agent-config-btn', text: 'Agent Modal' },
         { id: 'copy-chat-btn', text: 'Copy Chat Content' },
         { id: 'mcp-servers-btn', text: 'Model Context Protocol' },
         { id: 'function-btn', text: 'Function Calling' },

@@ -23,7 +23,7 @@ def test_button_tooltips(page: Page, serve_hacka_re):
     
     # Define the buttons to test (in the upper right bar)
     buttons = [
-        {"id": "agent-config-btn", "expected_text": "Agent Configuration"},
+        {"id": "agent-config-btn", "expected_text": "Agent Modal"},
         {"id": "function-btn", "expected_text": "Function Calling"},
         {"id": "prompts-btn", "expected_text": "System Prompt Menu"},
         {"id": "share-btn", "expected_text": "Share"},
