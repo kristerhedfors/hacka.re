@@ -261,29 +261,55 @@
             <div class="modal-content">
                 <span class="experimental-tag">EXPERIMENTAL</span>
                 <div class="settings-header">
-                    <h2>Agent Modal</h2>
+                    <h2>Agent Management</h2>
                     <span class="info-icon" id="agent-modal-info-icon">
                         <i class="fas fa-info-circle"></i>
                         <div class="tooltip">
                             <div class="tooltip-content">
                                 <div class="important-notice">
-                                    <p><strong>Agent Modal</strong>: Configure and manage AI agents for specialized tasks and workflows.</p>
+                                    <p><strong>Agent Management</strong>: Save and manage your hacka.re configurations as reusable agents.</p>
                                 </div>
                                 <div class="important-notice">
-                                    <p><strong>Agent Types</strong>: Connect to different AI agent services for enhanced capabilities.</p>
+                                    <p><strong>Save Current</strong>: Save your current API settings, prompts, functions, and MCP connections as a named agent.</p>
                                 </div>
                                 <div class="important-notice">
-                                    <p><strong>Agent Management</strong>: Enable, disable, configure, and delete agents as needed.</p>
+                                    <p><strong>Load Agent</strong>: Apply a saved agent's configuration to quickly switch contexts.</p>
                                 </div>
                             </div>
                         </div>
                     </span>
                 </div>
                 
-                <!-- Agent Items Section -->
+                <!-- Quick Save Section -->
+                <div class="agent-quick-save-section">
+                    <h3>💾 Save Current Configuration</h3>
+                    <p class="form-help">Quickly save your current settings as a named agent</p>
+                    <div class="quick-save-form">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <div style="display: flex; gap: 0.75rem; align-items: end;">
+                                <div style="flex: 1;">
+                                    <label for="quick-agent-name">Agent Name</label>
+                                    <input type="text" id="quick-agent-name" placeholder="Enter agent name" class="quick-save-input">
+                                </div>
+                                <button type="button" id="quick-save-agent" class="btn primary-btn">Save Current</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Saved Agents Section -->
                 <div class="agent-items-section">
-                    <h3>🤖 Available Agents</h3>
-                    <p class="form-help">Manage your AI agents and their configurations</p>
+                    <h3>🤖 Saved Agents</h3>
+                    <p class="form-help">Your saved agent configurations</p>
+                    <div id="saved-agents-list" class="agent-items-grid">
+                        <!-- Saved agents will be populated here by JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- External Agent Services Section -->
+                <div class="agent-items-section">
+                    <h3>🔌 External Agent Services</h3>
+                    <p class="form-help">Connect to external AI agent services</p>
                     <div class="agent-items-grid">
                         <div class="agent-item-card" data-agent="github">
                             <div class="agent-item-checkbox">
@@ -831,6 +857,10 @@ async function getCurrentTimeInBerlin() {
     <script src="js/services/mcp-service-connectors.js"></script>
     <script src="js/services/link-sharing-service.js"></script>
     <script src="js/services/share-service.js"></script>
+    <!-- Agent Services -->
+    <script src="js/services/configuration-service.js"></script>
+    <script src="js/services/agent-service.js"></script>
+    <script src="js/services/agent-interface.js"></script>
     <!-- Share Components -->
     <script src="js/components/share/mcp-connections-share-item.js"></script>
     <!-- Default prompts -->
@@ -873,6 +903,8 @@ async function getCurrentTimeInBerlin() {
     <script src="js/components/ui/ui-coordinator.js"></script>
     <!-- Legacy UI manager wrapper -->
     <script src="js/components/ui-manager.js"></script>
+    <!-- Agent Management Components -->
+    <script src="js/components/agent-manager.js"></script>
     <!-- Function Calling Components -->
     <script src="js/components/function-calling/function-modal-manager.js"></script>
     <script src="js/components/function-calling/function-details-modal.js"></script>
