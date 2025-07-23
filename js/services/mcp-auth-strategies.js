@@ -1,10 +1,13 @@
 /**
  * Authentication strategies for MCP providers
  * Implements various authentication patterns used by different providers
+ * 🔧 CACHE BUSTER: GitHub auth fix applied 2025-07-23 19:45
  */
 
 window.MCPAuthStrategies = (function() {
     'use strict';
+    
+    console.log('🔧 CACHE BUSTER: MCP Auth Strategies loaded at', new Date().toISOString(), '- GitHub token auth fix applied');
 
 /**
  * Base authentication strategy class
@@ -201,10 +204,14 @@ class PersonalTokenStrategy extends AuthStrategy {
         }
 
         try {
+            // GitHub API requires 'token' authentication for PATs, not 'Bearer'
+            const isGitHubApi = this.tokenValidationEndpoint && this.tokenValidationEndpoint.includes('api.github.com');
+            const authHeader = isGitHubApi ? `token ${credentials.token}` : `Bearer ${credentials.token}`;
+            
             const response = await fetch(this.tokenValidationEndpoint, {
                 method: this.tokenValidationMethod,
                 headers: {
-                    'Authorization': `Bearer ${credentials.token}`,
+                    'Authorization': authHeader,
                     'Accept': 'application/json',
                     'User-Agent': 'hacka.re/1.0'
                 },

@@ -66,16 +66,23 @@ window.ModelManager = (function() {
                 // Check if the stored model looks like it was recently set by comparing timestamps
                 const storageTimestamp = localStorage.getItem('model_last_updated') || sessionStorage.getItem('model_last_updated');
                 const now = Date.now();
-                const recentlyUpdated = storageTimestamp && (now - parseInt(storageTimestamp)) < 5000; // 5 seconds
+                const recentlyUpdated = storageTimestamp && (now - parseInt(storageTimestamp)) < 300000; // 5 minutes (much longer window)
                 
                 if (recentlyUpdated) {
                     console.log('Storage was recently updated, using stored model:', storedModel);
                     currentModel = storedModel;
                     return storedModel;
                 } else {
-                    console.log('Using memory model and updating storage:', currentModel);
-                    StorageService.saveModel(currentModel);
-                    return currentModel;
+                    // Additional safety check: if storage model looks like a valid new model, prefer it
+                    if (storedModel && storedModel.length > 0) {
+                        console.log('Storage has valid model, preferring storage over memory:', storedModel);
+                        currentModel = storedModel;
+                        return storedModel;
+                    } else {
+                        console.log('Using memory model and updating storage:', currentModel);
+                        StorageService.saveModel(currentModel);
+                        return currentModel;
+                    }
                 }
             }
             
@@ -138,7 +145,12 @@ window.ModelManager = (function() {
          */
         function resetMemoryState() {
             currentModel = '';
-            console.log('🔄 ModelManager memory state reset');
+            console.log('🔄 ModelManager memory state reset - will read from storage on next call');
+            
+            // Force a timestamp update to ensure storage takes precedence
+            const timestamp = Date.now();
+            localStorage.setItem('model_last_updated', timestamp.toString());
+            sessionStorage.setItem('model_last_updated', timestamp.toString());
         }
         
         /**

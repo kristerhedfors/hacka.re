@@ -1,5 +1,6 @@
 /**
  * MCP Service Connectors - GitHub, Gmail, and Google Docs Integration
+ * CACHE BUSTER: 2025-01-23-21:34 - GitHub auth fix applied
  * 
  * This module provides specialized connectors for popular services that require
  * custom authentication and API handling. It builds on the existing MCP infrastructure
@@ -7,6 +8,7 @@
  */
 
 (function(global) {
+    console.log('🔧 CACHE BUSTER: MCP Service Connectors loaded at', new Date().toISOString(), '- GitHub auth fix applied');
     'use strict';
 
     // Service-specific configurations
@@ -263,15 +265,38 @@
          */
         async validateGitHubToken(token) {
             try {
+                // TRACE TOKEN: Log validation attempt with full details and TYPE
+                console.log(`🔍 validateGitHubToken CALLED: Token TYPE=${typeof token}, Value=${token}, Length=${token ? token.length : 0}`);
+                console.log(`🔍 validateGitHubToken RAW TOKEN:`, token);
+                
+                // Fix token if it's not a string - extract from object if needed
+                let actualToken = token;
+                if (typeof token === 'object' && token !== null && token.token) {
+                    actualToken = token.token;
+                    console.log(`🔧 validateGitHubToken: Extracted string token from object: ${actualToken.substring(0, 10)}...${actualToken.substring(actualToken.length - 4)}`);
+                } else if (typeof token !== 'string') {
+                    console.error(`🔍 validateGitHubToken ERROR: Token is not a string! Type: ${typeof token}, Value:`, token);
+                    return false;
+                }
+                
+                console.log(`🔍 validateGitHubToken HEADERS: Authorization="token ${actualToken.substring(0, 10)}...${actualToken.substring(actualToken.length - 4)}"`);
+                
                 const response = await fetch('https://api.github.com/user', {
                     headers: {
-                        'Authorization': `Bearer ${token}`,
+                        'Authorization': `token ${actualToken}`,
                         'Accept': 'application/vnd.github.v3+json'
                     }
                 });
+
+                console.log(`🔍 validateGitHubToken RESPONSE: Status=${response.status}, OK=${response.ok}`);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.log(`🔍 validateGitHubToken ERROR: ${errorText}`);
+                }
+
                 return response.ok;
             } catch (error) {
-                console.error('[MCP Service Connectors] Token validation failed:', error);
+                console.error('🔍 validateGitHubToken EXCEPTION:', error);
                 return false;
             }
         }
@@ -581,7 +606,7 @@
                 const response = await fetch(url, {
                     method,
                     headers: {
-                        'Authorization': `Bearer ${token}`,
+                        'Authorization': `token ${token}`,
                         'Accept': 'application/vnd.github.v3+json',
                         'Content-Type': 'application/json'
                     },
