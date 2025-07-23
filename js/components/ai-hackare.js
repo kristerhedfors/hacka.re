@@ -1043,7 +1043,7 @@ window.AIHackareComponent = (function() {
                 <div class="agent-item-info">
                     <h4>${this.escapeHtml(agent.name)}</h4>
                     <div class="agent-details">
-                        ${this.escapeHtml(agent.config?.llm?.provider || 'Unknown provider')} using ${this.escapeHtml(agent.config?.llm?.model || 'unknown model')} with ${this.getMCPServerNames(agent)} MCP server(s) and ${this.getToolsCount(agent)} tools available.
+                        <strong>${this.escapeHtml(agent.config?.llm?.provider || 'Unknown provider')}</strong> using <strong>${this.escapeHtml(agent.config?.llm?.model || 'unknown model')}</strong> with ${this.getMCPServerNames(agent)} MCP server(s) and ${this.getToolsCount(agent)} tools available.
                     </div>
                 </div>
                 <div class="agent-item-actions">
@@ -1078,17 +1078,10 @@ window.AIHackareComponent = (function() {
     AIHackare.prototype.getToolsCount = function(agent) {
         let toolsCount = 0;
         
-        // Count MCP tools
-        const mcpConnections = agent.config?.mcp?.connections;
-        if (mcpConnections && typeof mcpConnections === 'object') {
-            // Rough estimate: each MCP server provides multiple tools
-            toolsCount += Object.keys(mcpConnections).length * 10; // Approximate
-        }
-        
-        // Count function tools
-        const functions = agent.config?.functions?.library;
-        if (functions && typeof functions === 'object') {
-            toolsCount += Object.keys(functions).length;
+        // Count only enabled/activated function tools for this agent
+        const enabledFunctions = agent.config?.functions?.enabled;
+        if (enabledFunctions && Array.isArray(enabledFunctions)) {
+            toolsCount += enabledFunctions.length;
         }
         
         return toolsCount > 0 ? toolsCount.toString() : '0';
