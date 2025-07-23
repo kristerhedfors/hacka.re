@@ -123,8 +123,17 @@ window.ShareService = (function() {
                 try {
                     const githubToken = await window.CoreStorageService.getValue('mcp_github_token');
                     if (githubToken) {
-                        mcpConnections.github = githubToken;
-                        console.log('🔌 ShareService: Found GitHub token in storage');
+                        // FIX TOKEN: Ensure we save the token as a string, not an object
+                        let tokenToSave = githubToken;
+                        if (typeof githubToken === 'object' && githubToken !== null && githubToken.token) {
+                            tokenToSave = githubToken.token;
+                            console.log(`🔧 AGENT SAVE: Extracted string token from object for save`);
+                        }
+                        
+                        mcpConnections.github = tokenToSave;
+                        console.log(`🔍 AGENT SAVE TOKEN TRACE: Found GitHub token in storage: Type=${typeof githubToken}, Saving as=${typeof tokenToSave}, Token=${typeof tokenToSave === 'string' ? tokenToSave.substring(0, 10) + '...' + tokenToSave.substring(tokenToSave.length - 4) : tokenToSave}`);
+                    } else {
+                        console.log('🔍 AGENT SAVE TOKEN TRACE: No GitHub token found in storage');
                     }
                 } catch (error) {
                     console.warn('❌ ShareService: Failed to collect MCP connections from storage:', error);

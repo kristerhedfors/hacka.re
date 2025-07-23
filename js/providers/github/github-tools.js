@@ -892,7 +892,7 @@ window.GitHubTools = class GitHubTools {
             const options = {
                 method,
                 headers: {
-                    'Authorization': `Bearer ${credentials.token}`,
+                    'Authorization': `token ${credentials.token}`,
                     'Accept': 'application/vnd.github.v3+json',
                     'User-Agent': 'hacka.re/1.0'
                 },

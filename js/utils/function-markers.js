@@ -27,7 +27,7 @@ window.FunctionMarkers = (function() {
             delete functionCallCounts[key];
         });
         // Note: We don't reset assignedColors to keep colors stable across messages
-        console.log('[Function Markers] Function call counts reset, keeping assigned colors');
+        // Removed excessive logging during streaming
     }
     
     /**
@@ -58,7 +58,10 @@ window.FunctionMarkers = (function() {
         
         // Store this assignment permanently
         assignedColors[colorKey] = colorClass;
-        console.log(`[Function Markers] getColorClass(${colorKey}): assigned new color ${colorClass} (assignedCount=${assignedCount})`);
+        // Reduced logging: only log first few color assignments
+        if (assignedCount < 3) {
+            console.log(`[Function Markers] Color assigned: ${colorKey} → ${colorClass}`);
+        }
         return colorClass;
     }
     
@@ -101,7 +104,7 @@ window.FunctionMarkers = (function() {
             
             // Use the new renderer if available, fallback to old method
             if (window.FunctionCallRenderer) {
-                console.log('[FunctionMarkers] Using FunctionCallRenderer for call:', functionName);
+                // Removed excessive logging during streaming
                 const element = window.FunctionCallRenderer.createCallIndicator({
                     functionName,
                     parameters,
@@ -110,8 +113,8 @@ window.FunctionMarkers = (function() {
                 return element.outerHTML;
             }
             
-            // Fallback for backward compatibility (add data attributes)
-            console.log('[FunctionMarkers] Using fallback HTML for call:', functionName);
+            // Fallback for backward compatibility (add data attributes) 
+            // Removed excessive logging during streaming
             const formattedArgs = JSON.stringify(parameters, null, 2);
             return `<span class="function-call-icon ${colorClass}" data-function-name="${escapeHTML(functionName)}" data-parameters="${escapeHTML(JSON.stringify(parameters))}" data-type="call">𝑓<span class="function-icon-tooltip"><strong>Function:</strong> ${escapeHTML(functionName)}<br><strong>Parameters:</strong> ${escapeHTML(formattedArgs)}</span></span>`;
         });
@@ -243,7 +246,7 @@ window.FunctionMarkers = (function() {
             
             // Use the new renderer if available, fallback to old method
             if (window.FunctionCallRenderer) {
-                console.log('[FunctionMarkers] Using FunctionCallRenderer for result:', functionName);
+                // Removed excessive logging during streaming
                 const element = window.FunctionCallRenderer.createResultIndicator({
                     functionName,
                     resultType,
@@ -255,7 +258,7 @@ window.FunctionMarkers = (function() {
             }
             
             // Fallback for backward compatibility (add data attributes)
-            console.log('[FunctionMarkers] Using fallback HTML for result:', functionName);
+            // Removed excessive logging during streaming
             const { displayValue } = formatDisplayValue(decodedResult, resultType);
             const executionTimeFormatted = formatExecutionTime(executionTime);
             
@@ -295,6 +298,9 @@ window.FunctionMarkers = (function() {
         Object.keys(assignedColors).forEach(key => {
             delete assignedColors[key];
         });
+        // Clear debug logs when colors are cleared
+        if (window._functionCallDebugLog) window._functionCallDebugLog.clear();
+        if (window._functionResultDebugLog) window._functionResultDebugLog.clear();
         console.log('[Function Markers] All assigned colors cleared');
     }
     

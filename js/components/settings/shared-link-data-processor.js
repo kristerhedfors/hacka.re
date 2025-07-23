@@ -139,12 +139,18 @@ function createSharedLinkDataProcessor() {
             
             // Check if we have provider information and validate compatibility
             if (sharedData.provider) {
+                console.log(`🔍 Validating model compatibility: "${sharedData.model}" with provider "${sharedData.provider}"`);
                 const isCompatible = validateModelProviderCompatibility(sharedData.model, sharedData.provider);
+                console.log(`🔍 Compatibility result: ${isCompatible}`);
+                
                 if (!isCompatible) {
                     // Get a compatible model for this provider
                     const compatibleModel = getCompatibleModelForProvider(sharedData.provider);
+                    console.log(`🔍 Suggested compatible model: ${compatibleModel}`);
+                    
                     if (compatibleModel) {
                         modelToUse = compatibleModel;
+                        console.log(`🔧 Replacing incompatible model "${sharedData.model}" with "${compatibleModel}"`);
                         if (addSystemMessage) {
                             addSystemMessage(`Model "${sharedData.model}" is not compatible with ${sharedData.provider}. Using "${compatibleModel}" instead.`);
                         }
@@ -154,12 +160,14 @@ function createSharedLinkDataProcessor() {
                         }
                     }
                 } else {
+                    console.log(`✅ Model "${sharedData.model}" is compatible with provider "${sharedData.provider}"`);
                     if (addSystemMessage) {
                         addSystemMessage(`Shared model "${sharedData.model}" is compatible with ${sharedData.provider}.`);
                     }
                 }
             } else {
                 // No provider info, use the model as-is
+                console.log(`🔍 No provider info, using model "${sharedData.model}" as-is`);
                 if (addSystemMessage) {
                     addSystemMessage(`Shared model preference "${sharedData.model}" will be applied if available.`);
                 }
@@ -173,6 +181,21 @@ function createSharedLinkDataProcessor() {
                 DataService.saveModel(modelToUse);
             } else {
                 StorageService.saveModel(modelToUse);
+            }
+            
+            // Force reset the model manager memory to prevent conflicts
+            if (window.aiHackare && window.aiHackare.settingsManager && window.aiHackare.settingsManager.componentManagers) {
+                const modelManager = window.aiHackare.settingsManager.componentManagers.model;
+                if (modelManager && typeof modelManager.resetMemoryState === 'function') {
+                    modelManager.resetMemoryState();
+                    console.log('🔧 Model manager memory reset to prevent conflicts with stored model:', modelToUse);
+                }
+            }
+            
+            // Also try to access the model manager directly if available
+            if (window.ModelManager && typeof window.ModelManager.resetMemoryState === 'function') {
+                window.ModelManager.resetMemoryState();
+                console.log('🔧 Global model manager memory reset');
             }
             
             // If we have a model manager, set the pending shared model there too
@@ -196,6 +219,7 @@ function createSharedLinkDataProcessor() {
         if (provider === 'openai') {
             return model.startsWith('gpt-') || model.startsWith('o1-') || model.includes('davinci') || model.includes('turbo');
         } else if (provider === 'groq') {
+            // Groq models: llama, mixtral, gemma, qwen variants
             return model.includes('llama') || model.includes('mixtral') || model.includes('qwen') || model.includes('gemma');
         } else if (provider === 'ollama') {
             // Ollama can run various models, but they usually don't have provider prefixes
@@ -214,7 +238,7 @@ function createSharedLinkDataProcessor() {
     function getCompatibleModelForProvider(provider) {
         const compatibleModels = {
             'openai': 'gpt-4o-mini',
-            'groq': 'llama-3.3-70b-versatile',
+            'groq': 'llama-3.1-70b-versatile', // Updated to correct Groq model name
             'ollama': 'llama3.2'
         };
         
@@ -372,11 +396,28 @@ function createSharedLinkDataProcessor() {
                 let appliedCount = 0;
                 
                 for (const serviceKey of connectionKeys) {
-                    const token = sharedData.mcpConnections[serviceKey];
+                    const rawToken = sharedData.mcpConnections[serviceKey];
+                    
+                    // TRACE TOKEN: Log token during agent load
+                    console.log(`🔍 AGENT LOAD TOKEN TRACE: Service=${serviceKey}, Type=${typeof rawToken}, Token=${rawToken}, Length=${rawToken ? rawToken.length : 0}`);
+                    
+                    // FIX TOKEN: Extract string token from object if needed
+                    let token = rawToken;
+                    if (typeof rawToken === 'object' && rawToken !== null && rawToken.token) {
+                        token = rawToken.token;
+                        console.log(`🔧 FIXED TOKEN: Extracted string token from object: ${token.substring(0, 10)}...${token.substring(token.length - 4)}`);
+                    } else if (typeof rawToken !== 'string') {
+                        console.error(`🚨 INVALID TOKEN: Expected string or {token: string}, got ${typeof rawToken}:`, rawToken);
+                        continue;
+                    }
                     
                     // Store the PAT token using the appropriate storage key
                     const storageKey = `mcp_${serviceKey}_token`;
                     await window.CoreStorageService.setValue(storageKey, token);
+                    
+                    // TRACE TOKEN: Verify token was stored correctly
+                    const storedToken = await window.CoreStorageService.getValue(storageKey);
+                    console.log(`🔍 AGENT LOAD TOKEN VERIFY: Stored token for ${serviceKey}: Type=${typeof storedToken}, Value=${storedToken}, Match=${token === storedToken}`);
                     
                     appliedCount++;
                     
@@ -392,19 +433,48 @@ function createSharedLinkDataProcessor() {
                 // Trigger MCP service connector to recreate connections if available
                 if (window.MCPServiceConnectors) {
                     // Delay slightly to ensure storage is committed
-                    setTimeout(() => {
-                        connectionKeys.forEach(serviceKey => {
+                    setTimeout(async () => {
+                        for (const serviceKey of connectionKeys) {
                             // Try to recreate the connection automatically
                             if (window.MCPServiceConnectors.quickConnect && serviceKey === 'github') {
-                                window.MCPServiceConnectors.quickConnect('github')
-                                    .then(() => {
+                                try {
+                                    // First validate the token before attempting connection
+                                    const storageKey = `mcp_${serviceKey}_token`;
+                                    const token = await window.CoreStorageService.getValue(storageKey);
+                                    
+                                    // TRACE TOKEN: Log token during validation
+                                    console.log(`🔍 VALIDATION TOKEN TRACE: Service=${serviceKey}, StorageKey=${storageKey}, Type=${typeof token}, Token=${token}, Length=${token ? token.length : 0}`);
+                                    
+                                    if (token && window.MCPServiceConnectors.validateGitHubToken) {
+                                        console.log(`🔍 VALIDATION: About to validate ${serviceKey} token: Type=${typeof token}, Value=${token}`);
+                                        const isValid = await window.MCPServiceConnectors.validateGitHubToken(token);
+                                        console.log(`🔍 VALIDATION RESULT: ${serviceKey} token validation result: ${isValid}`);
+                                        if (!isValid) {
+                                            console.warn(`[MCP Auto-reconnect] Invalid ${serviceKey} token detected, skipping auto-reconnection. Manual reconnection required.`);
+                                            if (addSystemMessage) {
+                                                addSystemMessage(`${serviceKey} MCP connection restored but token is invalid. Please reconnect manually in the MCP Servers panel.`);
+                                            }
+                                            continue;
+                                        }
+                                    }
+                                    
+                                    const connected = await window.MCPServiceConnectors.quickConnect('github');
+                                    if (connected) {
                                         console.log(`Auto-reconnected to ${serviceKey} MCP service`);
-                                    })
-                                    .catch(error => {
-                                        console.warn(`Failed to auto-reconnect to ${serviceKey} MCP service:`, error);
-                                    });
+                                    } else {
+                                        console.warn(`Auto-reconnection to ${serviceKey} MCP service failed - no valid token`);
+                                        if (addSystemMessage) {
+                                            addSystemMessage(`${serviceKey} MCP connection could not be restored automatically. Please reconnect manually in the MCP Servers panel.`);
+                                        }
+                                    }
+                                } catch (error) {
+                                    console.warn(`Failed to auto-reconnect to ${serviceKey} MCP service:`, error);
+                                    if (addSystemMessage) {
+                                        addSystemMessage(`${serviceKey} MCP connection restoration failed: ${error.message}. Please reconnect manually.`);
+                                    }
+                                }
                             }
-                        });
+                        }
                     }, 100);
                 }
                 
@@ -445,6 +515,62 @@ function createSharedLinkDataProcessor() {
     }
     
     /**
+     * Clean up existing state before applying agent configuration
+     * @param {Function} addSystemMessage - Function to add system messages
+     */
+    async function cleanSlateForAgent(addSystemMessage) {
+        // Disconnect all MCP connections
+        if (window.MCPServiceConnectors) {
+            try {
+                // Disconnect all known service types
+                const serviceTypes = ['github', 'gmail', 'filesystem']; // Add other known services
+                for (const serviceType of serviceTypes) {
+                    if (typeof window.MCPServiceConnectors.disconnectService === 'function') {
+                        await window.MCPServiceConnectors.disconnectService(serviceType);
+                    }
+                }
+                console.log('🧹 Disconnected all MCP connections for clean agent loading');
+            } catch (error) {
+                console.warn('Failed to disconnect MCP connections:', error);
+            }
+        }
+        
+        // Clear all function collections
+        if (window.FunctionToolsService) {
+            try {
+                // Get all functions and remove them (this will remove entire collections)
+                const allFunctions = window.FunctionToolsService.getJsFunctions();
+                const functionNames = Object.keys(allFunctions);
+                
+                if (functionNames.length > 0) {
+                    // Remove the first function from each collection to clear all collections
+                    const processedCollections = new Set();
+                    const functionCollections = window.FunctionToolsService.getFunctionCollections();
+                    
+                    functionNames.forEach(functionName => {
+                        const collectionId = functionCollections[functionName];
+                        if (collectionId && !processedCollections.has(collectionId)) {
+                            window.FunctionToolsService.removeJsFunction(functionName);
+                            processedCollections.add(collectionId);
+                        }
+                    });
+                    
+                    console.log(`🧹 Cleared ${processedCollections.size} function collections for clean agent loading`);
+                }
+                
+                // Disable function tools
+                window.FunctionToolsService.setFunctionToolsEnabled(false);
+            } catch (error) {
+                console.warn('Failed to clean function collections:', error);
+            }
+        }
+        
+        if (addSystemMessage) {
+            addSystemMessage('Previous MCP connections and functions cleared for clean agent loading.');
+        }
+    }
+    
+    /**
      * Process all shared data
      * @param {Object} sharedData - Shared data object
      * @param {string} password - Decryption password
@@ -452,7 +578,12 @@ function createSharedLinkDataProcessor() {
      * @returns {Promise<string|null>} Pending shared model
      */
     async function processSharedData(sharedData, password, options = {}) {
-        const { addSystemMessage, setMessages, elements, displayWelcomeMessage = true } = options;
+        const { addSystemMessage, setMessages, elements, displayWelcomeMessage = true, cleanSlate = false } = options;
+        
+        // Clean slate if requested (for agent loading)
+        if (cleanSlate) {
+            await cleanSlateForAgent(addSystemMessage);
+        }
         
         // Analyze and store what options were included in the shared data
         const sharedLinkOptions = analyzeSharedDataOptions(sharedData);
@@ -472,8 +603,11 @@ function createSharedLinkDataProcessor() {
         }
         
         // Apply data and collect system messages
+        // IMPORTANT: Apply API configuration and model together to ensure compatibility
         applyApiConfiguration(sharedData, collectSystemMessage);
         const pendingSharedModel = applyModelConfiguration(sharedData, collectSystemMessage);
+        
+        // Apply other configurations
         applyPrompts(sharedData, collectSystemMessage);
         applyFunctions(sharedData, collectSystemMessage);
         await applyMcpConnections(sharedData, collectSystemMessage);

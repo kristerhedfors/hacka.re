@@ -290,6 +290,7 @@ window.AgentService = (function() {
             const sharedData = convertAgentConfigToSharedDataFormat(agent.config);
             
             // Apply configuration using the same processor as shared links
+            // Use cleanSlate=true to clear previous MCP connections and functions
             await SharedLinkDataProcessor.processSharedData(
                 sharedData,
                 '', // No password needed for agents
@@ -297,7 +298,8 @@ window.AgentService = (function() {
                     addSystemMessage: collectSystemMessage,
                     setMessages: null, // Don't override chat messages for agents
                     elements: {}, // No UI elements needed
-                    displayWelcomeMessage: false // Don't display welcome messages for agents
+                    displayWelcomeMessage: false, // Don't display welcome messages for agents
+                    cleanSlate: true // Clear previous state for clean agent loading
                 }
             );
             
