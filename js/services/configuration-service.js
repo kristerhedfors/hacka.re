@@ -134,8 +134,24 @@ window.ConfigurationService = (function() {
         }
         
         // Get tools enabled status
-        if (FunctionToolsService && typeof FunctionToolsService.isToolsEnabled === 'function') {
-            config.toolsEnabled = FunctionToolsService.isToolsEnabled();
+        if (FunctionToolsService && typeof FunctionToolsService.isFunctionToolsEnabled === 'function') {
+            config.toolsEnabled = FunctionToolsService.isFunctionToolsEnabled();
+        }
+        
+        // Get function collections mapping for preserving collection organization
+        if (FunctionToolsService && typeof FunctionToolsService.getFunctionCollections === 'function') {
+            config.collections = FunctionToolsService.getFunctionCollections();
+        }
+        
+        // Get collection metadata for preserving server-specific collection names
+        if (FunctionToolsService && typeof FunctionToolsService.getAllFunctionCollections === 'function') {
+            const allCollections = FunctionToolsService.getAllFunctionCollections();
+            config.collectionMetadata = {};
+            Object.keys(allCollections).forEach(collectionId => {
+                if (allCollections[collectionId].metadata) {
+                    config.collectionMetadata[collectionId] = allCollections[collectionId].metadata;
+                }
+            });
         }
         
         return config;

@@ -133,31 +133,92 @@ function createSharedLinkDataProcessor() {
     function applyModelConfiguration(sharedData, addSystemMessage) {
         let pendingSharedModel = null;
         
-        // If there's a model, check if it's available and apply it
+        // If there's a model, check if it's compatible with the provider
         if (sharedData.model) {
-            pendingSharedModel = sharedData.model;
+            let modelToUse = sharedData.model;
             
-            // Show a message about the model preference
-            if (addSystemMessage) {
-                addSystemMessage(`Shared model preference "${sharedData.model}" will be applied if available.`);
+            // Check if we have provider information and validate compatibility
+            if (sharedData.provider) {
+                const isCompatible = validateModelProviderCompatibility(sharedData.model, sharedData.provider);
+                if (!isCompatible) {
+                    // Get a compatible model for this provider
+                    const compatibleModel = getCompatibleModelForProvider(sharedData.provider);
+                    if (compatibleModel) {
+                        modelToUse = compatibleModel;
+                        if (addSystemMessage) {
+                            addSystemMessage(`Model "${sharedData.model}" is not compatible with ${sharedData.provider}. Using "${compatibleModel}" instead.`);
+                        }
+                    } else {
+                        if (addSystemMessage) {
+                            addSystemMessage(`Model "${sharedData.model}" is not compatible with ${sharedData.provider}. Model selection may fail.`);
+                        }
+                    }
+                } else {
+                    if (addSystemMessage) {
+                        addSystemMessage(`Shared model "${sharedData.model}" is compatible with ${sharedData.provider}.`);
+                    }
+                }
+            } else {
+                // No provider info, use the model as-is
+                if (addSystemMessage) {
+                    addSystemMessage(`Shared model preference "${sharedData.model}" will be applied if available.`);
+                }
             }
             
-            // Save the model to storage immediately to ensure it's available for API requests
+            pendingSharedModel = modelToUse;
+            
+            // Save the (possibly corrected) model to storage immediately to ensure it's available for API requests
             // Use DataService instead of StorageService to ensure timestamp is set properly
             if (DataService && typeof DataService.saveModel === 'function') {
-                DataService.saveModel(sharedData.model);
+                DataService.saveModel(modelToUse);
             } else {
-                StorageService.saveModel(sharedData.model);
+                StorageService.saveModel(modelToUse);
             }
             
             // If we have a model manager, set the pending shared model there too
             if (window.aiHackare && window.aiHackare.settingsManager && 
                 typeof window.aiHackare.settingsManager.setPendingSharedModel === 'function') {
-                window.aiHackare.settingsManager.setPendingSharedModel(sharedData.model);
+                window.aiHackare.settingsManager.setPendingSharedModel(modelToUse);
             }
         }
         
         return pendingSharedModel;
+    }
+    
+    /**
+     * Validate if a model is compatible with a provider
+     * @param {string} model - Model ID
+     * @param {string} provider - Provider name
+     * @returns {boolean} Whether the model is compatible
+     */
+    function validateModelProviderCompatibility(model, provider) {
+        // Simple compatibility checks based on model naming patterns
+        if (provider === 'openai') {
+            return model.startsWith('gpt-') || model.startsWith('o1-') || model.includes('davinci') || model.includes('turbo');
+        } else if (provider === 'groq') {
+            return model.includes('llama') || model.includes('mixtral') || model.includes('qwen') || model.includes('gemma');
+        } else if (provider === 'ollama') {
+            // Ollama can run various models, but they usually don't have provider prefixes
+            return !model.startsWith('gpt-') && !model.includes('claude');
+        }
+        
+        // For unknown providers, assume compatibility
+        return true;
+    }
+    
+    /**
+     * Get a compatible model for a provider
+     * @param {string} provider - Provider name
+     * @returns {string|null} Compatible model ID or null
+     */
+    function getCompatibleModelForProvider(provider) {
+        const compatibleModels = {
+            'openai': 'gpt-4o-mini',
+            'groq': 'llama-3.3-70b-versatile',
+            'ollama': 'llama3.2'
+        };
+        
+        return compatibleModels[provider] || null;
     }
     
     /**
@@ -237,19 +298,30 @@ function createSharedLinkDataProcessor() {
      * @param {Function} addSystemMessage - Function to add system messages
      */
     function applyFunctions(sharedData, addSystemMessage) {
-        // If there are shared functions, save them
+        // If there are shared functions, save them with collection information
         if (sharedData.functions && typeof sharedData.functions === 'object') {
+            const functionCollections = sharedData.functionCollections || {};
+            const collectionMetadata = sharedData.functionCollectionMetadata || {};
+            
             Object.keys(sharedData.functions).forEach(functionName => {
                 const functionData = sharedData.functions[functionName];
+                const collectionId = functionCollections[functionName];
+                const metadata = collectionId ? collectionMetadata[collectionId] : null;
+                
+                // Add function with preserved collection information
                 FunctionToolsService.addJsFunction(
                     functionName,
                     functionData.code,
-                    functionData.toolDefinition
+                    functionData.toolDefinition,
+                    collectionId,
+                    metadata
                 );
             });
             
             if (addSystemMessage) {
-                addSystemMessage(`Shared function library with ${Object.keys(sharedData.functions).length} functions has been loaded.`);
+                const collectionCount = Object.keys(collectionMetadata).length;
+                const collectionText = collectionCount > 0 ? ` in ${collectionCount} collection(s)` : '';
+                addSystemMessage(`Shared function library with ${Object.keys(sharedData.functions).length} functions${collectionText} has been loaded.`);
             }
         }
         
@@ -268,6 +340,21 @@ function createSharedLinkDataProcessor() {
             
             if (addSystemMessage) {
                 addSystemMessage(`Shared function selections have been applied.`);
+            }
+        }
+        
+        // Apply function tools enabled state
+        if (typeof sharedData.functionToolsEnabled === 'boolean' && FunctionToolsService && typeof FunctionToolsService.setFunctionToolsEnabled === 'function') {
+            FunctionToolsService.setFunctionToolsEnabled(sharedData.functionToolsEnabled, addSystemMessage);
+            console.log(`🔧 Function tools ${sharedData.functionToolsEnabled ? 'enabled' : 'disabled'} during shared data application`);
+        } else {
+            // Fallback: Enable function tools if we have functions
+            const hasFunctions = (sharedData.functions && Object.keys(sharedData.functions).length > 0) ||
+                               (sharedData.enabledFunctions && sharedData.enabledFunctions.length > 0);
+            
+            if (hasFunctions && FunctionToolsService && typeof FunctionToolsService.setFunctionToolsEnabled === 'function') {
+                FunctionToolsService.setFunctionToolsEnabled(true, addSystemMessage);
+                console.log('🔧 Function tools enabled during shared data application (fallback)');
             }
         }
     }
