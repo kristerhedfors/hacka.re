@@ -82,8 +82,6 @@ def test_agent_load_complete_functionality(page: Page, serve_hacka_re, api_key):
     agent_name_input = page.locator('#quick-agent-name')
     agent_name_input.fill('test-groq-agent')
     
-    page.on("dialog", lambda dialog: dialog.accept())
-    
     save_btn = page.locator('#quick-save-agent')
     save_btn.click()
     page.wait_for_timeout(2000)

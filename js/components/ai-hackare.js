@@ -1012,7 +1012,6 @@ window.AIHackareComponent = (function() {
             const success = AgentService.createAgentFromCurrentState(name, { ...options, ...agentOptions });
             
             if (success) {
-                alert(`Agent "${name}" saved successfully!`);
                 nameInput.value = ''; // Clear the input
                 this.refreshSavedAgentsList();
             } else {
