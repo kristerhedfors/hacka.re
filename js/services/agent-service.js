@@ -279,31 +279,12 @@ window.AgentService = (function() {
                 console.log(`Agent "${name}": ${message}`);
             };
             
-            // Reset model manager memory state to prevent conflicts
-            console.log('🔄 Attempting to reset model manager memory state...');
-            let resetCalled = false;
-            
-            // Try multiple paths to find the model manager
-            if (window.aiHackare?.settingsManager?.componentManagers?.model?.resetMemoryState) {
-                console.log('🔄 Using aiHackare.settingsManager path');
-                window.aiHackare.settingsManager.componentManagers.model.resetMemoryState();
-                resetCalled = true;
-            } else if (window.ModelManager?.resetMemoryState) {
-                console.log('🔄 Using direct ModelManager path');
-                window.ModelManager.resetMemoryState();
-                resetCalled = true;
-            } else {
-                console.log('🔄 Available paths:');
-                console.log('- window.aiHackare:', !!window.aiHackare);
-                console.log('- settingsManager:', !!window.aiHackare?.settingsManager);
-                console.log('- componentManagers:', !!window.aiHackare?.settingsManager?.componentManagers);
-                console.log('- model:', !!window.aiHackare?.settingsManager?.componentManagers?.model);
-                console.log('- resetMemoryState:', !!window.aiHackare?.settingsManager?.componentManagers?.model?.resetMemoryState);
-            }
-            
-            if (!resetCalled) {
-                console.warn('🔄 Could not reset model manager memory state - function not found');
-            }
+            // Reset model manager memory state by forcing a timestamp update
+            // This ensures the timestamp check will favor storage over memory
+            console.log('🔄 Forcing model manager timestamp update to prevent memory conflicts');
+            const timestamp = Date.now();
+            localStorage.setItem('model_last_updated', timestamp.toString());
+            sessionStorage.setItem('model_last_updated', timestamp.toString());
             
             // Convert agent config to shared data format
             const sharedData = convertAgentConfigToSharedDataFormat(agent.config);
@@ -363,6 +344,9 @@ window.AgentService = (function() {
         if (agentConfig.functions) {
             if (agentConfig.functions.library) sharedData.functions = agentConfig.functions.library;
             if (agentConfig.functions.enabled) sharedData.enabledFunctions = agentConfig.functions.enabled;
+            if (agentConfig.functions.collections) sharedData.functionCollections = agentConfig.functions.collections;
+            if (agentConfig.functions.collectionMetadata) sharedData.functionCollectionMetadata = agentConfig.functions.collectionMetadata;
+            if (typeof agentConfig.functions.toolsEnabled === 'boolean') sharedData.functionToolsEnabled = agentConfig.functions.toolsEnabled;
         }
         
         // Convert MCP configuration
