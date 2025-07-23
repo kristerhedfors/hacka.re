@@ -445,12 +445,7 @@ Ready for testing...
         // Import the MCP components
         import { GitHubTokenManager } from './js/components/mcp/github-token-manager.js';
         import { MCPConnectionsUI } from './js/components/mcp/mcp-connections-ui.js';
-        import { 
-            collectMcpConnectionsData, 
-            applyMcpConnectionsData, 
-            estimateMcpConnectionsSize,
-            getMcpConnectionsSummary 
-        } from './js/components/share/mcp-connections-share-item.js';
+        // MCP connections functions are available globally from mcp-connections-share-item.js
 
         // Initialize components
         let githubManager, mcpUI;
@@ -540,7 +535,7 @@ Ready for testing...
             document.getElementById('test-collect').addEventListener('click', async () => {
                 log('📊 Testing data collection...');
                 try {
-                    const data = await collectMcpConnectionsData();
+                    const data = await window.collectMcpConnectionsData();
                     if (data) {
                         log(`✅ Collected MCP data: ${JSON.stringify(data, null, 2)}`);
                     } else {
@@ -554,7 +549,7 @@ Ready for testing...
             document.getElementById('test-estimate').addEventListener('click', async () => {
                 log('📏 Testing size estimation...');
                 try {
-                    const size = await estimateMcpConnectionsSize();
+                    const size = await window.estimateMcpConnectionsSize();
                     log(`📏 Estimated size: ${size} bytes`);
                 } catch (error) {
                     log(`❌ Size estimation error: ${error.message}`, 'error');
@@ -570,7 +565,7 @@ Ready for testing...
                         return;
                     }
                     
-                    const data = await collectMcpConnectionsData();
+                    const data = await window.collectMcpConnectionsData();
                     if (data) {
                         // Mock share link creation
                         const mockLink = `https://hacka.re/#shared=${btoa(JSON.stringify({mcpConnections: data}))}`;
@@ -579,7 +574,7 @@ Ready for testing...
                         
                         // Test applying the data
                         log('🧪 Testing data application...');
-                        await applyMcpConnectionsData(data);
+                        await window.applyMcpConnectionsData(data);
                         log('✅ Data application test completed');
                     } else {
                         log('❌ No MCP data to share');
@@ -657,7 +652,7 @@ Ready for testing...
         async function updateConnectionsSummary() {
             log('📊 Updating connections summary...');
             try {
-                const summary = await getMcpConnectionsSummary();
+                const summary = await window.getMcpConnectionsSummary();
                 const summaryContainer = document.getElementById('connections-summary');
                 
                 if (summary.total === 0) {

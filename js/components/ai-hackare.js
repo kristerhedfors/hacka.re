@@ -1074,16 +1074,144 @@ window.AIHackareComponent = (function() {
                     alert(`Agent "${agentName}" loaded successfully!`);
                     this.hideAgentConfigModal();
                     
-                    // Refresh UI to reflect the loaded configuration
-                    if (this.settingsManager) {
-                        this.settingsManager.loadSettingsFromStorage();
-                    }
+                    // Comprehensive UI refresh to reflect the loaded configuration
+                    this.refreshUIAfterAgentLoad();
                 } else {
                     alert('Failed to load agent.');
                 }
             } else {
                 alert('Agent service not available.');
             }
+        }
+    };
+
+    /**
+     * Refresh all UI components after loading an agent configuration
+     */
+    AIHackare.prototype.refreshUIAfterAgentLoad = function() {
+        try {
+            console.log('🔄 Refreshing UI after agent load...');
+            
+            // Log current configuration for debugging
+            if (DataService) {
+                console.log('🔄 Current configuration after load:', {
+                    apiKey: DataService.getApiKey() ? `***${DataService.getApiKey().slice(-4)}` : 'none',
+                    model: DataService.getModel(),
+                    provider: DataService.getBaseUrlProvider(),
+                    baseUrl: DataService.getBaseUrl()
+                });
+            }
+            
+            // Force refresh settings manager to update API key, model, base URL fields  
+            if (this.settingsManager && this.settingsManager.loadSettingsFromStorage) {
+                this.settingsManager.loadSettingsFromStorage();
+                console.log('🔄 Settings manager refreshed');
+            }
+            
+            // Force refresh model manager by directly accessing the global state
+            const storedModel = DataService.getModel();
+            console.log('🔄 Stored model from DataService:', storedModel);
+            
+            if (storedModel) {
+                // Delay to allow all UI updates to complete, then force model sync
+                setTimeout(() => {
+                    console.log('🔄 Forcing model manager sync after UI updates...');
+                    
+                    // Try multiple approaches to sync the model manager
+                    
+                    // Approach 1: Direct DataService save (this should update storage)
+                    if (window.DataService && window.DataService.saveModel) {
+                        window.DataService.saveModel(storedModel);
+                        console.log('🔄 DataService saveModel called with:', storedModel);
+                    }
+                    
+                    // Approach 2: Access model manager through settings manager 
+                    if (this.settingsManager?.componentManagers?.model?.saveModel) {
+                        this.settingsManager.componentManagers.model.saveModel(storedModel);
+                        console.log('🔄 Settings manager model saveModel called');
+                    }
+                    
+                    // Approach 3: Check if we can access the model manager directly
+                    if (window.ModelManager) {
+                        console.log('🔄 Found window.ModelManager, attempting direct access');
+                        // The ModelManager is a factory, need to find the instance
+                    }
+                    
+                    console.log('🔄 Model sync attempts completed');
+                }, 100);
+            } else {
+                console.log('🔄 No stored model found, skipping model refresh');
+            }
+            
+            // Force refresh model selection display
+            if (this.uiManager && this.uiManager.updateModelInfoDisplay) {
+                this.uiManager.updateModelInfoDisplay();
+                console.log('🔄 Model info display refreshed');
+            }
+            
+            // Force refresh API key input field
+            if (this.elements.apiKeyUpdate && DataService) {
+                const apiKey = DataService.getApiKey();
+                if (apiKey) {
+                    // Show masked API key in the field
+                    this.elements.apiKeyUpdate.value = '***' + apiKey.slice(-4);
+                    console.log('🔄 API key field refreshed');
+                }
+            }
+            
+            // Force refresh model select dropdown
+            if (this.elements.modelSelect && DataService) {
+                const currentModel = DataService.getModel();
+                if (currentModel && this.elements.modelSelect.querySelector(`option[value="${currentModel}"]`)) {
+                    this.elements.modelSelect.value = currentModel;
+                    console.log('🔄 Model select refreshed to:', currentModel);
+                }
+            }
+            
+            // Force refresh base URL select
+            if (this.elements.baseUrlSelect && DataService) {
+                const provider = DataService.getBaseUrlProvider();
+                if (provider) {
+                    this.elements.baseUrlSelect.value = provider;
+                    console.log('🔄 Base URL select refreshed to:', provider);
+                    
+                    // Trigger change event to show/hide custom URL field
+                    const event = new Event('change', { bubbles: true });
+                    this.elements.baseUrlSelect.dispatchEvent(event);
+                }
+            }
+            
+            // Refresh custom base URL field if needed
+            if (this.elements.baseUrl && DataService) {
+                const customUrl = DataService.getBaseUrl();
+                const provider = DataService.getBaseUrlProvider();
+                if (provider === 'custom' && customUrl) {
+                    this.elements.baseUrl.value = customUrl;
+                }
+            }
+            
+            // Update context usage display
+            if (this.chatManager && this.uiManager) {
+                this.chatManager.estimateContextUsage(
+                    this.uiManager.updateContextUsage.bind(this.uiManager),
+                    DataService.getModel()
+                );
+            }
+            
+            // Refresh prompts if prompts manager is available
+            if (this.promptsManager && this.promptsManager.refreshPrompts) {
+                this.promptsManager.refreshPrompts();
+            }
+            
+            // Refresh functions if function manager is available
+            if (this.functionCallingManager && this.functionCallingManager.refreshFunctions) {
+                this.functionCallingManager.refreshFunctions();
+            }
+            
+            console.log('UI refreshed after agent load');
+            
+        } catch (error) {
+            console.error('Error refreshing UI after agent load:', error);
         }
     };
 
