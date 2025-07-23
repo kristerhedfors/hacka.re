@@ -139,13 +139,29 @@ window.AIHackareComponent = (function() {
         // Agent configuration modal event listeners
         if (this.elements.agentConfigBtn) {
             this.elements.agentConfigBtn.addEventListener('click', () => {
-                this.elements.agentConfigModal.classList.add('active');
+                this.showAgentConfigModal();
             });
         }
         
         if (this.elements.closeAgentConfigModal) {
             this.elements.closeAgentConfigModal.addEventListener('click', () => {
-                this.elements.agentConfigModal.classList.remove('active');
+                this.hideAgentConfigModal();
+            });
+        }
+        
+        // Agent quick save functionality
+        if (this.elements.quickSaveAgent) {
+            this.elements.quickSaveAgent.addEventListener('click', () => {
+                this.handleQuickSaveAgent();
+            });
+        }
+        
+        // Allow Enter key to trigger quick save
+        if (this.elements.quickAgentName) {
+            this.elements.quickAgentName.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.handleQuickSaveAgent();
+                }
             });
         }
         
@@ -936,6 +952,169 @@ window.AIHackareComponent = (function() {
         } else {
             this.chatManager.addSystemMessage('Failed to copy chat content. Please try again.');
         }
+    };
+
+    /**
+     * Show agent configuration modal
+     */
+    AIHackare.prototype.showAgentConfigModal = function() {
+        if (this.elements.agentConfigModal) {
+            this.elements.agentConfigModal.classList.add('active');
+            this.refreshSavedAgentsList();
+        }
+    };
+
+    /**
+     * Hide agent configuration modal
+     */
+    AIHackare.prototype.hideAgentConfigModal = function() {
+        if (this.elements.agentConfigModal) {
+            this.elements.agentConfigModal.classList.remove('active');
+        }
+    };
+
+    /**
+     * Handle quick save agent functionality
+     */
+    AIHackare.prototype.handleQuickSaveAgent = function() {
+        const nameInput = this.elements.quickAgentName;
+        const name = nameInput.value.trim();
+        
+        if (!name) {
+            alert('Please enter an agent name.');
+            nameInput.focus();
+            return;
+        }
+        
+        // Check if agent already exists
+        if (AgentService && AgentService.agentExists(name)) {
+            if (!confirm(`Agent "${name}" already exists. Do you want to overwrite it?`)) {
+                return;
+            }
+        }
+        
+        // Use default options for quick save (include everything except chat history)
+        const options = {
+            includeLLMConfig: true,
+            includePromptLibrary: true,
+            includeFunctionLibrary: true,
+            includeMcpConnections: true,
+            includeChatData: false // Don't include chat history in quick save
+        };
+        
+        const agentOptions = {
+            description: `Quick save on ${new Date().toLocaleDateString()}`,
+            agentType: 'general'
+        };
+        
+        // Create agent from current state
+        if (AgentService) {
+            const success = AgentService.createAgentFromCurrentState(name, { ...options, ...agentOptions });
+            
+            if (success) {
+                alert(`Agent "${name}" saved successfully!`);
+                nameInput.value = ''; // Clear the input
+                this.refreshSavedAgentsList();
+            } else {
+                alert('Failed to save agent. Please try again.');
+            }
+        } else {
+            alert('Agent service not available. Please refresh the page.');
+        }
+    };
+
+    /**
+     * Refresh the saved agents list
+     */
+    AIHackare.prototype.refreshSavedAgentsList = function() {
+        if (!this.elements.savedAgentsList || !AgentService) {
+            return;
+        }
+        
+        const agents = AgentService.listAgents();
+        
+        if (agents.length === 0) {
+            this.elements.savedAgentsList.innerHTML = '<div class="no-agents">No saved agents yet. Use the form above to save your first agent.</div>';
+            return;
+        }
+        
+        this.elements.savedAgentsList.innerHTML = agents.map(agent => `
+            <div class="agent-item-card" data-agent="${this.escapeHtml(agent.name)}">
+                <div class="agent-item-info">
+                    <h4>${this.escapeHtml(agent.name)}</h4>
+                    <p>${this.escapeHtml(agent.description) || 'No description'}</p>
+                    <div class="agent-meta">
+                        <span class="agent-type">${this.escapeHtml(agent.agentType)}</span>
+                        <span class="agent-date">Created: ${new Date(agent.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <div class="agent-features">
+                        ${agent.hasLLMConfig ? '<span class="feature-tag">API</span>' : ''}
+                        ${agent.hasPrompts ? '<span class="feature-tag">Prompts</span>' : ''}
+                        ${agent.hasFunctions ? '<span class="feature-tag">Functions</span>' : ''}
+                        ${agent.hasMCP ? '<span class="feature-tag">MCP</span>' : ''}
+                    </div>
+                </div>
+                <div class="agent-item-actions">
+                    <button class="btn primary-btn" onclick="window.aiHackare.loadAgent('${this.escapeHtml(agent.name)}')">Load</button>
+                    <button class="btn secondary-btn" onclick="window.aiHackare.deleteAgent('${this.escapeHtml(agent.name)}')">Delete</button>
+                </div>
+            </div>
+        `).join('');
+    };
+
+    /**
+     * Load an agent configuration
+     */
+    AIHackare.prototype.loadAgent = function(agentName) {
+        if (confirm(`Load agent "${agentName}" configuration? This will replace your current settings.`)) {
+            if (AgentService) {
+                const success = AgentService.applyAgent(agentName);
+                
+                if (success) {
+                    alert(`Agent "${agentName}" loaded successfully!`);
+                    this.hideAgentConfigModal();
+                    
+                    // Refresh UI to reflect the loaded configuration
+                    if (this.settingsManager) {
+                        this.settingsManager.loadSettingsFromStorage();
+                    }
+                } else {
+                    alert('Failed to load agent.');
+                }
+            } else {
+                alert('Agent service not available.');
+            }
+        }
+    };
+
+    /**
+     * Delete an agent
+     */
+    AIHackare.prototype.deleteAgent = function(agentName) {
+        if (confirm(`Are you sure you want to delete agent "${agentName}"? This cannot be undone.`)) {
+            if (AgentService) {
+                const success = AgentService.deleteAgent(agentName);
+                
+                if (success) {
+                    alert(`Agent "${agentName}" deleted successfully.`);
+                    this.refreshSavedAgentsList();
+                } else {
+                    alert('Failed to delete agent.');
+                }
+            } else {
+                alert('Agent service not available.');
+            }
+        }
+    };
+
+    /**
+     * Escape HTML to prevent XSS
+     */
+    AIHackare.prototype.escapeHtml = function(text) {
+        if (typeof text !== 'string') return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     };
 
     // Return the constructor

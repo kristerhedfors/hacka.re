@@ -3517,3 +3517,61 @@ html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item a
         margin-top: 0.25rem;
     }
 }
+
+/* ===== Agent Quick Save Controls ===== */
+.agent-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.agent-list-header h3 {
+    margin: 0;
+    color: var(--dark-color);
+}
+
+.quick-save-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.quick-save-input {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    min-width: 200px;
+    transition: var(--transition);
+}
+
+.quick-save-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.quick-save-input::placeholder {
+    color: #9ca3af;
+}
+
+/* Responsive adjustments for quick save controls */
+@media (max-width: 768px) {
+    .agent-list-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .quick-save-controls {
+        justify-content: center;
+    }
+    
+    .quick-save-input {
+        min-width: 150px;
+        flex: 1;
+    }
+}

@@ -70,6 +70,9 @@ window.DOMElements = (function() {
             agentConfigBtn: document.getElementById('agent-config-btn'),
             agentConfigModal: document.getElementById('agent-config-modal'),
             closeAgentConfigModal: document.getElementById('close-agent-config-modal'),
+            quickAgentName: document.getElementById('quick-agent-name'),
+            quickSaveAgent: document.getElementById('quick-save-agent'),
+            savedAgentsList: document.getElementById('saved-agents-list'),
             
             // Function calling elements
             functionBtn: document.getElementById('function-btn'),

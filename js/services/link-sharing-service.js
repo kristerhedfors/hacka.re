@@ -48,72 +48,75 @@ window.LinkSharingService = (function() {
      * Create a custom shareable link with encrypted payload
      * This creates a link that contains any combination of data specified in the payload.
      * 
-     * @param {Object} payload - The data to encrypt and share
+     * @param {Object} payload - The data to encrypt and share (optional - will collect current state if not provided)
      * @param {string} password - The password to use for encryption
      * @param {Object} options - Additional options for sharing
      * @param {boolean} options.includePromptLibrary - Whether to include the prompt library in the link
+     * @param {boolean} options.includeFunctionLibrary - Whether to include the function library in the link
+     * @param {boolean} options.includeMcpConnections - Whether to include MCP connections in the link
+     * @param {boolean} options.includeLLMConfig - Whether to include LLM configuration in the link
+     * @param {boolean} options.includeChatData - Whether to include chat data in the link
      * @returns {string} Shareable URL with #gpt= fragment
      */
     function createCustomShareableLink(payload, password, options = {}) {
-        // Clone the payload to avoid modifying the original
-        const finalPayload = { ...payload };
+        let finalPayload;
         
-        // Add prompt library if requested
-        if (options.includePromptLibrary) {
-            // Get prompts and ensure they're included in the payload
-            const prompts = PromptsService.getPrompts();
-            finalPayload.prompts = prompts;
+        // If no payload provided, collect current configuration
+        if (!payload || Object.keys(payload).length === 0) {
+            // Use ConfigurationService to collect current state
+            const configOptions = {
+                includeLLMConfig: options.includeLLMConfig !== false, // Default true
+                includePromptLibrary: options.includePromptLibrary === true,
+                includeFunctionLibrary: options.includeFunctionLibrary === true,
+                includeMcpConnections: options.includeMcpConnections === true,
+                includeChatData: options.includeChatData !== false // Default true
+            };
             
-            // Get selected prompt IDs
-            const selectedPromptIds = PromptsService.getSelectedPromptIds();
-            finalPayload.selectedPromptIds = selectedPromptIds;
+            const currentConfig = ConfigurationService.collectCurrentConfiguration(configOptions);
             
-            // Get selected default prompt IDs - only include if they deviate from default (empty)
-            const selectedDefaultPromptIds = window.DefaultPromptsService ? 
-                window.DefaultPromptsService.getSelectedDefaultPromptIds() : [];
-            if (selectedDefaultPromptIds.length > 0) {
-                finalPayload.selectedDefaultPromptIds = selectedDefaultPromptIds;
+            // Convert to the flat structure expected by shared links
+            finalPayload = convertConfigToShareFormat(currentConfig);
+            
+            console.log('Collected current configuration for sharing:', {
+                hasLLM: !!currentConfig.llm,
+                hasPrompts: !!currentConfig.prompts,
+                hasFunctions: !!currentConfig.functions,
+                hasMCP: !!currentConfig.mcp,
+                hasChat: !!currentConfig.chat
+            });
+            
+        } else {
+            // Use provided payload and apply legacy options
+            finalPayload = { ...payload };
+            
+            // Add prompt library if requested (legacy support)
+            if (options.includePromptLibrary) {
+                const prompts = PromptsService.getPrompts();
+                finalPayload.prompts = prompts;
+                
+                const selectedPromptIds = PromptsService.getSelectedPromptIds();
+                finalPayload.selectedPromptIds = selectedPromptIds;
+                
+                const selectedDefaultPromptIds = window.DefaultPromptsService ? 
+                    window.DefaultPromptsService.getSelectedDefaultPromptIds() : [];
+                if (selectedDefaultPromptIds.length > 0) {
+                    finalPayload.selectedDefaultPromptIds = selectedDefaultPromptIds;
+                }
             }
             
-            // Log for debugging
-            console.log('Including prompt library in shared link:', {
-                promptsCount: prompts.length,
-                selectedIdsCount: selectedPromptIds.length,
-                selectedDefaultIdsCount: selectedDefaultPromptIds.length,
-                prompts: prompts,
-                selectedPromptIds: selectedPromptIds,
-                selectedDefaultPromptIds: selectedDefaultPromptIds
-            });
-        }
-        
-        // Add function library if requested
-        if (options.includeFunctionLibrary) {
-            // Get functions and ensure they're included in the payload
-            const functions = FunctionToolsService.getJsFunctions();
-            finalPayload.functions = functions;
+            // Add function library if requested (legacy support)
+            if (options.includeFunctionLibrary) {
+                const functions = FunctionToolsService.getJsFunctions();
+                finalPayload.functions = functions;
+                
+                const enabledFunctions = FunctionToolsService.getEnabledFunctionNames();
+                finalPayload.enabledFunctions = enabledFunctions;
+            }
             
-            // Get enabled function names
-            const enabledFunctions = FunctionToolsService.getEnabledFunctionNames();
-            finalPayload.enabledFunctions = enabledFunctions;
-            
-            // Log for debugging
-            console.log('Including function library in shared link:', {
-                functionsCount: Object.keys(functions).length,
-                enabledFunctionsCount: enabledFunctions.length,
-                functions: functions,
-                enabledFunctions: enabledFunctions
-            });
-        }
-        
-        // Add MCP connections if requested and available in payload
-        if (options.includeMcpConnections && payload.mcpConnections) {
-            finalPayload.mcpConnections = payload.mcpConnections;
-            
-            // Log for debugging
-            console.log('Including MCP connections in shared link:', {
-                connectionsCount: Object.keys(payload.mcpConnections).length,
-                services: Object.keys(payload.mcpConnections)
-            });
+            // Add MCP connections if requested and available in payload (legacy support)
+            if (options.includeMcpConnections && payload.mcpConnections) {
+                finalPayload.mcpConnections = payload.mcpConnections;
+            }
         }
         
         // Encrypt the payload
@@ -122,6 +125,51 @@ window.LinkSharingService = (function() {
         // Create URL with hash fragment
         const baseUrl = _location.href.split('#')[0];
         return `${baseUrl}#gpt=${encryptedData}`;
+    }
+    
+    /**
+     * Convert unified configuration object to flat share format
+     * @private
+     * @param {Object} config - Unified configuration object
+     * @returns {Object} Flat payload for sharing
+     */
+    function convertConfigToShareFormat(config) {
+        const payload = {};
+        
+        // LLM configuration
+        if (config.llm) {
+            if (config.llm.apiKey) payload.apiKey = config.llm.apiKey;
+            if (config.llm.model) payload.model = config.llm.model;
+            if (config.llm.baseUrl) payload.baseUrl = config.llm.baseUrl;
+            if (config.llm.provider) payload.provider = config.llm.provider;
+        }
+        
+        // Prompt configuration
+        if (config.prompts) {
+            if (config.prompts.library) payload.prompts = config.prompts.library;
+            if (config.prompts.selectedIds) payload.selectedPromptIds = config.prompts.selectedIds;
+            if (config.prompts.selectedDefaultIds) payload.selectedDefaultPromptIds = config.prompts.selectedDefaultIds;
+        }
+        
+        // Function configuration
+        if (config.functions) {
+            if (config.functions.library) payload.functions = config.functions.library;
+            if (config.functions.enabled) payload.enabledFunctions = config.functions.enabled;
+        }
+        
+        // MCP configuration  
+        if (config.mcp && config.mcp.connections) {
+            payload.mcpConnections = config.mcp.connections;
+        }
+        
+        // Chat configuration
+        if (config.chat) {
+            if (config.chat.systemPrompt) payload.systemPrompt = config.chat.systemPrompt;
+            if (config.chat.messages) payload.messages = config.chat.messages;
+            if (config.chat.welcomeMessage) payload.welcomeMessage = config.chat.welcomeMessage;
+        }
+        
+        return payload;
     }
     
     /**
