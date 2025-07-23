@@ -287,11 +287,11 @@ window.AgentInterface = (function() {
     /**
      * Apply agent configuration to current application (non-isolated)
      * @param {string} agentName - Name of the agent
-     * @returns {boolean} True if successful
+     * @returns {Promise<boolean>} True if successful
      */
-    function applyAgentToApplication(agentName) {
+    async function applyAgentToApplication(agentName) {
         try {
-            return AgentService.applyAgent(agentName);
+            return await AgentService.applyAgent(agentName);
         } catch (error) {
             console.error('Error applying agent to application:', error);
             return false;

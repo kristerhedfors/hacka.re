@@ -259,10 +259,11 @@ window.AgentService = (function() {
     
     /**
      * Apply an agent's configuration to the current application state
+     * Uses the same comprehensive approach as shared link loading
      * @param {string} name - Name of the agent to apply
-     * @returns {boolean} True if successful
+     * @returns {Promise<boolean>} True if successful
      */
-    function applyAgent(name) {
+    async function applyAgent(name) {
         try {
             const agent = loadAgent(name);
             if (!agent) {
@@ -270,20 +271,106 @@ window.AgentService = (function() {
                 return false;
             }
             
-            const success = ConfigurationService.applyConfiguration(agent.config);
+            // Use SharedLinkDataProcessor for comprehensive configuration application
+            // This ensures the same processing as shared links, including MCP auto-reconnection
+            const systemMessages = [];
+            const collectSystemMessage = (message) => {
+                systemMessages.push({ role: 'system', content: message });
+                console.log(`Agent "${name}": ${message}`);
+            };
             
-            if (success) {
-                console.log(`Agent "${name}" configuration applied successfully`);
-                return true;
+            // Reset model manager memory state to prevent conflicts
+            console.log('🔄 Attempting to reset model manager memory state...');
+            let resetCalled = false;
+            
+            // Try multiple paths to find the model manager
+            if (window.aiHackare?.settingsManager?.componentManagers?.model?.resetMemoryState) {
+                console.log('🔄 Using aiHackare.settingsManager path');
+                window.aiHackare.settingsManager.componentManagers.model.resetMemoryState();
+                resetCalled = true;
+            } else if (window.ModelManager?.resetMemoryState) {
+                console.log('🔄 Using direct ModelManager path');
+                window.ModelManager.resetMemoryState();
+                resetCalled = true;
             } else {
-                console.error(`Failed to apply agent "${name}" configuration`);
-                return false;
+                console.log('🔄 Available paths:');
+                console.log('- window.aiHackare:', !!window.aiHackare);
+                console.log('- settingsManager:', !!window.aiHackare?.settingsManager);
+                console.log('- componentManagers:', !!window.aiHackare?.settingsManager?.componentManagers);
+                console.log('- model:', !!window.aiHackare?.settingsManager?.componentManagers?.model);
+                console.log('- resetMemoryState:', !!window.aiHackare?.settingsManager?.componentManagers?.model?.resetMemoryState);
             }
+            
+            if (!resetCalled) {
+                console.warn('🔄 Could not reset model manager memory state - function not found');
+            }
+            
+            // Convert agent config to shared data format
+            const sharedData = convertAgentConfigToSharedDataFormat(agent.config);
+            
+            // Apply configuration using the same processor as shared links
+            await SharedLinkDataProcessor.processSharedData(
+                sharedData,
+                '', // No password needed for agents
+                {
+                    addSystemMessage: collectSystemMessage,
+                    setMessages: null, // Don't override chat messages for agents
+                    elements: {}, // No UI elements needed
+                    displayWelcomeMessage: false // Don't display welcome messages for agents
+                }
+            );
+            
+            console.log(`Agent "${name}" configuration applied successfully`);
+            return true;
             
         } catch (error) {
             console.error('Error applying agent configuration:', error);
             return false;
         }
+    }
+    
+    /**
+     * Convert agent configuration to shared data format for processing
+     * @param {Object} agentConfig - Agent configuration object
+     * @returns {Object} Shared data format
+     * @private
+     */
+    function convertAgentConfigToSharedDataFormat(agentConfig) {
+        const sharedData = {};
+        
+        // Convert LLM configuration
+        if (agentConfig.llm) {
+            if (agentConfig.llm.apiKey) sharedData.apiKey = agentConfig.llm.apiKey;
+            if (agentConfig.llm.model) sharedData.model = agentConfig.llm.model;
+            if (agentConfig.llm.baseUrl) sharedData.baseUrl = agentConfig.llm.baseUrl;
+            if (agentConfig.llm.provider) sharedData.provider = agentConfig.llm.provider;
+        }
+        
+        // Convert chat configuration
+        if (agentConfig.chat) {
+            if (agentConfig.chat.systemPrompt) sharedData.systemPrompt = agentConfig.chat.systemPrompt;
+            // Don't include messages for agent loading to avoid overriding current chat
+        }
+        
+        // Convert prompts configuration  
+        if (agentConfig.prompts) {
+            if (agentConfig.prompts.library) sharedData.prompts = Object.values(agentConfig.prompts.library);
+            if (agentConfig.prompts.selectedIds) sharedData.selectedPromptIds = agentConfig.prompts.selectedIds;
+            if (agentConfig.prompts.selectedDefaultIds) sharedData.selectedDefaultPromptIds = agentConfig.prompts.selectedDefaultIds;
+        }
+        
+        // Convert functions configuration
+        if (agentConfig.functions) {
+            if (agentConfig.functions.library) sharedData.functions = agentConfig.functions.library;
+            if (agentConfig.functions.enabled) sharedData.enabledFunctions = agentConfig.functions.enabled;
+        }
+        
+        // Convert MCP configuration
+        if (agentConfig.mcp && agentConfig.mcp.connections) {
+            sharedData.mcpConnections = agentConfig.mcp.connections;
+        }
+        
+        return sharedData;
     }
     
     /**

@@ -102,9 +102,16 @@ window.ApiKeyInputHandler = (function() {
                 defaultModel = componentManagers.baseUrl.updateProviderFromDetection(detection);
             }
             
-            // Auto-select default model if available
+            // Auto-select default model if available, but only if no model is currently stored
             if (defaultModel && componentManagers && componentManagers.model && componentManagers.model.selectModel) {
-                componentManagers.model.selectModel(defaultModel);
+                // Check if there's already a stored model to avoid overriding user's choice
+                const currentStoredModel = DataService && DataService.getModel ? DataService.getModel() : null;
+                if (!currentStoredModel || currentStoredModel === '') {
+                    console.log('🔄 Auto-selecting model (no stored model):', defaultModel);
+                    componentManagers.model.selectModel(defaultModel);
+                } else {
+                    console.log('🔄 Skipping auto-selection, model already stored:', currentStoredModel);
+                }
             }
         } else {
             hideDetection(detectionElement);

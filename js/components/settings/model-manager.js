@@ -134,6 +134,14 @@ window.ModelManager = (function() {
         }
         
         /**
+         * Reset model manager memory state - used during agent loading
+         */
+        function resetMemoryState() {
+            currentModel = '';
+            console.log('🔄 ModelManager memory state reset');
+        }
+        
+        /**
          * Fetch available models from the API
          * @param {string} apiKey - The API key to use
          * @param {string} baseUrl - The base URL to use
@@ -447,6 +455,7 @@ window.ModelManager = (function() {
             saveModel,
             selectModel,
             setPendingSharedModel,
+            resetMemoryState,
             fetchAvailableModels,
             populateDefaultModels
         };
