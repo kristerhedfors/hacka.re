@@ -12,6 +12,10 @@ window.FunctionToolsService = (function() {
     const Processor = FunctionToolsProcessor;
     const { ToolDefinitionGenerator } = FunctionToolsParser;
     
+    if (Logger && typeof Logger.log === 'function') {
+        Logger.log('FunctionToolsService initialized with all specialized modules');
+    }
+    
     /**
      * Check if function tools are enabled
      * @returns {boolean} Whether function tools are enabled
@@ -27,12 +31,16 @@ window.FunctionToolsService = (function() {
      */
     function setFunctionToolsEnabled(enabled, addSystemMessage) {
         const previousState = Storage.isEnabled();
-        console.log("FunctionToolsService.setFunctionToolsEnabled called with:", enabled);
-        console.log("- Previous state:", previousState);
+        if (Logger && typeof Logger.log === 'function') {
+            Logger.log(`FunctionToolsService.setFunctionToolsEnabled called with: ${enabled}`);
+            Logger.log(`- Previous state: ${previousState}`);
+        }
         
         Storage.setEnabled(enabled);
-        console.log("- New state set in storage:", enabled);
-        console.log("- Verifying new state:", Storage.isEnabled());
+        if (Logger && typeof Logger.log === 'function') {
+            Logger.log(`- New state set in storage: ${enabled}`);
+            Logger.log(`- Verifying new state: ${Storage.isEnabled()}`);
+        }
         
         // Display status message if the state has changed and a callback is provided
         if (addSystemMessage && previousState !== enabled) {
@@ -43,10 +51,14 @@ window.FunctionToolsService = (function() {
                     : 'No functions currently defined';
                 
                 addSystemMessage(`Function tools activated. ${functionsMessage}`);
-                console.log("- System message added for activation");
+                if (Logger && typeof Logger.log === 'function') {
+                    Logger.log('- System message added for activation');
+                }
             } else {
                 addSystemMessage('Function tools deactivated. No functions are available.');
-                console.log("- System message added for deactivation");
+                if (Logger && typeof Logger.log === 'function') {
+                    Logger.log('- System message added for deactivation');
+                }
             }
         }
     }
@@ -205,6 +217,24 @@ window.FunctionToolsService = (function() {
         return Storage.getFunctionCollections();
     }
     
+    /**
+     * Clear all function collections and their metadata
+     * This method provides a clean interface for bulk clearing operations
+     * @returns {boolean} Whether the operation was successful
+     */
+    function clearAllCollections() {
+        return Registry.clearAllCollections();
+    }
+    
+    /**
+     * Clear all functions from the registry
+     * This is a complete cleanup operation for agent loading
+     * @returns {boolean} Whether the operation was successful
+     */
+    function clearAllFunctions() {
+        return Registry.clearAllFunctions();
+    }
+    
     // Public API
     return {
         isFunctionToolsEnabled,
@@ -225,6 +255,8 @@ window.FunctionToolsService = (function() {
         getFunctionsInSameCollection,
         getCollectionMetadata,
         getAllFunctionCollections,
-        getFunctionCollections
+        getFunctionCollections,
+        clearAllCollections,
+        clearAllFunctions
     };
 })();

@@ -124,28 +124,28 @@ window.ConfigurationService = (function() {
         const config = {};
         
         // Get functions library
-        if (FunctionToolsService && typeof FunctionToolsService.getJsFunctions === 'function') {
-            config.library = FunctionToolsService.getJsFunctions();
+        if (window.FunctionToolsService && typeof window.FunctionToolsService.getJsFunctions === 'function') {
+            config.library = window.FunctionToolsService.getJsFunctions();
         }
         
         // Get enabled function names
-        if (FunctionToolsService && typeof FunctionToolsService.getEnabledFunctionNames === 'function') {
-            config.enabled = FunctionToolsService.getEnabledFunctionNames();
+        if (window.FunctionToolsService && typeof window.FunctionToolsService.getEnabledFunctionNames === 'function') {
+            config.enabled = window.FunctionToolsService.getEnabledFunctionNames();
         }
         
         // Get tools enabled status
-        if (FunctionToolsService && typeof FunctionToolsService.isFunctionToolsEnabled === 'function') {
-            config.toolsEnabled = FunctionToolsService.isFunctionToolsEnabled();
+        if (window.FunctionToolsService && typeof window.FunctionToolsService.isFunctionToolsEnabled === 'function') {
+            config.toolsEnabled = window.FunctionToolsService.isFunctionToolsEnabled();
         }
         
         // Get function collections mapping for preserving collection organization
-        if (FunctionToolsService && typeof FunctionToolsService.getFunctionCollections === 'function') {
-            config.collections = FunctionToolsService.getFunctionCollections();
+        if (window.FunctionToolsService && typeof window.FunctionToolsService.getFunctionCollections === 'function') {
+            config.collections = window.FunctionToolsService.getFunctionCollections();
         }
         
         // Get collection metadata for preserving server-specific collection names
-        if (FunctionToolsService && typeof FunctionToolsService.getAllFunctionCollections === 'function') {
-            const allCollections = FunctionToolsService.getAllFunctionCollections();
+        if (window.FunctionToolsService && typeof window.FunctionToolsService.getAllFunctionCollections === 'function') {
+            const allCollections = window.FunctionToolsService.getAllFunctionCollections();
             config.collectionMetadata = {};
             Object.keys(allCollections).forEach(collectionId => {
                 if (allCollections[collectionId].metadata) {

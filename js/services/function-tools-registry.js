@@ -269,9 +269,76 @@ window.FunctionToolsRegistry = (function() {
             });
             
             return collections;
+        },
+        
+        /**
+         * Clear all function collections and their metadata
+         * This method provides a clean interface for bulk clearing operations
+         * @returns {boolean} Whether the operation was successful
+         */
+        clearAllCollections: function() {
+            try {
+                if (Logger && typeof Logger.log === 'function') {
+                    Logger.log('FunctionToolsRegistry.clearAllCollections: Starting bulk clear operation');
+                }
+                
+                // Clear all collections and metadata
+                Storage.setJsFunctions({});
+                Storage.setFunctionCollections({});
+                Storage.setFunctionCollectionMetadata({});
+                Storage.setEnabledFunctions([]);
+                Storage.save();
+                
+                if (Logger && typeof Logger.log === 'function') {
+                    Logger.log('FunctionToolsRegistry.clearAllCollections: Successfully cleared all collections');
+                }
+                return true;
+            } catch (error) {
+                if (Logger && typeof Logger.error === 'function') {
+                    Logger.error('FunctionToolsRegistry.clearAllCollections: Failed to clear collections', error);
+                }
+                return false;
+            }
+        },
+        
+        /**
+         * Clear all functions from the registry
+         * This is a complete cleanup operation for agent loading
+         * @returns {boolean} Whether the operation was successful
+         */
+        clearAllFunctions: function() {
+            try {
+                if (Logger && typeof Logger.log === 'function') {
+                    Logger.log('FunctionToolsRegistry.clearAllFunctions: Starting complete function cleanup');
+                }
+                
+                const jsFunctions = Storage.getJsFunctions();
+                const functionNames = Object.keys(jsFunctions);
+                
+                if (Logger && typeof Logger.log === 'function') {
+                    Logger.log(`FunctionToolsRegistry.clearAllFunctions: Clearing ${functionNames.length} functions`);
+                }
+                
+                // Clear everything
+                Storage.setJsFunctions({});
+                Storage.setFunctionCollections({});
+                Storage.setFunctionCollectionMetadata({});
+                Storage.setEnabledFunctions([]);
+                Storage.save();
+                
+                if (Logger && typeof Logger.log === 'function') {
+                    Logger.log('FunctionToolsRegistry.clearAllFunctions: Successfully cleared all functions');
+                }
+                return true;
+            } catch (error) {
+                if (Logger && typeof Logger.error === 'function') {
+                    Logger.error('FunctionToolsRegistry.clearAllFunctions: Failed to clear functions', error);
+                }
+                return false;
+            }
         }
     };
     
-    // Public API
+    // Public API - Expose all registry methods including bulk operations
     return Registry;
 })();
