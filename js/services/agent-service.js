@@ -283,8 +283,7 @@ window.AgentService = (function() {
             // This ensures the timestamp check will favor storage over memory
             console.log('🔄 Forcing model manager timestamp update to prevent memory conflicts');
             const timestamp = Date.now();
-            localStorage.setItem('model_last_updated', timestamp.toString());
-            sessionStorage.setItem('model_last_updated', timestamp.toString());
+            window.CoreStorageService.setValue(window.NamespaceService.BASE_STORAGE_KEYS.MODEL_LAST_UPDATED, timestamp.toString());
             
             // Convert agent config to shared data format
             const sharedData = convertAgentConfigToSharedDataFormat(agent.config);

@@ -241,6 +241,13 @@ window.UIUtils = (function() {
                         ${content ? renderMarkdown(content) : ''}
                     </div>
                 `;
+            } else if (content && (content.includes('🎭') || content.includes('🤖'))) {
+                // For multi-agent system messages, render as markdown to support bold formatting
+                messageElement.innerHTML = `
+                    <div class="message-content markdown-content">
+                        ${content ? renderMarkdown(content) : ''}
+                    </div>
+                `;
             } else {
                 // For other system messages, preserve newlines by using innerHTML with <br> tags
                 // First escape HTML to prevent XSS, then replace newlines with <br>

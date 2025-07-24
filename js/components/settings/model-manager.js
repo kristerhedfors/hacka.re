@@ -64,7 +64,7 @@ window.ModelManager = (function() {
                 
                 // If storage was recently updated (like from agent loading), trust storage
                 // Check if the stored model looks like it was recently set by comparing timestamps
-                const storageTimestamp = localStorage.getItem('model_last_updated') || sessionStorage.getItem('model_last_updated');
+                const storageTimestamp = window.CoreStorageService.getValue(window.NamespaceService.BASE_STORAGE_KEYS.MODEL_LAST_UPDATED);
                 const now = Date.now();
                 const recentlyUpdated = storageTimestamp && (now - parseInt(storageTimestamp)) < 300000; // 5 minutes (much longer window)
                 
@@ -149,8 +149,7 @@ window.ModelManager = (function() {
             
             // Force a timestamp update to ensure storage takes precedence
             const timestamp = Date.now();
-            localStorage.setItem('model_last_updated', timestamp.toString());
-            sessionStorage.setItem('model_last_updated', timestamp.toString());
+            window.CoreStorageService.setValue(window.NamespaceService.BASE_STORAGE_KEYS.MODEL_LAST_UPDATED, timestamp.toString());
         }
         
         /**
