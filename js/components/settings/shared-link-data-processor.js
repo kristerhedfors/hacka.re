@@ -412,7 +412,6 @@ function createSharedLinkDataProcessor() {
                     const storageKey = `mcp_${serviceKey}_token`;
                     await window.CoreStorageService.setValue(storageKey, token);
                     
-                    const storedToken = await window.CoreStorageService.getValue(storageKey);
                     
                     appliedCount++;
                     
