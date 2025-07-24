@@ -58,11 +58,32 @@ window.ModelManager = (function() {
             const storedModel = StorageService.getModel();
             
             // If we have a current model in memory and it doesn't match storage,
-            // update storage with our current model (this helps with model persistence issues)
+            // we need to decide which one to trust. 
             if (currentModel && currentModel !== storedModel) {
-                console.log(`Model mismatch detected: memory=${currentModel}, storage=${storedModel}. Updating storage.`);
-                StorageService.saveModel(currentModel);
-                return currentModel;
+                console.log(`Model mismatch detected: memory=${currentModel}, storage=${storedModel}.`);
+                
+                // If storage was recently updated (like from agent loading), trust storage
+                // Check if the stored model looks like it was recently set by comparing timestamps
+                const storageTimestamp = window.CoreStorageService.getValue(window.NamespaceService.BASE_STORAGE_KEYS.MODEL_LAST_UPDATED);
+                const now = Date.now();
+                const recentlyUpdated = storageTimestamp && (now - parseInt(storageTimestamp)) < 300000; // 5 minutes (much longer window)
+                
+                if (recentlyUpdated) {
+                    console.log('Storage was recently updated, using stored model:', storedModel);
+                    currentModel = storedModel;
+                    return storedModel;
+                } else {
+                    // Additional safety check: if storage model looks like a valid new model, prefer it
+                    if (storedModel && storedModel.length > 0) {
+                        console.log('Storage has valid model, preferring storage over memory:', storedModel);
+                        currentModel = storedModel;
+                        return storedModel;
+                    } else {
+                        console.log('Using memory model and updating storage:', currentModel);
+                        StorageService.saveModel(currentModel);
+                        return currentModel;
+                    }
+                }
             }
             
             // If we have a stored model but no current model in memory, update our memory
@@ -117,6 +138,18 @@ window.ModelManager = (function() {
          */
         function setPendingSharedModel(model) {
             pendingSharedModel = model;
+        }
+        
+        /**
+         * Reset model manager memory state - used during agent loading
+         */
+        function resetMemoryState() {
+            currentModel = '';
+            console.log('🔄 ModelManager memory state reset - will read from storage on next call');
+            
+            // Force a timestamp update to ensure storage takes precedence
+            const timestamp = Date.now();
+            window.CoreStorageService.setValue(window.NamespaceService.BASE_STORAGE_KEYS.MODEL_LAST_UPDATED, timestamp.toString());
         }
         
         /**
@@ -433,6 +466,7 @@ window.ModelManager = (function() {
             saveModel,
             selectModel,
             setPendingSharedModel,
+            resetMemoryState,
             fetchAvailableModels,
             populateDefaultModels
         };

@@ -18,7 +18,7 @@ window.ApiKeyDetector = (function() {
             pattern: /^gsk_[A-Za-z0-9]{32,}$/,
             providerValue: 'groq',
             providerName: 'GroqCloud',
-            defaultModel: 'qwen/qwen3-32b'
+            defaultModel: 'moonshotai/kimi-k2-instruct'
         }
     };
 

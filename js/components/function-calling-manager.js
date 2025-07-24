@@ -236,9 +236,11 @@ window.FunctionCallingManager = (function() {
          * @param {string} name - Function name
          * @param {string} code - JavaScript function code
          * @param {string} description - Function description for the collection
+         * @param {Object} customToolDefinition - Custom tool definition (for MCP functions)
+         * @param {string} serverName - MCP server name (for creating server-specific collections)
          * @returns {boolean} Success status
          */
-        function addFunction(name, code, description, customToolDefinition = null) {
+        function addFunction(name, code, description, customToolDefinition = null, serverName = null) {
             try {
                 // Use custom tool definition if provided (for MCP functions), otherwise generate from code
                 let toolDefinition = customToolDefinition;
@@ -250,13 +252,26 @@ window.FunctionCallingManager = (function() {
                     }
                 }
                 
-                // Create collection metadata - use a single collection for all MCP functions
-                const collectionId = 'mcp_tools_collection';
-                const collectionMetadata = {
-                    name: 'MCP Tools',
-                    description: 'Functions from Model Context Protocol servers',
-                    source: 'mcp'
-                };
+                // Create server-specific collection for MCP functions to avoid conflicts
+                let collectionId, collectionMetadata;
+                if (serverName) {
+                    // Use server-specific collection ID to prevent conflicts between different MCP servers
+                    collectionId = `mcp_${serverName}_collection`;
+                    collectionMetadata = {
+                        name: `MCP Tools (${serverName})`,
+                        description: `Functions from ${serverName} MCP server`,
+                        source: 'mcp',
+                        serverName: serverName
+                    };
+                } else {
+                    // Fallback for non-MCP functions
+                    collectionId = 'mcp_tools_collection';
+                    collectionMetadata = {
+                        name: 'MCP Tools',
+                        description: 'Functions from Model Context Protocol servers',
+                        source: 'mcp'
+                    };
+                }
                 
                 // Add the function using the service
                 FunctionToolsService.addJsFunction(name, code, toolDefinition, collectionId, collectionMetadata);
@@ -267,7 +282,7 @@ window.FunctionCallingManager = (function() {
                 // Refresh the function list UI
                 renderFunctionList();
                 
-                console.log(`Successfully added and enabled MCP function: ${name}`);
+                console.log(`Successfully added and enabled MCP function: ${name} to collection: ${collectionId}`);
                 return true;
             } catch (error) {
                 console.error(`Failed to add function ${name}:`, error);

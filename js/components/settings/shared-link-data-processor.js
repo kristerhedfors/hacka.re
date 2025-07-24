@@ -53,7 +53,11 @@ function createSharedLinkDataProcessor() {
     function applyApiConfiguration(sharedData, addSystemMessage) {
         // Save the shared API key
         if (sharedData.apiKey) {
-            StorageService.saveApiKey(sharedData.apiKey);
+            if (DataService && typeof DataService.saveApiKey === 'function') {
+                DataService.saveApiKey(sharedData.apiKey);
+            } else {
+                StorageService.saveApiKey(sharedData.apiKey);
+            }
             const maskedApiKey = maskApiKey(sharedData.apiKey);
             if (addSystemMessage) {
                 addSystemMessage(`Shared API key (${maskedApiKey}) has been applied.`);
@@ -62,7 +66,11 @@ function createSharedLinkDataProcessor() {
         
         // If there's a base URL, save it too
         if (sharedData.baseUrl) {
-            StorageService.saveBaseUrl(sharedData.baseUrl);
+            if (DataService && typeof DataService.saveBaseUrl === 'function') {
+                DataService.saveBaseUrl(sharedData.baseUrl);
+            } else {
+                StorageService.saveBaseUrl(sharedData.baseUrl);
+            }
             if (addSystemMessage) {
                 addSystemMessage(`Shared base URL has been applied.`);
             }
@@ -70,9 +78,48 @@ function createSharedLinkDataProcessor() {
         
         // If there's a system prompt, save it too
         if (sharedData.systemPrompt) {
-            StorageService.saveSystemPrompt(sharedData.systemPrompt);
+            if (DataService && typeof DataService.saveSystemPrompt === 'function') {
+                DataService.saveSystemPrompt(sharedData.systemPrompt);
+            } else {
+                StorageService.saveSystemPrompt(sharedData.systemPrompt);
+            }
             if (addSystemMessage) {
                 addSystemMessage(`Shared system prompt has been applied.`);
+            }
+        }
+        
+        // If there's a provider, save it and set the appropriate base URL
+        if (sharedData.provider) {
+            if (DataService && typeof DataService.saveBaseUrlProvider === 'function') {
+                DataService.saveBaseUrlProvider(sharedData.provider);
+            } else if (StorageService && typeof StorageService.saveBaseUrlProvider === 'function') {
+                StorageService.saveBaseUrlProvider(sharedData.provider);
+            }
+            
+            // Also set the appropriate base URL for the provider if not explicitly provided
+            if (!sharedData.baseUrl) {
+                let defaultBaseUrl = null;
+                if (DataService && typeof DataService.getDefaultBaseUrlForProvider === 'function') {
+                    defaultBaseUrl = DataService.getDefaultBaseUrlForProvider(sharedData.provider);
+                }
+                if (defaultBaseUrl) {
+                    if (DataService && typeof DataService.saveBaseUrl === 'function') {
+                        DataService.saveBaseUrl(defaultBaseUrl);
+                    } else {
+                        StorageService.saveBaseUrl(defaultBaseUrl);
+                    }
+                    if (addSystemMessage) {
+                        addSystemMessage(`Shared provider (${sharedData.provider}) with default base URL has been applied.`);
+                    }
+                } else {
+                    if (addSystemMessage) {
+                        addSystemMessage(`Shared provider (${sharedData.provider}) has been applied.`);
+                    }
+                }
+            } else {
+                if (addSystemMessage) {
+                    addSystemMessage(`Shared provider (${sharedData.provider}) has been applied.`);
+                }
             }
         }
     }
@@ -86,26 +133,116 @@ function createSharedLinkDataProcessor() {
     function applyModelConfiguration(sharedData, addSystemMessage) {
         let pendingSharedModel = null;
         
-        // If there's a model, check if it's available and apply it
+        // If there's a model, check if it's compatible with the provider
         if (sharedData.model) {
-            pendingSharedModel = sharedData.model;
+            let modelToUse = sharedData.model;
             
-            // Show a message about the model preference
-            if (addSystemMessage) {
-                addSystemMessage(`Shared model preference "${sharedData.model}" will be applied if available.`);
+            // Check if we have provider information and validate compatibility
+            if (sharedData.provider) {
+                console.log(`🔍 Validating model compatibility: "${sharedData.model}" with provider "${sharedData.provider}"`);
+                const isCompatible = validateModelProviderCompatibility(sharedData.model, sharedData.provider);
+                console.log(`🔍 Compatibility result: ${isCompatible}`);
+                
+                if (!isCompatible) {
+                    // Get a compatible model for this provider
+                    const compatibleModel = getCompatibleModelForProvider(sharedData.provider);
+                    console.log(`🔍 Suggested compatible model: ${compatibleModel}`);
+                    
+                    if (compatibleModel) {
+                        modelToUse = compatibleModel;
+                        console.log(`🔧 Replacing incompatible model "${sharedData.model}" with "${compatibleModel}"`);
+                        if (addSystemMessage) {
+                            addSystemMessage(`Model "${sharedData.model}" is not compatible with ${sharedData.provider}. Using "${compatibleModel}" instead.`);
+                        }
+                    } else {
+                        if (addSystemMessage) {
+                            addSystemMessage(`Model "${sharedData.model}" is not compatible with ${sharedData.provider}. Model selection may fail.`);
+                        }
+                    }
+                } else {
+                    console.log(`✅ Model "${sharedData.model}" is compatible with provider "${sharedData.provider}"`);
+                    if (addSystemMessage) {
+                        addSystemMessage(`Shared model "${sharedData.model}" is compatible with ${sharedData.provider}.`);
+                    }
+                }
+            } else {
+                // No provider info, use the model as-is
+                console.log(`🔍 No provider info, using model "${sharedData.model}" as-is`);
+                if (addSystemMessage) {
+                    addSystemMessage(`Shared model preference "${sharedData.model}" will be applied if available.`);
+                }
             }
             
-            // Save the model to storage immediately to ensure it's available for API requests
-            StorageService.saveModel(sharedData.model);
+            pendingSharedModel = modelToUse;
+            
+            // Save the (possibly corrected) model to storage immediately to ensure it's available for API requests
+            // Use DataService instead of StorageService to ensure timestamp is set properly
+            if (DataService && typeof DataService.saveModel === 'function') {
+                DataService.saveModel(modelToUse);
+            } else {
+                StorageService.saveModel(modelToUse);
+            }
+            
+            // Force reset the model manager memory to prevent conflicts
+            if (window.aiHackare && window.aiHackare.settingsManager && window.aiHackare.settingsManager.componentManagers) {
+                const modelManager = window.aiHackare.settingsManager.componentManagers.model;
+                if (modelManager && typeof modelManager.resetMemoryState === 'function') {
+                    modelManager.resetMemoryState();
+                    console.log('🔧 Model manager memory reset to prevent conflicts with stored model:', modelToUse);
+                }
+            }
+            
+            // Also try to access the model manager directly if available
+            if (window.ModelManager && typeof window.ModelManager.resetMemoryState === 'function') {
+                window.ModelManager.resetMemoryState();
+                console.log('🔧 Global model manager memory reset');
+            }
             
             // If we have a model manager, set the pending shared model there too
             if (window.aiHackare && window.aiHackare.settingsManager && 
                 typeof window.aiHackare.settingsManager.setPendingSharedModel === 'function') {
-                window.aiHackare.settingsManager.setPendingSharedModel(sharedData.model);
+                window.aiHackare.settingsManager.setPendingSharedModel(modelToUse);
             }
         }
         
         return pendingSharedModel;
+    }
+    
+    /**
+     * Validate if a model is compatible with a provider
+     * @param {string} model - Model ID
+     * @param {string} provider - Provider name
+     * @returns {boolean} Whether the model is compatible
+     */
+    function validateModelProviderCompatibility(model, provider) {
+        // Simple compatibility checks based on model naming patterns
+        if (provider === 'openai') {
+            return model.startsWith('gpt-') || model.startsWith('o1-') || model.includes('davinci') || model.includes('turbo');
+        } else if (provider === 'groq') {
+            // Groq models: llama, mixtral, gemma, qwen variants
+            return model.includes('llama') || model.includes('mixtral') || model.includes('qwen') || model.includes('gemma');
+        } else if (provider === 'ollama') {
+            // Ollama can run various models, but they usually don't have provider prefixes
+            return !model.startsWith('gpt-') && !model.includes('claude');
+        }
+        
+        // For unknown providers, assume compatibility
+        return true;
+    }
+    
+    /**
+     * Get a compatible model for a provider
+     * @param {string} provider - Provider name
+     * @returns {string|null} Compatible model ID or null
+     */
+    function getCompatibleModelForProvider(provider) {
+        const compatibleModels = {
+            'openai': 'gpt-4o-mini',
+            'groq': 'llama-3.1-70b-versatile', // Updated to correct Groq model name
+            'ollama': 'llama3.2'
+        };
+        
+        return compatibleModels[provider] || null;
     }
     
     /**
@@ -183,41 +320,113 @@ function createSharedLinkDataProcessor() {
      * Apply functions from shared data
      * @param {Object} sharedData - Shared data object
      * @param {Function} addSystemMessage - Function to add system messages
+     * @param {boolean} systematicActivation - Whether to systematically control tool activation (default: false for backwards compatibility)
      */
-    function applyFunctions(sharedData, addSystemMessage) {
-        // If there are shared functions, save them
+    function applyFunctions(sharedData, addSystemMessage, systematicActivation = false) {
+        console.log('🔧 SharedLinkDataProcessor.applyFunctions called with:', {
+            hasFunctions: !!(sharedData.functions && typeof sharedData.functions === 'object'),
+            functionCount: sharedData.functions ? Object.keys(sharedData.functions).length : 0,
+            hasEnabledFunctions: !!(sharedData.enabledFunctions && Array.isArray(sharedData.enabledFunctions)),
+            enabledCount: sharedData.enabledFunctions ? sharedData.enabledFunctions.length : 0,
+            systematicActivation
+        });
+        
+        // If there are shared functions, save them with collection information
         if (sharedData.functions && typeof sharedData.functions === 'object') {
+            const functionCollections = sharedData.functionCollections || {};
+            const collectionMetadata = sharedData.functionCollectionMetadata || {};
+            
+            console.log('🔧 Adding functions to registry:', Object.keys(sharedData.functions));
+            
             Object.keys(sharedData.functions).forEach(functionName => {
                 const functionData = sharedData.functions[functionName];
-                FunctionToolsService.addJsFunction(
+                const collectionId = functionCollections[functionName];
+                const metadata = collectionId ? collectionMetadata[collectionId] : null;
+                
+                // Add function with preserved collection information
+                const added = FunctionToolsService.addJsFunction(
                     functionName,
                     functionData.code,
-                    functionData.toolDefinition
+                    functionData.toolDefinition,
+                    collectionId,
+                    metadata
                 );
+                
+                console.log(`🔧 Function ${functionName} ${added ? 'added' : 'failed to add'} to registry`);
             });
             
             if (addSystemMessage) {
-                addSystemMessage(`Shared function library with ${Object.keys(sharedData.functions).length} functions has been loaded.`);
+                const collectionCount = Object.keys(collectionMetadata).length;
+                const collectionText = collectionCount > 0 ? ` in ${collectionCount} collection(s)` : '';
+                addSystemMessage(`Shared function library with ${Object.keys(sharedData.functions).length} functions${collectionText} has been loaded.`);
             }
         }
         
-        // If there are shared enabled functions, save them
+        // Handle function activation based on mode
         if (sharedData.enabledFunctions && Array.isArray(sharedData.enabledFunctions)) {
-            // First disable all functions
-            const allFunctions = Object.keys(FunctionToolsService.getJsFunctions());
-            allFunctions.forEach(functionName => {
-                FunctionToolsService.disableJsFunction(functionName);
-            });
-            
-            // Then enable only the shared enabled functions
-            sharedData.enabledFunctions.forEach(functionName => {
-                FunctionToolsService.enableJsFunction(functionName);
-            });
+            if (systematicActivation) {
+                // Systematic activation: Only activate/deactivate functions that match the agent's configuration
+                console.log('🔧 Applying systematic function activation');
+                
+                // Get all currently available functions
+                const allFunctions = Object.keys(FunctionToolsService.getJsFunctions());
+                console.log('🔧 All available functions:', allFunctions);
+                console.log('🔧 Functions to enable:', sharedData.enabledFunctions);
+                
+                // Disable functions that are not in the enabled list
+                allFunctions.forEach(functionName => {
+                    const shouldBeEnabled = sharedData.enabledFunctions.includes(functionName);
+                    const isCurrentlyEnabled = FunctionToolsService.isJsFunctionEnabled(functionName);
+                    
+                    if (shouldBeEnabled && !isCurrentlyEnabled) {
+                        FunctionToolsService.enableJsFunction(functionName);
+                        console.log(`🔧 Enabled function: ${functionName}`);
+                    } else if (!shouldBeEnabled && isCurrentlyEnabled) {
+                        FunctionToolsService.disableJsFunction(functionName);
+                        console.log(`🔧 Disabled function: ${functionName}`);
+                    }
+                });
+                
+            } else {
+                // Legacy behavior: Disable all, then enable specified ones
+                console.log('🔧 Applying legacy function activation (disable all, then enable selected)');
+                
+                // First disable all functions
+                const allFunctions = Object.keys(FunctionToolsService.getJsFunctions());
+                allFunctions.forEach(functionName => {
+                    FunctionToolsService.disableJsFunction(functionName);
+                });
+                
+                // Then enable only the shared enabled functions
+                sharedData.enabledFunctions.forEach(functionName => {
+                    FunctionToolsService.enableJsFunction(functionName);
+                });
+            }
             
             if (addSystemMessage) {
-                addSystemMessage(`Shared function selections have been applied.`);
+                const method = systematicActivation ? 'systematically applied' : 'applied';
+                addSystemMessage(`Shared function selections have been ${method}.`);
             }
         }
+        
+        // Apply function tools enabled state
+        if (typeof sharedData.functionToolsEnabled === 'boolean' && FunctionToolsService && typeof FunctionToolsService.setFunctionToolsEnabled === 'function') {
+            FunctionToolsService.setFunctionToolsEnabled(sharedData.functionToolsEnabled, addSystemMessage);
+            console.log(`🔧 Function tools ${sharedData.functionToolsEnabled ? 'enabled' : 'disabled'} during shared data application`);
+        } else {
+            // Fallback: Enable function tools if we have functions
+            const hasFunctions = (sharedData.functions && Object.keys(sharedData.functions).length > 0) ||
+                               (sharedData.enabledFunctions && sharedData.enabledFunctions.length > 0);
+            
+            if (hasFunctions && FunctionToolsService && typeof FunctionToolsService.setFunctionToolsEnabled === 'function') {
+                FunctionToolsService.setFunctionToolsEnabled(true, addSystemMessage);
+                console.log('🔧 Function tools enabled during shared data application (fallback)');
+            }
+        }
+        
+        // Log final state
+        const finalEnabledFunctions = FunctionToolsService.getEnabledFunctionNames();
+        console.log('🔧 Final enabled functions after applyFunctions:', finalEnabledFunctions);
     }
     
     /**
@@ -233,11 +442,22 @@ function createSharedLinkDataProcessor() {
                 let appliedCount = 0;
                 
                 for (const serviceKey of connectionKeys) {
-                    const token = sharedData.mcpConnections[serviceKey];
+                    const rawToken = sharedData.mcpConnections[serviceKey];
+                    
+                    
+                    // FIX TOKEN: Extract string token from object if needed
+                    let token = rawToken;
+                    if (typeof rawToken === 'object' && rawToken !== null && rawToken.token) {
+                        token = rawToken.token;
+                    } else if (typeof rawToken !== 'string') {
+                        console.error(`🚨 INVALID TOKEN: Expected string or {token: string}, got ${typeof rawToken}:`, rawToken);
+                        continue;
+                    }
                     
                     // Store the PAT token using the appropriate storage key
                     const storageKey = `mcp_${serviceKey}_token`;
                     await window.CoreStorageService.setValue(storageKey, token);
+                    
                     
                     appliedCount++;
                     
@@ -253,19 +473,44 @@ function createSharedLinkDataProcessor() {
                 // Trigger MCP service connector to recreate connections if available
                 if (window.MCPServiceConnectors) {
                     // Delay slightly to ensure storage is committed
-                    setTimeout(() => {
-                        connectionKeys.forEach(serviceKey => {
+                    setTimeout(async () => {
+                        for (const serviceKey of connectionKeys) {
                             // Try to recreate the connection automatically
                             if (window.MCPServiceConnectors.quickConnect && serviceKey === 'github') {
-                                window.MCPServiceConnectors.quickConnect('github')
-                                    .then(() => {
+                                try {
+                                    // First validate the token before attempting connection
+                                    const storageKey = `mcp_${serviceKey}_token`;
+                                    const token = await window.CoreStorageService.getValue(storageKey);
+                                    
+                                    
+                                    if (token && window.MCPServiceConnectors.validateGitHubToken) {
+                                        const isValid = await window.MCPServiceConnectors.validateGitHubToken(token);
+                                        if (!isValid) {
+                                            console.warn(`[MCP Auto-reconnect] Invalid ${serviceKey} token detected, skipping auto-reconnection. Manual reconnection required.`);
+                                            if (addSystemMessage) {
+                                                addSystemMessage(`${serviceKey} MCP connection restored but token is invalid. Please reconnect manually in the MCP Servers panel.`);
+                                            }
+                                            continue;
+                                        }
+                                    }
+                                    
+                                    const connected = await window.MCPServiceConnectors.quickConnect('github');
+                                    if (connected) {
                                         console.log(`Auto-reconnected to ${serviceKey} MCP service`);
-                                    })
-                                    .catch(error => {
-                                        console.warn(`Failed to auto-reconnect to ${serviceKey} MCP service:`, error);
-                                    });
+                                    } else {
+                                        console.warn(`Auto-reconnection to ${serviceKey} MCP service failed - no valid token`);
+                                        if (addSystemMessage) {
+                                            addSystemMessage(`${serviceKey} MCP connection could not be restored automatically. Please reconnect manually in the MCP Servers panel.`);
+                                        }
+                                    }
+                                } catch (error) {
+                                    console.warn(`Failed to auto-reconnect to ${serviceKey} MCP service:`, error);
+                                    if (addSystemMessage) {
+                                        addSystemMessage(`${serviceKey} MCP connection restoration failed: ${error.message}. Please reconnect manually.`);
+                                    }
+                                }
                             }
-                        });
+                        }
                     }, 100);
                 }
                 
@@ -306,47 +551,313 @@ function createSharedLinkDataProcessor() {
     }
     
     /**
-     * Process all shared data
+     * Prepare state for agent loading using selective function management
+     * Preserves MCP connections and functions, only disables functions not needed by agent
+     * @param {Function} addSystemMessage - Function to add system messages
+     * @param {Array<string>} requiredFunctions - Array of function names required by the agent
+     */
+    async function cleanSlateForAgent(addSystemMessage, requiredFunctions = []) {
+        console.log('🧹 cleanSlateForAgent: Starting selective state preparation for agent loading');
+        console.log('🧹 Required functions for agent:', requiredFunctions);
+        
+        // PRESERVE MCP connections - do not disconnect them
+        if (window.MCPServiceConnectors) {
+            try {
+                const services = window.MCPServiceConnectors.getConnectedServices();
+                const serviceKeys = services.map(service => service.key);
+                console.log(`🧹 Preserving ${serviceKeys.length} existing MCP connections:`, serviceKeys);
+            } catch (error) {
+                console.warn('🧹 Failed to get connected services info:', error);
+            }
+        }
+        
+        // PRESERVE functions but selectively enable/disable based on agent requirements
+        if (window.FunctionToolsService) {
+            try {
+                const currentFunctions = window.FunctionToolsService.getJsFunctions();
+                const functionNames = Object.keys(currentFunctions);
+                const currentEnabledFunctions = window.FunctionToolsService.getEnabledFunctionNames();
+                
+                console.log(`🧹 Found ${functionNames.length} total functions, ${currentEnabledFunctions.length} currently enabled`);
+                console.log('🧹 All available functions:', functionNames);
+                console.log('🧹 Currently enabled functions:', currentEnabledFunctions);
+                
+                // Create sets for efficient comparison
+                const requiredSet = new Set(requiredFunctions);
+                const currentEnabledSet = new Set(currentEnabledFunctions);
+                
+                // Functions to disable: currently enabled but not required by agent
+                const functionsToDisable = currentEnabledFunctions.filter(name => !requiredSet.has(name));
+                
+                // Functions to enable: required by agent but not currently enabled
+                const functionsToEnable = requiredFunctions.filter(name => !currentEnabledSet.has(name));
+                
+                console.log(`🧹 Functions to disable (not needed by agent): [${functionsToDisable.length}]`, functionsToDisable);
+                console.log(`🧹 Functions to enable (required by agent): [${functionsToEnable.length}]`, functionsToEnable);
+                
+                // Disable functions not needed by the agent
+                let disabledCount = 0;
+                for (const functionName of functionsToDisable) {
+                    try {
+                        const disabled = window.FunctionToolsService.disableJsFunction(functionName);
+                        if (disabled) {
+                            disabledCount++;
+                            console.log(`🧹 Disabled function: ${functionName}`);
+                        }
+                    } catch (error) {
+                        console.warn(`🧹 Failed to disable function ${functionName}:`, error);
+                    }
+                }
+                
+                // Enable functions required by the agent
+                let enabledCount = 0;
+                for (const functionName of functionsToEnable) {
+                    try {
+                        // Check if function exists before trying to enable it
+                        if (functionNames.includes(functionName)) {
+                            const enabled = window.FunctionToolsService.enableJsFunction(functionName);
+                            if (enabled) {
+                                enabledCount++;
+                                console.log(`🧹 Enabled function: ${functionName}`);
+                            }
+                        } else {
+                            console.warn(`🧹 Function ${functionName} required by agent but not available`);
+                        }
+                    } catch (error) {
+                        console.warn(`🧹 Failed to enable function ${functionName}:`, error);
+                    }
+                }
+                
+                console.log(`🧹 Function state updated: disabled ${disabledCount}, enabled ${enabledCount}`);
+                
+                // Keep function tools enabled if there are any functions required
+                if (requiredFunctions.length > 0) {
+                    window.FunctionToolsService.setFunctionToolsEnabled(true);
+                    console.log('🧹 Function tools enabled for agent requirements');
+                } else {
+                    // If agent requires no functions, we can disable function tools but keep functions available
+                    window.FunctionToolsService.setFunctionToolsEnabled(false);
+                    console.log('🧹 Function tools disabled - agent requires no functions');
+                }
+                
+            } catch (error) {
+                console.warn('🧹 Failed to manage function states:', error);
+            }
+        }
+        
+        console.log('🧹 cleanSlateForAgent: Selective state preparation completed');
+        
+        if (addSystemMessage) {
+            const preservedMsg = requiredFunctions.length > 0 
+                ? `Preserved existing connections and functions. Enabled ${requiredFunctions.length} functions required by agent.`
+                : 'Preserved existing connections and functions. Disabled all functions as agent requires none.';
+            addSystemMessage(preservedMsg);
+        }
+    }
+    
+    /**
+     * Validate agent loading state after applying configuration
+     * @param {Object} sharedData - The shared data that was applied
+     * @param {Function} addSystemMessage - Function to add system messages
+     * @returns {Object} Validation results with success status and details
+     */
+    function validateAgentLoadingState(sharedData, addSystemMessage) {
+        const validation = {
+            success: true,
+            errors: [],
+            warnings: [],
+            details: {
+                functionsValidated: false,
+                mcpValidated: false,
+                stateCleared: false
+            }
+        };
+        
+        console.log('🔍 validateAgentLoadingState: Starting validation of agent loading state');
+        
+        // Validate functions state
+        if (sharedData.functions || sharedData.enabledFunctions) {
+            try {
+                const currentFunctions = window.FunctionToolsService ? window.FunctionToolsService.getJsFunctions() : {};
+                const enabledFunctions = window.FunctionToolsService ? window.FunctionToolsService.getEnabledFunctionNames() : [];
+                
+                console.log('🔍 Function validation:', {
+                    expectedFunctions: sharedData.functions ? Object.keys(sharedData.functions) : [],
+                    currentFunctions: Object.keys(currentFunctions),
+                    expectedEnabled: sharedData.enabledFunctions || [],
+                    currentEnabled: enabledFunctions
+                });
+                
+                // Check if expected functions are loaded
+                if (sharedData.functions) {
+                    const expectedFunctions = Object.keys(sharedData.functions);
+                    const missingFunctions = expectedFunctions.filter(name => !currentFunctions[name]);
+                    
+                    if (missingFunctions.length > 0) {
+                        validation.errors.push(`Missing functions: ${missingFunctions.join(', ')}`);
+                        validation.success = false;
+                    }
+                }
+                
+                // Check if enabled functions match expectations
+                if (sharedData.enabledFunctions) {
+                    const unexpectedEnabled = enabledFunctions.filter(name => !sharedData.enabledFunctions.includes(name));
+                    const missingEnabled = sharedData.enabledFunctions.filter(name => !enabledFunctions.includes(name));
+                    
+                    if (unexpectedEnabled.length > 0) {
+                        validation.warnings.push(`Unexpected enabled functions: ${unexpectedEnabled.join(', ')}`);
+                    }
+                    
+                    if (missingEnabled.length > 0) {
+                        validation.errors.push(`Functions not enabled: ${missingEnabled.join(', ')}`);
+                        validation.success = false;
+                    }
+                }
+                
+                validation.details.functionsValidated = true;
+            } catch (error) {
+                validation.errors.push(`Function validation failed: ${error.message}`);
+                validation.success = false;
+            }
+        }
+        
+        // Validate MCP connections state
+        if (sharedData.mcpConnections || sharedData.cleanSlate) {
+            try {
+                const connectedServices = window.MCPServiceConnectors ? window.MCPServiceConnectors.getConnectedServices() : [];
+                
+                console.log('🔍 MCP validation:', {
+                    expectedConnections: sharedData.mcpConnections ? Object.keys(sharedData.mcpConnections) : [],
+                    currentConnections: connectedServices.map(s => s.key),
+                    cleanSlateRequested: !!sharedData.cleanSlate
+                });
+                
+                // If clean slate was requested, verify no old connections remain
+                if (sharedData.cleanSlate && connectedServices.length > 0) {
+                    validation.warnings.push(`Clean slate requested but ${connectedServices.length} MCP services still connected`);
+                }
+                
+                validation.details.mcpValidated = true;
+            } catch (error) {
+                validation.errors.push(`MCP validation failed: ${error.message}`);
+                validation.success = false;
+            }
+        }
+        
+        // Log validation results
+        if (validation.success) {
+            console.log('✅ validateAgentLoadingState: Validation passed', validation);
+            if (addSystemMessage && validation.warnings.length === 0) {
+                addSystemMessage('Agent loading state validation passed successfully.');
+            }
+        } else {
+            console.error('❌ validateAgentLoadingState: Validation failed', validation);
+            if (addSystemMessage) {
+                addSystemMessage(`Agent loading validation failed: ${validation.errors.join('; ')}`);
+            }
+        }
+        
+        // Log warnings separately
+        if (validation.warnings.length > 0) {
+            console.warn('⚠️ validateAgentLoadingState: Validation warnings', validation.warnings);
+            if (addSystemMessage) {
+                addSystemMessage(`Agent loading warnings: ${validation.warnings.join('; ')}`);
+            }
+        }
+        
+        return validation;
+    }
+    
+    /**
+     * Process all shared data with enhanced error handling and validation
      * @param {Object} sharedData - Shared data object
      * @param {string} password - Decryption password
      * @param {Object} options - Processing options
      * @returns {Promise<string|null>} Pending shared model
      */
     async function processSharedData(sharedData, password, options = {}) {
-        const { addSystemMessage, setMessages, elements, displayWelcomeMessage = true } = options;
+        const { addSystemMessage, setMessages, elements, displayWelcomeMessage = true, cleanSlate = false, validateState = false } = options;
         
-        // Analyze and store what options were included in the shared data
-        const sharedLinkOptions = analyzeSharedDataOptions(sharedData);
-        if (window.aiHackare && window.aiHackare.shareManager) {
-            window.aiHackare.shareManager.setSharedLinkOptions(sharedLinkOptions);
+        console.log('🚀 processSharedData started with options:', {
+            hasSharedData: !!sharedData,
+            cleanSlate,
+            validateState,
+            displayWelcomeMessage
+        });
+        
+        try {
+            // Clean slate if requested (for agent loading)
+            if (cleanSlate) {
+                console.log('🧹 processSharedData: Performing clean slate operation');
+                // Extract required functions from shared data for selective enable/disable
+                const requiredFunctions = sharedData.enabledFunctions || [];
+                console.log('🧹 Agent requires functions:', requiredFunctions);
+                await cleanSlateForAgent(addSystemMessage, requiredFunctions);
+            }
+            
+            // Analyze and store what options were included in the shared data
+            const sharedLinkOptions = analyzeSharedDataOptions(sharedData);
+            if (window.aiHackare && window.aiHackare.shareManager) {
+                window.aiHackare.shareManager.setSharedLinkOptions(sharedLinkOptions);
+            }
+            
+            // Collect system messages to display before conversation history
+            const systemMessages = [];
+            const collectSystemMessage = (message) => {
+                systemMessages.push({ role: 'system', content: message });
+            };
+            
+            // Add user-defined welcome message FIRST (with markdown rendering)
+            if (sharedData.welcomeMessage && displayWelcomeMessage) {
+                systemMessages.push({ role: 'system', content: sharedData.welcomeMessage, className: 'welcome-message' });
+            }
+            
+            // Apply data and collect system messages
+            // IMPORTANT: Apply API configuration and model together to ensure compatibility
+            console.log('🔧 processSharedData: Applying API and model configuration');
+            applyApiConfiguration(sharedData, collectSystemMessage);
+            const pendingSharedModel = applyModelConfiguration(sharedData, collectSystemMessage);
+            
+            // Apply other configurations
+            console.log('🔧 processSharedData: Applying prompts and functions');
+            applyPrompts(sharedData, collectSystemMessage);
+            
+            // Use systematic activation for agent loading when cleanSlate is true
+            applyFunctions(sharedData, collectSystemMessage, cleanSlate);
+            
+            console.log('🔧 processSharedData: Applying MCP connections');
+            await applyMcpConnections(sharedData, collectSystemMessage);
+            
+            applySessionKey(password, elements, collectSystemMessage);
+            
+            // Apply welcome message processing (for storage in share manager)
+            applyWelcomeMessage(sharedData, () => {}, false); // Don't display, just process
+            
+            // Validate state if requested (typically for agent loading)
+            if (validateState) {
+                console.log('🔍 processSharedData: Performing state validation');
+                const validation = validateAgentLoadingState(sharedData, addSystemMessage);
+                
+                if (!validation.success) {
+                    console.error('❌ processSharedData: State validation failed', validation.errors);
+                    // Continue processing but log the issues
+                }
+            }
+            
+            console.log('🔧 processSharedData: Applying chat messages');
+            // Apply conversation history with system messages prepended
+            applyChatMessages(sharedData, collectSystemMessage, setMessages, systemMessages);
+            
+            console.log('✅ processSharedData completed successfully');
+            return pendingSharedModel;
+            
+        } catch (error) {
+            console.error('❌ processSharedData failed:', error);
+            if (addSystemMessage) {
+                addSystemMessage(`Error processing shared data: ${error.message}`);
+            }
+            throw error; // Re-throw to let caller handle
         }
-        
-        // Collect system messages to display before conversation history
-        const systemMessages = [];
-        const collectSystemMessage = (message) => {
-            systemMessages.push({ role: 'system', content: message });
-        };
-        
-        // Add user-defined welcome message FIRST (with markdown rendering)
-        if (sharedData.welcomeMessage && displayWelcomeMessage) {
-            systemMessages.push({ role: 'system', content: sharedData.welcomeMessage, className: 'welcome-message' });
-        }
-        
-        // Apply data and collect system messages
-        applyApiConfiguration(sharedData, collectSystemMessage);
-        const pendingSharedModel = applyModelConfiguration(sharedData, collectSystemMessage);
-        applyPrompts(sharedData, collectSystemMessage);
-        applyFunctions(sharedData, collectSystemMessage);
-        await applyMcpConnections(sharedData, collectSystemMessage);
-        applySessionKey(password, elements, collectSystemMessage);
-        
-        // Apply welcome message processing (for storage in share manager)
-        applyWelcomeMessage(sharedData, () => {}, false); // Don't display, just process
-        
-        // Apply conversation history with system messages prepended
-        applyChatMessages(sharedData, collectSystemMessage, setMessages, systemMessages);
-        
-        return pendingSharedModel;
     }
     
     /**
@@ -396,7 +907,9 @@ function createSharedLinkDataProcessor() {
         applySessionKey,
         processSharedData,
         displayDeferredWelcomeMessage,
-        analyzeSharedDataOptions
+        analyzeSharedDataOptions,
+        cleanSlateForAgent,  // Expose cleanSlateForAgent for external use
+        validateAgentLoadingState  // Expose validation for external use
     };
 }
 

@@ -53,12 +53,12 @@ window.FunctionCallRenderer = (function() {
         iconElement.setAttribute('data-parameters', JSON.stringify(parameters));
         iconElement.setAttribute('data-type', 'call');
         
-        // Debug: Log the element to verify attributes are set
-        console.log('[FunctionCallRenderer] Call indicator created:', {
-            functionName,
-            hasAttributes: iconElement.hasAttribute('data-function-name'),
-            outerHTML: iconElement.outerHTML.substring(0, 200)
-        });
+        // Debug: Log only once per function during development (limited logging)
+        if (!window._functionCallDebugLog) window._functionCallDebugLog = new Set();
+        if (!window._functionCallDebugLog.has(functionName)) {
+            console.log('[FunctionCallRenderer] Call indicator created for:', functionName);
+            window._functionCallDebugLog.add(functionName);
+        }
         
         // Create tooltip
         const tooltip = createTooltip({
@@ -119,13 +119,13 @@ window.FunctionCallRenderer = (function() {
         iconElement.setAttribute('data-execution-time', executionTime || 0);
         iconElement.setAttribute('data-type', 'result');
         
-        // Debug: Log the element to verify attributes are set
-        console.log('[FunctionCallRenderer] Result indicator created:', {
-            functionName,
-            resultType,
-            hasAttributes: iconElement.hasAttribute('data-function-name'),
-            outerHTML: iconElement.outerHTML.substring(0, 200)
-        });
+        // Debug: Log only once per function during development (limited logging)
+        if (!window._functionResultDebugLog) window._functionResultDebugLog = new Set();
+        const resultKey = `${functionName}_${resultType}`;
+        if (!window._functionResultDebugLog.has(resultKey)) {
+            console.log('[FunctionCallRenderer] Result indicator created for:', functionName, 'type:', resultType);
+            window._functionResultDebugLog.add(resultKey);
+        }
         
         // Create tooltip
         const tooltip = createTooltip({

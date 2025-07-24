@@ -65,8 +65,8 @@
                         </div>
                     </span>
                 </button>
-                <button id="copy-chat-btn" class="icon-btn" title="Copy Chat Content">
-                    <i class="fas fa-copy"></i>
+                <button id="agent-config-btn" class="icon-btn" title="Agent Modal">
+                    <i class="fas fa-robot"></i>
                 </button>
                 <button id="mcp-servers-btn" class="icon-btn" title="Model Context Protocol">
                     <span class="mcp-icon">MCP</span>
@@ -253,6 +253,87 @@
                     </div>
                     <div id="share-qr-code-container" style="margin-top: 15px; text-align: center;"></div>
                     <div id="qr-code-warning" style="display: none; margin-top: 10px; color: #856404; background-color: #fff3cd; padding: 10px; border-radius: 5px;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="agent-config-modal" class="modal">
+            <div class="modal-content">
+                <span class="experimental-tag">EXPERIMENTAL</span>
+                <div class="settings-header">
+                    <h2>Agent Management</h2>
+                    <span class="info-icon" id="agent-modal-info-icon">
+                        <i class="fas fa-info-circle"></i>
+                        <div class="tooltip">
+                            <div class="tooltip-content">
+                                <div class="important-notice">
+                                    <p><strong>Agent Management</strong>: Save and manage your hacka.re configurations as reusable agents.</p>
+                                </div>
+                                <div class="important-notice">
+                                    <p><strong>Save Current</strong>: Save your current API settings, prompts, functions, and MCP connections as a named agent.</p>
+                                </div>
+                                <div class="important-notice">
+                                    <p><strong>Load Agent</strong>: Apply a saved agent's configuration to quickly switch contexts.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </span>
+                </div>
+                
+                <!-- Quick Save Section -->
+                <div class="agent-quick-save-section">
+                    <h3>💾 Save Current Configuration</h3>
+                    <p class="form-help">Quickly save your current settings as a named agent</p>
+                    <div class="quick-save-form">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <div style="display: flex; gap: 0.75rem; align-items: end;">
+                                <div style="flex: 1;">
+                                    <label for="quick-agent-name">Agent Name</label>
+                                    <input type="text" id="quick-agent-name" placeholder="Enter agent name" class="quick-save-input">
+                                </div>
+                                <button type="button" id="quick-save-agent" class="btn primary-btn">Save Current</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Orchestration Section -->
+                <div class="agent-orchestration-section">
+                    <h3>🎭 Agent Orchestration</h3>
+                    <p class="form-help">Coordinate multiple agents for complex tasks</p>
+                    <div class="orchestration-controls">
+                        <div class="form-group">
+                            <label for="orchestration-mode">Orchestration Mode</label>
+                            <select id="orchestration-mode" class="orchestration-dropdown" disabled onchange="window.aiHackare.handleOrchestrationChange(this.value)">
+                                <option value="none">No orchestration (agents work independently)</option>
+                                <option value="auto">Auto-orchestration (AI coordinates agents automatically)</option>
+                                <option value="manual">Manual coordination (you direct agent interactions)</option>
+                            </select>
+                            <div class="orchestration-status">
+                                <span id="orchestration-status-text" class="status-inactive">Activate agents to enable orchestration</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Saved Agents Section -->
+                <div class="agent-items-section">
+                    <h3>🤖 Saved Agents</h3>
+                    <p class="form-help">Your saved agent configurations</p>
+                    <div id="saved-agents-list" class="agent-items-grid">
+                        <!-- Saved agents will be populated here by JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- Saved Agents Section -->
+                <div class="agent-items-section">
+                    <div class="agent-items-grid">
+                        <!-- Saved agents will be dynamically populated here -->
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" id="close-agent-config-modal" class="btn secondary-btn">Close</button>
                 </div>
             </div>
         </div>
@@ -657,6 +738,11 @@ async function getCurrentTimeInBerlin() {
 
         <main>
             <div id="chat-container">
+                <div id="chat-header">
+                    <button id="copy-chat-btn" class="icon-btn chat-action-btn" title="Copy Chat Content">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
                 <div id="chat-messages">
                     <div class="message system">
                         <div class="message-content">
@@ -721,21 +807,31 @@ async function getCurrentTimeInBerlin() {
     <script src="js/services/mcp-transport-service.js"></script>
     <script src="js/services/mcp-request-manager.js"></script>
     <script src="js/services/mcp-provider-interface.js"></script>
-    <script src="js/services/mcp-auth-strategies.js"></script>
+    <script src="js/services/mcp-auth-strategies.js?v=20250723-1945-github-auth-fix"></script>
     <script src="js/services/mcp-provider-factory.js"></script>
     <script src="js/services/mcp-tool-registry.js"></script>
     <!-- GitHub Provider (modular structure - file:// compatible) -->
-    <script src="js/providers/github/github-auth.js"></script>
-    <script src="js/providers/github/github-tools.js"></script>
+    <script src="js/providers/github/github-auth.js?v=20250723-1945-github-auth-fix"></script>
+    <script src="js/providers/github/github-tools.js?v=20250723-1945-github-auth-fix"></script>
     <script src="js/providers/github/github-provider.js"></script>
-    <script src="js/providers/github/github-ui.js"></script>
+    <script src="js/providers/github/github-ui.js?v=20250723-1945-github-auth-fix"></script>
     <script src="js/providers/github/index.js"></script>
     <script src="js/providers/github/github-provider-loader.js"></script>
     <script src="js/services/mcp-connection-manager.js"></script>
     <script src="js/services/mcp-client-core.js"></script>
-    <script src="js/services/mcp-service-connectors.js"></script>
+    <script src="js/services/mcp-service-connectors.js?v=20250723-1945-github-auth-fix"></script>
+    <!-- Orchestration Services -->
+    <script src="js/services/orchestration-mcp-server.js"></script>
+    <script src="js/services/orchestration-agent-service.js"></script>
     <script src="js/services/link-sharing-service.js"></script>
     <script src="js/services/share-service.js"></script>
+    <!-- Agent Services -->
+    <script src="js/services/configuration-service.js"></script>
+    <script src="js/services/agent-service.js"></script>
+    <script src="js/services/agent-cache.js"></script>
+    <script src="js/services/agent-orchestrator.js"></script>
+    <script src="js/services/agent-interface.js"></script>
+    <script src="js/services/agent-loader.js"></script>
     <!-- Share Components -->
     <script src="js/components/share/mcp-connections-share-item.js"></script>
     <!-- Default prompts -->
@@ -749,6 +845,16 @@ async function getCurrentTimeInBerlin() {
     <script src="js/default-prompts/interpretability-urgency.js"></script>
     <script src="js/default-prompts/mcp-sdk-readme.js"></script>
     <script src="js/default-prompts/code-section.js"></script>
+    <!-- Agent Examples Section -->
+    <script src="js/default-prompts/agent-examples-section.js"></script>
+    <script src="js/default-prompts/agent-planning-specialist.js"></script>
+    <script src="js/default-prompts/agent-research-specialist.js"></script>
+    <script src="js/default-prompts/agent-coding-specialist.js"></script>
+    <script src="js/default-prompts/agent-testing-specialist.js"></script>
+    <script src="js/default-prompts/agent-documentation-specialist.js"></script>
+    <script src="js/default-prompts/agent-security-analyst.js"></script>
+    <script src="js/default-prompts/agent-data-analyst.js"></script>
+    <script src="js/default-prompts/agent-project-manager.js"></script>
     <script src="js/services/default-prompts-service.js"></script>
     <!-- Default functions -->
     <script src="js/default-functions/rc4-encryption.js"></script>
@@ -778,6 +884,8 @@ async function getCurrentTimeInBerlin() {
     <script src="js/components/ui/ui-coordinator.js"></script>
     <!-- Legacy UI manager wrapper -->
     <script src="js/components/ui-manager.js"></script>
+    <!-- Agent Management Components -->
+    <script src="js/components/agent-manager.js"></script>
     <!-- Function Calling Components -->
     <script src="js/components/function-calling/function-modal-manager.js"></script>
     <script src="js/components/function-calling/function-details-modal.js"></script>
