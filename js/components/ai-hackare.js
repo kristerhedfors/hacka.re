@@ -445,18 +445,135 @@ window.AIHackareComponent = (function() {
         }
         
         const message = this.elements.messageInput.value.trim();
+        const enabledAgents = this.getEnabledAgents();
         
-        this.chatManager.sendMessage(
-            message,
-            this.settingsManager.getApiKey(),
-            this.settingsManager.getCurrentModel(),
-            this.settingsManager.getSystemPrompt(),
-            this.uiManager.showApiKeyModal.bind(this.uiManager),
-            this.uiManager.updateContextUsage.bind(this.uiManager),
-            this.apiToolsManager,
-            null, // Removed MCP manager
-            this.functionCallingManager
+        // Check if multi-agent mode is active
+        if (enabledAgents.length > 1) {
+            this.sendMultiAgentMessage(message, enabledAgents);
+        } else {
+            // Single agent mode (original behavior)
+            this.chatManager.sendMessage(
+                message,
+                this.settingsManager.getApiKey(),
+                this.settingsManager.getCurrentModel(),
+                this.settingsManager.getSystemPrompt(),
+                this.uiManager.showApiKeyModal.bind(this.uiManager),
+                this.uiManager.updateContextUsage.bind(this.uiManager),
+                this.apiToolsManager,
+                null, // Removed MCP manager
+                this.functionCallingManager
+            );
+        }
+    };
+
+    /**
+     * Send message to multiple agents in sequence
+     */
+    AIHackare.prototype.sendMultiAgentMessage = async function(message, enabledAgents) {
+        if (!message || enabledAgents.length === 0) return;
+        
+        console.log(`🎭 Multi-Agent Query: Sending to ${enabledAgents.length} agents:`, enabledAgents);
+        
+        // Add the user message first
+        this.chatManager.addUserMessage(message);
+        this.elements.messageInput.value = '';
+        
+        // Add a system message explaining multi-agent mode
+        this.chatManager.addSystemMessage(
+            `🎭 **Multi-Agent Mode**: Querying ${enabledAgents.length} agents: ${enabledAgents.join(', ')}`
         );
+        
+        let currentAgentIndex = 0;
+        const originalAgent = window.AgentOrchestrator?.getCurrentAgent();
+        
+        const processNextAgent = async () => {
+            if (currentAgentIndex >= enabledAgents.length) {
+                // All agents have responded, restore original agent if needed
+                if (originalAgent && originalAgent !== enabledAgents[enabledAgents.length - 1]) {
+                    try {
+                        await window.AgentOrchestrator.switchToAgent(originalAgent, { silent: true });
+                    } catch (error) {
+                        console.warn('Failed to restore original agent:', error);
+                    }
+                }
+                console.log('🎭 Multi-Agent Query: All agents completed');
+                return;
+            }
+            
+            const agentName = enabledAgents[currentAgentIndex];
+            currentAgentIndex++;
+            
+            try {
+                // Add agent header
+                this.chatManager.addSystemMessage(`🤖 **${agentName}** responding...`);
+                
+                // Switch to the agent
+                let switchSuccess = false;
+                if (window.AgentOrchestrator) {
+                    switchSuccess = await window.AgentOrchestrator.switchToAgent(agentName, { 
+                        silent: true,
+                        skipIfSame: false 
+                    });
+                } else if (window.AgentService) {
+                    switchSuccess = await window.AgentService.applyAgentFast(agentName, { 
+                        silent: true 
+                    });
+                }
+                
+                if (!switchSuccess) {
+                    this.chatManager.addSystemMessage(`❌ Failed to load agent "${agentName}"`);
+                    // Continue to next agent
+                    setTimeout(processNextAgent, 100);
+                    return;
+                }
+                
+                // Small delay to ensure agent is fully loaded
+                setTimeout(() => {
+                    // Send the message with the agent's configuration
+                    this.chatManager.sendMessage(
+                        message,
+                        this.settingsManager.getApiKey(),
+                        this.settingsManager.getCurrentModel(),
+                        this.settingsManager.getSystemPrompt(),
+                        this.uiManager.showApiKeyModal.bind(this.uiManager),
+                        this.uiManager.updateContextUsage.bind(this.uiManager),
+                        this.apiToolsManager,
+                        null,
+                        this.functionCallingManager
+                    );
+                    
+                    // Wait for this agent to finish generating, then process next
+                    this.waitForAgentCompletion(processNextAgent);
+                }, 200);
+                
+            } catch (error) {
+                console.error(`Error processing agent "${agentName}":`, error);
+                this.chatManager.addSystemMessage(`❌ Error with agent "${agentName}": ${error.message}`);
+                // Continue to next agent
+                setTimeout(processNextAgent, 100);
+            }
+        };
+        
+        // Start processing agents
+        processNextAgent();
+    };
+
+    /**
+     * Wait for current agent to complete generation, then call callback
+     */
+    AIHackare.prototype.waitForAgentCompletion = function(callback) {
+        const checkCompletion = () => {
+            if (!this.chatManager.getIsGenerating()) {
+                // Agent has finished, wait a bit more for any final processing
+                setTimeout(callback, 500);
+            } else {
+                // Still generating, check again in 500ms
+                setTimeout(checkCompletion, 500);
+            }
+        };
+        
+        // Start checking after a brief delay to allow generation to start
+        setTimeout(checkCompletion, 1000);
     };
     
     /**
@@ -1043,12 +1160,24 @@ window.AIHackareComponent = (function() {
                 <div class="agent-item-info">
                     <h4>${this.escapeHtml(agent.name)}</h4>
                     <div class="agent-details">
-                        <strong>${this.escapeHtml(agent.config?.llm?.provider || 'Unknown provider')}</strong> using <strong>${this.escapeHtml(agent.config?.llm?.model || 'unknown model')}</strong> with ${this.getMCPServerNames(agent)} MCP server(s) and ${this.getToolsCount(agent)} tools available.
+                        <div><strong>Provider:</strong> ${this.escapeHtml(agent.config?.llm?.provider || 'Unknown')}</div>
+                        <div><strong>Model:</strong> ${this.escapeHtml(agent.config?.llm?.model || 'unknown')}</div>
+                        <div><strong>MCP Servers:</strong> ${this.getMCPServerNames(agent)}</div>
+                        <div><strong>Tools:</strong> ${this.getToolsCount(agent)} available</div>
+                        ${agent.description ? `<div><strong>Description:</strong> ${this.escapeHtml(agent.description)}</div>` : ''}
                     </div>
                 </div>
                 <div class="agent-item-actions">
-                    <button class="btn primary-btn" onclick="window.aiHackare.loadAgent('${this.escapeHtml(agent.name)}')">Load</button>
-                    <button class="btn secondary-btn" onclick="window.aiHackare.deleteAgent('${this.escapeHtml(agent.name)}')">Delete</button>
+                    <label class="agent-enable-checkbox ${this.isAgentEnabled(agent.name) ? 'enabled' : ''}">
+                        <input type="checkbox" 
+                               ${this.isAgentEnabled(agent.name) ? 'checked' : ''} 
+                               onchange="window.aiHackare.toggleAgentEnabled('${this.escapeHtml(agent.name)}', this.checked)">
+                        <span>Enable for queries</span>
+                    </label>
+                    <div class="action-buttons">
+                        <button class="btn primary-btn" onclick="window.aiHackare.loadAgent('${this.escapeHtml(agent.name)}')">Load</button>
+                        <button class="btn secondary-btn" onclick="window.aiHackare.deleteAgent('${this.escapeHtml(agent.name)}')">Delete</button>
+                    </div>
                 </div>
             </div>
         `).join('');
@@ -1258,6 +1387,67 @@ window.AIHackareComponent = (function() {
                 alert('Agent service not available.');
             }
         }
+    };
+
+    /**
+     * Check if an agent is enabled for multi-agent queries
+     */
+    AIHackare.prototype.isAgentEnabled = function(agentName) {
+        const enabledAgents = this.getEnabledAgents();
+        return enabledAgents.includes(agentName);
+    };
+
+    /**
+     * Get list of enabled agents
+     */
+    AIHackare.prototype.getEnabledAgents = function() {
+        try {
+            const enabled = localStorage.getItem('enabled_agents');
+            return enabled ? JSON.parse(enabled) : [];
+        } catch (error) {
+            console.error('Error getting enabled agents:', error);
+            return [];
+        }
+    };
+
+    /**
+     * Set list of enabled agents
+     */
+    AIHackare.prototype.setEnabledAgents = function(agentNames) {
+        try {
+            localStorage.setItem('enabled_agents', JSON.stringify(agentNames));
+        } catch (error) {
+            console.error('Error setting enabled agents:', error);
+        }
+    };
+
+    /**
+     * Toggle agent enabled state for multi-agent queries
+     */
+    AIHackare.prototype.toggleAgentEnabled = function(agentName, enabled) {
+        const enabledAgents = this.getEnabledAgents();
+        
+        if (enabled && !enabledAgents.includes(agentName)) {
+            enabledAgents.push(agentName);
+        } else if (!enabled && enabledAgents.includes(agentName)) {
+            const index = enabledAgents.indexOf(agentName);
+            enabledAgents.splice(index, 1);
+        }
+        
+        this.setEnabledAgents(enabledAgents);
+        
+        // Update the checkbox styling
+        const card = document.querySelector(`[data-agent="${agentName}"]`);
+        if (card) {
+            const checkbox = card.querySelector('.agent-enable-checkbox');
+            if (enabled) {
+                checkbox.classList.add('enabled');
+            } else {
+                checkbox.classList.remove('enabled');
+            }
+        }
+        
+        console.log(`Agent "${agentName}" ${enabled ? 'enabled' : 'disabled'} for queries`);
     };
 
     /**

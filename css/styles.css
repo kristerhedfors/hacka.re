@@ -3426,13 +3426,13 @@ html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item a
 
 .agent-item-card {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     padding: 1rem;
     border: 1px solid var(--border-color, #e0e0e0);
     border-radius: var(--border-radius);
     background-color: var(--bg-color-secondary, #f9f9f9);
     transition: var(--transition);
-    gap: 1rem;
+    gap: 0.75rem;
 }
 
 .agent-item-card:hover {
@@ -3453,8 +3453,7 @@ html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item a
 }
 
 .agent-item-info {
-    flex: 1;
-    min-width: 0;
+    width: 100%;
 }
 
 .agent-item-info h4 {
@@ -3501,8 +3500,34 @@ html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item a
 .agent-item-actions {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 0.5rem;
-    flex-shrink: 0;
+    width: 100%;
+    border-top: 1px solid var(--border-color, #e0e0e0);
+    padding-top: 0.75rem;
+}
+
+.agent-item-actions .action-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.agent-enable-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-color-secondary);
+}
+
+.agent-enable-checkbox input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+}
+
+.agent-enable-checkbox.enabled {
+    color: var(--primary-color);
+    font-weight: 500;
 }
 
 .agent-settings-btn {
@@ -3527,21 +3552,13 @@ html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item a
 
 /* Responsive design for agent cards */
 @media (max-width: 768px) {
-    .agent-item-card {
+    .agent-item-actions .action-buttons {
         flex-direction: column;
-        align-items: stretch;
-        gap: 0.75rem;
+        width: 100%;
     }
     
-    .agent-item-checkbox {
-        justify-content: flex-start;
-    }
-    
-    .agent-item-actions {
-        justify-content: flex-end;
-        border-top: 1px solid var(--border-color, #e0e0e0);
-        padding-top: 0.75rem;
-        margin-top: 0.25rem;
+    .agent-item-actions .action-buttons .btn {
+        width: 100%;
     }
 }
 
