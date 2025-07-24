@@ -112,22 +112,7 @@ function initializeDefaultPrompts() {
         }
     }
     
-    // 2. About hacka.re Project
-    if (window.HackaReProjectPrompt) {
-        DEFAULT_PROMPTS.push(window.HackaReProjectPrompt);
-    }
-    
-    // 3. The urgency of interpretability
-    if (window.InterpretabilityUrgencyPrompt) {
-        DEFAULT_PROMPTS.push(window.InterpretabilityUrgencyPrompt);
-    }
-    
-    // 4. OWASP Top 10 for LLM Applications
-    if (window.OwaspLlmTop10Prompt) {
-        DEFAULT_PROMPTS.push(window.OwaspLlmTop10Prompt);
-    }
-    
-    // 5. Agent Examples section with 8 agent prompts
+    // 2. Agent Examples section with 8 agent prompts (immediately after Code)
     if (window.AgentExamplesPrompt) {
         // Create a copy of the Agent Examples section prompt
         const agentExamplesPrompt = { ...window.AgentExamplesPrompt };
@@ -168,6 +153,21 @@ function initializeDefaultPrompts() {
         
         // Add the Agent Examples section to the default prompts
         DEFAULT_PROMPTS.push(agentExamplesPrompt);
+    }
+    
+    // 3. About hacka.re Project
+    if (window.HackaReProjectPrompt) {
+        DEFAULT_PROMPTS.push(window.HackaReProjectPrompt);
+    }
+    
+    // 4. The urgency of interpretability
+    if (window.InterpretabilityUrgencyPrompt) {
+        DEFAULT_PROMPTS.push(window.InterpretabilityUrgencyPrompt);
+    }
+    
+    // 5. OWASP Top 10 for LLM Applications
+    if (window.OwaspLlmTop10Prompt) {
+        DEFAULT_PROMPTS.push(window.OwaspLlmTop10Prompt);
     }
     
     // Additional prompts can be added here in the future
