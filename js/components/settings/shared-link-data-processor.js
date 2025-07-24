@@ -398,14 +398,11 @@ function createSharedLinkDataProcessor() {
                 for (const serviceKey of connectionKeys) {
                     const rawToken = sharedData.mcpConnections[serviceKey];
                     
-                    // TRACE TOKEN: Log token during agent load
-                    console.log(`🔍 AGENT LOAD TOKEN TRACE: Service=${serviceKey}, Type=${typeof rawToken}, Token=${rawToken}, Length=${rawToken ? rawToken.length : 0}`);
                     
                     // FIX TOKEN: Extract string token from object if needed
                     let token = rawToken;
                     if (typeof rawToken === 'object' && rawToken !== null && rawToken.token) {
                         token = rawToken.token;
-                        console.log(`🔧 FIXED TOKEN: Extracted string token from object: ${token.substring(0, 10)}...${token.substring(token.length - 4)}`);
                     } else if (typeof rawToken !== 'string') {
                         console.error(`🚨 INVALID TOKEN: Expected string or {token: string}, got ${typeof rawToken}:`, rawToken);
                         continue;
@@ -415,9 +412,7 @@ function createSharedLinkDataProcessor() {
                     const storageKey = `mcp_${serviceKey}_token`;
                     await window.CoreStorageService.setValue(storageKey, token);
                     
-                    // TRACE TOKEN: Verify token was stored correctly
                     const storedToken = await window.CoreStorageService.getValue(storageKey);
-                    console.log(`🔍 AGENT LOAD TOKEN VERIFY: Stored token for ${serviceKey}: Type=${typeof storedToken}, Value=${storedToken}, Match=${token === storedToken}`);
                     
                     appliedCount++;
                     
@@ -442,13 +437,9 @@ function createSharedLinkDataProcessor() {
                                     const storageKey = `mcp_${serviceKey}_token`;
                                     const token = await window.CoreStorageService.getValue(storageKey);
                                     
-                                    // TRACE TOKEN: Log token during validation
-                                    console.log(`🔍 VALIDATION TOKEN TRACE: Service=${serviceKey}, StorageKey=${storageKey}, Type=${typeof token}, Token=${token}, Length=${token ? token.length : 0}`);
                                     
                                     if (token && window.MCPServiceConnectors.validateGitHubToken) {
-                                        console.log(`🔍 VALIDATION: About to validate ${serviceKey} token: Type=${typeof token}, Value=${token}`);
                                         const isValid = await window.MCPServiceConnectors.validateGitHubToken(token);
-                                        console.log(`🔍 VALIDATION RESULT: ${serviceKey} token validation result: ${isValid}`);
                                         if (!isValid) {
                                             console.warn(`[MCP Auto-reconnect] Invalid ${serviceKey} token detected, skipping auto-reconnection. Manual reconnection required.`);
                                             if (addSystemMessage) {
