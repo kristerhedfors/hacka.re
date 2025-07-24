@@ -3,13 +3,16 @@
  * Provides utility functions for agent management (integrated with existing modal)
  */
 
-window.AgentManager = (function() {
+// Legacy Agent Manager Component - deprecated in favor of settings/agent-manager.js
+// This file is kept for compatibility but the main functionality has moved
+
+window.LegacyAgentManager = (function() {
     
     /**
-     * Initialize the agent manager
+     * Initialize the legacy agent manager
      */
     function init() {
-        console.log('Agent Manager utilities initialized');
+        console.log('Legacy Agent Manager utilities initialized (deprecated)');
     }
     
     /**
@@ -40,5 +43,7 @@ window.AgentManager = (function() {
 
 // Initialize when the page loads
 document.addEventListener('DOMContentLoaded', () => {
-    AgentManager.init();
+    if (window.LegacyAgentManager) {
+        window.LegacyAgentManager.init();
+    }
 });

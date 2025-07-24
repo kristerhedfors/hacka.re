@@ -32,6 +32,12 @@ document.addEventListener('DOMContentLoaded', function() {
         DebugService.log('Function Details Modal initialized');
     }
     
+    // Initialize Agent Loader if available
+    if (window.AgentLoader) {
+        DebugService.log('Agent Loader service is available');
+        // Agent Loader initializes itself as a singleton
+    }
+    
     // Initialize Model Selection Manager after aiHackare is ready
     setTimeout(() => {
         if (window.ModelSelectionManager && window.aiHackare && window.aiHackare.elements) {

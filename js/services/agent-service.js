@@ -290,7 +290,7 @@ window.AgentService = (function() {
             const sharedData = convertAgentConfigToSharedDataFormat(agent.config);
             
             // Apply configuration using the same processor as shared links
-            // Use cleanSlate=true to clear previous MCP connections and functions
+            // Use cleanSlate=true to prepare state using selective function enable/disable
             await SharedLinkDataProcessor.processSharedData(
                 sharedData,
                 '', // No password needed for agents
