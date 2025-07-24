@@ -1,6 +1,5 @@
 /**
  * MCP Service Connectors - GitHub, Gmail, and Google Docs Integration
- * CACHE BUSTER: 2025-01-23-21:34 - GitHub auth fix applied
  * 
  * This module provides specialized connectors for popular services that require
  * custom authentication and API handling. It builds on the existing MCP infrastructure
@@ -8,7 +7,6 @@
  */
 
 (function(global) {
-    console.log('🔧 CACHE BUSTER: MCP Service Connectors loaded at', new Date().toISOString(), '- GitHub auth fix applied');
     'use strict';
 
     // Service-specific configurations
