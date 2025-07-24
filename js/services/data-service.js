@@ -32,6 +32,11 @@ window.DataService = (function() {
      */
     function saveModel(model) {
         CoreStorageService.setValue(STORAGE_KEYS.MODEL, model);
+        
+        // Add timestamp to track when model was last updated
+        // This helps with conflict resolution during agent loading
+        const timestamp = Date.now();
+        window.CoreStorageService.setValue(window.NamespaceService.BASE_STORAGE_KEYS.MODEL_LAST_UPDATED, timestamp.toString());
     }
 
     /**
@@ -149,6 +154,11 @@ window.DataService = (function() {
      */
     function saveBaseUrlProvider(provider) {
         CoreStorageService.setValue(STORAGE_KEYS.BASE_URL_PROVIDER, provider);
+        
+        // Add timestamp to track when provider was last updated
+        // This helps with conflict resolution during agent loading
+        const timestamp = Date.now();
+        window.CoreStorageService.setValue(window.NamespaceService.BASE_STORAGE_KEYS.PROVIDER_LAST_UPDATED, timestamp.toString());
     }
     
     /**

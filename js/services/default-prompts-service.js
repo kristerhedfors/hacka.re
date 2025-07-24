@@ -112,21 +112,63 @@ function initializeDefaultPrompts() {
         }
     }
     
-    // 2. About hacka.re Project
+    // 2. Agent Examples section with 8 agent prompts (immediately after Code)
+    if (window.AgentExamplesPrompt) {
+        // Create a copy of the Agent Examples section prompt
+        const agentExamplesPrompt = { ...window.AgentExamplesPrompt };
+        agentExamplesPrompt.items = [];
+        
+        // Add individual agent prompts to the section
+        if (window.AgentPlanningSpecialistPrompt) {
+            agentExamplesPrompt.items.push(window.AgentPlanningSpecialistPrompt);
+        }
+        
+        if (window.AgentResearchSpecialistPrompt) {
+            agentExamplesPrompt.items.push(window.AgentResearchSpecialistPrompt);
+        }
+        
+        if (window.AgentCodingSpecialistPrompt) {
+            agentExamplesPrompt.items.push(window.AgentCodingSpecialistPrompt);
+        }
+        
+        if (window.AgentTestingSpecialistPrompt) {
+            agentExamplesPrompt.items.push(window.AgentTestingSpecialistPrompt);
+        }
+        
+        if (window.AgentDocumentationSpecialistPrompt) {
+            agentExamplesPrompt.items.push(window.AgentDocumentationSpecialistPrompt);
+        }
+        
+        if (window.AgentSecurityAnalystPrompt) {
+            agentExamplesPrompt.items.push(window.AgentSecurityAnalystPrompt);
+        }
+        
+        if (window.AgentDataAnalystPrompt) {
+            agentExamplesPrompt.items.push(window.AgentDataAnalystPrompt);
+        }
+        
+        if (window.AgentProjectManagerPrompt) {
+            agentExamplesPrompt.items.push(window.AgentProjectManagerPrompt);
+        }
+        
+        // Add the Agent Examples section to the default prompts
+        DEFAULT_PROMPTS.push(agentExamplesPrompt);
+    }
+    
+    // 3. About hacka.re Project
     if (window.HackaReProjectPrompt) {
         DEFAULT_PROMPTS.push(window.HackaReProjectPrompt);
     }
     
-    // 3. The urgency of interpretability
+    // 4. The urgency of interpretability
     if (window.InterpretabilityUrgencyPrompt) {
         DEFAULT_PROMPTS.push(window.InterpretabilityUrgencyPrompt);
     }
     
-    // 4. OWASP Top 10 for LLM Applications
+    // 5. OWASP Top 10 for LLM Applications
     if (window.OwaspLlmTop10Prompt) {
         DEFAULT_PROMPTS.push(window.OwaspLlmTop10Prompt);
     }
-    
     
     // Additional prompts can be added here in the future
     

@@ -39,6 +39,12 @@ window.BaseUrlManager = (function() {
                 elements.baseUrlSelect.addEventListener('change', function() {
                     const selectedProvider = this.value;
                     
+                    // Save the provider selection immediately
+                    const newBaseUrl = selectedProvider === 'custom' 
+                        ? (elements.baseUrl ? elements.baseUrl.value : '') 
+                        : DataService.getDefaultBaseUrlForProvider(selectedProvider);
+                    saveBaseUrl(newBaseUrl, selectedProvider);
+                    
                     // Handle custom URL field visibility
                     if (selectedProvider === 'custom') {
                         // Show custom URL field

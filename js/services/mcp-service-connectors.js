@@ -263,15 +263,38 @@
          */
         async validateGitHubToken(token) {
             try {
+                // TRACE TOKEN: Log validation attempt with full details and TYPE
+                console.log(`🔍 validateGitHubToken CALLED: Token TYPE=${typeof token}, Value=${token}, Length=${token ? token.length : 0}`);
+                console.log(`🔍 validateGitHubToken RAW TOKEN:`, token);
+                
+                // Fix token if it's not a string - extract from object if needed
+                let actualToken = token;
+                if (typeof token === 'object' && token !== null && token.token) {
+                    actualToken = token.token;
+                    console.log(`🔧 validateGitHubToken: Extracted string token from object: ${actualToken.substring(0, 10)}...${actualToken.substring(actualToken.length - 4)}`);
+                } else if (typeof token !== 'string') {
+                    console.error(`🔍 validateGitHubToken ERROR: Token is not a string! Type: ${typeof token}, Value:`, token);
+                    return false;
+                }
+                
+                console.log(`🔍 validateGitHubToken HEADERS: Authorization="token ${actualToken.substring(0, 10)}...${actualToken.substring(actualToken.length - 4)}"`);
+                
                 const response = await fetch('https://api.github.com/user', {
                     headers: {
-                        'Authorization': `Bearer ${token}`,
+                        'Authorization': `token ${actualToken}`,
                         'Accept': 'application/vnd.github.v3+json'
                     }
                 });
+
+                console.log(`🔍 validateGitHubToken RESPONSE: Status=${response.status}, OK=${response.ok}`);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.log(`🔍 validateGitHubToken ERROR: ${errorText}`);
+                }
+
                 return response.ok;
             } catch (error) {
-                console.error('[MCP Service Connectors] Token validation failed:', error);
+                console.error('🔍 validateGitHubToken EXCEPTION:', error);
                 return false;
             }
         }
@@ -581,7 +604,7 @@
                 const response = await fetch(url, {
                     method,
                     headers: {
-                        'Authorization': `Bearer ${token}`,
+                        'Authorization': `token ${token}`,
                         'Accept': 'application/vnd.github.v3+json',
                         'Content-Type': 'application/json'
                     },
@@ -1577,61 +1600,75 @@
         }
 
         /**
-         * Disconnect a service
+         * Disconnect a service with comprehensive cleanup
+         * @param {string} serviceKey - The service key to disconnect
+         * @returns {Promise<boolean>} Whether the disconnection was successful
          */
         async disconnectService(serviceKey) {
+            console.log(`[MCP Service Connectors] Starting disconnection of service: ${serviceKey}`);
+            
             const connection = this.connectedServices.get(serviceKey);
-            if (!connection) return;
-
-            // Remove registered functions
-            const config = SERVICE_CONFIGS[serviceKey];
-            if (config && config.tools) {
-                for (const toolName of Object.keys(config.tools)) {
-                    const functionName = `${serviceKey}_${toolName}`;
-                    if (window[functionName]) {
-                        delete window[functionName];
-                        console.log(`[MCP Service Connectors] Removed function: ${functionName}`);
-                    }
-                    
-                    // Also remove from Function Calling system
-                    if (window.FunctionToolsStorage && window.FunctionToolsRegistry) {
-                        // Get current functions
-                        const jsFunctions = window.FunctionToolsStorage.getJsFunctions() || {};
-                        const functionCollections = window.FunctionToolsStorage.getFunctionCollections() || {};
-                        
-                        // Remove function from registry
-                        if (jsFunctions[functionName]) {
-                            delete jsFunctions[functionName];
-                            delete functionCollections[functionName];
-                            window.FunctionToolsStorage.setJsFunctions(jsFunctions);
-                            window.FunctionToolsStorage.setFunctionCollections(functionCollections);
-                        }
-                        
-                        // Remove from enabled functions
-                        const enabledFunctions = window.FunctionToolsStorage.getEnabledFunctions() || [];
-                        const index = enabledFunctions.indexOf(functionName);
-                        if (index > -1) {
-                            enabledFunctions.splice(index, 1);
-                            window.FunctionToolsStorage.setEnabledFunctions(enabledFunctions);
-                        }
-                        
-                        // Save changes
-                        window.FunctionToolsStorage.save();
-                        
-                        console.log(`[MCP Service Connectors] Removed ${functionName} from Function Calling system`);
-                    }
-                }
+            if (!connection) {
+                console.log(`[MCP Service Connectors] Service ${serviceKey} not connected, skipping disconnection`);
+                return true;
             }
 
-            // Remove from connected services
-            this.connectedServices.delete(serviceKey);
-            this.oauthTokens.delete(serviceKey);
+            let disconnectionSuccessful = true;
+            
+            try {
+                // Remove registered functions
+                const config = SERVICE_CONFIGS[serviceKey];
+                if (config && config.tools) {
+                    const toolNames = Object.keys(config.tools);
+                    console.log(`[MCP Service Connectors] Removing ${toolNames.length} tools for ${serviceKey}`);
+                    
+                    for (const toolName of toolNames) {
+                        const functionName = serviceKey === 'github' ? toolName : `${serviceKey}_${toolName}`;
+                        
+                        // Remove from global scope
+                        if (window[functionName]) {
+                            delete window[functionName];
+                            console.log(`[MCP Service Connectors] Removed global function: ${functionName}`);
+                        }
+                        
+                        // Remove from Function Calling system
+                        if (window.FunctionToolsService && typeof window.FunctionToolsService.removeJsFunction === 'function') {
+                            try {
+                                const removed = window.FunctionToolsService.removeJsFunction(functionName);
+                                if (removed) {
+                                    console.log(`[MCP Service Connectors] Removed ${functionName} from Function Calling system`);
+                                } else {
+                                    console.log(`[MCP Service Connectors] Function ${functionName} not found in Function Calling system`);
+                                }
+                            } catch (removalError) {
+                                console.warn(`[MCP Service Connectors] Failed to remove ${functionName} from Function Calling system:`, removalError);
+                                disconnectionSuccessful = false;
+                            }
+                        }
+                    }
+                }
 
-            // Clear stored credentials
-            await window.CoreStorageService.removeValue(`mcp_${serviceKey}_token`);
-            await window.CoreStorageService.removeValue(`mcp_${serviceKey}_oauth`);
+                // Remove from connected services
+                this.connectedServices.delete(serviceKey);
+                this.oauthTokens.delete(serviceKey);
 
-            console.log(`[MCP Service Connectors] ${SERVICE_CONFIGS[serviceKey].name} disconnected`);
+                // Clear stored credentials (don't fail if this fails)
+                try {
+                    await window.CoreStorageService.removeValue(`mcp_${serviceKey}_token`);
+                    await window.CoreStorageService.removeValue(`mcp_${serviceKey}_oauth`);
+                    console.log(`[MCP Service Connectors] Cleared stored credentials for ${serviceKey}`);
+                } catch (storageError) {
+                    console.warn(`[MCP Service Connectors] Failed to clear credentials for ${serviceKey}:`, storageError);
+                    // Don't mark as failed since the service is still disconnected
+                }
+
+                console.log(`[MCP Service Connectors] ${config?.name || serviceKey} disconnected successfully`);
+                return disconnectionSuccessful;
+                
+            } catch (error) {
+                console.error(`[MCP Service Connectors] Error during disconnection of ${serviceKey}:`, error);
+                return false;
+            }
         }
 
         /**
@@ -1642,14 +1679,31 @@
         }
 
         /**
-         * Get all connected services
+         * Get all connected services with comprehensive information
+         * @returns {Array} Array of connected service objects with full details
          */
         getConnectedServices() {
-            return Array.from(this.connectedServices.keys()).map(key => ({
-                key,
-                ...SERVICE_CONFIGS[key],
-                connected: true
-            }));
+            const connectedServices = Array.from(this.connectedServices.keys()).map(key => {
+                const connection = this.connectedServices.get(key);
+                const config = SERVICE_CONFIGS[key];
+                
+                return {
+                    key,
+                    name: config?.name || key,
+                    type: connection?.type || 'unknown',
+                    connected: true,
+                    toolCount: this.getToolCount(key),
+                    hasValidToken: this.hasValidConnection(key),
+                    connectionInfo: {
+                        authType: config?.authType,
+                        connectedAt: connection?.connectedAt || Date.now(),
+                        lastValidated: connection?.lastValidated
+                    }
+                };
+            });
+            
+            console.log(`[MCP Service Connectors] getConnectedServices returning ${connectedServices.length} services:`, connectedServices.map(s => s.key));
+            return connectedServices;
         }
 
         /**
@@ -1665,11 +1719,69 @@
 
         /**
          * Get tool count for a service
+         * @param {string} serviceKey - The service key
+         * @returns {number} Number of tools available for the service
          */
         getToolCount(serviceKey) {
             const config = SERVICE_CONFIGS[serviceKey];
             if (!config || !config.tools) return 0;
             return Object.keys(config.tools).length;
+        }
+        
+        /**
+         * Check if a service has a valid connection
+         * @param {string} serviceKey - The service key to check
+         * @returns {boolean} Whether the service has a valid connection
+         */
+        hasValidConnection(serviceKey) {
+            const connection = this.connectedServices.get(serviceKey);
+            if (!connection) return false;
+            
+            // For token-based services, check if token exists
+            if (connection.token) {
+                return typeof connection.token === 'string' && connection.token.length > 0;
+            }
+            
+            // For OAuth services, check if we have valid tokens
+            if (connection.tokens) {
+                return !!(connection.tokens.accessToken && connection.tokens.accessToken.length > 0);
+            }
+            
+            return false;
+        }
+        
+        /**
+         * Bulk disconnect multiple services efficiently
+         * @param {Array<string>} serviceKeys - Array of service keys to disconnect
+         * @returns {Promise<Object>} Object with success/failure counts and details
+         */
+        async bulkDisconnectServices(serviceKeys = []) {
+            console.log(`[MCP Service Connectors] Starting bulk disconnection of ${serviceKeys.length} services:`, serviceKeys);
+            
+            const results = {
+                successful: [],
+                failed: [],
+                totalRequested: serviceKeys.length,
+                totalDisconnected: 0
+            };
+            
+            for (const serviceKey of serviceKeys) {
+                try {
+                    const success = await this.disconnectService(serviceKey);
+                    if (success) {
+                        results.successful.push(serviceKey);
+                        results.totalDisconnected++;
+                    } else {
+                        results.failed.push({ serviceKey, error: 'Disconnection returned false' });
+                    }
+                } catch (error) {
+                    console.error(`[MCP Service Connectors] Bulk disconnect failed for ${serviceKey}:`, error);
+                    results.failed.push({ serviceKey, error: error.message });
+                }
+            }
+            
+            console.log(`[MCP Service Connectors] Bulk disconnect completed:`, results);
+            return results;
         }
 
         /**

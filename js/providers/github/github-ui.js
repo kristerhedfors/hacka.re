@@ -430,7 +430,7 @@ window.GitHubUI = class GitHubUI {
             const response = await fetch('https://api.github.com/user', {
                 method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
+                    'Authorization': `token ${token}`,
                     'Accept': 'application/vnd.github.v3+json',
                     'User-Agent': 'hacka.re-mcp-integration'
                 }
@@ -582,7 +582,7 @@ window.GitHubUI = class GitHubUI {
             
             const response = await fetch('https://api.github.com/user', {
                 headers: {
-                    'Authorization': `Bearer ${token}`,
+                    'Authorization': `token ${token}`,
                     'Accept': 'application/vnd.github.v3+json',
                     'User-Agent': 'hacka.re-mcp-integration'
                 }

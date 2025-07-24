@@ -78,7 +78,7 @@ window.GitHubAuth = class GitHubAuth {
             const response = await fetch(this.config.endpoints.userInfo, {
                 method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
+                    'Authorization': `token ${token}`,
                     'Accept': 'application/vnd.github.v3+json',
                     'User-Agent': 'hacka.re-mcp-integration'
                 },
@@ -107,7 +107,7 @@ window.GitHubAuth = class GitHubAuth {
             const response = await fetch(this.config.endpoints.userInfo, {
                 method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
+                    'Authorization': `token ${token}`,
                     'Accept': 'application/vnd.github.v3+json',
                     'User-Agent': 'hacka.re-mcp-integration'
                 },

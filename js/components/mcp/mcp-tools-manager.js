@@ -226,17 +226,20 @@ async function ${functionName}(params = {}) {
         if (functionCallingManager && functionCallingManager.addFunction) {
             for (const toolInfo of tools) {
                 try {
-                    // Check if function already exists and remove it if it's from MCP
+                    // Check if function already exists and remove it if it's from the same MCP server
                     if (functionCallingManager.hasFunction && functionCallingManager.hasFunction(toolInfo.functionName)) {
-                        // Check if it's an MCP function by looking at the collection
+                        // Check if it's an MCP function from the same server by looking at the collection
                         const functions = FunctionToolsService.getJsFunctions();
-                        const existingFunction = functions[toolInfo.functionName];
-                        if (existingFunction && existingFunction.collectionId === 'mcp_tools_collection') {
-                            // Remove the existing MCP function to re-register with updated code
+                        const functionCollections = FunctionToolsService.getFunctionCollections ? FunctionToolsService.getFunctionCollections() : {};
+                        const existingCollectionId = functionCollections[toolInfo.functionName];
+                        const expectedCollectionId = `mcp_${serverName}_collection`;
+                        
+                        if (existingCollectionId === expectedCollectionId || existingCollectionId === 'mcp_tools_collection') {
+                            // Remove the existing MCP function from same server to re-register with updated code
                             FunctionToolsService.removeJsFunction(toolInfo.functionName);
-                            console.log(`Removed existing MCP function "${toolInfo.functionName}" for re-registration`);
+                            console.log(`Removed existing MCP function "${toolInfo.functionName}" from ${serverName} for re-registration`);
                         } else {
-                            throw new Error(`Function name collision: "${toolInfo.functionName}" already exists as non-MCP function`);
+                            throw new Error(`Function name collision: "${toolInfo.functionName}" already exists from different source (collection: ${existingCollectionId})`);
                         }
                     }
                     
@@ -255,11 +258,13 @@ async function ${functionName}(params = {}) {
                     };
                     
                     // Add the function to the function calling system with custom tool definition
+                    // Pass serverName to create server-specific collections
                     functionCallingManager.addFunction(
                         toolInfo.functionName,
                         toolInfo.functionCode,
                         `MCP tool from ${serverName}`,
-                        toolDefinition
+                        toolDefinition,
+                        serverName
                     );
                     registeredCount++;
                 } catch (error) {
@@ -290,26 +295,31 @@ async function ${functionName}(params = {}) {
      */
     function unregisterServerTools(serverName) {
         const tools = getServerTools(serverName);
-        let unregisteredCount = 0;
         
-        // Use FunctionToolsService to remove functions directly
+        if (tools.length === 0) {
+            console.log(`No tools found for server ${serverName} to unregister`);
+            return;
+        }
+        
+        // Use FunctionToolsService to remove the entire server collection at once
         if (window.FunctionToolsService && window.FunctionToolsService.removeJsFunction) {
-            for (const toolInfo of tools) {
-                try {
-                    // Check if the function exists before trying to remove it
-                    const functions = window.FunctionToolsService.getJsFunctions();
-                    if (functions[toolInfo.functionName]) {
-                        window.FunctionToolsService.removeJsFunction(toolInfo.functionName);
-                        unregisteredCount++;
-                        console.log(`Unregistered MCP tool "${toolInfo.functionName}" from ${serverName}`);
-                    }
-                } catch (error) {
-                    console.error(`Failed to unregister tool ${toolInfo.tool.name}:`, error);
+            try {
+                // Remove just the first function - this will remove the entire server collection
+                // since all functions from the same server share the same collection ID
+                const firstTool = tools[0];
+                const functions = window.FunctionToolsService.getJsFunctions();
+                
+                if (functions[firstTool.functionName]) {
+                    console.log(`Removing entire MCP server collection for "${serverName}" by removing function: ${firstTool.functionName}`);
+                    window.FunctionToolsService.removeJsFunction(firstTool.functionName);
+                    
+                    notificationHandler(`Unregistered all tools from ${serverName}`, 'info');
+                    console.log(`Successfully unregistered all MCP tools from ${serverName}`);
+                } else {
+                    console.log(`No functions found for server ${serverName} in registry`);
                 }
-            }
-            
-            if (unregisteredCount > 0) {
-                notificationHandler(`Unregistered ${unregisteredCount} tools from ${serverName}`, 'info');
+            } catch (error) {
+                console.error(`Failed to unregister tools from server ${serverName}:`, error);
             }
         } else {
             console.warn('[MCPToolsManager] FunctionToolsService not available for unregistering tools');
