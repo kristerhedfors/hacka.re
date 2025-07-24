@@ -11,7 +11,7 @@ window.ModelInfoService = (function() {
     // Default models for different providers
     const defaultModels = {
         'openai': 'gpt-4.1',
-        'groq': 'llama-3.1-8b-instant'
+        'groq': 'moonshotai/kimi-k2-instruct'
         // For Ollama, we'll select the first model in the list
     };
 
@@ -41,6 +41,9 @@ window.ModelInfoService = (function() {
         'playai-tts': 10 * 1024,
         'playai-tts-arabic': 10 * 1024,
         'qwen-qwq-32b': 128 * 1024,
+        
+        // Moonshot models
+        'moonshotai/kimi-k2-instruct': 200 * 1024,
         
         // Groq models
         'compound-beta': 128 * 1024,
