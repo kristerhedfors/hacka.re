@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Markdown Fix for Multi-Agent Messages</title>
+    <script src="https://unpkg.com/marked@5.1.1/marked.min.js"></script>
+    <script src="https://unpkg.com/dompurify@3.0.3/dist/purify.min.js"></script>
+    <script src="../js/utils/ui-utils.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-message { margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        .result { color: green; }
+        .error { color: red; }
+        .markdown-content strong { font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Test Markdown Fix for Multi-Agent Messages</h1>
+    
+    <div id="test-results"></div>
+    
+    <script>
+        function runTests() {
+            const results = document.getElementById('test-results');
+            
+            // Test data
+            const testCases = [
+                {
+                    name: "Multi-Agent Mode Message",
+                    role: "system",
+                    content: "🎭 **Multi-Agent Mode**: Querying 2 agents: koder, planner",
+                    expectMarkdown: true
+                },
+                {
+                    name: "Agent Responding Message", 
+                    role: "system",
+                    content: "🤖 **koder** responding...",
+                    expectMarkdown: true
+                },
+                {
+                    name: "Regular System Message",
+                    role: "system", 
+                    content: "Regular system message without emojis",
+                    expectMarkdown: false
+                },
+                {
+                    name: "Welcome Message",
+                    role: "system",
+                    content: "**Welcome** to the system",
+                    className: "welcome-message",
+                    expectMarkdown: true
+                }
+            ];
+            
+            testCases.forEach(testCase => {
+                const messageElement = UIUtils.createMessageElement(
+                    testCase.role, 
+                    testCase.content, 
+                    null, 
+                    testCase.className
+                );
+                
+                const hasMarkdownClass = messageElement.querySelector('.markdown-content') !== null;
+                const hasBoldText = messageElement.innerHTML.includes('<strong>');
+                const hasLiteralAsterisks = messageElement.innerHTML.includes('**');
+                
+                const testDiv = document.createElement('div');
+                testDiv.className = 'test-message';
+                
+                let status = '✅ PASS';
+                let details = '';
+                
+                if (testCase.expectMarkdown) {
+                    if (!hasMarkdownClass) {
+                        status = '❌ FAIL';
+                        details += 'Missing markdown-content class. ';
+                    }
+                    if (!hasBoldText && testCase.content.includes('**')) {
+                        status = '❌ FAIL';
+                        details += 'Bold text not rendered. ';
+                    }
+                    if (hasLiteralAsterisks) {
+                        status = '❌ FAIL';
+                        details += 'Literal asterisks found (markdown not processed). ';
+                    }
+                } else {
+                    if (hasMarkdownClass) {
+                        status = '❌ FAIL';
+                        details += 'Unexpected markdown-content class. ';
+                    }
+                }
+                
+                testDiv.innerHTML = `
+                    <h3>${status} ${testCase.name}</h3>
+                    <p><strong>Content:</strong> ${testCase.content}</p>
+                    <p><strong>Expected Markdown:</strong> ${testCase.expectMarkdown}</p>
+                    <p><strong>Has Markdown Class:</strong> ${hasMarkdownClass}</p>
+                    <p><strong>Has Bold Text:</strong> ${hasBoldText}</p>
+                    <p><strong>Has Literal Asterisks:</strong> ${hasLiteralAsterisks}</p>
+                    ${details ? `<p class="error"><strong>Issues:</strong> ${details}</p>` : ''}
+                    <div><strong>Rendered Output:</strong></div>
+                    <div style="border: 1px solid #ddd; padding: 5px; margin: 5px 0;">${messageElement.innerHTML}</div>
+                `;
+                
+                results.appendChild(testDiv);
+            });
+        }
+        
+        // Run tests when page loads
+        window.addEventListener('load', runTests);
+    </script>
+</body>
+</html>

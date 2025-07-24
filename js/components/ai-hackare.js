@@ -1147,15 +1147,17 @@ window.AIHackareComponent = (function() {
             return;
         }
         
+        // Clean up any stale orchestration entries
+        this.cleanupStaleOrchestrationEntries();
+        
+        // Update orchestration dropdown state
+        this.updateOrchestrationDropdown();
+        
         // Get full agent data with config instead of just summaries
         const agents = Object.values(AgentService.getAllAgents());
         
-        if (agents.length === 0) {
-            this.elements.savedAgentsList.innerHTML = '<div class="no-agents">No saved agents yet. Use the form above to save your first agent.</div>';
-            return;
-        }
-        
-        this.elements.savedAgentsList.innerHTML = agents.map(agent => `
+        // Combine orchestration agent with saved agents
+        const savedAgentsHtml = agents.map(agent => `
             <div class="agent-item-card" data-agent="${this.escapeHtml(agent.name)}">
                 <div class="agent-item-info">
                     <h4>${this.escapeHtml(agent.name)}</h4>
@@ -1181,6 +1183,12 @@ window.AIHackareComponent = (function() {
                 </div>
             </div>
         `).join('');
+        
+        if (agents.length === 0) {
+            this.elements.savedAgentsList.innerHTML = '<div class="no-agents">No saved agents yet. Use the form above to save your first agent.</div>';
+        } else {
+            this.elements.savedAgentsList.innerHTML = savedAgentsHtml;
+        }
     };
 
     /**
@@ -1390,6 +1398,126 @@ window.AIHackareComponent = (function() {
     };
 
     /**
+     * Clean up stale orchestration entries from enabled agents list
+     */
+    AIHackare.prototype.cleanupStaleOrchestrationEntries = function() {
+        const enabledAgents = this.getEnabledAgents();
+        const filteredAgents = enabledAgents.filter(agentName => {
+            // Filter out orchestration agent and other built-in agents
+            return agentName !== '__orchestration_agent' && 
+                   agentName !== 'orchestration' &&
+                   !agentName.startsWith('__builtin_');
+        });
+        
+        // Only update if we filtered something out
+        if (filteredAgents.length !== enabledAgents.length) {
+            this.setEnabledAgents(filteredAgents);
+            console.log('Cleaned up stale orchestration entries from enabled agents');
+        }
+    };
+
+    /**
+     * Update orchestration dropdown state based on active agents
+     */
+    AIHackare.prototype.updateOrchestrationDropdown = function() {
+        const dropdown = document.getElementById('orchestration-mode');
+        const statusText = document.getElementById('orchestration-status-text');
+        
+        if (!dropdown || !statusText) {
+            return;
+        }
+        
+        // Count enabled agents (excluding built-in orchestration agent)
+        const enabledAgents = this.getEnabledAgents().filter(agentName => {
+            // Filter out orchestration agent and other built-in agents
+            return agentName !== '__orchestration_agent' && 
+                   agentName !== 'orchestration' &&
+                   !agentName.startsWith('__builtin_');
+        });
+        
+        // Also verify these agents actually exist in saved agents
+        const savedAgents = window.AgentService ? window.AgentService.getAllAgents() : {};
+        const existingEnabledAgents = enabledAgents.filter(agentName => 
+            savedAgents.hasOwnProperty(agentName)
+        );
+        
+        const hasActiveAgents = existingEnabledAgents.length > 0;
+        
+        // Enable/disable dropdown based on active agents
+        dropdown.disabled = !hasActiveAgents;
+        
+        // Update status text
+        if (hasActiveAgents) {
+            statusText.textContent = `${existingEnabledAgents.length} agent(s) active - orchestration available`;
+            statusText.className = 'status-active';
+            
+            // Start orchestration if dropdown is not on "none"
+            if (dropdown.value !== 'none') {
+                this.startOrchestration(dropdown.value);
+            } else {
+                this.stopOrchestration();
+            }
+        } else {
+            statusText.textContent = 'Activate agents to enable orchestration';
+            statusText.className = 'status-inactive';
+            dropdown.value = 'none';
+            this.stopOrchestration();
+        }
+    };
+
+    /**
+     * Handle orchestration dropdown change
+     */
+    AIHackare.prototype.handleOrchestrationChange = function(mode) {
+        if (mode === 'none') {
+            this.stopOrchestration();
+        } else {
+            this.startOrchestration(mode);
+        }
+        
+        // Update status
+        const statusText = document.getElementById('orchestration-status-text');
+        if (statusText) {
+            // Get actual enabled agent count (excluding built-in agents)
+            const enabledAgents = this.getEnabledAgents().filter(agentName => {
+                return agentName !== '__orchestration_agent' && 
+                       agentName !== 'orchestration' &&
+                       !agentName.startsWith('__builtin_');
+            });
+            const savedAgents = window.AgentService ? window.AgentService.getAllAgents() : {};
+            const existingEnabledAgents = enabledAgents.filter(agentName => 
+                savedAgents.hasOwnProperty(agentName)
+            );
+            
+            if (mode === 'none') {
+                statusText.textContent = `${existingEnabledAgents.length} agent(s) active - orchestration disabled`;
+            } else {
+                statusText.textContent = `${existingEnabledAgents.length} agent(s) active - ${mode} orchestration enabled`;
+            }
+        }
+    };
+
+    /**
+     * Start orchestration with specified mode
+     */
+    AIHackare.prototype.startOrchestration = function(mode) {
+        if (window.OrchestrationMCPServer && !window.OrchestrationMCPServer.isActive()) {
+            window.OrchestrationMCPServer.start();
+            console.log(`Orchestration started in ${mode} mode`);
+        }
+    };
+
+    /**
+     * Stop orchestration
+     */
+    AIHackare.prototype.stopOrchestration = function() {
+        if (window.OrchestrationMCPServer && window.OrchestrationMCPServer.isActive()) {
+            window.OrchestrationMCPServer.stop();
+            console.log('Orchestration stopped');
+        }
+    };
+
+    /**
      * Check if an agent is enabled for multi-agent queries
      */
     AIHackare.prototype.isAgentEnabled = function(agentName) {
@@ -1402,7 +1530,7 @@ window.AIHackareComponent = (function() {
      */
     AIHackare.prototype.getEnabledAgents = function() {
         try {
-            const enabled = localStorage.getItem('enabled_agents');
+            const enabled = window.CoreStorageService.getValue(window.NamespaceService.BASE_STORAGE_KEYS.ENABLED_AGENTS);
             return enabled ? JSON.parse(enabled) : [];
         } catch (error) {
             console.error('Error getting enabled agents:', error);
@@ -1415,7 +1543,7 @@ window.AIHackareComponent = (function() {
      */
     AIHackare.prototype.setEnabledAgents = function(agentNames) {
         try {
-            localStorage.setItem('enabled_agents', JSON.stringify(agentNames));
+            window.CoreStorageService.setValue(window.NamespaceService.BASE_STORAGE_KEYS.ENABLED_AGENTS, JSON.stringify(agentNames));
         } catch (error) {
             console.error('Error setting enabled agents:', error);
         }
@@ -1448,6 +1576,18 @@ window.AIHackareComponent = (function() {
         }
         
         console.log(`Agent "${agentName}" ${enabled ? 'enabled' : 'disabled'} for queries`);
+        
+        // Update orchestration dropdown state
+        this.updateOrchestrationDropdown();
+        
+        // Dispatch event for orchestration system
+        document.dispatchEvent(new CustomEvent('agentStateChanged', {
+            detail: { 
+                type: 'agent_toggle', 
+                action: enabled ? 'enabled' : 'disabled',
+                agent: agentName
+            }
+        }));
     };
 
     /**

@@ -24,6 +24,9 @@ window.NamespaceService = (function() {
         THEME_MODE: 'theme_mode',
         SAVED_AGENTS: 'saved_agents',
         AGENT_METADATA: 'agent_metadata',
+        ENABLED_AGENTS: 'enabled_agents',
+        MODEL_LAST_UPDATED: 'model_last_updated',
+        PROVIDER_LAST_UPDATED: 'provider_last_updated',
     };
     
     // Special keys that don't get namespaced (to avoid circular dependency)

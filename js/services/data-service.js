@@ -36,8 +36,7 @@ window.DataService = (function() {
         // Add timestamp to track when model was last updated
         // This helps with conflict resolution during agent loading
         const timestamp = Date.now();
-        localStorage.setItem('model_last_updated', timestamp.toString());
-        sessionStorage.setItem('model_last_updated', timestamp.toString());
+        window.CoreStorageService.setValue(window.NamespaceService.BASE_STORAGE_KEYS.MODEL_LAST_UPDATED, timestamp.toString());
     }
 
     /**
@@ -159,8 +158,7 @@ window.DataService = (function() {
         // Add timestamp to track when provider was last updated
         // This helps with conflict resolution during agent loading
         const timestamp = Date.now();
-        localStorage.setItem('provider_last_updated', timestamp.toString());
-        sessionStorage.setItem('provider_last_updated', timestamp.toString());
+        window.CoreStorageService.setValue(window.NamespaceService.BASE_STORAGE_KEYS.PROVIDER_LAST_UPDATED, timestamp.toString());
     }
     
     /**

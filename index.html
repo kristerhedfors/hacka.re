@@ -297,6 +297,25 @@
                     </div>
                 </div>
                 
+                <!-- Orchestration Section -->
+                <div class="agent-orchestration-section">
+                    <h3>🎭 Agent Orchestration</h3>
+                    <p class="form-help">Coordinate multiple agents for complex tasks</p>
+                    <div class="orchestration-controls">
+                        <div class="form-group">
+                            <label for="orchestration-mode">Orchestration Mode</label>
+                            <select id="orchestration-mode" class="orchestration-dropdown" disabled onchange="window.aiHackare.handleOrchestrationChange(this.value)">
+                                <option value="none">No orchestration (agents work independently)</option>
+                                <option value="auto">Auto-orchestration (AI coordinates agents automatically)</option>
+                                <option value="manual">Manual coordination (you direct agent interactions)</option>
+                            </select>
+                            <div class="orchestration-status">
+                                <span id="orchestration-status-text" class="status-inactive">Activate agents to enable orchestration</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Saved Agents Section -->
                 <div class="agent-items-section">
                     <h3>🤖 Saved Agents</h3>
@@ -801,6 +820,9 @@ async function getCurrentTimeInBerlin() {
     <script src="js/services/mcp-connection-manager.js"></script>
     <script src="js/services/mcp-client-core.js"></script>
     <script src="js/services/mcp-service-connectors.js?v=20250723-1945-github-auth-fix"></script>
+    <!-- Orchestration Services -->
+    <script src="js/services/orchestration-mcp-server.js"></script>
+    <script src="js/services/orchestration-agent-service.js"></script>
     <script src="js/services/link-sharing-service.js"></script>
     <script src="js/services/share-service.js"></script>
     <!-- Agent Services -->

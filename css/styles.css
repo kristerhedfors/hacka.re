@@ -3520,6 +3520,76 @@ html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item a
     color: var(--text-color-secondary);
 }
 
+/* Orchestration Section Styling */
+.agent-orchestration-section {
+    background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
+    border: 2px solid #4f46e5;
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.agent-orchestration-section h3 {
+    color: #4f46e5;
+    margin: 0 0 0.5rem 0;
+    font-weight: 700;
+}
+
+.orchestration-controls {
+    margin-top: 0.75rem;
+}
+
+.orchestration-dropdown {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-size: 0.9rem;
+    transition: var(--transition);
+}
+
+.orchestration-dropdown:disabled {
+    background-color: #f5f5f5;
+    color: #999;
+    cursor: not-allowed;
+}
+
+.orchestration-dropdown:not(:disabled):hover {
+    border-color: #4f46e5;
+}
+
+.orchestration-dropdown:not(:disabled):focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+    outline: none;
+}
+
+.orchestration-status {
+    margin-top: 0.5rem;
+    text-align: center;
+}
+
+.orchestration-status span {
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    display: inline-block;
+}
+
+.status-inactive {
+    color: #6b7280;
+    background-color: #f3f4f6;
+}
+
+.status-active {
+    color: #059669;
+    background-color: #d1fae5;
+}
+
 .agent-enable-checkbox input[type="checkbox"] {
     width: 16px;
     height: 16px;
