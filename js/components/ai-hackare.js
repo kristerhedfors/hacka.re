@@ -1091,6 +1091,13 @@ window.AIHackareComponent = (function() {
         if (this.elements.agentConfigModal) {
             this.elements.agentConfigModal.classList.add('active');
             this.refreshSavedAgentsList();
+            
+            // Focus on the agent name input field
+            setTimeout(() => {
+                if (this.elements.quickAgentName) {
+                    this.elements.quickAgentName.focus();
+                }
+            }, 100); // Small delay to ensure modal is fully shown
         }
     };
 
