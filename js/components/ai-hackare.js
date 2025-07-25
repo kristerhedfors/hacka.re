@@ -185,6 +185,17 @@ window.AIHackareComponent = (function() {
                 });
             }
             
+            // Share password info icon click handler
+            const sharePasswordInfoIcon = document.getElementById('share-password-info-icon');
+            if (sharePasswordInfoIcon) {
+                sharePasswordInfoIcon.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (window.SettingsInfoModalService) {
+                        window.SettingsInfoModalService.showSharePasswordInfoModal(sharePasswordInfoIcon);
+                    }
+                });
+            }
+            
             
             // Add event listeners for link length calculation only (not saving options)
             if (this.elements.shareBaseUrlCheckbox) {
