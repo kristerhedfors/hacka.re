@@ -7,6 +7,7 @@
 const SettingsInfoModalService = (() => {
     let agentInfoModal = null;
     let mcpInfoModal = null;
+    let sharePasswordInfoModal = null;
     
     /**
      * Initialize and show the Agent info modal
@@ -36,6 +37,21 @@ const SettingsInfoModalService = (() => {
             );
         }
         mcpInfoModal.classList.add('active');
+    }
+    
+    /**
+     * Initialize and show the Share Password info modal
+     * @param {HTMLElement} infoIcon - The info icon that was clicked
+     */
+    function showSharePasswordInfoModal(infoIcon) {
+        if (!sharePasswordInfoModal) {
+            sharePasswordInfoModal = createInfoModal(
+                'share-password-info-modal',
+                'About Password / Session Key',
+                infoIcon
+            );
+        }
+        sharePasswordInfoModal.classList.add('active');
     }
     
     /**
@@ -128,7 +144,8 @@ const SettingsInfoModalService = (() => {
     // Public API
     return {
         showAgentInfoModal,
-        showMcpInfoModal
+        showMcpInfoModal,
+        showSharePasswordInfoModal
     };
 })();
 

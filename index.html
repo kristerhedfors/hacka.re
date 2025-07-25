@@ -222,13 +222,26 @@
                 
                 <!-- Password/Session Key Section - Always visible -->
                 <div class="form-group">
-                    <label for="share-password">
-                        Password / Session Key
-                        <span class="info-icon">
+                    <div class="settings-header">
+                        <h3>Password / Session Key</h3>
+                        <span class="info-icon" id="share-password-info-icon">
                             <i class="fas fa-info-circle"></i>
-                            <span class="tooltip">A password/session key is used to encrypt shared links and local data. There are no accounts or login functions - hacka.re is a static client-side application with no server component. Your API keys and data never leave your browser except when communicating directly with your chosen LLM provider. The encrypted data in shared links is processed entirely in the browser and never reaches any server. All data stored in your browser's localStorage is also encrypted using this key. The security of your data relies entirely on the strength of this password/session key.</span>
+                            <div class="tooltip">
+                                <div class="tooltip-content">
+                                    <div class="important-notice">
+                                        <p><strong>Password / Session Key</strong>: A password/session key is used to encrypt shared links and local data. There are no accounts or login functions - hacka.re is a static client-side application with no server component.</p>
+                                    </div>
+                                    <div class="important-notice">
+                                        <p><strong>Privacy</strong>: Your API keys and data never leave your browser except when communicating directly with your chosen LLM provider. The encrypted data in shared links is processed entirely in the browser and never reaches any server.</p>
+                                    </div>
+                                    <div class="important-notice">
+                                        <p><strong>Security</strong>: All data stored in your browser's localStorage is also encrypted using this key. The security of your data relies entirely on the strength of this password/session key.</p>
+                                    </div>
+                                </div>
+                            </div>
                         </span>
-                    </label>
+                    </div>
+                    <label for="share-password" class="sr-only">Password/session key for encryption</label>
                     <div class="password-input-container">
                         <input type="password" id="share-password" placeholder="Password/session key for encryption">
                         <button type="button" class="icon-btn" id="regenerate-password" title="Generate strong password/session key">
