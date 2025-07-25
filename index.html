@@ -280,6 +280,21 @@
                     </span>
                 </div>
                 
+                <!-- Orchestration Section -->
+                <div class="agent-orchestration-section compact">
+                    <div class="orchestration-header">
+                        <span class="orchestration-label">🎭 Orchestration</span>
+                        <select id="orchestration-mode" class="orchestration-select" disabled onchange="window.aiHackare.handleOrchestrationChange(this.value)">
+                            <option value="none">Independent</option>
+                            <option value="auto">Auto-coordinate</option>
+                            <option value="manual">Manual</option>
+                        </select>
+                    </div>
+                    <div class="orchestration-status">
+                        <span id="orchestration-status-text" class="status-inactive">Enable 2+ agents to activate</span>
+                    </div>
+                </div>
+                
                 <!-- Quick Save Section -->
                 <div class="agent-quick-save-section">
                     <h3>💾 Save Current Configuration</h3>
@@ -292,25 +307,6 @@
                                     <input type="text" id="quick-agent-name" placeholder="Enter agent name" class="quick-save-input">
                                 </div>
                                 <button type="button" id="quick-save-agent" class="btn primary-btn">Save Current</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Orchestration Section -->
-                <div class="agent-orchestration-section">
-                    <h3>🎭 Agent Orchestration</h3>
-                    <p class="form-help">Coordinate multiple agents for complex tasks</p>
-                    <div class="orchestration-controls">
-                        <div class="form-group">
-                            <label for="orchestration-mode">Orchestration Mode</label>
-                            <select id="orchestration-mode" class="orchestration-dropdown" disabled onchange="window.aiHackare.handleOrchestrationChange(this.value)">
-                                <option value="none">No orchestration (agents work independently)</option>
-                                <option value="auto">Auto-orchestration (AI coordinates agents automatically)</option>
-                                <option value="manual">Manual coordination (you direct agent interactions)</option>
-                            </select>
-                            <div class="orchestration-status">
-                                <span id="orchestration-status-text" class="status-inactive">Activate agents to enable orchestration</span>
                             </div>
                         </div>
                     </div>
