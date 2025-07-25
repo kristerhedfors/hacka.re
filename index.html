@@ -54,7 +54,7 @@
                                 <div class="logo-line documentation-item" style="display: none;">│  ├─ <a href="about/local-llm-toolbox.html" class="tree-link" target="_blank" rel="noopener noreferrer">Local LLM Toolbox</a></div>
                                 <div class="logo-line documentation-item" style="display: none;">│  ├─ <a href="about/research-report.html" class="tree-link" target="_blank" rel="noopener noreferrer">Research Report</a></div>
                                 <div class="logo-line documentation-item" style="display: none;">│  └─ <a href="about/disclaimer.html" class="tree-link" target="_blank" rel="noopener noreferrer">Disclaimer</a></div>
-                                <div class="logo-line">├─ <span class="feature-link" data-feature="copy-chat">Copy Chat Content</span></div>
+                                <div class="logo-line">├─ <span class="feature-link" data-feature="agents">Agents</span></div>
                                 <div class="logo-line">├─ <span class="feature-link" data-feature="mcp-servers">Model Context Protocol (Experimental)</span></div>
                                 <div class="logo-line">├─ <span class="feature-link" data-feature="function-calling">Function Calling</span></div>
                                 <div class="logo-line">├─ <span class="feature-link" data-feature="system-prompts">System Prompts</span></div>
@@ -65,7 +65,7 @@
                         </div>
                     </span>
                 </button>
-                <button id="agent-config-btn" class="icon-btn" title="Agent Modal">
+                <button id="agent-config-btn" class="icon-btn" title="Agents">
                     <i class="fas fa-robot"></i>
                 </button>
                 <button id="mcp-servers-btn" class="icon-btn" title="Model Context Protocol">
@@ -280,6 +280,21 @@
                     </span>
                 </div>
                 
+                <!-- Orchestration Section -->
+                <div class="agent-orchestration-section compact">
+                    <div class="orchestration-header">
+                        <span class="orchestration-label">🎭 Orchestration</span>
+                        <select id="orchestration-mode" class="orchestration-select" disabled onchange="window.aiHackare.handleOrchestrationChange(this.value)">
+                            <option value="none">Independent</option>
+                            <option value="auto">Auto-coordinate</option>
+                            <option value="manual">Manual</option>
+                        </select>
+                    </div>
+                    <div class="orchestration-status">
+                        <span id="orchestration-status-text" class="status-inactive">Enable 2+ agents to activate</span>
+                    </div>
+                </div>
+                
                 <!-- Quick Save Section -->
                 <div class="agent-quick-save-section">
                     <h3>💾 Save Current Configuration</h3>
@@ -292,25 +307,6 @@
                                     <input type="text" id="quick-agent-name" placeholder="Enter agent name" class="quick-save-input">
                                 </div>
                                 <button type="button" id="quick-save-agent" class="btn primary-btn">Save Current</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Orchestration Section -->
-                <div class="agent-orchestration-section">
-                    <h3>🎭 Agent Orchestration</h3>
-                    <p class="form-help">Coordinate multiple agents for complex tasks</p>
-                    <div class="orchestration-controls">
-                        <div class="form-group">
-                            <label for="orchestration-mode">Orchestration Mode</label>
-                            <select id="orchestration-mode" class="orchestration-dropdown" disabled onchange="window.aiHackare.handleOrchestrationChange(this.value)">
-                                <option value="none">No orchestration (agents work independently)</option>
-                                <option value="auto">Auto-orchestration (AI coordinates agents automatically)</option>
-                                <option value="manual">Manual coordination (you direct agent interactions)</option>
-                            </select>
-                            <div class="orchestration-status">
-                                <span id="orchestration-status-text" class="status-inactive">Activate agents to enable orchestration</span>
                             </div>
                         </div>
                     </div>
@@ -827,6 +823,7 @@ async function getCurrentTimeInBerlin() {
     <script src="js/services/share-service.js"></script>
     <!-- Agent Services -->
     <script src="js/services/configuration-service.js"></script>
+    <script src="js/services/agent-context-manager.js"></script>
     <script src="js/services/agent-service.js"></script>
     <script src="js/services/agent-cache.js"></script>
     <script src="js/services/agent-orchestrator.js"></script>

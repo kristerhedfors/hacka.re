@@ -5,6 +5,12 @@
  */
 
 window.AgentService = (function() {
+
+    // Get AgentContextManager for configuration isolation
+    function getContextManager() {
+        const manager = window.AgentContextManager || null;
+        return manager;
+    }
     
     /**
      * Save an agent configuration with a given name
@@ -37,13 +43,16 @@ window.AgentService = (function() {
             // Get existing agents
             const existingAgents = getAllAgents();
             
+            // Check if this is a new agent
+            const isNewAgent = !existingAgents.hasOwnProperty(name);
+            
             // Create agent entry with metadata
             const agentEntry = {
                 name: name,
                 config: config,
                 description: options.description || '',
                 agentType: options.agentType || 'general',
-                createdAt: new Date().toISOString(),
+                createdAt: existingAgents[name]?.createdAt || new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
                 namespace: NamespaceService.getNamespace()
             };
@@ -56,6 +65,16 @@ window.AgentService = (function() {
             
             if (success) {
                 console.log(`Agent "${name}" saved successfully`);
+                
+                // Auto-enable new agents by default
+                if (isNewAgent && window.aiHackare) {
+                    const enabledAgents = window.aiHackare.getEnabledAgents();
+                    if (!enabledAgents.includes(name)) {
+                        enabledAgents.push(name);
+                        window.aiHackare.setEnabledAgents(enabledAgents);
+                        console.log(`Agent "${name}" auto-enabled for multi-agent queries`);
+                    }
+                }
                 
                 // Update metadata
                 updateAgentMetadata();
@@ -360,9 +379,29 @@ window.AgentService = (function() {
                 }
             }
             
-            opts.onProgress?.('analyzing', 'Analyzing state differences...');
+            opts.onProgress?.('applying', 'Applying agent context...');
             
-            // Differential loading: only apply changed sections
+            // ALWAYS use AgentContextManager for agent switching (bypass differential loading for context)
+            const contextManager = getContextManager();
+            if (contextManager) {
+                console.log(`🎯 AgentContextManager: Switching to "${name}" (always applied for context isolation)`);
+                contextManager.switchToAgent(name, agentConfig);
+                
+                // Update cache and complete
+                if (window.AgentCache) {
+                    window.AgentCache.cacheCurrentState(name);
+                }
+                
+                const loadTime = performance.now() - startTime;
+                if (!opts.silent) {
+                    console.log(`✅ FastAgent: "${name}" context applied in ${loadTime.toFixed(2)}ms`);
+                }
+                opts.onProgress?.('completed', `Agent "${name}" context loaded in ${loadTime.toFixed(0)}ms`);
+                return true;
+            }
+            
+            // Fallback: If no context manager, use differential loading for direct configuration
+            opts.onProgress?.('analyzing', 'Analyzing state differences...');
             let sections = { llm: true, functions: true, mcp: true, prompts: true };
             if (opts.differential && window.AgentCache) {
                 const currentState = window.AgentCache.getCurrentStateSnapshot();
@@ -384,8 +423,7 @@ window.AgentService = (function() {
             }
             
             opts.onProgress?.('applying', 'Applying configuration...');
-            
-            // Apply configuration sections directly without UI processing
+            // Fallback to direct configuration application
             await applyConfigurationDirect(agentConfig, sections, opts);
             
             // Cache the current state after successful application
@@ -799,6 +837,39 @@ window.AgentService = (function() {
             return false;
         }
     }
+
+    /**
+     * Restore global configuration (exit agent mode)
+     */
+    function restoreGlobalConfiguration() {
+        const contextManager = getContextManager();
+        return contextManager ? contextManager.restoreGlobalConfiguration() : false;
+    }
+
+    /**
+     * Check if currently in agent context
+     */
+    function isInAgentContext() {
+        const contextManager = getContextManager();
+        return contextManager ? contextManager.isInAgentContext() : false;
+    }
+
+    /**
+     * Get current agent context info
+     */
+    function getCurrentAgentContext() {
+        const contextManager = getContextManager();
+        return contextManager ? contextManager.getCurrentContext() : null;
+    }
+
+    /**
+     * Get the current agent's system prompt
+     * Returns agent-specific prompt if in agent context
+     */
+    function getCurrentAgentSystemPrompt() {
+        const contextManager = getContextManager();
+        return contextManager ? contextManager.getCurrentSystemPrompt() : localStorage.getItem('system_prompt') || '';
+    }
     
     // Public API
     return {
@@ -815,6 +886,10 @@ window.AgentService = (function() {
         createAgentFromCurrentState: createAgentFromCurrentState,
         getAgentMetadata: getAgentMetadata,
         exportAgents: exportAgents,
-        importAgents: importAgents
+        importAgents: importAgents,
+        restoreGlobalConfiguration: restoreGlobalConfiguration,
+        isInAgentContext: isInAgentContext,
+        getCurrentAgentContext: getCurrentAgentContext,
+        getCurrentAgentSystemPrompt: getCurrentAgentSystemPrompt
     };
 })();
