@@ -9,7 +9,6 @@ window.AgentService = (function() {
     // Get AgentContextManager for configuration isolation
     function getContextManager() {
         const manager = window.AgentContextManager || null;
-        console.log(`🔥 DEBUG: getContextManager() returning:`, manager ? 'AgentContextManager instance' : 'null');
         return manager;
     }
     
