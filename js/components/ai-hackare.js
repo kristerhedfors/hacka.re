@@ -154,8 +154,8 @@ window.AIHackareComponent = (function() {
         if (agentInfoIcon) {
             agentInfoIcon.addEventListener('click', (e) => {
                 e.stopPropagation();
-                if (window.SettingsInfoPopupService) {
-                    window.SettingsInfoPopupService.showAgentInfoPopup(agentInfoIcon);
+                if (window.SettingsInfoModalService) {
+                    window.SettingsInfoModalService.showAgentInfoModal(agentInfoIcon);
                 }
             });
         }
