@@ -7,7 +7,6 @@
 
 window.AgentContextManager = (function() {
     
-    console.log('🔥 DEBUG: AgentContextManager initializing...');
     
     let originalGlobalConfig = null;
     let currentAgentContext = null;
@@ -22,7 +21,6 @@ window.AgentContextManager = (function() {
             return; // Already captured
         }
 
-        console.log('🔒 AgentContextManager: Capturing global configuration');
         
         originalGlobalConfig = {
             // API Configuration
@@ -54,7 +52,6 @@ window.AgentContextManager = (function() {
      * Create an isolated context for an agent
      */
     function createAgentContext(agentId, agentConfig) {
-        console.log(`🎯 AgentContextManager: Creating context for agent "${agentId}"`);
         
         const context = {
             agentId,
@@ -75,7 +72,6 @@ window.AgentContextManager = (function() {
             captureGlobalConfiguration();
         }
 
-        console.log(`🔄 AgentContextManager: Applying context for agent "${agentId}"`);
         
         // Create or update agent context
         const context = createAgentContext(agentId, agentConfig);
@@ -157,7 +153,6 @@ window.AgentContextManager = (function() {
         // Store what we changed for restoration
         context.appliedSettings = appliedSettings;
         
-        console.log(`✅ AgentContextManager: Applied ${Object.keys(appliedSettings).length} settings for agent "${context.agentId}"`);
     }
 
     /**
@@ -168,7 +163,6 @@ window.AgentContextManager = (function() {
             return false;
         }
 
-        console.log('🔓 AgentContextManager: Restoring global configuration');
         
         // Restore all original values
         Object.entries(originalGlobalConfig).forEach(([key, value]) => {
@@ -182,7 +176,6 @@ window.AgentContextManager = (function() {
         currentAgentContext = null;
         isAgentActive = false;
         
-        console.log('✅ AgentContextManager: Global configuration restored');
         return true;
     }
 
@@ -212,16 +205,13 @@ window.AgentContextManager = (function() {
      * Switch between agent contexts
      */
     function switchToAgent(agentId, agentConfig) {
-        console.log(`🔥 DEBUG: switchToAgent called with agentId="${agentId}"`);
         
         // If switching to a different agent, apply new context
         if (!currentAgentContext || currentAgentContext.agentId !== agentId) {
-            console.log(`🔥 DEBUG: Applying new context for agent "${agentId}"`);
             return applyAgentContext(agentId, agentConfig);
         }
         
         // Already in correct context
-        console.log(`🎯 AgentContextManager: Already in context for agent "${agentId}"`);
         return currentAgentContext;
     }
 
@@ -243,7 +233,6 @@ window.AgentContextManager = (function() {
      * Clear all agent contexts (for cleanup)
      */
     function clearAllContexts() {
-        console.log('🧹 AgentContextManager: Clearing all contexts');
         restoreGlobalConfiguration();
         agentContexts.clear();
         originalGlobalConfig = null;
@@ -269,9 +258,6 @@ window.AgentContextManager = (function() {
         if (isInAgentContext() && currentAgentContext) {
             // Return the agent's system prompt from its configuration
             const agentConfig = currentAgentContext.config;
-            console.log(`🔍 DEBUG: Agent config for "${currentAgentContext.agentId}":`, agentConfig);
-            console.log(`🔍 DEBUG: systemPrompt field:`, agentConfig.systemPrompt);
-            console.log(`🔍 DEBUG: prompts field:`, agentConfig.prompts);
             
             // Try systemPrompt field first
             if (agentConfig.systemPrompt) {
@@ -280,7 +266,6 @@ window.AgentContextManager = (function() {
             
             // Try prompts.selectedIds for backward compatibility
             if (agentConfig.prompts && agentConfig.prompts.selectedIds) {
-                console.log(`🔍 DEBUG: Found prompts.selectedIds:`, agentConfig.prompts.selectedIds);
                 // Get the actual prompt text from the prompts service
                 if (window.PromptsService && window.PromptsService.getPromptById) {
                     const promptTexts = agentConfig.prompts.selectedIds.map(id => {
@@ -290,7 +275,6 @@ window.AgentContextManager = (function() {
                     
                     if (promptTexts.length > 0) {
                         const combinedPrompt = promptTexts.join('\n\n');
-                        console.log(`🔍 DEBUG: Combined prompt from selectedIds: "${combinedPrompt}"`);
                         return combinedPrompt;
                     }
                 }
