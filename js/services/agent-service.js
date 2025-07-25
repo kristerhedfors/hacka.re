@@ -43,13 +43,16 @@ window.AgentService = (function() {
             // Get existing agents
             const existingAgents = getAllAgents();
             
+            // Check if this is a new agent
+            const isNewAgent = !existingAgents.hasOwnProperty(name);
+            
             // Create agent entry with metadata
             const agentEntry = {
                 name: name,
                 config: config,
                 description: options.description || '',
                 agentType: options.agentType || 'general',
-                createdAt: new Date().toISOString(),
+                createdAt: existingAgents[name]?.createdAt || new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
                 namespace: NamespaceService.getNamespace()
             };
@@ -62,6 +65,16 @@ window.AgentService = (function() {
             
             if (success) {
                 console.log(`Agent "${name}" saved successfully`);
+                
+                // Auto-enable new agents by default
+                if (isNewAgent && window.aiHackare) {
+                    const enabledAgents = window.aiHackare.getEnabledAgents();
+                    if (!enabledAgents.includes(name)) {
+                        enabledAgents.push(name);
+                        window.aiHackare.setEnabledAgents(enabledAgents);
+                        console.log(`Agent "${name}" auto-enabled for multi-agent queries`);
+                    }
+                }
                 
                 // Update metadata
                 updateAgentMetadata();
