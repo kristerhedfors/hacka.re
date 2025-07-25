@@ -352,13 +352,10 @@
         z-index: 2;
     }
     
-    /* Improve tooltip positioning */
+    /* Improve tooltip positioning - already centered on desktop */
     .info-icon .tooltip {
         width: 250px;
         max-width: 80vw;
-        left: auto;
-        right: 0;
-        margin-left: 0;
     }
     
     /* Convert heart logo tooltip to modal-style on mobile */

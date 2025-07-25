@@ -149,6 +149,17 @@ window.AIHackareComponent = (function() {
             });
         }
         
+        // Agent modal info icon click handler
+        const agentInfoIcon = document.getElementById('agent-modal-info-icon');
+        if (agentInfoIcon) {
+            agentInfoIcon.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (window.SettingsInfoPopupService) {
+                    window.SettingsInfoPopupService.showAgentInfoPopup(agentInfoIcon);
+                }
+            });
+        }
+        
         // Agent quick save functionality
         if (this.elements.quickSaveAgent) {
             this.elements.quickSaveAgent.addEventListener('click', () => {

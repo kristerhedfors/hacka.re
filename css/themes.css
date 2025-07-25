@@ -489,7 +489,7 @@ header .settings .icon-btn i,
 }
 
 .theme-modern.dark-mode .info-icon .tooltip::after {
-    border-color: var(--bg-color-secondary) transparent transparent transparent;
+    display: none; /* Hide arrow since tooltip is now centered */
 }
 
 /* Fix for heart logo tooltip in dark mode */

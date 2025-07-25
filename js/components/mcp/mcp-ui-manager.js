@@ -71,6 +71,17 @@ window.MCPUIManager = (function() {
         // Add MCP button click handler
         elements.mcpButton.addEventListener('click', showModal);
         
+        // Add MCP modal info icon click handler
+        const mcpInfoIcon = document.getElementById('mcp-servers-info-icon');
+        if (mcpInfoIcon) {
+            mcpInfoIcon.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (window.SettingsInfoPopupService) {
+                    window.SettingsInfoPopupService.showMcpInfoPopup(mcpInfoIcon);
+                }
+            });
+        }
+        
         return true;
     }
     
