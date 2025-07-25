@@ -360,10 +360,46 @@ window.AgentOrchestrator = (function() {
     }
     
     /**
+     * Exit agent mode and restore global configuration
+     */
+    function exitAgentMode() {
+        console.log('🎼 AgentOrchestrator: Exiting agent mode, restoring global configuration');
+        
+        try {
+            // Restore global configuration
+            const restored = AgentService.restoreGlobalConfiguration();
+            
+            if (restored) {
+                currentAgent = null;
+                console.log('✅ AgentOrchestrator: Global configuration restored');
+                return true;
+            } else {
+                console.log('⚠️ AgentOrchestrator: No agent context to restore');
+                return false;
+            }
+        } catch (error) {
+            console.error('❌ AgentOrchestrator: Error exiting agent mode:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Check if currently in agent mode
+     */
+    function isInAgentMode() {
+        return AgentService.isInAgentContext();
+    }
+
+    /**
      * Stop the orchestrator and cleanup resources
      */
     function shutdown() {
         console.log('🎼 AgentOrchestrator: Shutting down');
+        
+        // Exit agent mode if active
+        if (isInAgentMode()) {
+            exitAgentMode();
+        }
         
         // Stop preload scheduler
         if (preloadScheduler) {
@@ -389,6 +425,8 @@ window.AgentOrchestrator = (function() {
         createAgentSession,
         getMetrics,
         cleanup,
-        shutdown
+        shutdown,
+        exitAgentMode,
+        isInAgentMode
     };
 })();

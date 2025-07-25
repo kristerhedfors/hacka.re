@@ -529,12 +529,27 @@ window.AIHackareComponent = (function() {
                 
                 // Small delay to ensure agent is fully loaded
                 setTimeout(() => {
+                    // Get agent-specific system prompt
+                    let agentSystemPrompt = this.settingsManager.getSystemPrompt();
+                    console.log(`🔍 DEBUG: Global system prompt: "${agentSystemPrompt}"`);
+                    
+                    if (window.AgentService && window.AgentService.getCurrentAgentSystemPrompt) {
+                        try {
+                            agentSystemPrompt = window.AgentService.getCurrentAgentSystemPrompt();
+                            console.log(`🔍 DEBUG: Agent-specific system prompt for "${agentName}": "${agentSystemPrompt}"`);
+                        } catch (error) {
+                            console.warn('Failed to get agent system prompt, using global:', error);
+                        }
+                    }
+                    
+                    console.log(`🚀 DEBUG: Final system prompt being sent to API: "${agentSystemPrompt}"`)
+                    
                     // Send the message with the agent's configuration
                     this.chatManager.sendMessage(
                         message,
                         this.settingsManager.getApiKey(),
                         this.settingsManager.getCurrentModel(),
-                        this.settingsManager.getSystemPrompt(),
+                        agentSystemPrompt,
                         this.uiManager.showApiKeyModal.bind(this.uiManager),
                         this.uiManager.updateContextUsage.bind(this.uiManager),
                         this.apiToolsManager,
