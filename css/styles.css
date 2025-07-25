@@ -3520,74 +3520,114 @@ html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item a
     color: var(--text-color-secondary);
 }
 
-/* Orchestration Section Styling */
+/* Orchestration Section Styling - Compact */
 .agent-orchestration-section {
-    background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
-    border: 2px solid #4f46e5;
+    background: var(--bg-color-secondary);
+    border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
-    padding: 1rem;
+    padding: 0.75rem;
     margin-bottom: 1.5rem;
-    position: relative;
+    transition: var(--transition);
 }
 
-.agent-orchestration-section h3 {
-    color: #4f46e5;
-    margin: 0 0 0.5rem 0;
-    font-weight: 700;
+.agent-orchestration-section.compact {
+    padding: 0.5rem 0.75rem;
 }
 
-.orchestration-controls {
-    margin-top: 0.75rem;
+.orchestration-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
 }
 
-.orchestration-dropdown {
-    width: 100%;
-    padding: 0.5rem;
+.orchestration-label {
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+}
+
+.orchestration-select {
+    padding: 0.25rem 0.5rem;
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
     background-color: var(--bg-color);
     color: var(--text-color);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    min-width: 120px;
     transition: var(--transition);
+    cursor: pointer;
 }
 
-.orchestration-dropdown:disabled {
-    background-color: #f5f5f5;
-    color: #999;
+.orchestration-select:disabled {
+    opacity: 0.5;
     cursor: not-allowed;
 }
 
-.orchestration-dropdown:not(:disabled):hover {
-    border-color: #4f46e5;
+.orchestration-select:not(:disabled):hover {
+    border-color: var(--primary-color);
 }
 
-.orchestration-dropdown:not(:disabled):focus {
-    border-color: #4f46e5;
-    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+.orchestration-select:focus {
     outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
 .orchestration-status {
-    margin-top: 0.5rem;
-    text-align: center;
+    margin-top: 0.25rem;
+    text-align: left;
 }
 
 .orchestration-status span {
-    font-size: 0.85rem;
-    font-weight: 500;
-    padding: 0.25rem 0.75rem;
-    border-radius: 15px;
-    display: inline-block;
+    font-size: 0.75rem;
+    color: var(--text-color-secondary);
+    font-style: italic;
 }
 
 .status-inactive {
-    color: #6b7280;
-    background-color: #f3f4f6;
+    color: var(--text-color-secondary);
 }
 
 .status-active {
-    color: #059669;
-    background-color: #d1fae5;
+    color: var(--success-color, #059669);
+    font-weight: 500;
+}
+
+/* Dark mode support for orchestration */
+.dark-mode .agent-orchestration-section {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .orchestration-select {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.dark-mode .orchestration-select:not(:disabled):hover {
+    border-color: var(--primary-color);
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Theme-specific orchestration styles */
+.theme-sunset .agent-orchestration-section,
+.theme-ocean .agent-orchestration-section,
+.theme-forest .agent-orchestration-section,
+.theme-midnight .agent-orchestration-section {
+    background: rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.theme-sunset .orchestration-select,
+.theme-ocean .orchestration-select,
+.theme-forest .orchestration-select,
+.theme-midnight .orchestration-select {
+    background-color: rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: var(--light-text);
 }
 
 .agent-enable-checkbox input[type="checkbox"] {

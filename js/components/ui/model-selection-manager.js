@@ -362,10 +362,21 @@ window.ModelSelectionManager = (function() {
         // Add click listeners to model items
         elements.modelListContainer.querySelectorAll('.model-item').forEach(item => {
             item.addEventListener('click', () => {
-                const index = parseInt(item.dataset.index);
-                highlightedIndex = index;
-                updateHighlight();
-                selectModelAtIndex(index);
+                const modelId = item.dataset.modelId;
+                const model = availableModels.find(m => m.id === modelId);
+                
+                if (model) {
+                    // Find the visible index for highlighting
+                    const visibleItems = elements.modelListContainer.querySelectorAll('.model-item:not(.filtered-out)');
+                    const visibleIndex = Array.from(visibleItems).indexOf(item);
+                    
+                    highlightedIndex = visibleIndex;
+                    updateHighlight();
+                    
+                    // Select the model directly
+                    selectedModel = model;
+                    selectModel();
+                }
             });
         });
     }

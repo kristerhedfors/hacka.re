@@ -31,6 +31,8 @@ window.PromptsService = (function() {
         // Find if prompt already exists
         const existingIndex = prompts.findIndex(p => p.id === prompt.id);
         
+        const isNewPrompt = existingIndex < 0;
+        
         if (existingIndex >= 0) {
             // Update existing prompt
             prompts[existingIndex] = prompt;
@@ -41,6 +43,15 @@ window.PromptsService = (function() {
         
         // Save to storage with encryption
         CoreStorageService.setValue(PROMPTS_STORAGE_KEY, prompts);
+        
+        // Auto-enable new prompts by default
+        if (isNewPrompt) {
+            const selectedIds = getSelectedPromptIds();
+            if (!selectedIds.includes(prompt.id)) {
+                selectedIds.push(prompt.id);
+                setSelectedPromptIds(selectedIds);
+            }
+        }
         
         return prompt;
     }
