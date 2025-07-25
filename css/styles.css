@@ -1379,6 +1379,68 @@ footer a:hover {
     font-size: 0.9rem;
 }
 
+/* Settings header info icons should not show tooltips - they use click popups instead */
+.settings-header .info-icon .tooltip {
+    display: none !important;
+}
+
+/* Settings modal info popup styles (similar to prompt-info-popup) */
+.settings-info-popup {
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    width: 300px;
+    max-width: 90vw;
+    z-index: 999999;
+    overflow: hidden;
+    position: fixed;
+}
+
+.settings-info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: var(--bg-color-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.settings-info-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.settings-info-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    color: var(--text-color-secondary);
+    font-size: 0.9rem;
+}
+
+.settings-info-close:hover {
+    color: var(--text-color);
+}
+
+.settings-info-content {
+    padding: 15px;
+}
+
+.settings-info-content p {
+    margin: 0 0 10px 0;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    color: var(--text-color);
+}
+
+.settings-info-content p:last-child {
+    margin-bottom: 0;
+}
+
 .info-icon .tooltip {
     visibility: hidden;
     width: 300px;
