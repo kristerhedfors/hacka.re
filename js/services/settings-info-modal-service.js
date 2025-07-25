@@ -8,6 +8,7 @@ const SettingsInfoModalService = (() => {
     let agentInfoModal = null;
     let mcpInfoModal = null;
     let sharePasswordInfoModal = null;
+    let shareLinkInfoModal = null;
     
     /**
      * Initialize and show the Agent info modal
@@ -52,6 +53,21 @@ const SettingsInfoModalService = (() => {
             );
         }
         sharePasswordInfoModal.classList.add('active');
+    }
+    
+    /**
+     * Initialize and show the Share Link info modal
+     * @param {HTMLElement} infoIcon - The info icon that was clicked
+     */
+    function showShareLinkInfoModal(infoIcon) {
+        if (!shareLinkInfoModal) {
+            shareLinkInfoModal = createInfoModal(
+                'share-link-info-modal',
+                'About Share Link',
+                infoIcon
+            );
+        }
+        shareLinkInfoModal.classList.add('active');
     }
     
     /**
@@ -145,7 +161,8 @@ const SettingsInfoModalService = (() => {
     return {
         showAgentInfoModal,
         showMcpInfoModal,
-        showSharePasswordInfoModal
+        showSharePasswordInfoModal,
+        showShareLinkInfoModal
     };
 })();
 

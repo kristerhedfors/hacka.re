@@ -196,6 +196,17 @@ window.AIHackareComponent = (function() {
                 });
             }
             
+            // Share link info icon click handler
+            const shareLinkInfoIcon = document.getElementById('share-link-info-icon');
+            if (shareLinkInfoIcon) {
+                shareLinkInfoIcon.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (window.SettingsInfoModalService) {
+                        window.SettingsInfoModalService.showShareLinkInfoModal(shareLinkInfoIcon);
+                    }
+                });
+            }
+            
             
             // Add event listeners for link length calculation only (not saving options)
             if (this.elements.shareBaseUrlCheckbox) {

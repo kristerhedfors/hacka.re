@@ -55,7 +55,7 @@
                                 <div class="logo-line documentation-item" style="display: none;">│  ├─ <a href="about/research-report.html" class="tree-link" target="_blank" rel="noopener noreferrer">Research Report</a></div>
                                 <div class="logo-line documentation-item" style="display: none;">│  └─ <a href="about/disclaimer.html" class="tree-link" target="_blank" rel="noopener noreferrer">Disclaimer</a></div>
                                 <div class="logo-line">├─ <span class="feature-link" data-feature="agents">Agents</span></div>
-                                <div class="logo-line">├─ <span class="feature-link" data-feature="mcp-servers">Model Context Protocol (Experimental)</span></div>
+                                <div class="logo-line">├─ <span class="feature-link" data-feature="mcp-servers">Model Context Protocol</span></div>
                                 <div class="logo-line">├─ <span class="feature-link" data-feature="function-calling">Function Calling</span></div>
                                 <div class="logo-line">├─ <span class="feature-link" data-feature="system-prompts">System Prompts</span></div>
                                 <div class="logo-line">├─ <span class="feature-link" data-feature="share">Share Configuration</span></div>
@@ -126,25 +126,31 @@
 
         <div id="share-modal" class="modal">
             <div class="modal-content">
-                <h2>Share Link</h2>
+                <div class="settings-header">
+                    <h2>Share Link</h2>
+                    <span class="info-icon" id="share-link-info-icon">
+                        <i class="fas fa-info-circle"></i>
+                        <div class="tooltip">
+                            <div class="tooltip-content">
+                                <div class="important-notice">
+                                    <p><strong>Share Link Limits</strong>: Practical limits for shared links vary by platform and usage.</p>
+                                </div>
+                                <div class="important-notice">
+                                    <p><strong>Browser Limits</strong>: Browser URL limit ~2000 bytes (may vary by browser). QR code limit ~1500 bytes for reliable scanning.</p>
+                                </div>
+                                <div class="important-notice">
+                                    <p><strong>Platform Recommendations</strong>: Mobile devices: Keep under 1000 bytes for best compatibility. Email sharing: Under 2000 bytes to avoid truncation. SMS/messaging: Under 500 bytes recommended.</p>
+                                </div>
+                                <div class="important-notice">
+                                    <p><strong>Link Length Bar</strong>: The link length bar below shows the estimated size relative to browser limits.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </span>
+                </div>
                 <form id="share-form">
                     <div class="form-group">
-                        <label>What to share
-                            <span class="info-icon">
-                                <i class="fas fa-info-circle"></i>
-                                <span class="tooltip">
-                                    <p>Practical limits for shared links:</p>
-                                    <ul>
-                                        <li>Browser URL limit: ~2000 bytes (may vary by browser)</li>
-                                        <li>QR code limit: ~1500 bytes for reliable scanning</li>
-                                        <li>Mobile devices: Keep under 1000 bytes for best compatibility</li>
-                                        <li>Email sharing: Under 2000 bytes to avoid truncation</li>
-                                        <li>SMS/messaging: Under 500 bytes recommended</li>
-                                    </ul>
-                                    <p>The link length bar below shows the estimated size relative to browser limits.</p>
-                                </span>
-                            </span>
-                        </label>
+                        <label>What to share</label>
                         <div class="link-length-container">
                             <div class="link-length-label">
                                 Estimated link length: <span id="link-length-text">0</span> bytes
@@ -686,7 +692,7 @@ async function getCurrentTimeInBerlin() {
                                     <p><strong>Get started</strong>: Configure with base URL (OpenAI-compatible) and API key.</p>
                                 </div>
                                 <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 0; border-radius: 8px;">
-                                    <p style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;"><i class="fas fa-magic"></i> <strong>Vibe-Coded</strong> with Claude 3.7 Sonnet | <a href="about/index.html" target="_blank" rel="noopener noreferrer">About</a> | <a href="about/development.html" target="_blank" rel="noopener noreferrer">Development</a> | <a href="about/disclaimer.html" target="_blank" rel="noopener noreferrer">Disclaimer</a></p>
+                                    <p style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;"><i class="fas fa-magic"></i> <strong>Vibe-Coded</strong> with Claude Sonnet | <a href="about/index.html" target="_blank" rel="noopener noreferrer">About</a> | <a href="about/development.html" target="_blank" rel="noopener noreferrer">Development</a> | <a href="about/disclaimer.html" target="_blank" rel="noopener noreferrer">Disclaimer</a></p>
                                 </div>
                             </div>
                         </div>
