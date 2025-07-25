@@ -154,8 +154,8 @@ window.AIHackareComponent = (function() {
         if (agentInfoIcon) {
             agentInfoIcon.addEventListener('click', (e) => {
                 e.stopPropagation();
-                if (window.SettingsInfoPopupService) {
-                    window.SettingsInfoPopupService.showAgentInfoPopup(agentInfoIcon);
+                if (window.SettingsInfoModalService) {
+                    window.SettingsInfoModalService.showAgentInfoModal(agentInfoIcon);
                 }
             });
         }
@@ -182,6 +182,28 @@ window.AIHackareComponent = (function() {
             if (this.elements.regeneratePasswordBtn) {
                 this.elements.regeneratePasswordBtn.addEventListener('click', () => {
                     this.shareManager.regeneratePassword();
+                });
+            }
+            
+            // Share password info icon click handler
+            const sharePasswordInfoIcon = document.getElementById('share-password-info-icon');
+            if (sharePasswordInfoIcon) {
+                sharePasswordInfoIcon.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (window.SettingsInfoModalService) {
+                        window.SettingsInfoModalService.showSharePasswordInfoModal(sharePasswordInfoIcon);
+                    }
+                });
+            }
+            
+            // Share link info icon click handler
+            const shareLinkInfoIcon = document.getElementById('share-link-info-icon');
+            if (shareLinkInfoIcon) {
+                shareLinkInfoIcon.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (window.SettingsInfoModalService) {
+                        window.SettingsInfoModalService.showShareLinkInfoModal(shareLinkInfoIcon);
+                    }
                 });
             }
             

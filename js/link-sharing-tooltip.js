@@ -9,6 +9,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Process each info icon
     shareInfoIcons.forEach((infoIcon, index) => {
+        // Skip the info icons that are handled by SettingsInfoModalService
+        if (infoIcon.id === 'share-link-info-icon' || infoIcon.id === 'share-password-info-icon') {
+            return; // Skip these, they're handled elsewhere
+        }
         // Create a unique ID for each modal
         const modalId = `share-info-modal-${index}`;
         

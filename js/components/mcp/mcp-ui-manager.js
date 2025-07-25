@@ -76,8 +76,8 @@ window.MCPUIManager = (function() {
         if (mcpInfoIcon) {
             mcpInfoIcon.addEventListener('click', (e) => {
                 e.stopPropagation();
-                if (window.SettingsInfoPopupService) {
-                    window.SettingsInfoPopupService.showMcpInfoPopup(mcpInfoIcon);
+                if (window.SettingsInfoModalService) {
+                    window.SettingsInfoModalService.showMcpInfoModal(mcpInfoIcon);
                 }
             });
         }
