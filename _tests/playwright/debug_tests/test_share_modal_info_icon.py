@@ -11,7 +11,7 @@ from playwright.sync_api import sync_playwright, expect
 import time
 
 def test_share_modal_info_icon():
-    """Test that Share modal Password/Session Key info icon appears in upper right corner"""
+    """Test that Share modal info icons appear in upper right corner like Agent/MCP modals"""
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=False)  # Show browser for visual verification
         page = browser.new_page()
@@ -33,21 +33,48 @@ def test_share_modal_info_icon():
             "Modal": "Share modal visible"
         })
         
-        # Find the Password/Session Key info icon
+        # Test 1: Main Share Link info icon (in header)
+        print("Testing main Share Link info icon...")
+        share_link_info_icon = page.locator("#share-link-info-icon")
+        expect(share_link_info_icon).to_be_visible()
+        
+        # Verify it's positioned in the settings-header (upper right corner style)
+        main_settings_header = page.locator(".settings-header").first
+        expect(main_settings_header).to_be_visible()
+        
+        # Click the main info icon
+        share_link_info_icon.click()
+        
+        # Wait for modal to appear
+        page.wait_for_timeout(500)
+        
+        # Check if info modal is visible
+        share_link_info_modal = page.locator("#share-link-info-modal")
+        expect(share_link_info_modal).to_be_visible()
+        expect(share_link_info_modal).to_have_class("modal active")
+        
+        screenshot_with_markdown(page, "share_link_info_modal_visible", {
+            "Status": "Share Link info modal should be full overlay",
+            "Modal": "Share Link info modal overlay",
+            "Info": "Main header info icon working"
+        })
+        
+        # Close the modal by clicking the close button
+        close_btn = share_link_info_modal.locator("#close-share-link-info-modal")
+        close_btn.click()
+        
+        # Test 2: Password/Session Key info icon (in second header)
+        print("Testing Password/Session Key info icon...")
         password_info_icon = page.locator("#share-password-info-icon")
         expect(password_info_icon).to_be_visible()
         
-        # Verify it's positioned in the settings-header (upper right corner style)
-        settings_header = page.locator(".settings-header")
-        expect(settings_header).to_be_visible()
-        
-        # Click the info icon
+        # Click the password info icon
         password_info_icon.click()
         
         # Wait for modal to appear
         page.wait_for_timeout(500)
         
-        # Check if info modal is visible (should be full overlay like other modals)
+        # Check if info modal is visible
         password_info_modal = page.locator("#share-password-info-modal")
         expect(password_info_modal).to_be_visible()
         expect(password_info_modal).to_have_class("modal active")
@@ -55,10 +82,10 @@ def test_share_modal_info_icon():
         screenshot_with_markdown(page, "share_password_info_modal_visible", {
             "Status": "Password/Session Key info modal should be full overlay",
             "Modal": "Share Password info modal overlay",
-            "Info": "This should match the style of Agent and MCP modals"
+            "Info": "Both info icons should now be in upper right corners"
         })
         
-        print("Share modal info icon test complete. Icon should be in upper right corner.")
+        print("Share modal info icons test complete. Both icons should be in upper right corners.")
         
         # Keep browser open for manual inspection
         page.pause()
