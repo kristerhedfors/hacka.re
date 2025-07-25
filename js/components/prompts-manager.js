@@ -94,6 +94,14 @@ window.PromptsManager = (function() {
                 console.error('Error loading prompts list:', error);
                 // Even if there's an error, keep the modal visible
             }
+            
+            // Focus on the prompt name input field
+            setTimeout(() => {
+                const promptNameField = document.getElementById('new-prompt-label');
+                if (promptNameField) {
+                    promptNameField.focus();
+                }
+            }, 200); // Slightly longer delay since prompts modal has content loading
         }
         
         /**
