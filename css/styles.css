@@ -321,7 +321,7 @@ html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu {
 }
 
 /* Dark mode (non-modern) text should be white */
-html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu *,
+html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu *:not(.fas):not(.far):not(.fal):not(.fab):not(.fa),
 html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu .tree-link,
 html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu .feature-link,
 html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu .tree-toggle,
@@ -348,7 +348,7 @@ html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu a {
 }
 
 /* Apply monospace font to ALL text elements - ADAPTIVE TEXT COLOR */
-.heart-logo .tooltip.tree-menu *,
+.heart-logo .tooltip.tree-menu *:not(.fas):not(.far):not(.fal):not(.fab):not(.fa),
 .heart-logo .tooltip.tree-menu .tree-link,
 .heart-logo .tooltip.tree-menu .feature-link,
 .heart-logo .tooltip.tree-menu .tree-toggle,
@@ -374,11 +374,11 @@ html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu a {
 
 /* White text for tree menu in modern theme (both light and dark have dark backgrounds) */
 html.theme-modern .heart-logo .tooltip.tree-menu,
-html.theme-modern .heart-logo .tooltip.tree-menu *,
+html.theme-modern .heart-logo .tooltip.tree-menu *:not(.fas):not(.far):not(.fal):not(.fab):not(.fa),
 html.theme-modern .heart-logo .tooltip.tree-menu .documentation-item,
 html.theme-modern .heart-logo .tooltip.tree-menu .documentation-item a,
 html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu,
-html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu *,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu *:not(.fas):not(.far):not(.fal):not(.fab):not(.fa),
 html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item,
 html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item a {
     color: #ffffff !important;
@@ -3396,17 +3396,17 @@ html.theme-modern .heart-logo .tooltip.tree-menu,
 html.theme-modern .heart-logo .tooltip.tree-menu div,
 html.theme-modern .heart-logo .tooltip.tree-menu span,
 html.theme-modern .heart-logo .tooltip.tree-menu a,
-html.theme-modern .heart-logo .tooltip.tree-menu *,
+html.theme-modern .heart-logo .tooltip.tree-menu *:not(.fas):not(.far):not(.fal):not(.fab):not(.fa),
 html.theme-modern .heart-logo .tooltip.tree-menu .documentation-item,
-html.theme-modern .heart-logo .tooltip.tree-menu .documentation-item *,
+html.theme-modern .heart-logo .tooltip.tree-menu .documentation-item *:not(.fas):not(.far):not(.fal):not(.fab):not(.fa),
 html.theme-modern .heart-logo .tooltip.tree-menu .documentation-item a,
 html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu,
 html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu div,
 html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu span,
 html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu a,
-html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu *,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu *:not(.fas):not(.far):not(.fal):not(.fab):not(.fa),
 html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item,
-html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item *,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item *:not(.fas):not(.far):not(.fal):not(.fab):not(.fa),
 html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item a {
     color: #ffffff !important;
     -webkit-text-fill-color: #ffffff !important;
@@ -3420,52 +3420,26 @@ html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item a
     z-index: 10;
 }
 
+/* Heart modal info icon positioning */
+.heart-modal-header {
+    position: relative;
+}
+
 .heart-modal-header .info-icon {
     position: absolute;
     top: 8px;
     right: 8px;
-    cursor: pointer;
-    color: var(--text-color);
     z-index: 12;
-    font-size: 1.1rem;
-    padding: 4px;
-    border-radius: 50%;
-    background-color: rgba(0, 0, 0, 0.1);
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
 }
 
-/* White info icon for modern theme */
+/* Theme-specific colors for heart modal info icon */
 html.theme-modern .heart-modal-header .info-icon,
 html.theme-modern.dark-mode .heart-modal-header .info-icon {
     color: #ffffff !important;
-    background-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Dark mode info icon */
 html.dark-mode:not(.theme-modern) .heart-modal-header .info-icon {
     color: #ffffff !important;
-    background-color: rgba(255, 255, 255, 0.2);
-}
-
-.heart-modal-header .info-icon:hover {
-    background-color: rgba(0, 0, 0, 0.2);
-    transform: scale(1.1);
-}
-
-html.theme-modern .heart-modal-header .info-icon:hover,
-html.theme-modern.dark-mode .heart-modal-header .info-icon:hover,
-html.dark-mode:not(.theme-modern) .heart-modal-header .info-icon:hover {
-    background-color: rgba(255, 255, 255, 0.3);
-}
-
-/* Hide the tooltip inside the heart modal info icon initially */
-.heart-modal-header .info-icon .tooltip {
-    display: none;
 }
 
 /* Hide the close button added by JavaScript since we're using info icon instead */
