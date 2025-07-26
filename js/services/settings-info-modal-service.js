@@ -210,13 +210,15 @@ const SettingsInfoModalService = (() => {
      */
     function setupModalHandlers(modal, closeButton) {
         // Close modal when close button is clicked
-        closeButton.addEventListener('click', function() {
+        closeButton.addEventListener('click', function(e) {
+            e.stopPropagation(); // Prevent event bubbling
             modal.classList.remove('active');
         });
         
         // Close modal when clicking outside
         modal.addEventListener('click', function(e) {
             if (e.target === modal) {
+                e.stopPropagation(); // Prevent event bubbling
                 modal.classList.remove('active');
             }
         });
@@ -224,6 +226,7 @@ const SettingsInfoModalService = (() => {
         // Close modal when pressing Escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape' && modal.classList.contains('active')) {
+                e.stopPropagation(); // Prevent event bubbling
                 modal.classList.remove('active');
             }
         });
