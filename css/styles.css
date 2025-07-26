@@ -321,7 +321,7 @@ html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu {
 }
 
 /* Dark mode (non-modern) text should be white */
-html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu *,
+html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu *:not(.fas):not(.far):not(.fal):not(.fab):not(.fa),
 html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu .tree-link,
 html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu .feature-link,
 html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu .tree-toggle,
@@ -348,7 +348,7 @@ html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu a {
 }
 
 /* Apply monospace font to ALL text elements - ADAPTIVE TEXT COLOR */
-.heart-logo .tooltip.tree-menu *,
+.heart-logo .tooltip.tree-menu *:not(.fas):not(.far):not(.fal):not(.fab):not(.fa),
 .heart-logo .tooltip.tree-menu .tree-link,
 .heart-logo .tooltip.tree-menu .feature-link,
 .heart-logo .tooltip.tree-menu .tree-toggle,
@@ -374,11 +374,11 @@ html.dark-mode:not(.theme-modern) .heart-logo .tooltip.tree-menu a {
 
 /* White text for tree menu in modern theme (both light and dark have dark backgrounds) */
 html.theme-modern .heart-logo .tooltip.tree-menu,
-html.theme-modern .heart-logo .tooltip.tree-menu *,
+html.theme-modern .heart-logo .tooltip.tree-menu *:not(.fas):not(.far):not(.fal):not(.fab):not(.fa),
 html.theme-modern .heart-logo .tooltip.tree-menu .documentation-item,
 html.theme-modern .heart-logo .tooltip.tree-menu .documentation-item a,
 html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu,
-html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu *,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu *:not(.fas):not(.far):not(.fal):not(.fab):not(.fa),
 html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item,
 html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item a {
     color: #ffffff !important;
@@ -3396,21 +3396,45 @@ html.theme-modern .heart-logo .tooltip.tree-menu,
 html.theme-modern .heart-logo .tooltip.tree-menu div,
 html.theme-modern .heart-logo .tooltip.tree-menu span,
 html.theme-modern .heart-logo .tooltip.tree-menu a,
-html.theme-modern .heart-logo .tooltip.tree-menu *,
+html.theme-modern .heart-logo .tooltip.tree-menu *:not(.fas):not(.far):not(.fal):not(.fab):not(.fa),
 html.theme-modern .heart-logo .tooltip.tree-menu .documentation-item,
-html.theme-modern .heart-logo .tooltip.tree-menu .documentation-item *,
+html.theme-modern .heart-logo .tooltip.tree-menu .documentation-item *:not(.fas):not(.far):not(.fal):not(.fab):not(.fa),
 html.theme-modern .heart-logo .tooltip.tree-menu .documentation-item a,
 html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu,
 html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu div,
 html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu span,
 html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu a,
-html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu *,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu *:not(.fas):not(.far):not(.fal):not(.fab):not(.fa),
 html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item,
-html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item *,
+html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item *:not(.fas):not(.far):not(.fal):not(.fab):not(.fa),
 html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item a {
     color: #ffffff !important;
     -webkit-text-fill-color: #ffffff !important;
     text-fill-color: #ffffff !important;
+}
+
+/* Heart modal info icon positioning */
+.heart-modal-header .info-icon {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 12;
+}
+
+/* Theme-specific colors for heart modal info icon */
+html.theme-modern .heart-modal-header .info-icon,
+html.theme-modern.dark-mode .heart-modal-header .info-icon {
+    color: #ffffff !important;
+}
+
+html.dark-mode:not(.theme-modern) .heart-modal-header .info-icon {
+    color: #ffffff !important;
+}
+
+/* Hide the close button added by JavaScript since we're using info icon instead */
+.heart-logo .tooltip .close-button,
+.heart-logo .tooltip button[title="Close"] {
+    display: none !important;
 }
 
 /* ===== Agent Modal Styles ===== */

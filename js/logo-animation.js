@@ -210,26 +210,38 @@ window.LogoAnimation = (function() {
                     }
                 });
                 
-                // Add close button to tooltip
-                const closeButton = document.createElement('button');
-                closeButton.innerHTML = '&times;';
-                closeButton.style.position = 'absolute';
-                closeButton.style.top = '5px';
-                closeButton.style.right = '5px';
-                closeButton.style.background = 'none';
-                closeButton.style.border = 'none';
-                closeButton.style.fontSize = '1.2rem';
-                closeButton.style.cursor = 'pointer';
-                closeButton.style.color = 'var(--text-color)';
-                closeButton.title = 'Close';
+                // Note: Close button functionality is now handled by the info icon
+                // The info icon serves as both an info button and close functionality
                 
-                closeButton.addEventListener('click', function(e) {
-                    e.stopPropagation();
+                // Add heart modal info icon click handler
+                const heartInfoIcon = tooltip.querySelector('#heart-modal-info-icon');
+                if (heartInfoIcon) {
+                    heartInfoIcon.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (window.SettingsInfoModalService) {
+                            window.SettingsInfoModalService.showHeartInfoModal(heartInfoIcon);
+                        }
+                    });
+                }
+                
+                // Add close functionality when clicking anywhere else in the tooltip
+                tooltip.addEventListener('click', function(e) {
+                    // Check if click is on the info icon - if so, don't close
+                    if (e.target.closest('#heart-modal-info-icon')) {
+                        return;
+                    }
+                    // Allow clicks on interactive elements to work normally
+                    if (e.target.classList.contains('tree-toggle') || 
+                        e.target.classList.contains('feature-link') || 
+                        e.target.classList.contains('tree-link') ||
+                        e.target.tagName === 'A') {
+                        return;
+                    }
+                    // Close modal on other clicks
                     tooltip.classList.remove('active');
                     tooltipActive = false;
+                    document.body.classList.remove('heart-modal-open');
                 });
-                
-                tooltip.appendChild(closeButton);
             }
         }
     }
