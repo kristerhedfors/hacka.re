@@ -3413,18 +3413,7 @@ html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item a
     text-fill-color: #ffffff !important;
 }
 
-/* Heart Modal Header with Info Icon */
-.heart-modal-header {
-    position: relative;
-    height: 0; /* Don't take up space in the layout */
-    z-index: 10;
-}
-
 /* Heart modal info icon positioning */
-.heart-modal-header {
-    position: relative;
-}
-
 .heart-modal-header .info-icon {
     position: absolute;
     top: 8px;
