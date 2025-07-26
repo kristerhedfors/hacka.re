@@ -3413,6 +3413,67 @@ html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .documentation-item a
     text-fill-color: #ffffff !important;
 }
 
+/* Heart Modal Header with Info Icon */
+.heart-modal-header {
+    position: relative;
+    height: 0; /* Don't take up space in the layout */
+    z-index: 10;
+}
+
+.heart-modal-header .info-icon {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    cursor: pointer;
+    color: var(--text-color);
+    z-index: 12;
+    font-size: 1.1rem;
+    padding: 4px;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+}
+
+/* White info icon for modern theme */
+html.theme-modern .heart-modal-header .info-icon,
+html.theme-modern.dark-mode .heart-modal-header .info-icon {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Dark mode info icon */
+html.dark-mode:not(.theme-modern) .heart-modal-header .info-icon {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.heart-modal-header .info-icon:hover {
+    background-color: rgba(0, 0, 0, 0.2);
+    transform: scale(1.1);
+}
+
+html.theme-modern .heart-modal-header .info-icon:hover,
+html.theme-modern.dark-mode .heart-modal-header .info-icon:hover,
+html.dark-mode:not(.theme-modern) .heart-modal-header .info-icon:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Hide the tooltip inside the heart modal info icon initially */
+.heart-modal-header .info-icon .tooltip {
+    display: none;
+}
+
+/* Hide the close button added by JavaScript since we're using info icon instead */
+.heart-logo .tooltip .close-button,
+.heart-logo .tooltip button[title="Close"] {
+    display: none !important;
+}
+
 /* ===== Agent Modal Styles ===== */
 .agent-items-section {
     margin: 1.5rem 0;
