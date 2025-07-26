@@ -440,28 +440,10 @@
         width: 100% !important;
     }
     
-    /* Add close button styling for mobile modal */
-    .heart-logo .tooltip .close-button {
-        position: absolute !important;
-        top: 10px !important;
-        right: 15px !important;
-        background: none !important;
-        border: none !important;
-        font-size: 1.5rem !important;
-        color: var(--text-color) !important;
-        cursor: pointer !important;
-        z-index: 1002 !important;
-        width: 30px !important;
-        height: 30px !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        border-radius: 50% !important;
-        background-color: var(--bg-color-secondary) !important;
-    }
-    
-    .heart-logo .tooltip .close-button:hover {
-        background-color: var(--border-color) !important;
+    /* Close button is now replaced by info icon - hide any close buttons */
+    .heart-logo .tooltip .close-button,
+    .heart-logo .tooltip button[title="Close"] {
+        display: none !important;
     }
     
     /* Make interactive elements more touch-friendly without breaking ASCII layout */

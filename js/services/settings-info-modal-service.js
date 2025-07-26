@@ -9,6 +9,7 @@ const SettingsInfoModalService = (() => {
     let mcpInfoModal = null;
     let sharePasswordInfoModal = null;
     let shareLinkInfoModal = null;
+    let heartInfoModal = null;
     
     /**
      * Initialize and show the Agent info modal
@@ -68,6 +69,77 @@ const SettingsInfoModalService = (() => {
             );
         }
         shareLinkInfoModal.classList.add('active');
+    }
+    
+    /**
+     * Initialize and show the Heart modal info modal
+     * @param {HTMLElement} infoIcon - The info icon that was clicked
+     */
+    function showHeartInfoModal(infoIcon) {
+        if (!heartInfoModal) {
+            heartInfoModal = createHeartInfoModal(
+                'heart-info-modal',
+                'hacka.re: serverless agency',
+                infoIcon
+            );
+        }
+        heartInfoModal.classList.add('active');
+    }
+    
+    /**
+     * Create a special heart info modal with custom content
+     * @param {string} id - Modal ID
+     * @param {string} title - Modal title
+     * @param {HTMLElement} infoIcon - Original info icon element
+     * @returns {HTMLElement} Modal element
+     */
+    function createHeartInfoModal(id, title, infoIcon) {
+        // Create modal element
+        const modal = document.createElement('div');
+        modal.id = id;
+        modal.className = 'modal';
+        
+        // Create modal content
+        const modalContent = document.createElement('div');
+        modalContent.className = 'modal-content';
+        
+        // Add header
+        const header = document.createElement('div');
+        header.className = 'settings-header';
+        
+        const heading = document.createElement('h2');
+        heading.textContent = title;
+        
+        header.appendChild(heading);
+        modalContent.appendChild(header);
+        
+        const content = document.createElement('div');
+        content.innerHTML = `
+            <p>Aside from Documentation, the links in this menu matches the icons in the header of the application. Each menu item opens the corresponding feature from the header icons.</p>
+        `;
+        modalContent.appendChild(content);
+        
+        // Add close button
+        const closeButtonContainer = document.createElement('div');
+        closeButtonContainer.className = 'form-actions';
+        
+        const closeButton = document.createElement('button');
+        closeButton.type = 'button';
+        closeButton.className = 'btn secondary-btn';
+        closeButton.textContent = 'Close';
+        closeButton.id = `close-${id}`;
+        
+        closeButtonContainer.appendChild(closeButton);
+        modalContent.appendChild(closeButtonContainer);
+        
+        // Add modal to document
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+        
+        // Set up event handlers
+        setupModalHandlers(modal, closeButton);
+        
+        return modal;
     }
     
     /**
@@ -138,13 +210,15 @@ const SettingsInfoModalService = (() => {
      */
     function setupModalHandlers(modal, closeButton) {
         // Close modal when close button is clicked
-        closeButton.addEventListener('click', function() {
+        closeButton.addEventListener('click', function(e) {
+            e.stopPropagation(); // Prevent event bubbling
             modal.classList.remove('active');
         });
         
         // Close modal when clicking outside
         modal.addEventListener('click', function(e) {
             if (e.target === modal) {
+                e.stopPropagation(); // Prevent event bubbling
                 modal.classList.remove('active');
             }
         });
@@ -152,6 +226,7 @@ const SettingsInfoModalService = (() => {
         // Close modal when pressing Escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape' && modal.classList.contains('active')) {
+                e.stopPropagation(); // Prevent event bubbling
                 modal.classList.remove('active');
             }
         });
@@ -162,7 +237,8 @@ const SettingsInfoModalService = (() => {
         showAgentInfoModal,
         showMcpInfoModal,
         showSharePasswordInfoModal,
-        showShareLinkInfoModal
+        showShareLinkInfoModal,
+        showHeartInfoModal
     };
 })();
 
