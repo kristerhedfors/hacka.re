@@ -10,15 +10,18 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT_ROOT"
 
-# Output directory and filename
+# Output directory and filename with timestamp
 OUTPUT_DIR="$PROJECT_ROOT/releases"
 mkdir -p "$OUTPUT_DIR"
 
-ZIP_FILE="$OUTPUT_DIR/hacka-re-latest.zip"
+TIMESTAMP=$(date +%Y%m%d-%H%M)
+TIMESTAMPED_ZIP="$OUTPUT_DIR/hacka-re-$TIMESTAMP.zip"
+LATEST_ZIP="$OUTPUT_DIR/hacka-re-latest.zip"
 
 echo "Building hacka.re release ZIP..."
 echo "Project root: $PROJECT_ROOT"
-echo "Output file: $ZIP_FILE"
+echo "Timestamped file: $TIMESTAMPED_ZIP"
+echo "Latest link: $LATEST_ZIP"
 
 # Create temporary directory for files to zip
 TEMP_DIR=$(mktemp -d)
@@ -31,31 +34,20 @@ echo "Copying essential files..."
 cp index.html "$TEMP_DIR/"
 cp LICENSE "$TEMP_DIR/"
 
-# JavaScript files
+# JavaScript files (only copy existing files)
 mkdir -p "$TEMP_DIR/js"
-cp js/app.js "$TEMP_DIR/js/"
-cp js/script.js "$TEMP_DIR/js/"
-cp js/themes.js "$TEMP_DIR/js/"
-cp js/button-tooltips.js "$TEMP_DIR/js/"
-cp js/copy-code.js "$TEMP_DIR/js/"
-cp js/default-functions-tooltip.js "$TEMP_DIR/js/"
-cp js/function-tooltip.js "$TEMP_DIR/js/"
-cp js/link-sharing-tooltip.js "$TEMP_DIR/js/"
-cp js/logo-animation.js "$TEMP_DIR/js/"
-cp js/logo-tooltip.js "$TEMP_DIR/js/"
-cp js/logo-typewriter.js "$TEMP_DIR/js/"
-cp js/mobile-utils.js "$TEMP_DIR/js/"
-cp js/modal-effects.js "$TEMP_DIR/js/"
-cp js/settings-tooltip.js "$TEMP_DIR/js/"
+for file in app.js script.js themes.js button-tooltips.js copy-code.js default-functions-tooltip.js function-tooltip.js link-sharing-tooltip.js logo-animation.js mobile-utils.js modal-effects.js settings-tooltip.js ascii-tree-menu.js; do
+    if [ -f "js/$file" ]; then
+        cp "js/$file" "$TEMP_DIR/js/"
+    fi
+done
 
-# Copy entire subdirectories
-cp -r js/components "$TEMP_DIR/js/"
-cp -r js/config "$TEMP_DIR/js/"
-cp -r js/services "$TEMP_DIR/js/"
-cp -r js/utils "$TEMP_DIR/js/"
-cp -r js/default-functions "$TEMP_DIR/js/"
-cp -r js/default-prompts "$TEMP_DIR/js/"
-cp -r js/plugins "$TEMP_DIR/js/"
+# Copy entire subdirectories (only existing ones)
+for dir in components services utils default-functions default-prompts plugins providers; do
+    if [ -d "js/$dir" ]; then
+        cp -r "js/$dir" "$TEMP_DIR/js/"
+    fi
+done
 
 # CSS files
 cp -r css "$TEMP_DIR/"
@@ -66,60 +58,31 @@ cp -r lib "$TEMP_DIR/"
 # About pages (useful for local users)
 cp -r about "$TEMP_DIR/"
 
-# Create installation instructions
-cat > "$TEMP_DIR/INSTALLATION.md" << 'EOF'
-# hacka.re - Local Installation
+# No installation file created - users can refer to the about pages
 
-## Quick Start
-
-1. **Extract files**: Unzip all files to any directory on your computer
-2. **Open in browser**: Double-click `index.html` or open it in any web browser
-3. **Configure API**: Click the settings gear icon and enter your API details
-4. **For Local LLMs**: See `about/local-llm-toolbox.html` for setup guides
-
-## What's Included
-
-- Complete hacka.re application (no internet required after setup)
-- All JavaScript modules and services  
-- CSS stylesheets and themes
-- Local libraries (Font Awesome, syntax highlighting, etc.)
-- Documentation and Local LLM setup guides
-
-## Local LLM Setup
-
-For complete privacy, combine with local LLMs:
-- **Ollama**: `http://localhost:11434/v1/chat/completions`
-- **LM Studio**: `http://localhost:1234/v1/chat/completions`
-- **GPT4All**: `http://localhost:4891/v1/chat/completions`
-
-See `about/local-llm-toolbox.html` for detailed setup instructions.
-
-## Privacy & Security
-
-- No backend server required
-- All data stays in your browser's local storage
-- Compatible with air-gapped systems when using local LLMs
-- Encrypted storage for sensitive data
-
-Generated: $(date)
-EOF
-
-# Create the ZIP file
-echo "Creating ZIP file..."
+# Create the timestamped ZIP file
+echo "Creating timestamped ZIP file..."
 cd "$TEMP_DIR"
-zip -r "$ZIP_FILE" . -x "*.DS_Store" "*/.*" > /dev/null
+zip -r "$TIMESTAMPED_ZIP" . -x "*.DS_Store" "*/.*" > /dev/null
+
+# Create/update the latest link
+echo "Creating latest link..."
+cd "$OUTPUT_DIR"
+rm -f "hacka-re-latest.zip"
+cp "$(basename "$TIMESTAMPED_ZIP")" "hacka-re-latest.zip"
 
 # Clean up
 rm -rf "$TEMP_DIR"
 
 # Get file size
-FILE_SIZE=$(ls -lh "$ZIP_FILE" | awk '{print $5}')
-FILE_COUNT=$(unzip -l "$ZIP_FILE" | tail -n 1 | awk '{print $2}')
+TIMESTAMPED_SIZE=$(ls -lh "$TIMESTAMPED_ZIP" | awk '{print $5}')
+FILE_COUNT=$(unzip -l "$TIMESTAMPED_ZIP" | tail -n 1 | awk '{print $2}')
 
 echo ""
 echo "✅ Release ZIP created successfully!"
-echo "📁 File: $ZIP_FILE"
-echo "📊 Size: $FILE_SIZE"
+echo "📁 Timestamped: $TIMESTAMPED_ZIP"
+echo "📁 Latest link: $LATEST_ZIP"
+echo "📊 Size: $TIMESTAMPED_SIZE"
 echo "📄 Files: $FILE_COUNT"
 echo ""
 echo "🚀 To use:"
@@ -127,6 +90,3 @@ echo "   1. Distribute the ZIP file"
 echo "   2. Users extract and open index.html"
 echo "   3. No server setup required!"
 echo ""
-
-# Note: File is already named hacka-re-latest.zip
-echo "📎 Latest release file: releases/hacka-re-latest.zip"
