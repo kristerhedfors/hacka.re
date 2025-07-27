@@ -23,7 +23,7 @@ window.ModelInfoDisplay = (function() {
                     provider = 'Meta';
                 } else if (modelId.includes('gemma')) {
                     provider = 'Google';
-                } else if (modelId.includes('mistral') || modelId.includes('mixtral')) {
+                } else if (modelId.includes('mistral') || modelId.includes('mixtral') || modelId.includes('magistral') || modelId.includes('devstral')) {
                     provider = 'Mistral AI';
                 } else if (modelId.includes('claude')) {
                     provider = 'Anthropic';
@@ -39,12 +39,16 @@ window.ModelInfoDisplay = (function() {
                     provider = 'Alibaba';
                 } else if (modelId.includes('deepseek')) {
                     provider = 'DeepSeek';
+                } else if (modelId.includes('mai-ds')) {
+                    provider = 'DeepSeek and Microsoft AI';
                 } else {
                     // If no specific model pattern is matched, determine by base URL
                     const baseUrl = StorageService.getBaseUrl();
                     if (baseUrl) {
                         if (baseUrl.includes('groq.com')) {
                             provider = 'Groq';
+                        } else if (baseUrl.includes('berget.ai')) {
+                            provider = 'Berget.AI';
                         } else if (baseUrl.includes('openai.com')) {
                             provider = 'OpenAI';
                         } else if (baseUrl.includes('localhost:11434')) {

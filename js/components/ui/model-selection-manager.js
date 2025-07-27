@@ -306,26 +306,80 @@ window.ModelSelectionManager = (function() {
         const modelSelect = document.getElementById('model-select');
         if (!modelSelect) return;
         
-        const baseUrl = window.aiHackare?.settingsManager?.getBaseUrl() || '';
         availableModels = Array.from(modelSelect.options)
             .filter(option => !option.disabled && option.value)
             .map(option => ({
                 id: option.value,
                 name: option.textContent,
-                provider: getProviderFromBaseUrl(baseUrl)
+                provider: getModelProvider(option.value)
             }));
     }
     
     /**
-     * Get provider name from base URL
-     * @param {string} baseUrl - API base URL
+     * Get provider name based on model ID (actual model creator, not API service)
+     * @param {string} modelId - Model ID
      * @returns {string} Provider name
      */
-    function getProviderFromBaseUrl(baseUrl) {
-        if (baseUrl.includes('openai.com')) return 'OpenAI';
-        if (baseUrl.includes('groq.com')) return 'Groq';
-        if (baseUrl.includes('localhost:11434')) return 'Ollama';
-        return 'Custom';
+    function getModelProvider(modelId) {
+        if (!modelId || typeof modelId !== 'string') {
+            return 'Unknown';
+        }
+        
+        const lowerModelId = modelId.toLowerCase();
+        
+        // Meta (Llama models)
+        if (lowerModelId.includes('llama')) {
+            return 'Meta';
+        }
+        
+        // Mistral AI models
+        if (lowerModelId.includes('mistral') || lowerModelId.includes('mixtral') || 
+            lowerModelId.includes('magistral') || lowerModelId.includes('devstral')) {
+            return 'Mistral AI';
+        }
+        
+        // OpenAI models
+        if (lowerModelId.includes('gpt') || lowerModelId.includes('whisper') || 
+            lowerModelId.includes('o1') || lowerModelId.includes('o3') || lowerModelId.includes('o4')) {
+            return 'OpenAI';
+        }
+        
+        // Google models
+        if (lowerModelId.includes('gemma') || lowerModelId.includes('gemini')) {
+            return 'Google';
+        }
+        
+        // Anthropic models
+        if (lowerModelId.includes('claude')) {
+            return 'Anthropic';
+        }
+        
+        // Alibaba models
+        if (lowerModelId.includes('qwen')) {
+            return 'Alibaba';
+        }
+        
+        // Microsoft AI models
+        if (lowerModelId.includes('mai-ds')) {
+            return 'DeepSeek and Microsoft AI';
+        }
+        
+        // DeepSeek models
+        if (lowerModelId.includes('deepseek')) {
+            return 'DeepSeek';
+        }
+        
+        // Other specific providers
+        if (lowerModelId.includes('allam')) {
+            return 'Aleph Alpha';
+        }
+        
+        if (lowerModelId.includes('playai')) {
+            return 'PlayAI';
+        }
+        
+        // Default to Unknown for unrecognized models
+        return 'Unknown';
     }
     
     /**
