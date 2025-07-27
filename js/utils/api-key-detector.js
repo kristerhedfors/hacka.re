@@ -19,6 +19,12 @@ window.ApiKeyDetector = (function() {
             providerValue: 'groq',
             providerName: 'GroqCloud',
             defaultModel: 'moonshotai/kimi-k2-instruct'
+        },
+        berget: {
+            pattern: /^sk_ber_[A-Za-z0-9\-_]{30,}$/,
+            providerValue: 'berget',
+            providerName: 'Berget.AI',
+            defaultModel: 'mistralai/Magistral-Small-2506'
         }
     };
 
