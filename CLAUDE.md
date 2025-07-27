@@ -94,7 +94,12 @@ js/
 │   ├── storage-*.js        # Storage services (4 modules)
 │   └── ... (6 more service categories)
 ├── utils/                   # Utility functions (7 modules)
-└── default-prompts/         # System prompt components
+├── default-prompts/         # System prompt components
+└── default-functions/       # Built-in function groups (4 modules)
+    ├── rc4-encryption.js    # RC4 encryption functions
+    ├── math-utilities.js    # Mathematical utilities
+    ├── api-auth-client.js   # API authentication
+    └── mcp-example.js       # MCP example functions
 ```
 
 ### Service Architecture (Refactored)
@@ -109,14 +114,17 @@ js/
 - `api-tools-service.js` - API tools integration
 
 **Function Tools System (8 modules):**
-- `function-tools-service.js` - Main orchestrator
-- `function-tools-config.js` - Configuration constants
-- `function-tools-storage.js` - Storage operations
-- `function-tools-parser.js` - Argument parsing
-- `function-tools-executor.js` - Sandboxed execution
-- `function-tools-registry.js` - Function registry
-- `function-tools-processor.js` - Tool call processing
-- `function-tools-logger.js` - Centralized logging
+Refactored from monolithic ~800-line service into focused modules with clear dependencies:
+- `function-tools-service.js` - Main orchestrator (public API, maintains backward compatibility)
+- `function-tools-config.js` - Configuration constants and storage keys
+- `function-tools-logger.js` - Centralized logging utilities with debug prefixes
+- `function-tools-storage.js` - localStorage operations and registry state management
+- `function-tools-parser.js` - Argument parsing with type conversion and JSDoc parsing
+- `function-tools-executor.js` - Sandboxed function execution with timeout handling
+- `function-tools-registry.js` - Function registry management and grouping logic
+- `function-tools-processor.js` - Tool call processing from API responses
+
+**Loading Order**: Must be loaded in dependency order in `index.html` for proper initialization
 
 **Storage Services (4 modules):**
 - `storage-service.js` - Main storage interface
@@ -145,6 +153,14 @@ js/
 - 8-module refactored architecture in `js/services/function-tools-*.js`
 - Functions tagged with `@callable` or `@tool` become available to models
 - Built-in RC4 encryption/decryption functions for testing
+
+### Default Functions System
+- Pre-built JavaScript function groups in `js/default-functions/`
+- Mirrors the Default Prompts functionality but for executable functions
+- Easy enable/disable via checkboxes in Function Calling UI
+- Function groups include: RC4 encryption, math utilities, API authentication, MCP examples
+- Functions persist across sessions and integrate with Function Tools Service
+- All functions follow standardized patterns: return objects, include error handling, use `@callable` annotation
 
 ### Privacy & Security
 - All data encrypted in localStorage using TweetNaCl
