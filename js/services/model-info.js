@@ -11,7 +11,8 @@ window.ModelInfoService = (function() {
     // Default models for different providers
     const defaultModels = {
         'openai': 'gpt-4.1',
-        'groq': 'moonshotai/kimi-k2-instruct'
+        'groq': 'moonshotai/kimi-k2-instruct',
+        'berget': 'mistralai/Magistral-Small-2506'
         // For Ollama, we'll select the first model in the list
     };
 
