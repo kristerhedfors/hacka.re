@@ -448,49 +448,7 @@ localai run stablelm-3b-4q</pre>
                 </div>
             </div>
 
-            <div class="runtime-section">
-                <h2>How to Decide?</h2>
-                
-                <h3>Platform Defaults for hacka.re</h3>
-                <table class="decision-table">
-                    <thead>
-                        <tr>
-                            <th>OS</th>
-                            <th>Primary</th>
-                            <th>Fallback</th>
-                            <th>Notes</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>Windows</strong></td>
-                            <td>Llamafile</td>
-                            <td>GPT4All</td>
-                            <td>Single executable simplicity; GPT4All for GUI preference</td>
-                        </tr>
-                        <tr>
-                            <td><strong>macOS</strong></td>
-                            <td>Llamafile</td>
-                            <td>Ollama</td>
-                            <td>No installation needed; Ollama for model management</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Linux</strong></td>
-                            <td>Llamafile</td>
-                            <td>Ollama</td>
-                            <td>True portability; Ollama for server deployment</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <h3>Decision Criteria</h3>
-                <ol>
-                    <li><strong>User friction</strong> (GUI vs CLI)</li>
-                    <li><strong>API surface</strong> (port, auth quirks)</li>
-                    <li><strong>License clarity</strong> (all must remain FOSS or permissive)</li>
-                    <li><strong>Update velocity & model catalogue</strong></li>
-                </ol>
-            </div>
+        
 
             <div class="runtime-section">
                 <h2>True Serverless: Complete Privacy with Local LLMs</h2>
