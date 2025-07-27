@@ -558,6 +558,123 @@ window.NamespaceService = (function() {
         return state.usingFallbackForMasterKey;
     }
     
+    /**
+     * Get metadata for a specific namespace
+     * @param {string} namespaceId - The namespace ID  
+     * @returns {Object|null} Namespace metadata or null
+     */
+    function getNamespaceMetadata(namespaceId) {
+        try {
+            // Try to get basic info from storage
+            const storage = StorageTypeService ? StorageTypeService.getStorage() : localStorage;
+            
+            // Get title and subtitle (these are not namespaced and might not be current namespace)
+            // For now, we'll use a generic title based on namespace ID
+            const title = `Namespace ${namespaceId}`;
+            const subtitle = '';
+            
+            // Try to get message history to count messages
+            let messageCount = 0;
+            let lastUsed = new Date().toISOString();
+            
+            try {
+                // Try to get chat history for this namespace
+                const historyKey = getNamespacedKey('chat_history', namespaceId);
+                const encryptedHistory = storage.getItem(historyKey);
+                
+                if (encryptedHistory && window.CoreStorageService) {
+                    const history = window.CoreStorageService.getItem('chat_history', namespaceId);
+                    if (history && Array.isArray(history)) {
+                        messageCount = history.length;
+                        // Get last message timestamp if available
+                        if (history.length > 0) {
+                            const lastMessage = history[history.length - 1];
+                            if (lastMessage && lastMessage.timestamp) {
+                                lastUsed = lastMessage.timestamp;
+                            }
+                        }
+                    }
+                }
+            } catch (e) {
+                // Can't decrypt or access history, use defaults
+                console.log('Cannot access history for namespace', namespaceId, e);
+            }
+            
+            return {
+                id: namespaceId,
+                title,
+                subtitle,
+                messageCount,
+                lastUsed
+            };
+        } catch (error) {
+            console.error('Error getting namespace metadata:', error);
+            return null;
+        }
+    }
+    
+    /**
+     * Set current namespace (for switching)
+     * @param {string} namespaceId - The namespace ID to switch to
+     */
+    function setCurrentNamespace(namespaceId) {
+        try {
+            // Reset current state to force re-initialization
+            state.current = {
+                namespaceId: null,
+                namespaceKey: null,
+                namespaceHash: null
+            };
+            
+            // Try to load the specified namespace
+            const targetHash = namespaceId; // For now, use namespace ID as hash
+            const sessionKey = getSessionKey();
+            
+            // Try to get master key for this namespace
+            const masterKeyStorageKey = getMasterKeyStorageKey(namespaceId);
+            const storage = StorageTypeService ? StorageTypeService.getStorage() : localStorage;
+            const encryptedMasterKey = storage.getItem(masterKeyStorageKey);
+            
+            if (encryptedMasterKey) {
+                let masterKey = null;
+                
+                // Try to decrypt with session key first
+                if (sessionKey) {
+                    try {
+                        masterKey = EncryptionService.decrypt(encryptedMasterKey, sessionKey);
+                    } catch (e) {
+                        // Session key didn't work
+                    }
+                }
+                
+                // Try with namespace hash if session key failed
+                if (!masterKey) {
+                    try {
+                        masterKey = EncryptionService.decrypt(encryptedMasterKey, targetHash);
+                    } catch (e) {
+                        // Namespace hash didn't work either
+                        console.error('Cannot decrypt master key for namespace', namespaceId);
+                        return false;
+                    }
+                }
+                
+                // Set the current namespace
+                state.current.namespaceId = namespaceId;
+                state.current.namespaceHash = targetHash;
+                state.current.namespaceKey = masterKey;
+                
+                console.log('Switched to namespace:', namespaceId);
+                return true;
+            } else {
+                console.error('No master key found for namespace', namespaceId);
+                return false;
+            }
+        } catch (error) {
+            console.error('Error switching to namespace:', error);
+            return false;
+        }
+    }
+
     // Public API
     return {
         BASE_STORAGE_KEYS: BASE_STORAGE_KEYS,
@@ -574,6 +691,9 @@ window.NamespaceService = (function() {
         getKeysToReEncrypt: getKeysToReEncrypt,
         findExistingNamespace: findExistingNamespace,
         getMasterKey: getMasterKey,
-        isUsingFallbackForMasterKey: isUsingFallbackForMasterKey
+        isUsingFallbackForMasterKey: isUsingFallbackForMasterKey,
+        getAllNamespaceIds: getAllNamespaceIds,
+        getNamespaceMetadata: getNamespaceMetadata,
+        setCurrentNamespace: setCurrentNamespace
     };
 })();
