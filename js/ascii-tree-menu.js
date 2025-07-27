@@ -116,6 +116,22 @@ class ASCIITreeMenu {
             'settings': 'settings-btn'
         };
 
+        // Handle namespace-specific features
+        const namespaceFeatures = {
+            'current-namespace': () => this.showCurrentNamespaceInfo(),
+            'switch-namespace': () => this.showNamespaceSwitcher(),
+            'create-namespace': () => this.createNewNamespace(),
+            'delete-namespace': () => this.deleteCurrentNamespace()
+        };
+
+        // Check for namespace features first
+        const namespaceAction = namespaceFeatures[feature];
+        if (namespaceAction) {
+            console.log('ASCII Tree Menu: Triggering namespace action for', feature);
+            namespaceAction();
+            return;
+        }
+
         const buttonId = featureToButtonId[feature];
         if (buttonId) {
             const button = document.getElementById(buttonId);
@@ -172,6 +188,39 @@ class ASCIITreeMenu {
             console.log('ASCII Tree Menu: Theme cycled');
         } else {
             console.warn('ASCII Tree Menu: ThemeManager not available');
+        }
+    }
+
+    // Namespace management methods
+    showCurrentNamespaceInfo() {
+        if (window.NamespaceInfoModal) {
+            window.NamespaceInfoModal.show();
+        } else {
+            console.warn('ASCII Tree Menu: NamespaceInfoModal not available');
+        }
+    }
+
+    showNamespaceSwitcher() {
+        if (window.NamespaceSwitchModal) {
+            window.NamespaceSwitchModal.show();
+        } else {
+            console.warn('ASCII Tree Menu: NamespaceSwitchModal not available');
+        }
+    }
+
+    createNewNamespace() {
+        if (window.NamespaceCreationModal) {
+            window.NamespaceCreationModal.show();
+        } else {
+            console.warn('ASCII Tree Menu: NamespaceCreationModal not available');
+        }
+    }
+
+    deleteCurrentNamespace() {
+        if (window.NamespaceDeletionModal) {
+            window.NamespaceDeletionModal.show();
+        } else {
+            console.warn('ASCII Tree Menu: NamespaceDeletionModal not available');
         }
     }
 

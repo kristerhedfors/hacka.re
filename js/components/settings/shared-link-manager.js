@@ -22,6 +22,205 @@ window.SharedLinkManager = (function() {
         }
         
         /**
+         * Handle namespace selection after successful decryption
+         * @param {Object} sharedData - Decrypted shared data
+         * @param {string} password - The password used for decryption
+         * @param {Object} context - Context object with functions and elements
+         * @param {Function} resolve - Promise resolve function
+         */
+        async function handleNamespaceSelection(sharedData, password, context, resolve) {
+            try {
+                // Get available namespaces using NamespaceService
+                const availableNamespaces = await getAvailableNamespaces();
+                
+                if (availableNamespaces.length > 0) {
+                    // Show namespace selection modal
+                    try {
+                        const selection = await window.NamespaceSelectionModal.show(availableNamespaces, sharedData);
+                        
+                        if (selection.action === 'use_existing') {
+                            // Switch to existing namespace and apply shared data
+                            await applySharedDataToNamespace(selection.namespace, sharedData, password, context, resolve);
+                        } else if (selection.action === 'create_new') {
+                            // Create new namespace and apply shared data
+                            await applySharedDataToNewNamespace(sharedData, password, context, resolve);
+                        }
+                    } catch (error) {
+                        console.log('Namespace selection cancelled, applying to current namespace');
+                        await applySharedDataToCurrentNamespace(sharedData, password, context, resolve);
+                    }
+                } else {
+                    // No existing namespaces, apply to current
+                    await applySharedDataToCurrentNamespace(sharedData, password, context, resolve);
+                }
+            } catch (error) {
+                console.error('Error in namespace selection:', error);
+                // Fallback to current namespace
+                await applySharedDataToCurrentNamespace(sharedData, password, context, resolve);
+            }
+        }
+        
+        /**
+         * Get available namespaces with metadata
+         * @returns {Array} Array of namespace objects
+         */
+        async function getAvailableNamespaces() {
+            if (!window.NamespaceService) {
+                return [];
+            }
+            
+            try {
+                const namespaceIds = window.NamespaceService.getAllNamespaceIds();
+                const namespaces = [];
+                
+                for (const id of namespaceIds) {
+                    const metadata = await getNamespaceMetadata(id);
+                    if (metadata) {
+                        namespaces.push({
+                            id: id,
+                            title: metadata.title || 'Untitled',
+                            subtitle: metadata.subtitle || '',
+                            messageCount: metadata.messageCount || 0,
+                            lastUsed: metadata.lastUsed || new Date().toISOString()
+                        });
+                    }
+                }
+                
+                // Sort by last used (most recent first)
+                namespaces.sort((a, b) => new Date(b.lastUsed) - new Date(a.lastUsed));
+                
+                return namespaces;
+            } catch (error) {
+                console.error('Error getting available namespaces:', error);
+                return [];
+            }
+        }
+        
+        /**
+         * Get metadata for a specific namespace
+         * @param {string} namespaceId - The namespace ID
+         * @returns {Object|null} Namespace metadata or null
+         */
+        async function getNamespaceMetadata(namespaceId) {
+            try {
+                // Try to decrypt and get basic info
+                const storageService = window.CoreStorageService;
+                if (!storageService) return null;
+                
+                // Get title and subtitle (not encrypted)
+                const title = localStorage.getItem('title') || `Namespace ${namespaceId}`;
+                const subtitle = localStorage.getItem('subtitle') || '';
+                
+                // Try to get message history to count messages
+                let messageCount = 0;
+                try {
+                    const history = storageService.getItem('chat_history', namespaceId);
+                    if (history && Array.isArray(history)) {
+                        messageCount = history.length;
+                    }
+                } catch (e) {
+                    // Can't decrypt, use 0
+                }
+                
+                return {
+                    title,
+                    subtitle,
+                    messageCount,
+                    lastUsed: new Date().toISOString() // TODO: Track actual last used
+                };
+            } catch (error) {
+                console.error('Error getting namespace metadata:', error);
+                return null;
+            }
+        }
+        
+        /**
+         * Apply shared data to an existing namespace
+         */
+        async function applySharedDataToNamespace(namespace, sharedData, password, context, resolve) {
+            try {
+                // Switch to the selected namespace first
+                if (window.NamespaceService) {
+                    window.NamespaceService.setCurrentNamespace(namespace.id);
+                }
+                
+                // Apply shared data
+                const processedModel = SharedLinkDataProcessor.processSharedData(
+                    sharedData, password, { ...context, displayWelcomeMessage: true }
+                );
+                
+                if (processedModel) {
+                    pendingSharedModel = processedModel;
+                }
+                
+                finishSharedLinkProcessing(resolve, processedModel);
+            } catch (error) {
+                console.error('Error applying shared data to namespace:', error);
+                resolve({ success: false, pendingSharedModel: null });
+            }
+        }
+        
+        /**
+         * Apply shared data to a new namespace
+         */
+        async function applySharedDataToNewNamespace(sharedData, password, context, resolve) {
+            try {
+                // Create new namespace by generating new title/subtitle
+                // The NamespaceService will automatically create a new namespace
+                // when title/subtitle combination doesn't exist
+                
+                const processedModel = SharedLinkDataProcessor.processSharedData(
+                    sharedData, password, { ...context, displayWelcomeMessage: true }
+                );
+                
+                if (processedModel) {
+                    pendingSharedModel = processedModel;
+                }
+                
+                finishSharedLinkProcessing(resolve, processedModel);
+            } catch (error) {
+                console.error('Error applying shared data to new namespace:', error);
+                resolve({ success: false, pendingSharedModel: null });
+            }
+        }
+        
+        /**
+         * Apply shared data to current namespace (fallback)
+         */
+        async function applySharedDataToCurrentNamespace(sharedData, password, context, resolve) {
+            try {
+                const processedModel = SharedLinkDataProcessor.processSharedData(
+                    sharedData, password, { ...context, displayWelcomeMessage: true }
+                );
+                
+                if (processedModel) {
+                    pendingSharedModel = processedModel;
+                }
+                
+                finishSharedLinkProcessing(resolve, processedModel);
+            } catch (error) {
+                console.error('Error applying shared data to current namespace:', error);
+                resolve({ success: false, pendingSharedModel: null });
+            }
+        }
+        
+        /**
+         * Finish shared link processing
+         */
+        function finishSharedLinkProcessing(resolve, processedModel) {
+            // Clear the shared data from the URL
+            LinkSharingService.clearSharedApiKeyFromUrl();
+            
+            // Mark password verification as complete
+            window._passwordVerificationComplete = true;
+            
+            resolve({
+                success: true,
+                pendingSharedModel: processedModel
+            });
+        }
+        
+        /**
          * Try decryption with session key
          * @param {Function} addSystemMessage - Function to add system messages
          * @param {Function} setMessages - Function to set chat messages
@@ -99,27 +298,11 @@ window.SharedLinkManager = (function() {
                                 window.aiHackare.shareManager.setSharedWelcomeMessage(sharedData.welcomeMessage);
                             }
                             
-                            const processedModel = SharedLinkDataProcessor.processSharedData(
-                                sharedData, password, { addSystemMessage, setMessages, elements, displayWelcomeMessage: true }
-                            );
-                            
-                            if (processedModel) {
-                                pendingSharedModel = processedModel;
-                            }
-                            
-                            // Clear the shared data from the URL
-                            LinkSharingService.clearSharedApiKeyFromUrl();
-                            
-                            // Remove the password modal
+                            // Remove the password modal first
                             modalElements.modal.remove();
                             
-                            // Mark password verification as complete
-                            window._passwordVerificationComplete = true;
-                            
-                            resolve({
-                                success: true,
-                                pendingSharedModel: pendingSharedModel
-                            });
+                            // Check for existing namespaces and show selection modal if needed
+                            handleNamespaceSelection(sharedData, password, { addSystemMessage, setMessages, elements }, resolve);
                         } else {
                             SharedLinkModalManager.showModalError(
                                 paragraph, input, 'Incorrect password. Please try again.'
