@@ -55,6 +55,7 @@
             padding: 15px;
             margin: 15px 0;
             overflow-x: auto;
+            max-width: 100%;
             font-family: 'Courier New', monospace;
             position: relative;
         }
@@ -64,6 +65,7 @@
             white-space: pre;
             word-wrap: normal;
             overflow-x: auto;
+            max-width: 100%;
         }
         
         .copy-button {
@@ -154,91 +156,40 @@
             margin-bottom: 8px;
         }
 
-        .download-section {
-            margin: 30px 0;
+        .download-button {
+            display: inline-block;
             text-align: center;
-        }
-
-        .download-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 20px;
             background: linear-gradient(135deg, var(--primary-color), #2c5aa0);
             color: white;
             padding: 20px 30px;
             border-radius: 12px;
             text-decoration: none;
-            font-size: 1.1em;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            border: 2px solid transparent;
-            min-width: 80%;
-            max-width: 600px;
-            position: relative;
-            overflow: hidden;
+            font-size: 1.2em;
+            font-weight: bold;
+            min-width: 200px;
+            max-width: calc(100vw - 2rem);
+            box-sizing: border-box;
+        }
+        
+        .download-button i {
+            margin-right: 10px;
         }
 
-        .download-link::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-            transition: left 0.6s;
-        }
-
-        .download-link:hover::before {
-            left: 100%;
-        }
-
-        .download-link:hover {
+        .download-button:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-            border-color: rgba(255, 255, 255, 0.3);
             text-decoration: none;
             color: white;
         }
 
-        .download-link i {
-            font-size: 2.5em;
-            opacity: 0.9;
-        }
-
-        .download-text {
-            display: flex;
-            flex-direction: column;
-            text-align: left;
-            flex: 1;
-        }
-
-        .download-text strong {
-            font-size: 1.2em;
-            margin-bottom: 5px;
-            display: block;
-        }
-
-        .download-text small {
-            opacity: 0.9;
-            font-size: 0.9em;
-            line-height: 1.3;
-        }
-
-        .download-info {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            font-size: 0.9em;
-            opacity: 0.9;
-        }
-
-        .download-info span {
-            margin: 2px 0;
-        }
-
 
         @media (max-width: 768px) {
+            main {
+                padding: 0.5rem !important;
+            }
+            
             .pros-cons {
                 grid-template-columns: 1fr;
             }
@@ -247,20 +198,9 @@
                 font-size: 0.9em;
             }
 
-            .download-link {
-                flex-direction: column;
-                text-align: center;
-                gap: 15px;
-                min-width: 90%;
-                padding: 25px 20px;
-            }
-
-            .download-text {
-                text-align: center;
-            }
-
-            .download-info {
-                align-items: center;
+            .download-button {
+                padding: 15px 20px;
+                font-size: 1.1em;
             }
         }
     </style>
@@ -274,7 +214,7 @@
             </div>
         </header>
 
-        <main style="overflow-y: auto; overflow-x: auto; padding: 2rem;">
+        <main style="overflow-y: auto; padding: 1rem;">
             <div class="container" style="max-width: 1000px; margin: 0 auto;">
             
             <h2 class="page-title">Local LLMs</h2>
@@ -293,19 +233,14 @@
             </div>
 
             <!-- Download Link for hacka.re ZIP -->
-            <div class="download-section">
-                <a href="../releases/hacka-re-latest.zip" class="download-link" download>
+            <div style="position: relative; left: 50%; transform: translateX(-50%); width: 100vw; text-align: center; margin: 30px 0;">
+                <a href="../releases/hacka-re-latest.zip" class="download-button" download>
                     <i class="fas fa-download"></i>
-                    <span class="download-text">
-                        <strong>Download hacka.re Complete Package</strong>
-                        <small>Extract ZIP and open index.html in your browser. Works offline with local LLMs.</small>
-                    </span>
-                    <div class="download-info">
-                        <span>~1 MB</span>
-                        <span>Ready to use</span>
-                    </div>
+                    <span>Download hacka.re</span>
                 </a>
             </div>
+            
+            <p>Extract ZIP and open index.html in your browser. Works offline with local LLMs. The package is ~1 MB and ready to use without installation.</p>
 
             <div class="runtime-section">
                 <h2>Context</h2>
