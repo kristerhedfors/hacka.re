@@ -116,3 +116,7 @@ test_results.md
 
 # MCP client plugin example (detached reference)
 mcp-client-plugin/
+
+# Server PID files
+server_pid.txt
+**/server_pid.txt
