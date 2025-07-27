@@ -135,7 +135,8 @@ window.BaseUrlManager = (function() {
             // Map detection results to provider values
             var providerMapping = {
                 'openai': 'openai',
-                'groq': 'groq'
+                'groq': 'groq',
+                'berget': 'berget'
             };
 
             var mappedProvider = providerMapping[detectedProvider];

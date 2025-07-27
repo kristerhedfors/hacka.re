@@ -182,6 +182,8 @@ window.DataService = (function() {
         switch (provider) {
             case 'groq':
                 return 'https://api.groq.com/openai/v1';
+            case 'berget':
+                return 'https://api.berget.ai/v1';
             case 'openai':
                 return 'https://api.openai.com/v1';
             case 'ollama':
