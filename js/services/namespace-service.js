@@ -31,8 +31,7 @@ window.NamespaceService = (function() {
     
     // Special keys that don't get namespaced (to avoid circular dependency)
     const NON_NAMESPACED_KEYS = [
-        BASE_STORAGE_KEYS.TITLE,
-        BASE_STORAGE_KEYS.SUBTITLE
+        // Removed title/subtitle as they are no longer used to avoid unencrypted localStorage entries
     ];
     
     // State management
@@ -58,9 +57,20 @@ window.NamespaceService = (function() {
     
     // Helper functions
     function getSessionKey() {
+        // For shared links, prioritize the aiHackare.shareManager instance
+        if (window.aiHackare && window.aiHackare.shareManager && 
+            typeof window.aiHackare.shareManager.getSessionKey === 'function') {
+            const sessionKey = window.aiHackare.shareManager.getSessionKey();
+            if (sessionKey) {
+                return sessionKey;
+            }
+        }
+        
+        // Fallback to legacy ShareManager
         if (window.ShareManager && typeof window.ShareManager.getSessionKey === 'function') {
             return window.ShareManager.getSessionKey();
         }
+        
         return null;
     }
     
@@ -245,59 +255,16 @@ window.NamespaceService = (function() {
     }
     
     /**
-     * Find existing namespace for the current title/subtitle
-     * @param {string} title - The title
-     * @param {string} subtitle - The subtitle
-     * @returns {Object|null} Object with namespaceId, namespaceHash, and masterKey if found, null otherwise
+     * Find existing namespace by namespace hash (deprecated - no longer used)
+     * @deprecated This function is no longer used as we don't rely on title/subtitle for namespacing
+     * @param {string} title - The title (unused)
+     * @param {string} subtitle - The subtitle (unused)
+     * @returns {Object|null} Always returns null as this function is deprecated
      */
     function findExistingNamespace(title, subtitle) {
-        const targetHash = CryptoUtils.generateNamespaceHash(title, subtitle);
-        const sessionKey = getSessionKey();
-        
-        addSystemMessage(`[CRYPTO] Searching for namespace with hash: ${targetHash.substring(0, 8)}...`);
-        
-        const namespaceIds = getAllNamespaceIds();
-        
-        // Try to decrypt each namespace entry
-        for (const namespaceId of namespaceIds) {
-            try {
-                const namespaceStorageKey = getNamespaceStorageKey(namespaceId);
-                // Use dynamic storage based on storage type
-                const storage = StorageTypeService ? StorageTypeService.getStorage() : localStorage;
-                const encryptedData = storage.getItem(namespaceStorageKey);
-                
-                if (!encryptedData) {
-                    continue;
-                }
-                
-                const decryptResult = tryDecryptNamespace(encryptedData, targetHash, sessionKey);
-                
-                if (decryptResult) {
-                    const method = decryptResult.decryptionMethod === 'SESSION_KEY' ? 'session key' : 'namespace hash';
-                    addSystemMessage(`[CRYPTO] Found namespace ${namespaceId} using ${method}`);
-                    
-                    // Get the namespace master key
-                    const masterKey = getMasterKey(namespaceId, targetHash);
-                    
-                    if (!masterKey) {
-                        addSystemMessage(`[CRYPTO] ERROR: Found namespace ${namespaceId} but master key is missing`);
-                        continue;
-                    }
-                    
-                    return {
-                        namespaceId: namespaceId,
-                        namespaceHash: targetHash,
-                        masterKey: masterKey
-                    };
-                }
-            } catch (error) {
-                // Decryption failed, try the next namespace
-                continue;
-            }
-        }
-        
-        // No matching namespace found
-        addSystemMessage(`[CRYPTO] No matching namespace found for title "${title}" and subtitle "${subtitle}"`);
+        // This function is deprecated to avoid title/subtitle dependencies
+        // that create unencrypted localStorage entries
+        addSystemMessage(`[CRYPTO] findExistingNamespace is deprecated - no longer searching by title/subtitle`);
         return null;
     }
     
@@ -327,10 +294,50 @@ window.NamespaceService = (function() {
             if (sharedLinkNamespace) {
                 addSystemMessage(`[CRYPTO] Using shared link namespace: ${sharedLinkNamespace}`);
                 
-                // Create a simple namespace for shared links
+                // First check if this namespace already exists with a stored master key
+                const existingMasterKey = getMasterKey(sharedLinkNamespace, sharedLinkNamespace);
+                
+                if (existingMasterKey) {
+                    // Use existing namespace data
+                    state.current.namespaceId = sharedLinkNamespace;
+                    state.current.namespaceHash = sharedLinkNamespace;
+                    state.current.namespaceKey = existingMasterKey;
+                    
+                    addSystemMessage(`[CRYPTO] Loaded existing master key for shared link namespace ${sharedLinkNamespace}`);
+                    
+                    return {
+                        namespaceId: state.current.namespaceId,
+                        namespaceHash: state.current.namespaceHash,
+                        masterKey: state.current.namespaceKey
+                    };
+                }
+                
+                // No existing namespace, create new one
                 state.current.namespaceId = sharedLinkNamespace;
                 state.current.namespaceHash = sharedLinkNamespace; // Use namespace ID as hash for simplicity
-                state.current.namespaceKey = CryptoUtils.generateSecretKey(); // Generate a new key
+                
+                // For shared links, derive master key deterministically from session key
+                const sessionKey = getSessionKey();
+                console.log(`[NamespaceService] Session key available for ${sharedLinkNamespace}:`, sessionKey ? sessionKey.length + ' chars' : 'none');
+                if (sessionKey) {
+                    try {
+                        state.current.namespaceKey = CryptoUtils.deriveMasterKeyFromSession(sessionKey, sharedLinkNamespace);
+                        console.log(`[NamespaceService] Derived master key for ${sharedLinkNamespace}:`, state.current.namespaceKey ? state.current.namespaceKey.length + ' chars' : 'none');
+                        addSystemMessage(`[CRYPTO] Derived deterministic master key for shared link namespace ${sharedLinkNamespace}`);
+                        
+                        // Store the namespace data for future tabs
+                        storeNamespaceData(sharedLinkNamespace, sharedLinkNamespace, state.current.namespaceKey);
+                        addSystemMessage(`[CRYPTO] Stored namespace data for future tabs`);
+                    } catch (error) {
+                        console.error(`[NamespaceService] Failed to derive master key:`, error);
+                        addSystemMessage(`[CRYPTO] Failed to derive master key, using random: ${error.message}`);
+                        state.current.namespaceKey = CryptoUtils.generateSecretKey(); // Fallback to random
+                    }
+                } else {
+                    console.log(`[NamespaceService] No session key available, using random master key for ${sharedLinkNamespace}`);
+                    addSystemMessage(`[CRYPTO] No session key available, using random master key for ${sharedLinkNamespace}`);
+                    state.current.namespaceKey = CryptoUtils.generateSecretKey(); // Fallback to random
+                }
                 
                 return {
                     namespaceId: state.current.namespaceId,
@@ -368,7 +375,20 @@ window.NamespaceService = (function() {
             
             state.current.namespaceId = defaultNamespace;
             state.current.namespaceHash = defaultNamespace; // Use namespace ID as hash for simplicity
-            state.current.namespaceKey = CryptoUtils.generateSecretKey(); // Generate a new key
+            
+            // For sessionStorage with session key, derive master key deterministically
+            const sessionKey = getSessionKey();
+            if (sessionKey) {
+                try {
+                    state.current.namespaceKey = CryptoUtils.deriveMasterKeyFromSession(sessionKey, defaultNamespace);
+                    addSystemMessage(`[CRYPTO] Derived deterministic master key for session namespace ${defaultNamespace}`);
+                } catch (error) {
+                    addSystemMessage(`[CRYPTO] Failed to derive master key, using random: ${error.message}`);
+                    state.current.namespaceKey = CryptoUtils.generateSecretKey(); // Fallback to random
+                }
+            } else {
+                state.current.namespaceKey = CryptoUtils.generateSecretKey(); // Generate a new key
+            }
             
             return {
                 namespaceId: state.current.namespaceId,
@@ -377,35 +397,62 @@ window.NamespaceService = (function() {
             };
         }
         
-        // Fallback to original logic if StorageTypeService is not available
-        const storage = StorageTypeService ? StorageTypeService.getStorage() : sessionStorage;
-        const title = storage.getItem(BASE_STORAGE_KEYS.TITLE) || "hacka.re";
-        const subtitle = storage.getItem(BASE_STORAGE_KEYS.SUBTITLE) || "Free, open, för hackare av hackare";
+        // Check if there are any existing namespaces before creating a fallback
+        const existingNamespaceIds = getAllNamespaceIds();
         
-        addSystemMessage(`[CRYPTO] Getting or creating namespace for title "${title}" and subtitle "${subtitle}"`);
-        
-        // Try to find an existing namespace
-        const existingNamespace = findExistingNamespace(title, subtitle);
-        if (existingNamespace) {
-            // Use the existing namespace
-            state.current.namespaceId = existingNamespace.namespaceId;
-            state.current.namespaceHash = existingNamespace.namespaceHash;
-            state.current.namespaceKey = existingNamespace.masterKey;
+        if (existingNamespaceIds.length > 0) {
+            // Use the first available namespace
+            const firstNamespaceId = existingNamespaceIds[0];
+            addSystemMessage(`[CRYPTO] Using existing namespace: ${firstNamespaceId}`);
             
-            addSystemMessage(`[CRYPTO] Using existing namespace: ${state.current.namespaceId}`);
+            // Try to load this namespace
+            const targetHash = firstNamespaceId; // Use ID as hash for simplicity
+            const masterKey = getMasterKey(firstNamespaceId, targetHash);
+            
+            if (masterKey) {
+                state.current.namespaceId = firstNamespaceId;
+                state.current.namespaceHash = targetHash;
+                state.current.namespaceKey = masterKey;
+                
+                addSystemMessage(`[CRYPTO] Successfully loaded existing namespace: ${firstNamespaceId}`);
+            } else {
+                // Fallback to creating new if we can't load the existing one
+                addSystemMessage(`[CRYPTO] Failed to load existing namespace, creating new fallback`);
+                const defaultNamespaceId = CryptoUtils.generateRandomAlphaNum(8);
+                const defaultNamespaceHash = defaultNamespaceId;
+                
+                // Derive master key deterministically if session key available
+                const sessionKey = getSessionKey();
+                const defaultMasterKey = sessionKey ? 
+                    CryptoUtils.deriveMasterKeyFromSession(sessionKey, defaultNamespaceId) : 
+                    CryptoUtils.generateSecretKey();
+                
+                state.current.namespaceId = defaultNamespaceId;
+                state.current.namespaceHash = defaultNamespaceHash;
+                state.current.namespaceKey = defaultMasterKey;
+                
+                storeNamespaceData(state.current.namespaceId, state.current.namespaceHash, state.current.namespaceKey);
+                addSystemMessage(`[CRYPTO] Created and stored fallback namespace: ${state.current.namespaceId}`);
+            }
         } else {
-            // Create a new namespace
-            addSystemMessage(`[CRYPTO] Creating new namespace for title "${title}" and subtitle "${subtitle}"`);
+            // No existing namespaces, create a new fallback
+            addSystemMessage(`[CRYPTO] No existing namespaces found, creating fallback namespace`);
             
-            const newNamespace = CryptoUtils.createNamespaceEntry(title, subtitle);
-            state.current.namespaceId = newNamespace.namespaceId;
-            state.current.namespaceHash = newNamespace.namespaceHash;
-            state.current.namespaceKey = newNamespace.masterKey;
+            const defaultNamespaceId = CryptoUtils.generateRandomAlphaNum(8);
+            const defaultNamespaceHash = defaultNamespaceId;
             
-            // Store the new namespace data
+            // Derive master key deterministically if session key available
+            const sessionKey = getSessionKey();
+            const defaultMasterKey = sessionKey ? 
+                CryptoUtils.deriveMasterKeyFromSession(sessionKey, defaultNamespaceId) : 
+                CryptoUtils.generateSecretKey();
+            
+            state.current.namespaceId = defaultNamespaceId;
+            state.current.namespaceHash = defaultNamespaceHash;
+            state.current.namespaceKey = defaultMasterKey;
+            
             storeNamespaceData(state.current.namespaceId, state.current.namespaceHash, state.current.namespaceKey);
-            
-            addSystemMessage(`[CRYPTO] Created and stored new namespace: ${state.current.namespaceId}`);
+            addSystemMessage(`[CRYPTO] Created and stored fallback namespace: ${state.current.namespaceId}`);
         }
         
         return {
@@ -429,8 +476,40 @@ window.NamespaceService = (function() {
      * @returns {string} The namespace key
      */
     function getNamespaceKey() {
+        // For shared links, ensure we wait for proper initialization
+        if (StorageTypeService && StorageTypeService.isUsingLocalStorage && StorageTypeService.isUsingLocalStorage()) {
+            const sharedLinkNamespace = StorageTypeService.getSharedLinkNamespace ? StorageTypeService.getSharedLinkNamespace() : null;
+            if (sharedLinkNamespace) {
+                // For shared links, ensure session key is available before proceeding
+                const sessionKey = getSessionKey();
+                if (!sessionKey) {
+                    addSystemMessage(`[CRYPTO] WARNING: No session key available for shared link namespace, returning null`);
+                    return null;
+                }
+            }
+        }
+        
         const namespace = getOrCreateNamespace();
         return namespace ? namespace.masterKey : null;
+    }
+    
+    /**
+     * Force re-initialization of namespace when session key becomes available
+     * This is needed when session key is set after initial namespace creation attempt
+     */
+    function reinitializeNamespace() {
+        // Clear current state to force re-creation
+        state.current.namespaceId = null;
+        state.current.namespaceHash = null;
+        state.current.namespaceKey = null;
+        
+        // Re-initialize namespace with session key now available
+        const namespace = getOrCreateNamespace();
+        if (namespace) {
+            addSystemMessage(`[CRYPTO] Successfully re-initialized namespace with session key`);
+        }
+        
+        return namespace;
     }
     
     /**
@@ -565,26 +644,15 @@ window.NamespaceService = (function() {
      */
     function getNamespaceMetadata(namespaceId) {
         try {
-            // Get basic info - for current namespace, use actual title/subtitle
-            let title, subtitle;
-            
-            if (namespaceId === state.current.namespaceId) {
-                // Current namespace - get actual title/subtitle
-                const storage = StorageTypeService ? StorageTypeService.getStorage() : localStorage;
-                title = storage.getItem('title') || `Namespace ${namespaceId}`;
-                subtitle = storage.getItem('subtitle') || '';
-            } else {
-                // Other namespace - use generic title
-                title = `Namespace ${namespaceId}`;
-                subtitle = '';
-            }
+            // Use namespace ID as the display name (no title/subtitle dependencies)
+            const displayName = `Namespace ${namespaceId}`;
             
             // Try to get message history to count messages
             let messageCount = 0;
             let lastUsed = new Date().toISOString();
             
             try {
-                // Only try to decrypt if we have CoreStorageService
+                // Only try to decrypt if we have CoreStorageService and it's current namespace
                 if (window.CoreStorageService && namespaceId === state.current.namespaceId) {
                     // Only check current namespace to avoid decryption errors
                     const history = window.CoreStorageService.getItem('chat_history');
@@ -606,8 +674,8 @@ window.NamespaceService = (function() {
             
             return {
                 id: namespaceId,
-                title,
-                subtitle,
+                title: displayName,
+                subtitle: '',
                 messageCount,
                 lastUsed
             };
@@ -635,7 +703,7 @@ window.NamespaceService = (function() {
             const sessionKey = getSessionKey();
             
             // Try to get master key for this namespace
-            const masterKeyStorageKey = getMasterKeyStorageKey(namespaceId);
+            const masterKeyStorageKey = CryptoUtils.getMasterKeyStorageKey(namespaceId);
             const storage = StorageTypeService ? StorageTypeService.getStorage() : localStorage;
             const encryptedMasterKey = storage.getItem(masterKeyStorageKey);
             
@@ -698,6 +766,7 @@ window.NamespaceService = (function() {
         isUsingFallbackForMasterKey: isUsingFallbackForMasterKey,
         getAllNamespaceIds: getAllNamespaceIds,
         getNamespaceMetadata: getNamespaceMetadata,
-        setCurrentNamespace: setCurrentNamespace
+        setCurrentNamespace: setCurrentNamespace,
+        reinitializeNamespace: reinitializeNamespace
     };
 })();

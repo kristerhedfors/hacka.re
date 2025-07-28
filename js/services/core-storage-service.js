@@ -25,7 +25,13 @@ window.CoreStorageService = (function() {
      */
     function getPassphrase() {
         // Use the master key as the passphrase
-        return NamespaceService.getNamespaceKey();
+        const key = NamespaceService.getNamespaceKey();
+        if (!key) {
+            // If no key is available, this usually means initialization isn't complete
+            // Don't spam the console with errors, just return null
+            return null;
+        }
+        return key;
     }
     
     /**
@@ -37,6 +43,11 @@ window.CoreStorageService = (function() {
     function secureSet(key, value) {
         try {
             const passphrase = getPassphrase();
+            
+            // If no passphrase is available, we can't encrypt yet
+            if (!passphrase) {
+                return false;
+            }
             
             // Check if we're using a master key that was decrypted with the fallback namespace hash
             if (NamespaceService.isUsingFallbackForMasterKey && 
@@ -106,6 +117,13 @@ window.CoreStorageService = (function() {
         
         try {
             const passphrase = getPassphrase();
+            
+            // If no passphrase is available, don't try to decrypt
+            if (!passphrase) {
+                // For shared links without session keys, we can't decrypt yet
+                // Return null silently to avoid console spam
+                return null;
+            }
             
             // Check if we're using a master key that was decrypted with the fallback namespace hash
             if (NamespaceService.isUsingFallbackForMasterKey && 
@@ -378,6 +396,7 @@ window.CoreStorageService = (function() {
             };
         }
     }
+    
     
     /**
      * Initialize the storage service

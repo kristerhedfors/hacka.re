@@ -33,8 +33,17 @@ window.SharedLinkManager = (function() {
                 // Get available namespaces using NamespaceService
                 const availableNamespaces = await getAvailableNamespaces();
                 
-                if (availableNamespaces.length > 0) {
-                    // Show namespace selection modal
+                if (availableNamespaces.length === 0) {
+                    // No existing namespaces, create new one automatically
+                    console.log('No existing namespaces found, creating new namespace automatically');
+                    await applySharedDataToCurrentNamespace(sharedData, password, context, resolve);
+                } else if (availableNamespaces.length === 1) {
+                    // Only one existing namespace, use it automatically
+                    console.log('One existing namespace found, using it automatically:', availableNamespaces[0].id);
+                    await applySharedDataToNamespace(availableNamespaces[0], sharedData, password, context, resolve);
+                } else {
+                    // Multiple namespaces available, show selection modal
+                    console.log('Multiple namespaces found, showing selection modal:', availableNamespaces.length);
                     try {
                         const selection = await window.NamespaceSelectionModal.show(availableNamespaces, sharedData);
                         
@@ -49,9 +58,6 @@ window.SharedLinkManager = (function() {
                         console.log('Namespace selection cancelled, applying to current namespace');
                         await applySharedDataToCurrentNamespace(sharedData, password, context, resolve);
                     }
-                } else {
-                    // No existing namespaces, apply to current
-                    await applySharedDataToCurrentNamespace(sharedData, password, context, resolve);
                 }
             } catch (error) {
                 console.error('Error in namespace selection:', error);
@@ -127,9 +133,10 @@ window.SharedLinkManager = (function() {
                 }
                 
                 // Apply shared data
-                const processedModel = SharedLinkDataProcessor.processSharedData(
-                    sharedData, password, { ...context, displayWelcomeMessage: true }
-                );
+                const processedModel = window.SharedLinkDataProcessor ? 
+                    window.SharedLinkDataProcessor.processSharedData(
+                        sharedData, password, { ...context, displayWelcomeMessage: true }
+                    ) : null;
                 
                 if (processedModel) {
                     pendingSharedModel = processedModel;
@@ -151,9 +158,10 @@ window.SharedLinkManager = (function() {
                 // The NamespaceService will automatically create a new namespace
                 // when title/subtitle combination doesn't exist
                 
-                const processedModel = SharedLinkDataProcessor.processSharedData(
-                    sharedData, password, { ...context, displayWelcomeMessage: true }
-                );
+                const processedModel = window.SharedLinkDataProcessor ? 
+                    window.SharedLinkDataProcessor.processSharedData(
+                        sharedData, password, { ...context, displayWelcomeMessage: true }
+                    ) : null;
                 
                 if (processedModel) {
                     pendingSharedModel = processedModel;
@@ -171,9 +179,10 @@ window.SharedLinkManager = (function() {
          */
         async function applySharedDataToCurrentNamespace(sharedData, password, context, resolve) {
             try {
-                const processedModel = SharedLinkDataProcessor.processSharedData(
-                    sharedData, password, { ...context, displayWelcomeMessage: true }
-                );
+                const processedModel = window.SharedLinkDataProcessor ? 
+                    window.SharedLinkDataProcessor.processSharedData(
+                        sharedData, password, { ...context, displayWelcomeMessage: true }
+                    ) : null;
                 
                 if (processedModel) {
                     pendingSharedModel = processedModel;
@@ -224,14 +233,21 @@ window.SharedLinkManager = (function() {
                     return null;
                 }
                 
+                // Ensure namespace is properly initialized with session key
+                if (window.NamespaceService && typeof window.NamespaceService.reinitializeNamespace === 'function') {
+                    console.log('[SharedLinkManager] Re-initializing namespace with existing session key');
+                    window.NamespaceService.reinitializeNamespace();
+                }
+                
                 // Store welcome message for share modal pre-population only (don't display)
                 if (sharedData.welcomeMessage && window.aiHackare && window.aiHackare.shareManager) {
                     window.aiHackare.shareManager.setSharedWelcomeMessage(sharedData.welcomeMessage);
                 }
                 
-                const processedModel = SharedLinkDataProcessor.processSharedData(
-                    sharedData, sessionKey, { addSystemMessage, setMessages, elements, displayWelcomeMessage: true }
-                );
+                const processedModel = window.SharedLinkDataProcessor ? 
+                    window.SharedLinkDataProcessor.processSharedData(
+                        sharedData, sessionKey, { addSystemMessage, setMessages, elements, displayWelcomeMessage: true }
+                    ) : null;
                 
                 if (processedModel) {
                     pendingSharedModel = processedModel;
@@ -275,6 +291,19 @@ window.SharedLinkManager = (function() {
                         const sharedData = LinkSharingService.extractSharedApiKey(password);
                         
                         if (sharedData && sharedData.apiKey) {
+                            // FIRST: Apply session key immediately when password is validated
+                            if (window.aiHackare && window.aiHackare.shareManager) {
+                                console.log('[SharedLinkManager] Setting session key immediately after password validation');
+                                window.aiHackare.shareManager.setSessionKey(password);
+                                addSystemMessage(`[CRYPTO] Session key set for deterministic master key derivation`);
+                                
+                                // Force namespace re-initialization now that session key is available
+                                if (window.NamespaceService && typeof window.NamespaceService.reinitializeNamespace === 'function') {
+                                    console.log('[SharedLinkManager] Re-initializing namespace with session key');
+                                    window.NamespaceService.reinitializeNamespace();
+                                }
+                            }
+                            
                             // Store welcome message for share modal pre-population only (don't display)
                             if (sharedData.welcomeMessage && window.aiHackare && window.aiHackare.shareManager) {
                                 window.aiHackare.shareManager.setSharedWelcomeMessage(sharedData.welcomeMessage);
@@ -332,7 +361,8 @@ window.SharedLinkManager = (function() {
          * @deprecated Use SharedLinkDataProcessor.maskApiKey instead
          */
         function maskApiKey(apiKey) {
-            return SharedLinkDataProcessor.maskApiKey(apiKey);
+            return window.SharedLinkDataProcessor ? 
+                window.SharedLinkDataProcessor.maskApiKey(apiKey) : apiKey;
         }
         
         // Public API

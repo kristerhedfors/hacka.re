@@ -199,7 +199,7 @@ class ASCIITreeMenu {
             const currentMeta = window.NamespaceService.getNamespaceMetadata ? 
                 window.NamespaceService.getNamespaceMetadata(currentId) : null;
             
-            const info = `Current Namespace: ${currentId}\nTitle: ${currentMeta?.title || 'Unknown'}\nMessages: ${currentMeta?.messageCount || 0}`;
+            const info = `Current Namespace: ${currentId}\nMessages: ${currentMeta?.messageCount || 0}`;
             alert(info);
         } else {
             alert('Current Namespace: Default\nNamespace service not available');
@@ -251,20 +251,75 @@ class ASCIITreeMenu {
     }
 
     createNewNamespace() {
-        // Simple prompt for new namespace creation
-        const title = prompt('Enter title for new namespace:', 'New Namespace');
-        if (title) {
-            const subtitle = prompt('Enter subtitle (optional):', '');
-            
-            // Set new title/subtitle which will create new namespace
-            localStorage.setItem('title', title);
-            if (subtitle) {
-                localStorage.setItem('subtitle', subtitle);
+        // Generate a new namespace ID
+        const newNamespaceId = this.generateNamespaceId();
+        
+        if (confirm(`Create new namespace: ${newNamespaceId}?\n\nThis will switch to a new isolated conversation context.`)) {
+            try {
+                // Create the new namespace directly using NamespaceService
+                if (window.NamespaceService && window.CryptoUtils) {
+                    // Generate namespace data
+                    const namespaceHash = newNamespaceId; // Use ID as hash for simplicity
+                    const masterKey = window.CryptoUtils.generateSecretKey();
+                    
+                    // Store the new namespace data
+                    const namespaceStorageKey = `hackare_${newNamespaceId}_namespace`;
+                    const masterKeyStorageKey = window.CryptoUtils.getMasterKeyStorageKey(newNamespaceId);
+                    
+                    // Get encryption key (session key or fallback to namespace hash)
+                    const sessionKey = (window.aiHackare && window.aiHackare.shareManager) ? 
+                        window.aiHackare.shareManager.getSessionKey() : null;
+                    const encryptionKey = sessionKey || namespaceHash;
+                    
+                    // Encrypt and store namespace hash
+                    const encryptedNamespaceData = window.EncryptionService.encrypt(namespaceHash, encryptionKey);
+                    localStorage.setItem(namespaceStorageKey, encryptedNamespaceData);
+                    
+                    // Encrypt and store master key
+                    const encryptedMasterKey = window.EncryptionService.encrypt(masterKey, encryptionKey);
+                    localStorage.setItem(masterKeyStorageKey, encryptedMasterKey);
+                    
+                    // Set the namespace directly in the service state instead of using setCurrentNamespace
+                    if (window.NamespaceService) {
+                        // Force the service to use this new namespace
+                        window.NamespaceService.resetNamespaceCache();
+                        
+                        // Clear existing data except namespace-related keys
+                        const keysToKeep = ['hackare_visited', 'debug_mode', 'theme_mode'];
+                        const allKeys = Object.keys(localStorage);
+                        
+                        for (const key of allKeys) {
+                            if (!keysToKeep.includes(key) && 
+                                !key.includes('_master_key') && 
+                                !key.includes('_namespace') &&
+                                !key.includes(newNamespaceId)) {
+                                localStorage.removeItem(key);
+                            }
+                        }
+                        
+                        alert(`New namespace ${newNamespaceId} created successfully. Reloading...`);
+                        window.location.reload();
+                    } else {
+                        alert('Failed to create new namespace - service not available.');
+                    }
+                } else {
+                    alert('Namespace service not available. Cannot create new namespace.');
+                }
+            } catch (error) {
+                console.error('Error creating new namespace:', error);
+                alert('Error creating new namespace. Please try again.');
             }
-            
-            alert(`New namespace "${title}" created. Reloading...`);
-            window.location.reload();
         }
+    }
+    
+    generateNamespaceId() {
+        // Generate 8-character hex ID similar to existing namespace system
+        const chars = '0123456789abcdef';
+        let result = '';
+        for (let i = 0; i < 8; i++) {
+            result += chars[Math.floor(Math.random() * chars.length)];
+        }
+        return result;
     }
 
     deleteCurrentNamespace() {
