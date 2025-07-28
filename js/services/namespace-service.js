@@ -322,7 +322,6 @@ window.NamespaceService = (function() {
                 if (sessionKey) {
                     try {
                         state.current.namespaceKey = CryptoUtils.deriveMasterKeyFromSession(sessionKey, sharedLinkNamespace);
-                        console.log(`[NamespaceService] Derived master key for ${sharedLinkNamespace}:`, state.current.namespaceKey ? state.current.namespaceKey.length + ' chars' : 'none');
                         addSystemMessage(`[CRYPTO] Derived deterministic master key for shared link namespace ${sharedLinkNamespace}`);
                         
                         // Store the namespace data for future tabs
