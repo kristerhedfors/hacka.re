@@ -97,41 +97,23 @@ window.SharedLinkManager = (function() {
         }
         
         /**
-         * Get metadata for a specific namespace
+         * Get metadata for a specific namespace using NamespaceService
          * @param {string} namespaceId - The namespace ID
          * @returns {Object|null} Namespace metadata or null
          */
         async function getNamespaceMetadata(namespaceId) {
-            try {
-                // Try to decrypt and get basic info
-                const storageService = window.CoreStorageService;
-                if (!storageService) return null;
-                
-                // Get title and subtitle (not encrypted)
-                const title = localStorage.getItem('title') || `Namespace ${namespaceId}`;
-                const subtitle = localStorage.getItem('subtitle') || '';
-                
-                // Try to get message history to count messages
-                let messageCount = 0;
-                try {
-                    const history = storageService.getItem('chat_history', namespaceId);
-                    if (history && Array.isArray(history)) {
-                        messageCount = history.length;
-                    }
-                } catch (e) {
-                    // Can't decrypt, use 0
-                }
-                
-                return {
-                    title,
-                    subtitle,
-                    messageCount,
-                    lastUsed: new Date().toISOString() // TODO: Track actual last used
-                };
-            } catch (error) {
-                console.error('Error getting namespace metadata:', error);
-                return null;
+            if (window.NamespaceService && window.NamespaceService.getNamespaceMetadata) {
+                return window.NamespaceService.getNamespaceMetadata(namespaceId);
             }
+            
+            // Fallback if NamespaceService not available
+            return {
+                id: namespaceId,
+                title: `Namespace ${namespaceId}`,
+                subtitle: '',
+                messageCount: 0,
+                lastUsed: new Date().toISOString()
+            };
         }
         
         /**
