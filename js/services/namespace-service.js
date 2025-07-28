@@ -565,25 +565,29 @@ window.NamespaceService = (function() {
      */
     function getNamespaceMetadata(namespaceId) {
         try {
-            // Try to get basic info from storage
-            const storage = StorageTypeService ? StorageTypeService.getStorage() : localStorage;
+            // Get basic info - for current namespace, use actual title/subtitle
+            let title, subtitle;
             
-            // Get title and subtitle (these are not namespaced and might not be current namespace)
-            // For now, we'll use a generic title based on namespace ID
-            const title = `Namespace ${namespaceId}`;
-            const subtitle = '';
+            if (namespaceId === state.current.namespaceId) {
+                // Current namespace - get actual title/subtitle
+                const storage = StorageTypeService ? StorageTypeService.getStorage() : localStorage;
+                title = storage.getItem('title') || `Namespace ${namespaceId}`;
+                subtitle = storage.getItem('subtitle') || '';
+            } else {
+                // Other namespace - use generic title
+                title = `Namespace ${namespaceId}`;
+                subtitle = '';
+            }
             
             // Try to get message history to count messages
             let messageCount = 0;
             let lastUsed = new Date().toISOString();
             
             try {
-                // Try to get chat history for this namespace
-                const historyKey = getNamespacedKey('chat_history', namespaceId);
-                const encryptedHistory = storage.getItem(historyKey);
-                
-                if (encryptedHistory && window.CoreStorageService) {
-                    const history = window.CoreStorageService.getItem('chat_history', namespaceId);
+                // Only try to decrypt if we have CoreStorageService
+                if (window.CoreStorageService && namespaceId === state.current.namespaceId) {
+                    // Only check current namespace to avoid decryption errors
+                    const history = window.CoreStorageService.getItem('chat_history');
                     if (history && Array.isArray(history)) {
                         messageCount = history.length;
                         // Get last message timestamp if available
@@ -596,8 +600,8 @@ window.NamespaceService = (function() {
                     }
                 }
             } catch (e) {
-                // Can't decrypt or access history, use defaults
-                console.log('Cannot access history for namespace', namespaceId, e);
+                // Can't decrypt or access history, use defaults (this is expected for other namespaces)
+                // Don't log this as it's normal behavior
             }
             
             return {

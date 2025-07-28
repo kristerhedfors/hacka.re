@@ -193,34 +193,98 @@ class ASCIITreeMenu {
 
     // Namespace management methods
     showCurrentNamespaceInfo() {
-        if (window.NamespaceInfoModal) {
-            window.NamespaceInfoModal.show();
+        // Show current namespace information
+        if (window.NamespaceService) {
+            const currentId = window.NamespaceService.getNamespaceId();
+            const currentMeta = window.NamespaceService.getNamespaceMetadata ? 
+                window.NamespaceService.getNamespaceMetadata(currentId) : null;
+            
+            const info = `Current Namespace: ${currentId}\nTitle: ${currentMeta?.title || 'Unknown'}\nMessages: ${currentMeta?.messageCount || 0}`;
+            alert(info);
         } else {
-            console.warn('ASCII Tree Menu: NamespaceInfoModal not available');
+            alert('Current Namespace: Default\nNamespace service not available');
         }
     }
 
-    showNamespaceSwitcher() {
-        if (window.NamespaceSwitchModal) {
-            window.NamespaceSwitchModal.show();
+    async showNamespaceSwitcher() {
+        // Use the existing namespace selection modal for switching
+        if (window.NamespaceSelectionModal && window.NamespaceService) {
+            try {
+                // Get available namespaces
+                const namespaceIds = window.NamespaceService.getAllNamespaceIds();
+                const namespaces = [];
+                
+                for (const id of namespaceIds) {
+                    const metadata = window.NamespaceService.getNamespaceMetadata(id);
+                    if (metadata) {
+                        namespaces.push(metadata);
+                    }
+                }
+                
+                if (namespaces.length === 0) {
+                    alert('No other namespaces available. Create a new namespace first.');
+                    return;
+                }
+                
+                // Show selection modal
+                const selection = await window.NamespaceSelectionModal.show(namespaces, null);
+                
+                if (selection.action === 'use_existing') {
+                    // Switch to selected namespace
+                    const success = window.NamespaceService.setCurrentNamespace(selection.namespace.id);
+                    if (success) {
+                        alert(`Switched to namespace: ${selection.namespace.title}`);
+                        // Reload page to apply namespace switch
+                        window.location.reload();
+                    } else {
+                        alert('Failed to switch namespace');
+                    }
+                } else if (selection.action === 'create_new') {
+                    this.createNewNamespace();
+                }
+            } catch (error) {
+                console.log('Namespace switching cancelled');
+            }
         } else {
-            console.warn('ASCII Tree Menu: NamespaceSwitchModal not available');
+            console.warn('ASCII Tree Menu: NamespaceSelectionModal or NamespaceService not available');
         }
     }
 
     createNewNamespace() {
-        if (window.NamespaceCreationModal) {
-            window.NamespaceCreationModal.show();
-        } else {
-            console.warn('ASCII Tree Menu: NamespaceCreationModal not available');
+        // Simple prompt for new namespace creation
+        const title = prompt('Enter title for new namespace:', 'New Namespace');
+        if (title) {
+            const subtitle = prompt('Enter subtitle (optional):', '');
+            
+            // Set new title/subtitle which will create new namespace
+            localStorage.setItem('title', title);
+            if (subtitle) {
+                localStorage.setItem('subtitle', subtitle);
+            }
+            
+            alert(`New namespace "${title}" created. Reloading...`);
+            window.location.reload();
         }
     }
 
     deleteCurrentNamespace() {
-        if (window.NamespaceDeletionModal) {
-            window.NamespaceDeletionModal.show();
-        } else {
-            console.warn('ASCII Tree Menu: NamespaceDeletionModal not available');
+        if (confirm('Are you sure you want to delete the current namespace? This action cannot be undone.')) {
+            if (window.NamespaceService) {
+                const currentId = window.NamespaceService.getNamespaceId();
+                
+                // Clear current namespace data
+                const keys = Object.keys(localStorage);
+                const namespaceKeys = keys.filter(key => key.includes(`hackare_${currentId}_`));
+                
+                for (const key of namespaceKeys) {
+                    localStorage.removeItem(key);
+                }
+                
+                alert('Current namespace deleted. Reloading...');
+                window.location.reload();
+            } else {
+                alert('Cannot delete namespace: NamespaceService not available');
+            }
         }
     }
 
