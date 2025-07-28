@@ -530,23 +530,57 @@ function createSharedLinkDataProcessor() {
      * @param {Function} addSystemMessage - Function to add system messages
      */
     function applySessionKey(password, elements, addSystemMessage) {
-        // Use the decryption password as the session key and lock it
+        console.log('[SharedLinkDataProcessor] applySessionKey called with password length:', password ? password.length : 'null');
+        console.log('[SharedLinkDataProcessor] window.aiHackare available:', !!window.aiHackare);
+        console.log('[SharedLinkDataProcessor] shareManager available:', !!(window.aiHackare && window.aiHackare.shareManager));
+        
+        // Check if a session key already exists in sessionStorage for this shared link
+        // to prevent race conditions between multiple tabs
         if (window.aiHackare && window.aiHackare.shareManager) {
-            // Set the session key on the instance, not the module
-            window.aiHackare.shareManager.setSessionKey(password);
+            const existingSessionKey = window.aiHackare.shareManager.getSessionKey();
+            console.log('[SharedLinkDataProcessor] Existing session key:', existingSessionKey ? existingSessionKey.length + ' chars' : 'none');
             
-            // Also lock the session key for future use
-            if (elements.lockSessionKeyCheckbox) {
-                elements.lockSessionKeyCheckbox.checked = true;
+            if (!existingSessionKey) {
+                // Only set the session key if none exists yet
+                window.aiHackare.shareManager.setSessionKey(password);
+                console.log('[SharedLinkDataProcessor] Set new session key');
+                
+                if (addSystemMessage) {
+                    addSystemMessage(`Using decryption password as session key for deterministic master key derivation.`);
+                }
+                
+                // Force namespace re-initialization now that session key is available
+                if (window.NamespaceService && typeof window.NamespaceService.reinitializeNamespace === 'function') {
+                    console.log('[SharedLinkDataProcessor] Re-initializing namespace with new session key');
+                    window.NamespaceService.reinitializeNamespace();
+                }
+            } else {
+                // Session key already exists, use it instead
+                console.log('[SharedLinkDataProcessor] Using existing session key');
+                if (addSystemMessage) {
+                    addSystemMessage(`Session key already exists from another tab - using existing key for consistency.`);
+                }
+                
+                // Even with existing session key, ensure namespace is properly initialized
+                if (window.NamespaceService && typeof window.NamespaceService.reinitializeNamespace === 'function') {
+                    console.log('[SharedLinkDataProcessor] Re-initializing namespace with existing session key');
+                    window.NamespaceService.reinitializeNamespace();
+                }
             }
-            
-            if (elements.passwordInputContainer) {
-                elements.passwordInputContainer.classList.add('locked');
-            }
-            
+        } else {
+            console.error('[SharedLinkDataProcessor] ShareManager not available - cannot set session key!');
             if (addSystemMessage) {
-                addSystemMessage(`Using decryption password as session key for future sharing.`);
+                addSystemMessage(`ERROR: Cannot set session key - ShareManager not available`);
             }
+        }
+        
+        // Also lock the session key for future use
+        if (elements.lockSessionKeyCheckbox) {
+            elements.lockSessionKeyCheckbox.checked = true;
+        }
+        
+        if (elements.passwordInputContainer) {
+            elements.passwordInputContainer.classList.add('locked');
         }
     }
     
