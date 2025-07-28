@@ -530,9 +530,8 @@ function createSharedLinkDataProcessor() {
      * @param {Function} addSystemMessage - Function to add system messages
      */
     function applySessionKey(password, elements, addSystemMessage) {
-        console.log('[SharedLinkDataProcessor] applySessionKey called with password length:', password ? password.length : 'null');
-        console.log('[SharedLinkDataProcessor] window.aiHackare available:', !!window.aiHackare);
-        console.log('[SharedLinkDataProcessor] shareManager available:', !!(window.aiHackare && window.aiHackare.shareManager));
+        // Note: This function is now redundant as session key is applied immediately in shared-link-manager.js
+        console.log('[SharedLinkDataProcessor] applySessionKey called - but session key should already be set');
         
         // Check if a session key already exists in sessionStorage for this shared link
         // to prevent race conditions between multiple tabs
@@ -540,33 +539,9 @@ function createSharedLinkDataProcessor() {
             const existingSessionKey = window.aiHackare.shareManager.getSessionKey();
             console.log('[SharedLinkDataProcessor] Existing session key:', existingSessionKey ? existingSessionKey.length + ' chars' : 'none');
             
-            if (!existingSessionKey) {
-                // Only set the session key if none exists yet
-                window.aiHackare.shareManager.setSessionKey(password);
-                console.log('[SharedLinkDataProcessor] Set new session key');
-                
-                if (addSystemMessage) {
-                    addSystemMessage(`Using decryption password as session key for deterministic master key derivation.`);
-                }
-                
-                // Force namespace re-initialization now that session key is available
-                if (window.NamespaceService && typeof window.NamespaceService.reinitializeNamespace === 'function') {
-                    console.log('[SharedLinkDataProcessor] Re-initializing namespace with new session key');
-                    window.NamespaceService.reinitializeNamespace();
-                }
-            } else {
-                // Session key already exists, use it instead
-                console.log('[SharedLinkDataProcessor] Using existing session key');
-                if (addSystemMessage) {
-                    addSystemMessage(`Session key already exists from another tab - using existing key for consistency.`);
-                }
-                
-                // Even with existing session key, ensure namespace is properly initialized
-                if (window.NamespaceService && typeof window.NamespaceService.reinitializeNamespace === 'function') {
-                    console.log('[SharedLinkDataProcessor] Re-initializing namespace with existing session key');
-                    window.NamespaceService.reinitializeNamespace();
-                }
-            }
+            // Session key should already be set by shared-link-manager.js
+            // This function is now redundant but kept for backward compatibility
+            console.log('[SharedLinkDataProcessor] Session key already applied, skipping redundant application');
         } else {
             console.error('[SharedLinkDataProcessor] ShareManager not available - cannot set session key!');
             if (addSystemMessage) {
@@ -862,7 +837,9 @@ function createSharedLinkDataProcessor() {
             console.log('🔧 processSharedData: Applying MCP connections');
             await applyMcpConnections(sharedData, collectSystemMessage);
             
-            applySessionKey(password, elements, collectSystemMessage);
+            // Session key is now applied immediately in shared-link-manager.js when password is validated
+            // This redundant call is no longer needed
+            // applySessionKey(password, elements, collectSystemMessage);
             
             // Apply welcome message processing (for storage in share manager)
             applyWelcomeMessage(sharedData, () => {}, false); // Don't display, just process
