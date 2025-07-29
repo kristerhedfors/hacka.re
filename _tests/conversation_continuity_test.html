@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversation Continuity Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-case { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .passed { border-color: green; background-color: #f0fff0; }
+        .failed { border-color: red; background-color: #fff0f0; }
+        .log { font-family: monospace; background: #f5f5f5; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Conversation Continuity Test</h1>
+    
+    <div id="test-results"></div>
+    
+    <script>
+        // Mock namespace service for testing
+        window.NamespaceService = {
+            _testMode: true,
+            _isReturningToExisting: false,
+            
+            isReturningToExistingNamespace() {
+                return this._isReturningToExisting;
+            },
+            
+            setTestState(isReturning) {
+                this._isReturningToExisting = isReturning;
+            }
+        };
+        
+        // Mock chat manager
+        window.aiHackare = {
+            chatManager: {
+                _reloadCalled: false,
+                reloadConversationHistory() {
+                    this._reloadCalled = true;
+                    console.log('[TEST] reloadConversationHistory called');
+                    return [];
+                }
+            }
+        };
+        
+        // Mock shared link data processor
+        let applyChatMessages;
+        
+        // Simulate the applyChatMessages function
+        function simulateApplyChatMessages(sharedData, addSystemMessage, setMessages, systemMessages = []) {
+            // Check if we're returning to an existing namespace
+            const isReturningToExisting = window.NamespaceService && 
+                                        window.NamespaceService.isReturningToExistingNamespace && 
+                                        window.NamespaceService.isReturningToExistingNamespace();
+            
+            if (isReturningToExisting) {
+                // For existing namespaces, use reloadConversationHistory instead of shared messages
+                console.log('[SharedLinkDataProcessor] Returning to existing namespace - skipping shared conversation, will reload stored conversation');
+                
+                if (addSystemMessage) {
+                    addSystemMessage('Returning to existing namespace - loading your conversation history...');
+                }
+                
+                // Only apply system messages (like welcome message) but not the shared conversation
+                if (systemMessages.length > 0 && setMessages) {
+                    setMessages(systemMessages);
+                }
+                
+                // Trigger conversation history reload via chat manager
+                if (window.aiHackare && window.aiHackare.chatManager && 
+                    window.aiHackare.chatManager.reloadConversationHistory) {
+                    // Delay to allow system messages to be displayed first
+                    setTimeout(() => {
+                        window.aiHackare.chatManager.reloadConversationHistory();
+                    }, 100);
+                }
+                
+                return;
+            }
+            
+            // For new namespaces or first-time shared links, use shared messages as before
+            if (sharedData.messages && sharedData.messages.length > 0 && setMessages) {
+                // Add system message about conversation loading
+                if (addSystemMessage) {
+                    addSystemMessage(`Shared conversation history with ${sharedData.messages.length} messages has been loaded.`);
+                }
+                
+                // Combine system messages with shared conversation history
+                const allMessages = [...systemMessages, ...sharedData.messages];
+                setMessages(allMessages);
+            } else if (systemMessages.length > 0 && setMessages) {
+                // Even if no conversation history, show system messages
+                setMessages(systemMessages);
+            }
+        }
+        
+        // Test cases
+        const tests = [
+            {
+                name: "New Namespace - Should Use Shared Conversation",
+                setup() {
+                    window.NamespaceService.setTestState(false); // New namespace
+                    window.aiHackare.chatManager._reloadCalled = false;
+                },
+                test() {
+                    const logs = [];
+                    const messages = [];
+                    
+                    const mockSharedData = {
+                        messages: [
+                            { role: 'user', content: 'Hello' },
+                            { role: 'assistant', content: 'Hi there!' }
+                        ]
+                    };
+                    
+                    simulateApplyChatMessages(
+                        mockSharedData,
+                        (msg) => logs.push(msg),
+                        (msgs) => messages.push(...msgs),
+                        []
+                    );
+                    
+                    // Should use shared messages, not reload
+                    return {
+                        passed: messages.length === 2 && !window.aiHackare.chatManager._reloadCalled,
+                        details: `Messages: ${messages.length}, Reload called: ${window.aiHackare.chatManager._reloadCalled}`
+                    };
+                }
+            },
+            
+            {
+                name: "Existing Namespace - Should Reload Conversation",
+                setup() {
+                    window.NamespaceService.setTestState(true); // Existing namespace
+                    window.aiHackare.chatManager._reloadCalled = false;
+                },
+                test() {
+                    const logs = [];
+                    const messages = [];
+                    
+                    const mockSharedData = {
+                        messages: [
+                            { role: 'user', content: 'Hello' },
+                            { role: 'assistant', content: 'Hi there!' }
+                        ]
+                    };
+                    
+                    simulateApplyChatMessages(
+                        mockSharedData,
+                        (msg) => logs.push(msg),
+                        (msgs) => messages.push(...msgs),
+                        []
+                    );
+                    
+                    // Should trigger reload after delay
+                    return new Promise((resolve) => {
+                        setTimeout(() => {
+                            resolve({
+                                passed: messages.length === 0 && window.aiHackare.chatManager._reloadCalled,
+                                details: `Messages: ${messages.length}, Reload called: ${window.aiHackare.chatManager._reloadCalled}, Logs: ${logs.join(', ')}`
+                            });
+                        }, 150);
+                    });
+                }
+            },
+            
+            {
+                name: "Existing Namespace with System Messages - Should Show System Messages and Reload",
+                setup() {
+                    window.NamespaceService.setTestState(true); // Existing namespace
+                    window.aiHackare.chatManager._reloadCalled = false;
+                },
+                test() {
+                    const logs = [];
+                    const messages = [];
+                    
+                    const mockSharedData = {
+                        messages: [
+                            { role: 'user', content: 'Hello' },
+                            { role: 'assistant', content: 'Hi there!' }
+                        ]
+                    };
+                    
+                    const systemMessages = [
+                        { role: 'system', content: 'Welcome message', className: 'welcome-message' }
+                    ];
+                    
+                    simulateApplyChatMessages(
+                        mockSharedData,
+                        (msg) => logs.push(msg),
+                        (msgs) => messages.push(...msgs),
+                        systemMessages
+                    );
+                    
+                    // Should show system messages and trigger reload
+                    return new Promise((resolve) => {
+                        setTimeout(() => {
+                            resolve({
+                                passed: messages.length === 1 && 
+                                       messages[0].content === 'Welcome message' &&
+                                       window.aiHackare.chatManager._reloadCalled,
+                                details: `Messages: ${JSON.stringify(messages)}, Reload called: ${window.aiHackare.chatManager._reloadCalled}`
+                            });
+                        }, 150);
+                    });
+                }
+            }
+        ];
+        
+        // Run tests
+        async function runTests() {
+            const results = document.getElementById('test-results');
+            
+            for (const test of tests) {
+                const testDiv = document.createElement('div');
+                testDiv.className = 'test-case';
+                
+                testDiv.innerHTML = `<h3>${test.name}</h3><div class="log">Running...</div>`;
+                results.appendChild(testDiv);
+                
+                try {
+                    test.setup();
+                    const result = await test.test();
+                    
+                    testDiv.className = `test-case ${result.passed ? 'passed' : 'failed'}`;
+                    testDiv.innerHTML = `
+                        <h3>${test.name}</h3>
+                        <div class="log">
+                            <strong>Result:</strong> ${result.passed ? 'PASSED' : 'FAILED'}<br>
+                            <strong>Details:</strong> ${result.details}
+                        </div>
+                    `;
+                } catch (error) {
+                    testDiv.className = 'test-case failed';
+                    testDiv.innerHTML = `
+                        <h3>${test.name}</h3>
+                        <div class="log">
+                            <strong>Result:</strong> ERROR<br>
+                            <strong>Error:</strong> ${error.message}
+                        </div>
+                    `;
+                }
+            }
+        }
+        
+        // Auto-run tests when page loads
+        document.addEventListener('DOMContentLoaded', runTests);
+    </script>
+</body>
+</html>

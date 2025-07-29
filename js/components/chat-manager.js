@@ -348,6 +348,59 @@ function cleanupGeneration(updateContextUsage, currentModel) {
         }
         
         /**
+         * Reload conversation history for existing namespace continuity
+         * This method is specifically for when returning to an existing namespace
+         * and we want to display the full conversation history
+         */
+        function reloadConversationHistory() {
+            console.log('[ChatManager] Reloading conversation history for namespace continuity');
+            
+            // Clear current UI first
+            if (uiHandler) {
+                uiHandler.clearChat();
+            }
+            
+            // Load fresh chat history from storage
+            const savedHistory = StorageService.loadChatHistory();
+            
+            console.log('[ChatManager] Loaded history from storage:', savedHistory);
+            
+            if (savedHistory && Array.isArray(savedHistory) && savedHistory.length > 0) {
+                try {
+                    messages = savedHistory;
+                    
+                    // Debug: Log the actual messages to see what we're trying to display
+                    console.log('[ChatManager] Messages to display:', messages);
+                    
+                    // Check if messages are valid
+                    const validMessages = messages.filter(msg => 
+                        msg && typeof msg === 'object' && msg.role && msg.content
+                    );
+                    
+                    if (validMessages.length !== messages.length) {
+                        console.warn(`[ChatManager] Some messages are invalid. Valid: ${validMessages.length}, Total: ${messages.length}`);
+                        messages = validMessages;
+                    }
+                    
+                    // Display all messages using UI handler
+                    uiHandler.displayMessages(messages);
+                    
+                    console.log(`[ChatManager] Reloaded ${messages.length} messages for conversation continuity`);
+                    addSystemMessage(`Conversation history reloaded with ${messages.length} messages.`);
+                    
+                } catch (error) {
+                    console.error('Error reloading conversation history:', error);
+                    addSystemMessage('Error reloading conversation history.');
+                }
+            } else {
+                console.log('[ChatManager] No existing conversation history found in namespace');
+                addSystemMessage('No previous conversation found in this namespace.');
+            }
+            
+            return messages;
+        }
+        
+        /**
          * Clear chat history
          * @param {Function} updateContextUsage - Function to update context usage
          */
@@ -468,6 +521,7 @@ function cleanupGeneration(updateContextUsage, currentModel) {
             updateAIMessage,
             addSystemMessage,
             loadChatHistory,
+            reloadConversationHistory,
             clearChatHistory,
             estimateContextUsage,
             getMessages,

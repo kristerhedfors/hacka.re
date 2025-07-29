@@ -49,7 +49,9 @@ window.NamespaceService = (function() {
             namespaceHash: null
         },
         // Flag to track if the current master key was decrypted using the fallback namespace hash
-        usingFallbackForMasterKey: false
+        usingFallbackForMasterKey: false,
+        // Flag to track if we're returning to an existing namespace vs creating new
+        isReturningToExistingNamespace: false
     };
     
     // Flag to track if we've attempted session cleanup for this page load
@@ -57,6 +59,42 @@ window.NamespaceService = (function() {
     
     // Helper functions
     function getSessionKey() {
+        // First, check sessionStorage directly for shared link session keys
+        // This ensures we get the session key even before ShareManager is initialized
+        if (window.location.hash && (window.location.hash.includes('#gpt=') || window.location.hash.includes('#shared='))) {
+            // Try to find any session key in sessionStorage that matches the pattern
+            // This works even if CryptoUtils isn't loaded yet
+            for (let i = 0; i < sessionStorage.length; i++) {
+                const key = sessionStorage.key(i);
+                if (key && key.startsWith('__hacka_re_session_key_')) {
+                    const storedKey = sessionStorage.getItem(key);
+                    if (storedKey) {
+                        console.log(`[NamespaceService] Found session key in sessionStorage: ${key}`);
+                        return storedKey;
+                    }
+                }
+            }
+            
+            // If CryptoUtils is available, try the more specific approach
+            const hash = window.location.hash;
+            let encryptedData = null;
+            if (hash.includes('#gpt=')) {
+                encryptedData = hash.split('#gpt=')[1];
+            } else if (hash.includes('#shared=')) {
+                encryptedData = hash.split('#shared=')[1];
+            }
+            if (encryptedData && window.CryptoUtils) {
+                // Create a consistent key based on the encrypted data hash
+                const linkHash = CryptoUtils.hashString(encryptedData);
+                const storageKey = `__hacka_re_session_key_${linkHash.substring(0, 16)}`;
+                const storedKey = sessionStorage.getItem(storageKey);
+                if (storedKey) {
+                    console.log(`[NamespaceService] Found session key in sessionStorage (via CryptoUtils): ${storageKey}`);
+                    return storedKey;
+                }
+            }
+        }
+        
         // For shared links, prioritize the aiHackare.shareManager instance
         if (window.aiHackare && window.aiHackare.shareManager && 
             typeof window.aiHackare.shareManager.getSessionKey === 'function') {
@@ -302,8 +340,10 @@ window.NamespaceService = (function() {
                     state.current.namespaceId = sharedLinkNamespace;
                     state.current.namespaceHash = sharedLinkNamespace;
                     state.current.namespaceKey = existingMasterKey;
+                    state.isReturningToExistingNamespace = true;
                     
                     addSystemMessage(`[CRYPTO] Loaded existing master key for shared link namespace ${sharedLinkNamespace}`);
+                    addSystemMessage(`[NAMESPACE] Returning to existing namespace - conversation continuity enabled`);
                     
                     return {
                         namespaceId: state.current.namespaceId,
@@ -315,6 +355,7 @@ window.NamespaceService = (function() {
                 // No existing namespace, create new one
                 state.current.namespaceId = sharedLinkNamespace;
                 state.current.namespaceHash = sharedLinkNamespace; // Use namespace ID as hash for simplicity
+                state.isReturningToExistingNamespace = false;
                 
                 // For shared links, derive master key deterministically from session key
                 const sessionKey = getSessionKey();
@@ -374,6 +415,7 @@ window.NamespaceService = (function() {
             
             state.current.namespaceId = defaultNamespace;
             state.current.namespaceHash = defaultNamespace; // Use namespace ID as hash for simplicity
+            state.isReturningToExistingNamespace = false;
             
             // For sessionStorage with session key, derive master key deterministically
             const sessionKey = getSessionKey();
@@ -412,6 +454,7 @@ window.NamespaceService = (function() {
                 state.current.namespaceId = firstNamespaceId;
                 state.current.namespaceHash = targetHash;
                 state.current.namespaceKey = masterKey;
+                state.isReturningToExistingNamespace = true; // This is an existing namespace
                 
                 addSystemMessage(`[CRYPTO] Successfully loaded existing namespace: ${firstNamespaceId}`);
             } else {
@@ -429,6 +472,7 @@ window.NamespaceService = (function() {
                 state.current.namespaceId = defaultNamespaceId;
                 state.current.namespaceHash = defaultNamespaceHash;
                 state.current.namespaceKey = defaultMasterKey;
+                state.isReturningToExistingNamespace = false;
                 
                 storeNamespaceData(state.current.namespaceId, state.current.namespaceHash, state.current.namespaceKey);
                 addSystemMessage(`[CRYPTO] Created and stored fallback namespace: ${state.current.namespaceId}`);
@@ -449,6 +493,7 @@ window.NamespaceService = (function() {
             state.current.namespaceId = defaultNamespaceId;
             state.current.namespaceHash = defaultNamespaceHash;
             state.current.namespaceKey = defaultMasterKey;
+            state.isReturningToExistingNamespace = false;
             
             storeNamespaceData(state.current.namespaceId, state.current.namespaceHash, state.current.namespaceKey);
             addSystemMessage(`[CRYPTO] Created and stored fallback namespace: ${state.current.namespaceId}`);
@@ -497,15 +542,32 @@ window.NamespaceService = (function() {
      * This is needed when session key is set after initial namespace creation attempt
      */
     function reinitializeNamespace() {
+        // Store the namespace ID to check if it exists after re-initialization
+        const previousNamespaceId = state.current.namespaceId;
+        
         // Clear current state to force re-creation
         state.current.namespaceId = null;
         state.current.namespaceHash = null;
         state.current.namespaceKey = null;
+        // Don't reset isReturningToExistingNamespace here - let getOrCreateNamespace determine it
         
         // Re-initialize namespace with session key now available
         const namespace = getOrCreateNamespace();
         if (namespace) {
             addSystemMessage(`[CRYPTO] Successfully re-initialized namespace with session key`);
+            
+            // If we re-initialized the same namespace and it's marked as existing, trigger conversation reload
+            if (previousNamespaceId === namespace.namespaceId && state.isReturningToExistingNamespace) {
+                addSystemMessage(`[NAMESPACE] Re-initialized existing namespace - triggering conversation reload`);
+                
+                // Trigger conversation reload after a delay to ensure everything is initialized
+                if (window.aiHackare && window.aiHackare.chatManager && 
+                    window.aiHackare.chatManager.reloadConversationHistory) {
+                    setTimeout(() => {
+                        window.aiHackare.chatManager.reloadConversationHistory();
+                    }, 500);
+                }
+            }
         }
         
         return namespace;
@@ -537,6 +599,7 @@ window.NamespaceService = (function() {
         state.current.namespaceId = null;
         state.current.namespaceKey = null;
         state.current.namespaceHash = null;
+        state.isReturningToExistingNamespace = false;
         
         addSystemMessage(`[CRYPTO] Namespace cache reset, will create or find namespace on next access`);
     }
@@ -685,6 +748,14 @@ window.NamespaceService = (function() {
     }
     
     /**
+     * Check if we're returning to an existing namespace (vs creating new)
+     * @returns {boolean} True if returning to existing namespace
+     */
+    function isReturningToExistingNamespace() {
+        return state.isReturningToExistingNamespace;
+    }
+    
+    /**
      * Set current namespace (for switching)
      * @param {string} namespaceId - The namespace ID to switch to
      */
@@ -733,6 +804,7 @@ window.NamespaceService = (function() {
                 state.current.namespaceId = namespaceId;
                 state.current.namespaceHash = targetHash;
                 state.current.namespaceKey = masterKey;
+                state.isReturningToExistingNamespace = true; // Switching to existing namespace
                 
                 console.log('Switched to namespace:', namespaceId);
                 return true;
@@ -766,6 +838,7 @@ window.NamespaceService = (function() {
         getAllNamespaceIds: getAllNamespaceIds,
         getNamespaceMetadata: getNamespaceMetadata,
         setCurrentNamespace: setCurrentNamespace,
-        reinitializeNamespace: reinitializeNamespace
+        reinitializeNamespace: reinitializeNamespace,
+        isReturningToExistingNamespace: isReturningToExistingNamespace
     };
 })();
