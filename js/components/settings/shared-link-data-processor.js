@@ -252,7 +252,40 @@ function createSharedLinkDataProcessor() {
      * @param {Function} setMessages - Function to set chat messages
      */
     function applyChatMessages(sharedData, addSystemMessage, setMessages, systemMessages = []) {
-        // If there are shared messages, update the chat
+        // Check if we're returning to an existing namespace
+        const isReturningToExisting = window.NamespaceService && 
+                                    window.NamespaceService.isReturningToExistingNamespace && 
+                                    window.NamespaceService.isReturningToExistingNamespace();
+        
+        if (isReturningToExisting) {
+            console.log('[SharedLinkDataProcessor] Returning to existing namespace - loading localStorage conversation');
+            
+            // For existing namespaces, always prioritize localStorage conversation
+            // Only use shared conversation if localStorage has no real conversation
+            
+            if (addSystemMessage) {
+                addSystemMessage('Returning to existing namespace - loading your conversation history...');
+            }
+            
+            // DON'T overwrite conversation history with just system messages!
+            // The chat manager will handle loading the correct conversation history
+            // and will add system messages if needed
+            
+            // Trigger conversation history reload via chat manager immediately
+            if (window.aiHackare && window.aiHackare.chatManager && 
+                window.aiHackare.chatManager.reloadConversationHistory) {
+                console.log('[SharedLinkDataProcessor] Triggering conversation reload without overwriting history');
+                // Call reload immediately to preserve existing conversation
+                setTimeout(() => {
+                    console.log('[SharedLinkDataProcessor] Triggering conversation reload');
+                    window.aiHackare.chatManager.reloadConversationHistory();
+                }, 100);
+            }
+            
+            return;
+        }
+        
+        // For new namespaces or first-time shared links, use shared messages as before
         if (sharedData.messages && sharedData.messages.length > 0 && setMessages) {
             // Add system message about conversation loading
             if (addSystemMessage) {
@@ -530,23 +563,32 @@ function createSharedLinkDataProcessor() {
      * @param {Function} addSystemMessage - Function to add system messages
      */
     function applySessionKey(password, elements, addSystemMessage) {
-        // Use the decryption password as the session key and lock it
+        // Note: This function is now redundant as session key is applied immediately in shared-link-manager.js
+        console.log('[SharedLinkDataProcessor] applySessionKey called - but session key should already be set');
+        
+        // Check if a session key already exists in sessionStorage for this shared link
+        // to prevent race conditions between multiple tabs
         if (window.aiHackare && window.aiHackare.shareManager) {
-            // Set the session key on the instance, not the module
-            window.aiHackare.shareManager.setSessionKey(password);
+            const existingSessionKey = window.aiHackare.shareManager.getSessionKey();
+            console.log('[SharedLinkDataProcessor] Existing session key:', existingSessionKey ? existingSessionKey.length + ' chars' : 'none');
             
-            // Also lock the session key for future use
-            if (elements.lockSessionKeyCheckbox) {
-                elements.lockSessionKeyCheckbox.checked = true;
-            }
-            
-            if (elements.passwordInputContainer) {
-                elements.passwordInputContainer.classList.add('locked');
-            }
-            
+            // Session key should already be set by shared-link-manager.js
+            // This function is now redundant but kept for backward compatibility
+            console.log('[SharedLinkDataProcessor] Session key already applied, skipping redundant application');
+        } else {
+            console.error('[SharedLinkDataProcessor] ShareManager not available - cannot set session key!');
             if (addSystemMessage) {
-                addSystemMessage(`Using decryption password as session key for future sharing.`);
+                addSystemMessage(`ERROR: Cannot set session key - ShareManager not available`);
             }
+        }
+        
+        // Also lock the session key for future use
+        if (elements.lockSessionKeyCheckbox) {
+            elements.lockSessionKeyCheckbox.checked = true;
+        }
+        
+        if (elements.passwordInputContainer) {
+            elements.passwordInputContainer.classList.add('locked');
         }
     }
     
@@ -828,7 +870,9 @@ function createSharedLinkDataProcessor() {
             console.log('🔧 processSharedData: Applying MCP connections');
             await applyMcpConnections(sharedData, collectSystemMessage);
             
-            applySessionKey(password, elements, collectSystemMessage);
+            // Session key is now applied immediately in shared-link-manager.js when password is validated
+            // This redundant call is no longer needed
+            // applySessionKey(password, elements, collectSystemMessage);
             
             // Apply welcome message processing (for storage in share manager)
             applyWelcomeMessage(sharedData, () => {}, false); // Don't display, just process
