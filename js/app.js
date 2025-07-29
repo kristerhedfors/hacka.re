@@ -3,7 +3,135 @@
  * A simple chat interface for OpenAI-compatible APIs
  */
 
-document.addEventListener('DOMContentLoaded', function() {
+/**
+ * Handle early shared link password collection
+ * This runs BEFORE any initialization to ensure password is available for namespace creation
+ */
+async function handleEarlySharedLinkPassword() {
+    // If the flag is set, we definitely need to show the password modal
+    if (!window._waitingForSharedLinkPassword) {
+        return; // No shared link waiting for password
+    }
+    
+    console.log('[App] Shared link detected - requesting password before initialization');
+    
+    // Use the encrypted data stored by the critical early script
+    const encryptedData = window._sharedLinkEncryptedData;
+    
+    if (encryptedData && window.CryptoUtils) {
+        const linkHash = window.CryptoUtils.hashString(encryptedData);
+        const storageKey = `__hacka_re_session_key_${linkHash.substring(0, 16)}`;
+        const existingKey = sessionStorage.getItem(storageKey);
+        
+        if (existingKey) {
+            console.log('[App] Found existing session key in sessionStorage - no password prompt needed');
+            return; // We already have the password
+        }
+    }
+    
+    // We need to prompt for password
+    console.log('[App] Creating password modal...');
+    return new Promise((resolve) => {
+        // Create a simple password modal
+        const modal = document.createElement('div');
+        modal.className = 'modal password-modal show';
+        modal.style.cssText = `
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            background-color: rgba(0, 0, 0, 0.8) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            z-index: 10000 !important;
+        `;
+        modal.innerHTML = `
+            <div class="modal-content" style="
+                background: white;
+                padding: 2rem;
+                border-radius: 8px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                max-width: 400px;
+                width: 90%;
+                text-align: center;
+            ">
+                <h2>Shared Link Password Required</h2>
+                <p>Enter the password to decrypt this shared configuration:</p>
+                <input type="password" id="early-password-input" class="password-input" placeholder="Enter password" autofocus>
+                <div class="modal-buttons">
+                    <button id="early-password-submit" class="primary-button">Decrypt</button>
+                </div>
+                <div id="early-password-error" class="error-message" style="display: none;"></div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        console.log('[App] Password modal added to DOM');
+        
+        const passwordInput = document.getElementById('early-password-input');
+        const submitButton = document.getElementById('early-password-submit');
+        const errorDiv = document.getElementById('early-password-error');
+        
+        const handleSubmit = async () => {
+            const password = passwordInput.value.trim();
+            if (!password) {
+                errorDiv.textContent = 'Please enter a password';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            // Try to decrypt with this password
+            try {
+                const sharedData = await window.LinkSharingService.extractSharedApiKey(password);
+                if (sharedData) {
+                    // Success! Store the session key
+                    if (encryptedData && window.CryptoUtils) {
+                        const linkHash = window.CryptoUtils.hashString(encryptedData);
+                        const storageKey = `__hacka_re_session_key_${linkHash.substring(0, 16)}`;
+                        sessionStorage.setItem(storageKey, password);
+                        console.log('[App] Password verified and session key stored');
+                    }
+                    
+                    // Clear the waiting flag to allow namespace creation
+                    window._waitingForSharedLinkPassword = false;
+                    
+                    // Force namespace re-initialization now that we have the session key
+                    if (window.NamespaceService && window.NamespaceService.reinitializeNamespace) {
+                        window.NamespaceService.reinitializeNamespace();
+                        console.log('[App] Namespace re-initialized with session key');
+                    }
+                    
+                    // Remove modal and continue
+                    modal.remove();
+                    resolve();
+                } else {
+                    errorDiv.textContent = 'Invalid password';
+                    errorDiv.style.display = 'block';
+                    passwordInput.select();
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Decryption failed: ' + error.message;
+                errorDiv.style.display = 'block';
+                passwordInput.select();
+            }
+        };
+        
+        submitButton.addEventListener('click', handleSubmit);
+        passwordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleSubmit();
+            }
+        });
+        
+        // Focus the input
+        passwordInput.focus();
+    });
+}
+
+document.addEventListener('DOMContentLoaded', async function() {
+    // Handle shared link password BEFORE any initialization
+    await handleEarlySharedLinkPassword();
     // Initialize the debug service
     if (window.DebugService) {
         DebugService.init();

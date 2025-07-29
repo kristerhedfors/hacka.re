@@ -348,6 +348,168 @@ function cleanupGeneration(updateContextUsage, currentModel) {
         }
         
         /**
+         * Reload conversation history for existing namespace continuity
+         * This method is specifically for when returning to an existing namespace
+         * and we want to display the full conversation history
+         */
+        function reloadConversationHistory() {
+            console.log('[ChatManager] Reloading conversation history for namespace continuity');
+            
+            // Clear current UI first
+            if (uiHandler) {
+                uiHandler.clearChat();
+            }
+            
+            // Load fresh chat history from storage
+            const savedHistory = StorageService.loadChatHistory();
+            
+            console.log('[ChatManager] Loaded history from storage:', savedHistory);
+            console.log('[ChatManager] Raw history details:', savedHistory?.map(msg => ({
+                role: msg.role,
+                content: msg.content?.substring(0, 100) + '...',
+                timestamp: msg.timestamp
+            })));
+            
+            // TEMP DEBUG: Let's see what's actually available
+            console.log('[ChatManager] DEBUG - Available objects:');
+            console.log('- window.LinkSharingService:', !!window.LinkSharingService);
+            console.log('- window.aiHackare:', !!window.aiHackare);
+            console.log('- window.aiHackare.shareManager:', !!(window.aiHackare && window.aiHackare.shareManager));
+            
+            // Let's also check what the shared link originally contained
+            if (window.LinkSharingService && window.aiHackare && window.aiHackare.shareManager) {
+                try {
+                    const sessionKey = window.aiHackare.shareManager.getSessionKey();
+                    console.log('[ChatManager] DEBUG session key:', sessionKey ? sessionKey.length + ' chars' : 'null');
+                    if (sessionKey) {
+                        const sharedData = window.LinkSharingService.extractSharedApiKey(sessionKey);
+                        console.log('[ChatManager] DEBUG extracted shared data:', sharedData);
+                        console.log('[ChatManager] Original shared data messages:', sharedData?.messages?.map(msg => ({
+                            role: msg.role,
+                            content: msg.content?.substring(0, 100) + '...'
+                        })));
+                    } else {
+                        console.log('[ChatManager] No session key available for shared data extraction');
+                    }
+                } catch (error) {
+                    console.log('[ChatManager] Could not extract shared data:', error.message);
+                }
+            }
+            
+            if (savedHistory && Array.isArray(savedHistory) && savedHistory.length > 0) {
+                // Check if savedHistory contains real conversation (user/assistant messages)
+                const hasRealConversation = savedHistory.some(msg => 
+                    msg.role === 'user' || msg.role === 'assistant'
+                );
+                
+                console.log('[ChatManager] savedHistory analysis:');
+                console.log('- Total messages:', savedHistory.length);
+                console.log('- Has real conversation:', hasRealConversation);
+                
+                if (hasRealConversation) {
+                    // Use localStorage conversation
+                    console.log('[ChatManager] Using localStorage conversation');
+                    messages = savedHistory;
+                    
+                    // Check if messages are valid
+                    const validMessages = messages.filter(msg => 
+                        msg && typeof msg === 'object' && msg.role && msg.content
+                    );
+                    
+                    if (validMessages.length !== messages.length) {
+                        console.warn(`[ChatManager] Some messages are invalid. Valid: ${validMessages.length}, Total: ${messages.length}`);
+                        messages = validMessages;
+                    }
+                    
+                    // Display all messages using UI handler
+                    if (uiHandler && uiHandler.displayMessages) {
+                        console.log('[ChatManager] About to call uiHandler.displayMessages with', messages.length, 'messages');
+                        uiHandler.displayMessages(messages);
+                    } else {
+                        console.error('[ChatManager] uiHandler or displayMessages method not available');
+                    }
+                    
+                    console.log(`[ChatManager] Reloaded ${messages.length} messages from localStorage`);
+                    addSystemMessage(`Conversation history reloaded with ${messages.length} messages.`);
+                    
+                } else {
+                    // localStorage only has system messages, try shared data
+                    console.log('[ChatManager] localStorage only has system messages, checking shared data');
+                    
+                    let sharedData = null;
+                    if (window.LinkSharingService && window.aiHackare && window.aiHackare.shareManager) {
+                        try {
+                            const sessionKey = window.aiHackare.shareManager.getSessionKey();
+                            console.log('[ChatManager] FALLBACK DEBUG session key:', sessionKey ? sessionKey.length + ' chars' : 'null');
+                            if (sessionKey) {
+                                sharedData = window.LinkSharingService.extractSharedApiKey(sessionKey);
+                                console.log('[ChatManager] FALLBACK DEBUG extracted shared data:', sharedData);
+                            }
+                        } catch (error) {
+                            console.log('[ChatManager] Could not extract shared data:', error.message);
+                        }
+                    }
+                    if (sharedData && sharedData.messages && sharedData.messages.length > 0) {
+                        const sharedHasRealConversation = sharedData.messages.some(msg => 
+                            msg.role === 'user' || msg.role === 'assistant'
+                        );
+                        
+                        if (sharedHasRealConversation) {
+                            console.log('[ChatManager] Using shared conversation data instead');
+                            messages = sharedData.messages;
+                            
+                            // Display shared messages
+                            if (uiHandler && uiHandler.displayMessages) {
+                                uiHandler.displayMessages(messages);
+                            }
+                            
+                            console.log(`[ChatManager] Loaded ${messages.length} messages from shared data`);
+                            addSystemMessage(`Shared conversation history loaded with ${messages.length} messages.`);
+                        } else {
+                            console.log('[ChatManager] No real conversation in shared data either');
+                            addSystemMessage('No conversation history found.');
+                        }
+                    } else {
+                        console.log('[ChatManager] No shared data available');
+                        addSystemMessage('No previous conversation found in this namespace.');
+                    }
+                }
+            } else {
+                // No localStorage history, try shared data
+                console.log('[ChatManager] No localStorage history, checking shared data');
+                
+                let sharedData = null;
+                if (window.LinkSharingService && window.aiHackare && window.aiHackare.shareManager) {
+                    try {
+                        const sessionKey = window.aiHackare.shareManager.getSessionKey();
+                        if (sessionKey) {
+                            sharedData = window.LinkSharingService.extractSharedApiKey(sessionKey);
+                        }
+                    } catch (error) {
+                        console.log('[ChatManager] Could not extract shared data:', error.message);
+                    }
+                }
+                if (sharedData && sharedData.messages && sharedData.messages.length > 0) {
+                    console.log('[ChatManager] Using shared conversation data');
+                    messages = sharedData.messages;
+                    
+                    // Display shared messages
+                    if (uiHandler && uiHandler.displayMessages) {
+                        uiHandler.displayMessages(messages);
+                    }
+                    
+                    console.log(`[ChatManager] Loaded ${messages.length} messages from shared data`);
+                    addSystemMessage(`Shared conversation history loaded with ${messages.length} messages.`);
+                } else {
+                    console.log('[ChatManager] No conversation history found anywhere');
+                    addSystemMessage('No previous conversation found.');
+                }
+            }
+            
+            return messages;
+        }
+        
+        /**
          * Clear chat history
          * @param {Function} updateContextUsage - Function to update context usage
          */
@@ -468,6 +630,7 @@ function cleanupGeneration(updateContextUsage, currentModel) {
             updateAIMessage,
             addSystemMessage,
             loadChatHistory,
+            reloadConversationHistory,
             clearChatHistory,
             estimateContextUsage,
             getMessages,

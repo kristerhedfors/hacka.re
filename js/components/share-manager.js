@@ -15,11 +15,38 @@ window.ShareManager = (function() {
         let sharedWelcomeMessage = null;
         let sharedLinkOptions = null; // Store what was included in the shared link that brought us here
         
+        // Create a consistent session key storage key based on the shared link hash
+        function getSessionKeyStorageKey() {
+            if (LinkSharingService && LinkSharingService.hasSharedApiKey && LinkSharingService.hasSharedApiKey()) {
+                const hash = window.location.hash;
+                let encryptedData = null;
+                if (hash.includes('#gpt=')) {
+                    encryptedData = hash.split('#gpt=')[1];
+                } else if (hash.includes('#shared=')) {
+                    encryptedData = hash.split('#shared=')[1];
+                }
+                if (encryptedData) {
+                    // Create a consistent key based on the encrypted data hash
+                    const linkHash = CryptoUtils.hashString(encryptedData);
+                    return `__hacka_re_session_key_${linkHash.substring(0, 16)}`;
+                }
+            }
+            return null;
+        }
+        
         /**
          * Initialize the share manager
          */
         function init() {
-            // Nothing to initialize for now
+            // For shared links, try to restore session key from sessionStorage
+            const storageKey = getSessionKeyStorageKey();
+            if (storageKey) {
+                const storedKey = sessionStorage.getItem(storageKey);
+                if (storedKey) {
+                    sessionKey = storedKey;
+                    console.log(`[ShareManager] Restored session key from sessionStorage for cross-tab consistency: ${storageKey}`);
+                }
+            }
         }
         
         /**
@@ -513,6 +540,15 @@ window.ShareManager = (function() {
          * @returns {string} Session key
          */
         function getSessionKey() {
+            // For shared links, try to get session key from sessionStorage first
+            const storageKey = getSessionKeyStorageKey();
+            if (storageKey) {
+                const storedKey = sessionStorage.getItem(storageKey);
+                if (storedKey) {
+                    sessionKey = storedKey; // Sync local variable
+                    return storedKey;
+                }
+            }
             return sessionKey;
         }
         
@@ -521,6 +557,22 @@ window.ShareManager = (function() {
          * @param {string} key - Session key
          */
         function setSessionKey(key) {
+            // For shared links, check if a session key already exists in sessionStorage
+            const storageKey = getSessionKeyStorageKey();
+            if (storageKey && key) {
+                const existingKey = sessionStorage.getItem(storageKey);
+                if (existingKey && existingKey !== key) {
+                    // Another tab already set a different session key - use the existing one for consistency
+                    console.log(`[ShareManager] Session key already exists in sessionStorage - using existing key for cross-tab consistency`);
+                    sessionKey = existingKey;
+                    return;
+                }
+                
+                // Either no existing key or same key - safe to set
+                sessionStorage.setItem(storageKey, key);
+                console.log(`[ShareManager] Stored session key in sessionStorage for cross-tab access: ${storageKey}`);
+            }
+            
             sessionKey = key;
         }
         

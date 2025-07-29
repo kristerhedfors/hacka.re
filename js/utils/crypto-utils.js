@@ -92,6 +92,30 @@ window.CryptoUtils = (function() {
     }
     
     /**
+     * Derive a deterministic master key from a session key
+     * This ensures that the same session key always produces the same master key
+     * @param {string} sessionKey - The session key to derive from
+     * @param {string} namespace - Optional namespace identifier for additional entropy
+     * @returns {string} Deterministic master key as hex string
+     */
+    function deriveMasterKeyFromSession(sessionKey, namespace = 'default') {
+        if (!sessionKey) {
+            throw new Error('Session key is required for master key derivation');
+        }
+        
+        // Create a deterministic salt from the namespace
+        const namespaceSalt = nacl.util.decodeUTF8(namespace);
+        
+        // Use the key derivation function with the session key and namespace salt
+        const masterKeyBytes = deriveSeed(sessionKey, namespaceSalt);
+        
+        // Convert to hex string
+        return Array.from(masterKeyBytes)
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
+    }
+    
+    /**
      * Create a new namespace entry with encrypted hash
      * @param {string} title - The title
      * @param {string} subtitle - The subtitle
@@ -273,6 +297,7 @@ window.CryptoUtils = (function() {
         generateNamespaceHash: generateNamespaceHash,
         generateMasterKey: generateMasterKey,
         generateSecretKey: generateSecretKey,
+        deriveMasterKeyFromSession: deriveMasterKeyFromSession,
         createNamespaceEntry: createNamespaceEntry,
         getMasterKeyStorageKey: getMasterKeyStorageKey,
         NAMESPACE_PREFIX: NAMESPACE_PREFIX,
