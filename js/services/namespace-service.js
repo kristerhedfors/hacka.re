@@ -311,6 +311,16 @@ window.NamespaceService = (function() {
      * @returns {Object} Object with namespaceId, namespaceHash, and masterKey
      */
     function getOrCreateNamespace() {
+        // If we're waiting for a shared link password, delay namespace creation
+        if (window._waitingForSharedLinkPassword) {
+            console.log('[NamespaceService] Waiting for shared link password before creating namespace');
+            // Return a temporary namespace that won't be used for encryption
+            return {
+                namespaceId: 'temp_waiting',
+                namespaceHash: 'temp_waiting',
+                masterKey: null
+            };
+        }
         // If we already have a namespace, return it
         if (state.current.namespaceId && state.current.namespaceKey && state.current.namespaceHash) {
             return {
@@ -520,6 +530,11 @@ window.NamespaceService = (function() {
      * @returns {string} The namespace key
      */
     function getNamespaceKey() {
+        // If we're waiting for shared link password, don't provide a key yet
+        if (window._waitingForSharedLinkPassword) {
+            console.log('[NamespaceService] Cannot provide namespace key - waiting for shared link password');
+            return null;
+        }
         // For shared links, ensure we wait for proper initialization
         if (StorageTypeService && StorageTypeService.isUsingLocalStorage && StorageTypeService.isUsingLocalStorage()) {
             const sharedLinkNamespace = StorageTypeService.getSharedLinkNamespace ? StorageTypeService.getSharedLinkNamespace() : null;
