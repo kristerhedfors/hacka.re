@@ -252,7 +252,37 @@ function createSharedLinkDataProcessor() {
      * @param {Function} setMessages - Function to set chat messages
      */
     function applyChatMessages(sharedData, addSystemMessage, setMessages, systemMessages = []) {
-        // If there are shared messages, update the chat
+        // Check if we're returning to an existing namespace
+        const isReturningToExisting = window.NamespaceService && 
+                                    window.NamespaceService.isReturningToExistingNamespace && 
+                                    window.NamespaceService.isReturningToExistingNamespace();
+        
+        if (isReturningToExisting) {
+            // For existing namespaces, use reloadConversationHistory instead of shared messages
+            console.log('[SharedLinkDataProcessor] Returning to existing namespace - skipping shared conversation, will reload stored conversation');
+            
+            if (addSystemMessage) {
+                addSystemMessage('Returning to existing namespace - loading your conversation history...');
+            }
+            
+            // Only apply system messages (like welcome message) but not the shared conversation
+            if (systemMessages.length > 0 && setMessages) {
+                setMessages(systemMessages);
+            }
+            
+            // Trigger conversation history reload via chat manager
+            if (window.aiHackare && window.aiHackare.chatManager && 
+                window.aiHackare.chatManager.reloadConversationHistory) {
+                // Delay to allow system messages to be displayed first
+                setTimeout(() => {
+                    window.aiHackare.chatManager.reloadConversationHistory();
+                }, 100);
+            }
+            
+            return;
+        }
+        
+        // For new namespaces or first-time shared links, use shared messages as before
         if (sharedData.messages && sharedData.messages.length > 0 && setMessages) {
             // Add system message about conversation loading
             if (addSystemMessage) {
