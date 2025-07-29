@@ -267,15 +267,15 @@ function createSharedLinkDataProcessor() {
                 addSystemMessage('Returning to existing namespace - loading your conversation history...');
             }
             
-            // Only apply system messages but let chat manager handle conversation loading
-            if (systemMessages.length > 0 && setMessages) {
-                setMessages(systemMessages);
-            }
+            // DON'T overwrite conversation history with just system messages!
+            // The chat manager will handle loading the correct conversation history
+            // and will add system messages if needed
             
-            // Trigger conversation history reload via chat manager
+            // Trigger conversation history reload via chat manager immediately
             if (window.aiHackare && window.aiHackare.chatManager && 
                 window.aiHackare.chatManager.reloadConversationHistory) {
-                // Delay to allow system messages to be displayed first
+                console.log('[SharedLinkDataProcessor] Triggering conversation reload without overwriting history');
+                // Call reload immediately to preserve existing conversation
                 setTimeout(() => {
                     console.log('[SharedLinkDataProcessor] Triggering conversation reload');
                     window.aiHackare.chatManager.reloadConversationHistory();
