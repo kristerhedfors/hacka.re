@@ -1342,6 +1342,43 @@ footer a:hover {
     background-color: var(--primary-dark);
 }
 
+/* ===== Early Password Modal Styles ===== */
+.password-modal .primary-button {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.password-modal .primary-button:hover {
+    background: var(--primary-dark);
+}
+
+.password-modal .error-message {
+    color: #d32f2f;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.password-modal .modal-buttons {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: center;
+}
+
+.password-modal .password-input {
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    margin-top: 0.5rem;
+}
+
 /* ===== New Share Modal Styles ===== */
 .password-input-container {
     display: flex;
