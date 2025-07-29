@@ -8,6 +8,9 @@ window.LinkSharingService = (function() {
     let _location = window.location;
     let _history = window.history;
     
+    // Cache for extracted shared data to avoid repeated decryption
+    let _cachedSharedData = null;
+    
     /**
      * Set custom location and history objects for testing
      * @param {Object} locationObj - Custom location object
@@ -187,6 +190,12 @@ window.LinkSharingService = (function() {
      * @returns {Object} Object containing the decrypted data (apiKey, systemPrompt, messages, prompts, selectedPromptIds, etc.)
      */
     function extractSharedApiKey(password) {
+        // Return cached data if available and password matches
+        if (_cachedSharedData && _cachedSharedData._password === password) {
+            console.log('Returning cached shared data');
+            return _cachedSharedData;
+        }
+        
         try {
             // Get the hash fragment
             const hash = _location.hash;
@@ -236,6 +245,7 @@ window.LinkSharingService = (function() {
                     console.log('Extracted prompts from shared link:', data.prompts);
                 } else {
                     console.log('No prompts found in shared link data:', data);
+                    console.log('DEBUG: Full decrypted data structure:', JSON.stringify(data, null, 2));
                 }
                 
                 if (data.selectedPromptIds) {
@@ -265,6 +275,11 @@ window.LinkSharingService = (function() {
                     result.welcomeMessage = data.welcomeMessage;
                     console.log('Extracted welcome message from shared link:', data.welcomeMessage.substring(0, 50) + '...');
                 }
+                
+                // Cache the result with the password for future access
+                result._password = password; // Store password for cache validation
+                _cachedSharedData = result;
+                console.log('Cached shared data for future access');
                 
                 return result;
             }

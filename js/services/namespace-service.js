@@ -579,8 +579,37 @@ window.NamespaceService = (function() {
                 if (window.aiHackare && window.aiHackare.chatManager && 
                     window.aiHackare.chatManager.reloadConversationHistory) {
                     setTimeout(() => {
+                        console.log('[NamespaceService] Triggering delayed conversation reload to restore original history');
+                        
+                        // First, load the original history and save it to a temp variable
+                        const originalHistory = window.StorageService ? window.StorageService.loadChatHistory() : null;
+                        console.log('[NamespaceService] Original history loaded:', originalHistory?.length || 0, 'messages');
+                        
+                        // Now reload and display it
                         window.aiHackare.chatManager.reloadConversationHistory();
-                    }, 500);
+                        
+                        // Force save the original history to overwrite any system messages that may have been saved
+                        if (originalHistory && originalHistory.length > 0) {
+                            setTimeout(() => {
+                                // Check if the current messages contain only system messages about configuration
+                                const currentMessages = window.aiHackare.chatManager.getMessages();
+                                const hasOnlyConfigMessages = currentMessages && currentMessages.every(msg => 
+                                    msg.role === 'system' && (
+                                        msg.content.includes('Shared API key') ||
+                                        msg.content.includes('Shared base URL') ||
+                                        msg.content.includes('Shared model preference') ||
+                                        msg.content.includes('Returning to existing namespace')
+                                    )
+                                );
+                                
+                                if (hasOnlyConfigMessages) {
+                                    console.log('[NamespaceService] Detected config-only messages, restoring original history');
+                                    window.StorageService.saveChatHistory(originalHistory);
+                                    window.aiHackare.chatManager.reloadConversationHistory();
+                                }
+                            }, 100);
+                        }
+                    }, 2000); // Increased delay to let all initialization complete
                 }
             }
         }

@@ -131,25 +131,36 @@ window.ChatUIService = (function() {
              * @param {Array} messages - Array of messages to display
              */
             displayMessages(messages) {
+                console.log('[ChatUIService] displayMessages called with', messages.length, 'messages');
+                
                 // Clear chat container
                 elements.chatMessages.innerHTML = '';
+                console.log('[ChatUIService] Chat container cleared');
                 
                 // Add messages to chat
-                messages.forEach(message => {
+                messages.forEach((message, index) => {
+                    console.log(`[ChatUIService] Processing message ${index + 1}/${messages.length}:`, message.role, message.content?.substring(0, 50) + '...');
+                    
                     if (message.role === 'user') {
                         const messageElement = UIUtils.createMessageElement('user', message.content);
                         elements.chatMessages.appendChild(messageElement);
+                        console.log('[ChatUIService] Added user message to DOM');
                     } else if (message.role === 'assistant') {
                         const messageElement = UIUtils.createMessageElement('assistant', message.content);
                         elements.chatMessages.appendChild(messageElement);
+                        console.log('[ChatUIService] Added assistant message to DOM');
                     } else if (message.role === 'system') {
                         const messageElement = UIUtils.createMessageElement('system', message.content, null, message.className);
                         elements.chatMessages.appendChild(messageElement);
+                        console.log('[ChatUIService] Added system message to DOM');
                     }
                 });
                 
+                console.log('[ChatUIService] Total messages in DOM:', elements.chatMessages.children.length);
+                
                 // Scroll to bottom
                 UIUtils.scrollToBottom(elements.chatMessages);
+                console.log('[ChatUIService] Scrolled to bottom');
             },
 
             /**

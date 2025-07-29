@@ -258,14 +258,16 @@ function createSharedLinkDataProcessor() {
                                     window.NamespaceService.isReturningToExistingNamespace();
         
         if (isReturningToExisting) {
-            // For existing namespaces, use reloadConversationHistory instead of shared messages
-            console.log('[SharedLinkDataProcessor] Returning to existing namespace - skipping shared conversation, will reload stored conversation');
+            console.log('[SharedLinkDataProcessor] Returning to existing namespace - loading localStorage conversation');
+            
+            // For existing namespaces, always prioritize localStorage conversation
+            // Only use shared conversation if localStorage has no real conversation
             
             if (addSystemMessage) {
                 addSystemMessage('Returning to existing namespace - loading your conversation history...');
             }
             
-            // Only apply system messages (like welcome message) but not the shared conversation
+            // Only apply system messages but let chat manager handle conversation loading
             if (systemMessages.length > 0 && setMessages) {
                 setMessages(systemMessages);
             }
@@ -275,6 +277,7 @@ function createSharedLinkDataProcessor() {
                 window.aiHackare.chatManager.reloadConversationHistory) {
                 // Delay to allow system messages to be displayed first
                 setTimeout(() => {
+                    console.log('[SharedLinkDataProcessor] Triggering conversation reload');
                     window.aiHackare.chatManager.reloadConversationHistory();
                 }, 100);
             }
