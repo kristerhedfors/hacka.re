@@ -207,6 +207,11 @@ function finalizeResponse(finalContent, typingIndicator) {
     
     // Save chat history
     StorageService.saveChatHistory(messages);
+    
+    // Notify cross-tab sync service
+    if (window.CrossTabSyncService && window.CrossTabSyncService.isInitialized()) {
+        window.CrossTabSyncService.notifyMessageAdded();
+    }
 }
 
 /**
@@ -280,6 +285,11 @@ function cleanupGeneration(updateContextUsage, currentModel) {
             
             // Save chat history
             StorageService.saveChatHistory(messages);
+            
+            // Notify cross-tab sync service
+            if (window.CrossTabSyncService && window.CrossTabSyncService.isInitialized()) {
+                window.CrossTabSyncService.notifyMessageAdded();
+            }
             
             // Update context usage
             if (updateContextUsage) {
@@ -618,6 +628,11 @@ function cleanupGeneration(updateContextUsage, currentModel) {
             
             // Save to local storage
             StorageService.saveChatHistory(messages);
+            
+            // Notify cross-tab sync service
+            if (window.CrossTabSyncService && window.CrossTabSyncService.isInitialized()) {
+                window.CrossTabSyncService.notifyHistoryUpdate();
+            }
         }
         
         // Public API
