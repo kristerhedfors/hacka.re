@@ -6,14 +6,15 @@ This document provides a detailed technical specification of the cryptography an
 
 1. [Overview](#overview)
 2. [Cryptographic Primitives](#cryptographic-primitives)
-3. [Namespace System](#namespace-system)
-4. [Key Hierarchy](#key-hierarchy)
-5. [Storage Structure](#storage-structure)
-6. [Encryption and Decryption Process](#encryption-and-decryption-process)
-7. [Session Keys and User Authentication](#session-keys-and-user-authentication)
-8. [Sharing Mechanism](#sharing-mechanism)
-9. [Security Considerations](#security-considerations)
-10. [Implementation Details](#implementation-details)
+3. [Storage Type Determination](#storage-type-determination)
+4. [Namespace System](#namespace-system)
+5. [Key Hierarchy](#key-hierarchy)
+6. [Storage Structure](#storage-structure)
+7. [Encryption and Decryption Process](#encryption-and-decryption-process)
+8. [Session Keys and User Authentication](#session-keys-and-user-authentication)
+9. [Sharing Mechanism](#sharing-mechanism)
+10. [Security Considerations](#security-considerations)
+11. [Implementation Details](#implementation-details)
 
 ## Overview
 
@@ -52,6 +53,156 @@ The system uses TweetNaCl.js for cryptographic operations, providing high-securi
 
 - **Source**: Web Crypto API (`window.crypto.getRandomValues()`)
 - **Usage**: Generation of salts, nonces, and random identifiers
+
+## Storage Type Determination
+
+The application dynamically determines whether to use `sessionStorage` or `localStorage` based on how the user accesses the application. This decision is critical for balancing privacy and functionality.
+
+### Storage Type Decision Logic
+
+#### Direct Visit (sessionStorage)
+
+When a user navigates directly to hacka.re (no URL hash parameters):
+
+- **Storage**: `sessionStorage`
+- **Namespace**: Always `'default_session'`
+- **Persistence**: Data cleared when browser/tab is closed
+- **Privacy**: Maximum privacy - no data persists across sessions
+- **Use Case**: Users who prioritize privacy and don't need conversation persistence
+
+#### Shared Link Visit (localStorage)
+
+When a user accesses hacka.re via a shared link (URL contains `#gpt=` or `#shared=`):
+
+- **Storage**: `localStorage`
+- **Namespace**: First 8 characters of SHA-256 hash of the encrypted blob
+- **Persistence**: Data persists across browser sessions
+- **Privacy**: Balanced - data is encrypted and namespaced
+- **Use Case**: Users who need to return to shared conversations
+
+### Storage Type Locking Mechanism
+
+Once the storage type is determined, it is **locked** for the duration of the browser session:
+
+1. **Initial Decision**: Made on first page load based on URL
+2. **Session Persistence**: Stored in `sessionStorage` with key `__hacka_re_storage_type__`
+3. **Lock Duration**: Persists across page navigations within the same browser session
+4. **Rationale**: Prevents data inconsistency from switching storage types mid-session
+
+Example flow:
+```javascript
+// First visit with shared link
+// URL: https://hacka.re/#gpt=encrypted_data
+// Decision: localStorage (locked)
+
+// User navigates to https://hacka.re/ (no hash)
+// Storage type remains: localStorage (due to lock)
+
+// New browser session, direct visit
+// URL: https://hacka.re/
+// Decision: sessionStorage (new lock)
+```
+
+### Namespace Generation by Storage Type
+
+#### SessionStorage Namespace
+
+- **Fixed Namespace**: `'default_session'`
+- **No Variation**: All sessionStorage data uses the same namespace
+- **Isolation**: Natural isolation via browser session boundaries
+- **Cleanup**: Automatic when browser/tab closes
+
+#### LocalStorage Namespace
+
+- **Dynamic Namespace**: Derived from shared link content
+- **Generation Process**:
+  1. Extract encrypted blob from URL hash
+  2. Compute SHA-256 hash of the blob
+  3. Use first 8 characters as namespace
+- **Consistency**: Same shared link always generates same namespace
+- **Isolation**: Different shared links have different namespaces
+
+### Session Cleanup Behavior
+
+#### SessionStorage Cleanup
+
+When using sessionStorage, the system performs cleanup on initialization:
+
+```javascript
+// Check if sessionStorage contains encrypted data from a previous session
+if (!hasAttemptedSessionCleanup && sessionStorage.length > 0) {
+    const hasEncryptedData = Array.from({ length: sessionStorage.length })
+        .some((_, i) => {
+            const key = sessionStorage.key(i);
+            const value = sessionStorage.getItem(key);
+            return value && (
+                value.includes('"salt"') || 
+                value.includes('"nonce"') || 
+                value.includes('"ciphertext"')
+            );
+        });
+    
+    if (hasEncryptedData) {
+        // Clear all sessionStorage and start fresh
+        sessionStorage.clear();
+    }
+}
+```
+
+This ensures clean session boundaries and prevents data leakage between sessions.
+
+#### LocalStorage Behavior
+
+LocalStorage does not perform automatic cleanup, allowing:
+- Return to shared conversations
+- Persistence of namespaced data
+- Multi-tab access to same namespace
+
+### Privacy and Security Implications
+
+#### SessionStorage Mode
+
+**Advantages**:
+- Maximum privacy - no persistent data
+- Clean session boundaries
+- No cross-session data leakage
+- Ideal for sensitive conversations
+
+**Limitations**:
+- No conversation history after closing tab
+- Cannot bookmark and return to conversations
+- No multi-tab synchronization
+
+#### LocalStorage Mode
+
+**Advantages**:
+- Conversation persistence across sessions
+- Ability to return to shared conversations
+- Multi-tab synchronization within namespace
+- Bookmarkable conversations
+
+**Limitations**:
+- Data persists until manually cleared
+- Requires explicit user action to delete data
+- Potential for data accumulation over time
+
+### Implementation Components
+
+The storage type determination system is implemented across several modules:
+
+1. **StorageTypeService** (`js/services/storage-type-service.js`):
+   - Detects entry method (direct vs shared link)
+   - Manages storage type locking
+   - Provides namespace generation logic
+
+2. **NamespaceService** (`js/services/namespace-service.js`):
+   - Integrates with StorageTypeService
+   - Handles namespace resolution for both storage types
+   - Manages session cleanup for sessionStorage
+
+3. **CoreStorageService** (`js/services/core-storage-service.js`):
+   - Uses appropriate storage backend based on StorageTypeService
+   - Transparent encryption/decryption for both storage types
 
 ## Namespace System
 

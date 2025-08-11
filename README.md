@@ -130,6 +130,12 @@ cd _tests/playwright
 
 For more information about the test suite, see the [Playwright Tests README](_tests/playwright/README.md).
 
+## Additional Documentation
+
+- [Namespace and Storage Guide](NAMESPACE_GUIDE.md) - Detailed explanation of how hacka.re uses namespaces and storage types
+- [Cryptography Specification](CRYPTO_SPEC.md) - Technical details of the encryption and storage system
+- [Playwright Tests README](_tests/playwright/README.md) - Information about the test suite
+
 ## License
 
 MIT
