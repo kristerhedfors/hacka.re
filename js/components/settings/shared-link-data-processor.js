@@ -22,11 +22,10 @@ function createSharedLinkDataProcessor() {
     
     /**
      * Apply welcome message from shared data - should be called last
-     * @param {Object} sharedData - Shared data object
-     * @param {Function} addSystemMessage - Function to add system messages
+     * @param {Object} sharedData - Shared data object  
      * @param {boolean} displayMessage - Whether to display the message or just store it
      */
-    function applyWelcomeMessage(sharedData, addSystemMessage, displayMessage = true) {
+    function applyWelcomeMessage(sharedData, displayMessage = true) {
         // If there's a welcome message, handle it appropriately
         if (sharedData.welcomeMessage) {
             // Store the welcome message in the share manager for future use (for share modal pre-population)
@@ -563,11 +562,9 @@ function createSharedLinkDataProcessor() {
     
     /**
      * Apply session key from decryption password
-     * @param {string} password - The decryption password
-     * @param {Object} elements - DOM elements for UI updates
      * @param {Function} addSystemMessage - Function to add system messages
      */
-    function applySessionKey(password, elements, addSystemMessage) {
+    function applySessionKey(addSystemMessage) {
         // Note: This function is now redundant as session key is applied immediately in shared-link-manager.js
         console.log('[SharedLinkDataProcessor] applySessionKey called - but session key should already be set');
         
@@ -822,11 +819,14 @@ function createSharedLinkDataProcessor() {
      * @param {Object} options - Processing options
      * @returns {Promise<string|null>} Pending shared model
      */
-    async function processSharedData(sharedData, password, options = {}) {
-        const { addSystemMessage, setMessages, elements, displayWelcomeMessage = true, cleanSlate = false, validateState = false } = options;
+    async function processSharedData(sharedData, options = {}) {
+        const { addSystemMessage, setMessages, displayWelcomeMessage = true, cleanSlate = false, validateState = false } = options;
         
         // Set flag to prevent cross-tab sync loops during processing
         window._processingSharedLink = true;
+        
+        // Set longer-lasting flag to prevent namespace delayed reload
+        window._sharedLinkProcessed = true;
         
         console.log('🚀 processSharedData started with options:', {
             hasSharedData: !!sharedData,
@@ -884,9 +884,9 @@ function createSharedLinkDataProcessor() {
             
             // Apply welcome message processing (store for deferred display when password verification completes)
             if (displayWelcomeMessage) {
-                applyWelcomeMessage(sharedData, collectSystemMessage, true); // Enable deferred storage
+                applyWelcomeMessage(sharedData, true); // Store welcome message for prepending
             } else {
-                applyWelcomeMessage(sharedData, () => {}, false); // Just process for share manager
+                applyWelcomeMessage(sharedData, false); // Just process for share manager
             }
             
             // Validate state if requested (typically for agent loading)
@@ -909,6 +909,12 @@ function createSharedLinkDataProcessor() {
             // Clear the processing flag
             window._processingSharedLink = false;
             
+            // Clear the shared link processed flag after a delay to allow all related operations to complete
+            setTimeout(() => {
+                window._sharedLinkProcessed = false;
+                console.log('[SharedLink] Cleared _sharedLinkProcessed flag after processing completion');
+            }, 5000); // 5 second delay
+            
             return pendingSharedModel;
             
         } catch (error) {
@@ -916,6 +922,12 @@ function createSharedLinkDataProcessor() {
             
             // Clear the processing flag even on error
             window._processingSharedLink = false;
+            
+            // Clear the shared link processed flag after a delay even on error
+            setTimeout(() => {
+                window._sharedLinkProcessed = false;
+                console.log('[SharedLink] Cleared _sharedLinkProcessed flag after error');
+            }, 5000); // 5 second delay
             
             if (addSystemMessage) {
                 addSystemMessage(`Error processing shared data: ${error.message}`);
