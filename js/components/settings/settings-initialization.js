@@ -27,6 +27,10 @@ window.SettingsInitialization = (function() {
                 // Show settings modal after welcome modal is closed
                 if (elements.settingsModal) {
                     elements.settingsModal.classList.add('active');
+                    // Focus the API key field after modal is shown
+                    if (elements.apiKeyUpdate) {
+                        setTimeout(() => elements.apiKeyUpdate.focus(), 100);
+                    }
                 }
             });
             
@@ -34,6 +38,10 @@ window.SettingsInitialization = (function() {
             if (!wasWelcomeShown) {
                 if (elements.settingsModal) {
                     elements.settingsModal.classList.add('active');
+                    // Focus the API key field after modal is shown
+                    if (elements.apiKeyUpdate) {
+                        setTimeout(() => elements.apiKeyUpdate.focus(), 100);
+                    }
                 }
             }
         } else {
@@ -215,6 +223,10 @@ window.SettingsInitialization = (function() {
         
         if (elements.settingsModal) {
             elements.settingsModal.classList.add('active');
+            // Focus the API key field if it's empty, otherwise focus the model select
+            if (elements.apiKeyUpdate && !apiKey) {
+                setTimeout(() => elements.apiKeyUpdate.focus(), 100);
+            }
         }
     }
     
