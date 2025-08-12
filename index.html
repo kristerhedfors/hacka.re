@@ -224,11 +224,6 @@
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="form-actions">
-                        <button type="button" class="btn primary-btn" id="generate-share-link-btn">Generate Link</button>
-                        <button type="button" class="btn secondary-btn" id="close-share-modal">Cancel</button>
-                    </div>
                 </form>
                 
                 <!-- Password/Session Key Section - Always visible -->
@@ -267,6 +262,11 @@
                     </div>
                 </div>
                 
+                <!-- Generate Link button moved below password section -->
+                <div class="form-actions" style="margin-top: 20px;">
+                    <button type="button" class="btn primary-btn" id="generate-share-link-btn">Generate Link</button>
+                </div>
+                
                 <div id="generated-link-container" style="display: none;">
                     <h3>Your Shareable Link</h3>
                     <div class="link-display">
@@ -277,6 +277,11 @@
                     </div>
                     <div id="share-qr-code-container" style="margin-top: 15px; text-align: center;"></div>
                     <div id="qr-code-warning" style="display: none; margin-top: 10px; color: #856404; background-color: #fff3cd; padding: 10px; border-radius: 5px;"></div>
+                </div>
+                
+                <!-- Cancel button always at the bottom -->
+                <div class="form-actions" style="margin-top: 20px;">
+                    <button type="button" class="btn secondary-btn" id="close-share-modal">Cancel</button>
                 </div>
             </div>
         </div>
