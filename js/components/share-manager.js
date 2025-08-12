@@ -448,6 +448,19 @@ window.ShareManager = (function() {
                     if (generateShareQRCode) {
                         generateShareQRCode(shareableLink);
                     }
+                    
+                    // Scroll to the bottom of the modal to show the generated link and QR code
+                    // Find the modal content container
+                    const modalContent = elements.generatedLinkContainer.closest('.modal-content');
+                    if (modalContent) {
+                        // Small delay to ensure QR code is rendered
+                        setTimeout(() => {
+                            modalContent.scrollTo({
+                                top: modalContent.scrollHeight,
+                                behavior: 'smooth'
+                            });
+                        }, 100);
+                    }
                 }
                 
                 return true;
