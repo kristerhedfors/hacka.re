@@ -631,6 +631,12 @@ window.NamespaceService = (function() {
             
             // If we re-initialized the same namespace and it's marked as existing, trigger conversation reload
             if (previousNamespaceId === namespace.namespaceId && state.isReturningToExistingNamespace) {
+                // Skip delayed reload if we're processing a shared link - the shared link processor handles this
+                if (window._processingSharedLink || window._waitingForSharedLinkPassword || window._sharedLinkProcessed) {
+                    console.log('[NamespaceService] Skipping delayed reload - shared link processor will handle conversation loading');
+                    return namespace;
+                }
+                
                 addSystemMessage(`[NAMESPACE] Re-initialized existing namespace - triggering conversation reload`);
                 
                 // Trigger conversation reload after a delay to ensure everything is initialized
