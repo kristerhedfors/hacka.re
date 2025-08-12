@@ -104,6 +104,7 @@
         align-items: flex-start;
         padding-top: 1rem;
         overflow-y: auto;
+        overflow-x: hidden; /* Prevent horizontal scrolling */
     }
     
     .modal-content {
@@ -111,6 +112,8 @@
         padding: 1.25rem;
         max-height: 85vh;
         margin-bottom: 1rem;
+        overflow-x: hidden; /* Prevent horizontal scrolling on modal content */
+        overflow-y: auto; /* Allow vertical scrolling only */
     }
     
     /* Form improvements for mobile */
