@@ -435,8 +435,9 @@ function cleanupGeneration(updateContextUsage, currentModel) {
                         // DON'T clear the flag - keep it for subsequent reloads during this session
                     }
                     
-                    // Update our messages array
-                    messages = messagesToDisplay;
+                    // Update our messages array - but ONLY with the actual conversation (no welcome message)
+                    // The welcome message is only for display, not for storage
+                    messages = validMessages;
                     
                     // Display all messages including welcome message first
                     if (uiHandler && uiHandler.displayMessages) {
