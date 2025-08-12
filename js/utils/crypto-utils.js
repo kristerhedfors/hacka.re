@@ -190,10 +190,45 @@ window.CryptoUtils = (function() {
     }
     
     /**
+     * URL-safe base64 encode (directly from Uint8Array)
+     * @param {Uint8Array} data - Data to encode
+     * @returns {string} URL-safe base64 string
+     */
+    function encodeBase64UrlSafe(data) {
+        const standardBase64 = nacl.util.encodeBase64(data);
+        return standardBase64
+            .replace(/\+/g, '-')  // Replace + with -
+            .replace(/\//g, '_')  // Replace / with _
+            .replace(/=/g, '');   // Remove padding =
+    }
+    
+    /**
+     * URL-safe base64 decode (directly to Uint8Array)
+     * @param {string} urlSafeBase64 - URL-safe base64 string
+     * @returns {Uint8Array} Decoded data
+     */
+    function decodeBase64UrlSafe(urlSafeBase64) {
+        // Convert URL-safe base64 to standard base64
+        let base64 = urlSafeBase64
+            .replace(/-/g, '+')  // Replace - with +
+            .replace(/_/g, '/'); // Replace _ with /
+        
+        // Add padding if needed
+        const padding = base64.length % 4;
+        if (padding === 2) {
+            base64 += '==';
+        } else if (padding === 3) {
+            base64 += '=';
+        }
+        
+        return nacl.util.decodeBase64(base64);
+    }
+    
+    /**
      * Encrypt data with a password
      * @param {*} payloadObj - The data to encrypt (can be any JSON-serializable value)
      * @param {string} password - The password to use for encryption
-     * @returns {string} Base64-encoded encrypted data
+     * @returns {string} URL-safe base64-encoded encrypted data
      */
     function encryptData(payloadObj, password) {
         // Convert to JSON string
@@ -229,20 +264,20 @@ window.CryptoUtils = (function() {
         
         fullMessage.set(cipher, offset);
         
-        // Convert to base64 for URL-friendly format
-        return nacl.util.encodeBase64(fullMessage);
+        // Convert directly to URL-safe base64
+        return encodeBase64UrlSafe(fullMessage);
     }
     
     /**
      * Decrypt encrypted data with a password
-     * @param {string} encryptedData - Base64-encoded encrypted data
+     * @param {string} encryptedData - URL-safe base64-encoded encrypted data
      * @param {string} password - The password to use for decryption
      * @returns {*} Decrypted data or null if decryption fails
      */
     function decryptData(encryptedData, password) {
         try {
-            // Convert from base64
-            const data = nacl.util.decodeBase64(encryptedData);
+            // Convert from URL-safe base64 directly to Uint8Array
+            const data = decodeBase64UrlSafe(encryptedData);
             
             // Extract components
             let offset = 0;
@@ -280,8 +315,50 @@ window.CryptoUtils = (function() {
                 return null;
             }
         } catch (error) {
-            // Decryption failed
-            return null;
+            // Decryption failed - this could be due to URL-safe conversion or actual decryption failure
+            // Try with the original data as standard base64 for backward compatibility
+            try {
+                const data = nacl.util.decodeBase64(encryptedData);
+                
+                // Extract components
+                let offset = 0;
+                const salt = data.slice(offset, offset + SALT_LENGTH);
+                offset += SALT_LENGTH;
+                
+                const nonce = data.slice(offset, offset + nacl.secretbox.nonceLength);
+                offset += nacl.secretbox.nonceLength;
+                
+                const cipher = data.slice(offset);
+                
+                // Derive key from password and salt
+                const key = deriveSeed(password, salt);
+                
+                // Decrypt with secretbox
+                const plain = nacl.secretbox.open(
+                    cipher,
+                    nonce,
+                    key
+                );
+                
+                if (!plain) {
+                    return null; // Decryption failed
+                }
+                
+                // Convert from Uint8Array to string, then parse JSON
+                const plainText = nacl.util.encodeUTF8(plain);
+                
+                try {
+                    // Parse JSON
+                    const result = JSON.parse(plainText);
+                    return result;
+                } catch (jsonError) {
+                    // JSON parsing failed
+                    return null;
+                }
+            } catch (backwardCompatError) {
+                // Both attempts failed
+                return null;
+            }
         }
     }
     
@@ -291,6 +368,8 @@ window.CryptoUtils = (function() {
         getKeyPair: getKeyPair,
         encryptData: encryptData,
         decryptData: decryptData,
+        encodeBase64UrlSafe: encodeBase64UrlSafe,
+        decodeBase64UrlSafe: decodeBase64UrlSafe,
         sha256: sha256,
         hashString: hashString,
         generateRandomAlphaNum: generateRandomAlphaNum,
