@@ -22,7 +22,7 @@ window.SharedLinkManager = (function() {
         }
         
         /**
-         * Handle namespace selection after successful decryption
+         * Apply shared data after successful decryption
          * @param {Object} sharedData - Decrypted shared data
          * @param {string} password - The password used for decryption
          * @param {Object} context - Context object with functions and elements
@@ -30,34 +30,10 @@ window.SharedLinkManager = (function() {
          */
         async function handleNamespaceSelection(sharedData, password, context, resolve) {
             try {
-                // Get available namespaces using NamespaceService
-                const availableNamespaces = await getAvailableNamespaces();
-                
-                if (availableNamespaces.length === 0) {
-                    // No existing namespaces, create new one automatically
-                    await applySharedDataToCurrentNamespace(sharedData, password, context, resolve);
-                } else if (availableNamespaces.length === 1) {
-                    // Only one existing namespace, use it automatically
-                    await applySharedDataToNamespace(availableNamespaces[0], sharedData, password, context, resolve);
-                } else {
-                    // Multiple namespaces available, show selection modal
-                    try {
-                        const selection = await window.NamespaceSelectionModal.show(availableNamespaces, sharedData);
-                        
-                        if (selection.action === 'use_existing') {
-                            // Switch to existing namespace and apply shared data
-                            await applySharedDataToNamespace(selection.namespace, sharedData, password, context, resolve);
-                        } else if (selection.action === 'create_new') {
-                            // Create new namespace and apply shared data
-                            await applySharedDataToNewNamespace(sharedData, password, context, resolve);
-                        }
-                    } catch (error) {
-                        console.log('Namespace selection cancelled, applying to current namespace');
-                        await applySharedDataToCurrentNamespace(sharedData, password, context, resolve);
-                    }
-                }
+                // With simplified namespace system, always apply to current namespace
+                await applySharedDataToCurrentNamespace(sharedData, password, context, resolve);
             } catch (error) {
-                console.error('Error in namespace selection:', error);
+                console.error('Error applying shared data:', error);
                 // Fallback to current namespace
                 await applySharedDataToCurrentNamespace(sharedData, password, context, resolve);
             }
@@ -132,7 +108,7 @@ window.SharedLinkManager = (function() {
                 // Apply shared data
                 const processedModel = window.SharedLinkDataProcessor ? 
                     window.SharedLinkDataProcessor.processSharedData(
-                        sharedData, password, { ...context, displayWelcomeMessage: true }
+                        sharedData, { ...context, displayWelcomeMessage: true }
                     ) : null;
                 
                 if (processedModel) {
@@ -157,7 +133,7 @@ window.SharedLinkManager = (function() {
                 
                 const processedModel = window.SharedLinkDataProcessor ? 
                     window.SharedLinkDataProcessor.processSharedData(
-                        sharedData, password, { ...context, displayWelcomeMessage: true }
+                        sharedData, { ...context, displayWelcomeMessage: true }
                     ) : null;
                 
                 if (processedModel) {
@@ -178,7 +154,7 @@ window.SharedLinkManager = (function() {
             try {
                 const processedModel = window.SharedLinkDataProcessor ? 
                     window.SharedLinkDataProcessor.processSharedData(
-                        sharedData, password, { ...context, displayWelcomeMessage: true }
+                        sharedData, { ...context, displayWelcomeMessage: true }
                     ) : null;
                 
                 if (processedModel) {
@@ -306,7 +282,7 @@ window.SharedLinkManager = (function() {
                             // Remove the password modal first
                             modalElements.modal.remove();
                             
-                            // Check for existing namespaces and show selection modal if needed
+                            // Apply shared data to current namespace
                             handleNamespaceSelection(sharedData, password, { addSystemMessage, setMessages, elements }, resolve);
                         } else {
                             SharedLinkModalManager.showModalError(

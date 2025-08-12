@@ -96,11 +96,21 @@ async function handleEarlySharedLinkPassword() {
                     // Clear the waiting flag to allow namespace creation
                     window._waitingForSharedLinkPassword = false;
                     
+                    // Mark password verification as complete (required for welcome message display)
+                    window._passwordVerificationComplete = true;
+                    
+                    // Set flag to prevent namespace delayed reload during shared link processing
+                    window._sharedLinkProcessed = true;
+                    
                     // Force namespace re-initialization now that we have the session key
                     if (window.NamespaceService && window.NamespaceService.reinitializeNamespace) {
                         window.NamespaceService.reinitializeNamespace();
                         console.log('[App] Namespace re-initialized with session key');
                     }
+                    
+                    // Note: Deferred welcome message will be displayed after chat history loads
+                    // to prevent it being overwritten by chat container clearing
+                    console.log('[App] Password verification complete - welcome message will display after chat loads');
                     
                     // Remove modal and continue
                     modal.remove();

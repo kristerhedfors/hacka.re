@@ -98,10 +98,8 @@ window.SettingsInitialization = (function() {
                                 }
                             }
                             
-                            // Display deferred welcome message last, after all other system messages
-                            if (SharedLinkDataProcessor.displayDeferredWelcomeMessage) {
-                                SharedLinkDataProcessor.displayDeferredWelcomeMessage();
-                            }
+                            // Welcome message is now handled by the prepending system in ChatManager
+                            // No need for deferred display - message will appear first when conversation loads
                         });
                     } else {
                         // No shared model, just fetch models
@@ -115,10 +113,8 @@ window.SettingsInitialization = (function() {
                             true, 
                             SettingsCoordinator.createContextUsageCallback(state, componentManagers)
                         ).then(() => {
-                            // Display deferred welcome message last, after all other system messages
-                            if (SharedLinkDataProcessor.displayDeferredWelcomeMessage) {
-                                SharedLinkDataProcessor.displayDeferredWelcomeMessage();
-                            }
+                            // Welcome message is now handled by the prepending system in ChatManager
+                            // No need for deferred display - message will appear first when conversation loads
                         });
                     }
                 } else {

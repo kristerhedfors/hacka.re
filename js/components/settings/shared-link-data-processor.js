@@ -22,11 +22,10 @@ function createSharedLinkDataProcessor() {
     
     /**
      * Apply welcome message from shared data - should be called last
-     * @param {Object} sharedData - Shared data object
-     * @param {Function} addSystemMessage - Function to add system messages
+     * @param {Object} sharedData - Shared data object  
      * @param {boolean} displayMessage - Whether to display the message or just store it
      */
-    function applyWelcomeMessage(sharedData, addSystemMessage, displayMessage = true) {
+    function applyWelcomeMessage(sharedData, displayMessage = true) {
         // If there's a welcome message, handle it appropriately
         if (sharedData.welcomeMessage) {
             // Store the welcome message in the share manager for future use (for share modal pre-population)
@@ -34,13 +33,18 @@ function createSharedLinkDataProcessor() {
                 window.aiHackare.shareManager.setSharedWelcomeMessage(sharedData.welcomeMessage);
             }
             
-            // Store the welcome message for deferred display instead of displaying immediately
-            if (displayMessage && addSystemMessage) {
-                // Store the message and display function for later use
-                window._deferredWelcomeMessage = {
-                    message: sharedData.welcomeMessage,
-                    displayFunction: addSystemMessage
+            // Store the welcome message for prepending to conversation history
+            if (displayMessage) {
+                console.log('[SharedLink] Storing welcome message to be prepended to conversation history');
+                
+                // Store for prepending to messages array (NEW APPROACH - replaces deferred display)
+                window._welcomeMessageToPrepend = {
+                    role: 'system',
+                    content: sharedData.welcomeMessage,
+                    className: 'welcome-message'
                 };
+                
+                console.log('[SharedLink] Welcome message stored to be prepended to conversation history');
             }
         }
     }
@@ -558,11 +562,9 @@ function createSharedLinkDataProcessor() {
     
     /**
      * Apply session key from decryption password
-     * @param {string} password - The decryption password
-     * @param {Object} elements - DOM elements for UI updates
      * @param {Function} addSystemMessage - Function to add system messages
      */
-    function applySessionKey(password, elements, addSystemMessage) {
+    function applySessionKey(addSystemMessage) {
         // Note: This function is now redundant as session key is applied immediately in shared-link-manager.js
         console.log('[SharedLinkDataProcessor] applySessionKey called - but session key should already be set');
         
@@ -817,8 +819,14 @@ function createSharedLinkDataProcessor() {
      * @param {Object} options - Processing options
      * @returns {Promise<string|null>} Pending shared model
      */
-    async function processSharedData(sharedData, password, options = {}) {
-        const { addSystemMessage, setMessages, elements, displayWelcomeMessage = true, cleanSlate = false, validateState = false } = options;
+    async function processSharedData(sharedData, options = {}) {
+        const { addSystemMessage, setMessages, displayWelcomeMessage = true, cleanSlate = false, validateState = false } = options;
+        
+        // Set flag to prevent cross-tab sync loops during processing
+        window._processingSharedLink = true;
+        
+        // Set longer-lasting flag to prevent namespace delayed reload
+        window._sharedLinkProcessed = true;
         
         console.log('🚀 processSharedData started with options:', {
             hasSharedData: !!sharedData,
@@ -874,8 +882,12 @@ function createSharedLinkDataProcessor() {
             // This redundant call is no longer needed
             // applySessionKey(password, elements, collectSystemMessage);
             
-            // Apply welcome message processing (for storage in share manager)
-            applyWelcomeMessage(sharedData, () => {}, false); // Don't display, just process
+            // Apply welcome message processing (store for deferred display when password verification completes)
+            if (displayWelcomeMessage) {
+                applyWelcomeMessage(sharedData, true); // Store welcome message for prepending
+            } else {
+                applyWelcomeMessage(sharedData, false); // Just process for share manager
+            }
             
             // Validate state if requested (typically for agent loading)
             if (validateState) {
@@ -893,10 +905,30 @@ function createSharedLinkDataProcessor() {
             applyChatMessages(sharedData, collectSystemMessage, setMessages, systemMessages);
             
             console.log('✅ processSharedData completed successfully');
+            
+            // Clear the processing flag
+            window._processingSharedLink = false;
+            
+            // Clear the shared link processed flag after a delay to allow all related operations to complete
+            setTimeout(() => {
+                window._sharedLinkProcessed = false;
+                console.log('[SharedLink] Cleared _sharedLinkProcessed flag after processing completion');
+            }, 5000); // 5 second delay
+            
             return pendingSharedModel;
             
         } catch (error) {
             console.error('❌ processSharedData failed:', error);
+            
+            // Clear the processing flag even on error
+            window._processingSharedLink = false;
+            
+            // Clear the shared link processed flag after a delay even on error
+            setTimeout(() => {
+                window._sharedLinkProcessed = false;
+                console.log('[SharedLink] Cleared _sharedLinkProcessed flag after error');
+            }, 5000); // 5 second delay
+            
             if (addSystemMessage) {
                 addSystemMessage(`Error processing shared data: ${error.message}`);
             }
@@ -904,18 +936,7 @@ function createSharedLinkDataProcessor() {
         }
     }
     
-    /**
-     * Display any deferred welcome message (only after password verification is complete)
-     */
-    function displayDeferredWelcomeMessage() {
-        if (window._deferredWelcomeMessage && window._passwordVerificationComplete) {
-            const { message, displayFunction } = window._deferredWelcomeMessage;
-            // Display the welcome message with markdown rendering and special styling
-            displayFunction(message, 'welcome-message');
-            // Clear the deferred message
-            window._deferredWelcomeMessage = null;
-        }
-    }
+    // Legacy deferred display system removed - now using prepending approach in ChatManager
     
     /**
      * Analyze shared data and determine what options were included
@@ -950,7 +971,6 @@ function createSharedLinkDataProcessor() {
         applyMcpConnections,
         applySessionKey,
         processSharedData,
-        displayDeferredWelcomeMessage,
         analyzeSharedDataOptions,
         cleanSlateForAgent,  // Expose cleanSlateForAgent for external use
         validateAgentLoadingState  // Expose validation for external use
