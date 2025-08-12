@@ -924,93 +924,7 @@ function createSharedLinkDataProcessor() {
         }
     }
     
-    /**
-     * Display any deferred welcome message (only after password verification is complete)
-     */
-    function displayDeferredWelcomeMessage() {
-        if (window._deferredWelcomeMessage && window._passwordVerificationComplete) {
-            // If we have a prepended welcome message, don't use deferred display
-            if (window._welcomeMessageToPrepend) {
-                console.log('[SharedLink] Welcome message is being handled by prepending - skipping deferred display');
-                return;
-            }
-            
-            // Check if already displayed - if so, just ensure it's still visible after any chat reloads
-            if (window._deferredWelcomeMessage.displayed) {
-                console.log('[SharedLink] Welcome message was already displayed - ensuring it stays visible');
-                // Re-display if chat was cleared by any reload
-                const { message, displayFunction } = window._deferredWelcomeMessage;
-                try {
-                    if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
-                        // Check if welcome message is still in the DOM
-                        const existingWelcome = document.querySelector('.welcome-message');
-                        if (!existingWelcome) {
-                            console.log('[SharedLink] Welcome message not found in DOM - re-adding');
-                            window.aiHackare.chatManager.addSystemMessage(message, 'welcome-message');
-                        }
-                    }
-                } catch (error) {
-                    console.error('[SharedLink] Error ensuring welcome message visibility:', error);
-                }
-                return;
-            }
-            
-            const { message, displayFunction } = window._deferredWelcomeMessage;
-            console.log('[SharedLink] Displaying deferred welcome message:', message);
-            console.log('[SharedLink] Display function type:', typeof displayFunction);
-            // Display the welcome message with markdown rendering and special styling
-            try {
-                // Only use the direct chat manager method to avoid duplicates and ensure proper positioning
-                if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
-                    console.log('[SharedLink] Adding welcome message directly via chat manager');
-                    window.aiHackare.chatManager.addSystemMessage(message, 'welcome-message');
-                } else {
-                    // Fallback to original display function if chat manager not available
-                    displayFunction(message, 'welcome-message');
-                    console.log('[SharedLink] Used fallback display function');
-                }
-                
-            } catch (error) {
-                console.error('[SharedLink] Error calling display function:', error);
-                // Final fallback
-                if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
-                    console.log('[SharedLink] Using error fallback - calling aiHackare.chatManager.addSystemMessage');
-                    window.aiHackare.chatManager.addSystemMessage(message, 'welcome-message');
-                }
-            }
-            
-            // Mark as displayed but don't clear yet - wait for all chat reloads to complete
-            window._deferredWelcomeMessage.displayed = true;
-            console.log('[SharedLink] Welcome message displayed - marked as shown');
-            
-            // Don't clear the deferred message - keep it permanently for any future reloads
-            console.log('[SharedLink] Welcome message marked as permanently available for future reloads');
-        } else if (window._deferredWelcomeMessage && window._deferredWelcomeMessage.displayed) {
-            // Message was already displayed but chat is reloading again - display it again FIRST
-            const { message, displayFunction } = window._deferredWelcomeMessage;
-            console.log('[SharedLink] Re-displaying welcome message after chat reload:', message);
-            try {
-                // Only use the direct chat manager method to avoid duplicates
-                if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
-                    console.log('[SharedLink] Re-adding welcome message directly via chat manager');
-                    window.aiHackare.chatManager.addSystemMessage(message, 'welcome-message');
-                } else {
-                    // Fallback to original display function
-                    displayFunction(message, 'welcome-message');
-                    console.log('[SharedLink] Used fallback display function for re-display');
-                }
-                
-            } catch (error) {
-                console.error('[SharedLink] Error re-displaying welcome message:', error);
-                
-                // Final fallback
-                if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
-                    console.log('[SharedLink] Using error fallback for re-display');
-                    window.aiHackare.chatManager.addSystemMessage(message, 'welcome-message');
-                }
-            }
-        }
-    }
+    // Legacy deferred display system removed - now using prepending approach in ChatManager
     
     /**
      * Analyze shared data and determine what options were included
@@ -1045,7 +959,6 @@ function createSharedLinkDataProcessor() {
         applyMcpConnections,
         applySessionKey,
         processSharedData,
-        displayDeferredWelcomeMessage,
         analyzeSharedDataOptions,
         cleanSlateForAgent,  // Expose cleanSlateForAgent for external use
         validateAgentLoadingState  // Expose validation for external use
