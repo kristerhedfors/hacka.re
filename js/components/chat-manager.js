@@ -429,9 +429,27 @@ function cleanupGeneration(updateContextUsage, currentModel) {
                     
                     // Check if we need to prepend a welcome message
                     let messagesToDisplay = validMessages;
+                    let welcomeAlreadyExists = false;
+                    let welcomePrepended = false;
+                    
                     if (window._welcomeMessageToPrepend) {
-                        messagesToDisplay = [window._welcomeMessageToPrepend, ...validMessages];
-                        console.log('[ChatManager] Prepended welcome message to conversation history');
+                        // Check if the first message is already a welcome message to avoid duplicates
+                        const firstMessage = validMessages[0];
+                        const isFirstMessageWelcome = firstMessage && 
+                            firstMessage.role === 'system' && 
+                            (firstMessage.className === 'welcome-message' || 
+                             firstMessage.content === window._welcomeMessageToPrepend.content);
+                        
+                        if (isFirstMessageWelcome) {
+                            console.log('[ChatManager] Welcome message already exists in conversation history - skipping prepend');
+                            // Use existing messages as-is, welcome message already there
+                            messagesToDisplay = validMessages;
+                            welcomeAlreadyExists = true;
+                        } else {
+                            messagesToDisplay = [window._welcomeMessageToPrepend, ...validMessages];
+                            console.log('[ChatManager] Prepended welcome message to conversation history');
+                            welcomePrepended = true;
+                        }
                         // DON'T clear the flag - keep it for subsequent reloads during this session
                     }
                     
@@ -446,11 +464,14 @@ function cleanupGeneration(updateContextUsage, currentModel) {
                     }
                     
                     console.log(`[ChatManager] Displayed ${messagesToDisplay.length} messages from localStorage (including welcome)`);
-                    if (messagesToDisplay.length > validMessages.length) {
+                    
+                    // Only add system messages when appropriate
+                    if (welcomePrepended) {
                         addSystemMessage(`Welcome message and conversation history loaded with ${validMessages.length} messages.`);
-                    } else {
+                    } else if (!welcomeAlreadyExists) {
                         addSystemMessage(`Conversation history reloaded with ${validMessages.length} messages.`);
                     }
+                    // If welcome already exists, don't add any system message - conversation speaks for itself
                     
                 } else {
                     // localStorage only has system messages, try shared data
