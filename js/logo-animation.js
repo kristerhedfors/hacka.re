@@ -60,35 +60,39 @@ window.LogoAnimation = (function() {
             
             // Create enhanced pulsing animation that speeds up existing gradient
             const styleSheet = document.createElement('style');
+            styleSheet.id = 'heart-animation-styles';
             styleSheet.textContent = `
-                /* Speed up the existing heartSweep animation and add contrast pulsing */
-                @keyframes heartPulseEnhanced {
+                /* Realistic heartbeat at ~64 BPM (0.92s per beat) - strong LUB, very weak DUB */
+                @keyframes heartbeatLubDub {
                     0% { 
-                        filter: brightness(0.6) contrast(1.5);
+                        filter: brightness(0.7) contrast(1.5);
+                    }
+                    12.5% { 
+                        filter: brightness(1.8) contrast(2.2); /* Very strong LUB peak */
+                    }
+                    25% { 
+                        filter: brightness(0.7) contrast(1.5);
+                    }
+                    37.5% { 
+                        filter: brightness(0.9) contrast(1.5); /* Very weak DUB - subtle */
                     }
                     50% { 
-                        filter: brightness(1.4) contrast(1.5);
+                        filter: brightness(0.7) contrast(1.5);
                     }
                     100% { 
-                        filter: brightness(0.6) contrast(1.5);
+                        filter: brightness(0.7) contrast(1.5); /* Rest period until next beat */
                     }
                 }
                 
-                /* Apply both animations - speed up existing sweep and add pulse */
+                /* Apply both animations - speed up existing sweep and add heartbeat at ~64 BPM */
                 .heart-logo.animating {
-                    animation: heartSweep 1s infinite alternate, heartPulseEnhanced 0.5s infinite !important;
+                    animation: heartSweep 1s infinite alternate, heartbeatLubDub 0.92s infinite !important;
                 }
                 
-                /* For themes without heartSweep, create the fast sweep */
-                @keyframes heartSweepFast {
-                    0% { background-position: 0% center; }
-                    100% { background-position: 100% center; }
-                }
-                
-                /* Default theme - add fast sweep if needed */
+                /* For themes without heartSweep, just use heartbeat */
                 html:not(.theme-modern):not(.theme-sunset):not(.theme-ocean):not(.theme-forest):not(.theme-midnight) .heart-logo.animating {
                     color: #e74c3c;
-                    animation: heartPulseEnhanced 0.5s infinite !important;
+                    animation: heartbeatLubDub 0.92s infinite !important;
                 }
             `;
             document.head.appendChild(styleSheet);
