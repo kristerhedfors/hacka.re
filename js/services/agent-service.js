@@ -311,7 +311,6 @@ window.AgentService = (function() {
             // Use cleanSlate=true to prepare state using selective function enable/disable
             await SharedLinkDataProcessor.processSharedData(
                 sharedData,
-                '', // No password needed for agents
                 {
                     addSystemMessage: collectSystemMessage,
                     setMessages: null, // Don't override chat messages for agents

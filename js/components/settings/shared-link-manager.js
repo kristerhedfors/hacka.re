@@ -108,7 +108,7 @@ window.SharedLinkManager = (function() {
                 // Apply shared data
                 const processedModel = window.SharedLinkDataProcessor ? 
                     window.SharedLinkDataProcessor.processSharedData(
-                        sharedData, password, { ...context, displayWelcomeMessage: true }
+                        sharedData, { ...context, displayWelcomeMessage: true }
                     ) : null;
                 
                 if (processedModel) {
@@ -133,7 +133,7 @@ window.SharedLinkManager = (function() {
                 
                 const processedModel = window.SharedLinkDataProcessor ? 
                     window.SharedLinkDataProcessor.processSharedData(
-                        sharedData, password, { ...context, displayWelcomeMessage: true }
+                        sharedData, { ...context, displayWelcomeMessage: true }
                     ) : null;
                 
                 if (processedModel) {
@@ -154,7 +154,7 @@ window.SharedLinkManager = (function() {
             try {
                 const processedModel = window.SharedLinkDataProcessor ? 
                     window.SharedLinkDataProcessor.processSharedData(
-                        sharedData, password, { ...context, displayWelcomeMessage: true }
+                        sharedData, { ...context, displayWelcomeMessage: true }
                     ) : null;
                 
                 if (processedModel) {
