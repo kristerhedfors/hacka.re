@@ -544,8 +544,8 @@ function cleanupGeneration(updateContextUsage, currentModel) {
                             console.log('[ChatManager] Displaying welcome message only (no conversation history)');
                             uiHandler.displayMessages(messages);
                         }
-                        window._welcomeMessageToPrepend = null;
-                        addSystemMessage('Welcome message displayed.');
+                        // DON'T clear the flag - keep it for subsequent reloads during this session
+                        // No need for additional system message - welcome message is sufficient
                     } else if (messages.length === 0) {
                         addSystemMessage('No previous conversation found.');
                     }

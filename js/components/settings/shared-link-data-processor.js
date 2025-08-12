@@ -38,19 +38,13 @@ function createSharedLinkDataProcessor() {
             if (displayMessage) {
                 console.log('[SharedLink] Storing welcome message to be prepended to conversation history');
                 
-                // Store for prepending to messages array
+                // Store for prepending to messages array (NEW APPROACH - replaces deferred display)
                 window._welcomeMessageToPrepend = {
                     role: 'system',
                     content: sharedData.welcomeMessage,
                     className: 'welcome-message'
                 };
                 
-                // Also store for deferred display as backup
-                window._deferredWelcomeMessage = {
-                    message: sharedData.welcomeMessage,
-                    displayFunction: addSystemMessage,
-                    displayed: false
-                };
                 console.log('[SharedLink] Welcome message stored to be prepended to conversation history');
             }
         }
