@@ -96,6 +96,9 @@ async function handleEarlySharedLinkPassword() {
                     // Clear the waiting flag to allow namespace creation
                     window._waitingForSharedLinkPassword = false;
                     
+                    // Mark password verification as complete (required for welcome message display)
+                    window._passwordVerificationComplete = true;
+                    
                     // Force namespace re-initialization now that we have the session key
                     if (window.NamespaceService && window.NamespaceService.reinitializeNamespace) {
                         window.NamespaceService.reinitializeNamespace();

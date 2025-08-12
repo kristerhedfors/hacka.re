@@ -3,6 +3,9 @@
  * 
  * This service provides configuration isolation so agents can have their own
  * settings without affecting the global hacka.re configuration.
+ * 
+ * SECURITY: This service has been updated to use the encrypted storage service
+ * instead of direct localStorage access to protect sensitive data like API keys.
  */
 
 window.AgentContextManager = (function() {
@@ -14,37 +17,50 @@ window.AgentContextManager = (function() {
     let isAgentActive = false;
 
     /**
+     * Get the storage service for secure data access
+     */
+    function getStorageService() {
+        return window.StorageService || window.CoreStorageService;
+    }
+
+    /**
      * Capture the current global configuration before agent activation
+     * Uses encrypted storage service instead of direct localStorage access
      */
     function captureGlobalConfiguration() {
         if (originalGlobalConfig) {
             return; // Already captured
         }
 
+        const storage = getStorageService();
+        if (!storage) {
+            console.error('[AgentContextManager] Storage service not available');
+            return;
+        }
         
         originalGlobalConfig = {
-            // API Configuration
-            apiKey: localStorage.getItem('openai_api_key'),
-            model: localStorage.getItem('selected_model'),
-            apiEndpoint: localStorage.getItem('api_endpoint'),
-            provider: localStorage.getItem('selected_provider'),
+            // API Configuration - now using encrypted storage
+            apiKey: storage.getItem('api_key'),
+            model: storage.getItem('selected_model'),
+            apiEndpoint: storage.getItem('api_endpoint'),
+            provider: storage.getItem('selected_provider'),
             
             // Function Tools
-            functionToolsEnabled: localStorage.getItem('function_tools_enabled'),
-            enabledFunctions: localStorage.getItem('enabled_functions'),
+            functionToolsEnabled: storage.getItem('function_tools_enabled'),
+            enabledFunctions: storage.getItem('enabled_functions'),
             
             // MCP Services
-            mcpServices: localStorage.getItem('mcp_services'),
-            mcpConnections: localStorage.getItem('mcp_connections'),
+            mcpServices: storage.getItem('mcp_services'),
+            mcpConnections: storage.getItem('mcp_connections'),
             
             // System Prompt
-            systemPrompt: localStorage.getItem('system_prompt'),
-            selectedPrompts: localStorage.getItem('selected_prompts'),
+            systemPrompt: storage.getItem('system_prompt'),
+            selectedPrompts: storage.getItem('selected_prompts'),
             
             // Other settings
-            temperature: localStorage.getItem('temperature'),
-            maxTokens: localStorage.getItem('max_tokens'),
-            streamingEnabled: localStorage.getItem('streaming_enabled')
+            temperature: storage.getItem('temperature'),
+            maxTokens: storage.getItem('max_tokens'),
+            streamingEnabled: storage.getItem('streaming_enabled')
         };
     }
 
@@ -85,69 +101,75 @@ window.AgentContextManager = (function() {
     }
 
     /**
-     * Apply configuration to storage with tracking
+     * Apply configuration to storage with tracking - USING ENCRYPTED STORAGE
      */
     function applyContextToStorage(config, context) {
+        const storage = getStorageService();
+        if (!storage) {
+            console.error('[AgentContextManager] Storage service not available for applying context');
+            return;
+        }
+
         const appliedSettings = {};
 
-        // Apply LLM configuration
+        // Apply LLM configuration using encrypted storage
         if (config.llm) {
             if (config.llm.apiKey) {
-                appliedSettings.apiKey = localStorage.getItem('openai_api_key');
-                localStorage.setItem('openai_api_key', config.llm.apiKey);
+                appliedSettings.apiKey = storage.getItem('api_key');
+                storage.setItem('api_key', config.llm.apiKey);
             }
             if (config.llm.model) {
-                appliedSettings.model = localStorage.getItem('selected_model');
-                localStorage.setItem('selected_model', config.llm.model);
+                appliedSettings.model = storage.getItem('selected_model');
+                storage.setItem('selected_model', config.llm.model);
             }
             if (config.llm.provider) {
-                appliedSettings.provider = localStorage.getItem('selected_provider');
-                localStorage.setItem('selected_provider', config.llm.provider);
+                appliedSettings.provider = storage.getItem('selected_provider');
+                storage.setItem('selected_provider', config.llm.provider);
             }
             if (config.llm.endpoint) {
-                appliedSettings.apiEndpoint = localStorage.getItem('api_endpoint');
-                localStorage.setItem('api_endpoint', config.llm.endpoint);
+                appliedSettings.apiEndpoint = storage.getItem('api_endpoint');
+                storage.setItem('api_endpoint', config.llm.endpoint);
             }
             if (config.llm.temperature !== undefined) {
-                appliedSettings.temperature = localStorage.getItem('temperature');
-                localStorage.setItem('temperature', config.llm.temperature.toString());
+                appliedSettings.temperature = storage.getItem('temperature');
+                storage.setItem('temperature', config.llm.temperature.toString());
             }
             if (config.llm.maxTokens) {
-                appliedSettings.maxTokens = localStorage.getItem('max_tokens');
-                localStorage.setItem('max_tokens', config.llm.maxTokens.toString());
+                appliedSettings.maxTokens = storage.getItem('max_tokens');
+                storage.setItem('max_tokens', config.llm.maxTokens.toString());
             }
         }
 
         // Apply function tools configuration
         if (config.functionCalling) {
             if (config.functionCalling.enabled !== undefined) {
-                appliedSettings.functionToolsEnabled = localStorage.getItem('function_tools_enabled');
-                localStorage.setItem('function_tools_enabled', config.functionCalling.enabled.toString());
+                appliedSettings.functionToolsEnabled = storage.getItem('function_tools_enabled');
+                storage.setItem('function_tools_enabled', config.functionCalling.enabled.toString());
             }
             if (config.functionCalling.functions) {
-                appliedSettings.enabledFunctions = localStorage.getItem('enabled_functions');
-                localStorage.setItem('enabled_functions', JSON.stringify(config.functionCalling.functions));
+                appliedSettings.enabledFunctions = storage.getItem('enabled_functions');
+                storage.setItem('enabled_functions', JSON.stringify(config.functionCalling.functions));
             }
         }
 
         // Apply MCP configuration
         if (config.mcp) {
             if (config.mcp.services) {
-                appliedSettings.mcpServices = localStorage.getItem('mcp_services');
-                localStorage.setItem('mcp_services', JSON.stringify(config.mcp.services));
+                appliedSettings.mcpServices = storage.getItem('mcp_services');
+                storage.setItem('mcp_services', JSON.stringify(config.mcp.services));
             }
         }
 
         // Apply system prompt
         if (config.systemPrompt) {
-            appliedSettings.systemPrompt = localStorage.getItem('system_prompt');
-            localStorage.setItem('system_prompt', config.systemPrompt);
+            appliedSettings.systemPrompt = storage.getItem('system_prompt');
+            storage.setItem('system_prompt', config.systemPrompt);
         }
 
         // Apply prompts configuration
         if (config.prompts) {
-            appliedSettings.selectedPrompts = localStorage.getItem('selected_prompts');
-            localStorage.setItem('selected_prompts', JSON.stringify(config.prompts));
+            appliedSettings.selectedPrompts = storage.getItem('selected_prompts');
+            storage.setItem('selected_prompts', JSON.stringify(config.prompts));
         }
 
         // Store what we changed for restoration
@@ -156,20 +178,26 @@ window.AgentContextManager = (function() {
     }
 
     /**
-     * Restore global configuration when leaving agent mode
+     * Restore global configuration when leaving agent mode - USING ENCRYPTED STORAGE
      */
     function restoreGlobalConfiguration() {
         if (!originalGlobalConfig || !isAgentActive) {
             return false;
         }
 
+        const storage = getStorageService();
+        if (!storage) {
+            console.error('[AgentContextManager] Storage service not available for restoration');
+            return false;
+        }
         
-        // Restore all original values
+        // Restore all original values using encrypted storage
         Object.entries(originalGlobalConfig).forEach(([key, value]) => {
+            const storageKey = mapConfigKeyToStorageKey(key);
             if (value !== null) {
-                localStorage.setItem(mapConfigKeyToStorageKey(key), value);
+                storage.setItem(storageKey, value);
             } else {
-                localStorage.removeItem(mapConfigKeyToStorageKey(key));
+                storage.removeItem(storageKey);
             }
         });
 
@@ -180,11 +208,11 @@ window.AgentContextManager = (function() {
     }
 
     /**
-     * Map configuration keys to localStorage keys
+     * Map configuration keys to storage service keys (encrypted)
      */
     function mapConfigKeyToStorageKey(configKey) {
         const mapping = {
-            apiKey: 'openai_api_key',
+            apiKey: 'api_key',  // Changed from 'openai_api_key' to use encrypted storage key
             model: 'selected_model',
             apiEndpoint: 'api_endpoint',
             provider: 'selected_provider',
@@ -239,15 +267,21 @@ window.AgentContextManager = (function() {
     }
 
     /**
-     * Get context-aware setting value
+     * Get context-aware setting value - USING ENCRYPTED STORAGE
      * Returns agent-specific value if in agent context, otherwise global value
      */
     function getContextAwareSetting(key) {
+        const storage = getStorageService();
+        if (!storage) {
+            console.error('[AgentContextManager] Storage service not available for getting setting');
+            return null;
+        }
+
         if (isInAgentContext()) {
             const storageKey = mapConfigKeyToStorageKey(key);
-            return localStorage.getItem(storageKey);
+            return storage.getItem(storageKey);
         }
-        return localStorage.getItem(key);
+        return storage.getItem(key);
     }
 
     /**
@@ -282,8 +316,9 @@ window.AgentContextManager = (function() {
             
             return '';
         }
-        // Return global system prompt
-        return localStorage.getItem('system_prompt') || '';
+        // Return global system prompt using encrypted storage
+        const storage = getStorageService();
+        return storage ? storage.getItem('system_prompt') || '' : '';
     }
 
     /**
