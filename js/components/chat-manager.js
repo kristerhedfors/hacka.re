@@ -365,10 +365,8 @@ function cleanupGeneration(updateContextUsage, currentModel) {
         function reloadConversationHistory() {
             console.log('[ChatManager] Reloading conversation history for namespace continuity');
             
-            // Clear current UI first
-            if (uiHandler) {
-                uiHandler.clearChat();
-            }
+            // DON'T clear the UI - we want to preserve any welcome message
+            // Just add messages that aren't already displayed
             
             // Load fresh chat history from storage
             const savedHistory = StorageService.loadChatHistory();
@@ -419,28 +417,39 @@ function cleanupGeneration(updateContextUsage, currentModel) {
                 if (hasRealConversation) {
                     // Use localStorage conversation
                     console.log('[ChatManager] Using localStorage conversation');
-                    messages = savedHistory;
                     
                     // Check if messages are valid
-                    const validMessages = messages.filter(msg => 
+                    const validMessages = savedHistory.filter(msg => 
                         msg && typeof msg === 'object' && msg.role && msg.content
                     );
                     
-                    if (validMessages.length !== messages.length) {
-                        console.warn(`[ChatManager] Some messages are invalid. Valid: ${validMessages.length}, Total: ${messages.length}`);
-                        messages = validMessages;
+                    if (validMessages.length !== savedHistory.length) {
+                        console.warn(`[ChatManager] Some messages are invalid. Valid: ${validMessages.length}, Total: ${savedHistory.length}`);
                     }
                     
-                    // Display all messages using UI handler
+                    // Check if we need to prepend a welcome message
+                    let messagesToDisplay = validMessages;
+                    if (window._welcomeMessageToPrepend) {
+                        messagesToDisplay = [window._welcomeMessageToPrepend, ...validMessages];
+                        console.log('[ChatManager] Prepended welcome message to conversation history');
+                        // DON'T clear the flag - keep it for subsequent reloads during this session
+                    }
+                    
+                    // Update our messages array
+                    messages = messagesToDisplay;
+                    
+                    // Display all messages including welcome message first
                     if (uiHandler && uiHandler.displayMessages) {
-                        console.log('[ChatManager] About to call uiHandler.displayMessages with', messages.length, 'messages');
-                        uiHandler.displayMessages(messages);
-                    } else {
-                        console.error('[ChatManager] uiHandler or displayMessages method not available');
+                        console.log('[ChatManager] Displaying', messagesToDisplay.length, 'messages (including welcome message first)');
+                        uiHandler.displayMessages(messagesToDisplay);
                     }
                     
-                    console.log(`[ChatManager] Reloaded ${messages.length} messages from localStorage`);
-                    addSystemMessage(`Conversation history reloaded with ${messages.length} messages.`);
+                    console.log(`[ChatManager] Displayed ${messagesToDisplay.length} messages from localStorage (including welcome)`);
+                    if (messagesToDisplay.length > validMessages.length) {
+                        addSystemMessage(`Welcome message and conversation history loaded with ${validMessages.length} messages.`);
+                    } else {
+                        addSystemMessage(`Conversation history reloaded with ${validMessages.length} messages.`);
+                    }
                     
                 } else {
                     // localStorage only has system messages, try shared data
@@ -466,15 +475,22 @@ function cleanupGeneration(updateContextUsage, currentModel) {
                         
                         if (sharedHasRealConversation) {
                             console.log('[ChatManager] Using shared conversation data instead');
-                            messages = sharedData.messages;
                             
-                            // Display shared messages
-                            if (uiHandler && uiHandler.displayMessages) {
-                                uiHandler.displayMessages(messages);
+                            // Add only new messages that aren't already displayed
+                            const currentMessageCount = messages.length;
+                            const newMessages = sharedData.messages.slice(currentMessageCount);
+                            
+                            if (newMessages.length > 0) {
+                                messages = messages.concat(newMessages);
+                                
+                                // Display only the new shared messages
+                                if (uiHandler && uiHandler.displayMessages) {
+                                    uiHandler.displayMessages(newMessages, true); // append mode
+                                }
+                                
+                                console.log(`[ChatManager] Added ${newMessages.length} new messages from shared data`);
+                                addSystemMessage(`Added ${newMessages.length} messages from shared conversation history.`);
                             }
-                            
-                            console.log(`[ChatManager] Loaded ${messages.length} messages from shared data`);
-                            addSystemMessage(`Shared conversation history loaded with ${messages.length} messages.`);
                         } else {
                             console.log('[ChatManager] No real conversation in shared data either');
                             addSystemMessage('No conversation history found.');
@@ -501,18 +517,37 @@ function cleanupGeneration(updateContextUsage, currentModel) {
                 }
                 if (sharedData && sharedData.messages && sharedData.messages.length > 0) {
                     console.log('[ChatManager] Using shared conversation data');
-                    messages = sharedData.messages;
                     
-                    // Display shared messages
-                    if (uiHandler && uiHandler.displayMessages) {
-                        uiHandler.displayMessages(messages);
+                    // Add only new messages that aren't already displayed
+                    const currentMessageCount = messages.length;
+                    const newMessages = sharedData.messages.slice(currentMessageCount);
+                    
+                    if (newMessages.length > 0) {
+                        messages = messages.concat(newMessages);
+                        
+                        // Display only the new shared messages
+                        if (uiHandler && uiHandler.displayMessages) {
+                            uiHandler.displayMessages(newMessages, true); // append mode
+                        }
+                        
+                        console.log(`[ChatManager] Added ${newMessages.length} new messages from shared data`);
+                        addSystemMessage(`Added ${newMessages.length} messages from shared conversation history.`);
                     }
-                    
-                    console.log(`[ChatManager] Loaded ${messages.length} messages from shared data`);
-                    addSystemMessage(`Shared conversation history loaded with ${messages.length} messages.`);
                 } else {
                     console.log('[ChatManager] No conversation history found anywhere');
-                    addSystemMessage('No previous conversation found.');
+                    
+                    // Check if we have a welcome message to display even with no history
+                    if (window._welcomeMessageToPrepend) {
+                        messages = [window._welcomeMessageToPrepend];
+                        if (uiHandler && uiHandler.displayMessages) {
+                            console.log('[ChatManager] Displaying welcome message only (no conversation history)');
+                            uiHandler.displayMessages(messages);
+                        }
+                        window._welcomeMessageToPrepend = null;
+                        addSystemMessage('Welcome message displayed.');
+                    } else if (messages.length === 0) {
+                        addSystemMessage('No previous conversation found.');
+                    }
                 }
             }
             

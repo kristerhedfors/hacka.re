@@ -113,6 +113,13 @@ window.CrossTabSyncService = (function() {
             console.log('[CrossTabSync] History hash changed in another tab, syncing...');
             lastKnownHistoryHash = newHash;
             
+            // Don't reload conversation history if we're already processing a shared link
+            // This prevents infinite loops during shared link initialization
+            if (window._waitingForSharedLinkPassword || window._processingSharedLink) {
+                console.log('[CrossTabSync] Shared link in progress - skipping cross-tab reload to prevent loops');
+                return;
+            }
+            
             // Reload conversation history
             if (window.aiHackare && window.aiHackare.chatManager) {
                 setTimeout(() => {

@@ -105,6 +105,10 @@ async function handleEarlySharedLinkPassword() {
                         console.log('[App] Namespace re-initialized with session key');
                     }
                     
+                    // Note: Deferred welcome message will be displayed after chat history loads
+                    // to prevent it being overwritten by chat container clearing
+                    console.log('[App] Password verification complete - welcome message will display after chat loads');
+                    
                     // Remove modal and continue
                     modal.remove();
                     resolve();
