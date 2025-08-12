@@ -865,10 +865,16 @@ window.AgentService = (function() {
     /**
      * Get the current agent's system prompt
      * Returns agent-specific prompt if in agent context
+     * SECURITY: Updated to use encrypted storage instead of direct localStorage
      */
     function getCurrentAgentSystemPrompt() {
         const contextManager = getContextManager();
-        return contextManager ? contextManager.getCurrentSystemPrompt() : localStorage.getItem('system_prompt') || '';
+        if (contextManager) {
+            return contextManager.getCurrentSystemPrompt();
+        }
+        // Fallback to encrypted storage service
+        const storage = window.StorageService || window.CoreStorageService;
+        return storage ? storage.getItem('system_prompt') || '' : '';
     }
     
     // Public API

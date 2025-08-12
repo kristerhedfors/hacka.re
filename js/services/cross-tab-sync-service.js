@@ -14,8 +14,8 @@ window.CrossTabSyncService = (function() {
     
     // Constants
     const SYNC_CHECK_INTERVAL = 2000; // Check every 2 seconds
-    const SYNC_TRIGGER_KEY = 'hacka_re_sync_trigger';
-    const HISTORY_HASH_KEY = 'hacka_re_history_hash';
+    const SYNC_TRIGGER_KEY = 'hackare_sync_trigger';     // Properly prefixed
+    const HISTORY_HASH_KEY = 'hackare_history_hash';    // Properly prefixed for cross-tab sync
     
     /**
      * Initialize cross-tab synchronization
@@ -278,11 +278,13 @@ window.CrossTabSyncService = (function() {
     }
     
     /**
-     * Update the stored history hash
+     * Update the stored history hash - USING PROPER HACKARE_ PREFIXED KEY
+     * Note: Cross-tab sync requires direct localStorage access for storage events to work
      */
     function updateHistoryHash() {
         try {
             const currentHash = getHistoryHash();
+            // Use direct localStorage with proper hackare_ prefix for cross-tab sync
             localStorage.setItem(HISTORY_HASH_KEY, currentHash);
             lastKnownHistoryHash = currentHash;
         } catch (error) {
