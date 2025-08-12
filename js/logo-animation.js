@@ -1,6 +1,6 @@
 /**
  * Logo Animation for hacka.re
- * Creates a heartbeat animation through three dots inside the heart logo
+ * Creates an enhanced gradient wave animation on the heart logo
  * Animation runs continuously when waiting for a response, serving as a loading indicator
  */
 
@@ -8,7 +8,8 @@ window.LogoAnimation = (function() {
     // Animation state
     let animationRunning = false;
     let animationLoop = null;
-    let dots = [];
+    let heartLogo = null;
+    let originalAnimation = null;
     let tooltipActive = false;
     
     // Check if browser is Firefox Focus
@@ -43,98 +44,58 @@ window.LogoAnimation = (function() {
             if (heartLogos.length === 0) return;
             
             // Use the last heart logo (most recently added)
-            const heartLogo = heartLogos[heartLogos.length - 1];
+            heartLogo = heartLogos[heartLogos.length - 1];
             const typingDots = heartLogo.querySelector('.typing-dots');
             
-            if (!heartLogo || !typingDots) return;
+            if (!heartLogo) return;
             
-            // Clear existing dots
-            typingDots.innerHTML = '';
-            
-            // Position the typing dots container inside the heart
-            typingDots.style.position = 'absolute';
-            typingDots.style.top = '50%';
-            typingDots.style.left = '50%';
-            typingDots.style.transform = 'translate(-50%, -50%)';
-            typingDots.style.width = '16px';
-            typingDots.style.height = '6px';
-            typingDots.style.display = 'flex';
-            typingDots.style.justifyContent = 'space-between';
-            typingDots.style.alignItems = 'center';
-            typingDots.style.zIndex = '2';
-            
-            // Create three dots
-            dots = [];
-            for (let i = 0; i < 3; i++) {
-                const dot = document.createElement('span');
-                dot.className = 'dot';
-                
-                // Use CSS class instead of inline styles for better compatibility
-                // The .dot class is defined in styles.css
-                dot.style.opacity = '0'; // Initially invisible
-                
-                // Set a specific style for Firefox Focus
-                if (isFirefoxFocus()) {
-                    // Force hardware acceleration and visibility
-                    dot.style.transform = 'translateZ(0)';
-                    dot.style.willChange = 'opacity, transform';
-                    
-                    // Explicitly set all styles for Firefox Focus
-                    dot.style.backgroundColor = '#22CC22';
-                    dot.style.width = '3px';
-                    dot.style.height = '3px';
-                    dot.style.borderRadius = '50%';
-                    dot.style.display = 'inline-block';
-                    dot.style.boxShadow = '0 1px 1px rgba(0, 0, 0, 0.2)';
-                    dot.style.opacity = '1'; // Always visible in Firefox Focus
-                    
-                    // Add !important to critical styles for Firefox Focus
-                    dot.style.setProperty('background-color', '#22CC22', 'important');
-                    dot.style.setProperty('opacity', '1', 'important');
-                    dot.style.setProperty('width', '3px', 'important');
-                    dot.style.setProperty('height', '3px', 'important');
-                }
-                
-                typingDots.appendChild(dot);
-                dots.push(dot);
+            // Hide the typing dots container - we won't use dots anymore
+            if (typingDots) {
+                typingDots.style.display = 'none';
             }
             
-            // Position dots with specific spacing
-            typingDots.style.display = 'flex';
-            typingDots.style.justifyContent = 'center';
+            // Store the original animation settings
+            const computedStyle = window.getComputedStyle(heartLogo);
+            originalAnimation = computedStyle.animation || computedStyle.webkitAnimation || '';
             
-            // Set a default spacing of 2px between dots
-            typingDots.style.gap = '2px';
-            
-            // Then adjust the second and third dots to be 1px closer
-            dots[1].style.marginLeft = '-1px';
-            dots[2].style.marginLeft = '-1px';
-            
-            // Create the keyframe animations for heartbeat with rapid opacity changes
-            // Enhanced for better compatibility with Firefox Focus
+            // Create enhanced pulsing animation that speeds up existing gradient
             const styleSheet = document.createElement('style');
             styleSheet.textContent = `
-                @keyframes heartbeatLub {
-                    0% { transform: translateY(0) translateZ(0); opacity: 0; background-color: #22CC22; }
-                    10% { transform: translateY(-1px) translateZ(0); opacity: 1; background-color: #22CC22; }
-                    50% { transform: translateY(-4px) translateZ(0); opacity: 1; background-color: #22CC22; }
-                    90% { transform: translateY(-1px) translateZ(0); opacity: 1; background-color: #22CC22; }
-                    100% { transform: translateY(0) translateZ(0); opacity: 0; background-color: #22CC22; }
+                /* Speed up the existing heartSweep animation and add contrast pulsing */
+                @keyframes heartPulseEnhanced {
+                    0% { 
+                        filter: brightness(0.6) contrast(1.5);
+                    }
+                    50% { 
+                        filter: brightness(1.4) contrast(1.5);
+                    }
+                    100% { 
+                        filter: brightness(0.6) contrast(1.5);
+                    }
                 }
                 
-                @keyframes heartbeatDub {
-                    0% { transform: translateY(0) translateZ(0); opacity: 0; background-color: #22CC22; }
-                    10% { transform: translateY(-1px) translateZ(0); opacity: 1; background-color: #22CC22; }
-                    50% { transform: translateY(-2px) translateZ(0); opacity: 1; background-color: #22CC22; }
-                    90% { transform: translateY(-1px) translateZ(0); opacity: 1; background-color: #22CC22; }
-                    100% { transform: translateY(0) translateZ(0); opacity: 0; background-color: #22CC22; }
+                /* Apply both animations - speed up existing sweep and add pulse */
+                .heart-logo.animating {
+                    animation: heartSweep 1s infinite alternate, heartPulseEnhanced 0.5s infinite !important;
+                }
+                
+                /* For themes without heartSweep, create the fast sweep */
+                @keyframes heartSweepFast {
+                    0% { background-position: 0% center; }
+                    100% { background-position: 100% center; }
+                }
+                
+                /* Default theme - add fast sweep if needed */
+                html:not(.theme-modern):not(.theme-sunset):not(.theme-ocean):not(.theme-forest):not(.theme-midnight) .heart-logo.animating {
+                    color: #e74c3c;
+                    animation: heartPulseEnhanced 0.5s infinite !important;
                 }
             `;
             document.head.appendChild(styleSheet);
             
-            // Run initial animation once
+            // Run initial animation pulse
             setTimeout(() => {
-                runSingleHeartbeat();
+                runSinglePulse();
             }, 100);
             
             // Listen for custom events to start/stop the animation
@@ -246,127 +207,33 @@ window.LogoAnimation = (function() {
         }
     }
     
-    // Function to run a single heartbeat (lub-dub)
-    function runSingleHeartbeat() {
+    // Function to run a single pulse of the enhanced gradient animation
+    function runSinglePulse() {
         return new Promise(resolve => {
-            // Check if we're in collapsed mode
-            const logoContainer = document.querySelector('.logo-text-container');
-            const isCollapsed = logoContainer && logoContainer.classList.contains('collapsed');
+            if (!heartLogo) return resolve();
             
-            // Reset any existing animations and make dots visible
-            dots.forEach(dot => {
-                dot.style.animation = 'none';
-                dot.style.transform = 'translateY(0) translateZ(0)';
-                dot.style.opacity = '1'; // Make dots visible during heartbeat
-                
-                // Set appropriate size based on collapsed state
-                if (isCollapsed) {
-                    dot.style.backgroundColor = '#22CC22';
-                    dot.style.width = '4px'; // Reduced from 9px
-                    dot.style.height = '4px'; // Reduced from 9px
-                    dot.style.borderRadius = '50%';
-                    dot.style.display = 'inline-block';
-                    dot.style.boxShadow = '0 1px 1px rgba(0, 0, 0, 0.2)';
-                } else {
-                    // Standard size
-                    dot.style.backgroundColor = '#22CC22';
-                    dot.style.width = '3px';
-                    dot.style.height = '3px';
-                    dot.style.borderRadius = '50%';
-                    dot.style.display = 'inline-block';
-                    dot.style.boxShadow = '0 1px 1px rgba(0, 0, 0, 0.2)';
-                }
-                
-                // Force hardware acceleration
-                dot.style.willChange = 'opacity, transform';
-            });
+            // Apply the enhanced animation class
+            heartLogo.classList.add('animating');
             
-            // Choose appropriate animations based on collapsed state
-            const lubAnimation = isCollapsed ? 'heartbeatLubLarge' : 'heartbeatLub';
-            const dubAnimation = isCollapsed ? 'heartbeatDubLarge' : 'heartbeatDub';
-            
-            // First beat (lub) - stronger
-            dots.forEach((dot, index) => {
-                setTimeout(() => {
-                    // Apply animation with !important to override any browser restrictions
-                    dot.style.setProperty('animation', `${lubAnimation} 200ms ease-in-out`, 'important');
-                    
-                    // For Firefox Focus, also set these properties directly
-                    if (isFirefoxFocus()) {
-                        const moveDistance = isCollapsed ? '-5px' : '-4px'; // Reduced from -12px
-                        setTimeout(() => {
-                            dot.style.opacity = '1';
-                            dot.style.backgroundColor = '#22CC22';
-                            dot.style.transform = `translateY(${moveDistance}) translateZ(0)`;
-                        }, 100); // At 50% of animation
-                    }
-                }, index * 30);
-            });
-            
-            // Second beat (dub) - softer, after a short delay
+            // Run for a short duration then stop if not in continuous mode
             setTimeout(() => {
-                dots.forEach((dot, index) => {
-                    setTimeout(() => {
-                        // Apply animation with !important
-                        dot.style.setProperty('animation', `${dubAnimation} 200ms ease-in-out`, 'important');
-                        
-                        // For Firefox Focus, also set these properties directly
-                        if (isFirefoxFocus()) {
-                            const moveDistance = isCollapsed ? '-2px' : '-2px'; // Reduced from -6px
-                            setTimeout(() => {
-                                dot.style.opacity = '1';
-                                dot.style.backgroundColor = '#22CC22';
-                                dot.style.transform = `translateY(${moveDistance}) translateZ(0)`;
-                            }, 100); // At 50% of animation
-                        }
-                    }, index * 30);
-                });
-                
-                // Handle dots after the second beat completes
-                setTimeout(() => {
-                    if (!animationRunning) {
-                        dots.forEach(dot => {
-                            // In Firefox Focus, keep dots visible even when not animating
-                            if (isFirefoxFocus()) {
-                                dot.style.opacity = '1';
-                                dot.style.backgroundColor = '#22CC22';
-                                dot.style.transform = 'translateY(0) translateZ(0)';
-                            } else {
-                                dot.style.opacity = '0'; // Hide dots after animation in other browsers
-                            }
-                        });
-                    }
-                    resolve();
-                }, 300);
-            }, 300);
+                if (!animationRunning) {
+                    heartLogo.classList.remove('animating');
+                }
+                resolve();
+            }, 1000); // Single pulse duration
         });
     }
     
     // Start the continuous animation
-    async function startAnimation() {
-        if (animationRunning) return;
+    function startAnimation() {
+        if (animationRunning || !heartLogo) return;
         
         animationRunning = true;
         document.body.dataset.animationRunning = 'true';
         
-        // Run the animation in a loop
-        async function animationCycle() {
-            if (!animationRunning) return;
-            
-            // Run a single heartbeat
-            await runSingleHeartbeat();
-            
-            // Pause between heartbeats
-            await new Promise(resolve => setTimeout(resolve, 600));
-            
-            // Continue the loop if animation is still running
-            if (animationRunning) {
-                animationLoop = setTimeout(animationCycle, 0);
-            }
-        }
-        
-        // Start the animation cycle
-        animationCycle();
+        // Apply the enhanced animation class for continuous animation
+        heartLogo.classList.add('animating');
     }
     
     // Stop the animation
@@ -379,20 +246,9 @@ window.LogoAnimation = (function() {
             animationLoop = null;
         }
         
-        // Reset dots to their initial state
-        if (dots.length > 0) {
-            dots.forEach(dot => {
-                dot.style.animation = 'none';
-                dot.style.transform = 'translateY(0)';
-                
-                // In Firefox Focus, keep dots visible even when not animating
-                if (isFirefoxFocus()) {
-                    dot.style.opacity = '1';
-                    dot.style.backgroundColor = '#22CC22';
-                } else {
-                    dot.style.opacity = '0'; // Hide dots when not animating in other browsers
-                }
-            });
+        // Remove the animation class to return to normal state
+        if (heartLogo) {
+            heartLogo.classList.remove('animating');
         }
     }
     
