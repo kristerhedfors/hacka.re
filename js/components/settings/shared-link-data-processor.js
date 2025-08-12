@@ -34,13 +34,24 @@ function createSharedLinkDataProcessor() {
                 window.aiHackare.shareManager.setSharedWelcomeMessage(sharedData.welcomeMessage);
             }
             
-            // Store the welcome message for deferred display instead of displaying immediately
-            if (displayMessage && addSystemMessage) {
-                // Store the message and display function for later use
+            // Store the welcome message for prepending to conversation history
+            if (displayMessage) {
+                console.log('[SharedLink] Storing welcome message to be prepended to conversation history');
+                
+                // Store for prepending to messages array
+                window._welcomeMessageToPrepend = {
+                    role: 'system',
+                    content: sharedData.welcomeMessage,
+                    className: 'welcome-message'
+                };
+                
+                // Also store for deferred display as backup
                 window._deferredWelcomeMessage = {
                     message: sharedData.welcomeMessage,
-                    displayFunction: addSystemMessage
+                    displayFunction: addSystemMessage,
+                    displayed: false
                 };
+                console.log('[SharedLink] Welcome message stored to be prepended to conversation history');
             }
         }
     }
@@ -820,6 +831,9 @@ function createSharedLinkDataProcessor() {
     async function processSharedData(sharedData, password, options = {}) {
         const { addSystemMessage, setMessages, elements, displayWelcomeMessage = true, cleanSlate = false, validateState = false } = options;
         
+        // Set flag to prevent cross-tab sync loops during processing
+        window._processingSharedLink = true;
+        
         console.log('🚀 processSharedData started with options:', {
             hasSharedData: !!sharedData,
             cleanSlate,
@@ -874,8 +888,12 @@ function createSharedLinkDataProcessor() {
             // This redundant call is no longer needed
             // applySessionKey(password, elements, collectSystemMessage);
             
-            // Apply welcome message processing (for storage in share manager)
-            applyWelcomeMessage(sharedData, () => {}, false); // Don't display, just process
+            // Apply welcome message processing (store for deferred display when password verification completes)
+            if (displayWelcomeMessage) {
+                applyWelcomeMessage(sharedData, collectSystemMessage, true); // Enable deferred storage
+            } else {
+                applyWelcomeMessage(sharedData, () => {}, false); // Just process for share manager
+            }
             
             // Validate state if requested (typically for agent loading)
             if (validateState) {
@@ -893,10 +911,18 @@ function createSharedLinkDataProcessor() {
             applyChatMessages(sharedData, collectSystemMessage, setMessages, systemMessages);
             
             console.log('✅ processSharedData completed successfully');
+            
+            // Clear the processing flag
+            window._processingSharedLink = false;
+            
             return pendingSharedModel;
             
         } catch (error) {
             console.error('❌ processSharedData failed:', error);
+            
+            // Clear the processing flag even on error
+            window._processingSharedLink = false;
+            
             if (addSystemMessage) {
                 addSystemMessage(`Error processing shared data: ${error.message}`);
             }
@@ -909,11 +935,86 @@ function createSharedLinkDataProcessor() {
      */
     function displayDeferredWelcomeMessage() {
         if (window._deferredWelcomeMessage && window._passwordVerificationComplete) {
+            // If we have a prepended welcome message, don't use deferred display
+            if (window._welcomeMessageToPrepend) {
+                console.log('[SharedLink] Welcome message is being handled by prepending - skipping deferred display');
+                return;
+            }
+            
+            // Check if already displayed - if so, just ensure it's still visible after any chat reloads
+            if (window._deferredWelcomeMessage.displayed) {
+                console.log('[SharedLink] Welcome message was already displayed - ensuring it stays visible');
+                // Re-display if chat was cleared by any reload
+                const { message, displayFunction } = window._deferredWelcomeMessage;
+                try {
+                    if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
+                        // Check if welcome message is still in the DOM
+                        const existingWelcome = document.querySelector('.welcome-message');
+                        if (!existingWelcome) {
+                            console.log('[SharedLink] Welcome message not found in DOM - re-adding');
+                            window.aiHackare.chatManager.addSystemMessage(message, 'welcome-message');
+                        }
+                    }
+                } catch (error) {
+                    console.error('[SharedLink] Error ensuring welcome message visibility:', error);
+                }
+                return;
+            }
+            
             const { message, displayFunction } = window._deferredWelcomeMessage;
+            console.log('[SharedLink] Displaying deferred welcome message:', message);
+            console.log('[SharedLink] Display function type:', typeof displayFunction);
             // Display the welcome message with markdown rendering and special styling
-            displayFunction(message, 'welcome-message');
-            // Clear the deferred message
-            window._deferredWelcomeMessage = null;
+            try {
+                // Only use the direct chat manager method to avoid duplicates and ensure proper positioning
+                if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
+                    console.log('[SharedLink] Adding welcome message directly via chat manager');
+                    window.aiHackare.chatManager.addSystemMessage(message, 'welcome-message');
+                } else {
+                    // Fallback to original display function if chat manager not available
+                    displayFunction(message, 'welcome-message');
+                    console.log('[SharedLink] Used fallback display function');
+                }
+                
+            } catch (error) {
+                console.error('[SharedLink] Error calling display function:', error);
+                // Final fallback
+                if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
+                    console.log('[SharedLink] Using error fallback - calling aiHackare.chatManager.addSystemMessage');
+                    window.aiHackare.chatManager.addSystemMessage(message, 'welcome-message');
+                }
+            }
+            
+            // Mark as displayed but don't clear yet - wait for all chat reloads to complete
+            window._deferredWelcomeMessage.displayed = true;
+            console.log('[SharedLink] Welcome message displayed - marked as shown');
+            
+            // Don't clear the deferred message - keep it permanently for any future reloads
+            console.log('[SharedLink] Welcome message marked as permanently available for future reloads');
+        } else if (window._deferredWelcomeMessage && window._deferredWelcomeMessage.displayed) {
+            // Message was already displayed but chat is reloading again - display it again FIRST
+            const { message, displayFunction } = window._deferredWelcomeMessage;
+            console.log('[SharedLink] Re-displaying welcome message after chat reload:', message);
+            try {
+                // Only use the direct chat manager method to avoid duplicates
+                if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
+                    console.log('[SharedLink] Re-adding welcome message directly via chat manager');
+                    window.aiHackare.chatManager.addSystemMessage(message, 'welcome-message');
+                } else {
+                    // Fallback to original display function
+                    displayFunction(message, 'welcome-message');
+                    console.log('[SharedLink] Used fallback display function for re-display');
+                }
+                
+            } catch (error) {
+                console.error('[SharedLink] Error re-displaying welcome message:', error);
+                
+                // Final fallback
+                if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
+                    console.log('[SharedLink] Using error fallback for re-display');
+                    window.aiHackare.chatManager.addSystemMessage(message, 'welcome-message');
+                }
+            }
         }
     }
     

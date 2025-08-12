@@ -133,9 +133,22 @@ window.ChatUIService = (function() {
             displayMessages(messages) {
                 console.log('[ChatUIService] displayMessages called with', messages.length, 'messages');
                 
+                // Preserve any existing welcome messages before clearing
+                const existingWelcomeMessages = elements.chatMessages.querySelectorAll('.welcome-message');
+                const preservedWelcomeMessages = [];
+                existingWelcomeMessages.forEach(msg => {
+                    preservedWelcomeMessages.push(msg.cloneNode(true));
+                });
+                
                 // Clear chat container
                 elements.chatMessages.innerHTML = '';
                 console.log('[ChatUIService] Chat container cleared');
+                
+                // Restore welcome messages first
+                preservedWelcomeMessages.forEach(welcomeMsg => {
+                    elements.chatMessages.appendChild(welcomeMsg);
+                    console.log('[ChatUIService] Restored welcome message to top of chat');
+                });
                 
                 // Add messages to chat
                 messages.forEach((message, index) => {
