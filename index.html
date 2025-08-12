@@ -52,11 +52,6 @@
                             <div class="tree-content">
                                 <div class="logo-line hacka-re-font">hacka.re: serverless agency</div>
                                 <div class="logo-line">│</div>
-                                <div class="logo-line"><span class="tree-toggle" data-target="namespaces">├─[+] Namespaces</span></div>
-                                <div class="logo-line namespaces-item" style="display: none;">│  ├─ <span class="feature-link" data-feature="current-namespace">Current Namespace Info</span></div>
-                                <div class="logo-line namespaces-item" style="display: none;">│  ├─ <span class="feature-link" data-feature="switch-namespace">Switch Namespace</span></div>
-                                <div class="logo-line namespaces-item" style="display: none;">│  ├─ <span class="feature-link" data-feature="create-namespace">Create New Namespace</span></div>
-                                <div class="logo-line namespaces-item" style="display: none;">│  └─ <span class="feature-link" data-feature="delete-namespace">Delete Namespace</span></div>
                                 <div class="logo-line"><span class="tree-toggle" data-target="documentation">├─[+] Documentation</span></div>
                                 <div class="logo-line documentation-item" style="display: none;">│  ├─ <a href="about/index.html" class="tree-link" target="_blank" rel="noopener noreferrer">About</a></div>
                                 <div class="logo-line documentation-item" style="display: none;">│  ├─ <a href="about/development.html" class="tree-link" target="_blank" rel="noopener noreferrer">Development</a></div>
@@ -846,6 +841,7 @@ async function getCurrentTimeInBerlin() {
     <script src="js/services/core-storage-service.js"></script>
     <script src="js/services/data-service.js"></script>
     <script src="js/services/storage-service.js"></script>
+    <script src="js/services/cross-tab-sync-service.js"></script>
     <script src="js/services/context-usage-service.js"></script>
     <script src="js/services/system-prompt-coordinator.js"></script>
     <script src="js/services/debug-service.js"></script>
@@ -997,7 +993,6 @@ async function getCurrentTimeInBerlin() {
     <script src="js/components/settings/title-subtitle-manager.js"></script>
     <script src="js/components/settings/welcome-manager.js"></script>
     <script src="js/components/settings/shared-link-modal-manager.js"></script>
-    <script src="js/components/settings/namespace-selection-modal-manager.js"></script>
     <script src="js/components/settings/shared-link-data-processor.js"></script>
     <script src="js/components/settings/shared-link-manager.js"></script>
     <script src="js/components/settings/tool-calling-manager.js"></script>

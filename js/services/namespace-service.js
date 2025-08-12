@@ -1,6 +1,22 @@
 /**
  * Namespace Service
- * Manages namespaces for storage isolation based on title/subtitle
+ * 
+ * Manages namespaces for storage isolation and integrates with StorageTypeService
+ * to handle both sessionStorage and localStorage scenarios.
+ * 
+ * Key responsibilities:
+ * - Namespace creation and resolution based on title/subtitle
+ * - Master key management for encryption
+ * - Integration with StorageTypeService for proper storage backend
+ * - Session cleanup for sessionStorage mode
+ * - Fallback mechanisms for session key retrieval
+ * 
+ * Storage Type Integration:
+ * - sessionStorage: Uses fixed 'default_session' namespace, performs cleanup
+ * - localStorage: Uses dynamic namespaces from shared links, no cleanup
+ * 
+ * @see StorageTypeService for storage type determination
+ * @see NAMESPACE_GUIDE.md for user documentation
  */
 
 window.NamespaceService = (function() {
@@ -59,6 +75,13 @@ window.NamespaceService = (function() {
     
     // Helper functions
     function getSessionKey() {
+        // Session key retrieval with multiple fallback mechanisms
+        // Priority order:
+        // 1. Direct sessionStorage lookup for shared links (works before ShareManager init)
+        // 2. CryptoUtils-based lookup using hash of encrypted data
+        // 3. ShareManager instance (aiHackare.shareManager)
+        // 4. Legacy ShareManager fallback
+        
         // First, check sessionStorage directly for shared link session keys
         // This ensures we get the session key even before ShareManager is initialized
         if (window.location.hash && (window.location.hash.includes('#gpt=') || window.location.hash.includes('#shared='))) {
@@ -124,10 +147,15 @@ window.NamespaceService = (function() {
     
     // Core namespace operations
     /**
-     * Store namespace data in localStorage
-     * @param {string} namespaceId - The namespace ID
-     * @param {string} namespaceHash - The namespace hash to encrypt and store
-     * @param {string} masterKey - The master key for encryption
+     * Store namespace data in the appropriate storage (localStorage or sessionStorage)
+     * 
+     * The namespace hash and master key are encrypted with either:
+     * - User's session key (if available) - provides additional security
+     * - Namespace hash itself (fallback) - ensures data is still accessible
+     * 
+     * @param {string} namespaceId - The namespace ID (8 random chars)
+     * @param {string} namespaceHash - The namespace hash (SHA-256 of title+subtitle)
+     * @param {string} masterKey - The master key for data encryption
      */
     function storeNamespaceData(namespaceId, namespaceHash, masterKey) {
         try {
@@ -307,7 +335,23 @@ window.NamespaceService = (function() {
     }
     
     /**
-     * Get or create namespace for the current title/subtitle
+     * Get or create namespace for the current context
+     * 
+     * This is the core function that determines namespace creation and retrieval.
+     * The behavior differs significantly based on storage type:
+     * 
+     * SessionStorage Mode (Direct Visit):
+     * - Always uses 'default_session' namespace
+     * - Performs cleanup of encrypted data from previous sessions
+     * - Generates random master key (or derives from session key if available)
+     * - Data is temporary and cleared when browser/tab closes
+     * 
+     * LocalStorage Mode (Shared Link):
+     * - Uses namespace derived from hash of encrypted blob in URL
+     * - Checks for existing namespace to enable conversation continuity
+     * - Derives master key from session key for consistency
+     * - Data persists across browser sessions
+     * 
      * @returns {Object} Object with namespaceId, namespaceHash, and masterKey
      */
     function getOrCreateNamespace() {
@@ -402,10 +446,17 @@ window.NamespaceService = (function() {
             // Use default namespace for sessionStorage
             const defaultNamespace = StorageTypeService.getDefaultNamespace();
             
-            // Check if sessionStorage has any encrypted data that might be from a previous session
-            // If so, and we haven't attempted cleanup yet, clear everything and start fresh
+            // Session cleanup for sessionStorage mode
+            // When using sessionStorage, we need to ensure clean session boundaries.
+            // This cleanup prevents encrypted data from previous sessions from causing
+            // decryption errors or data confusion.
+            // 
+            // Note: This cleanup only happens once per page load and only affects
+            // sessionStorage when in sessionStorage mode.
             if (!hasAttemptedSessionCleanup && sessionStorage.length > 0) {
                 // Check if there's any encrypted data that would fail to decrypt
+                // We look for base64-encoded strings that are likely encrypted data
+                // rather than normal application state
                 const hasEncryptedData = Object.keys(sessionStorage).some(key => {
                     const value = sessionStorage.getItem(key);
                     // Check if this looks like encrypted data (base64-like strings over certain length)
@@ -413,6 +464,8 @@ window.NamespaceService = (function() {
                 });
                 
                 if (hasEncryptedData) {
+                    // Clear all sessionStorage to start fresh
+                    // This ensures no data leakage between sessions when using sessionStorage
                     addSystemMessage(`[CRYPTO] Detected encrypted data from previous session - clearing sessionStorage and starting fresh`);
                     sessionStorage.clear();
                     hasAttemptedSessionCleanup = true;
@@ -427,7 +480,10 @@ window.NamespaceService = (function() {
             state.current.namespaceHash = defaultNamespace; // Use namespace ID as hash for simplicity
             state.isReturningToExistingNamespace = false;
             
-            // For sessionStorage with session key, derive master key deterministically
+            // Master key generation for sessionStorage
+            // Even in sessionStorage mode, we support session keys for additional security
+            // If a session key is available, we derive the master key from it
+            // Otherwise, we generate a random master key
             const sessionKey = getSessionKey();
             if (sessionKey) {
                 try {
@@ -438,7 +494,9 @@ window.NamespaceService = (function() {
                     state.current.namespaceKey = CryptoUtils.generateSecretKey(); // Fallback to random
                 }
             } else {
-                state.current.namespaceKey = CryptoUtils.generateSecretKey(); // Generate a new key
+                // No session key available - generate a random master key
+                // This is the typical case for direct visits without a session key
+                state.current.namespaceKey = CryptoUtils.generateSecretKey();
             }
             
             return {
@@ -573,6 +631,12 @@ window.NamespaceService = (function() {
             
             // If we re-initialized the same namespace and it's marked as existing, trigger conversation reload
             if (previousNamespaceId === namespace.namespaceId && state.isReturningToExistingNamespace) {
+                // Skip delayed reload if we're processing a shared link - the shared link processor handles this
+                if (window._processingSharedLink || window._waitingForSharedLinkPassword || window._sharedLinkProcessed) {
+                    console.log('[NamespaceService] Skipping delayed reload - shared link processor will handle conversation loading');
+                    return namespace;
+                }
+                
                 addSystemMessage(`[NAMESPACE] Re-initialized existing namespace - triggering conversation reload`);
                 
                 // Trigger conversation reload after a delay to ensure everything is initialized

@@ -1,6 +1,18 @@
 /**
  * Storage Type Service
- * Manages storage type detection and configuration for different entry methods
+ * 
+ * Determines whether to use sessionStorage or localStorage based on how the user
+ * accesses the application. This service is critical for balancing privacy and functionality.
+ * 
+ * Storage Type Decision Logic:
+ * - Direct visit (no hash) → sessionStorage (temporary, maximum privacy)
+ * - Shared link (#gpt= or #shared=) → localStorage (persistent, for returning to conversations)
+ * 
+ * The storage type decision is LOCKED for the browser session to prevent data inconsistency.
+ * Once determined, the storage type persists across page navigations within the same session.
+ * 
+ * @see NAMESPACE_GUIDE.md for detailed user documentation
+ * @see CRYPTO_SPEC.md for technical implementation details
  */
 
 window.StorageTypeService = (function() {
@@ -19,10 +31,22 @@ window.StorageTypeService = (function() {
     let wasInitiallySharedLink = false; // Remember original context
     
     // Key to store the storage type decision across page navigations
+    // This key is stored in sessionStorage to maintain consistency during the browser session
     const STORAGE_TYPE_KEY = '__hacka_re_storage_type__';
     
     /**
      * Initialize storage type detection
+     * 
+     * This function determines which storage type to use based on the entry method.
+     * The decision is made once per browser session and locked to prevent inconsistencies.
+     * 
+     * Decision flow:
+     * 1. Check if a decision was already made in this browser session
+     * 2. If not, detect based on URL (shared link vs direct visit)
+     * 3. Lock the decision by storing it in sessionStorage
+     * 
+     * The locking mechanism ensures that even if a user navigates from a shared link
+     * to the direct URL (or vice versa), the storage type remains consistent.
      */
     function init() {
         if (isInitialized) {
@@ -30,6 +54,8 @@ window.StorageTypeService = (function() {
         }
         
         // First check if we already have a storage type decision from this browser session
+        // This ensures consistency across page navigations and prevents switching storage types
+        // mid-session, which could lead to data loss or confusion
         const existingDecision = sessionStorage.getItem(STORAGE_TYPE_KEY);
         if (existingDecision) {
             storageType = existingDecision;
@@ -44,12 +70,16 @@ window.StorageTypeService = (function() {
         
         // Detect storage type based on URL and lock it for the session
         if (wasInitiallySharedLink) {
+            // User accessed via shared link - use localStorage for persistence
+            // This allows returning to the conversation later
             storageType = STORAGE_TYPES.LOCAL;
             initialStorageType = STORAGE_TYPES.LOCAL; // Store original
             // Persist decision across page navigations
             sessionStorage.setItem(STORAGE_TYPE_KEY, STORAGE_TYPES.LOCAL);
             console.log('[StorageTypeService] Detected shared link - using localStorage (LOCKED)');
         } else {
+            // User accessed directly - use sessionStorage for maximum privacy
+            // All data will be cleared when the browser/tab is closed
             storageType = STORAGE_TYPES.SESSION;
             initialStorageType = STORAGE_TYPES.SESSION; // Store original
             // Persist decision across page navigations
@@ -71,6 +101,11 @@ window.StorageTypeService = (function() {
     
     /**
      * Get the current storage type
+     * 
+     * Returns the locked storage type decision for this browser session.
+     * This will always return the same value throughout the session,
+     * regardless of URL changes.
+     * 
      * @returns {string} The storage type ('localStorage' or 'sessionStorage')
      */
     function getStorageType() {
@@ -78,11 +113,16 @@ window.StorageTypeService = (function() {
             init();
         }
         // Always return the initial decision, not the current detection
+        // This ensures consistency throughout the browser session
         return initialStorageType || storageType;
     }
     
     /**
      * Get the appropriate storage object
+     * 
+     * Returns the actual storage object based on the locked storage type.
+     * This is used by CoreStorageService and other services to persist data.
+     * 
      * @returns {Storage} Either localStorage or sessionStorage
      */
     function getStorage() {
@@ -108,7 +148,14 @@ window.StorageTypeService = (function() {
     
     /**
      * Get namespace for shared links (based on hash of encrypted blob)
-     * @returns {string} Namespace derived from hash
+     * 
+     * For shared links, the namespace is derived from the encrypted data in the URL.
+     * This ensures that the same shared link always produces the same namespace,
+     * allowing users to return to their conversations.
+     * 
+     * The namespace is the first 8 characters of the SHA-256 hash of the encrypted blob.
+     * 
+     * @returns {string|null} Namespace derived from hash, or null if no shared link
      */
     function getSharedLinkNamespace() {
         if (!hasSharedLink()) {
@@ -135,7 +182,11 @@ window.StorageTypeService = (function() {
     
     /**
      * Get the default namespace for session storage
-     * @returns {string} Default hard-coded namespace
+     * 
+     * When using sessionStorage (direct visits), all data uses a fixed namespace.
+     * This provides simplicity since sessionStorage is already isolated per tab/session.
+     * 
+     * @returns {string} Default hard-coded namespace 'default_session'
      */
     function getDefaultNamespace() {
         return DEFAULT_NAMESPACE;
@@ -143,7 +194,12 @@ window.StorageTypeService = (function() {
     
     /**
      * Get the appropriate namespace based on storage type
-     * @returns {string} The namespace to use
+     * 
+     * This is the main function that determines which namespace to use:
+     * - localStorage: Dynamic namespace from shared link hash
+     * - sessionStorage: Fixed 'default_session' namespace
+     * 
+     * @returns {string} The namespace to use for the current storage type
      */
     function getNamespace() {
         if (isUsingLocalStorage()) {
