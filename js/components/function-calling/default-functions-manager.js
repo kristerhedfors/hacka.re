@@ -55,14 +55,8 @@ window.DefaultFunctionsManager = (function() {
             copyButton.style.marginLeft = 'auto'; // Push to the right
             copyButton.addEventListener('click', (e) => {
                 e.stopPropagation(); // Don't trigger expand/collapse
-                // Trigger the copy function directly
-                if (window.functionCopyManager && window.functionCopyManager.copyFunctionLibrary) {
-                    window.functionCopyManager.copyFunctionLibrary();
-                } else if (window.FunctionCopyManager) {
-                    // Get the manager instance and call copy function
-                    const copyManager = window.FunctionCopyManager.createFunctionCopyManager({}, addSystemMessage);
-                    copyManager.copyFunctionLibrary();
-                }
+                // Copy only enabled default functions
+                copyEnabledDefaultFunctions();
             });
             sectionHeader.appendChild(copyButton);
             
@@ -474,6 +468,58 @@ window.DefaultFunctionsManager = (function() {
         }
         
         /**
+         * Copy only enabled default functions to clipboard
+         */
+        function copyEnabledDefaultFunctions() {
+            try {
+                const defaultFunctionCollections = DefaultFunctionsService.getDefaultFunctionCollections();
+                const enabledDefaultFunctions = [];
+                
+                // Get all enabled default functions
+                defaultFunctionCollections.forEach(collection => {
+                    if (collection.functions) {
+                        collection.functions.forEach(func => {
+                            const functionId = `${collection.id}:${func.name}`;
+                            if (DefaultFunctionsService.isIndividualFunctionSelected(functionId)) {
+                                enabledDefaultFunctions.push(func.code);
+                            }
+                        });
+                    }
+                });
+                
+                if (enabledDefaultFunctions.length === 0) {
+                    if (addSystemMessage) {
+                        addSystemMessage('No enabled default functions to copy. Please enable some default functions first.');
+                    }
+                    return;
+                }
+                
+                // Join all function code with double newlines for separation
+                const allFunctionCode = enabledDefaultFunctions.join('\n\n');
+                
+                // Copy to clipboard
+                navigator.clipboard.writeText(allFunctionCode)
+                    .then(() => {
+                        const count = enabledDefaultFunctions.length;
+                        if (addSystemMessage) {
+                            addSystemMessage(`${count} enabled default function${count !== 1 ? 's' : ''} copied to clipboard.`);
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy default functions:', err);
+                        if (addSystemMessage) {
+                            addSystemMessage('Failed to copy default functions. Please try again.');
+                        }
+                    });
+            } catch (error) {
+                console.error('Error copying default functions:', error);
+                if (addSystemMessage) {
+                    addSystemMessage(`Error copying default functions: ${error.message}`);
+                }
+            }
+        }
+        
+        /**
          * Show function collection info popup
          * @param {Object} collection - The function collection object
          * @param {HTMLElement} infoIcon - The info icon element
@@ -536,7 +582,8 @@ window.DefaultFunctionsManager = (function() {
             updateCollectionCheckboxState,
             toggleAllFunctionsInCollectionBackend,
             updateDefaultCollectionCount,
-            updateDefaultFunctionsSectionCount
+            updateDefaultFunctionsSectionCount,
+            copyEnabledDefaultFunctions
         };
     }
 

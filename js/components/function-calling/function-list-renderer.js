@@ -162,9 +162,11 @@ window.FunctionListRenderer = (function() {
             collectionHeader.addEventListener('click', (e) => {
                 const deleteButton = collectionHeader.querySelector('.function-collection-delete');
                 const copyButton = collectionHeader.querySelector('.function-collection-copy');
+                const collectionCheckbox = collectionHeader.querySelector('.collection-master-checkbox');
                 if (e.target === deleteButton || e.target.closest('.function-collection-delete') ||
-                    e.target === copyButton || e.target.closest('.function-collection-copy')) {
-                    return; // Don't expand/collapse when clicking delete or copy buttons
+                    e.target === copyButton || e.target.closest('.function-collection-copy') ||
+                    e.target === collectionCheckbox || e.target.closest('.collection-master-checkbox')) {
+                    return; // Don't expand/collapse when clicking delete, copy buttons, or checkbox
                 }
                 isExpanded = !isExpanded;
                 expandIcon.className = isExpanded ? 'fas fa-chevron-down' : 'fas fa-chevron-right';
@@ -238,6 +240,11 @@ window.FunctionListRenderer = (function() {
                     // Update count display
                     updateUserCollectionCount(collection, callableFunctions);
                 }, 0);
+            });
+            
+            // Add separate click handler for checkbox to prevent expand/collapse
+            collectionCheckbox.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent triggering expand/collapse
             });
             
             collectionHeader.appendChild(collectionCheckbox);
