@@ -446,6 +446,11 @@ window.FunctionListRenderer = (function() {
             copyButton.title = 'Copy function code to clipboard';
             copyButton.style.fontSize = '12px';
             copyButton.style.padding = '4px 6px';
+            copyButton.style.background = 'none';
+            copyButton.style.border = 'none';
+            copyButton.style.color = 'var(--text-color-secondary)';
+            copyButton.style.cursor = 'pointer';
+            copyButton.style.borderRadius = '0';
             
             // Add click handler with proper event stopping
             copyButton.onclick = (e) => {
