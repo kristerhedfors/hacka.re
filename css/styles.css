@@ -1140,6 +1140,89 @@ main {
     margin-bottom: 1rem;
 }
 
+/* Debug Categories Dropdown Styling */
+.debug-categories-dropdown {
+    background-color: var(--bg-color-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    margin-left: 20px;
+    margin-top: 10px;
+    padding: 10px;
+    transition: all 0.3s ease;
+}
+
+.debug-dropdown-header {
+    margin-bottom: 10px;
+    font-weight: bold;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 5px;
+}
+
+.debug-category-item {
+    margin-bottom: 5px;
+    padding-left: 15px;
+}
+
+.debug-category-item label {
+    font-size: 0.9em;
+    cursor: pointer;
+    user-select: none;
+}
+
+.debug-category-item label:hover {
+    color: var(--primary-color);
+}
+
+/* Domain-specific debug message colors */
+.debug-crypto {
+    border-left: 3px solid #f39c12; /* Orange for crypto operations */
+}
+
+.debug-storage {
+    border-left: 3px solid #3498db; /* Blue for storage operations */
+}
+
+.debug-shared-links {
+    border-left: 3px solid #9b59b6; /* Purple for shared links */
+}
+
+.debug-functions {
+    border-left: 3px solid #e74c3c; /* Red for function calling */
+}
+
+.debug-mcp-events {
+    border-left: 3px solid #2ecc71; /* Green for MCP events */
+}
+
+.debug-api {
+    border-left: 3px solid #1abc9c; /* Teal for API calls */
+}
+
+/* Debug message content styling */
+.debug-crypto .message-content {
+    background-color: rgba(243, 156, 18, 0.1);
+}
+
+.debug-storage .message-content {
+    background-color: rgba(52, 152, 219, 0.1);
+}
+
+.debug-shared-links .message-content {
+    background-color: rgba(155, 89, 182, 0.1);
+}
+
+.debug-functions .message-content {
+    background-color: rgba(231, 76, 60, 0.1);
+}
+
+.debug-mcp-events .message-content {
+    background-color: rgba(46, 204, 113, 0.1);
+}
+
+.debug-api .message-content {
+    background-color: rgba(26, 188, 156, 0.1);
+}
+
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }

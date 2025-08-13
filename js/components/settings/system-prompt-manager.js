@@ -42,8 +42,14 @@ window.SystemPromptManager = (function() {
                 });
             }
             
-            // Add debug mode checkbox after system prompt section
-            addDebugModeCheckbox();
+            // Initialize debug manager with hierarchical controls
+            if (window.DebugManager) {
+                const debugManager = DebugManager.createDebugManager(elements);
+                debugManager.init();
+            } else {
+                // Fallback to simple debug checkbox if DebugManager is not available
+                addDebugModeCheckbox();
+            }
         }
         
         /**

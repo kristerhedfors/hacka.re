@@ -12,6 +12,11 @@ window.DataService = (function() {
      */
     function saveApiKey(apiKey) {
         CoreStorageService.setValue(STORAGE_KEYS.API_KEY, apiKey);
+        
+        // Debug message for storage operations
+        if (DebugService && DebugService.debugLog) {
+            DebugService.debugLog('storage', `API key saved to namespace: ${NamespaceService.getNamespace()}`);
+        }
     }
 
     /**
@@ -57,6 +62,11 @@ window.DataService = (function() {
      */
     function saveChatHistory(messages) {
         CoreStorageService.setValue(STORAGE_KEYS.HISTORY, messages);
+        
+        // Debug message for storage operations
+        if (DebugService && DebugService.debugLog) {
+            DebugService.debugLog('storage', `💬 Chat history saved: ${messages.length} messages in namespace: ${NamespaceService.getNamespace()}`);
+        }
     }
 
     /**
@@ -278,6 +288,26 @@ window.DataService = (function() {
         ) || false;
     }
     
+    /**
+     * Save debug categories state to local storage
+     * @param {Object} categories - The debug categories object with enabled states
+     */
+    function saveDebugCategories(categories) {
+        CoreStorageService.setValue(STORAGE_KEYS.DEBUG_CATEGORIES, categories);
+    }
+    
+    /**
+     * Get debug categories state from local storage
+     * @returns {Object|null} The stored debug categories or null if not found
+     */
+    function getDebugCategories() {
+        return CoreStorageService.getValue(
+            STORAGE_KEYS.DEBUG_CATEGORIES, 
+            STORAGE_KEYS.DEBUG_CATEGORIES, 
+            saveDebugCategories
+        );
+    }
+    
     // Public API
     return {
         saveApiKey: saveApiKey,
@@ -301,6 +331,8 @@ window.DataService = (function() {
         saveSubtitle: saveSubtitle,
         getSubtitle: getSubtitle,
         saveDebugMode: saveDebugMode,
-        getDebugMode: getDebugMode
+        getDebugMode: getDebugMode,
+        saveDebugCategories: saveDebugCategories,
+        getDebugCategories: getDebugCategories
     };
 })();

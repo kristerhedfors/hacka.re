@@ -37,6 +37,7 @@ window.NamespaceService = (function() {
         TITLE: 'hackare_title',
         SUBTITLE: 'hackare_subtitle',
         DEBUG_MODE: 'debug_mode',
+        DEBUG_CATEGORIES: 'debug_categories',
         THEME_MODE: 'theme_mode',
         SAVED_AGENTS: 'saved_agents',
         AGENT_METADATA: 'agent_metadata',

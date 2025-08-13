@@ -107,6 +107,16 @@ window.ChatUIService = (function() {
                     messageElement.classList.add(...className.split(' '));
                 }
                 
+                // Add data attributes for debug messages to enable efficient removal
+                if (className && className.includes('debug-')) {
+                    messageElement.setAttribute('data-debug-message', 'true');
+                    // Extract debug category from className (e.g., 'debug-crypto' -> 'crypto')
+                    const debugCategory = className.match(/debug-([a-zA-Z-]+)/);
+                    if (debugCategory && debugCategory[1]) {
+                        messageElement.setAttribute('data-debug-category', debugCategory[1]);
+                    }
+                }
+                
                 elements.chatMessages.appendChild(messageElement);
                 UIUtils.scrollToBottom(elements.chatMessages);
                 return messageElement;
@@ -181,6 +191,23 @@ window.ChatUIService = (function() {
              */
             clearChat() {
                 elements.chatMessages.innerHTML = '';
+            },
+            
+            /**
+             * Remove all debug messages from chat UI
+             */
+            removeAllDebugMessages() {
+                const debugMessages = elements.chatMessages.querySelectorAll('[data-debug-message="true"]');
+                debugMessages.forEach(msg => msg.remove());
+            },
+            
+            /**
+             * Remove debug messages from a specific category
+             * @param {string} category - Category to remove messages from
+             */
+            removeCategoryDebugMessages(category) {
+                const categoryMessages = elements.chatMessages.querySelectorAll(`[data-debug-category="${category}"]`);
+                categoryMessages.forEach(msg => msg.remove());
             }
         };
     }
