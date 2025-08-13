@@ -40,6 +40,8 @@ window.StorageService = (function() {
         saveSubtitle: DataService.saveSubtitle,
         getSubtitle: DataService.getSubtitle,
         saveDebugMode: DataService.saveDebugMode,
-        getDebugMode: DataService.getDebugMode
+        getDebugMode: DataService.getDebugMode,
+        saveDebugCategories: DataService.saveDebugCategories,
+        getDebugCategories: DataService.getDebugCategories
     };
 })();
