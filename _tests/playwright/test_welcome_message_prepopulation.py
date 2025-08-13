@@ -64,8 +64,8 @@ def test_welcome_message_prepopulation(page, serve_hacka_re):
         page.click('#generate-share-link-btn')
         
         # Wait for link to be generated
-        page.wait_for_selector('#generated-share-link')
-        shared_link = page.input_value('#generated-share-link')
+        page.wait_for_selector('#generated-link')
+        shared_link = page.input_value('#generated-link')
         
         print(f"✅ Created shared link with welcome message")
         print(f"   Session key: {session_key}")
@@ -87,8 +87,8 @@ def test_welcome_message_prepopulation(page, serve_hacka_re):
             page.wait_for_selector('.modal:not(.active)', timeout=5000)
         
         # Wait for welcome message to appear
-        page.wait_for_selector('.message.system.welcome-message', timeout=10000)
-        welcome_displayed = page.text_content('.message.system.welcome-message')
+        page.wait_for_selector('.message.welcome-message', timeout=10000)
+        welcome_displayed = page.text_content('.message.welcome-message')
         print(f"✅ Welcome message displayed: {welcome_displayed[:80]}...")
         
         # Phase 3: Open share modal and verify pre-population
@@ -136,15 +136,17 @@ def test_welcome_message_prepopulation(page, serve_hacka_re):
         
         # Generate a new share link
         page.click('#generate-share-link-btn')
-        page.wait_for_selector('#generated-share-link')
-        new_shared_link = page.input_value('#generated-share-link')
+        page.wait_for_selector('#generated-link')
+        new_shared_link = page.input_value('#generated-link')
         
         print(f"✅ Generated new share link: {new_shared_link[:80]}...")
         print("✅ Test completed successfully - welcome message pre-population works!")
         
     except Exception as e:
-        screenshot_with_markdown(page, "welcome_prepopulation_error", 
-                                f"Error during welcome message pre-population test: {str(e)}")
+        screenshot_with_markdown(page, "welcome_prepopulation_error", {
+            "Error": str(e),
+            "Phase": "Welcome message pre-population test"
+        })
         raise e
     finally:
         pass  # Page cleanup handled by fixture

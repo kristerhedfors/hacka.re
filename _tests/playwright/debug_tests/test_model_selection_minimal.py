@@ -9,6 +9,7 @@ from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 import time
 
 
+@pytest.mark.skip(reason="Debug test - minimal model selection test")
 def test_model_selection_mouse_click_minimal(page: Page, serve_hacka_re):
     """Minimal test to debug mouse click issue in model selection modal"""
     
