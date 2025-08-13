@@ -163,6 +163,35 @@ window.DebugService = (function() {
     }
     
     /**
+     * Get source location from stack trace
+     * @returns {Object} Source location info
+     */
+    function getSourceLocation() {
+        const error = new Error();
+        const stack = error.stack || '';
+        const lines = stack.split('\n');
+        
+        // Find the first line that's not from debug-service.js
+        for (let i = 2; i < lines.length; i++) {
+            const line = lines[i];
+            if (!line.includes('debug-service.js') && !line.includes('debugLog')) {
+                // Extract file and line number from stack trace
+                // Format varies by browser, but typically includes "file:line:column"
+                const match = line.match(/([^\/\s]+\.js):(\d+):(\d+)/);
+                if (match) {
+                    return {
+                        file: match[1],
+                        line: parseInt(match[2]),
+                        column: parseInt(match[3]),
+                        fullPath: line.match(/(https?:\/\/[^:]+\.js:\d+:\d+)/)?.[1] || ''
+                    };
+                }
+            }
+        }
+        return null;
+    }
+    
+    /**
      * Log a debug message for a specific domain
      * @param {string} domain - Debug domain (crypto, storage, etc.)
      * @param {string} message - The message to log
@@ -175,6 +204,9 @@ window.DebugService = (function() {
         const symbol = category ? category.symbol : '🔍';
         const formattedMessage = `${symbol} [${domain.toUpperCase()}] ${message}`;
         
+        // Get source location
+        const sourceLocation = getSourceLocation();
+        
         // Console log
         if (data !== undefined) {
             console.log(formattedMessage, data);
@@ -182,10 +214,18 @@ window.DebugService = (function() {
             console.log(formattedMessage);
         }
         
-        // Add to chat if available
+        // Add to chat if available with source location data
         if (window.aiHackare && window.aiHackare.chatManager) {
             const className = `debug-message debug-${domain}`;
-            window.aiHackare.chatManager.addSystemMessage(formattedMessage, className);
+            const messageElement = window.aiHackare.chatManager.addSystemMessage(formattedMessage, className);
+            
+            // Add source location as data attributes if available
+            if (messageElement && sourceLocation) {
+                messageElement.setAttribute('data-source-file', sourceLocation.file);
+                messageElement.setAttribute('data-source-line', sourceLocation.line);
+                messageElement.setAttribute('data-source-column', sourceLocation.column);
+                messageElement.setAttribute('data-source-path', sourceLocation.fullPath);
+            }
         }
     }
     

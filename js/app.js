@@ -148,6 +148,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         DebugService.log('Debug service initialized');
     }
     
+    // Initialize debug code tooltip
+    if (window.DebugCodeTooltip) {
+        DebugCodeTooltip.init();
+    }
+    
     // Initialize the chat application
     const aiHackare = new AIHackareComponent.AIHackare();
     aiHackare.init();

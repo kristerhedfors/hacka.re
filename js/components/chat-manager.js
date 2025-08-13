@@ -329,10 +329,11 @@ function cleanupGeneration(updateContextUsage, currentModel) {
          * Add a system message to the chat
          * @param {string} content - Message content
          * @param {string} className - Optional CSS class to add to the message
+         * @returns {HTMLElement} The created message element
          */
         function addSystemMessage(content, className) {
-            // Delegate to UI handler
-            uiHandler.addSystemMessageToUI(content, className);
+            // Delegate to UI handler and return the element
+            return uiHandler.addSystemMessageToUI(content, className);
         }
         
         /**
