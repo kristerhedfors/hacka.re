@@ -161,8 +161,10 @@ window.FunctionListRenderer = (function() {
             // Add click event to expand/collapse
             collectionHeader.addEventListener('click', (e) => {
                 const deleteButton = collectionHeader.querySelector('.function-collection-delete');
-                if (e.target === deleteButton || e.target.closest('.function-collection-delete')) {
-                    return; // Don't expand/collapse when clicking delete
+                const copyButton = collectionHeader.querySelector('.function-collection-copy');
+                if (e.target === deleteButton || e.target.closest('.function-collection-delete') ||
+                    e.target === copyButton || e.target.closest('.function-collection-copy')) {
+                    return; // Don't expand/collapse when clicking delete or copy buttons
                 }
                 isExpanded = !isExpanded;
                 expandIcon.className = isExpanded ? 'fas fa-chevron-down' : 'fas fa-chevron-right';
@@ -225,7 +227,6 @@ window.FunctionListRenderer = (function() {
             deleteCollectionButton.className = 'function-collection-delete';
             deleteCollectionButton.innerHTML = '<i class="fas fa-trash"></i>';
             deleteCollectionButton.title = 'Delete entire collection';
-            deleteCollectionButton.style.marginLeft = 'auto';
             
             // Add click handler with proper event stopping
             deleteCollectionButton.onclick = (e) => {
@@ -251,6 +252,54 @@ window.FunctionListRenderer = (function() {
             };
             
             collectionHeader.appendChild(deleteCollectionButton);
+            
+            // Add copy button for the collection (after delete button to appear at far right)
+            const copyCollectionButton = document.createElement('button');
+            copyCollectionButton.className = 'function-collection-copy';
+            copyCollectionButton.innerHTML = '<i class="fas fa-copy"></i>';
+            copyCollectionButton.title = 'Copy functions in this collection to clipboard';
+            
+            // Add click handler with proper event stopping
+            copyCollectionButton.onclick = (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                
+                // Get all functions in this collection
+                const functionCodes = [];
+                const allFunctions = FunctionToolsService.getJsFunctions();
+                callableFunctions.forEach(funcName => {
+                    const functionSpec = allFunctions[funcName];
+                    if (functionSpec && functionSpec.code) {
+                        functionCodes.push(functionSpec.code);
+                    }
+                });
+                
+                if (functionCodes.length === 0) {
+                    if (addSystemMessage) {
+                        addSystemMessage('No functions to copy in this collection.');
+                    }
+                    return;
+                }
+                
+                // Join all function code with double newlines for separation
+                const allFunctionCode = functionCodes.join('\n\n');
+                
+                // Copy to clipboard
+                navigator.clipboard.writeText(allFunctionCode)
+                    .then(() => {
+                        if (addSystemMessage) {
+                            addSystemMessage(`${functionCodes.length} functions from "${collection.metadata.name}" copied to clipboard.`);
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy collection functions:', err);
+                        if (addSystemMessage) {
+                            addSystemMessage('Failed to copy functions. Please try again.');
+                        }
+                    });
+            };
+            
+            collectionHeader.appendChild(copyCollectionButton);
             
             return collectionHeader;
         }

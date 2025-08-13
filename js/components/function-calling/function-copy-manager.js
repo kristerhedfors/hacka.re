@@ -62,69 +62,102 @@ window.FunctionCopyManager = (function() {
         }
         
         /**
-         * Copy tool definition to clipboard
+         * Copy all enabled tool definitions to clipboard
          */
         function copyToolDefinition() {
-            if (!elements.functionToolDefinition) return;
-            
-            const toolDefinition = elements.functionToolDefinition.textContent.trim();
-            if (!toolDefinition || !elements.functionToolDefinition.classList.contains('active')) {
-                if (addSystemMessage) {
-                    addSystemMessage('No tool definition to copy. Please validate the function first.');
-                }
-                return;
-            }
-            
-            // Copy to clipboard
-            navigator.clipboard.writeText(toolDefinition)
-                .then(() => {
-                    if (addSystemMessage) {
-                        addSystemMessage('Tool definition copied to clipboard.');
-                    }
-                })
-                .catch(err => {
-                    console.error('Failed to copy tool definition:', err);
-                    if (addSystemMessage) {
-                        addSystemMessage('Failed to copy tool definition. Please try again.');
-                    }
-                });
-        }
-        
-        /**
-         * Copy entire function library as JSON to clipboard
-         */
-        function copyFunctionLibrary() {
-            // Get all functions
-            const functions = FunctionToolsService.getJsFunctions();
-            
-            if (!functions || Object.keys(functions).length === 0) {
-                if (addSystemMessage) {
-                    addSystemMessage('No functions in library to copy.');
-                }
-                return;
-            }
-            
             try {
-                // Create a JSON representation of the functions library
-                const functionsLibrary = {};
+                // Get enabled user-defined function tool definitions
+                const enabledUserToolDefs = FunctionToolsService ? FunctionToolsService.getEnabledToolDefinitions() : [];
                 
-                // For each function, include its code and tool definition
-                Object.keys(functions).forEach(name => {
-                    functionsLibrary[name] = {
-                        code: functions[name].code,
-                        toolDefinition: functions[name].toolDefinition,
-                        enabled: FunctionToolsService.isJsFunctionEnabled(name)
-                    };
-                });
+                // Get enabled default function tool definitions
+                const enabledDefaultToolDefs = window.DefaultFunctionsService ? window.DefaultFunctionsService.getEnabledDefaultFunctionToolDefinitions() : [];
+                
+                // Combine both arrays
+                const allEnabledToolDefinitions = [...enabledUserToolDefs, ...enabledDefaultToolDefs];
+                
+                if (allEnabledToolDefinitions.length === 0) {
+                    if (addSystemMessage) {
+                        addSystemMessage('No enabled functions to copy tool definitions for. Please enable some functions first.');
+                    }
+                    return;
+                }
                 
                 // Convert to JSON string with pretty formatting
-                const jsonString = JSON.stringify(functionsLibrary, null, 2);
+                const jsonString = JSON.stringify(allEnabledToolDefinitions, null, 2);
                 
                 // Copy to clipboard
                 navigator.clipboard.writeText(jsonString)
                     .then(() => {
+                        const count = allEnabledToolDefinitions.length;
                         if (addSystemMessage) {
-                            addSystemMessage('Function library copied to clipboard as JSON.');
+                            addSystemMessage(`${count} tool definitions copied to clipboard as JSON.`);
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy tool definitions:', err);
+                        if (addSystemMessage) {
+                            addSystemMessage('Failed to copy tool definitions. Please try again.');
+                        }
+                    });
+            } catch (error) {
+                console.error('Error serializing tool definitions:', error);
+                if (addSystemMessage) {
+                    addSystemMessage(`Error copying tool definitions: ${error.message}`);
+                }
+            }
+        }
+        
+        /**
+         * Copy enabled function library as plain JavaScript functions to clipboard
+         */
+        function copyFunctionLibrary() {
+            try {
+                // Get enabled user-defined functions
+                const enabledUserFunctions = FunctionToolsService ? FunctionToolsService.getEnabledJsFunctions() : {};
+                
+                // Get enabled default functions
+                const enabledDefaultFunctions = window.DefaultFunctionsService ? window.DefaultFunctionsService.getEnabledDefaultFunctions() : {};
+                
+                // Create array to maintain order - default functions first (in library order), then user-defined
+                const functionCodes = [];
+                
+                // Add enabled default functions first, in the order they appear in the default function collections
+                if (window.DefaultFunctionsService) {
+                    const defaultCollections = window.DefaultFunctionsService.getDefaultFunctionCollections();
+                    
+                    defaultCollections.forEach(collection => {
+                        if (collection.functions) {
+                            collection.functions.forEach(func => {
+                                // Check if this function is enabled
+                                if (enabledDefaultFunctions[func.name]) {
+                                    functionCodes.push(func.code);
+                                }
+                            });
+                        }
+                    });
+                }
+                
+                // Add enabled user-defined functions after default functions
+                Object.keys(enabledUserFunctions).forEach(name => {
+                    functionCodes.push(enabledUserFunctions[name].code);
+                });
+                
+                if (functionCodes.length === 0) {
+                    if (addSystemMessage) {
+                        addSystemMessage('No enabled functions to copy. Please enable some functions first.');
+                    }
+                    return;
+                }
+                
+                // Join all function code with double newlines for separation
+                const allFunctionCode = functionCodes.join('\n\n');
+                
+                // Copy to clipboard
+                navigator.clipboard.writeText(allFunctionCode)
+                    .then(() => {
+                        const count = functionCodes.length;
+                        if (addSystemMessage) {
+                            addSystemMessage(`${count} enabled JavaScript functions copied to clipboard.`);
                         }
                     })
                     .catch(err => {
@@ -134,7 +167,7 @@ window.FunctionCopyManager = (function() {
                         }
                     });
             } catch (error) {
-                console.error('Error serializing function library:', error);
+                console.error('Error copying function library:', error);
                 if (addSystemMessage) {
                     addSystemMessage(`Error copying function library: ${error.message}`);
                 }
