@@ -434,14 +434,10 @@
                                 <input type="text" id="function-name" class="function-name-input" placeholder="Enter a name for this function">
                             </div>
                             <div class="form-group">
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <label for="function-code">JavaScript Functions</label>
-                                    <button type="button" id="copy-function-code-btn" class="icon-btn" title="Copy function code">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
-                                </div>
+                                <label for="function-code">JavaScript Functions</label>
                                 <p class="form-help">Define multiple functions in one editor. By default, all functions are callable. If any function is tagged with <code>@callable</code> or <code>@tool</code> (at the beginning of a line or in JSDoc), then only tagged functions will be callable.</p>
-                                <textarea id="function-code" class="function-code-editor" placeholder="/**
+                                <div style="position: relative;">
+                                    <textarea id="function-code" class="function-code-editor" placeholder="/**
  * Helper function that formats data (not exposed to LLM)
  * @param {Object} data - The data to format
  * @returns {string} Formatted data
@@ -471,6 +467,10 @@ async function getCurrentTimeInBerlin() {
     return { error: error.message };
   }
 }" required tabindex="2" style="height: 300px;"></textarea>
+                                    <button type="button" id="copy-function-code-btn" class="icon-btn" title="Copy function code" style="position: absolute; top: 8px; right: 8px; font-size: 12px; padding: 4px 6px; z-index: 10;">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
                                 <div id="function-validation-result" class="function-validation-result">
                                     Validation result will appear here
                                 </div>
