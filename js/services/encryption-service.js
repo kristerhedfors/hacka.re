@@ -14,8 +14,8 @@ window.EncryptionService = (function() {
     function encrypt(data, passphrase) {
         try {
             // Debug message for crypto operations
-            if (DebugService && DebugService.debugLog) {
-                DebugService.debugLog('crypto', `🔐 Encrypting data (${typeof data}, ${data?.length || 'unknown'} chars)`);
+            if (window.DebugService && window.DebugService.debugLog) {
+                window.DebugService.debugLog('crypto', `🔐 Encrypting data (${typeof data}, ${data?.length || 'unknown'} chars)`);
             }
             
             return CryptoUtils.encryptData(data, passphrase);

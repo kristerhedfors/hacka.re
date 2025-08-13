@@ -1223,6 +1223,139 @@ main {
     background-color: rgba(26, 188, 156, 0.1);
 }
 
+/* Debug messages hover effect */
+.debug-message {
+    cursor: help;
+    transition: background-color 0.2s ease;
+}
+
+.debug-message:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Debug Code Tooltip Styling */
+.debug-code-tooltip {
+    position: fixed;
+    z-index: 10000;
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    max-width: 600px;
+    min-width: 400px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+}
+
+.debug-code-tooltip.visible {
+    opacity: 1;
+}
+
+.debug-code-header {
+    padding: 8px 12px;
+    background: var(--bg-color-secondary);
+    border-bottom: 1px solid var(--border-color);
+    border-radius: 8px 8px 0 0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+}
+
+.debug-code-file {
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.debug-code-location {
+    color: var(--text-color-secondary);
+    margin-left: 4px;
+}
+
+.debug-code-content {
+    padding: 12px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.debug-code-pre {
+    margin: 0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85em;
+    line-height: 1.4;
+    background: var(--bg-color-secondary);
+    padding: 8px;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+.debug-code-line {
+    display: flex;
+    padding: 2px 0;
+    transition: background-color 0.2s ease;
+}
+
+.debug-code-line:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.debug-code-line.highlight {
+    background-color: rgba(255, 235, 59, 0.3);
+    font-weight: bold;
+}
+
+.line-number {
+    color: var(--text-color-secondary);
+    margin-right: 12px;
+    user-select: none;
+    opacity: 0.6;
+    font-size: 0.9em;
+}
+
+.line-content {
+    flex: 1;
+    white-space: pre;
+}
+
+.debug-code-fallback {
+    padding: 12px;
+    text-align: center;
+    color: var(--text-color-secondary);
+}
+
+.debug-code-hint {
+    font-size: 0.9em;
+    font-style: italic;
+    margin-top: 8px;
+}
+
+/* Syntax highlighting colors (when marked.js is used) */
+.debug-code-tooltip .hljs-keyword {
+    color: #d73a49;
+}
+
+.debug-code-tooltip .hljs-string {
+    color: #032f62;
+}
+
+.debug-code-tooltip .hljs-comment {
+    color: #6a737d;
+    font-style: italic;
+}
+
+.debug-code-tooltip .hljs-function {
+    color: #6f42c1;
+}
+
+.debug-code-tooltip .hljs-number {
+    color: #005cc5;
+}
+
+.debug-code-tooltip .hljs-variable {
+    color: #e36209;
+}
+
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }

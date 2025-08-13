@@ -14,8 +14,8 @@ window.DataService = (function() {
         CoreStorageService.setValue(STORAGE_KEYS.API_KEY, apiKey);
         
         // Debug message for storage operations
-        if (DebugService && DebugService.debugLog) {
-            DebugService.debugLog('storage', `API key saved to namespace: ${NamespaceService.getNamespace()}`);
+        if (window.DebugService && window.DebugService.debugLog) {
+            window.DebugService.debugLog('storage', `API key saved to namespace: ${NamespaceService.getNamespace()}`);
         }
     }
 
@@ -64,8 +64,8 @@ window.DataService = (function() {
         CoreStorageService.setValue(STORAGE_KEYS.HISTORY, messages);
         
         // Debug message for storage operations
-        if (DebugService && DebugService.debugLog) {
-            DebugService.debugLog('storage', `💬 Chat history saved: ${messages.length} messages in namespace: ${NamespaceService.getNamespace()}`);
+        if (window.DebugService && window.DebugService.debugLog) {
+            window.DebugService.debugLog('storage', `💬 Chat history saved: ${messages.length} messages in namespace: ${NamespaceService.getNamespace()}`);
         }
     }
 
