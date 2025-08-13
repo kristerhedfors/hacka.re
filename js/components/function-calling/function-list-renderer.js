@@ -161,8 +161,12 @@ window.FunctionListRenderer = (function() {
             // Add click event to expand/collapse
             collectionHeader.addEventListener('click', (e) => {
                 const deleteButton = collectionHeader.querySelector('.function-collection-delete');
-                if (e.target === deleteButton || e.target.closest('.function-collection-delete')) {
-                    return; // Don't expand/collapse when clicking delete
+                const copyButton = collectionHeader.querySelector('.function-collection-copy');
+                const collectionCheckbox = collectionHeader.querySelector('.collection-master-checkbox');
+                if (e.target === deleteButton || e.target.closest('.function-collection-delete') ||
+                    e.target === copyButton || e.target.closest('.function-collection-copy') ||
+                    e.target === collectionCheckbox || e.target.closest('.collection-master-checkbox')) {
+                    return; // Don't expand/collapse when clicking delete, copy buttons, or checkbox
                 }
                 isExpanded = !isExpanded;
                 expandIcon.className = isExpanded ? 'fas fa-chevron-down' : 'fas fa-chevron-right';
@@ -191,6 +195,60 @@ window.FunctionListRenderer = (function() {
             expandIcon.className = 'fas fa-chevron-right';
             collectionHeader.appendChild(expandIcon);
             
+            // Add collection checkbox for enabling/disabling all functions in collection
+            const collectionCheckbox = document.createElement('input');
+            collectionCheckbox.type = 'checkbox';
+            collectionCheckbox.className = 'collection-master-checkbox';
+            collectionCheckbox.id = `user-collection-checkbox-${collection.id}`;
+            collectionCheckbox.title = 'Check/uncheck all functions in this collection';
+            collectionCheckbox.style.marginLeft = '10px';
+            
+            // Set initial state based on how many functions are enabled
+            updateUserCollectionCheckboxState(collectionCheckbox, collection, callableFunctions);
+            
+            // Add event listener for collection checkbox
+            collectionCheckbox.addEventListener('change', function(e) {
+                e.stopPropagation();
+                
+                const isChecked = this.checked;
+                
+                // Update individual checkboxes immediately for responsive UI
+                const collectionContainer = document.querySelector(`[data-collection-id="${collection.id}"]`);
+                if (collectionContainer) {
+                    const individualCheckboxes = collectionContainer.querySelectorAll('.function-item-checkbox');
+                    individualCheckboxes.forEach(checkbox => {
+                        checkbox.checked = isChecked;
+                    });
+                }
+                
+                // Add system message immediately
+                if (addSystemMessage) {
+                    const actionText = isChecked ? 'enabled' : 'disabled';
+                    addSystemMessage(`All functions in "${collection.metadata.name}" ${actionText}.`);
+                }
+                
+                // Update backend state for all functions in collection
+                setTimeout(() => {
+                    callableFunctions.forEach(funcName => {
+                        if (isChecked) {
+                            FunctionToolsService.enableJsFunction(funcName);
+                        } else {
+                            FunctionToolsService.disableJsFunction(funcName);
+                        }
+                    });
+                    
+                    // Update count display
+                    updateUserCollectionCount(collection, callableFunctions);
+                }, 0);
+            });
+            
+            // Add separate click handler for checkbox to prevent expand/collapse
+            collectionCheckbox.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent triggering expand/collapse
+            });
+            
+            collectionHeader.appendChild(collectionCheckbox);
+            
             // Add collection name
             const collectionName = document.createElement('h4');
             collectionName.textContent = collection.metadata.name || 'Untitled Collection';
@@ -199,13 +257,15 @@ window.FunctionListRenderer = (function() {
             collectionName.style.fontWeight = '700';
             collectionHeader.appendChild(collectionName);
             
-            // Add function count
+            // Add function count with enabled/total format
             const functionCount = document.createElement('span');
             functionCount.className = 'function-collection-count';
-            functionCount.textContent = `(${callableFunctions.length} function${callableFunctions.length !== 1 ? 's' : ''})`;
+            functionCount.id = `user-collection-count-${collection.id}`;
             functionCount.style.marginLeft = '10px';
             functionCount.style.color = 'var(--text-color-secondary)';
             functionCount.style.fontSize = '14px';
+            functionCount.style.display = 'none'; // Initially hidden
+            updateUserCollectionCount(collection, callableFunctions);
             collectionHeader.appendChild(functionCount);
             
             // Add source info if MCP
@@ -225,7 +285,6 @@ window.FunctionListRenderer = (function() {
             deleteCollectionButton.className = 'function-collection-delete';
             deleteCollectionButton.innerHTML = '<i class="fas fa-trash"></i>';
             deleteCollectionButton.title = 'Delete entire collection';
-            deleteCollectionButton.style.marginLeft = 'auto';
             
             // Add click handler with proper event stopping
             deleteCollectionButton.onclick = (e) => {
@@ -251,6 +310,61 @@ window.FunctionListRenderer = (function() {
             };
             
             collectionHeader.appendChild(deleteCollectionButton);
+            
+            // Add copy button for the collection (after delete button to appear at far right)
+            const copyCollectionButton = document.createElement('button');
+            copyCollectionButton.className = 'function-collection-copy';
+            copyCollectionButton.innerHTML = '<i class="fas fa-copy"></i>';
+            copyCollectionButton.title = 'Copy functions in this collection to clipboard';
+            copyCollectionButton.style.fontSize = '12px';
+            copyCollectionButton.style.padding = '4px 6px';
+            copyCollectionButton.style.background = 'none';
+            copyCollectionButton.style.border = 'none';
+            copyCollectionButton.style.color = 'var(--text-color-secondary)';
+            copyCollectionButton.style.cursor = 'pointer';
+            copyCollectionButton.style.borderRadius = '0';
+            
+            // Add click handler with proper event stopping
+            copyCollectionButton.onclick = (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                
+                // Get all functions in this collection
+                const functionCodes = [];
+                const allFunctions = FunctionToolsService.getJsFunctions();
+                callableFunctions.forEach(funcName => {
+                    const functionSpec = allFunctions[funcName];
+                    if (functionSpec && functionSpec.code) {
+                        functionCodes.push(functionSpec.code);
+                    }
+                });
+                
+                if (functionCodes.length === 0) {
+                    if (addSystemMessage) {
+                        addSystemMessage('No functions to copy in this collection.');
+                    }
+                    return;
+                }
+                
+                // Join all function code with double newlines for separation
+                const allFunctionCode = functionCodes.join('\n\n');
+                
+                // Copy to clipboard
+                navigator.clipboard.writeText(allFunctionCode)
+                    .then(() => {
+                        if (addSystemMessage) {
+                            addSystemMessage(`${functionCodes.length} functions from "${collection.metadata.name}" copied to clipboard.`);
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy collection functions:', err);
+                        if (addSystemMessage) {
+                            addSystemMessage('Failed to copy functions. Please try again.');
+                        }
+                    });
+            };
+            
+            collectionHeader.appendChild(copyCollectionButton);
             
             return collectionHeader;
         }
@@ -288,6 +402,16 @@ window.FunctionListRenderer = (function() {
                     FunctionToolsService.disableJsFunction(funcName);
                 }
                 
+                // Update the collection checkbox state
+                const collectionCheckbox = document.getElementById(`user-collection-checkbox-${collection.id}`);
+                if (collectionCheckbox) {
+                    const allFunctions = collection.functions || [];
+                    updateUserCollectionCheckboxState(collectionCheckbox, collection, allFunctions);
+                }
+                
+                // Update the collection count display
+                updateUserCollectionCount(collection, collection.functions || []);
+                
                 if (addSystemMessage) {
                     const status = checkbox.checked ? 'enabled' : 'disabled';
                     addSystemMessage(`Function "${funcName}" ${status} for tool calling.`);
@@ -322,41 +446,117 @@ window.FunctionListRenderer = (function() {
                 }
             });
             
-            // Create delete button for individual function (deletes entire collection)
-            const deleteButton = document.createElement('button');
-            deleteButton.className = 'function-item-delete';
-            deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
-            deleteButton.title = 'Delete entire collection';
+            // Create copy button for individual function
+            const copyButton = document.createElement('button');
+            copyButton.className = 'function-item-copy';
+            copyButton.innerHTML = '<i class="fas fa-copy"></i>';
+            copyButton.title = 'Copy function code to clipboard';
+            copyButton.style.fontSize = '12px';
+            copyButton.style.padding = '4px 6px';
+            copyButton.style.background = 'none';
+            copyButton.style.border = 'none';
+            copyButton.style.color = 'var(--text-color-secondary)';
+            copyButton.style.cursor = 'pointer';
+            copyButton.style.borderRadius = '0';
             
             // Add click handler with proper event stopping
-            deleteButton.onclick = (e) => {
+            copyButton.onclick = (e) => {
                 e.stopPropagation();
                 e.preventDefault();
                 
-                const collectionMetadata = FunctionToolsService.getCollectionMetadata(collection.id);
-                const collectionName = collectionMetadata ? collectionMetadata.name : 'Untitled Collection';
-                const confirmMessage = `Are you sure you want to delete the entire "${collectionName}" collection?`;
-                
-                // Use setTimeout to prevent multiple dialogs
-                setTimeout(() => {
-                    if (confirm(confirmMessage)) {
-                        FunctionToolsService.removeJsFunction(funcName);
-                        renderMainFunctionList();
-                        
-                        if (addSystemMessage) {
-                            addSystemMessage(`Function collection "${collectionName}" removed.`);
-                        }
+                if (functionSpec && functionSpec.code) {
+                    // Copy function code to clipboard
+                    navigator.clipboard.writeText(functionSpec.code)
+                        .then(() => {
+                            if (addSystemMessage) {
+                                addSystemMessage(`Function "${funcName}" code copied to clipboard.`);
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Failed to copy function code:', err);
+                            if (addSystemMessage) {
+                                addSystemMessage('Failed to copy function code. Please try again.');
+                            }
+                        });
+                } else {
+                    if (addSystemMessage) {
+                        addSystemMessage('No function code available to copy.');
                     }
-                }, 0);
+                }
             };
             
             // Assemble function item
             functionItem.appendChild(checkbox);
             contentContainer.insertBefore(nameElement, contentContainer.firstChild);
             functionItem.appendChild(contentContainer);
-            functionItem.appendChild(deleteButton);
+            functionItem.appendChild(copyButton);
             
             return functionItem;
+        }
+        
+        /**
+         * Update the user collection checkbox state based on individual function selections
+         * @param {HTMLElement} collectionCheckbox - The collection checkbox element
+         * @param {Object} collection - The collection object
+         * @param {Array} callableFunctions - Array of callable function names
+         */
+        function updateUserCollectionCheckboxState(collectionCheckbox, collection, callableFunctions) {
+            if (!callableFunctions || callableFunctions.length === 0) {
+                collectionCheckbox.checked = false;
+                collectionCheckbox.indeterminate = false;
+                return;
+            }
+            
+            // Count how many functions in this collection are enabled
+            let enabledCount = 0;
+            callableFunctions.forEach(funcName => {
+                if (FunctionToolsService.isJsFunctionEnabled(funcName)) {
+                    enabledCount++;
+                }
+            });
+            
+            const totalCount = callableFunctions.length;
+            
+            if (enabledCount === 0) {
+                collectionCheckbox.checked = false;
+                collectionCheckbox.indeterminate = false;
+            } else if (enabledCount === totalCount) {
+                collectionCheckbox.checked = true;
+                collectionCheckbox.indeterminate = false;
+            } else {
+                collectionCheckbox.checked = false;
+                collectionCheckbox.indeterminate = true;
+            }
+        }
+        
+        /**
+         * Update the user collection count display to show enabled/total format
+         * Only show if at least 1 function is enabled, otherwise hide
+         * @param {Object} collection - The collection object
+         * @param {Array} callableFunctions - Array of callable function names
+         */
+        function updateUserCollectionCount(collection, callableFunctions) {
+            const countElement = document.getElementById(`user-collection-count-${collection.id}`);
+            if (!countElement || !callableFunctions) return;
+            
+            // Count enabled functions
+            let enabledCount = 0;
+            callableFunctions.forEach(funcName => {
+                if (FunctionToolsService.isJsFunctionEnabled(funcName)) {
+                    enabledCount++;
+                }
+            });
+            
+            const totalCount = callableFunctions.length;
+            
+            // Only show count if at least 1 function is enabled
+            if (enabledCount > 0) {
+                const pluralText = totalCount !== 1 ? 's' : '';
+                countElement.textContent = `(${enabledCount}/${totalCount} function${pluralText} enabled)`;
+                countElement.style.display = 'inline';
+            } else {
+                countElement.style.display = 'none';
+            }
         }
         
         /**

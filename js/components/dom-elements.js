@@ -88,6 +88,7 @@ window.DOMElements = (function() {
             functionValidationResult: document.getElementById('function-validation-result'),
             functionToolDefinition: document.getElementById('function-tool-definition'),
             copyToolDefinitionBtn: document.getElementById('copy-tool-definition-btn'),
+            copyToolDefinitionsBtn: document.getElementById('copy-tool-definitions-btn'),
             functionValidateBtn: document.getElementById('function-validate-btn'),
             functionClearBtn: document.getElementById('function-clear-btn'),
             closeFunctionModal: document.getElementById('close-function-modal'),

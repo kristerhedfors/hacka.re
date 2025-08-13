@@ -16,7 +16,8 @@ window.FunctionToolsConfig = (function() {
     // Configuration
     const CONFIG = {
         EXECUTION_TIMEOUT: 30000, // 30 seconds
-        DEBUG_PREFIX: '[FunctionTools Debug]'
+        DEBUG_PREFIX: '[FunctionTools Debug]',
+        LOG_LEVEL: 'ERROR' // 'DEBUG', 'INFO', 'WARN', 'ERROR' - set to ERROR to reduce console noise
     };
     
     // Public API
