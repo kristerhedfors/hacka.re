@@ -242,6 +242,85 @@ window.DefaultFunctionsService = (function() {
     }
     
     /**
+     * Toggle multiple individual functions efficiently (batch mode)
+     * @param {Array} functionIds - Array of function IDs to toggle
+     * @param {boolean} targetState - Target state (true for selected, false for unselected)
+     * @returns {Array} Array of results for each function
+     */
+    function batchToggleIndividualFunctions(functionIds, targetState) {
+        const results = [];
+        let storageNeedsSave = false;
+        
+        // Get current selections once
+        const selectedIds = getSelectedIndividualFunctionIds();
+        const enabledDefaultFunctions = getEnabledDefaultFunctions();
+        
+        functionIds.forEach(functionId => {
+            const index = selectedIds.indexOf(functionId);
+            const isCurrentlySelected = index >= 0;
+            
+            // Only process if state needs to change
+            if (isCurrentlySelected !== targetState) {
+                const [groupId, functionName] = functionId.split(':');
+                const group = getDefaultFunctionCollectionById(groupId);
+                const func = group?.functions?.find(f => f.name === functionName);
+                
+                if (targetState) {
+                    // Add to selected
+                    selectedIds.push(functionId);
+                    
+                    // Add to enabled functions
+                    if (func && window.FunctionToolsService) {
+                        try {
+                            const toolDefinition = window.FunctionToolsParser.ToolDefinitionGenerator.generate(func.code);
+                            if (toolDefinition) {
+                                enabledDefaultFunctions[func.name] = {
+                                    code: func.code,
+                                    toolDefinition: toolDefinition,
+                                    groupId: group.groupId || group.id
+                                };
+                                storageNeedsSave = true;
+                            }
+                        } catch (error) {
+                            console.error(`Error parsing default function ${func.name}:`, error);
+                        }
+                    }
+                } else {
+                    // Remove from selected
+                    selectedIds.splice(index, 1);
+                    
+                    // Remove from enabled functions
+                    if (func && enabledDefaultFunctions[func.name]) {
+                        delete enabledDefaultFunctions[func.name];
+                        storageNeedsSave = true;
+                    }
+                }
+                
+                results.push({functionId, wasSelected: targetState});
+            } else {
+                results.push({functionId, wasSelected: isCurrentlySelected});
+            }
+        });
+        
+        // Save all changes at once
+        if (storageNeedsSave) {
+            setSelectedIndividualFunctionIds(selectedIds);
+            setEnabledDefaultFunctions(enabledDefaultFunctions);
+            
+            // Enable function tools globally if any functions were selected
+            if (selectedIds.length > 0 && !window.FunctionToolsService.isFunctionToolsEnabled()) {
+                window.FunctionToolsService.setFunctionToolsEnabled(true);
+            }
+        }
+        
+        // Only log in debug mode to reduce console noise
+        if (window.FunctionToolsConfig?.CONFIG?.LOG_LEVEL === 'DEBUG') {
+            console.log(`Batch processed ${functionIds.length} functions, ${results.filter(r => r.wasSelected).length} selected`);
+        }
+        return results;
+    }
+    
+    /**
      * Toggle an individual function's selection status
      * @param {string} functionId - The function ID to toggle (format: collectionId:functionName)
      * @returns {boolean} True if the function is now selected, false if unselected
@@ -306,34 +385,7 @@ window.DefaultFunctionsService = (function() {
                         window.FunctionToolsService.setFunctionToolsEnabled(true);
                     }
                     
-                    // Verify the function is actually enabled
-                    const isEnabled = window.FunctionToolsService.isJsFunctionEnabled(func.name);
-                    console.log(`Function ${func.name} enabled status:`, isEnabled);
-                    
-                    // Check if it appears in the enabled function names list
-                    const enabledNames = window.FunctionToolsService.getEnabledFunctionNames();
-                    console.log(`All enabled functions:`, enabledNames);
-                    
-                    // Check if it appears in the tool definitions
-                    const toolDefs = window.FunctionToolsService.getEnabledToolDefinitions();
-                    console.log(`Tool definitions count:`, toolDefs.length);
-                    console.log(`Tool definition names:`, toolDefs.map(t => t.function?.name));
-                    
                     console.log(`Added and enabled default function: ${func.name}`);
-                    
-                    // Force a save to ensure persistence
-                    if (window.FunctionToolsStorage) {
-                        window.FunctionToolsStorage.save();
-                        
-                        // Verify the function was saved
-                        console.log(`Verifying saved state for ${func.name}:`);
-                        window.FunctionToolsStorage.load();
-                        const savedFunctions = window.FunctionToolsStorage.getJsFunctions();
-                        const savedEnabled = window.FunctionToolsStorage.getEnabledFunctions();
-                        console.log(`  - In jsFunctions: ${!!savedFunctions[func.name]}`);
-                        console.log(`  - In enabledFunctions: ${savedEnabled.includes(func.name)}`);
-                        console.log(`  - Has tool definition: ${!!savedFunctions[func.name]?.toolDefinition}`);
-                    }
                 } catch (error) {
                     console.error(`Error parsing default function ${func.name}:`, error);
                 }
@@ -456,6 +508,7 @@ window.DefaultFunctionsService = (function() {
         setSelectedIndividualFunctionIds,
         isIndividualFunctionSelected,
         toggleIndividualFunctionSelection,
+        batchToggleIndividualFunctions,
         loadSelectedDefaultFunctions,
         initializeDefaultFunctions,
         debugCurrentState,
