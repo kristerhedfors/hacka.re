@@ -88,6 +88,11 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
             showToolsDebugInfo(apiToolsManager, addSystemMessage);
         }
         
+        // Debug logging
+        if (window.DebugService && window.DebugService.debugLog) {
+            window.DebugService.debugLog('api', `🚀 Starting chat completion with model: ${model}`);
+        }
+        
         // Make the initial request
         const response = await fetch(requestConfig.url, {
             method: requestConfig.method,
@@ -125,7 +130,6 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
         throw error;
     }
 }
-    
     
     /**
      * Process streaming response with tool call handling

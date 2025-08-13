@@ -38,6 +38,11 @@ window.LinkSharingService = (function() {
         // Create payload with just the API key
         const payload = { apiKey };
         
+        // Debug logging
+        if (window.DebugService && window.DebugService.debugLog) {
+            window.DebugService.debugLog('crypto', `🔐 Encrypting simple shareable link payload (apiKey) for link creation`);
+        }
+        
         // Encrypt the payload
         const encryptedData = CryptoUtils.encryptData(payload, password);
         
@@ -46,7 +51,6 @@ window.LinkSharingService = (function() {
         return `${baseUrl}#gpt=${encryptedData}`;
     }
     
-
     /**
      * Create a custom shareable link with encrypted payload
      * This creates a link that contains any combination of data specified in the payload.
@@ -120,6 +124,12 @@ window.LinkSharingService = (function() {
             if (options.includeMcpConnections && payload.mcpConnections) {
                 finalPayload.mcpConnections = payload.mcpConnections;
             }
+        }
+        
+        // Debug logging
+        if (window.DebugService && window.DebugService.debugLog) {
+            const payloadKeys = Object.keys(finalPayload);
+            window.DebugService.debugLog('crypto', `🔐 Encrypting custom shareable link payload with ${payloadKeys.length} components: ${payloadKeys.join(', ')}`);
         }
         
         // Encrypt the payload
@@ -213,6 +223,11 @@ window.LinkSharingService = (function() {
                 if (!encryptedData) {
                     console.error('No encrypted data found in URL hash');
                     return null;
+                }
+                
+                // Debug logging
+                if (window.DebugService && window.DebugService.debugLog) {
+                    window.DebugService.debugLog('crypto', `🔓 Decrypting shared link data from URL hash fragment`);
                 }
                 
                 // Decrypt the data

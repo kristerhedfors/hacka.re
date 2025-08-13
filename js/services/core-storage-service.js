@@ -181,6 +181,11 @@ window.CoreStorageService = (function() {
         const key = NamespaceService.getNamespacedKey(baseKey);
         
         if (shouldEncrypt(key)) {
+            // Debug logging
+            if (window.DebugService && window.DebugService.debugLog) {
+                window.DebugService.debugLog('crypto', `🔐 Encrypting ${baseKey} for secure storage in namespace: ${NamespaceService.getNamespace()}`);
+            }
+            
             return secureSet(key, value);
         } else {
             try {
@@ -212,6 +217,11 @@ window.CoreStorageService = (function() {
         let value;
         
         if (shouldEncrypt(key)) {
+            // Debug logging
+            if (window.DebugService && window.DebugService.debugLog) {
+                window.DebugService.debugLog('crypto', `🔓 Decrypting ${baseKey} from secure storage in namespace: ${NamespaceService.getNamespace()}`);
+            }
+            
             value = secureGet(key);
         } else {
             // Use dynamic storage based on storage type
@@ -236,6 +246,11 @@ window.CoreStorageService = (function() {
             let legacyValue;
             
             if (shouldEncrypt(legacyKey)) {
+                // Debug logging
+                if (window.DebugService && window.DebugService.debugLog) {
+                    window.DebugService.debugLog('crypto', `🔓 Decrypting legacy ${baseKey} during namespace migration`);
+                }
+                
                 legacyValue = secureGet(legacyKey);
             } else {
                 // Use dynamic storage based on storage type
@@ -396,7 +411,6 @@ window.CoreStorageService = (function() {
             };
         }
     }
-    
     
     /**
      * Initialize the storage service
