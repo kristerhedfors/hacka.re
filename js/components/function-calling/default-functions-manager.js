@@ -34,9 +34,39 @@ window.DefaultFunctionsManager = (function() {
             sectionTitle.textContent = 'Default Functions';
             sectionHeader.appendChild(sectionTitle);
             
+            // Add section count with enabled/total format
+            const sectionCount = document.createElement('span');
+            sectionCount.className = 'function-collection-count';
+            sectionCount.id = 'default-functions-section-count';
+            sectionCount.style.marginLeft = '10px';
+            sectionCount.style.color = 'var(--text-color-secondary)';
+            sectionCount.style.fontSize = '14px';
+            sectionCount.style.display = 'none'; // Initially hidden
+            updateDefaultFunctionsSectionCount();
+            sectionHeader.appendChild(sectionCount);
+            
+            // Add copy button for enabled functions
+            const copyButton = document.createElement('button');
+            copyButton.type = 'button';
+            copyButton.id = 'copy-enabled-functions-btn'; // Changed ID to avoid conflicts
+            copyButton.className = 'icon-btn';
+            copyButton.title = 'Copy enabled functions to clipboard';
+            copyButton.innerHTML = '<i class="fas fa-copy"></i>';
+            copyButton.style.marginLeft = 'auto'; // Push to the right
+            copyButton.addEventListener('click', (e) => {
+                e.stopPropagation(); // Don't trigger expand/collapse
+                // Copy only enabled default functions
+                copyEnabledDefaultFunctions();
+            });
+            sectionHeader.appendChild(copyButton);
+            
             // Add click event to expand/collapse
             let isExpanded = false;
-            sectionHeader.addEventListener('click', () => {
+            sectionHeader.addEventListener('click', (e) => {
+                // Don't expand/collapse when clicking the copy button
+                if (e.target === copyButton || e.target.closest('#copy-enabled-functions-btn')) {
+                    return;
+                }
                 isExpanded = !isExpanded;
                 expandIcon.className = isExpanded ? 'fas fa-chevron-down' : 'fas fa-chevron-right';
                 defaultFunctionsList.style.display = isExpanded ? 'block' : 'none';
@@ -86,6 +116,45 @@ window.DefaultFunctionsManager = (function() {
             expandIcon.className = 'fas fa-chevron-right';
             headerContainer.appendChild(expandIcon);
             
+            // Create collection checkbox for checking all functions in the collection
+            const collectionCheckbox = document.createElement('input');
+            collectionCheckbox.type = 'checkbox';
+            collectionCheckbox.className = 'collection-master-checkbox';
+            collectionCheckbox.id = `collection-checkbox-${collection.id}`;
+            collectionCheckbox.title = 'Check/uncheck all functions in this collection';
+            
+            // Set initial state based on how many functions are selected
+            updateCollectionCheckboxState(collectionCheckbox, collection);
+            
+            // Add event listener for collection checkbox
+            collectionCheckbox.addEventListener('change', function(e) {
+                e.stopPropagation();
+                
+                const isChecked = this.checked;
+                
+                // Update individual checkboxes immediately for responsive UI
+                const collectionContainer = document.querySelector(`[data-id="${collection.id}"]`);
+                if (collectionContainer) {
+                    const individualCheckboxes = collectionContainer.querySelectorAll('.function-item-checkbox');
+                    individualCheckboxes.forEach(checkbox => {
+                        checkbox.checked = isChecked;
+                    });
+                }
+                
+                // Add system message immediately
+                if (addSystemMessage) {
+                    const actionText = isChecked ? 'enabled' : 'disabled';
+                    addSystemMessage(`All functions in "${collection.name}" ${actionText}.`);
+                }
+                
+                // Defer backend operations
+                setTimeout(() => {
+                    toggleAllFunctionsInCollectionBackend(collection, isChecked);
+                    // Count updates are handled in toggleAllFunctionsInCollectionBackend
+                }, 0);
+            });
+            headerContainer.appendChild(collectionCheckbox);
+            
             // Create collection name element
             const collectionName = document.createElement('div');
             collectionName.className = 'function-collection-name';
@@ -93,6 +162,17 @@ window.DefaultFunctionsManager = (function() {
             collectionName.style.cursor = 'pointer';
             collectionName.title = 'Click to expand/collapse';
             headerContainer.appendChild(collectionName);
+            
+            // Add function count with enabled/total format
+            const functionCount = document.createElement('span');
+            functionCount.className = 'function-collection-count';
+            functionCount.id = `default-collection-count-${collection.id}`;
+            functionCount.style.marginLeft = '10px';
+            functionCount.style.color = 'var(--text-color-secondary)';
+            functionCount.style.fontSize = '14px';
+            functionCount.style.display = 'none'; // Initially hidden
+            updateDefaultCollectionCount(collection);
+            headerContainer.appendChild(functionCount);
             
             // Add info icon
             const infoIcon = document.createElement('button');
@@ -126,9 +206,17 @@ window.DefaultFunctionsManager = (function() {
                 if (e.target === infoIcon || e.target.closest('.function-collection-info')) {
                     return; // Don't expand/collapse when clicking info icon
                 }
+                if (e.target === collectionCheckbox || e.target.closest('.collection-master-checkbox')) {
+                    return; // Don't expand/collapse when clicking collection checkbox
+                }
                 isExpanded = !isExpanded;
                 expandIcon.className = isExpanded ? 'fas fa-chevron-down' : 'fas fa-chevron-right';
                 functionsList.style.display = isExpanded ? 'block' : 'none';
+            });
+            
+            // Add separate click handler for checkbox to prevent overlap
+            collectionCheckbox.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent triggering expand/collapse
             });
             
             collectionItem.appendChild(functionsList);
@@ -156,22 +244,37 @@ window.DefaultFunctionsManager = (function() {
                 e.stopPropagation();
                 console.log("Individual function checkbox clicked:", functionId);
                 
-                // Toggle the individual function selection
-                const wasSelected = DefaultFunctionsService.toggleIndividualFunctionSelection(functionId);
-                
-                // Update only the main function list without affecting the default functions tree
-                if (window.functionListRenderer) {
-                    window.functionListRenderer.renderMainFunctionList();
-                }
-                
-                // Add system message
-                if (addSystemMessage) {
-                    if (wasSelected) {
-                        addSystemMessage(`Default function "${func.name}" enabled.`);
-                    } else {
-                        addSystemMessage(`Default function "${func.name}" disabled.`);
+                // Use setTimeout to make UI responsive
+                setTimeout(() => {
+                    // Toggle the individual function selection
+                    const wasSelected = DefaultFunctionsService.toggleIndividualFunctionSelection(functionId);
+                    
+                    // Update the collection checkbox state
+                    const collectionCheckbox = document.getElementById(`collection-checkbox-${collection.id}`);
+                    if (collectionCheckbox) {
+                        updateCollectionCheckboxState(collectionCheckbox, collection);
                     }
-                }
+                    
+                    // Update collection count display
+                    updateDefaultCollectionCount(collection);
+                    
+                    // Update section count display
+                    updateDefaultFunctionsSectionCount();
+                    
+                    // Update only the main function list without affecting the default functions tree
+                    if (window.functionListRenderer) {
+                        window.functionListRenderer.renderMainFunctionList();
+                    }
+                    
+                    // Add system message
+                    if (addSystemMessage) {
+                        if (wasSelected) {
+                            addSystemMessage(`Default function "${func.name}" enabled.`);
+                        } else {
+                            addSystemMessage(`Default function "${func.name}" disabled.`);
+                        }
+                    }
+                }, 0);
             });
             functionItem.appendChild(checkbox);
             
@@ -240,6 +343,183 @@ window.DefaultFunctionsManager = (function() {
         }
         
         /**
+         * Update the collection checkbox state based on individual function selections
+         * @param {HTMLElement} collectionCheckbox - The collection checkbox element
+         * @param {Object} collection - The function collection object
+         */
+        function updateCollectionCheckboxState(collectionCheckbox, collection) {
+            if (!collection.functions || collection.functions.length === 0) {
+                collectionCheckbox.checked = false;
+                collectionCheckbox.indeterminate = false;
+                return;
+            }
+            
+            // Count how many functions in this collection are selected
+            let selectedCount = 0;
+            collection.functions.forEach(func => {
+                const functionId = `${collection.id}:${func.name}`;
+                if (DefaultFunctionsService.isIndividualFunctionSelected(functionId)) {
+                    selectedCount++;
+                }
+            });
+            
+            const totalCount = collection.functions.length;
+            
+            if (selectedCount === 0) {
+                collectionCheckbox.checked = false;
+                collectionCheckbox.indeterminate = false;
+            } else if (selectedCount === totalCount) {
+                collectionCheckbox.checked = true;
+                collectionCheckbox.indeterminate = false;
+            } else {
+                collectionCheckbox.checked = false;
+                collectionCheckbox.indeterminate = true;
+            }
+        }
+        
+        /**
+         * Toggle all functions in a collection (backend operations only)
+         * @param {Object} collection - The function collection object
+         * @param {boolean} checked - Whether to check or uncheck all functions
+         */
+        function toggleAllFunctionsInCollectionBackend(collection, checked) {
+            if (!collection.functions || collection.functions.length === 0) {
+                return;
+            }
+            
+            // Use batch operation for better performance - UI already updated
+            const allFunctionIds = collection.functions.map(func => `${collection.id}:${func.name}`);
+            const results = DefaultFunctionsService.batchToggleIndividualFunctions(allFunctionIds, checked);
+            
+            // Update the main function list
+            if (window.functionListRenderer && results.length > 0) {
+                window.functionListRenderer.renderMainFunctionList();
+            }
+            
+            // Update collection count display
+            updateDefaultCollectionCount(collection);
+            
+            // Update section count display
+            updateDefaultFunctionsSectionCount();
+        }
+        
+        /**
+         * Update the default collection count display to show enabled/total format
+         * Only show if at least 1 function is enabled, otherwise hide
+         * @param {Object} collection - The function collection object
+         */
+        function updateDefaultCollectionCount(collection) {
+            const countElement = document.getElementById(`default-collection-count-${collection.id}`);
+            if (!countElement || !collection.functions) return;
+            
+            // Count enabled functions in this collection
+            let enabledCount = 0;
+            collection.functions.forEach(func => {
+                const functionId = `${collection.id}:${func.name}`;
+                if (DefaultFunctionsService.isIndividualFunctionSelected(functionId)) {
+                    enabledCount++;
+                }
+            });
+            
+            const totalCount = collection.functions.length;
+            
+            // Only show count if at least 1 function is enabled
+            if (enabledCount > 0) {
+                const pluralText = totalCount !== 1 ? 's' : '';
+                countElement.textContent = `(${enabledCount}/${totalCount} function${pluralText} enabled)`;
+                countElement.style.display = 'inline';
+            } else {
+                countElement.style.display = 'none';
+            }
+        }
+        
+        /**
+         * Update the default functions section count display to show total enabled/total format
+         * Only show if at least 1 function is enabled, otherwise hide
+         */
+        function updateDefaultFunctionsSectionCount() {
+            const sectionCountElement = document.getElementById('default-functions-section-count');
+            if (!sectionCountElement) return;
+            
+            const defaultFunctionCollections = DefaultFunctionsService.getDefaultFunctionCollections();
+            let totalEnabled = 0;
+            let totalFunctions = 0;
+            
+            defaultFunctionCollections.forEach(collection => {
+                if (collection.functions) {
+                    totalFunctions += collection.functions.length;
+                    collection.functions.forEach(func => {
+                        const functionId = `${collection.id}:${func.name}`;
+                        if (DefaultFunctionsService.isIndividualFunctionSelected(functionId)) {
+                            totalEnabled++;
+                        }
+                    });
+                }
+            });
+            
+            // Only show count if at least 1 function is enabled
+            if (totalEnabled > 0) {
+                const pluralText = totalFunctions !== 1 ? 's' : '';
+                sectionCountElement.textContent = `(${totalEnabled}/${totalFunctions} function${pluralText} enabled)`;
+                sectionCountElement.style.display = 'inline';
+            } else {
+                sectionCountElement.style.display = 'none';
+            }
+        }
+        
+        /**
+         * Copy only enabled default functions to clipboard
+         */
+        function copyEnabledDefaultFunctions() {
+            try {
+                const defaultFunctionCollections = DefaultFunctionsService.getDefaultFunctionCollections();
+                const enabledDefaultFunctions = [];
+                
+                // Get all enabled default functions
+                defaultFunctionCollections.forEach(collection => {
+                    if (collection.functions) {
+                        collection.functions.forEach(func => {
+                            const functionId = `${collection.id}:${func.name}`;
+                            if (DefaultFunctionsService.isIndividualFunctionSelected(functionId)) {
+                                enabledDefaultFunctions.push(func.code);
+                            }
+                        });
+                    }
+                });
+                
+                if (enabledDefaultFunctions.length === 0) {
+                    if (addSystemMessage) {
+                        addSystemMessage('No enabled default functions to copy. Please enable some default functions first.');
+                    }
+                    return;
+                }
+                
+                // Join all function code with double newlines for separation
+                const allFunctionCode = enabledDefaultFunctions.join('\n\n');
+                
+                // Copy to clipboard
+                navigator.clipboard.writeText(allFunctionCode)
+                    .then(() => {
+                        const count = enabledDefaultFunctions.length;
+                        if (addSystemMessage) {
+                            addSystemMessage(`${count} enabled default function${count !== 1 ? 's' : ''} copied to clipboard.`);
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy default functions:', err);
+                        if (addSystemMessage) {
+                            addSystemMessage('Failed to copy default functions. Please try again.');
+                        }
+                    });
+            } catch (error) {
+                console.error('Error copying default functions:', error);
+                if (addSystemMessage) {
+                    addSystemMessage(`Error copying default functions: ${error.message}`);
+                }
+            }
+        }
+        
+        /**
          * Show function collection info popup
          * @param {Object} collection - The function collection object
          * @param {HTMLElement} infoIcon - The info icon element
@@ -298,7 +578,12 @@ window.DefaultFunctionsManager = (function() {
             addDefaultFunctionsSection,
             createDefaultFunctionCollectionItem,
             createIndividualFunctionItem,
-            showFunctionCollectionInfo
+            showFunctionCollectionInfo,
+            updateCollectionCheckboxState,
+            toggleAllFunctionsInCollectionBackend,
+            updateDefaultCollectionCount,
+            updateDefaultFunctionsSectionCount,
+            copyEnabledDefaultFunctions
         };
     }
 

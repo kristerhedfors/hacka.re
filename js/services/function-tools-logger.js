@@ -6,13 +6,38 @@
 window.FunctionToolsLogger = (function() {
     const { CONFIG } = FunctionToolsConfig;
     
+    const LOG_LEVELS = {
+        'DEBUG': 0,
+        'INFO': 1, 
+        'WARN': 2,
+        'ERROR': 3
+    };
+    
+    const currentLogLevel = LOG_LEVELS[CONFIG.LOG_LEVEL] || LOG_LEVELS['ERROR'];
+    
     const Logger = {
         debug: function(message, ...args) {
-            console.log(`${CONFIG.DEBUG_PREFIX} ${message}`, ...args);
+            if (currentLogLevel <= LOG_LEVELS['DEBUG']) {
+                console.log(`${CONFIG.DEBUG_PREFIX} ${message}`, ...args);
+            }
+        },
+        
+        info: function(message, ...args) {
+            if (currentLogLevel <= LOG_LEVELS['INFO']) {
+                console.log(`${CONFIG.DEBUG_PREFIX} ${message}`, ...args);
+            }
+        },
+        
+        warn: function(message, ...args) {
+            if (currentLogLevel <= LOG_LEVELS['WARN']) {
+                console.warn(`${CONFIG.DEBUG_PREFIX} ${message}`, ...args);
+            }
         },
         
         error: function(message, ...args) {
-            console.error(`${CONFIG.DEBUG_PREFIX} ${message}`, ...args);
+            if (currentLogLevel <= LOG_LEVELS['ERROR']) {
+                console.error(`${CONFIG.DEBUG_PREFIX} ${message}`, ...args);
+            }
         },
         
         logFunctionCall: function(name, args) {
