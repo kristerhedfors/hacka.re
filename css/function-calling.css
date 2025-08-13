@@ -400,13 +400,30 @@
     font-size: 12px;
 }
 
+.function-collection-copy {
+    background: none !important;
+    border: none !important;
+    color: var(--text-color-secondary);
+    cursor: pointer;
+    padding: 5px;
+    margin-left: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: none !important;
+}
+
+.function-collection-copy:hover {
+    color: var(--accent-color);
+}
+
 .function-collection-delete {
     background: none;
     border: none;
     color: var(--text-color-secondary);
     cursor: pointer;
     padding: 5px;
-    margin-left: auto;
+    margin-left: 5px;
     display: flex;
     align-items: center;
     justify-content: center;

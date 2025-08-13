@@ -34,9 +34,34 @@ window.DefaultFunctionsManager = (function() {
             sectionTitle.textContent = 'Default Functions';
             sectionHeader.appendChild(sectionTitle);
             
+            // Add copy button for enabled functions
+            const copyButton = document.createElement('button');
+            copyButton.type = 'button';
+            copyButton.id = 'copy-enabled-functions-btn'; // Changed ID to avoid conflicts
+            copyButton.className = 'icon-btn';
+            copyButton.title = 'Copy enabled functions to clipboard';
+            copyButton.innerHTML = '<i class="fas fa-copy"></i>';
+            copyButton.style.marginLeft = 'auto'; // Push to the right
+            copyButton.addEventListener('click', (e) => {
+                e.stopPropagation(); // Don't trigger expand/collapse
+                // Trigger the copy function directly
+                if (window.functionCopyManager && window.functionCopyManager.copyFunctionLibrary) {
+                    window.functionCopyManager.copyFunctionLibrary();
+                } else if (window.FunctionCopyManager) {
+                    // Get the manager instance and call copy function
+                    const copyManager = window.FunctionCopyManager.createFunctionCopyManager({}, addSystemMessage);
+                    copyManager.copyFunctionLibrary();
+                }
+            });
+            sectionHeader.appendChild(copyButton);
+            
             // Add click event to expand/collapse
             let isExpanded = false;
-            sectionHeader.addEventListener('click', () => {
+            sectionHeader.addEventListener('click', (e) => {
+                // Don't expand/collapse when clicking the copy button
+                if (e.target === copyButton || e.target.closest('#copy-enabled-functions-btn')) {
+                    return;
+                }
                 isExpanded = !isExpanded;
                 expandIcon.className = isExpanded ? 'fas fa-chevron-down' : 'fas fa-chevron-right';
                 defaultFunctionsList.style.display = isExpanded ? 'block' : 'none';
