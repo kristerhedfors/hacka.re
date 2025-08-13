@@ -1225,7 +1225,7 @@ main {
 
 /* Debug messages hover effect */
 .debug-message {
-    cursor: help;
+    cursor: pointer;
     transition: background-color 0.2s ease;
 }
 
@@ -1261,7 +1261,15 @@ main {
     font-family: 'Courier New', monospace;
     font-size: 0.9em;
     display: flex;
+    justify-content: space-between;
     align-items: center;
+}
+
+.debug-code-hint {
+    font-size: 0.8rem;
+    color: var(--text-color-tertiary);
+    font-style: italic;
+    opacity: 0.7;
 }
 
 .debug-code-file {
