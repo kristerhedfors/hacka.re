@@ -269,8 +269,8 @@ def test_default_prompts_info_button(page, serve_hacka_re):
         print("Found Code section, expanding it")
         code_section.click()
         
-        # Wait for the nested section list to be visible
-        nested_list = page.locator(".nested-section-list")
+        # Wait for the nested section list to be visible (there may be multiple)
+        nested_list = page.locator(".nested-section-list").first
         expect(nested_list).to_be_visible()
     
     # Define the prompts to test
@@ -400,8 +400,8 @@ def test_default_prompts_name_click(page, serve_hacka_re):
         print("Found Code section, expanding it")
         code_section.click()
         
-        # Wait for the nested section list to be visible
-        nested_list = page.locator(".nested-section-list")
+        # Wait for the nested section list to be visible (there may be multiple)
+        nested_list = page.locator(".nested-section-list").first
         expect(nested_list).to_be_visible()
     
     # Define the prompts to test
