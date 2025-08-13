@@ -161,6 +161,11 @@ window.CrossTabSyncService = (function() {
      */
     function checkForUpdates() {
         try {
+            // Skip updates if we're processing shared links to prevent loops
+            if (window._waitingForSharedLinkPassword || window._processingSharedLink) {
+                return;
+            }
+            
             // Get current history hash
             const currentHistoryHash = getHistoryHash();
             

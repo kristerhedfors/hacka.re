@@ -80,6 +80,12 @@ function createSharedLinkDataProcessor() {
             }
         }
         
+        // Invalidate model cache to force refresh with new API configuration
+        if (window.ModelSelectionManager && window.ModelSelectionManager.invalidateCache) {
+            console.log('[SharedLinkDataProcessor] Invalidating model cache after API config change');
+            window.ModelSelectionManager.invalidateCache();
+        }
+        
         // If there's a system prompt, save it too
         if (sharedData.systemPrompt) {
             if (DataService && typeof DataService.saveSystemPrompt === 'function') {

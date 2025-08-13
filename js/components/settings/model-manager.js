@@ -163,6 +163,12 @@ window.ModelManager = (function() {
         async function fetchAvailableModels(apiKey, baseUrl, updateStorage = false, updateContextUsage = null) {
             if (!apiKey) return { success: false, error: 'API key is required' };
             
+            // Skip model fetching if we're processing shared links to prevent race conditions
+            if (window._processingSharedLink && !updateStorage) {
+                console.log('[ModelManager] Skipping model fetch during shared link processing to prevent race conditions');
+                return { success: false, error: 'Shared link processing in progress' };
+            }
+            
             try {
                 // Use the provided values for this API call only
                 const models = await ApiService.fetchAvailableModels(apiKey, baseUrl);

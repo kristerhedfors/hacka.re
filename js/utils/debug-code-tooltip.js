@@ -25,25 +25,59 @@ window.DebugCodeTooltip = (function() {
     }
     
     /**
-     * Create the tooltip element
+     * Create the tooltip and modal elements
      */
     function createTooltipElement() {
+        // Create simple hover tooltip for filename:line
         tooltipElement = document.createElement('div');
-        tooltipElement.className = 'debug-code-tooltip';
+        tooltipElement.className = 'debug-code-hover-tooltip';
         tooltipElement.style.display = 'none';
-        tooltipElement.innerHTML = `
-            <div class="debug-code-header">
-                <span class="debug-code-file"></span>
-                <span class="debug-code-location"></span>
-                <span class="debug-code-hint">📄 Click to open file</span>
-            </div>
-            <div class="debug-code-content"></div>
-        `;
         document.body.appendChild(tooltipElement);
+        
+        // Create modal for syntax highlighted code
+        createCodeModal();
     }
     
     /**
-     * Handle mouse enter on elements
+     * Create the code modal element
+     */
+    function createCodeModal() {
+        const modalElement = document.createElement('div');
+        modalElement.className = 'debug-code-modal';
+        modalElement.style.display = 'none';
+        modalElement.innerHTML = `
+            <div class="debug-code-modal-backdrop"></div>
+            <div class="debug-code-modal-content">
+                <div class="debug-code-header">
+                    <span class="debug-code-file"></span>
+                    <span class="debug-code-location"></span>
+                    <button class="debug-code-close">✕</button>
+                </div>
+                <div class="debug-code-content"></div>
+            </div>
+        `;
+        document.body.appendChild(modalElement);
+        
+        // Store reference to modal
+        window.debugCodeModal = modalElement;
+        
+        // Setup close handlers
+        const closeBtn = modalElement.querySelector('.debug-code-close');
+        const backdrop = modalElement.querySelector('.debug-code-modal-backdrop');
+        
+        closeBtn.addEventListener('click', closeCodeModal);
+        backdrop.addEventListener('click', closeCodeModal);
+        
+        // Close on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modalElement.style.display !== 'none') {
+                closeCodeModal();
+            }
+        });
+    }
+    
+    /**
+     * Handle mouse enter on elements - show simple hover tooltip
      */
     function handleMouseEnter(event) {
         // Check if target has closest method (is an Element)
@@ -61,16 +95,15 @@ window.DebugCodeTooltip = (function() {
         // Get source location from data attributes
         const sourceFile = target.getAttribute('data-source-file');
         const sourceLine = target.getAttribute('data-source-line');
-        const sourcePath = target.getAttribute('data-source-path');
         
         if (!sourceFile || !sourceLine) return;
         
         currentTarget = target;
-        showTooltip(target, sourceFile, parseInt(sourceLine), sourcePath);
+        showSimpleTooltip(target, sourceFile, parseInt(sourceLine));
     }
     
     /**
-     * Handle mouse leave on elements
+     * Handle mouse leave on elements - hide simple tooltip
      */
     function handleMouseLeave(event) {
         // Check if target has closest method (is an Element)
@@ -81,12 +114,12 @@ window.DebugCodeTooltip = (function() {
         
         // Hide tooltip after a short delay
         hideTimeout = setTimeout(() => {
-            hideTooltip();
+            hideSimpleTooltip();
         }, 300);
     }
     
     /**
-     * Handle click on debug messages to open source file
+     * Handle click on debug messages to show code modal
      */
     function handleClick(event) {
         const target = event.target.closest('.debug-message');
@@ -103,17 +136,38 @@ window.DebugCodeTooltip = (function() {
         event.preventDefault();
         event.stopPropagation();
         
-        // Open source file in new tab
-        openSourceFile(sourceFile, parseInt(sourceLine), sourcePath);
+        // Hide simple tooltip if showing
+        hideSimpleTooltip();
+        
+        // Show code modal
+        showCodeModal(target, sourceFile, parseInt(sourceLine), sourcePath);
     }
     
     /**
-     * Show tooltip with source code
+     * Show simple hover tooltip with filename:line
      */
-    async function showTooltip(target, file, line, fullPath) {
-        // Update tooltip header
-        const fileElement = tooltipElement.querySelector('.debug-code-file');
-        const locationElement = tooltipElement.querySelector('.debug-code-location');
+    function showSimpleTooltip(target, file, line) {
+        // Update tooltip content
+        tooltipElement.textContent = `${file}:${line}`;
+        
+        // Position tooltip
+        positionSimpleTooltip(target);
+        
+        // Show tooltip
+        tooltipElement.style.display = 'block';
+        tooltipElement.classList.add('visible');
+    }
+    
+    /**
+     * Show code modal with syntax highlighted source
+     */
+    async function showCodeModal(target, file, line, fullPath) {
+        const modalElement = window.debugCodeModal;
+        if (!modalElement) return;
+        
+        // Update modal header
+        const fileElement = modalElement.querySelector('.debug-code-file');
+        const locationElement = modalElement.querySelector('.debug-code-location');
         fileElement.textContent = file;
         locationElement.textContent = `:${line}`;
         
@@ -123,22 +177,19 @@ window.DebugCodeTooltip = (function() {
         // Get source code with direction-aware context
         const codeContent = await getSourceCode(file, line, fullPath, messageDirection);
         
-        // Update tooltip content
-        const contentElement = tooltipElement.querySelector('.debug-code-content');
+        // Update modal content
+        const contentElement = modalElement.querySelector('.debug-code-content');
         contentElement.innerHTML = codeContent;
         
-        // Position tooltip
-        positionTooltip(target);
-        
-        // Show tooltip
-        tooltipElement.style.display = 'block';
-        tooltipElement.classList.add('visible');
+        // Show modal
+        modalElement.style.display = 'block';
+        modalElement.classList.add('visible');
     }
     
     /**
-     * Hide tooltip
+     * Hide simple tooltip
      */
-    function hideTooltip() {
+    function hideSimpleTooltip() {
         if (tooltipElement) {
             tooltipElement.classList.remove('visible');
             setTimeout(() => {
@@ -149,9 +200,22 @@ window.DebugCodeTooltip = (function() {
     }
     
     /**
-     * Position tooltip relative to target element
+     * Close code modal
      */
-    function positionTooltip(target) {
+    function closeCodeModal() {
+        const modalElement = window.debugCodeModal;
+        if (modalElement) {
+            modalElement.classList.remove('visible');
+            setTimeout(() => {
+                modalElement.style.display = 'none';
+            }, 200);
+        }
+    }
+    
+    /**
+     * Position simple tooltip relative to target element
+     */
+    function positionSimpleTooltip(target) {
         const rect = target.getBoundingClientRect();
         const tooltipRect = tooltipElement.getBoundingClientRect();
         

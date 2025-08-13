@@ -1234,27 +1234,70 @@ main {
 }
 
 /* Debug Code Tooltip Styling */
-.debug-code-tooltip {
+/* Simple hover tooltip showing just filename:line */
+.debug-code-hover-tooltip {
     position: fixed;
     z-index: 10000;
     background: var(--bg-color);
     border: 1px solid var(--border-color);
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    max-width: 600px;
-    min-width: 400px;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    padding: 4px 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8em;
     opacity: 0;
     transition: opacity 0.2s ease;
     pointer-events: none;
     color: var(--text-color);
+    white-space: nowrap;
 }
-
-.debug-code-tooltip.visible {
+.debug-code-hover-tooltip.visible {
     opacity: 1;
 }
 
+/* Debug Code Modal for syntax highlighted source */
+.debug-code-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.debug-code-modal.visible {
+    opacity: 1;
+}
+.debug-code-modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+}
+.debug-code-modal-content {
+    position: relative;
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    max-width: 80vw;
+    max-height: 80vh;
+    min-width: 600px;
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+    color: var(--text-color);
+}
+
 .debug-code-header {
-    padding: 8px 12px;
+    padding: 12px 16px;
     background: var(--bg-color-secondary);
     border-bottom: 1px solid var(--border-color);
     border-radius: 8px 8px 0 0;
@@ -1263,6 +1306,21 @@ main {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
+}
+.debug-code-close {
+    background: none;
+    border: none;
+    color: var(--text-color-secondary);
+    font-size: 1.2em;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+.debug-code-close:hover {
+    background: var(--bg-color-tertiary);
+    color: var(--text-color);
 }
 
 .debug-code-hint {
@@ -1283,26 +1341,29 @@ main {
 }
 
 .debug-code-content {
-    padding: 12px;
-    max-height: 400px;
+    padding: 16px;
+    flex: 1;
     overflow-y: auto;
+    overflow-x: auto;
 }
 
 .debug-code-pre {
     margin: 0;
     font-family: 'Courier New', monospace;
     font-size: 0.85em;
-    line-height: 1.4;
+    line-height: 1.5;
     background: var(--bg-color-secondary);
-    padding: 8px;
+    padding: 12px;
     border-radius: 4px;
-    overflow-x: auto;
+    height: 100%;
+    overflow: auto;
 }
 
 .debug-code-line {
     display: flex;
-    padding: 2px 0;
+    padding: 3px 0;
     transition: background-color 0.2s ease;
+    min-height: 1.5em;
 }
 
 .debug-code-line:hover {
@@ -1316,10 +1377,12 @@ main {
 
 .line-number {
     color: var(--text-color-secondary);
-    margin-right: 12px;
+    margin-right: 16px;
     user-select: none;
-    opacity: 0.6;
+    opacity: 0.7;
     font-size: 0.9em;
+    min-width: 4ch;
+    text-align: right;
 }
 
 .line-content {
@@ -1340,59 +1403,59 @@ main {
 }
 
 /* Syntax highlighting colors for highlight.js */
-.debug-code-tooltip .hljs-keyword,
-.debug-code-tooltip .hljs-selector-tag,
-.debug-code-tooltip .hljs-literal,
-.debug-code-tooltip .hljs-section,
-.debug-code-tooltip .hljs-link {
+.debug-code-modal .hljs-keyword,
+.debug-code-modal .hljs-selector-tag,
+.debug-code-modal .hljs-literal,
+.debug-code-modal .hljs-section,
+.debug-code-modal .hljs-link {
     color: #d73a49;
     font-weight: bold;
 }
 
-.debug-code-tooltip .hljs-string,
-.debug-code-tooltip .hljs-meta .hljs-string,
-.debug-code-tooltip .hljs-attribute,
-.debug-code-tooltip .hljs-quote,
-.debug-code-tooltip .hljs-template-variable {
+.debug-code-modal .hljs-string,
+.debug-code-modal .hljs-meta .hljs-string,
+.debug-code-modal .hljs-attribute,
+.debug-code-modal .hljs-quote,
+.debug-code-modal .hljs-template-variable {
     color: #032f62;
 }
 
-.debug-code-tooltip .hljs-comment,
-.debug-code-tooltip .hljs-deletion {
+.debug-code-modal .hljs-comment,
+.debug-code-modal .hljs-deletion {
     color: #6a737d;
     font-style: italic;
 }
 
-.debug-code-tooltip .hljs-function .hljs-title,
-.debug-code-tooltip .hljs-section,
-.debug-code-tooltip .hljs-title {
+.debug-code-modal .hljs-function .hljs-title,
+.debug-code-modal .hljs-section,
+.debug-code-modal .hljs-title {
     color: #6f42c1;
     font-weight: bold;
 }
 
-.debug-code-tooltip .hljs-number,
-.debug-code-tooltip .hljs-meta,
-.debug-code-tooltip .hljs-meta .hljs-keyword,
-.debug-code-tooltip .hljs-emphasis {
+.debug-code-modal .hljs-number,
+.debug-code-modal .hljs-meta,
+.debug-code-modal .hljs-meta .hljs-keyword,
+.debug-code-modal .hljs-emphasis {
     color: #005cc5;
 }
 
-.debug-code-tooltip .hljs-params {
+.debug-code-modal .hljs-params {
     color: #24292e;
 }
 
-.debug-code-tooltip .hljs-built_in,
-.debug-code-tooltip .hljs-class .hljs-title {
+.debug-code-modal .hljs-built_in,
+.debug-code-modal .hljs-class .hljs-title {
     color: #e36209;
 }
 
-.debug-code-tooltip .hljs-variable,
-.debug-code-tooltip .hljs-attr {
+.debug-code-modal .hljs-variable,
+.debug-code-modal .hljs-attr {
     color: #e36209;
 }
 
 /* Ensure proper contrast in both light and dark themes */
-.debug-code-tooltip .line-content {
+.debug-code-modal .line-content {
     color: var(--text-color);
 }
 
