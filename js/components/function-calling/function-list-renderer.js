@@ -193,6 +193,55 @@ window.FunctionListRenderer = (function() {
             expandIcon.className = 'fas fa-chevron-right';
             collectionHeader.appendChild(expandIcon);
             
+            // Add collection checkbox for enabling/disabling all functions in collection
+            const collectionCheckbox = document.createElement('input');
+            collectionCheckbox.type = 'checkbox';
+            collectionCheckbox.className = 'collection-master-checkbox';
+            collectionCheckbox.id = `user-collection-checkbox-${collection.id}`;
+            collectionCheckbox.title = 'Check/uncheck all functions in this collection';
+            collectionCheckbox.style.marginLeft = '10px';
+            
+            // Set initial state based on how many functions are enabled
+            updateUserCollectionCheckboxState(collectionCheckbox, collection, callableFunctions);
+            
+            // Add event listener for collection checkbox
+            collectionCheckbox.addEventListener('change', function(e) {
+                e.stopPropagation();
+                
+                const isChecked = this.checked;
+                
+                // Update individual checkboxes immediately for responsive UI
+                const collectionContainer = document.querySelector(`[data-collection-id="${collection.id}"]`);
+                if (collectionContainer) {
+                    const individualCheckboxes = collectionContainer.querySelectorAll('.function-item-checkbox');
+                    individualCheckboxes.forEach(checkbox => {
+                        checkbox.checked = isChecked;
+                    });
+                }
+                
+                // Add system message immediately
+                if (addSystemMessage) {
+                    const actionText = isChecked ? 'enabled' : 'disabled';
+                    addSystemMessage(`All functions in "${collection.metadata.name}" ${actionText}.`);
+                }
+                
+                // Update backend state for all functions in collection
+                setTimeout(() => {
+                    callableFunctions.forEach(funcName => {
+                        if (isChecked) {
+                            FunctionToolsService.enableJsFunction(funcName);
+                        } else {
+                            FunctionToolsService.disableJsFunction(funcName);
+                        }
+                    });
+                    
+                    // Update count display
+                    updateUserCollectionCount(collection, callableFunctions);
+                }, 0);
+            });
+            
+            collectionHeader.appendChild(collectionCheckbox);
+            
             // Add collection name
             const collectionName = document.createElement('h4');
             collectionName.textContent = collection.metadata.name || 'Untitled Collection';
@@ -201,13 +250,14 @@ window.FunctionListRenderer = (function() {
             collectionName.style.fontWeight = '700';
             collectionHeader.appendChild(collectionName);
             
-            // Add function count
+            // Add function count with enabled/total format
             const functionCount = document.createElement('span');
             functionCount.className = 'function-collection-count';
-            functionCount.textContent = `(${callableFunctions.length} function${callableFunctions.length !== 1 ? 's' : ''})`;
+            functionCount.id = `user-collection-count-${collection.id}`;
             functionCount.style.marginLeft = '10px';
             functionCount.style.color = 'var(--text-color-secondary)';
             functionCount.style.fontSize = '14px';
+            updateUserCollectionCount(collection, callableFunctions);
             collectionHeader.appendChild(functionCount);
             
             // Add source info if MCP
@@ -337,6 +387,16 @@ window.FunctionListRenderer = (function() {
                     FunctionToolsService.disableJsFunction(funcName);
                 }
                 
+                // Update the collection checkbox state
+                const collectionCheckbox = document.getElementById(`user-collection-checkbox-${collection.id}`);
+                if (collectionCheckbox) {
+                    const allFunctions = collection.functions || [];
+                    updateUserCollectionCheckboxState(collectionCheckbox, collection, allFunctions);
+                }
+                
+                // Update the collection count display
+                updateUserCollectionCount(collection, collection.functions || []);
+                
                 if (addSystemMessage) {
                     const status = checkbox.checked ? 'enabled' : 'disabled';
                     addSystemMessage(`Function "${funcName}" ${status} for tool calling.`);
@@ -406,6 +466,63 @@ window.FunctionListRenderer = (function() {
             functionItem.appendChild(deleteButton);
             
             return functionItem;
+        }
+        
+        /**
+         * Update the user collection checkbox state based on individual function selections
+         * @param {HTMLElement} collectionCheckbox - The collection checkbox element
+         * @param {Object} collection - The collection object
+         * @param {Array} callableFunctions - Array of callable function names
+         */
+        function updateUserCollectionCheckboxState(collectionCheckbox, collection, callableFunctions) {
+            if (!callableFunctions || callableFunctions.length === 0) {
+                collectionCheckbox.checked = false;
+                collectionCheckbox.indeterminate = false;
+                return;
+            }
+            
+            // Count how many functions in this collection are enabled
+            let enabledCount = 0;
+            callableFunctions.forEach(funcName => {
+                if (FunctionToolsService.isJsFunctionEnabled(funcName)) {
+                    enabledCount++;
+                }
+            });
+            
+            const totalCount = callableFunctions.length;
+            
+            if (enabledCount === 0) {
+                collectionCheckbox.checked = false;
+                collectionCheckbox.indeterminate = false;
+            } else if (enabledCount === totalCount) {
+                collectionCheckbox.checked = true;
+                collectionCheckbox.indeterminate = false;
+            } else {
+                collectionCheckbox.checked = false;
+                collectionCheckbox.indeterminate = true;
+            }
+        }
+        
+        /**
+         * Update the user collection count display to show enabled/total format
+         * @param {Object} collection - The collection object
+         * @param {Array} callableFunctions - Array of callable function names
+         */
+        function updateUserCollectionCount(collection, callableFunctions) {
+            const countElement = document.getElementById(`user-collection-count-${collection.id}`);
+            if (!countElement || !callableFunctions) return;
+            
+            // Count enabled functions
+            let enabledCount = 0;
+            callableFunctions.forEach(funcName => {
+                if (FunctionToolsService.isJsFunctionEnabled(funcName)) {
+                    enabledCount++;
+                }
+            });
+            
+            const totalCount = callableFunctions.length;
+            const pluralText = totalCount !== 1 ? 's' : '';
+            countElement.textContent = `(${enabledCount}/${totalCount} function${pluralText} enabled)`;
         }
         
         /**

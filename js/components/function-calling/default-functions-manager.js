@@ -34,6 +34,16 @@ window.DefaultFunctionsManager = (function() {
             sectionTitle.textContent = 'Default Functions';
             sectionHeader.appendChild(sectionTitle);
             
+            // Add section count with enabled/total format
+            const sectionCount = document.createElement('span');
+            sectionCount.className = 'function-collection-count';
+            sectionCount.id = 'default-functions-section-count';
+            sectionCount.style.marginLeft = '10px';
+            sectionCount.style.color = 'var(--text-color-secondary)';
+            sectionCount.style.fontSize = '14px';
+            updateDefaultFunctionsSectionCount();
+            sectionHeader.appendChild(sectionCount);
+            
             // Add copy button for enabled functions
             const copyButton = document.createElement('button');
             copyButton.type = 'button';
@@ -145,6 +155,7 @@ window.DefaultFunctionsManager = (function() {
                 // Defer backend operations
                 setTimeout(() => {
                     toggleAllFunctionsInCollectionBackend(collection, isChecked);
+                    // Count updates are handled in toggleAllFunctionsInCollectionBackend
                 }, 0);
             });
             headerContainer.appendChild(collectionCheckbox);
@@ -156,6 +167,16 @@ window.DefaultFunctionsManager = (function() {
             collectionName.style.cursor = 'pointer';
             collectionName.title = 'Click to expand/collapse';
             headerContainer.appendChild(collectionName);
+            
+            // Add function count with enabled/total format
+            const functionCount = document.createElement('span');
+            functionCount.className = 'function-collection-count';
+            functionCount.id = `default-collection-count-${collection.id}`;
+            functionCount.style.marginLeft = '10px';
+            functionCount.style.color = 'var(--text-color-secondary)';
+            functionCount.style.fontSize = '14px';
+            updateDefaultCollectionCount(collection);
+            headerContainer.appendChild(functionCount);
             
             // Add info icon
             const infoIcon = document.createElement('button');
@@ -237,6 +258,12 @@ window.DefaultFunctionsManager = (function() {
                     if (collectionCheckbox) {
                         updateCollectionCheckboxState(collectionCheckbox, collection);
                     }
+                    
+                    // Update collection count display
+                    updateDefaultCollectionCount(collection);
+                    
+                    // Update section count display
+                    updateDefaultFunctionsSectionCount();
                     
                     // Update only the main function list without affecting the default functions tree
                     if (window.functionListRenderer) {
@@ -372,6 +399,61 @@ window.DefaultFunctionsManager = (function() {
             if (window.functionListRenderer && results.length > 0) {
                 window.functionListRenderer.renderMainFunctionList();
             }
+            
+            // Update collection count display
+            updateDefaultCollectionCount(collection);
+            
+            // Update section count display
+            updateDefaultFunctionsSectionCount();
+        }
+        
+        /**
+         * Update the default collection count display to show enabled/total format
+         * @param {Object} collection - The function collection object
+         */
+        function updateDefaultCollectionCount(collection) {
+            const countElement = document.getElementById(`default-collection-count-${collection.id}`);
+            if (!countElement || !collection.functions) return;
+            
+            // Count enabled functions in this collection
+            let enabledCount = 0;
+            collection.functions.forEach(func => {
+                const functionId = `${collection.id}:${func.name}`;
+                if (DefaultFunctionsService.isIndividualFunctionSelected(functionId)) {
+                    enabledCount++;
+                }
+            });
+            
+            const totalCount = collection.functions.length;
+            const pluralText = totalCount !== 1 ? 's' : '';
+            countElement.textContent = `(${enabledCount}/${totalCount} function${pluralText} enabled)`;
+        }
+        
+        /**
+         * Update the default functions section count display to show total enabled/total format
+         */
+        function updateDefaultFunctionsSectionCount() {
+            const sectionCountElement = document.getElementById('default-functions-section-count');
+            if (!sectionCountElement) return;
+            
+            const defaultFunctionCollections = DefaultFunctionsService.getDefaultFunctionCollections();
+            let totalEnabled = 0;
+            let totalFunctions = 0;
+            
+            defaultFunctionCollections.forEach(collection => {
+                if (collection.functions) {
+                    totalFunctions += collection.functions.length;
+                    collection.functions.forEach(func => {
+                        const functionId = `${collection.id}:${func.name}`;
+                        if (DefaultFunctionsService.isIndividualFunctionSelected(functionId)) {
+                            totalEnabled++;
+                        }
+                    });
+                }
+            });
+            
+            const pluralText = totalFunctions !== 1 ? 's' : '';
+            sectionCountElement.textContent = `(${totalEnabled}/${totalFunctions} function${pluralText} enabled)`;
         }
         
         /**
@@ -435,7 +517,9 @@ window.DefaultFunctionsManager = (function() {
             createIndividualFunctionItem,
             showFunctionCollectionInfo,
             updateCollectionCheckboxState,
-            toggleAllFunctionsInCollectionBackend
+            toggleAllFunctionsInCollectionBackend,
+            updateDefaultCollectionCount,
+            updateDefaultFunctionsSectionCount
         };
     }
 

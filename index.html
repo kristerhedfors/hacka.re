@@ -474,18 +474,17 @@ async function getCurrentTimeInBerlin() {
                                 <div id="function-validation-result" class="function-validation-result">
                                     Validation result will appear here
                                 </div>
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
-                                    <label>Tool Definition</label>
-                                    <button type="button" id="copy-tool-definition-btn" class="icon-btn" title="Copy tool definition">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
-                                </div>
                                 <div class="form-actions" style="margin-top: 10px; margin-bottom: 15px;">
                                     <button type="submit" class="btn primary-btn" tabindex="3">Save Functions</button>
                                     <button type="button" id="function-validate-btn" class="btn secondary-btn" tabindex="4">Validate</button>
                                     <button type="button" id="function-clear-btn" class="btn secondary-btn" tabindex="5">Reset</button>
                                 </div>
-                                <div id="function-tool-definition" class="function-tool-definition">
+                                <div class="form-actions" style="margin-bottom: 15px;">
+                                    <button type="button" id="copy-tool-definitions-btn" class="btn secondary-btn" tabindex="6" title="Copy tool definitions to clipboard">
+                                        Copy tool-definitions to clipboard <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                                <div id="function-tool-definition" class="function-tool-definition" style="display: none;">
                                     Tool definition will appear here
                                 </div>
                             </div>
