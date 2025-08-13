@@ -53,7 +53,7 @@ def test_api_key_detection_simple(page: Page, serve_hacka_re):
     # Wait for detection to appear
     expect(detection_element).to_be_visible(timeout=1000)
     expect(detection_text).to_contain_text("GroqCloud")
-    expect(detection_text).to_contain_text("qwen3-32b")
+    expect(detection_text).to_contain_text("moonshotai/kimi-k2-instruct")
     print("✅ GroqCloud API key detected with model info")
     
     # Check provider dropdown
@@ -63,11 +63,12 @@ def test_api_key_detection_simple(page: Page, serve_hacka_re):
     
     # Check model dropdown for default Groq model
     model_select = page.locator('#model-select')
-    expect(model_select).to_have_value('qwen/qwen3-32b')
-    print("✅ Default model auto-selected: qwen3-32b")
+    expect(model_select).to_have_value('moonshotai/kimi-k2-instruct')
+    print("✅ Default model auto-selected: moonshotai/kimi-k2-instruct")
     
-    # Clear and test OpenAI key
+    # Clear and test OpenAI key - also clear stored model to test auto-selection
     api_key_input.clear()
+    page.evaluate("() => { window.StorageService && window.StorageService.saveModel(''); }")
     openai_test_key = "sk-proj-" + "A" * 60
     api_key_input.fill(openai_test_key)
     
@@ -77,7 +78,7 @@ def test_api_key_detection_simple(page: Page, serve_hacka_re):
     # Check detection message changed
     expect(detection_element).to_be_visible()
     expect(detection_text).to_contain_text("OpenAI")
-    expect(detection_text).to_contain_text("gpt-4.1-mini")
+    expect(detection_text).to_contain_text("gpt-4o-mini")
     print("✅ OpenAI API key detected with model info")
     
     # Check provider dropdown changed
@@ -85,8 +86,8 @@ def test_api_key_detection_simple(page: Page, serve_hacka_re):
     print("✅ Provider auto-selected to 'openai'")
     
     # Check model dropdown for default OpenAI model
-    expect(model_select).to_have_value('gpt-4.1-mini')
-    print("✅ Default model auto-selected: gpt-4.1-mini")
+    expect(model_select).to_have_value('gpt-4o-mini')
+    print("✅ Default model auto-selected: gpt-4o-mini")
 
 
 if __name__ == "__main__":
