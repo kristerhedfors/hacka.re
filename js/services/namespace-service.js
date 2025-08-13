@@ -175,6 +175,12 @@ window.NamespaceService = (function() {
                     : `[CRYPTO] FALLBACK: Using namespace hash to encrypt itself for ${namespaceId} (no session key available)`
             );
             
+            // Debug logging
+            if (window.DebugService && window.DebugService.debugLog) {
+                const keyType = sessionKey ? 'session key' : 'namespace hash (fallback)';
+                window.DebugService.debugLog('crypto', `🔐 Encrypting namespace hash for ${namespaceId} using ${keyType} for storage`);
+            }
+            
             // Store the encrypted hash in the namespace entry
             const encryptedData = EncryptionService.encrypt(namespaceHash, encryptionKey);
             const namespaceStorageKey = getNamespaceStorageKey(namespaceId);
@@ -192,6 +198,12 @@ window.NamespaceService = (function() {
                     ? `[CRYPTO] Using session key to encrypt master key for ${namespaceId}`
                     : `[CRYPTO] FALLBACK: Using namespace hash to encrypt master key for ${namespaceId} (no session key available)`
             );
+            
+            // Debug logging
+            if (window.DebugService && window.DebugService.debugLog) {
+                const keyType = sessionKey ? 'session key' : 'namespace hash (fallback)';
+                window.DebugService.debugLog('crypto', `🔐 Encrypting master key for ${namespaceId} using ${keyType} for secure storage`);
+            }
             
             // Encrypt the master key with the session key or namespace hash
             const encryptedMasterKey = EncryptionService.encrypt(masterKey, encryptionKey);
@@ -227,6 +239,12 @@ window.NamespaceService = (function() {
             if (sessionKey) {
                 try {
                     addSystemMessage(`[CRYPTO] Attempting to decrypt master key with session key for ${namespaceId}`);
+                    
+                    // Debug logging
+                    if (window.DebugService && window.DebugService.debugLog) {
+                        window.DebugService.debugLog('crypto', `🔓 Decrypting master key for ${namespaceId} using session key`);
+                    }
+                    
                     masterKey = EncryptionService.decrypt(encryptedMasterKey, sessionKey);
                     if (masterKey) {
                         decryptionMethod = 'SESSION_KEY';
@@ -240,6 +258,12 @@ window.NamespaceService = (function() {
             if (!masterKey) {
                 try {
                     addSystemMessage(`[CRYPTO] FALLBACK: Attempting to decrypt master key with namespace hash for ${namespaceId}`);
+                    
+                    // Debug logging
+                    if (window.DebugService && window.DebugService.debugLog) {
+                        window.DebugService.debugLog('crypto', `🔓 Decrypting master key for ${namespaceId} using namespace hash (fallback)`);
+                    }
+                    
                     masterKey = EncryptionService.decrypt(encryptedMasterKey, namespaceHash);
                     if (masterKey) {
                         decryptionMethod = 'NAMESPACE_HASH';
@@ -299,6 +323,11 @@ window.NamespaceService = (function() {
         // First try with session key if available
         if (sessionKey) {
             try {
+                // Debug logging
+                if (window.DebugService && window.DebugService.debugLog) {
+                    window.DebugService.debugLog('crypto', `🔓 Attempting to decrypt namespace hash using session key`);
+                }
+                
                 const decryptedHash = EncryptionService.decrypt(encryptedData, sessionKey);
                 if (decryptedHash === targetHash) {
                     return { decryptedHash, decryptionMethod: 'SESSION_KEY' };
@@ -310,6 +339,11 @@ window.NamespaceService = (function() {
         
         // Try with namespace hash
         try {
+            // Debug logging
+            if (window.DebugService && window.DebugService.debugLog) {
+                window.DebugService.debugLog('crypto', `🔓 Attempting to decrypt namespace hash using namespace hash (fallback)`);
+            }
+            
             const decryptedHash = EncryptionService.decrypt(encryptedData, targetHash);
             if (decryptedHash === targetHash) {
                 return { decryptedHash, decryptionMethod: 'NAMESPACE_HASH' };
@@ -892,6 +926,11 @@ window.NamespaceService = (function() {
                 // Try to decrypt with session key first
                 if (sessionKey) {
                     try {
+                        // Debug logging
+                        if (window.DebugService && window.DebugService.debugLog) {
+                            window.DebugService.debugLog('crypto', `🔓 Attempting to decrypt master key for namespace switch using session key`);
+                        }
+                        
                         masterKey = EncryptionService.decrypt(encryptedMasterKey, sessionKey);
                     } catch (e) {
                         // Session key didn't work
@@ -901,6 +940,11 @@ window.NamespaceService = (function() {
                 // Try with namespace hash if session key failed
                 if (!masterKey) {
                     try {
+                        // Debug logging
+                        if (window.DebugService && window.DebugService.debugLog) {
+                            window.DebugService.debugLog('crypto', `🔓 Attempting to decrypt master key for namespace switch using namespace hash (fallback)`);
+                        }
+                        
                         masterKey = EncryptionService.decrypt(encryptedMasterKey, targetHash);
                     } catch (e) {
                         // Namespace hash didn't work either

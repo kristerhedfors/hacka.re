@@ -13,11 +13,6 @@ window.EncryptionService = (function() {
      */
     function encrypt(data, passphrase) {
         try {
-            // Debug logging
-            if (window.DebugService && window.DebugService.debugLog) {
-                window.DebugService.debugLog('crypto', `🔐 Encrypting data (${typeof data}, ${data?.length || 'unknown'} chars)`);
-            }
-            
             return CryptoUtils.encryptData(data, passphrase);
         } catch (error) {
             // Create error object with safe properties

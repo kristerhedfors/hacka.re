@@ -83,14 +83,14 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
         
         ApiDebugger.logRequest('Chat Completion', requestConfig, requestConfig.requestBody);
         
-        // Debug logging
-        if (window.DebugService && window.DebugService.debugLog) {
-            window.DebugService.debugLog('api', `🚀 Starting chat completion with model: ${model}`);
-        }
-        
         // Show debug information about tools if enabled
         if (apiToolsManager && addSystemMessage && window.DebugService && DebugService.getDebugMode()) {
             showToolsDebugInfo(apiToolsManager, addSystemMessage);
+        }
+        
+        // Debug logging
+        if (window.DebugService && window.DebugService.debugLog) {
+            window.DebugService.debugLog('api', `🚀 Starting chat completion with model: ${model}`);
         }
         
         // Make the initial request
@@ -130,7 +130,6 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
         throw error;
     }
 }
-    
     
     /**
      * Process streaming response with tool call handling

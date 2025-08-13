@@ -199,8 +199,9 @@ window.DebugCodeTooltip = (function() {
         const filteredLines = [];
         const originalLineNumbers = [];
         
+        // First pass: identify debug lines
+        const debugLines = new Set();
         for (let i = 0; i < lines.length; i++) {
-            const lineNum = startLine + i;
             const line = lines[i];
             const trimmed = line.trim();
             
@@ -210,9 +211,52 @@ window.DebugCodeTooltip = (function() {
             const isDebugCall = trimmed.includes('window.DebugService.debugLog(');
             const isDebugClosing = trimmed === '}' && i > 0 && lines[i-1].trim().includes('debugLog');
             
-            // Skip debug-related lines
             if (isDebugComment || isDebugIf || isDebugCall || isDebugClosing) {
+                debugLines.add(i);
+            }
+        }
+        
+        // Second pass: filter lines and handle blank lines after debug blocks
+        for (let i = 0; i < lines.length; i++) {
+            const lineNum = startLine + i;
+            const line = lines[i];
+            const trimmed = line.trim();
+            
+            // Skip debug-related lines
+            if (debugLines.has(i)) {
                 continue;
+            }
+            
+            // Check if this is a blank line that immediately follows a debug block
+            const isBlankLine = trimmed === '';
+            if (isBlankLine) {
+                // Look backwards to see if we just removed debug lines
+                let justRemovedDebug = false;
+                for (let j = i - 1; j >= 0; j--) {
+                    if (debugLines.has(j)) {
+                        justRemovedDebug = true;
+                        break;
+                    } else if (lines[j].trim() !== '') {
+                        // Hit non-empty, non-debug line
+                        break;
+                    }
+                }
+                
+                // Also look forwards to see if there are more blank lines or debug lines coming
+                let hasContentAfter = false;
+                for (let j = i + 1; j < lines.length; j++) {
+                    if (debugLines.has(j)) {
+                        continue; // Skip debug lines
+                    } else if (lines[j].trim() !== '') {
+                        hasContentAfter = true;
+                        break;
+                    }
+                }
+                
+                // Skip blank line if it immediately follows removed debug code and there's content after
+                if (justRemovedDebug && hasContentAfter) {
+                    continue;
+                }
             }
             
             filteredLines.push(line);
