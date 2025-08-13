@@ -439,39 +439,45 @@ window.FunctionListRenderer = (function() {
                 }
             });
             
-            // Create delete button for individual function (deletes entire collection)
-            const deleteButton = document.createElement('button');
-            deleteButton.className = 'function-item-delete';
-            deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
-            deleteButton.title = 'Delete entire collection';
+            // Create copy button for individual function
+            const copyButton = document.createElement('button');
+            copyButton.className = 'function-item-copy';
+            copyButton.innerHTML = '<i class="fas fa-copy"></i>';
+            copyButton.title = 'Copy function code to clipboard';
+            copyButton.style.fontSize = '12px';
+            copyButton.style.padding = '4px 6px';
             
             // Add click handler with proper event stopping
-            deleteButton.onclick = (e) => {
+            copyButton.onclick = (e) => {
                 e.stopPropagation();
                 e.preventDefault();
                 
-                const collectionMetadata = FunctionToolsService.getCollectionMetadata(collection.id);
-                const collectionName = collectionMetadata ? collectionMetadata.name : 'Untitled Collection';
-                const confirmMessage = `Are you sure you want to delete the entire "${collectionName}" collection?`;
-                
-                // Use setTimeout to prevent multiple dialogs
-                setTimeout(() => {
-                    if (confirm(confirmMessage)) {
-                        FunctionToolsService.removeJsFunction(funcName);
-                        renderMainFunctionList();
-                        
-                        if (addSystemMessage) {
-                            addSystemMessage(`Function collection "${collectionName}" removed.`);
-                        }
+                if (functionSpec && functionSpec.code) {
+                    // Copy function code to clipboard
+                    navigator.clipboard.writeText(functionSpec.code)
+                        .then(() => {
+                            if (addSystemMessage) {
+                                addSystemMessage(`Function "${funcName}" code copied to clipboard.`);
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Failed to copy function code:', err);
+                            if (addSystemMessage) {
+                                addSystemMessage('Failed to copy function code. Please try again.');
+                            }
+                        });
+                } else {
+                    if (addSystemMessage) {
+                        addSystemMessage('No function code available to copy.');
                     }
-                }, 0);
+                }
             };
             
             // Assemble function item
             functionItem.appendChild(checkbox);
             contentContainer.insertBefore(nameElement, contentContainer.firstChild);
             functionItem.appendChild(contentContainer);
-            functionItem.appendChild(deleteButton);
+            functionItem.appendChild(copyButton);
             
             return functionItem;
         }
