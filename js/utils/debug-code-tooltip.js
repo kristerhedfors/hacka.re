@@ -19,6 +19,7 @@ window.DebugCodeTooltip = (function() {
         // Setup event delegation for debug messages
         document.addEventListener('mouseenter', handleMouseEnter, true);
         document.addEventListener('mouseleave', handleMouseLeave, true);
+        document.addEventListener('click', handleClick, true);
         
         console.log('[DebugCodeTooltip] Initialized');
     }
@@ -34,6 +35,7 @@ window.DebugCodeTooltip = (function() {
             <div class="debug-code-header">
                 <span class="debug-code-file"></span>
                 <span class="debug-code-location"></span>
+                <span class="debug-code-hint">📄 Click to open file</span>
             </div>
             <div class="debug-code-content"></div>
         `;
@@ -75,6 +77,28 @@ window.DebugCodeTooltip = (function() {
         hideTimeout = setTimeout(() => {
             hideTooltip();
         }, 300);
+    }
+    
+    /**
+     * Handle click on debug messages to open source file
+     */
+    function handleClick(event) {
+        const target = event.target.closest('.debug-message');
+        if (!target) return;
+        
+        // Get source location from data attributes
+        const sourceFile = target.getAttribute('data-source-file');
+        const sourceLine = target.getAttribute('data-source-line');
+        const sourcePath = target.getAttribute('data-source-path');
+        
+        if (!sourceFile || !sourceLine) return;
+        
+        // Prevent default behavior
+        event.preventDefault();
+        event.stopPropagation();
+        
+        // Open source file in new tab
+        openSourceFile(sourceFile, parseInt(sourceLine), sourcePath);
     }
     
     /**
@@ -365,6 +389,129 @@ window.DebugCodeTooltip = (function() {
             "'": '&#039;'
         };
         return text.replace(/[&<>"']/g, m => map[m]);
+    }
+    
+    /**
+     * Open source file in new tab with line highlighting
+     */
+    function openSourceFile(file, line, fullPath) {
+        try {
+            let fileUrl;
+            
+            // Try to extract path from fullPath if available (most reliable)
+            if (fullPath) {
+                const pathMatch = fullPath.match(/\/js\/.*?\.js/);
+                if (pathMatch) {
+                    fileUrl = pathMatch[0];
+                }
+            }
+            
+            // If we couldn't get it from fullPath, use smart path detection based on filename patterns
+            if (!fileUrl) {
+                if (file.includes('api-') || file === 'api-service.js' || file.includes('function-tools-') || file.includes('storage-') || file.includes('mcp-') || file.includes('chat-') || file.includes('prompts-') || file.includes('model-') || file.includes('encryption-') || file.includes('namespace-') || file.includes('debug-') || file.includes('link-sharing-')) {
+                    fileUrl = `/js/services/${file}`;
+                } else if (file.includes('settings-') || file.includes('api-key-') || file.includes('model-manager') || file.includes('system-prompt-')) {
+                    fileUrl = `/js/components/settings/${file}`;
+                } else if (file.includes('function-') && (file.includes('calling') || file.includes('editor') || file.includes('modal') || file.includes('list'))) {
+                    fileUrl = `/js/components/function-calling/${file}`;
+                } else if (file.includes('mcp-') && file.includes('manager')) {
+                    fileUrl = `/js/components/mcp/${file}`;
+                } else if (file.includes('prompt') && file.includes('manager')) {
+                    fileUrl = `/js/components/prompts/${file}`;
+                } else if (file.includes('ui-') || file.includes('share-ui')) {
+                    fileUrl = `/js/components/ui/${file}`;
+                } else if (file.includes('debug-code-tooltip') || file.includes('crypto-utils')) {
+                    fileUrl = `/js/utils/${file}`;
+                } else if (file.includes('manager') || file.includes('component')) {
+                    fileUrl = `/js/components/${file}`;
+                } else if (file.includes('default-') || file.includes('rc4-') || file.includes('math-') || file.includes('auth-')) {
+                    fileUrl = `/js/default-functions/${file}`;
+                } else {
+                    // Fallback to services for most core files
+                    fileUrl = `/js/services/${file}`;
+                }
+            }
+            
+            // Create URL with line number fragment
+            const fullUrl = `${window.location.origin}${fileUrl}`;
+            
+            console.log(`[DebugCodeTooltip] Opening source file: ${fullUrl}#L${line}`);
+            
+            // Open in new tab
+            const newTab = window.open(fullUrl, '_blank');
+            
+            if (newTab) {
+                // Try to scroll to the line after the tab loads
+                newTab.addEventListener('load', () => {
+                    try {
+                        // Wait a bit for content to load
+                        setTimeout(() => {
+                            // Try different methods to scroll to the line
+                            scrollToLineInTab(newTab, line);
+                        }, 500);
+                    } catch (e) {
+                        console.warn('[DebugCodeTooltip] Could not scroll to line in new tab:', e);
+                    }
+                });
+                
+                // Also set the hash fragment which some browsers use
+                setTimeout(() => {
+                    try {
+                        if (newTab.location) {
+                            newTab.location.hash = `L${line}`;
+                        }
+                    } catch (e) {
+                        // Cross-origin restrictions might prevent this
+                        console.warn('[DebugCodeTooltip] Could not set hash fragment:', e);
+                    }
+                }, 100);
+            } else {
+                console.warn('[DebugCodeTooltip] Failed to open new tab - popup blocked?');
+            }
+            
+        } catch (error) {
+            console.error('[DebugCodeTooltip] Error opening source file:', error);
+        }
+    }
+    
+    /**
+     * Attempt to scroll to a specific line in the opened tab
+     */
+    function scrollToLineInTab(tab, line) {
+        try {
+            // Method 1: Try to find line numbers in a <pre> tag
+            const pre = tab.document.querySelector('pre');
+            if (pre) {
+                const lines = pre.textContent.split('\n');
+                if (lines.length >= line) {
+                    // Calculate approximate scroll position
+                    const lineHeight = 20; // Approximate line height
+                    const scrollPosition = (line - 1) * lineHeight;
+                    tab.scrollTo(0, scrollPosition);
+                    return;
+                }
+            }
+            
+            // Method 2: Use line number hash fragments
+            if (tab.location.hash !== `#L${line}`) {
+                tab.location.hash = `L${line}`;
+            }
+            
+            // Method 3: Try to search for line numbers in the document
+            const textContent = tab.document.body.textContent || '';
+            const linePattern = new RegExp(`^\\s*${line}[→\\s]`, 'm');
+            const match = textContent.match(linePattern);
+            if (match) {
+                // Try to scroll to approximately the right position
+                const beforeMatch = textContent.substring(0, match.index);
+                const linesBefore = beforeMatch.split('\n').length;
+                const lineHeight = 16;
+                tab.scrollTo(0, linesBefore * lineHeight);
+            }
+            
+        } catch (e) {
+            console.warn('[DebugCodeTooltip] Could not scroll to line:', e);
+        }
     }
     
     // Public API
