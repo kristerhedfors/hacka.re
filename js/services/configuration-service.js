@@ -154,6 +154,19 @@ window.ConfigurationService = (function() {
             });
         }
         
+        // Get default function selections (by reference only, not the actual functions)
+        if (window.DefaultFunctionsService) {
+            // Get selected default function collection IDs
+            if (typeof window.DefaultFunctionsService.getSelectedDefaultFunctionIds === 'function') {
+                config.selectedDefaultFunctionCollectionIds = window.DefaultFunctionsService.getSelectedDefaultFunctionIds();
+            }
+            
+            // Get selected individual default function IDs  
+            if (typeof window.DefaultFunctionsService.getSelectedIndividualFunctionIds === 'function') {
+                config.selectedDefaultFunctionIds = window.DefaultFunctionsService.getSelectedIndividualFunctionIds();
+            }
+        }
+        
         return config;
     }
     
@@ -325,6 +338,24 @@ window.ConfigurationService = (function() {
         // Apply tools enabled status
         if (typeof functionConfig.toolsEnabled === 'boolean' && FunctionToolsService && typeof FunctionToolsService.setToolsEnabled === 'function') {
             FunctionToolsService.setToolsEnabled(functionConfig.toolsEnabled);
+        }
+        
+        // Apply default function selections
+        if (window.DefaultFunctionsService) {
+            // Apply selected default function collection IDs
+            if (functionConfig.selectedDefaultFunctionCollectionIds && typeof window.DefaultFunctionsService.setSelectedDefaultFunctionIds === 'function') {
+                window.DefaultFunctionsService.setSelectedDefaultFunctionIds(functionConfig.selectedDefaultFunctionCollectionIds);
+            }
+            
+            // Apply selected individual default function IDs
+            if (functionConfig.selectedDefaultFunctionIds && typeof window.DefaultFunctionsService.setSelectedIndividualFunctionIds === 'function') {
+                window.DefaultFunctionsService.setSelectedIndividualFunctionIds(functionConfig.selectedDefaultFunctionIds);
+                
+                // Load the selected default functions into the system
+                if (typeof window.DefaultFunctionsService.loadSelectedDefaultFunctions === 'function') {
+                    window.DefaultFunctionsService.loadSelectedDefaultFunctions();
+                }
+            }
         }
     }
     
