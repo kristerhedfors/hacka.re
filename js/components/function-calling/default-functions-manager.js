@@ -41,6 +41,7 @@ window.DefaultFunctionsManager = (function() {
             sectionCount.style.marginLeft = '10px';
             sectionCount.style.color = 'var(--text-color-secondary)';
             sectionCount.style.fontSize = '14px';
+            sectionCount.style.display = 'none'; // Initially hidden
             updateDefaultFunctionsSectionCount();
             sectionHeader.appendChild(sectionCount);
             
@@ -175,6 +176,7 @@ window.DefaultFunctionsManager = (function() {
             functionCount.style.marginLeft = '10px';
             functionCount.style.color = 'var(--text-color-secondary)';
             functionCount.style.fontSize = '14px';
+            functionCount.style.display = 'none'; // Initially hidden
             updateDefaultCollectionCount(collection);
             headerContainer.appendChild(functionCount);
             
@@ -409,6 +411,7 @@ window.DefaultFunctionsManager = (function() {
         
         /**
          * Update the default collection count display to show enabled/total format
+         * Only show if at least 1 function is enabled, otherwise hide
          * @param {Object} collection - The function collection object
          */
         function updateDefaultCollectionCount(collection) {
@@ -425,12 +428,20 @@ window.DefaultFunctionsManager = (function() {
             });
             
             const totalCount = collection.functions.length;
-            const pluralText = totalCount !== 1 ? 's' : '';
-            countElement.textContent = `(${enabledCount}/${totalCount} function${pluralText} enabled)`;
+            
+            // Only show count if at least 1 function is enabled
+            if (enabledCount > 0) {
+                const pluralText = totalCount !== 1 ? 's' : '';
+                countElement.textContent = `(${enabledCount}/${totalCount} function${pluralText} enabled)`;
+                countElement.style.display = 'inline';
+            } else {
+                countElement.style.display = 'none';
+            }
         }
         
         /**
          * Update the default functions section count display to show total enabled/total format
+         * Only show if at least 1 function is enabled, otherwise hide
          */
         function updateDefaultFunctionsSectionCount() {
             const sectionCountElement = document.getElementById('default-functions-section-count');
@@ -452,8 +463,14 @@ window.DefaultFunctionsManager = (function() {
                 }
             });
             
-            const pluralText = totalFunctions !== 1 ? 's' : '';
-            sectionCountElement.textContent = `(${totalEnabled}/${totalFunctions} function${pluralText} enabled)`;
+            // Only show count if at least 1 function is enabled
+            if (totalEnabled > 0) {
+                const pluralText = totalFunctions !== 1 ? 's' : '';
+                sectionCountElement.textContent = `(${totalEnabled}/${totalFunctions} function${pluralText} enabled)`;
+                sectionCountElement.style.display = 'inline';
+            } else {
+                sectionCountElement.style.display = 'none';
+            }
         }
         
         /**
