@@ -86,6 +86,44 @@ window.DefaultFunctionsManager = (function() {
             expandIcon.className = 'fas fa-chevron-right';
             headerContainer.appendChild(expandIcon);
             
+            // Create collection checkbox for checking all functions in the collection
+            const collectionCheckbox = document.createElement('input');
+            collectionCheckbox.type = 'checkbox';
+            collectionCheckbox.className = 'collection-master-checkbox';
+            collectionCheckbox.id = `collection-checkbox-${collection.id}`;
+            collectionCheckbox.title = 'Check/uncheck all functions in this collection';
+            
+            // Set initial state based on how many functions are selected
+            updateCollectionCheckboxState(collectionCheckbox, collection);
+            
+            // Add event listener for collection checkbox
+            collectionCheckbox.addEventListener('change', function(e) {
+                e.stopPropagation();
+                
+                const isChecked = this.checked;
+                
+                // Update individual checkboxes immediately for responsive UI
+                const collectionContainer = document.querySelector(`[data-id="${collection.id}"]`);
+                if (collectionContainer) {
+                    const individualCheckboxes = collectionContainer.querySelectorAll('.function-item-checkbox');
+                    individualCheckboxes.forEach(checkbox => {
+                        checkbox.checked = isChecked;
+                    });
+                }
+                
+                // Add system message immediately
+                if (addSystemMessage) {
+                    const actionText = isChecked ? 'enabled' : 'disabled';
+                    addSystemMessage(`All functions in "${collection.name}" ${actionText}.`);
+                }
+                
+                // Defer backend operations
+                setTimeout(() => {
+                    toggleAllFunctionsInCollectionBackend(collection, isChecked);
+                }, 0);
+            });
+            headerContainer.appendChild(collectionCheckbox);
+            
             // Create collection name element
             const collectionName = document.createElement('div');
             collectionName.className = 'function-collection-name';
@@ -126,9 +164,17 @@ window.DefaultFunctionsManager = (function() {
                 if (e.target === infoIcon || e.target.closest('.function-collection-info')) {
                     return; // Don't expand/collapse when clicking info icon
                 }
+                if (e.target === collectionCheckbox || e.target.closest('.collection-master-checkbox')) {
+                    return; // Don't expand/collapse when clicking collection checkbox
+                }
                 isExpanded = !isExpanded;
                 expandIcon.className = isExpanded ? 'fas fa-chevron-down' : 'fas fa-chevron-right';
                 functionsList.style.display = isExpanded ? 'block' : 'none';
+            });
+            
+            // Add separate click handler for checkbox to prevent overlap
+            collectionCheckbox.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent triggering expand/collapse
             });
             
             collectionItem.appendChild(functionsList);
@@ -156,22 +202,31 @@ window.DefaultFunctionsManager = (function() {
                 e.stopPropagation();
                 console.log("Individual function checkbox clicked:", functionId);
                 
-                // Toggle the individual function selection
-                const wasSelected = DefaultFunctionsService.toggleIndividualFunctionSelection(functionId);
-                
-                // Update only the main function list without affecting the default functions tree
-                if (window.functionListRenderer) {
-                    window.functionListRenderer.renderMainFunctionList();
-                }
-                
-                // Add system message
-                if (addSystemMessage) {
-                    if (wasSelected) {
-                        addSystemMessage(`Default function "${func.name}" enabled.`);
-                    } else {
-                        addSystemMessage(`Default function "${func.name}" disabled.`);
+                // Use setTimeout to make UI responsive
+                setTimeout(() => {
+                    // Toggle the individual function selection
+                    const wasSelected = DefaultFunctionsService.toggleIndividualFunctionSelection(functionId);
+                    
+                    // Update the collection checkbox state
+                    const collectionCheckbox = document.getElementById(`collection-checkbox-${collection.id}`);
+                    if (collectionCheckbox) {
+                        updateCollectionCheckboxState(collectionCheckbox, collection);
                     }
-                }
+                    
+                    // Update only the main function list without affecting the default functions tree
+                    if (window.functionListRenderer) {
+                        window.functionListRenderer.renderMainFunctionList();
+                    }
+                    
+                    // Add system message
+                    if (addSystemMessage) {
+                        if (wasSelected) {
+                            addSystemMessage(`Default function "${func.name}" enabled.`);
+                        } else {
+                            addSystemMessage(`Default function "${func.name}" disabled.`);
+                        }
+                    }
+                }, 0);
             });
             functionItem.appendChild(checkbox);
             
@@ -240,6 +295,61 @@ window.DefaultFunctionsManager = (function() {
         }
         
         /**
+         * Update the collection checkbox state based on individual function selections
+         * @param {HTMLElement} collectionCheckbox - The collection checkbox element
+         * @param {Object} collection - The function collection object
+         */
+        function updateCollectionCheckboxState(collectionCheckbox, collection) {
+            if (!collection.functions || collection.functions.length === 0) {
+                collectionCheckbox.checked = false;
+                collectionCheckbox.indeterminate = false;
+                return;
+            }
+            
+            // Count how many functions in this collection are selected
+            let selectedCount = 0;
+            collection.functions.forEach(func => {
+                const functionId = `${collection.id}:${func.name}`;
+                if (DefaultFunctionsService.isIndividualFunctionSelected(functionId)) {
+                    selectedCount++;
+                }
+            });
+            
+            const totalCount = collection.functions.length;
+            
+            if (selectedCount === 0) {
+                collectionCheckbox.checked = false;
+                collectionCheckbox.indeterminate = false;
+            } else if (selectedCount === totalCount) {
+                collectionCheckbox.checked = true;
+                collectionCheckbox.indeterminate = false;
+            } else {
+                collectionCheckbox.checked = false;
+                collectionCheckbox.indeterminate = true;
+            }
+        }
+        
+        /**
+         * Toggle all functions in a collection (backend operations only)
+         * @param {Object} collection - The function collection object
+         * @param {boolean} checked - Whether to check or uncheck all functions
+         */
+        function toggleAllFunctionsInCollectionBackend(collection, checked) {
+            if (!collection.functions || collection.functions.length === 0) {
+                return;
+            }
+            
+            // Use batch operation for better performance - UI already updated
+            const allFunctionIds = collection.functions.map(func => `${collection.id}:${func.name}`);
+            const results = DefaultFunctionsService.batchToggleIndividualFunctions(allFunctionIds, checked);
+            
+            // Update the main function list
+            if (window.functionListRenderer && results.length > 0) {
+                window.functionListRenderer.renderMainFunctionList();
+            }
+        }
+        
+        /**
          * Show function collection info popup
          * @param {Object} collection - The function collection object
          * @param {HTMLElement} infoIcon - The info icon element
@@ -298,7 +408,9 @@ window.DefaultFunctionsManager = (function() {
             addDefaultFunctionsSection,
             createDefaultFunctionCollectionItem,
             createIndividualFunctionItem,
-            showFunctionCollectionInfo
+            showFunctionCollectionInfo,
+            updateCollectionCheckboxState,
+            toggleAllFunctionsInCollectionBackend
         };
     }
 

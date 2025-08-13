@@ -46,6 +46,9 @@ window.DebugCodeTooltip = (function() {
      * Handle mouse enter on elements
      */
     function handleMouseEnter(event) {
+        // Check if target has closest method (is an Element)
+        if (!event.target || typeof event.target.closest !== 'function') return;
+        
         const target = event.target.closest('.debug-message');
         if (!target) return;
         
@@ -70,6 +73,9 @@ window.DebugCodeTooltip = (function() {
      * Handle mouse leave on elements
      */
     function handleMouseLeave(event) {
+        // Check if target has closest method (is an Element)
+        if (!event.target || typeof event.target.closest !== 'function') return;
+        
         const target = event.target.closest('.debug-message');
         if (!target || target !== currentTarget) return;
         
