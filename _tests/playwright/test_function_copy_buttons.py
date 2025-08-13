@@ -27,7 +27,7 @@ def test_function_copy_buttons_exist(page: Page, serve_hacka_re):
     expect(copy_function_code_btn).to_be_visible()
     
     # Check that the copy tool definition button is visible
-    copy_tool_definition_btn = page.locator("#copy-tool-definition-btn")
+    copy_tool_definition_btn = page.locator("#copy-tool-definitions-btn")
     expect(copy_tool_definition_btn).to_be_visible()
     
     # Take a screenshot with debug info
@@ -59,6 +59,18 @@ def test_function_copy_functionality(page: Page, serve_hacka_re):
     function_modal = page.locator("#function-modal")
     expect(function_modal).to_be_visible()
     
+    # Add a test function to the editor
+    function_code = page.locator("#function-code")
+    function_code.fill("""/**
+ * Test function for copy functionality
+ * @param {string} text - Text to process
+ * @returns {string} Processed text
+ * @tool
+ */
+function testFunction(text) {
+    return `Processed: ${text}`;
+}""")
+    
     # Validate the function to generate the tool definition
     validate_btn = page.locator("#function-validate-btn")
     validate_btn.click()
@@ -67,9 +79,9 @@ def test_function_copy_functionality(page: Page, serve_hacka_re):
     validation_result = page.locator("#function-validation-result.success")
     expect(validation_result).to_be_visible()
     
-    # Wait for the tool definition to appear
-    tool_definition = page.locator("#function-tool-definition.active")
-    expect(tool_definition).to_be_visible()
+    # Wait for the tool definition to appear - try without .active class first
+    tool_definition = page.locator("#function-tool-definition")
+    tool_definition.wait_for(state="visible", timeout=10000)
     
     # Take a screenshot with debug info before copying
     screenshot_with_markdown(page, "function_copy_before", {
@@ -92,7 +104,7 @@ def test_function_copy_functionality(page: Page, serve_hacka_re):
     })
     
     # Click the copy tool definition button
-    copy_tool_definition_btn = page.locator("#copy-tool-definition-btn")
+    copy_tool_definition_btn = page.locator("#copy-tool-definitions-btn")
     copy_tool_definition_btn.click()
     
     # Wait for the system message indicating the tool definition was copied

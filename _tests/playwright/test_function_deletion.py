@@ -159,6 +159,12 @@ function multiply_numbers(a, b) {
     # Handle the confirmation dialog (which should warn about deleting related functions)
     page.on("dialog", lambda dialog: dialog.accept())
     
+    # First, expand function collections if they're collapsed
+    collection_headers = function_list.locator(".function-collection-header")
+    if collection_headers.count() > 0:
+        collection_headers.first.click()
+        page.wait_for_timeout(500)  # Wait for expansion
+    
     # Delete the first function (getCurrentTimeInBerlin)
     delete_button = function_list.locator(".function-item:has-text('getCurrentTimeInBerlin') .function-item-delete")
     delete_button.wait_for(state="visible", timeout=2000)
@@ -344,6 +350,12 @@ function calculate_rectangle_area(width, height) {
     # Delete the first function collection
     # Handle the confirmation dialog
     page.on("dialog", lambda dialog: dialog.accept())
+    
+    # First, expand function collections if they're collapsed
+    collection_headers = function_list.locator(".function-collection-header")
+    if collection_headers.count() > 0:
+        collection_headers.first.click()
+        page.wait_for_timeout(500)  # Wait for expansion
     
     # Delete getCurrentTimeInBerlin (this deletes the entire first collection)
     delete_button = function_list.locator(".function-item:has-text('getCurrentTimeInBerlin') .function-item-delete")
