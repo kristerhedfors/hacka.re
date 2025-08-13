@@ -365,6 +365,10 @@ function createSharedLinkDataProcessor() {
             functionCount: sharedData.functions ? Object.keys(sharedData.functions).length : 0,
             hasEnabledFunctions: !!(sharedData.enabledFunctions && Array.isArray(sharedData.enabledFunctions)),
             enabledCount: sharedData.enabledFunctions ? sharedData.enabledFunctions.length : 0,
+            hasSelectedDefaultFunctionIds: !!(sharedData.selectedDefaultFunctionIds && sharedData.selectedDefaultFunctionIds.length > 0),
+            selectedDefaultFunctionIdsCount: sharedData.selectedDefaultFunctionIds ? sharedData.selectedDefaultFunctionIds.length : 0,
+            hasSelectedDefaultFunctionCollectionIds: !!(sharedData.selectedDefaultFunctionCollectionIds && sharedData.selectedDefaultFunctionCollectionIds.length > 0),
+            selectedDefaultFunctionCollectionIdsCount: sharedData.selectedDefaultFunctionCollectionIds ? sharedData.selectedDefaultFunctionCollectionIds.length : 0,
             systematicActivation
         });
         
@@ -458,6 +462,39 @@ function createSharedLinkDataProcessor() {
             if (hasFunctions && FunctionToolsService && typeof FunctionToolsService.setFunctionToolsEnabled === 'function') {
                 FunctionToolsService.setFunctionToolsEnabled(true, addSystemMessage);
                 console.log('🔧 Function tools enabled during shared data application (fallback)');
+            }
+        }
+        
+        // Apply default function selections if present
+        if (window.DefaultFunctionsService && (sharedData.selectedDefaultFunctionIds || sharedData.selectedDefaultFunctionCollectionIds)) {
+            console.log('🔧 Applying default function selections from shared data:', {
+                selectedDefaultFunctionIds: sharedData.selectedDefaultFunctionIds || [],
+                selectedDefaultFunctionCollectionIds: sharedData.selectedDefaultFunctionCollectionIds || []
+            });
+            
+            // Apply default function collection selections
+            if (sharedData.selectedDefaultFunctionCollectionIds && typeof window.DefaultFunctionsService.setSelectedDefaultFunctionIds === 'function') {
+                window.DefaultFunctionsService.setSelectedDefaultFunctionIds(sharedData.selectedDefaultFunctionCollectionIds);
+                console.log('🔧 Applied default function collection selections:', sharedData.selectedDefaultFunctionCollectionIds);
+            }
+            
+            // Apply individual default function selections
+            if (sharedData.selectedDefaultFunctionIds && typeof window.DefaultFunctionsService.setSelectedIndividualFunctionIds === 'function') {
+                window.DefaultFunctionsService.setSelectedIndividualFunctionIds(sharedData.selectedDefaultFunctionIds);
+                console.log('🔧 Applied individual default function selections:', sharedData.selectedDefaultFunctionIds);
+                
+                // Load the selected default functions into the system
+                if (typeof window.DefaultFunctionsService.loadSelectedDefaultFunctions === 'function') {
+                    window.DefaultFunctionsService.loadSelectedDefaultFunctions();
+                    console.log('🔧 Loaded selected default functions into the system');
+                }
+            }
+            
+            if (addSystemMessage) {
+                const totalSelections = (sharedData.selectedDefaultFunctionIds || []).length + (sharedData.selectedDefaultFunctionCollectionIds || []).length;
+                if (totalSelections > 0) {
+                    addSystemMessage(`Shared default function selections (${totalSelections} items) have been applied.`);
+                }
             }
         }
         

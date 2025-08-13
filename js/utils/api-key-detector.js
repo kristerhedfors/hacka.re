@@ -12,7 +12,7 @@ window.ApiKeyDetector = (function() {
             pattern: /^sk-proj-[A-Za-z0-9\-_]{50,}$/,
             providerValue: 'openai',
             providerName: 'OpenAI',
-            defaultModel: 'gpt-4.1-mini'
+            defaultModel: 'gpt-4o-mini'
         },
         groqcloud: {
             pattern: /^gsk_[A-Za-z0-9]{32,}$/,
