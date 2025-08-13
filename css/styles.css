@@ -1140,6 +1140,268 @@ main {
     margin-bottom: 1rem;
 }
 
+/* Debug Categories Dropdown Styling */
+.debug-categories-dropdown {
+    background-color: var(--bg-color-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    margin-left: 20px;
+    margin-top: 10px;
+    padding: 10px;
+    transition: all 0.3s ease;
+}
+
+.debug-dropdown-header {
+    margin-bottom: 10px;
+    font-weight: bold;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 5px;
+}
+
+.debug-category-item {
+    margin-bottom: 5px;
+    padding-left: 15px;
+}
+
+.debug-category-item label {
+    font-size: 0.9em;
+    cursor: pointer;
+    user-select: none;
+}
+
+.debug-category-item label:hover {
+    color: var(--primary-color);
+}
+
+/* Domain-specific debug message colors */
+.debug-crypto {
+    border-left: 3px solid #f39c12; /* Orange for crypto operations */
+}
+
+.debug-storage {
+    border-left: 3px solid #3498db; /* Blue for storage operations */
+}
+
+.debug-shared-links {
+    border-left: 3px solid #9b59b6; /* Purple for shared links */
+}
+
+.debug-functions {
+    border-left: 3px solid #e74c3c; /* Red for function calling */
+}
+
+.debug-mcp-events {
+    border-left: 3px solid #2ecc71; /* Green for MCP events */
+}
+
+.debug-api {
+    border-left: 3px solid #1abc9c; /* Teal for API calls */
+}
+
+/* Debug message content styling */
+.debug-crypto .message-content {
+    background-color: rgba(243, 156, 18, 0.1);
+}
+
+.debug-storage .message-content {
+    background-color: rgba(52, 152, 219, 0.1);
+}
+
+.debug-shared-links .message-content {
+    background-color: rgba(155, 89, 182, 0.1);
+}
+
+.debug-functions .message-content {
+    background-color: rgba(231, 76, 60, 0.1);
+}
+
+.debug-mcp-events .message-content {
+    background-color: rgba(46, 204, 113, 0.1);
+}
+
+.debug-api .message-content {
+    background-color: rgba(26, 188, 156, 0.1);
+}
+
+/* Debug messages hover effect */
+.debug-message {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.debug-message:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Debug Code Tooltip Styling */
+.debug-code-tooltip {
+    position: fixed;
+    z-index: 10000;
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    max-width: 600px;
+    min-width: 400px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+    color: var(--text-color);
+}
+
+.debug-code-tooltip.visible {
+    opacity: 1;
+}
+
+.debug-code-header {
+    padding: 8px 12px;
+    background: var(--bg-color-secondary);
+    border-bottom: 1px solid var(--border-color);
+    border-radius: 8px 8px 0 0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.debug-code-hint {
+    font-size: 0.8rem;
+    color: var(--text-color-tertiary);
+    font-style: italic;
+    opacity: 0.7;
+}
+
+.debug-code-file {
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.debug-code-location {
+    color: var(--text-color-secondary);
+    margin-left: 4px;
+}
+
+.debug-code-content {
+    padding: 12px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.debug-code-pre {
+    margin: 0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85em;
+    line-height: 1.4;
+    background: var(--bg-color-secondary);
+    padding: 8px;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+.debug-code-line {
+    display: flex;
+    padding: 2px 0;
+    transition: background-color 0.2s ease;
+}
+
+.debug-code-line:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.debug-code-line.highlight {
+    background-color: rgba(255, 235, 59, 0.3);
+    font-weight: bold;
+}
+
+.line-number {
+    color: var(--text-color-secondary);
+    margin-right: 12px;
+    user-select: none;
+    opacity: 0.6;
+    font-size: 0.9em;
+}
+
+.line-content {
+    flex: 1;
+    white-space: pre;
+}
+
+.debug-code-fallback {
+    padding: 12px;
+    text-align: center;
+    color: var(--text-color-secondary);
+}
+
+.debug-code-hint {
+    font-size: 0.9em;
+    font-style: italic;
+    margin-top: 8px;
+}
+
+/* Syntax highlighting colors for highlight.js */
+.debug-code-tooltip .hljs-keyword,
+.debug-code-tooltip .hljs-selector-tag,
+.debug-code-tooltip .hljs-literal,
+.debug-code-tooltip .hljs-section,
+.debug-code-tooltip .hljs-link {
+    color: #d73a49;
+    font-weight: bold;
+}
+
+.debug-code-tooltip .hljs-string,
+.debug-code-tooltip .hljs-meta .hljs-string,
+.debug-code-tooltip .hljs-attribute,
+.debug-code-tooltip .hljs-quote,
+.debug-code-tooltip .hljs-template-variable {
+    color: #032f62;
+}
+
+.debug-code-tooltip .hljs-comment,
+.debug-code-tooltip .hljs-deletion {
+    color: #6a737d;
+    font-style: italic;
+}
+
+.debug-code-tooltip .hljs-function .hljs-title,
+.debug-code-tooltip .hljs-section,
+.debug-code-tooltip .hljs-title {
+    color: #6f42c1;
+    font-weight: bold;
+}
+
+.debug-code-tooltip .hljs-number,
+.debug-code-tooltip .hljs-meta,
+.debug-code-tooltip .hljs-meta .hljs-keyword,
+.debug-code-tooltip .hljs-emphasis {
+    color: #005cc5;
+}
+
+.debug-code-tooltip .hljs-params {
+    color: #24292e;
+}
+
+.debug-code-tooltip .hljs-built_in,
+.debug-code-tooltip .hljs-class .hljs-title {
+    color: #e36209;
+}
+
+.debug-code-tooltip .hljs-variable,
+.debug-code-tooltip .hljs-attr {
+    color: #e36209;
+}
+
+/* Ensure proper contrast in both light and dark themes */
+.debug-code-tooltip .line-content {
+    color: var(--text-color);
+}
+
+/* Override any default highlight.js background */
+.debug-code-tooltip .hljs {
+    background: transparent !important;
+    color: inherit;
+}
+
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
