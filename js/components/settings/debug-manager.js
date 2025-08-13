@@ -53,6 +53,11 @@ window.DebugManager = (function() {
                 if (dropdown) {
                     dropdown.style.display = this.checked ? 'block' : 'none';
                 }
+                
+                // Scroll to bottom of settings modal when debug is enabled
+                if (this.checked) {
+                    scrollToBottomOfModal();
+                }
             });
             
             // Append elements to the main checkbox group
@@ -179,6 +184,22 @@ window.DebugManager = (function() {
             } else {
                 masterCheckbox.checked = false;
                 masterCheckbox.indeterminate = true;
+            }
+        }
+        
+        /**
+         * Scroll to the bottom of the settings modal
+         */
+        function scrollToBottomOfModal() {
+            const settingsModal = document.getElementById('settings-modal');
+            if (settingsModal) {
+                const modalContent = settingsModal.querySelector('.modal-content');
+                if (modalContent) {
+                    // Use a small timeout to ensure the dropdown is rendered before scrolling
+                    setTimeout(() => {
+                        modalContent.scrollTop = modalContent.scrollHeight;
+                    }, 100);
+                }
             }
         }
         
