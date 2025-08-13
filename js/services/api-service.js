@@ -83,7 +83,7 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
         
         ApiDebugger.logRequest('Chat Completion', requestConfig, requestConfig.requestBody);
         
-        // Debug message for API operations
+        // Debug logging
         if (window.DebugService && window.DebugService.debugLog) {
             window.DebugService.debugLog('api', `🚀 Starting chat completion with model: ${model}`);
         }

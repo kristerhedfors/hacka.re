@@ -87,8 +87,11 @@ window.DebugCodeTooltip = (function() {
         fileElement.textContent = file;
         locationElement.textContent = `:${line}`;
         
-        // Get source code
-        const codeContent = await getSourceCode(file, line, fullPath);
+        // Get message direction for context adjustment
+        const messageDirection = target.getAttribute('data-message-direction') || 'forward';
+        
+        // Get source code with direction-aware context
+        const codeContent = await getSourceCode(file, line, fullPath, messageDirection);
         
         // Update tooltip content
         const contentElement = tooltipElement.querySelector('.debug-code-content');
@@ -144,8 +147,8 @@ window.DebugCodeTooltip = (function() {
     /**
      * Get source code around the specified line
      */
-    async function getSourceCode(file, line, fullPath) {
-        const cacheKey = `${file}:${line}`;
+    async function getSourceCode(file, line, fullPath, messageDirection = 'forward') {
+        const cacheKey = `${file}:${line}:${messageDirection}`;
         
         // Check cache first
         if (codeCache[cacheKey]) {
@@ -168,7 +171,7 @@ window.DebugCodeTooltip = (function() {
                     const res = await fetch(path);
                     if (res.ok) {
                         const text = await res.text();
-                        return formatSourceCode(text, line, file);
+                        return formatSourceCode(text, line, file, messageDirection);
                     }
                 }
                 
@@ -176,7 +179,7 @@ window.DebugCodeTooltip = (function() {
             }
             
             const text = await response.text();
-            const formatted = formatSourceCode(text, line, file);
+            const formatted = formatSourceCode(text, line, file, messageDirection);
             
             // Cache the result
             codeCache[cacheKey] = formatted;
@@ -188,70 +191,111 @@ window.DebugCodeTooltip = (function() {
         }
     }
     
+    
+    /**
+     * Filter out debug-related lines from the display
+     */
+    function filterDebugLines(lines, startLine, targetLine) {
+        const filteredLines = [];
+        const originalLineNumbers = [];
+        
+        for (let i = 0; i < lines.length; i++) {
+            const lineNum = startLine + i;
+            const line = lines[i];
+            const trimmed = line.trim();
+            
+            // Check for the consistent debug pattern: "// Debug logging" comment and if-statement
+            const isDebugComment = trimmed === '// Debug logging';
+            const isDebugIf = trimmed.startsWith('if (window.DebugService && window.DebugService.debugLog)');
+            const isDebugCall = trimmed.includes('window.DebugService.debugLog(');
+            const isDebugClosing = trimmed === '}' && i > 0 && lines[i-1].trim().includes('debugLog');
+            
+            // Skip debug-related lines
+            if (isDebugComment || isDebugIf || isDebugCall || isDebugClosing) {
+                continue;
+            }
+            
+            filteredLines.push(line);
+            originalLineNumbers.push(lineNum);
+        }
+        
+        return { filteredLines, originalLineNumbers };
+    }
+    
     /**
      * Format source code with line numbers and highlighting
      */
-    function formatSourceCode(text, targetLine, file) {
+    function formatSourceCode(text, targetLine, file, messageDirection = 'forward') {
         const lines = text.split('\n');
-        const contextLines = 5; // Show 5 lines before and after
-        const startLine = Math.max(1, targetLine - contextLines);
-        const endLine = Math.min(lines.length, targetLine + contextLines);
         
-        let html = '<pre class="debug-code-pre"><code class="javascript">';
+        // Base context lines (increased by 50% from original 3/8)
+        let contextLinesBefore, contextLinesAfter;
         
-        for (let i = startLine; i <= endLine; i++) {
-            const lineNum = i;
-            const lineContent = escapeHtml(lines[i - 1] || '');
-            const isTarget = i === targetLine;
-            
-            html += `<div class="debug-code-line ${isTarget ? 'highlight' : ''}">`;
-            html += `<span class="line-number">${lineNum.toString().padStart(4, ' ')}</span>`;
-            html += `<span class="line-content">${lineContent}</span>`;
-            html += '</div>';
+        if (messageDirection === 'backward') {
+            // For backward messages (like "saved", "completed"), show more context BEFORE
+            contextLinesBefore = 8;  // More lines before to show what led to the action
+            contextLinesAfter = 4;   // Fewer lines after since action is complete
+        } else {
+            // For forward messages (like "starting", "processing"), show more context AFTER  
+            contextLinesBefore = 4;  // Fewer lines before
+            contextLinesAfter = 8;   // More lines after to show what happens next
         }
+        
+        // Increase overall by 50% (from original 3+8=11 to ~17)
+        contextLinesBefore = Math.ceil(contextLinesBefore * 1.5);
+        contextLinesAfter = Math.ceil(contextLinesAfter * 1.5);
+        
+        const startLine = Math.max(1, targetLine - contextLinesBefore);
+        const endLine = Math.min(lines.length, targetLine + contextLinesAfter);
+        
+        // Get the raw lines for this section
+        const rawLines = lines.slice(startLine - 1, endLine);
+        
+        // Filter out debug-related lines
+        const { filteredLines, originalLineNumbers } = filterDebugLines(rawLines, startLine, targetLine);
+        
+        if (filteredLines.length === 0) {
+            // Fallback if all lines were filtered out
+            return formatFallbackCode(file, targetLine);
+        }
+        
+        // Extract the code snippet from filtered lines
+        const codeSnippet = filteredLines.join('\n');
+        
+        // Apply syntax highlighting with highlight.js if available
+        let highlightedCode = codeSnippet;
+        if (window.hljs) {
+            try {
+                const result = window.hljs.highlight(codeSnippet, { language: 'javascript' });
+                highlightedCode = result.value;
+            } catch (e) {
+                console.warn('[DebugCodeTooltip] Failed to highlight code:', e);
+                highlightedCode = escapeHtml(codeSnippet);
+            }
+        } else {
+            highlightedCode = escapeHtml(codeSnippet);
+        }
+        
+        // Split highlighted code back into lines
+        const highlightedLines = highlightedCode.split('\n');
+        
+        // Build the final HTML with line numbers (NO line highlighting)
+        let html = '<pre class="debug-code-pre"><code class="language-javascript">';
+        
+        highlightedLines.forEach((line, index) => {
+            const lineNum = originalLineNumbers[index];
+            
+            html += `<div class="debug-code-line">`;
+            html += `<span class="line-number">${lineNum.toString().padStart(4, ' ')}</span>`;
+            html += `<span class="line-content">${line || ' '}</span>`;
+            html += '</div>';
+        });
         
         html += '</code></pre>';
-        
-        // Apply syntax highlighting if marked is available
-        if (window.marked && window.marked.parse) {
-            // Wrap in markdown code block for syntax highlighting
-            const markdown = '```javascript\n' + lines.slice(startLine - 1, endLine).join('\n') + '\n```';
-            const highlighted = window.marked.parse(markdown);
-            
-            // Re-add line numbers to highlighted code
-            return addLineNumbersToHighlighted(highlighted, startLine, targetLine);
-        }
         
         return html;
     }
     
-    /**
-     * Add line numbers to syntax-highlighted code
-     */
-    function addLineNumbersToHighlighted(html, startLine, targetLine) {
-        // Extract the code content from the highlighted HTML
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = html;
-        const codeElement = tempDiv.querySelector('code');
-        
-        if (!codeElement) return html;
-        
-        const lines = codeElement.innerHTML.split('\n').filter(line => line.trim() !== '');
-        let result = '<pre class="debug-code-pre"><code class="javascript">';
-        
-        lines.forEach((line, index) => {
-            const lineNum = startLine + index;
-            const isTarget = lineNum === targetLine;
-            
-            result += `<div class="debug-code-line ${isTarget ? 'highlight' : ''}">`;
-            result += `<span class="line-number">${lineNum.toString().padStart(4, ' ')}</span>`;
-            result += `<span class="line-content">${line}</span>`;
-            result += '</div>';
-        });
-        
-        result += '</code></pre>';
-        return result;
-    }
     
     /**
      * Format fallback code when source is not available

@@ -163,7 +163,7 @@ window.DebugService = (function() {
     }
     
     /**
-     * Get source location from stack trace
+     * Get source location from stack trace, focusing on business logic rather than debug calls
      * @returns {Object} Source location info
      */
     function getSourceLocation() {
@@ -183,7 +183,8 @@ window.DebugService = (function() {
                         file: match[1],
                         line: parseInt(match[2]),
                         column: parseInt(match[3]),
-                        fullPath: line.match(/(https?:\/\/[^:]+\.js:\d+:\d+)/)?.[1] || ''
+                        fullPath: line.match(/(https?:\/\/[^:]+\.js:\d+:\d+)/)?.[1] || '',
+                        needsBusinessLogicDetection: true  // Flag to indicate we should find the actual business logic line
                     };
                 }
             }
@@ -225,8 +226,45 @@ window.DebugService = (function() {
                 messageElement.setAttribute('data-source-line', sourceLocation.line);
                 messageElement.setAttribute('data-source-column', sourceLocation.column);
                 messageElement.setAttribute('data-source-path', sourceLocation.fullPath);
+                
+                // Detect if this is a backward-referencing message (describes what just happened)
+                const isBackwardMessage = detectBackwardReference(message);
+                messageElement.setAttribute('data-message-direction', isBackwardMessage ? 'backward' : 'forward');
             }
         }
+    }
+    
+    /**
+     * Detect if a debug message refers to something that just happened (backward reference)
+     * @param {string} message - The debug message content
+     * @returns {boolean} True if message describes past action
+     */
+    function detectBackwardReference(message) {
+        const backwardPatterns = [
+            /saved/i,
+            /stored/i,
+            /created/i,
+            /updated/i,
+            /deleted/i,
+            /removed/i,
+            /completed/i,
+            /finished/i,
+            /processed/i,
+            /executed/i,
+            /sent/i,
+            /loaded/i,
+            /initialized/i,
+            /configured/i,
+            /established/i,
+            /connected/i,
+            /encrypted/i,
+            /decrypted/i,
+            /validated/i,
+            /authenticated/i,
+            /logged/i
+        ];
+        
+        return backwardPatterns.some(pattern => pattern.test(message));
     }
     
     /**
