@@ -96,6 +96,17 @@ window.LinkSharingService = (function() {
             // Use provided payload and apply legacy options
             finalPayload = { ...payload };
             
+            // If the payload contains function configuration with default function selections,
+            // ensure they are preserved at the top level
+            if (payload.functions) {
+                if (payload.functions.selectedDefaultFunctionIds) {
+                    finalPayload.selectedDefaultFunctionIds = payload.functions.selectedDefaultFunctionIds;
+                }
+                if (payload.functions.selectedDefaultFunctionCollectionIds) {
+                    finalPayload.selectedDefaultFunctionCollectionIds = payload.functions.selectedDefaultFunctionCollectionIds;
+                }
+            }
+            
             // Add prompt library if requested (legacy support)
             if (options.includePromptLibrary) {
                 const prompts = PromptsService.getPrompts();
@@ -118,6 +129,23 @@ window.LinkSharingService = (function() {
                 
                 const enabledFunctions = FunctionToolsService.getEnabledFunctionNames();
                 finalPayload.enabledFunctions = enabledFunctions;
+                
+                // Add default function selections if available (legacy support)
+                if (window.DefaultFunctionsService) {
+                    if (typeof window.DefaultFunctionsService.getSelectedDefaultFunctionIds === 'function') {
+                        const selectedDefaultCollectionIds = window.DefaultFunctionsService.getSelectedDefaultFunctionIds();
+                        if (selectedDefaultCollectionIds.length > 0) {
+                            finalPayload.selectedDefaultFunctionCollectionIds = selectedDefaultCollectionIds;
+                        }
+                    }
+                    
+                    if (typeof window.DefaultFunctionsService.getSelectedIndividualFunctionIds === 'function') {
+                        const selectedDefaultFunctionIds = window.DefaultFunctionsService.getSelectedIndividualFunctionIds();
+                        if (selectedDefaultFunctionIds.length > 0) {
+                            finalPayload.selectedDefaultFunctionIds = selectedDefaultFunctionIds;
+                        }
+                    }
+                }
             }
             
             // Add MCP connections if requested and available in payload (legacy support)
@@ -168,6 +196,10 @@ window.LinkSharingService = (function() {
         if (config.functions) {
             if (config.functions.library) payload.functions = config.functions.library;
             if (config.functions.enabled) payload.enabledFunctions = config.functions.enabled;
+            
+            // Include default function selections (by reference only)
+            if (config.functions.selectedDefaultFunctionCollectionIds) payload.selectedDefaultFunctionCollectionIds = config.functions.selectedDefaultFunctionCollectionIds;
+            if (config.functions.selectedDefaultFunctionIds) payload.selectedDefaultFunctionIds = config.functions.selectedDefaultFunctionIds;
         }
         
         // MCP configuration  
@@ -240,7 +272,9 @@ window.LinkSharingService = (function() {
                 
                 // Check if the decrypted data contains at least one valid field
                 // We no longer require apiKey to be present, allowing sharing of just conversation or model
-                if (!data.apiKey && !data.messages && !data.model && !data.systemPrompt && !data.prompts && !data.mcpConnections && !data.welcomeMessage) {
+                if (!data.apiKey && !data.messages && !data.model && !data.systemPrompt && !data.prompts && 
+                    !data.functions && !data.selectedDefaultFunctionIds && !data.selectedDefaultFunctionCollectionIds && 
+                    !data.mcpConnections && !data.welcomeMessage) {
                     console.error('Decrypted data does not contain any valid fields');
                     return null;
                 }
@@ -277,6 +311,17 @@ window.LinkSharingService = (function() {
                 if (data.enabledFunctions) {
                     result.enabledFunctions = data.enabledFunctions;
                     console.log('Extracted enabled function names from shared link:', data.enabledFunctions);
+                }
+                
+                // Include default function selections if present (by reference)
+                if (data.selectedDefaultFunctionCollectionIds) {
+                    result.selectedDefaultFunctionCollectionIds = data.selectedDefaultFunctionCollectionIds;
+                    console.log('Extracted selected default function collection IDs from shared link:', data.selectedDefaultFunctionCollectionIds);
+                }
+                
+                if (data.selectedDefaultFunctionIds) {
+                    result.selectedDefaultFunctionIds = data.selectedDefaultFunctionIds;
+                    console.log('Extracted selected individual default function IDs from shared link:', data.selectedDefaultFunctionIds);
                 }
                 
                 // Include MCP connections if present
