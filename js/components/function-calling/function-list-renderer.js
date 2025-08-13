@@ -316,6 +316,13 @@ window.FunctionListRenderer = (function() {
             copyCollectionButton.className = 'function-collection-copy';
             copyCollectionButton.innerHTML = '<i class="fas fa-copy"></i>';
             copyCollectionButton.title = 'Copy functions in this collection to clipboard';
+            copyCollectionButton.style.fontSize = '12px';
+            copyCollectionButton.style.padding = '4px 6px';
+            copyCollectionButton.style.background = 'none';
+            copyCollectionButton.style.border = 'none';
+            copyCollectionButton.style.color = 'var(--text-color-secondary)';
+            copyCollectionButton.style.cursor = 'pointer';
+            copyCollectionButton.style.borderRadius = '0';
             
             // Add click handler with proper event stopping
             copyCollectionButton.onclick = (e) => {
