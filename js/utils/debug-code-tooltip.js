@@ -1,12 +1,12 @@
 /**
  * Debug Code Tooltip Module
- * Shows source code context when hovering over debug messages
+ * Shows source code context when clicking debug messages
+ * Click message to show tooltip, click elsewhere or same message to hide
  */
 
 window.DebugCodeTooltip = (function() {
     let tooltipElement = null;
     let currentTarget = null;
-    let hideTimeout = null;
     let codeCache = {};
     
     /**
@@ -16,12 +16,10 @@ window.DebugCodeTooltip = (function() {
         // Create tooltip element
         createTooltipElement();
         
-        // Setup event delegation for debug messages
-        document.addEventListener('mouseenter', handleMouseEnter, true);
-        document.addEventListener('mouseleave', handleMouseLeave, true);
+        // Setup event delegation for debug messages - CLICK ONLY, no hover
         document.addEventListener('click', handleClick, true);
         
-        console.log('[DebugCodeTooltip] Initialized');
+        console.log('[DebugCodeTooltip] Initialized - Click to show tooltip');
     }
     
     /**
@@ -35,62 +33,46 @@ window.DebugCodeTooltip = (function() {
             <div class="debug-code-header">
                 <span class="debug-code-file"></span>
                 <span class="debug-code-location"></span>
-                <span class="debug-code-hint">📄 Click to open file</span>
+                <span class="debug-code-hint">📄 Click header to open file</span>
             </div>
             <div class="debug-code-content"></div>
         `;
         document.body.appendChild(tooltipElement);
     }
     
-    /**
-     * Handle mouse enter on elements
-     */
-    function handleMouseEnter(event) {
-        // Check if target has closest method (is an Element)
-        if (!event.target || typeof event.target.closest !== 'function') return;
-        
-        const target = event.target.closest('.debug-message');
-        if (!target) return;
-        
-        // Clear any pending hide
-        if (hideTimeout) {
-            clearTimeout(hideTimeout);
-            hideTimeout = null;
-        }
-        
-        // Get source location from data attributes
-        const sourceFile = target.getAttribute('data-source-file');
-        const sourceLine = target.getAttribute('data-source-line');
-        const sourcePath = target.getAttribute('data-source-path');
-        
-        if (!sourceFile || !sourceLine) return;
-        
-        currentTarget = target;
-        showTooltip(target, sourceFile, parseInt(sourceLine), sourcePath);
-    }
     
     /**
-     * Handle mouse leave on elements
-     */
-    function handleMouseLeave(event) {
-        // Check if target has closest method (is an Element)
-        if (!event.target || typeof event.target.closest !== 'function') return;
-        
-        const target = event.target.closest('.debug-message');
-        if (!target || target !== currentTarget) return;
-        
-        // Hide tooltip after a short delay
-        hideTimeout = setTimeout(() => {
-            hideTooltip();
-        }, 300);
-    }
-    
-    /**
-     * Handle click on debug messages to open source file
+     * Handle click on debug messages to toggle tooltip
      */
     function handleClick(event) {
+        // Check if clicking on the tooltip itself
+        if (tooltipElement && tooltipElement.contains(event.target)) {
+            // Check if clicking the file link in tooltip header
+            if (event.target.classList.contains('debug-code-hint') || 
+                event.target.closest('.debug-code-header')) {
+                // Let the click through to open file if needed
+                const target = currentTarget;
+                if (target) {
+                    const sourceFile = target.getAttribute('data-source-file');
+                    const sourceLine = target.getAttribute('data-source-line');
+                    const sourcePath = target.getAttribute('data-source-path');
+                    if (sourceFile && sourceLine) {
+                        openSourceFile(sourceFile, parseInt(sourceLine), sourcePath);
+                    }
+                }
+            }
+            return; // Don't close tooltip when clicking on it
+        }
+        
         const target = event.target.closest('.debug-message');
-        if (!target) return;
+        
+        // If clicking outside any debug message, hide tooltip
+        if (!target) {
+            if (tooltipElement && tooltipElement.style.display !== 'none') {
+                hideTooltip();
+            }
+            return;
+        }
         
         // Get source location from data attributes
         const sourceFile = target.getAttribute('data-source-file');
@@ -103,14 +85,28 @@ window.DebugCodeTooltip = (function() {
         event.preventDefault();
         event.stopPropagation();
         
-        // Open source file in new tab
-        openSourceFile(sourceFile, parseInt(sourceLine), sourcePath);
+        // Toggle tooltip: if clicking same target, hide; otherwise show for new target
+        if (currentTarget === target && tooltipElement && tooltipElement.style.display !== 'none') {
+            hideTooltip();
+        } else {
+            currentTarget = target;
+            showTooltip(target, sourceFile, parseInt(sourceLine), sourcePath);
+        }
     }
     
     /**
      * Show tooltip with source code
      */
     async function showTooltip(target, file, line, fullPath) {
+        // Remove active class from any previous message
+        const previousActive = document.querySelector('.debug-message.tooltip-active');
+        if (previousActive) {
+            previousActive.classList.remove('tooltip-active');
+        }
+        
+        // Add active class to current message
+        target.classList.add('tooltip-active');
+        
         // Update tooltip header
         const fileElement = tooltipElement.querySelector('.debug-code-file');
         const locationElement = tooltipElement.querySelector('.debug-code-location');
@@ -145,6 +141,13 @@ window.DebugCodeTooltip = (function() {
                 tooltipElement.style.display = 'none';
             }, 200);
         }
+        
+        // Remove active class from any message
+        const activeMessage = document.querySelector('.debug-message.tooltip-active');
+        if (activeMessage) {
+            activeMessage.classList.remove('tooltip-active');
+        }
+        
         currentTarget = null;
     }
     

@@ -1223,14 +1223,26 @@ main {
     background-color: rgba(26, 188, 156, 0.1);
 }
 
-/* Debug messages hover effect */
+/* Debug messages click effect */
 .debug-message {
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    transition: all 0.2s ease;
+    position: relative;
 }
 
 .debug-message:hover {
     background-color: rgba(0, 0, 0, 0.05);
+}
+
+.debug-message:active {
+    transform: scale(0.99);
+    background-color: rgba(0, 0, 0, 0.08);
+}
+
+/* Add indicator when tooltip is shown for this message */
+.debug-message.tooltip-active {
+    background-color: rgba(99, 102, 241, 0.1);
+    border-left: 3px solid var(--primary-color);
 }
 
 /* Debug Code Tooltip Styling */
@@ -1245,7 +1257,7 @@ main {
     min-width: 400px;
     opacity: 0;
     transition: opacity 0.2s ease;
-    pointer-events: none;
+    pointer-events: auto; /* Changed from none to auto to make it clickable */
     color: var(--text-color);
 }
 
