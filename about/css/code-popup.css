@@ -9,13 +9,21 @@
     cursor: pointer;
     border-bottom: 1px dashed var(--primary-color);
     padding-bottom: 1px;
-    transition: color 0.2s ease;
+    transition: all 0.2s ease;
+    position: relative;
 }
 
 .code-module-reference:hover,
 .code-popup-trigger:hover {
     color: var(--primary-dark);
     text-decoration: none;
+    border-bottom: 1px solid var(--primary-dark);
+}
+
+.code-module-reference:active,
+.code-popup-trigger:active {
+    transform: translateY(1px);
+    color: var(--primary-dark);
 }
 
 /* Code popup container */
