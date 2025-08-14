@@ -1228,10 +1228,30 @@ main {
     cursor: pointer;
     transition: all 0.2s ease;
     position: relative;
+    margin-left: 8px; /* Add space for the active indicator */
 }
 
 .debug-message:hover {
     background-color: rgba(0, 0, 0, 0.05);
+    border-left: 2px solid rgba(99, 102, 241, 0.3);
+    transform: translateX(1px);
+}
+
+.debug-message:hover::after {
+    content: '👁️ Click to view source';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.7rem;
+    color: var(--primary-color);
+    background: var(--bg-color);
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid var(--primary-color);
+    opacity: 0.8;
+    z-index: 1000;
+    pointer-events: none;
 }
 
 .debug-message:active {
@@ -1241,8 +1261,41 @@ main {
 
 /* Add indicator when tooltip is shown for this message */
 .debug-message.tooltip-active {
-    background-color: rgba(99, 102, 241, 0.1);
-    border-left: 3px solid var(--primary-color);
+    background-color: rgba(99, 102, 241, 0.15);
+    border-left: 4px solid var(--primary-color);
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+    transform: translateX(2px);
+    transition: all 0.3s ease;
+}
+
+.debug-message.tooltip-active .message-content {
+    background-color: rgba(99, 102, 241, 0.05);
+    border-radius: 3px;
+}
+
+/* Enhanced highlighting for active debug message with pulse effect */
+.debug-message.tooltip-active::before {
+    content: '';
+    position: absolute;
+    left: -2px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--primary-color);
+    border-radius: 1px;
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        opacity: 1;
+        transform: scaleY(1);
+    }
+    50% {
+        opacity: 0.7;
+        transform: scaleY(0.95);
+    }
 }
 
 /* Debug Code Tooltip Styling */
