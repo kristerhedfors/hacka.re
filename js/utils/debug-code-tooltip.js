@@ -131,21 +131,81 @@ window.DebugCodeTooltip = (function() {
         // Update tooltip content with the full file
         contentElement.innerHTML = codeContent;
         
-        // Scroll to the target line or red line indicator
+        // Scroll to center the red line indicator in the viewport
         setTimeout(() => {
-            // First try to find the red line indicator if it's the target
+            // Find the red line indicator that's closest to the target line
             const targetIndicator = contentElement.querySelector('#debug-target-indicator');
+            
+            console.log('[DebugCodeTooltip] Scrolling to target line', line);
+            console.log('[DebugCodeTooltip] Target indicator found:', !!targetIndicator);
+            
             if (targetIndicator) {
-                // Scroll the red line into view, centered
-                targetIndicator.scrollIntoView({ behavior: 'auto', block: 'center' });
+                // Get the container's viewport dimensions
+                const containerRect = contentElement.getBoundingClientRect();
+                const containerHeight = containerRect.height;
+                
+                // Get the indicator's position relative to the container
+                const indicatorOffsetTop = targetIndicator.offsetTop;
+                
+                // Calculate scroll position to center the red line
+                // We want the red line in the middle of the visible area
+                const scrollTop = indicatorOffsetTop - (containerHeight / 2);
+                
+                console.log('[DebugCodeTooltip] Container height:', containerHeight);
+                console.log('[DebugCodeTooltip] Indicator offset:', indicatorOffsetTop);
+                console.log('[DebugCodeTooltip] Calculated scroll position:', scrollTop);
+                
+                // Scroll to the calculated position
+                contentElement.scrollTop = Math.max(0, scrollTop);
             } else {
-                // Otherwise find the target line
-                const targetLineElement = contentElement.querySelector('.target-line');
-                if (targetLineElement) {
-                    targetLineElement.scrollIntoView({ behavior: 'auto', block: 'center' });
+                // Fallback: find ANY red line indicator near the target
+                const allIndicators = contentElement.querySelectorAll('.debug-removed-indicator');
+                console.log('[DebugCodeTooltip] Found', allIndicators.length, 'red line indicators in fallback');
+                
+                if (allIndicators.length > 0) {
+                    // Find the indicator closest to our target line
+                    let closestIndicator = null;
+                    let closestDistance = Infinity;
+                    
+                    allIndicators.forEach((indicator, index) => {
+                        // Check if this indicator is near the target line
+                        const prevLine = indicator.previousElementSibling;
+                        if (prevLine && prevLine.dataset.lineNumber) {
+                            const lineNum = parseInt(prevLine.dataset.lineNumber);
+                            const distance = Math.abs(lineNum - line);
+                            console.log('[DebugCodeTooltip] Indicator', index, 'at line', lineNum, 'distance from target', distance);
+                            if (distance < closestDistance) {
+                                closestDistance = distance;
+                                closestIndicator = indicator;
+                            }
+                        }
+                    });
+                    
+                    if (closestIndicator) {
+                        console.log('[DebugCodeTooltip] Using closest indicator, distance:', closestDistance);
+                        // Center the closest red line indicator
+                        const containerHeight = contentElement.getBoundingClientRect().height;
+                        const indicatorOffsetTop = closestIndicator.offsetTop;
+                        const scrollTop = indicatorOffsetTop - (containerHeight / 2);
+                        console.log('[DebugCodeTooltip] Fallback scroll position:', scrollTop);
+                        contentElement.scrollTop = Math.max(0, scrollTop);
+                    }
+                } else {
+                    console.log('[DebugCodeTooltip] No red line indicators found, using target line');
+                    // Final fallback: scroll to the target line if no red lines found
+                    const targetLineElement = contentElement.querySelector('.target-line');
+                    if (targetLineElement) {
+                        const containerHeight = contentElement.getBoundingClientRect().height;
+                        const lineOffsetTop = targetLineElement.offsetTop;
+                        const scrollTop = lineOffsetTop - (containerHeight / 2);
+                        console.log('[DebugCodeTooltip] Target line fallback scroll position:', scrollTop);
+                        contentElement.scrollTop = Math.max(0, scrollTop);
+                    } else {
+                        console.log('[DebugCodeTooltip] No target line found either');
+                    }
                 }
             }
-        }, 50); // Small delay to ensure rendering is complete
+        }, 100); // Slightly longer delay to ensure full rendering
     }
     
     /**
@@ -292,17 +352,23 @@ window.DebugCodeTooltip = (function() {
         }
         
         // Second pass: filter lines and track where debug blocks were removed
-        let lastNonDebugIndex = -1;
+        let lastNonDebugFilteredIndex = -1;
+        let foundDebugBlock = false;
         
         for (let i = 0; i < lines.length; i++) {
             const lineNum = startLine + i;
             const line = lines[i];
             const trimmed = line.trim();
             
+            // Track if we found any debug code in this file
+            if (debugLines.has(i)) {
+                foundDebugBlock = true;
+            }
+            
             // Check if we're starting a debug block that will be removed
-            if (debugBlockStarts.has(i) && lastNonDebugIndex >= 0) {
+            if (debugBlockStarts.has(i) && lastNonDebugFilteredIndex >= 0) {
                 // Mark that we should show a red line after the last non-debug line
-                removedAfterIndices.add(lastNonDebugIndex);
+                removedAfterIndices.add(lastNonDebugFilteredIndex);
             }
             
             // Skip debug-related lines
@@ -345,9 +411,18 @@ window.DebugCodeTooltip = (function() {
             filteredLines.push(line);
             originalLineNumbers.push(lineNum);
             
-            // Track the index of this line if it's not blank
+            // Track the filtered index of this line if it's not blank
             if (trimmed !== '') {
-                lastNonDebugIndex = filteredLines.length - 1;
+                lastNonDebugFilteredIndex = filteredLines.length - 1;
+            }
+        }
+        
+        // If no debug blocks were found but we expect them (based on target line), add a fallback indicator
+        if (!foundDebugBlock && removedAfterIndices.size === 0) {
+            // Find a reasonable place to show a red line near the target line
+            const targetIndex = originalLineNumbers.findIndex(lineNum => lineNum >= targetLine);
+            if (targetIndex >= 0 && targetIndex > 0) {
+                removedAfterIndices.add(targetIndex - 1);
             }
         }
         
