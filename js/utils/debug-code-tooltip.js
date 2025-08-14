@@ -221,10 +221,13 @@ window.DebugCodeTooltip = (function() {
         // Add active class to current message
         target.classList.add('tooltip-active');
         
-        // Update tooltip header
+        // Update tooltip header with full path
         const fileElement = tooltipElement.querySelector('.debug-code-file');
         const locationElement = tooltipElement.querySelector('.debug-code-location');
-        fileElement.textContent = file;
+        
+        // Get the full file path using the same logic as openSourceFile
+        const fullFilePath = getFullFilePath(file);
+        fileElement.textContent = fullFilePath;
         locationElement.textContent = `:${line} (Full File)`;
         
         // Show loading indicator while fetching full file
@@ -237,7 +240,7 @@ window.DebugCodeTooltip = (function() {
         tooltipElement.classList.add('visible');
         
         // Get source code (now loads full file)
-        const codeContent = await getSourceCode(file, line, fullPath);
+        const codeContent = await getSourceCode(file, line);
         
         // Update tooltip content with the full file
         contentElement.innerHTML = codeContent;
@@ -246,9 +249,6 @@ window.DebugCodeTooltip = (function() {
         setTimeout(() => {
             // Find the red line indicator that's closest to the target line
             const targetIndicator = contentElement.querySelector('#debug-target-indicator');
-            
-            console.log('[DebugCodeTooltip] Scrolling to target line', line);
-            console.log('[DebugCodeTooltip] Target indicator found:', !!targetIndicator);
             
             if (targetIndicator) {
                 // Get the container's viewport dimensions
@@ -262,29 +262,23 @@ window.DebugCodeTooltip = (function() {
                 // We want the red line in the middle of the visible area
                 const scrollTop = indicatorOffsetTop - (containerHeight / 2);
                 
-                console.log('[DebugCodeTooltip] Container height:', containerHeight);
-                console.log('[DebugCodeTooltip] Indicator offset:', indicatorOffsetTop);
-                console.log('[DebugCodeTooltip] Calculated scroll position:', scrollTop);
-                
                 // Scroll to the calculated position
                 contentElement.scrollTop = Math.max(0, scrollTop);
             } else {
                 // Fallback: find ANY red line indicator near the target
                 const allIndicators = contentElement.querySelectorAll('.debug-removed-indicator');
-                console.log('[DebugCodeTooltip] Found', allIndicators.length, 'red line indicators in fallback');
                 
                 if (allIndicators.length > 0) {
                     // Find the indicator closest to our target line
                     let closestIndicator = null;
                     let closestDistance = Infinity;
                     
-                    allIndicators.forEach((indicator, index) => {
+                    allIndicators.forEach((indicator) => {
                         // Check if this indicator is near the target line
                         const prevLine = indicator.previousElementSibling;
                         if (prevLine && prevLine.dataset.lineNumber) {
                             const lineNum = parseInt(prevLine.dataset.lineNumber);
                             const distance = Math.abs(lineNum - line);
-                            console.log('[DebugCodeTooltip] Indicator', index, 'at line', lineNum, 'distance from target', distance);
                             if (distance < closestDistance) {
                                 closestDistance = distance;
                                 closestIndicator = indicator;
@@ -293,26 +287,20 @@ window.DebugCodeTooltip = (function() {
                     });
                     
                     if (closestIndicator) {
-                        console.log('[DebugCodeTooltip] Using closest indicator, distance:', closestDistance);
                         // Center the closest red line indicator
                         const containerHeight = contentElement.getBoundingClientRect().height;
                         const indicatorOffsetTop = closestIndicator.offsetTop;
                         const scrollTop = indicatorOffsetTop - (containerHeight / 2);
-                        console.log('[DebugCodeTooltip] Fallback scroll position:', scrollTop);
                         contentElement.scrollTop = Math.max(0, scrollTop);
                     }
                 } else {
-                    console.log('[DebugCodeTooltip] No red line indicators found, using target line');
                     // Final fallback: scroll to the target line if no red lines found
                     const targetLineElement = contentElement.querySelector('.target-line');
                     if (targetLineElement) {
                         const containerHeight = contentElement.getBoundingClientRect().height;
                         const lineOffsetTop = targetLineElement.offsetTop;
                         const scrollTop = lineOffsetTop - (containerHeight / 2);
-                        console.log('[DebugCodeTooltip] Target line fallback scroll position:', scrollTop);
                         contentElement.scrollTop = Math.max(0, scrollTop);
-                    } else {
-                        console.log('[DebugCodeTooltip] No target line found either');
                     }
                 }
             }
@@ -339,6 +327,34 @@ window.DebugCodeTooltip = (function() {
         currentTarget = null;
     }
     
+    /**
+     * Get the full file path based on filename patterns
+     */
+    function getFullFilePath(file) {
+        if (file.includes('api-') || file === 'api-service.js' || file.includes('function-tools-') || file.includes('storage-') || file.includes('mcp-') || file.includes('chat-') || file.includes('prompts-') || file.includes('model-') || file.includes('encryption-') || file.includes('namespace-') || file.includes('debug-') || file.includes('link-sharing-')) {
+            return `js/services/${file}`;
+        } else if (file.includes('settings-') || file.includes('api-key-') || file.includes('model-manager') || file.includes('system-prompt-')) {
+            return `js/components/settings/${file}`;
+        } else if (file.includes('function-') && (file.includes('calling') || file.includes('editor') || file.includes('modal') || file.includes('list'))) {
+            return `js/components/function-calling/${file}`;
+        } else if (file.includes('mcp-') && file.includes('manager')) {
+            return `js/components/mcp/${file}`;
+        } else if (file.includes('prompt') && file.includes('manager')) {
+            return `js/components/prompts/${file}`;
+        } else if (file.includes('ui-') || file.includes('share-ui')) {
+            return `js/components/ui/${file}`;
+        } else if (file.includes('debug-code-tooltip') || file.includes('crypto-utils')) {
+            return `js/utils/${file}`;
+        } else if (file.includes('manager') || file.includes('component')) {
+            return `js/components/${file}`;
+        } else if (file.includes('default-') || file.includes('rc4-') || file.includes('math-') || file.includes('auth-')) {
+            return `js/default-functions/${file}`;
+        } else {
+            // Fallback - try to determine from common patterns
+            return `js/${file}`;
+        }
+    }
+
     /**
      * Position tooltip relative to target element
      */
@@ -368,7 +384,7 @@ window.DebugCodeTooltip = (function() {
     /**
      * Get source code around the specified line
      */
-    async function getSourceCode(file, line, fullPath) {
+    async function getSourceCode(file, line) {
         const cacheKey = `${file}:full`; // Cache key for full file
         
         // Check cache first
