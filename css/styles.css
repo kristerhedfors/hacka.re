@@ -1542,12 +1542,6 @@ main {
     color: var(--text-color-secondary);
 }
 
-.debug-code-hint {
-    font-size: 0.9em;
-    font-style: italic;
-    margin-top: 8px;
-}
-
 /* Syntax highlighting colors for highlight.js */
 .debug-code-tooltip .hljs-keyword,
 .debug-code-tooltip .hljs-selector-tag,
