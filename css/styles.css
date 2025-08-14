@@ -1605,6 +1605,86 @@ main {
     color: inherit;
 }
 
+/* Mobile responsive styles for debug code tooltip */
+@media (max-width: 768px) {
+    .debug-code-tooltip {
+        /* On mobile, make it fill most of the screen like other modals */
+        position: fixed !important;
+        top: 2rem !important;
+        left: 2.5% !important;
+        width: 95% !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        height: calc(100vh - 4rem) !important;
+        max-height: calc(100vh - 4rem) !important;
+        /* Disable drag and resize on mobile */
+        transform: none !important;
+    }
+    
+    /* Hide resize handles on mobile */
+    .debug-code-tooltip .resize-handle {
+        display: none !important;
+    }
+    
+    /* Disable dragging cursor on mobile */
+    .debug-code-tooltip .draggable-header {
+        cursor: default !important;
+    }
+    
+    /* Adjust content area for mobile */
+    .debug-code-tooltip .debug-code-content {
+        max-height: calc(100vh - 8rem) !important;
+        min-height: calc(100vh - 8rem) !important;
+        height: calc(100vh - 8rem) !important;
+    }
+    
+    /* Make the header more mobile-friendly */
+    .debug-code-tooltip .debug-code-header {
+        padding: 12px 16px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    /* Stack header elements on very small screens */
+    .debug-code-tooltip .debug-code-file,
+    .debug-code-tooltip .debug-code-location {
+        font-size: 0.85em;
+    }
+    
+    .debug-code-tooltip .clickable-hint {
+        font-size: 0.75rem;
+        margin-top: 4px;
+    }
+}
+
+@media (max-width: 480px) {
+    .debug-code-tooltip {
+        top: 1rem !important;
+        left: 1rem !important;
+        width: calc(100% - 2rem) !important;
+        height: calc(100vh - 2rem) !important;
+        max-height: calc(100vh - 2rem) !important;
+    }
+    
+    .debug-code-tooltip .debug-code-content {
+        max-height: calc(100vh - 6rem) !important;
+        min-height: calc(100vh - 6rem) !important;
+        height: calc(100vh - 6rem) !important;
+        padding: 8px;
+    }
+    
+    .debug-code-tooltip .debug-code-header {
+        padding: 8px 12px;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .debug-code-tooltip .clickable-hint {
+        align-self: flex-end;
+        margin-top: 8px;
+    }
+}
+
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
