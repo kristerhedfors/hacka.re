@@ -52,6 +52,13 @@ window.DebugCodeTooltip = (function() {
     }
     
     /**
+     * Check if we're on a mobile device
+     */
+    function isMobileDevice() {
+        return window.innerWidth <= 768;
+    }
+
+    /**
      * Initialize drag and resize functionality for the tooltip
      */
     function initializeDragAndResize() {
@@ -67,8 +74,8 @@ window.DebugCodeTooltip = (function() {
         const hint = tooltipElement.querySelector('.clickable-hint');
         
         header.addEventListener('mousedown', (e) => {
-            // Don't start drag if clicking on the hint
-            if (e.target === hint || hint.contains(e.target)) {
+            // Don't start drag if clicking on the hint or on mobile devices
+            if (e.target === hint || hint.contains(e.target) || isMobileDevice()) {
                 return;
             }
             
@@ -83,6 +90,11 @@ window.DebugCodeTooltip = (function() {
         const resizeHandles = tooltipElement.querySelectorAll('.resize-handle');
         resizeHandles.forEach(handle => {
             handle.addEventListener('mousedown', (e) => {
+                // Don't allow resize on mobile devices
+                if (isMobileDevice()) {
+                    return;
+                }
+                
                 isResizing = true;
                 resizeDirection = handle.className.split(' ')[1]; // Get direction class
                 initialRect = tooltipElement.getBoundingClientRect();
@@ -359,6 +371,11 @@ window.DebugCodeTooltip = (function() {
      * Position tooltip relative to target element
      */
     function positionTooltip(target) {
+        // On mobile, don't do relative positioning - CSS handles fixed position
+        if (isMobileDevice()) {
+            return;
+        }
+        
         const rect = target.getBoundingClientRect();
         const tooltipRect = tooltipElement.getBoundingClientRect();
         
