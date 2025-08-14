@@ -231,9 +231,12 @@ window.DebugCodeTooltip = (function() {
     function filterDebugLines(lines, startLine, targetLine) {
         const filteredLines = [];
         const originalLineNumbers = [];
+        const removedAfterIndices = new Set(); // Track where we removed debug blocks
         
         // First pass: identify debug lines
         const debugLines = new Set();
+        const debugBlockStarts = new Set(); // Track where debug blocks start
+        
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
             const trimmed = line.trim();
@@ -246,14 +249,26 @@ window.DebugCodeTooltip = (function() {
             
             if (isDebugComment || isDebugIf || isDebugCall || isDebugClosing) {
                 debugLines.add(i);
+                // Mark the start of a debug block
+                if (isDebugComment) {
+                    debugBlockStarts.add(i);
+                }
             }
         }
         
-        // Second pass: filter lines and handle blank lines after debug blocks
+        // Second pass: filter lines and track where debug blocks were removed
+        let lastNonDebugIndex = -1;
+        
         for (let i = 0; i < lines.length; i++) {
             const lineNum = startLine + i;
             const line = lines[i];
             const trimmed = line.trim();
+            
+            // Check if we're starting a debug block that will be removed
+            if (debugBlockStarts.has(i) && lastNonDebugIndex >= 0) {
+                // Mark that we should show a red line after the last non-debug line
+                removedAfterIndices.add(lastNonDebugIndex);
+            }
             
             // Skip debug-related lines
             if (debugLines.has(i)) {
@@ -294,9 +309,14 @@ window.DebugCodeTooltip = (function() {
             
             filteredLines.push(line);
             originalLineNumbers.push(lineNum);
+            
+            // Track the index of this line if it's not blank
+            if (trimmed !== '') {
+                lastNonDebugIndex = filteredLines.length - 1;
+            }
         }
         
-        return { filteredLines, originalLineNumbers };
+        return { filteredLines, originalLineNumbers, removedAfterIndices };
     }
     
     /**
@@ -328,8 +348,8 @@ window.DebugCodeTooltip = (function() {
         // Get the raw lines for this section
         const rawLines = lines.slice(startLine - 1, endLine);
         
-        // Filter out debug-related lines
-        const { filteredLines, originalLineNumbers } = filterDebugLines(rawLines, startLine, targetLine);
+        // Filter out debug-related lines and track where they were removed
+        const { filteredLines, originalLineNumbers, removedAfterIndices } = filterDebugLines(rawLines, startLine, targetLine);
         
         if (filteredLines.length === 0) {
             // Fallback if all lines were filtered out
@@ -356,16 +376,29 @@ window.DebugCodeTooltip = (function() {
         // Split highlighted code back into lines
         const highlightedLines = highlightedCode.split('\n');
         
-        // Build the final HTML with line numbers (NO line highlighting)
+        // Build the final HTML with line numbers and red lines where code was removed
         let html = '<pre class="debug-code-pre"><code class="language-javascript">';
         
         highlightedLines.forEach((line, index) => {
             const lineNum = originalLineNumbers[index];
             
-            html += `<div class="debug-code-line">`;
-            html += `<span class="line-number">${lineNum.toString().padStart(4, ' ')}</span>`;
-            html += `<span class="line-content">${line || ' '}</span>`;
-            html += '</div>';
+            // Check if we should add a red line after this line
+            if (removedAfterIndices.has(index)) {
+                html += `<div class="debug-code-line">`;
+                html += `<span class="line-number">${lineNum.toString().padStart(4, ' ')}</span>`;
+                html += `<span class="line-content">${line || ' '}</span>`;
+                html += '</div>';
+                // Add the red line indicator
+                html += `<div class="debug-removed-indicator">`;
+                html += `<span class="line-number-placeholder">    </span>`;
+                html += `<span class="removed-line-marker" title="Debug code removed here"></span>`;
+                html += '</div>';
+            } else {
+                html += `<div class="debug-code-line">`;
+                html += `<span class="line-number">${lineNum.toString().padStart(4, ' ')}</span>`;
+                html += `<span class="line-content">${line || ' '}</span>`;
+                html += '</div>';
+            }
         });
         
         html += '</code></pre>';

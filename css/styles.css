@@ -1339,6 +1339,45 @@ main {
     white-space: pre;
 }
 
+/* Red line indicator where debug code was removed */
+.debug-removed-indicator {
+    display: flex;
+    align-items: center;
+    height: 3px;
+    margin: 2px 0;
+}
+
+.line-number-placeholder {
+    display: inline-block;
+    width: 45px; /* Match the line number width */
+    margin-right: 12px; /* Match the line number margin */
+}
+
+.removed-line-marker {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        rgba(220, 38, 38, 0.8) 0%, 
+        rgba(220, 38, 38, 0.4) 50%, 
+        rgba(220, 38, 38, 0.8) 100%);
+    position: relative;
+    display: block;
+}
+
+.removed-line-marker::before {
+    content: '• debug code removed •';
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 9px;
+    color: rgba(220, 38, 38, 0.7);
+    white-space: nowrap;
+    font-style: italic;
+    background: var(--bg-color-secondary);
+    padding: 0 4px;
+}
+
 .debug-code-fallback {
     padding: 12px;
     text-align: center;
