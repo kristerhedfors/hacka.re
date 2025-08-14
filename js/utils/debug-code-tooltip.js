@@ -30,16 +30,132 @@ window.DebugCodeTooltip = (function() {
         tooltipElement.className = 'debug-code-tooltip';
         tooltipElement.style.display = 'none';
         tooltipElement.innerHTML = `
-            <div class="debug-code-header">
+            <div class="debug-code-header draggable-header">
                 <span class="debug-code-file"></span>
                 <span class="debug-code-location"></span>
-                <span class="debug-code-hint">📄 Click header to open file</span>
+                <span class="debug-code-hint clickable-hint">📄 Click to open file</span>
             </div>
             <div class="debug-code-content"></div>
+            <div class="resize-handle resize-handle-n"></div>
+            <div class="resize-handle resize-handle-s"></div>
+            <div class="resize-handle resize-handle-e"></div>
+            <div class="resize-handle resize-handle-w"></div>
+            <div class="resize-handle resize-handle-ne"></div>
+            <div class="resize-handle resize-handle-nw"></div>
+            <div class="resize-handle resize-handle-se"></div>
+            <div class="resize-handle resize-handle-sw"></div>
         `;
         document.body.appendChild(tooltipElement);
+        
+        // Initialize drag and resize functionality
+        initializeDragAndResize();
     }
     
+    /**
+     * Initialize drag and resize functionality for the tooltip
+     */
+    function initializeDragAndResize() {
+        let isDragging = false;
+        let isResizing = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let resizeDirection = null;
+        let initialRect = null;
+        
+        // Drag functionality
+        const header = tooltipElement.querySelector('.draggable-header');
+        const hint = tooltipElement.querySelector('.clickable-hint');
+        
+        header.addEventListener('mousedown', (e) => {
+            // Don't start drag if clicking on the hint
+            if (e.target === hint || hint.contains(e.target)) {
+                return;
+            }
+            
+            isDragging = true;
+            dragStartX = e.clientX - tooltipElement.offsetLeft;
+            dragStartY = e.clientY - tooltipElement.offsetTop;
+            header.style.cursor = 'grabbing';
+            e.preventDefault();
+        });
+        
+        // Resize functionality
+        const resizeHandles = tooltipElement.querySelectorAll('.resize-handle');
+        resizeHandles.forEach(handle => {
+            handle.addEventListener('mousedown', (e) => {
+                isResizing = true;
+                resizeDirection = handle.className.split(' ')[1]; // Get direction class
+                initialRect = tooltipElement.getBoundingClientRect();
+                dragStartX = e.clientX;
+                dragStartY = e.clientY;
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        });
+        
+        // Global mouse move handler
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const newX = e.clientX - dragStartX;
+                const newY = e.clientY - dragStartY;
+                
+                // Keep tooltip within viewport bounds
+                const maxX = window.innerWidth - tooltipElement.offsetWidth;
+                const maxY = window.innerHeight - tooltipElement.offsetHeight;
+                
+                tooltipElement.style.left = Math.max(0, Math.min(newX, maxX)) + 'px';
+                tooltipElement.style.top = Math.max(0, Math.min(newY, maxY)) + 'px';
+            } else if (isResizing && initialRect) {
+                const deltaX = e.clientX - dragStartX;
+                const deltaY = e.clientY - dragStartY;
+                
+                let newWidth = initialRect.width;
+                let newHeight = initialRect.height;
+                let newLeft = initialRect.left;
+                let newTop = initialRect.top;
+                
+                // Handle different resize directions
+                if (resizeDirection.includes('e')) {
+                    newWidth = Math.max(400, initialRect.width + deltaX);
+                }
+                if (resizeDirection.includes('w')) {
+                    newWidth = Math.max(400, initialRect.width - deltaX);
+                    newLeft = initialRect.left + deltaX;
+                }
+                if (resizeDirection.includes('s')) {
+                    newHeight = Math.max(200, initialRect.height + deltaY);
+                }
+                if (resizeDirection.includes('n')) {
+                    newHeight = Math.max(200, initialRect.height - deltaY);
+                    newTop = initialRect.top + deltaY;
+                }
+                
+                // Apply new dimensions
+                tooltipElement.style.width = newWidth + 'px';
+                tooltipElement.style.height = newHeight + 'px';
+                tooltipElement.style.left = newLeft + 'px';
+                tooltipElement.style.top = newTop + 'px';
+                
+                // Update content area max-height
+                const contentArea = tooltipElement.querySelector('.debug-code-content');
+                const headerHeight = tooltipElement.querySelector('.debug-code-header').offsetHeight;
+                contentArea.style.maxHeight = (newHeight - headerHeight - 24) + 'px'; // 24px for padding
+            }
+        });
+        
+        // Global mouse up handler
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                header.style.cursor = 'grab';
+            }
+            if (isResizing) {
+                isResizing = false;
+                resizeDirection = null;
+                initialRect = null;
+            }
+        });
+    }
     
     /**
      * Handle click on debug messages to toggle tooltip
@@ -47,10 +163,8 @@ window.DebugCodeTooltip = (function() {
     function handleClick(event) {
         // Check if clicking on the tooltip itself
         if (tooltipElement && tooltipElement.contains(event.target)) {
-            // Check if clicking the file link in tooltip header
-            if (event.target.classList.contains('debug-code-hint') || 
-                event.target.closest('.debug-code-header')) {
-                // Let the click through to open file if needed
+            // Only open file if clicking specifically on the hint text
+            if (event.target.classList.contains('clickable-hint')) {
                 const target = currentTarget;
                 if (target) {
                     const sourceFile = target.getAttribute('data-source-file');
@@ -122,11 +236,8 @@ window.DebugCodeTooltip = (function() {
         tooltipElement.style.display = 'block';
         tooltipElement.classList.add('visible');
         
-        // Get message direction for context adjustment
-        const messageDirection = target.getAttribute('data-message-direction') || 'forward';
-        
-        // Get source code with direction-aware context (now loads full file)
-        const codeContent = await getSourceCode(file, line, fullPath, messageDirection);
+        // Get source code (now loads full file)
+        const codeContent = await getSourceCode(file, line, fullPath);
         
         // Update tooltip content with the full file
         contentElement.innerHTML = codeContent;
@@ -257,7 +368,7 @@ window.DebugCodeTooltip = (function() {
     /**
      * Get source code around the specified line
      */
-    async function getSourceCode(file, line, fullPath, messageDirection = 'forward') {
+    async function getSourceCode(file, line, fullPath) {
         const cacheKey = `${file}:full`; // Cache key for full file
         
         // Check cache first
@@ -281,7 +392,7 @@ window.DebugCodeTooltip = (function() {
                     const res = await fetch(path);
                     if (res.ok) {
                         const text = await res.text();
-                        const formatted = formatSourceCode(text, line, file, messageDirection);
+                        const formatted = formatSourceCode(text, line, file);
                         
                         // Update header with file size info
                         const lines = text.split('\n').length;
@@ -300,7 +411,7 @@ window.DebugCodeTooltip = (function() {
             }
             
             const text = await response.text();
-            const formatted = formatSourceCode(text, line, file, messageDirection);
+            const formatted = formatSourceCode(text, line, file);
             
             // Update header with file size info
             const lines = text.split('\n').length;
@@ -432,7 +543,7 @@ window.DebugCodeTooltip = (function() {
     /**
      * Format source code with line numbers and highlighting
      */
-    function formatSourceCode(text, targetLine, file, messageDirection = 'forward') {
+    function formatSourceCode(text, targetLine, file) {
         const lines = text.split('\n');
         
         // Load the ENTIRE file
