@@ -1,12 +1,12 @@
 /**
  * Debug Code Tooltip Module
- * Shows source code context when hovering over debug messages
+ * Shows source code context when clicking debug messages
+ * Click message to show tooltip, click elsewhere or same message to hide
  */
 
 window.DebugCodeTooltip = (function() {
     let tooltipElement = null;
     let currentTarget = null;
-    let hideTimeout = null;
     let codeCache = {};
     
     /**
@@ -16,12 +16,10 @@ window.DebugCodeTooltip = (function() {
         // Create tooltip element
         createTooltipElement();
         
-        // Setup event delegation for debug messages
-        document.addEventListener('mouseenter', handleMouseEnter, true);
-        document.addEventListener('mouseleave', handleMouseLeave, true);
+        // Setup event delegation for debug messages - CLICK ONLY, no hover
         document.addEventListener('click', handleClick, true);
         
-        console.log('[DebugCodeTooltip] Initialized');
+        console.log('[DebugCodeTooltip] Initialized - Click to show tooltip');
     }
     
     /**
@@ -32,65 +30,163 @@ window.DebugCodeTooltip = (function() {
         tooltipElement.className = 'debug-code-tooltip';
         tooltipElement.style.display = 'none';
         tooltipElement.innerHTML = `
-            <div class="debug-code-header">
+            <div class="debug-code-header draggable-header">
                 <span class="debug-code-file"></span>
                 <span class="debug-code-location"></span>
-                <span class="debug-code-hint">📄 Click to open file</span>
+                <span class="debug-code-hint clickable-hint">📄 Click to open file</span>
             </div>
             <div class="debug-code-content"></div>
+            <div class="resize-handle resize-handle-n"></div>
+            <div class="resize-handle resize-handle-s"></div>
+            <div class="resize-handle resize-handle-e"></div>
+            <div class="resize-handle resize-handle-w"></div>
+            <div class="resize-handle resize-handle-ne"></div>
+            <div class="resize-handle resize-handle-nw"></div>
+            <div class="resize-handle resize-handle-se"></div>
+            <div class="resize-handle resize-handle-sw"></div>
         `;
         document.body.appendChild(tooltipElement);
+        
+        // Initialize drag and resize functionality
+        initializeDragAndResize();
     }
     
     /**
-     * Handle mouse enter on elements
+     * Initialize drag and resize functionality for the tooltip
      */
-    function handleMouseEnter(event) {
-        // Check if target has closest method (is an Element)
-        if (!event.target || typeof event.target.closest !== 'function') return;
+    function initializeDragAndResize() {
+        let isDragging = false;
+        let isResizing = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let resizeDirection = null;
+        let initialRect = null;
         
-        const target = event.target.closest('.debug-message');
-        if (!target) return;
+        // Drag functionality
+        const header = tooltipElement.querySelector('.draggable-header');
+        const hint = tooltipElement.querySelector('.clickable-hint');
         
-        // Clear any pending hide
-        if (hideTimeout) {
-            clearTimeout(hideTimeout);
-            hideTimeout = null;
-        }
+        header.addEventListener('mousedown', (e) => {
+            // Don't start drag if clicking on the hint
+            if (e.target === hint || hint.contains(e.target)) {
+                return;
+            }
+            
+            isDragging = true;
+            dragStartX = e.clientX - tooltipElement.offsetLeft;
+            dragStartY = e.clientY - tooltipElement.offsetTop;
+            header.style.cursor = 'grabbing';
+            e.preventDefault();
+        });
         
-        // Get source location from data attributes
-        const sourceFile = target.getAttribute('data-source-file');
-        const sourceLine = target.getAttribute('data-source-line');
-        const sourcePath = target.getAttribute('data-source-path');
+        // Resize functionality
+        const resizeHandles = tooltipElement.querySelectorAll('.resize-handle');
+        resizeHandles.forEach(handle => {
+            handle.addEventListener('mousedown', (e) => {
+                isResizing = true;
+                resizeDirection = handle.className.split(' ')[1]; // Get direction class
+                initialRect = tooltipElement.getBoundingClientRect();
+                dragStartX = e.clientX;
+                dragStartY = e.clientY;
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        });
         
-        if (!sourceFile || !sourceLine) return;
+        // Global mouse move handler
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const newX = e.clientX - dragStartX;
+                const newY = e.clientY - dragStartY;
+                
+                // Keep tooltip within viewport bounds
+                const maxX = window.innerWidth - tooltipElement.offsetWidth;
+                const maxY = window.innerHeight - tooltipElement.offsetHeight;
+                
+                tooltipElement.style.left = Math.max(0, Math.min(newX, maxX)) + 'px';
+                tooltipElement.style.top = Math.max(0, Math.min(newY, maxY)) + 'px';
+            } else if (isResizing && initialRect) {
+                const deltaX = e.clientX - dragStartX;
+                const deltaY = e.clientY - dragStartY;
+                
+                let newWidth = initialRect.width;
+                let newHeight = initialRect.height;
+                let newLeft = initialRect.left;
+                let newTop = initialRect.top;
+                
+                // Handle different resize directions
+                if (resizeDirection.includes('e')) {
+                    newWidth = Math.max(400, initialRect.width + deltaX);
+                }
+                if (resizeDirection.includes('w')) {
+                    newWidth = Math.max(400, initialRect.width - deltaX);
+                    newLeft = initialRect.left + deltaX;
+                }
+                if (resizeDirection.includes('s')) {
+                    newHeight = Math.max(200, initialRect.height + deltaY);
+                }
+                if (resizeDirection.includes('n')) {
+                    newHeight = Math.max(200, initialRect.height - deltaY);
+                    newTop = initialRect.top + deltaY;
+                }
+                
+                // Apply new dimensions
+                tooltipElement.style.width = newWidth + 'px';
+                tooltipElement.style.height = newHeight + 'px';
+                tooltipElement.style.left = newLeft + 'px';
+                tooltipElement.style.top = newTop + 'px';
+                
+                // Update content area max-height
+                const contentArea = tooltipElement.querySelector('.debug-code-content');
+                const headerHeight = tooltipElement.querySelector('.debug-code-header').offsetHeight;
+                contentArea.style.maxHeight = (newHeight - headerHeight - 24) + 'px'; // 24px for padding
+            }
+        });
         
-        currentTarget = target;
-        showTooltip(target, sourceFile, parseInt(sourceLine), sourcePath);
+        // Global mouse up handler
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                header.style.cursor = 'grab';
+            }
+            if (isResizing) {
+                isResizing = false;
+                resizeDirection = null;
+                initialRect = null;
+            }
+        });
     }
     
     /**
-     * Handle mouse leave on elements
-     */
-    function handleMouseLeave(event) {
-        // Check if target has closest method (is an Element)
-        if (!event.target || typeof event.target.closest !== 'function') return;
-        
-        const target = event.target.closest('.debug-message');
-        if (!target || target !== currentTarget) return;
-        
-        // Hide tooltip after a short delay
-        hideTimeout = setTimeout(() => {
-            hideTooltip();
-        }, 300);
-    }
-    
-    /**
-     * Handle click on debug messages to open source file
+     * Handle click on debug messages to toggle tooltip
      */
     function handleClick(event) {
+        // Check if clicking on the tooltip itself
+        if (tooltipElement && tooltipElement.contains(event.target)) {
+            // Only open file if clicking specifically on the hint text
+            if (event.target.classList.contains('clickable-hint')) {
+                const target = currentTarget;
+                if (target) {
+                    const sourceFile = target.getAttribute('data-source-file');
+                    const sourceLine = target.getAttribute('data-source-line');
+                    const sourcePath = target.getAttribute('data-source-path');
+                    if (sourceFile && sourceLine) {
+                        openSourceFile(sourceFile, parseInt(sourceLine), sourcePath);
+                    }
+                }
+            }
+            return; // Don't close tooltip when clicking on it
+        }
+        
         const target = event.target.closest('.debug-message');
-        if (!target) return;
+        
+        // If clicking outside any debug message, hide tooltip
+        if (!target) {
+            if (tooltipElement && tooltipElement.style.display !== 'none') {
+                hideTooltip();
+            }
+            return;
+        }
         
         // Get source location from data attributes
         const sourceFile = target.getAttribute('data-source-file');
@@ -103,36 +199,112 @@ window.DebugCodeTooltip = (function() {
         event.preventDefault();
         event.stopPropagation();
         
-        // Open source file in new tab
-        openSourceFile(sourceFile, parseInt(sourceLine), sourcePath);
+        // Toggle tooltip: if clicking same target, hide; otherwise show for new target
+        if (currentTarget === target && tooltipElement && tooltipElement.style.display !== 'none') {
+            hideTooltip();
+        } else {
+            currentTarget = target;
+            showTooltip(target, sourceFile, parseInt(sourceLine), sourcePath);
+        }
     }
     
     /**
      * Show tooltip with source code
      */
     async function showTooltip(target, file, line, fullPath) {
-        // Update tooltip header
+        // Remove active class from any previous message
+        const previousActive = document.querySelector('.debug-message.tooltip-active');
+        if (previousActive) {
+            previousActive.classList.remove('tooltip-active');
+        }
+        
+        // Add active class to current message
+        target.classList.add('tooltip-active');
+        
+        // Update tooltip header with full path
         const fileElement = tooltipElement.querySelector('.debug-code-file');
         const locationElement = tooltipElement.querySelector('.debug-code-location');
-        fileElement.textContent = file;
-        locationElement.textContent = `:${line}`;
         
-        // Get message direction for context adjustment
-        const messageDirection = target.getAttribute('data-message-direction') || 'forward';
+        // Get the full file path using the same logic as openSourceFile
+        const fullFilePath = getFullFilePath(file);
+        fileElement.textContent = fullFilePath;
+        locationElement.textContent = `:${line} (Full File)`;
         
-        // Get source code with direction-aware context
-        const codeContent = await getSourceCode(file, line, fullPath, messageDirection);
-        
-        // Update tooltip content
+        // Show loading indicator while fetching full file
         const contentElement = tooltipElement.querySelector('.debug-code-content');
-        contentElement.innerHTML = codeContent;
+        contentElement.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-color-secondary);">Loading entire file...</div>';
         
-        // Position tooltip
+        // Position and show tooltip immediately with loading state
         positionTooltip(target);
-        
-        // Show tooltip
         tooltipElement.style.display = 'block';
         tooltipElement.classList.add('visible');
+        
+        // Get source code (now loads full file)
+        const codeContent = await getSourceCode(file, line);
+        
+        // Update tooltip content with the full file
+        contentElement.innerHTML = codeContent;
+        
+        // Scroll to center the red line indicator in the viewport
+        setTimeout(() => {
+            // Find the red line indicator that's closest to the target line
+            const targetIndicator = contentElement.querySelector('#debug-target-indicator');
+            
+            if (targetIndicator) {
+                // Get the container's viewport dimensions
+                const containerRect = contentElement.getBoundingClientRect();
+                const containerHeight = containerRect.height;
+                
+                // Get the indicator's position relative to the container
+                const indicatorOffsetTop = targetIndicator.offsetTop;
+                
+                // Calculate scroll position to center the red line
+                // We want the red line in the middle of the visible area
+                const scrollTop = indicatorOffsetTop - (containerHeight / 2);
+                
+                // Scroll to the calculated position
+                contentElement.scrollTop = Math.max(0, scrollTop);
+            } else {
+                // Fallback: find ANY red line indicator near the target
+                const allIndicators = contentElement.querySelectorAll('.debug-removed-indicator');
+                
+                if (allIndicators.length > 0) {
+                    // Find the indicator closest to our target line
+                    let closestIndicator = null;
+                    let closestDistance = Infinity;
+                    
+                    allIndicators.forEach((indicator) => {
+                        // Check if this indicator is near the target line
+                        const prevLine = indicator.previousElementSibling;
+                        if (prevLine && prevLine.dataset.lineNumber) {
+                            const lineNum = parseInt(prevLine.dataset.lineNumber);
+                            const distance = Math.abs(lineNum - line);
+                            if (distance < closestDistance) {
+                                closestDistance = distance;
+                                closestIndicator = indicator;
+                            }
+                        }
+                    });
+                    
+                    if (closestIndicator) {
+                        // Center the closest red line indicator
+                        const containerHeight = contentElement.getBoundingClientRect().height;
+                        const indicatorOffsetTop = closestIndicator.offsetTop;
+                        const scrollTop = indicatorOffsetTop - (containerHeight / 2);
+                        contentElement.scrollTop = Math.max(0, scrollTop);
+                    }
+                } else {
+                    // Final fallback: scroll to the target line if no red lines found
+                    const targetLineElement = contentElement.querySelector('.target-line');
+                    if (targetLineElement) {
+                        const containerHeight = contentElement.getBoundingClientRect().height;
+                        const lineOffsetTop = targetLineElement.offsetTop;
+                        const scrollTop = lineOffsetTop - (containerHeight / 2);
+                        contentElement.scrollTop = Math.max(0, scrollTop);
+                    }
+                }
+            }
+        }, 100); // Slightly longer delay to ensure full rendering
     }
     
     /**
@@ -145,9 +317,44 @@ window.DebugCodeTooltip = (function() {
                 tooltipElement.style.display = 'none';
             }, 200);
         }
+        
+        // Remove active class from any message
+        const activeMessage = document.querySelector('.debug-message.tooltip-active');
+        if (activeMessage) {
+            activeMessage.classList.remove('tooltip-active');
+        }
+        
         currentTarget = null;
     }
     
+    /**
+     * Get the full file path based on filename patterns
+     */
+    function getFullFilePath(file) {
+        if (file.includes('api-') || file === 'api-service.js' || file.includes('function-tools-') || file.includes('storage-') || file.includes('mcp-') || file.includes('chat-') || file.includes('prompts-') || file.includes('model-') || file.includes('encryption-') || file.includes('namespace-') || file.includes('debug-') || file.includes('link-sharing-')) {
+            return `js/services/${file}`;
+        } else if (file.includes('settings-') || file.includes('api-key-') || file.includes('model-manager') || file.includes('system-prompt-')) {
+            return `js/components/settings/${file}`;
+        } else if (file.includes('function-') && (file.includes('calling') || file.includes('editor') || file.includes('modal') || file.includes('list'))) {
+            return `js/components/function-calling/${file}`;
+        } else if (file.includes('mcp-') && file.includes('manager')) {
+            return `js/components/mcp/${file}`;
+        } else if (file.includes('prompt') && file.includes('manager')) {
+            return `js/components/prompts/${file}`;
+        } else if (file.includes('ui-') || file.includes('share-ui')) {
+            return `js/components/ui/${file}`;
+        } else if (file.includes('debug-code-tooltip') || file.includes('crypto-utils')) {
+            return `js/utils/${file}`;
+        } else if (file.includes('manager') || file.includes('component')) {
+            return `js/components/${file}`;
+        } else if (file.includes('default-') || file.includes('rc4-') || file.includes('math-') || file.includes('auth-')) {
+            return `js/default-functions/${file}`;
+        } else {
+            // Fallback - try to determine from common patterns
+            return `js/${file}`;
+        }
+    }
+
     /**
      * Position tooltip relative to target element
      */
@@ -177,8 +384,8 @@ window.DebugCodeTooltip = (function() {
     /**
      * Get source code around the specified line
      */
-    async function getSourceCode(file, line, fullPath, messageDirection = 'forward') {
-        const cacheKey = `${file}:${line}:${messageDirection}`;
+    async function getSourceCode(file, line) {
+        const cacheKey = `${file}:full`; // Cache key for full file
         
         // Check cache first
         if (codeCache[cacheKey]) {
@@ -201,7 +408,18 @@ window.DebugCodeTooltip = (function() {
                     const res = await fetch(path);
                     if (res.ok) {
                         const text = await res.text();
-                        return formatSourceCode(text, line, file, messageDirection);
+                        const formatted = formatSourceCode(text, line, file);
+                        
+                        // Update header with file size info
+                        const lines = text.split('\n').length;
+                        const locationElement = document.querySelector('.debug-code-location');
+                        if (locationElement) {
+                            locationElement.textContent = `:${line} (Full File - ${lines} lines)`;
+                        }
+                        
+                        // Cache the result
+                        codeCache[cacheKey] = formatted;
+                        return formatted;
                     }
                 }
                 
@@ -209,7 +427,14 @@ window.DebugCodeTooltip = (function() {
             }
             
             const text = await response.text();
-            const formatted = formatSourceCode(text, line, file, messageDirection);
+            const formatted = formatSourceCode(text, line, file);
+            
+            // Update header with file size info
+            const lines = text.split('\n').length;
+            const locationElement = document.querySelector('.debug-code-location');
+            if (locationElement) {
+                locationElement.textContent = `:${line} (Full File - ${lines} lines)`;
+            }
             
             // Cache the result
             codeCache[cacheKey] = formatted;
@@ -228,9 +453,12 @@ window.DebugCodeTooltip = (function() {
     function filterDebugLines(lines, startLine, targetLine) {
         const filteredLines = [];
         const originalLineNumbers = [];
+        const removedAfterIndices = new Set(); // Track where we removed debug blocks
         
         // First pass: identify debug lines
         const debugLines = new Set();
+        const debugBlockStarts = new Set(); // Track where debug blocks start
+        
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
             const trimmed = line.trim();
@@ -243,14 +471,32 @@ window.DebugCodeTooltip = (function() {
             
             if (isDebugComment || isDebugIf || isDebugCall || isDebugClosing) {
                 debugLines.add(i);
+                // Mark the start of a debug block
+                if (isDebugComment) {
+                    debugBlockStarts.add(i);
+                }
             }
         }
         
-        // Second pass: filter lines and handle blank lines after debug blocks
+        // Second pass: filter lines and track where debug blocks were removed
+        let lastNonDebugFilteredIndex = -1;
+        let foundDebugBlock = false;
+        
         for (let i = 0; i < lines.length; i++) {
             const lineNum = startLine + i;
             const line = lines[i];
             const trimmed = line.trim();
+            
+            // Track if we found any debug code in this file
+            if (debugLines.has(i)) {
+                foundDebugBlock = true;
+            }
+            
+            // Check if we're starting a debug block that will be removed
+            if (debugBlockStarts.has(i) && lastNonDebugFilteredIndex >= 0) {
+                // Mark that we should show a red line after the last non-debug line
+                removedAfterIndices.add(lastNonDebugFilteredIndex);
+            }
             
             // Skip debug-related lines
             if (debugLines.has(i)) {
@@ -291,46 +537,53 @@ window.DebugCodeTooltip = (function() {
             
             filteredLines.push(line);
             originalLineNumbers.push(lineNum);
+            
+            // Track the filtered index of this line if it's not blank
+            if (trimmed !== '') {
+                lastNonDebugFilteredIndex = filteredLines.length - 1;
+            }
         }
         
-        return { filteredLines, originalLineNumbers };
+        // If no debug blocks were found but we expect them (based on target line), add a fallback indicator
+        if (!foundDebugBlock && removedAfterIndices.size === 0) {
+            // Find a reasonable place to show a red line near the target line
+            const targetIndex = originalLineNumbers.findIndex(lineNum => lineNum >= targetLine);
+            if (targetIndex >= 0 && targetIndex > 0) {
+                removedAfterIndices.add(targetIndex - 1);
+            }
+        }
+        
+        return { filteredLines, originalLineNumbers, removedAfterIndices };
     }
     
     /**
      * Format source code with line numbers and highlighting
      */
-    function formatSourceCode(text, targetLine, file, messageDirection = 'forward') {
+    function formatSourceCode(text, targetLine, file) {
         const lines = text.split('\n');
         
-        // Base context lines (increased by 50% from original 3/8)
-        let contextLinesBefore, contextLinesAfter;
+        // Load the ENTIRE file
+        const startLine = 1;
+        const endLine = lines.length;
         
-        if (messageDirection === 'backward') {
-            // For backward messages (like "saved", "completed"), show more context BEFORE
-            contextLinesBefore = 8;  // More lines before to show what led to the action
-            contextLinesAfter = 4;   // Fewer lines after since action is complete
-        } else {
-            // For forward messages (like "starting", "processing"), show more context AFTER  
-            contextLinesBefore = 4;  // Fewer lines before
-            contextLinesAfter = 8;   // More lines after to show what happens next
-        }
-        
-        // Increase overall by 50% (from original 3+8=11 to ~17)
-        contextLinesBefore = Math.ceil(contextLinesBefore * 1.5);
-        contextLinesAfter = Math.ceil(contextLinesAfter * 1.5);
-        
-        const startLine = Math.max(1, targetLine - contextLinesBefore);
-        const endLine = Math.min(lines.length, targetLine + contextLinesAfter);
-        
-        // Get the raw lines for this section
+        // Get ALL lines of the file
         const rawLines = lines.slice(startLine - 1, endLine);
         
-        // Filter out debug-related lines
-        const { filteredLines, originalLineNumbers } = filterDebugLines(rawLines, startLine, targetLine);
+        // Filter out debug-related lines and track where they were removed
+        const { filteredLines, originalLineNumbers, removedAfterIndices } = filterDebugLines(rawLines, startLine, targetLine);
         
         if (filteredLines.length === 0) {
             // Fallback if all lines were filtered out
             return formatFallbackCode(file, targetLine);
+        }
+        
+        // Find the index of the target line in the filtered output
+        let targetLineIndex = -1;
+        for (let i = 0; i < originalLineNumbers.length; i++) {
+            if (originalLineNumbers[i] === targetLine) {
+                targetLineIndex = i;
+                break;
+            }
         }
         
         // Extract the code snippet from filtered lines
@@ -353,16 +606,30 @@ window.DebugCodeTooltip = (function() {
         // Split highlighted code back into lines
         const highlightedLines = highlightedCode.split('\n');
         
-        // Build the final HTML with line numbers (NO line highlighting)
-        let html = '<pre class="debug-code-pre"><code class="language-javascript">';
+        // Build the final HTML with line numbers and red lines where code was removed
+        let html = '<pre class="debug-code-pre" data-target-line-index="' + targetLineIndex + '"><code class="language-javascript">';
         
         highlightedLines.forEach((line, index) => {
             const lineNum = originalLineNumbers[index];
+            const isTargetLine = lineNum === targetLine;
             
-            html += `<div class="debug-code-line">`;
-            html += `<span class="line-number">${lineNum.toString().padStart(4, ' ')}</span>`;
-            html += `<span class="line-content">${line || ' '}</span>`;
-            html += '</div>';
+            // Check if we should add a red line after this line
+            if (removedAfterIndices.has(index)) {
+                html += `<div class="debug-code-line${isTargetLine ? ' target-line' : ''}" data-line-number="${lineNum}">`;
+                html += `<span class="line-number">${lineNum.toString().padStart(4, ' ')}</span>`;
+                html += `<span class="line-content">${line || ' '}</span>`;
+                html += '</div>';
+                // Add the red line indicator
+                html += `<div class="debug-removed-indicator" id="${isTargetLine ? 'debug-target-indicator' : ''}">`;
+                html += `<span class="line-number-placeholder">    </span>`;
+                html += `<span class="removed-line-marker" title="Debug code removed here"></span>`;
+                html += '</div>';
+            } else {
+                html += `<div class="debug-code-line${isTargetLine ? ' target-line' : ''}" data-line-number="${lineNum}">`;
+                html += `<span class="line-number">${lineNum.toString().padStart(4, ' ')}</span>`;
+                html += `<span class="line-content">${line || ' '}</span>`;
+                html += '</div>';
+            }
         });
         
         html += '</code></pre>';

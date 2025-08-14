@@ -56,7 +56,8 @@ window.CodePopupCore = (function() {
     }
 
     /**
-     * Add event listeners to code module references
+     * Add CLICK event listeners to code module references
+     * Note: System is designed for click-to-show popups that stick until dismissed
      */
     function addCodeModuleEventListeners() {
         // Handle auto-generated code-module-reference elements

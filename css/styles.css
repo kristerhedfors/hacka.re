@@ -1223,14 +1223,79 @@ main {
     background-color: rgba(26, 188, 156, 0.1);
 }
 
-/* Debug messages hover effect */
+/* Debug messages click effect */
 .debug-message {
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    transition: all 0.2s ease;
+    position: relative;
+    margin-left: 8px; /* Add space for the active indicator */
 }
 
 .debug-message:hover {
     background-color: rgba(0, 0, 0, 0.05);
+    border-left: 2px solid rgba(99, 102, 241, 0.3);
+    transform: translateX(1px);
+}
+
+.debug-message:hover::after {
+    content: '👁️ Click to view source';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.7rem;
+    color: var(--primary-color);
+    background: var(--bg-color);
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid var(--primary-color);
+    opacity: 0.8;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.debug-message:active {
+    transform: scale(0.99);
+    background-color: rgba(0, 0, 0, 0.08);
+}
+
+/* Add indicator when tooltip is shown for this message */
+.debug-message.tooltip-active {
+    background-color: rgba(99, 102, 241, 0.15);
+    border-left: 4px solid var(--primary-color);
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+    transform: translateX(2px);
+    transition: all 0.3s ease;
+}
+
+.debug-message.tooltip-active .message-content {
+    background-color: rgba(99, 102, 241, 0.05);
+    border-radius: 3px;
+}
+
+/* Enhanced highlighting for active debug message with pulse effect */
+.debug-message.tooltip-active::before {
+    content: '';
+    position: absolute;
+    left: -2px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--primary-color);
+    border-radius: 1px;
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        opacity: 1;
+        transform: scaleY(1);
+    }
+    50% {
+        opacity: 0.7;
+        transform: scaleY(0.95);
+    }
 }
 
 /* Debug Code Tooltip Styling */
@@ -1241,11 +1306,12 @@ main {
     border: 1px solid var(--border-color);
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    max-width: 600px;
-    min-width: 400px;
+    max-width: 80vw; /* Increased to 80% of viewport width */
+    min-width: 600px; /* Increased minimum width */
+    width: 800px; /* Default width */
     opacity: 0;
     transition: opacity 0.2s ease;
-    pointer-events: none;
+    pointer-events: auto; /* Changed from none to auto to make it clickable */
     color: var(--text-color);
 }
 
@@ -1263,6 +1329,16 @@ main {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    position: relative;
+}
+
+.draggable-header {
+    cursor: grab;
+    user-select: none;
+}
+
+.draggable-header:active {
+    cursor: grabbing;
 }
 
 .debug-code-hint {
@@ -1270,6 +1346,18 @@ main {
     color: var(--text-color-tertiary);
     font-style: italic;
     opacity: 0.7;
+}
+
+.clickable-hint {
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: background-color 0.2s ease;
+}
+
+.clickable-hint:hover {
+    background-color: rgba(99, 102, 241, 0.1);
+    opacity: 1;
 }
 
 .debug-code-file {
@@ -1284,8 +1372,11 @@ main {
 
 .debug-code-content {
     padding: 12px;
-    max-height: 400px;
+    max-height: 70vh; /* 70% of viewport height for better full file viewing */
+    min-height: 300px;
     overflow-y: auto;
+    overflow-x: auto;
+    scroll-behavior: smooth;
 }
 
 .debug-code-pre {
@@ -1314,6 +1405,14 @@ main {
     font-weight: bold;
 }
 
+/* Highlight the target line where debug was called */
+.debug-code-line.target-line {
+    background-color: rgba(99, 102, 241, 0.1);
+    border-left: 3px solid var(--primary-color);
+    margin-left: -3px;
+    padding-left: 3px;
+}
+
 .line-number {
     color: var(--text-color-secondary);
     margin-right: 12px;
@@ -1327,16 +1426,120 @@ main {
     white-space: pre;
 }
 
+/* Red line indicator where debug code was removed */
+.debug-removed-indicator {
+    display: flex;
+    align-items: center;
+    height: 3px;
+    margin: 2px 0;
+}
+
+.line-number-placeholder {
+    display: inline-block;
+    width: 45px; /* Match the line number width */
+    margin-right: 12px; /* Match the line number margin */
+}
+
+.removed-line-marker {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        rgba(220, 38, 38, 0.8) 0%, 
+        rgba(220, 38, 38, 0.4) 50%, 
+        rgba(220, 38, 38, 0.8) 100%);
+    position: relative;
+    display: block;
+}
+
+.removed-line-marker::before {
+    content: '• debug code removed •';
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 9px;
+    color: rgba(220, 38, 38, 0.7);
+    white-space: nowrap;
+    font-style: italic;
+    background: var(--bg-color-secondary);
+    padding: 0 4px;
+}
+
+/* Resize handles for tooltip */
+.resize-handle {
+    position: absolute;
+    background: transparent;
+    z-index: 1001;
+}
+
+.resize-handle-n {
+    top: -3px;
+    left: 8px;
+    right: 8px;
+    height: 6px;
+    cursor: ns-resize;
+}
+
+.resize-handle-s {
+    bottom: -3px;
+    left: 8px;
+    right: 8px;
+    height: 6px;
+    cursor: ns-resize;
+}
+
+.resize-handle-e {
+    top: 8px;
+    bottom: 8px;
+    right: -3px;
+    width: 6px;
+    cursor: ew-resize;
+}
+
+.resize-handle-w {
+    top: 8px;
+    bottom: 8px;
+    left: -3px;
+    width: 6px;
+    cursor: ew-resize;
+}
+
+.resize-handle-ne {
+    top: -3px;
+    right: -3px;
+    width: 12px;
+    height: 12px;
+    cursor: nesw-resize;
+}
+
+.resize-handle-nw {
+    top: -3px;
+    left: -3px;
+    width: 12px;
+    height: 12px;
+    cursor: nwse-resize;
+}
+
+.resize-handle-se {
+    bottom: -3px;
+    right: -3px;
+    width: 12px;
+    height: 12px;
+    cursor: nwse-resize;
+}
+
+.resize-handle-sw {
+    bottom: -3px;
+    left: -3px;
+    width: 12px;
+    height: 12px;
+    cursor: nesw-resize;
+}
+
 .debug-code-fallback {
     padding: 12px;
     text-align: center;
     color: var(--text-color-secondary);
-}
-
-.debug-code-hint {
-    font-size: 0.9em;
-    font-style: italic;
-    margin-top: 8px;
 }
 
 /* Syntax highlighting colors for highlight.js */
