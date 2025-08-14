@@ -111,24 +111,41 @@ window.DebugCodeTooltip = (function() {
         const fileElement = tooltipElement.querySelector('.debug-code-file');
         const locationElement = tooltipElement.querySelector('.debug-code-location');
         fileElement.textContent = file;
-        locationElement.textContent = `:${line}`;
+        locationElement.textContent = `:${line} (Full File)`;
+        
+        // Show loading indicator while fetching full file
+        const contentElement = tooltipElement.querySelector('.debug-code-content');
+        contentElement.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-color-secondary);">Loading entire file...</div>';
+        
+        // Position and show tooltip immediately with loading state
+        positionTooltip(target);
+        tooltipElement.style.display = 'block';
+        tooltipElement.classList.add('visible');
         
         // Get message direction for context adjustment
         const messageDirection = target.getAttribute('data-message-direction') || 'forward';
         
-        // Get source code with direction-aware context
+        // Get source code with direction-aware context (now loads full file)
         const codeContent = await getSourceCode(file, line, fullPath, messageDirection);
         
-        // Update tooltip content
-        const contentElement = tooltipElement.querySelector('.debug-code-content');
+        // Update tooltip content with the full file
         contentElement.innerHTML = codeContent;
         
-        // Position tooltip
-        positionTooltip(target);
-        
-        // Show tooltip
-        tooltipElement.style.display = 'block';
-        tooltipElement.classList.add('visible');
+        // Scroll to the target line or red line indicator
+        setTimeout(() => {
+            // First try to find the red line indicator if it's the target
+            const targetIndicator = contentElement.querySelector('#debug-target-indicator');
+            if (targetIndicator) {
+                // Scroll the red line into view, centered
+                targetIndicator.scrollIntoView({ behavior: 'auto', block: 'center' });
+            } else {
+                // Otherwise find the target line
+                const targetLineElement = contentElement.querySelector('.target-line');
+                if (targetLineElement) {
+                    targetLineElement.scrollIntoView({ behavior: 'auto', block: 'center' });
+                }
+            }
+        }, 50); // Small delay to ensure rendering is complete
     }
     
     /**
@@ -181,7 +198,7 @@ window.DebugCodeTooltip = (function() {
      * Get source code around the specified line
      */
     async function getSourceCode(file, line, fullPath, messageDirection = 'forward') {
-        const cacheKey = `${file}:${line}:${messageDirection}`;
+        const cacheKey = `${file}:full`; // Cache key for full file
         
         // Check cache first
         if (codeCache[cacheKey]) {
@@ -204,7 +221,18 @@ window.DebugCodeTooltip = (function() {
                     const res = await fetch(path);
                     if (res.ok) {
                         const text = await res.text();
-                        return formatSourceCode(text, line, file, messageDirection);
+                        const formatted = formatSourceCode(text, line, file, messageDirection);
+                        
+                        // Update header with file size info
+                        const lines = text.split('\n').length;
+                        const locationElement = document.querySelector('.debug-code-location');
+                        if (locationElement) {
+                            locationElement.textContent = `:${line} (Full File - ${lines} lines)`;
+                        }
+                        
+                        // Cache the result
+                        codeCache[cacheKey] = formatted;
+                        return formatted;
                     }
                 }
                 
@@ -213,6 +241,13 @@ window.DebugCodeTooltip = (function() {
             
             const text = await response.text();
             const formatted = formatSourceCode(text, line, file, messageDirection);
+            
+            // Update header with file size info
+            const lines = text.split('\n').length;
+            const locationElement = document.querySelector('.debug-code-location');
+            if (locationElement) {
+                locationElement.textContent = `:${line} (Full File - ${lines} lines)`;
+            }
             
             // Cache the result
             codeCache[cacheKey] = formatted;
@@ -325,27 +360,11 @@ window.DebugCodeTooltip = (function() {
     function formatSourceCode(text, targetLine, file, messageDirection = 'forward') {
         const lines = text.split('\n');
         
-        // Base context lines (increased by 50% from original 3/8)
-        let contextLinesBefore, contextLinesAfter;
+        // Load the ENTIRE file
+        const startLine = 1;
+        const endLine = lines.length;
         
-        if (messageDirection === 'backward') {
-            // For backward messages (like "saved", "completed"), show more context BEFORE
-            contextLinesBefore = 8;  // More lines before to show what led to the action
-            contextLinesAfter = 4;   // Fewer lines after since action is complete
-        } else {
-            // For forward messages (like "starting", "processing"), show more context AFTER  
-            contextLinesBefore = 4;  // Fewer lines before
-            contextLinesAfter = 8;   // More lines after to show what happens next
-        }
-        
-        // Increase overall by 50% (from original 3+8=11 to ~17)
-        contextLinesBefore = Math.ceil(contextLinesBefore * 1.5);
-        contextLinesAfter = Math.ceil(contextLinesAfter * 1.5);
-        
-        const startLine = Math.max(1, targetLine - contextLinesBefore);
-        const endLine = Math.min(lines.length, targetLine + contextLinesAfter);
-        
-        // Get the raw lines for this section
+        // Get ALL lines of the file
         const rawLines = lines.slice(startLine - 1, endLine);
         
         // Filter out debug-related lines and track where they were removed
@@ -354,6 +373,15 @@ window.DebugCodeTooltip = (function() {
         if (filteredLines.length === 0) {
             // Fallback if all lines were filtered out
             return formatFallbackCode(file, targetLine);
+        }
+        
+        // Find the index of the target line in the filtered output
+        let targetLineIndex = -1;
+        for (let i = 0; i < originalLineNumbers.length; i++) {
+            if (originalLineNumbers[i] === targetLine) {
+                targetLineIndex = i;
+                break;
+            }
         }
         
         // Extract the code snippet from filtered lines
@@ -377,24 +405,25 @@ window.DebugCodeTooltip = (function() {
         const highlightedLines = highlightedCode.split('\n');
         
         // Build the final HTML with line numbers and red lines where code was removed
-        let html = '<pre class="debug-code-pre"><code class="language-javascript">';
+        let html = '<pre class="debug-code-pre" data-target-line-index="' + targetLineIndex + '"><code class="language-javascript">';
         
         highlightedLines.forEach((line, index) => {
             const lineNum = originalLineNumbers[index];
+            const isTargetLine = lineNum === targetLine;
             
             // Check if we should add a red line after this line
             if (removedAfterIndices.has(index)) {
-                html += `<div class="debug-code-line">`;
+                html += `<div class="debug-code-line${isTargetLine ? ' target-line' : ''}" data-line-number="${lineNum}">`;
                 html += `<span class="line-number">${lineNum.toString().padStart(4, ' ')}</span>`;
                 html += `<span class="line-content">${line || ' '}</span>`;
                 html += '</div>';
                 // Add the red line indicator
-                html += `<div class="debug-removed-indicator">`;
+                html += `<div class="debug-removed-indicator" id="${isTargetLine ? 'debug-target-indicator' : ''}">`;
                 html += `<span class="line-number-placeholder">    </span>`;
                 html += `<span class="removed-line-marker" title="Debug code removed here"></span>`;
                 html += '</div>';
             } else {
-                html += `<div class="debug-code-line">`;
+                html += `<div class="debug-code-line${isTargetLine ? ' target-line' : ''}" data-line-number="${lineNum}">`;
                 html += `<span class="line-number">${lineNum.toString().padStart(4, ' ')}</span>`;
                 html += `<span class="line-content">${line || ' '}</span>`;
                 html += '</div>';

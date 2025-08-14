@@ -1253,8 +1253,9 @@ main {
     border: 1px solid var(--border-color);
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    max-width: 600px;
-    min-width: 400px;
+    max-width: 80vw; /* Increased to 80% of viewport width */
+    min-width: 600px; /* Increased minimum width */
+    width: 800px; /* Default width */
     opacity: 0;
     transition: opacity 0.2s ease;
     pointer-events: auto; /* Changed from none to auto to make it clickable */
@@ -1296,8 +1297,11 @@ main {
 
 .debug-code-content {
     padding: 12px;
-    max-height: 400px;
+    max-height: 70vh; /* 70% of viewport height for better full file viewing */
+    min-height: 300px;
     overflow-y: auto;
+    overflow-x: auto;
+    scroll-behavior: smooth;
 }
 
 .debug-code-pre {
@@ -1324,6 +1328,14 @@ main {
 .debug-code-line.highlight {
     background-color: rgba(255, 235, 59, 0.3);
     font-weight: bold;
+}
+
+/* Highlight the target line where debug was called */
+.debug-code-line.target-line {
+    background-color: rgba(99, 102, 241, 0.1);
+    border-left: 3px solid var(--primary-color);
+    margin-left: -3px;
+    padding-left: 3px;
 }
 
 .line-number {
