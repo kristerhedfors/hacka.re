@@ -125,21 +125,23 @@ window.ShareManager = (function() {
             }
             
             // Update status indicators after loading options
-            updateShareItemStatuses();
+            updateShareItemStatuses().catch(error => {
+                console.warn('Error updating share item statuses:', error);
+            });
         }
         
         /**
          * Update status indicators for each share item
          */
-        function updateShareItemStatuses() {
+        async function updateShareItemStatuses() {
             // Update prompt library status
             updatePromptLibraryStatus();
             
             // Update function library status
             updateFunctionLibraryStatus();
             
-            // Update MCP connections status
-            updateMcpConnectionsStatus();
+            // Update MCP connections status (now async)
+            await updateMcpConnectionsStatus();
             
             // Update conversation status
             updateConversationStatus();
@@ -155,11 +157,9 @@ window.ShareManager = (function() {
             const label = checkbox.parentElement ? checkbox.parentElement.querySelector('label[for="share-prompt-library"]') : null;
             if (!label) return;
             
-            // Remove existing status if any
-            const existingStatus = label.querySelector('.share-item-status');
-            if (existingStatus) {
-                existingStatus.remove();
-            }
+            // Remove ALL existing status indicators (fix for duplicates)
+            const allExistingStatus = label.querySelectorAll('.share-item-status');
+            allExistingStatus.forEach(status => status.remove());
             
             // Get prompt statistics
             let enabledUserPrompts = 0;
@@ -213,11 +213,9 @@ window.ShareManager = (function() {
             const label = checkbox.parentElement ? checkbox.parentElement.querySelector('label[for="share-function-library"]') : null;
             if (!label) return;
             
-            // Remove existing status if any
-            const existingStatus = label.querySelector('.share-item-status');
-            if (existingStatus) {
-                existingStatus.remove();
-            }
+            // Remove ALL existing status indicators (fix for duplicates)
+            const allExistingStatus = label.querySelectorAll('.share-item-status');
+            allExistingStatus.forEach(status => status.remove());
             
             // Get function statistics
             let enabledUserFunctions = 0;
@@ -289,36 +287,56 @@ window.ShareManager = (function() {
         /**
          * Update MCP connections status display
          */
-        function updateMcpConnectionsStatus() {
-            const checkbox = elements.shareMcpConnectionsCheckbox;
+        async function updateMcpConnectionsStatus() {
+            // Always get fresh reference to checkbox (nuclear fix replaces the element)
+            const checkbox = document.getElementById('share-mcp-connections');
             if (!checkbox) return;
             
             const label = checkbox.parentElement ? checkbox.parentElement.querySelector('label[for="share-mcp-connections"]') : null;
             if (!label) return;
             
-            // Remove existing status if any
-            const existingStatus = label.querySelector('.share-item-status');
-            if (existingStatus) {
-                existingStatus.remove();
-            }
+            // Remove ALL existing status indicators (fix for duplicates)
+            const allExistingStatus = label.querySelectorAll('.share-item-status');
+            console.log(`🧹 updateMcpConnectionsStatus: Found ${allExistingStatus.length} existing status indicators to remove`);
+            allExistingStatus.forEach(status => status.remove());
             
-            // Try to check for GitHub token directly from localStorage
+            // Check for GitHub token using CoreStorageService
             try {
-                const githubToken = localStorage.getItem('mcp_github_token');
-                if (githubToken) {
-                    const statusSpan = document.createElement('span');
-                    statusSpan.className = 'share-item-status';
-                    statusSpan.style.marginLeft = '10px';
-                    statusSpan.style.color = 'var(--text-color-secondary)';
-                    statusSpan.style.fontSize = '0.85em';
-                    statusSpan.style.fontWeight = 'normal';
-                    
-                    const actionText = checkbox.checked ? 'will be shared' : 'available';
-                    statusSpan.textContent = `(GitHub ${actionText})`;
-                    label.appendChild(statusSpan);
+                if (window.CoreStorageService) {
+                    const githubToken = await window.CoreStorageService.getValue('mcp_github_token');
+                    if (githubToken) {
+                        console.log(`🎯 updateMcpConnectionsStatus: Creating new status indicator, checkbox.checked = ${checkbox.checked}`);
+                        const statusSpan = document.createElement('span');
+                        statusSpan.className = 'share-item-status';
+                        statusSpan.style.marginLeft = '10px';
+                        statusSpan.style.color = 'var(--text-color-secondary)';
+                        statusSpan.style.fontSize = '0.85em';
+                        statusSpan.style.fontWeight = 'normal';
+                        
+                        const actionText = checkbox.checked ? 'will be shared' : 'available';
+                        statusSpan.textContent = `(GitHub ${actionText})`;
+                        console.log(`🎯 updateMcpConnectionsStatus: Status text set to '${statusSpan.textContent}'`);
+                        label.appendChild(statusSpan);
+                    }
+                } else {
+                    // Fallback to direct localStorage check for testing
+                    const githubToken = localStorage.getItem('mcp_github_token');
+                    if (githubToken) {
+                        const statusSpan = document.createElement('span');
+                        statusSpan.className = 'share-item-status';
+                        statusSpan.style.marginLeft = '10px';
+                        statusSpan.style.color = 'var(--text-color-secondary)';
+                        statusSpan.style.fontSize = '0.85em';
+                        statusSpan.style.fontWeight = 'normal';
+                        
+                        const actionText = checkbox.checked ? 'will be shared' : 'available';
+                        statusSpan.textContent = `(GitHub ${actionText})`;
+                        label.appendChild(statusSpan);
+                    }
                 }
             } catch (error) {
-                // Ignore localStorage errors - status will just not show
+                // Ignore errors - status will just not show
+                console.warn('Error updating MCP connections status:', error);
             }
         }
         
@@ -332,11 +350,9 @@ window.ShareManager = (function() {
             const label = checkbox.parentElement ? checkbox.parentElement.querySelector('label[for="share-conversation"]') : null;
             if (!label) return;
             
-            // Remove existing status if any
-            const existingStatus = label.querySelector('.share-item-status');
-            if (existingStatus) {
-                existingStatus.remove();
-            }
+            // Remove ALL existing status indicators (fix for duplicates)
+            const allExistingStatus = label.querySelectorAll('.share-item-status');
+            allExistingStatus.forEach(status => status.remove());
             
             // Get message count from the chat container
             const messageCount = document.querySelectorAll('#chat-container .message').length;
