@@ -10,6 +10,7 @@ window.CrossTabSyncService = (function() {
     let isInitialized = false;
     let syncQueue = [];
     let lastKnownHistoryHash = null;
+    let lastReloadTime = 0; // Track last reload to prevent rapid successive reloads
     let syncCheckInterval = null;
     
     // Constants
@@ -109,8 +110,15 @@ window.CrossTabSyncService = (function() {
      * @param {string} newHash - New history hash
      */
     function handleHistoryHashChange(newHash) {
-        if (newHash && newHash !== lastKnownHistoryHash) {
+        // Ignore empty or error hashes to prevent infinite loops
+        if (!newHash || newHash === 'empty' || newHash === 'error') {
+            console.log('[CrossTabSync] Ignoring empty/error hash to prevent loops:', newHash);
+            return;
+        }
+        
+        if (newHash !== lastKnownHistoryHash) {
             console.log('[CrossTabSync] History hash changed in another tab, syncing...');
+            console.log('[CrossTabSync] Old hash:', lastKnownHistoryHash, 'New hash:', newHash);
             lastKnownHistoryHash = newHash;
             
             // Don't reload conversation history if we're already processing a shared link
@@ -119,6 +127,14 @@ window.CrossTabSyncService = (function() {
                 console.log('[CrossTabSync] Shared link in progress - skipping cross-tab reload to prevent loops');
                 return;
             }
+            
+            // Additional check to prevent rapid successive reloads
+            const now = Date.now();
+            if (now - lastReloadTime < 2000) { // Prevent reloads within 2 seconds
+                console.log('[CrossTabSync] Preventing rapid successive reload - too soon since last reload');
+                return;
+            }
+            lastReloadTime = now;
             
             // Reload conversation history
             if (window.aiHackare && window.aiHackare.chatManager) {
