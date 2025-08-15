@@ -13,11 +13,13 @@ window.CrossTabSyncService = (function() {
     let lastReloadTime = 0; // Track last reload to prevent rapid successive reloads
     let syncCheckInterval = null;
     let consecutiveEmptyChecks = 0; // Track empty hash checks to reduce frequency
+    let isReloading = false; // Track if we're currently reloading to prevent loops
     
     // Constants
     const SYNC_CHECK_INTERVAL = 5000; // Check every 5 seconds (reduced frequency)
     const SYNC_TRIGGER_KEY = 'hackare_sync_trigger';     // Properly prefixed
     const HISTORY_HASH_KEY = 'hackare_history_hash';    // Properly prefixed for cross-tab sync
+    const TAB_HEARTBEAT_KEY = 'hackare_tab_heartbeat';   // For detecting multiple tabs
     
     /**
      * Initialize cross-tab synchronization
@@ -117,6 +119,12 @@ window.CrossTabSyncService = (function() {
             return;
         }
         
+        // Don't process hash changes if we're already reloading
+        if (isReloading) {
+            console.log('[CrossTabSync] Already reloading - ignoring hash change to prevent loops');
+            return;
+        }
+        
         if (newHash !== lastKnownHistoryHash) {
             console.log('[CrossTabSync] History hash changed in another tab, syncing...');
             console.log('[CrossTabSync] Old hash:', lastKnownHistoryHash, 'New hash:', newHash);
@@ -131,18 +139,28 @@ window.CrossTabSyncService = (function() {
             
             // Additional check to prevent rapid successive reloads
             const now = Date.now();
-            if (now - lastReloadTime < 2000) { // Prevent reloads within 2 seconds
+            if (now - lastReloadTime < 5000) { // Prevent reloads within 5 seconds (increased)
                 console.log('[CrossTabSync] Preventing rapid successive reload - too soon since last reload');
                 return;
             }
             lastReloadTime = now;
+            
+            // Set reloading flag to prevent concurrent reloads
+            isReloading = true;
             
             // Reload conversation history
             if (window.aiHackare && window.aiHackare.chatManager) {
                 setTimeout(() => {
                     console.log('[CrossTabSync] Reloading conversation history due to cross-tab update');
                     window.aiHackare.chatManager.reloadConversationHistory();
+                    
+                    // Clear reloading flag after a delay
+                    setTimeout(() => {
+                        isReloading = false;
+                    }, 1000);
                 }, 100); // Small delay to ensure storage is updated
+            } else {
+                isReloading = false;
             }
         }
     }
@@ -155,11 +173,15 @@ window.CrossTabSyncService = (function() {
             clearInterval(syncCheckInterval);
         }
         
-        syncCheckInterval = setInterval(() => {
-            checkForUpdates();
-        }, SYNC_CHECK_INTERVAL);
+        // Disable periodic checking entirely - only respond to explicit storage events
+        // This prevents the infinite loops caused by self-triggering updates
+        console.log('[CrossTabSync] Cross-tab sync will only respond to storage events from other tabs');
         
-        console.log('[CrossTabSync] Started periodic sync check (every', SYNC_CHECK_INTERVAL, 'ms)');
+        // syncCheckInterval = setInterval(() => {
+        //     checkForUpdates();
+        // }, SYNC_CHECK_INTERVAL);
+        
+        // console.log('[CrossTabSync] Started periodic sync check (every', SYNC_CHECK_INTERVAL, 'ms)');
     }
     
     /**
@@ -178,9 +200,9 @@ window.CrossTabSyncService = (function() {
      */
     function checkForUpdates() {
         try {
-            // Skip updates if we're processing shared links to prevent interference
-            if (window._waitingForSharedLinkPassword || window._processingSharedLink) {
-                console.log('[CrossTabSync] Skipping update check - shared link processing in progress');
+            // Skip updates if we're processing shared links or reloading to prevent interference
+            if (window._waitingForSharedLinkPassword || window._processingSharedLink || isReloading) {
+                console.log('[CrossTabSync] Skipping update check - processing in progress');
                 return;
             }
             
@@ -198,16 +220,17 @@ window.CrossTabSyncService = (function() {
                 consecutiveEmptyChecks = 0;
             }
             
-            // Compare with last known hash
+            // Compare with last known hash - but don't update if we just set it
             if (currentHistoryHash !== lastKnownHistoryHash) {
-                // Only log and update if the change is meaningful (not just 'empty' or 'error')
+                // Only trigger cross-tab updates if there's actually another tab listening
+                // Skip localStorage updates to prevent self-triggering events in single tab scenarios
                 if (currentHistoryHash !== 'empty' && currentHistoryHash !== 'error' && 
                     lastKnownHistoryHash !== 'empty' && lastKnownHistoryHash !== 'error') {
-                    console.log('[CrossTabSync] History changed, updating other tabs');
-                    console.log('[CrossTabSync] Hash change:', lastKnownHistoryHash, '->', currentHistoryHash);
+                    console.log('[CrossTabSync] History changed locally - hash:', currentHistoryHash);
                 }
                 lastKnownHistoryHash = currentHistoryHash;
-                updateHistoryHash();
+                // Don't call updateHistoryHash() here to prevent localStorage events in single tab
+                // updateHistoryHash();
             }
             
         } catch (error) {
@@ -305,6 +328,11 @@ window.CrossTabSyncService = (function() {
      */
     function getHistoryHash() {
         try {
+            // Don't generate hash during reload to prevent inconsistencies
+            if (isReloading) {
+                return lastKnownHistoryHash || 'reloading';
+            }
+            
             const history = StorageService ? StorageService.loadChatHistory() : null;
             if (!history || !Array.isArray(history)) {
                 return 'empty';
@@ -318,11 +346,17 @@ window.CrossTabSyncService = (function() {
             
             // Use content hash instead of timestamp to avoid constant changes
             const lastMessage = history[history.length - 1];
-            const lastContent = lastMessage ? lastMessage.content : '';
-            const lastRole = lastMessage ? lastMessage.role : '';
+            const lastContent = lastMessage && lastMessage.content ? lastMessage.content : '';
+            const lastRole = lastMessage && lastMessage.role ? lastMessage.role : 'unknown';
             
             // Create a more stable hash that only changes when actual content changes
-            return `${messageCount}_${lastContent.length}_${lastRole}_${lastContent.slice(0, 50)}`;
+            // Use a simple checksum of content instead of content itself to avoid issues
+            let contentChecksum = 0;
+            for (let i = 0; i < lastContent.length; i++) {
+                contentChecksum += lastContent.charCodeAt(i);
+            }
+            
+            return `${messageCount}_${lastContent.length}_${lastRole}_${contentChecksum}`;
         } catch (error) {
             console.error('[CrossTabSync] Error getting history hash:', error);
             return 'error';
@@ -348,16 +382,22 @@ window.CrossTabSyncService = (function() {
      * Notify that conversation history was updated
      */
     function notifyHistoryUpdate() {
-        updateHistoryHash();
-        triggerSync('history_update');
+        // Only update hash for actual cross-tab notification
+        if (!isReloading) {
+            updateHistoryHash();
+            triggerSync('history_update');
+        }
     }
     
     /**
      * Notify that a message was added
      */
     function notifyMessageAdded() {
-        updateHistoryHash();
-        triggerSync('message_added');
+        // Only update hash for actual cross-tab notification
+        if (!isReloading) {
+            updateHistoryHash();
+            triggerSync('message_added');
+        }
     }
     
     /**
