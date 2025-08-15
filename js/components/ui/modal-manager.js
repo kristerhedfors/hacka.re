@@ -94,6 +94,11 @@ window.ModalManager = (function() {
         function showShareModal() {
             elements.shareModal.classList.add('active');
             
+            // Update status indicators when modal opens
+            if (window.aiHackare && window.aiHackare.shareManager && window.aiHackare.shareManager.updateShareItemStatuses) {
+                window.aiHackare.shareManager.updateShareItemStatuses();
+            }
+            
             // NUCLEAR FIX: Force-attach MCP checkbox event listener when modal opens
             setTimeout(() => {
                 const mcpCheckbox = document.getElementById('share-mcp-connections');
