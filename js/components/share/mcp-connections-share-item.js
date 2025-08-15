@@ -97,18 +97,37 @@ function prepareMcpConnectionsForSharing(connections) {
 
 /**
  * Collect MCP connections data for sharing/testing
- * @returns {Object} Collected connections data
+ * @returns {Promise<Object>} Collected connections data (flat structure for sharing)
  */
-function collectMcpConnectionsData() {
-    // For now, return empty data structure
-    // This would normally collect actual MCP connection data
-    return {
-        connections: {},
-        metadata: {
-            timestamp: new Date().toISOString(),
-            version: '1.0.0'
+async function collectMcpConnectionsData() {
+    try {
+        const connections = {};
+        
+        // Check for GitHub token
+        if (window.CoreStorageService) {
+            const githubToken = await window.CoreStorageService.getValue('mcp_github_token');
+            if (githubToken) {
+                // Ensure we store as string, not object
+                let tokenToShare = githubToken;
+                if (typeof githubToken === 'object' && githubToken !== null && githubToken.token) {
+                    tokenToShare = githubToken.token;
+                }
+                
+                connections.github = tokenToShare;
+                console.log('🔌 collectMcpConnectionsData: Found GitHub token for sharing, type:', typeof tokenToShare);
+            } else {
+                console.log('🔌 collectMcpConnectionsData: No GitHub token found');
+            }
+        } else {
+            console.warn('🔌 collectMcpConnectionsData: CoreStorageService not available');
         }
-    };
+        
+        console.log('🔌 collectMcpConnectionsData: Returning connections:', Object.keys(connections));
+        return connections;
+    } catch (error) {
+        console.error('🔌 collectMcpConnectionsData: Error collecting MCP connections:', error);
+        return {};
+    }
 }
 
 /**
