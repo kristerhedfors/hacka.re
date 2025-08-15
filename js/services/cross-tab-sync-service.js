@@ -12,9 +12,10 @@ window.CrossTabSyncService = (function() {
     let lastKnownHistoryHash = null;
     let lastReloadTime = 0; // Track last reload to prevent rapid successive reloads
     let syncCheckInterval = null;
+    let consecutiveEmptyChecks = 0; // Track empty hash checks to reduce frequency
     
     // Constants
-    const SYNC_CHECK_INTERVAL = 2000; // Check every 2 seconds
+    const SYNC_CHECK_INTERVAL = 5000; // Check every 5 seconds (reduced frequency)
     const SYNC_TRIGGER_KEY = 'hackare_sync_trigger';     // Properly prefixed
     const HISTORY_HASH_KEY = 'hackare_history_hash';    // Properly prefixed for cross-tab sync
     
@@ -177,12 +178,34 @@ window.CrossTabSyncService = (function() {
      */
     function checkForUpdates() {
         try {
+            // Skip updates if we're processing shared links to prevent interference
+            if (window._waitingForSharedLinkPassword || window._processingSharedLink) {
+                console.log('[CrossTabSync] Skipping update check - shared link processing in progress');
+                return;
+            }
+            
             // Get current history hash
             const currentHistoryHash = getHistoryHash();
             
+            // Track consecutive empty checks to reduce logging noise
+            if (currentHistoryHash === 'empty') {
+                consecutiveEmptyChecks++;
+                if (consecutiveEmptyChecks > 3) {
+                    // After 3 consecutive empty checks, reduce logging frequency
+                    return;
+                }
+            } else {
+                consecutiveEmptyChecks = 0;
+            }
+            
             // Compare with last known hash
             if (currentHistoryHash !== lastKnownHistoryHash) {
-                console.log('[CrossTabSync] History changed, updating other tabs');
+                // Only log and update if the change is meaningful (not just 'empty' or 'error')
+                if (currentHistoryHash !== 'empty' && currentHistoryHash !== 'error' && 
+                    lastKnownHistoryHash !== 'empty' && lastKnownHistoryHash !== 'error') {
+                    console.log('[CrossTabSync] History changed, updating other tabs');
+                    console.log('[CrossTabSync] Hash change:', lastKnownHistoryHash, '->', currentHistoryHash);
+                }
                 lastKnownHistoryHash = currentHistoryHash;
                 updateHistoryHash();
             }
@@ -287,13 +310,19 @@ window.CrossTabSyncService = (function() {
                 return 'empty';
             }
             
-            // Create a simple hash based on message count and last message content
+            // Create a stable hash based on message count and content (not timestamps)
             const messageCount = history.length;
+            if (messageCount === 0) {
+                return 'empty';
+            }
+            
+            // Use content hash instead of timestamp to avoid constant changes
             const lastMessage = history[history.length - 1];
             const lastContent = lastMessage ? lastMessage.content : '';
-            const lastTimestamp = lastMessage ? lastMessage.timestamp : '';
+            const lastRole = lastMessage ? lastMessage.role : '';
             
-            return `${messageCount}_${lastContent.length}_${lastTimestamp}`;
+            // Create a more stable hash that only changes when actual content changes
+            return `${messageCount}_${lastContent.length}_${lastRole}_${lastContent.slice(0, 50)}`;
         } catch (error) {
             console.error('[CrossTabSync] Error getting history hash:', error);
             return 'error';
