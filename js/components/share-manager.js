@@ -123,6 +123,237 @@ window.ShareManager = (function() {
                     }
                 }
             }
+            
+            // Update status indicators after loading options
+            updateShareItemStatuses();
+        }
+        
+        /**
+         * Update status indicators for each share item
+         */
+        function updateShareItemStatuses() {
+            // Update prompt library status
+            updatePromptLibraryStatus();
+            
+            // Update function library status
+            updateFunctionLibraryStatus();
+            
+            // Update MCP connections status
+            updateMcpConnectionsStatus();
+            
+            // Update conversation status
+            updateConversationStatus();
+        }
+        
+        /**
+         * Update prompt library status display
+         */
+        function updatePromptLibraryStatus() {
+            const checkbox = elements.sharePromptLibraryCheckbox;
+            if (!checkbox) return;
+            
+            const label = checkbox.parentElement ? checkbox.parentElement.querySelector('label[for="share-prompt-library"]') : null;
+            if (!label) return;
+            
+            // Remove existing status if any
+            const existingStatus = label.querySelector('.share-item-status');
+            if (existingStatus) {
+                existingStatus.remove();
+            }
+            
+            // Get prompt statistics
+            let enabledUserPrompts = 0;
+            let enabledDefaultPrompts = 0;
+            
+            // Get user-defined prompts
+            if (window.PromptsService) {
+                const selectedPrompts = window.PromptsService.getSelectedPrompts();
+                enabledUserPrompts = selectedPrompts.length;
+            }
+            
+            // Get default prompts
+            if (window.DefaultPromptsService) {
+                const selectedDefaultPrompts = window.DefaultPromptsService.getSelectedDefaultPrompts();
+                enabledDefaultPrompts = selectedDefaultPrompts.length;
+            }
+            
+            // Only show status if there are enabled prompts
+            const totalEnabled = enabledUserPrompts + enabledDefaultPrompts;
+            
+            if (totalEnabled > 0) {
+                const statusSpan = document.createElement('span');
+                statusSpan.className = 'share-item-status';
+                statusSpan.style.marginLeft = '10px';
+                statusSpan.style.color = 'var(--text-color-secondary)';
+                statusSpan.style.fontSize = '0.85em';
+                statusSpan.style.fontWeight = 'normal';
+                
+                const parts = [];
+                if (enabledUserPrompts > 0) {
+                    parts.push(`${enabledUserPrompts} user`);
+                }
+                if (enabledDefaultPrompts > 0) {
+                    parts.push(`${enabledDefaultPrompts} default`);
+                }
+                
+                const promptText = totalEnabled !== 1 ? 'prompts' : 'prompt';
+                const actionText = checkbox.checked ? 'will be shared' : 'available';
+                statusSpan.textContent = `(${parts.join(', ')} ${promptText} ${actionText})`;
+                label.appendChild(statusSpan);
+            }
+        }
+        
+        /**
+         * Update function library status display
+         */
+        function updateFunctionLibraryStatus() {
+            const checkbox = elements.shareFunctionLibraryCheckbox;
+            if (!checkbox) return;
+            
+            const label = checkbox.parentElement ? checkbox.parentElement.querySelector('label[for="share-function-library"]') : null;
+            if (!label) return;
+            
+            // Remove existing status if any
+            const existingStatus = label.querySelector('.share-item-status');
+            if (existingStatus) {
+                existingStatus.remove();
+            }
+            
+            // Get function statistics
+            let enabledUserFunctions = 0;
+            let enabledDefaultFunctions = 0;
+            
+            // Get user-defined functions
+            if (window.FunctionToolsService) {
+                const jsFunctions = window.FunctionToolsService.getJsFunctions();
+                const enabledFunctions = window.FunctionToolsService.getEnabledFunctionNames();
+                
+                // Filter out default functions from the counts
+                const defaultFunctionNames = [];
+                if (window.DefaultFunctionsService) {
+                    const collections = window.DefaultFunctionsService.getDefaultFunctionCollections();
+                    collections.forEach(collection => {
+                        collection.functions.forEach(func => {
+                            defaultFunctionNames.push(func.name);
+                        });
+                    });
+                }
+                
+                // Count user functions (excluding default functions)
+                for (const funcName in jsFunctions) {
+                    if (!defaultFunctionNames.includes(funcName) && enabledFunctions.includes(funcName)) {
+                        enabledUserFunctions++;
+                    }
+                }
+            }
+            
+            // Get default functions
+            if (window.DefaultFunctionsService) {
+                const collections = window.DefaultFunctionsService.getDefaultFunctionCollections();
+                collections.forEach(collection => {
+                    collection.functions.forEach(func => {
+                        const functionId = `${collection.id}:${func.name}`;
+                        if (window.DefaultFunctionsService.isIndividualFunctionSelected(functionId)) {
+                            enabledDefaultFunctions++;
+                        }
+                    });
+                });
+            }
+            
+            // Only show status if there are enabled functions
+            const totalEnabled = enabledUserFunctions + enabledDefaultFunctions;
+            
+            if (totalEnabled > 0) {
+                const statusSpan = document.createElement('span');
+                statusSpan.className = 'share-item-status';
+                statusSpan.style.marginLeft = '10px';
+                statusSpan.style.color = 'var(--text-color-secondary)';
+                statusSpan.style.fontSize = '0.85em';
+                statusSpan.style.fontWeight = 'normal';
+                
+                const parts = [];
+                if (enabledUserFunctions > 0) {
+                    parts.push(`${enabledUserFunctions} user`);
+                }
+                if (enabledDefaultFunctions > 0) {
+                    parts.push(`${enabledDefaultFunctions} default`);
+                }
+                
+                const functionText = totalEnabled !== 1 ? 'functions' : 'function';
+                const actionText = checkbox.checked ? 'will be shared' : 'available';
+                statusSpan.textContent = `(${parts.join(', ')} ${functionText} ${actionText})`;
+                label.appendChild(statusSpan);
+            }
+        }
+        
+        /**
+         * Update MCP connections status display
+         */
+        function updateMcpConnectionsStatus() {
+            const checkbox = elements.shareMcpConnectionsCheckbox;
+            if (!checkbox) return;
+            
+            const label = checkbox.parentElement ? checkbox.parentElement.querySelector('label[for="share-mcp-connections"]') : null;
+            if (!label) return;
+            
+            // Remove existing status if any
+            const existingStatus = label.querySelector('.share-item-status');
+            if (existingStatus) {
+                existingStatus.remove();
+            }
+            
+            // Try to check for GitHub token directly from localStorage
+            try {
+                const githubToken = localStorage.getItem('mcp_github_token');
+                if (githubToken) {
+                    const statusSpan = document.createElement('span');
+                    statusSpan.className = 'share-item-status';
+                    statusSpan.style.marginLeft = '10px';
+                    statusSpan.style.color = 'var(--text-color-secondary)';
+                    statusSpan.style.fontSize = '0.85em';
+                    statusSpan.style.fontWeight = 'normal';
+                    
+                    const actionText = checkbox.checked ? 'will be shared' : 'available';
+                    statusSpan.textContent = `(GitHub ${actionText})`;
+                    label.appendChild(statusSpan);
+                }
+            } catch (error) {
+                // Ignore localStorage errors - status will just not show
+            }
+        }
+        
+        /**
+         * Update conversation status display
+         */
+        function updateConversationStatus() {
+            const checkbox = elements.shareConversationCheckbox;
+            if (!checkbox) return;
+            
+            const label = checkbox.parentElement ? checkbox.parentElement.querySelector('label[for="share-conversation"]') : null;
+            if (!label) return;
+            
+            // Remove existing status if any
+            const existingStatus = label.querySelector('.share-item-status');
+            if (existingStatus) {
+                existingStatus.remove();
+            }
+            
+            // Get message count from the chat container
+            const messageCount = document.querySelectorAll('#chat-container .message').length;
+            
+            if (messageCount > 0) {
+                const statusSpan = document.createElement('span');
+                statusSpan.className = 'share-item-status';
+                statusSpan.style.marginLeft = '10px';
+                statusSpan.style.color = 'var(--text-color-secondary)';
+                statusSpan.style.fontSize = '0.85em';
+                statusSpan.style.fontWeight = 'normal';
+                
+                const messageText = messageCount !== 1 ? 'messages' : 'message';
+                const actionText = checkbox.checked ? 'will be shared' : 'available';
+                statusSpan.textContent = `(${messageCount} ${messageText} ${actionText})`;
+                label.appendChild(statusSpan);
+            }
         }
         
         /**
@@ -645,7 +876,8 @@ window.ShareManager = (function() {
             getSharedLinkOptions,
             setSharedLinkOptions,
             saveShareOptions,
-            loadShareOptions
+            loadShareOptions,
+            updateShareItemStatuses
         };
     }
 
