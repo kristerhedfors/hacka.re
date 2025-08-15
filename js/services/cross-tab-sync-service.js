@@ -38,6 +38,15 @@ window.CrossTabSyncService = (function() {
             return;
         }
         
+        // Disable cross-tab sync for shared links entirely due to interference issues
+        // Shared links involve multiple tabs with different initialization timings
+        // which causes infinite loops and conflicts
+        console.log('[CrossTabSync] Shared link detected - disabling cross-tab sync to prevent interference');
+        console.log('[CrossTabSync] Cross-tab sync is disabled for shared link scenarios');
+        return;
+        
+        // The following code is disabled but preserved for reference:
+        /*
         isInitialized = true;
         
         // Listen for storage events from other tabs
@@ -50,6 +59,7 @@ window.CrossTabSyncService = (function() {
         updateHistoryHash();
         
         console.log('[CrossTabSync] Cross-tab synchronization initialized');
+        */
     }
     
     /**
@@ -125,21 +135,27 @@ window.CrossTabSyncService = (function() {
             return;
         }
         
+        // Don't process hash changes if ANY tab is processing a shared link
+        // This prevents cross-tab interference during shared link loading
+        if (window._waitingForSharedLinkPassword || window._processingSharedLink || window._sharedLinkProcessed) {
+            console.log('[CrossTabSync] Shared link processing detected - ignoring cross-tab sync to prevent interference');
+            return;
+        }
+        
+        // Additional check: ignore undefined role changes which indicate unstable state
+        if (newHash.includes('undefined')) {
+            console.log('[CrossTabSync] Ignoring hash with undefined role - indicates unstable state:', newHash);
+            return;
+        }
+        
         if (newHash !== lastKnownHistoryHash) {
             console.log('[CrossTabSync] History hash changed in another tab, syncing...');
             console.log('[CrossTabSync] Old hash:', lastKnownHistoryHash, 'New hash:', newHash);
             lastKnownHistoryHash = newHash;
             
-            // Don't reload conversation history if we're already processing a shared link
-            // This prevents infinite loops during shared link initialization
-            if (window._waitingForSharedLinkPassword || window._processingSharedLink) {
-                console.log('[CrossTabSync] Shared link in progress - skipping cross-tab reload to prevent loops');
-                return;
-            }
-            
             // Additional check to prevent rapid successive reloads
             const now = Date.now();
-            if (now - lastReloadTime < 5000) { // Prevent reloads within 5 seconds (increased)
+            if (now - lastReloadTime < 10000) { // Prevent reloads within 10 seconds (increased further)
                 console.log('[CrossTabSync] Preventing rapid successive reload - too soon since last reload');
                 return;
             }
@@ -157,8 +173,8 @@ window.CrossTabSyncService = (function() {
                     // Clear reloading flag after a delay
                     setTimeout(() => {
                         isReloading = false;
-                    }, 1000);
-                }, 100); // Small delay to ensure storage is updated
+                    }, 2000);
+                }, 500); // Longer delay to ensure storage is stable
             } else {
                 isReloading = false;
             }
