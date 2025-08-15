@@ -94,6 +94,11 @@ window.ModalManager = (function() {
         function showShareModal() {
             elements.shareModal.classList.add('active');
             
+            // Update status indicators when modal opens
+            if (window.aiHackare && window.aiHackare.shareManager && window.aiHackare.shareManager.updateShareItemStatuses) {
+                window.aiHackare.shareManager.updateShareItemStatuses();
+            }
+            
             // NUCLEAR FIX: Force-attach MCP checkbox event listener when modal opens
             setTimeout(() => {
                 const mcpCheckbox = document.getElementById('share-mcp-connections');
@@ -130,6 +135,19 @@ window.ModalManager = (function() {
                                 } else {
                                     console.error('❌ NUCLEAR FIX: updateLinkLengthBar is not a function');
                                     console.error('❌ NUCLEAR FIX: updateLinkLengthBar value:', window.aiHackare.updateLinkLengthBar);
+                                }
+                                
+                                // ALSO update the MCP status indicators when checkbox changes
+                                if (window.aiHackare.shareManager && typeof window.aiHackare.shareManager.updateShareItemStatuses === 'function') {
+                                    console.log('📞 NUCLEAR FIX: About to update MCP status indicators...');
+                                    try {
+                                        window.aiHackare.shareManager.updateShareItemStatuses();
+                                        console.log('✅ NUCLEAR FIX: MCP status indicators updated successfully');
+                                    } catch (statusError) {
+                                        console.error('❌ NUCLEAR FIX: Error updating MCP status indicators:', statusError);
+                                    }
+                                } else {
+                                    console.error('❌ NUCLEAR FIX: shareManager or updateShareItemStatuses not available');
                                 }
                             } else {
                                 console.error('❌ NUCLEAR FIX: window.aiHackare is not available');

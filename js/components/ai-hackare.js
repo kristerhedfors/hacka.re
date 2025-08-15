@@ -236,12 +236,20 @@ window.AIHackareComponent = (function() {
             if (this.elements.sharePromptLibraryCheckbox) {
                 this.elements.sharePromptLibraryCheckbox.addEventListener('change', () => {
                     this.updateLinkLengthBar();
+                    // Update status indicators
+                    if (this.shareManager && this.shareManager.updateShareItemStatuses) {
+                        this.shareManager.updateShareItemStatuses();
+                    }
                 });
             }
             
             if (this.elements.shareFunctionLibraryCheckbox) {
                 this.elements.shareFunctionLibraryCheckbox.addEventListener('change', () => {
                     this.updateLinkLengthBar();
+                    // Update status indicators
+                    if (this.shareManager && this.shareManager.updateShareItemStatuses) {
+                        this.shareManager.updateShareItemStatuses();
+                    }
                 });
             }
             
@@ -258,6 +266,10 @@ window.AIHackareComponent = (function() {
                 mcpCheckbox.addEventListener('change', () => {
                     console.log('MCP checkbox changed to:', mcpCheckbox.checked);
                     this.updateLinkLengthBar();
+                    // Update status indicators
+                    if (this.shareManager && this.shareManager.updateShareItemStatuses) {
+                        this.shareManager.updateShareItemStatuses();
+                    }
                 });
                 console.log('✅ MCP checkbox event listener attached successfully');
             } else {
@@ -267,6 +279,10 @@ window.AIHackareComponent = (function() {
             if (this.elements.shareConversationCheckbox) {
                 this.elements.shareConversationCheckbox.addEventListener('change', () => {
                     this.toggleMessageHistoryInput();
+                    // Update status indicators
+                    if (this.shareManager && this.shareManager.updateShareItemStatuses) {
+                        this.shareManager.updateShareItemStatuses();
+                    }
                 });
             }
             
