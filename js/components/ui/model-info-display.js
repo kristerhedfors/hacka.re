@@ -46,11 +46,11 @@ window.ModelInfoDisplay = (function() {
                     const baseUrl = StorageService.getBaseUrl();
                     if (baseUrl) {
                         if (baseUrl.includes('groq.com')) {
-                            provider = 'Groq';
+                            provider = '🇸🇦 Groq';
                         } else if (baseUrl.includes('berget.ai')) {
-                            provider = 'Berget.AI';
+                            provider = '🇸🇪 Berget.AI';
                         } else if (baseUrl.includes('openai.com')) {
-                            provider = 'OpenAI';
+                            provider = '🇺🇸 OpenAI';
                         } else if (baseUrl.includes('localhost:11434')) {
                             provider = 'Ollama';
                         }
