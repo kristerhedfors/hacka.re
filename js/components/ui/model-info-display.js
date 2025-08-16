@@ -122,13 +122,30 @@ window.ModelInfoDisplay = (function() {
             // Get a simplified display name for the model
             const displayName = ModelInfoService.getDisplayName(currentModel);
             
-            // Update model name display
+            // Update model name display with flag
             if (elements.modelNameDisplay) {
                 // Safeguard: Don't update if displayName is just a number
                 if (!/^\d+$/.test(displayName)) {
                     // Clear any existing content first
                     elements.modelNameDisplay.innerHTML = '';
-                    elements.modelNameDisplay.textContent = displayName;
+                    
+                    // Get the flag for this model
+                    const flag = window.ModelCountryMapping ? window.ModelCountryMapping.getModelFlag(currentModel) : '';
+                    
+                    if (flag) {
+                        // Create a span for the flag with special styling
+                        const flagSpan = document.createElement('span');
+                        flagSpan.className = 'model-flag-prefix';
+                        flagSpan.textContent = flag + ' ';
+                        elements.modelNameDisplay.appendChild(flagSpan);
+                        
+                        // Add the model name as text
+                        const modelText = document.createTextNode(displayName);
+                        elements.modelNameDisplay.appendChild(modelText);
+                    } else {
+                        // No flag, just set the text
+                        elements.modelNameDisplay.textContent = displayName;
+                    }
                 }
             }
             
@@ -151,29 +168,41 @@ window.ModelInfoDisplay = (function() {
                 // Get a simplified display name for the model
                 const displayName = ModelInfoService.getDisplayName(currentModel);
                 
-                // Update model name display
+                // Update model name display with flag
                 if (elements.modelNameDisplay) {
                     // Safeguard: Don't update if displayName is just a number
                     if (!/^\d+$/.test(displayName)) {
                         // Check if we have a provider span
                         const providerSpan = elements.modelNameDisplay.querySelector('.model-provider-inline');
                         
-                        // Update just the text content, preserving the provider span
+                        // Get the flag for this model
+                        const flag = window.ModelCountryMapping ? window.ModelCountryMapping.getModelFlag(currentModel) : '';
+                        
+                        // Clear and rebuild the display
                         if (providerSpan) {
-                            // Update only the text before the span
-                            const textNode = elements.modelNameDisplay.firstChild;
-                            if (textNode && textNode.nodeType === Node.TEXT_NODE) {
-                                textNode.textContent = displayName + ' ';
-                            } else {
-                                // Insert text node before the span
-                                elements.modelNameDisplay.insertBefore(
-                                    document.createTextNode(displayName + ' '),
-                                    providerSpan
-                                );
-                            }
-                        } else {
-                            // No provider span, just update text
-                            elements.modelNameDisplay.textContent = displayName;
+                            // Remove provider span temporarily
+                            providerSpan.remove();
+                        }
+                        
+                        // Clear content
+                        elements.modelNameDisplay.innerHTML = '';
+                        
+                        if (flag) {
+                            // Add flag span
+                            const flagSpan = document.createElement('span');
+                            flagSpan.className = 'model-flag-prefix';
+                            flagSpan.textContent = flag + ' ';
+                            elements.modelNameDisplay.appendChild(flagSpan);
+                        }
+                        
+                        // Add model name
+                        const modelText = document.createTextNode(displayName);
+                        elements.modelNameDisplay.appendChild(modelText);
+                        
+                        // Re-add provider span if it existed
+                        if (providerSpan) {
+                            elements.modelNameDisplay.appendChild(document.createTextNode(' '));
+                            elements.modelNameDisplay.appendChild(providerSpan);
                         }
                     }
                 }

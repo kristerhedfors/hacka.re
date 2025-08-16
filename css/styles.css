@@ -854,6 +854,23 @@ body.firefox-focus .heart-logo {
     background-clip: text;
     -webkit-text-fill-color: transparent;
     text-fill-color: transparent;
+    position: relative;
+}
+
+/* Flag prefix styling in header */
+.model-flag-prefix {
+    font-size: 0.85em;
+    position: relative;
+    top: -0.1em;
+    margin-right: 0.15em;
+    display: inline-block;
+    /* Reset the gradient effect for the flag */
+    background: none !important;
+    -webkit-background-clip: initial !important;
+    background-clip: initial !important;
+    -webkit-text-fill-color: initial !important;
+    text-fill-color: initial !important;
+    animation: none !important;
 }
 
 .active-model {
