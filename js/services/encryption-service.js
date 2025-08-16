@@ -48,13 +48,14 @@ window.EncryptionService = (function() {
      * Decrypt data with the given passphrase
      * @param {string} encryptedData - The encrypted data as a string
      * @param {string} passphrase - The passphrase to use for decryption
+     * @param {boolean} suppressErrorLogging - If true, don't log decryption failures (for expected failures)
      * @returns {*} The decrypted data or null if decryption fails
      */
-    function decrypt(encryptedData, passphrase) {
+    function decrypt(encryptedData, passphrase, suppressErrorLogging = false) {
         try {
             const decryptedValue = CryptoUtils.decryptData(encryptedData, passphrase);
             
-            if (decryptedValue === null) {
+            if (decryptedValue === null && !suppressErrorLogging) {
                 // Create error object with safe properties
                 const errorInfo = {
                     status: 'Decryption returned null'
@@ -78,21 +79,23 @@ window.EncryptionService = (function() {
             
             return decryptedValue;
         } catch (error) {
-            // Create error object with safe properties
-            const errorInfo = {
-                error: error.message,
-                stack: error.stack
-            };
-            
-            // Safely add length properties
-            try {
-                errorInfo.encryptedDataLength = encryptedData ? encryptedData.length : 0;
-                errorInfo.passphraseLength = passphrase ? passphrase.length : 0;
-            } catch (e) {
-                errorInfo.metadataError = e.message;
+            if (!suppressErrorLogging) {
+                // Create error object with safe properties
+                const errorInfo = {
+                    error: error.message,
+                    stack: error.stack
+                };
+                
+                // Safely add length properties
+                try {
+                    errorInfo.encryptedDataLength = encryptedData ? encryptedData.length : 0;
+                    errorInfo.passphraseLength = passphrase ? passphrase.length : 0;
+                } catch (e) {
+                    errorInfo.metadataError = e.message;
+                }
+                
+                console.error('Exception during decryption:', errorInfo);
             }
-            
-            console.error('Exception during decryption:', errorInfo);
             return null;
         }
     }

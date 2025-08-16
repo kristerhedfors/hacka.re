@@ -328,6 +328,7 @@ window.LinkSharingService = (function() {
                 if (data.mcpConnections) {
                     result.mcpConnections = data.mcpConnections;
                     console.log('Extracted MCP connections from shared link:', Object.keys(data.mcpConnections));
+                    // Note: MCP connections will be applied by shared-link-data-processor
                 }
                 
                 // Include welcome message if present

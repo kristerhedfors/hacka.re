@@ -105,6 +105,64 @@ window.CoreStorageService = (function() {
     }
     
     /**
+     * Detect if a decryption failure might be expected due to cross-storage scenarios
+     * @param {string} key - The storage key
+     * @param {string} encryptedValue - The encrypted data
+     * @returns {boolean} True if this might be an expected failure scenario
+     */
+    function detectCrossStorageScenario(key, encryptedValue) {
+        try {
+            // Check if there's data in the opposite storage that might indicate a cross-storage scenario
+            if (StorageTypeService.isUsingSessionStorage()) {
+                // Using sessionStorage - check if localStorage has ANY encrypted data for this key
+                const localStorageValue = localStorage.getItem(key);
+                if (localStorageValue) {
+                    // There's data in localStorage for this key, which might have been from a previous session
+                    // This is likely a cross-storage scenario
+                    return true;
+                }
+            } else if (StorageTypeService.isUsingLocalStorage()) {
+                // Using localStorage - check if sessionStorage has ANY encrypted data for this key
+                const sessionStorageValue = sessionStorage.getItem(key);
+                if (sessionStorageValue) {
+                    // There's data in sessionStorage for this key
+                    // This is likely a cross-storage scenario
+                    return true;
+                }
+            }
+            
+            // Also check if this is early in the initialization where cross-storage issues are common
+            // Keys that commonly have cross-storage issues during init
+            const crossStorageProneKeys = [
+                'js_functions', 'enabled_functions', 'function_collections', 
+                'function_collection_metadata', 'openai_model', 'system_prompt',
+                'base_url', 'base_url_provider', 'openai_api_key', 'chat_history',
+                'function_tools_enabled', 'tool_calling_enabled', 'theme_mode'
+            ];
+            
+            // Check if this key is one that commonly has cross-storage issues
+            for (const proneKey of crossStorageProneKeys) {
+                if (key.includes(proneKey)) {
+                    // This is a key that commonly has cross-storage issues
+                    // Check if we're in a cross-storage scenario by seeing if both storages have data
+                    const hasLocalStorage = localStorage.length > 0;
+                    const hasSessionStorage = sessionStorage.length > 0;
+                    
+                    // If both storages have data, we're likely in a cross-storage scenario
+                    if (hasLocalStorage && hasSessionStorage) {
+                        return true;
+                    }
+                }
+            }
+            
+            return false;
+        } catch (error) {
+            // If we can't determine the scenario, err on the side of not suppressing errors
+            return false;
+        }
+    }
+    
+    /**
      * Retrieve and decrypt a value
      * @param {string} key - The key to retrieve
      * @returns {*} The decrypted value or null if not found/decryption fails
@@ -142,7 +200,22 @@ window.CoreStorageService = (function() {
                 // });
             }
             
-            return EncryptionService.decrypt(encryptedValue, passphrase);
+            // Detect if this might be a cross-storage decryption attempt
+            // (sessionStorage trying to decrypt localStorage data or vice versa)
+            const isExpectedFailure = detectCrossStorageScenario(key, encryptedValue);
+            
+            const result = EncryptionService.decrypt(encryptedValue, passphrase, isExpectedFailure);
+            
+            // If decryption failed and it was expected, log debug info instead of error
+            if (result === null && isExpectedFailure) {
+                // Silent handling of expected cross-storage decryption failures
+                // Debug: console.debug(`[CoreStorageService] Expected decryption failure for cross-storage scenario: ${key} (using ${StorageTypeService.getStorageType()})`);
+            } else if (result === null && !isExpectedFailure) {
+                // This should be rare - unexpected decryption failure
+                console.debug(`[CoreStorageService] Unexpected decryption failure for key: ${key} (using ${StorageTypeService.getStorageType()})`);
+            }
+            
+            return result;
         } catch (error) {
             // Create error object with safe properties
             const errorInfo = {
