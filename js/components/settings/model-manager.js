@@ -196,8 +196,11 @@ window.ModelManager = (function() {
                         const option = document.createElement('option');
                         option.value = modelId;
                         
-                        // Get simplified display name
-                        option.textContent = ModelInfoService.getDisplayName(modelId);
+                        // Get simplified display name with country flag
+                        const displayName = ModelInfoService.getDisplayName(modelId);
+                        option.textContent = window.ModelCountryMapping ? 
+                            window.ModelCountryMapping.formatModelWithFlag(modelId, displayName) : 
+                            displayName;
                         
                         // Set selected if it matches current model
                         if (modelId === currentModel) {
@@ -214,8 +217,11 @@ window.ModelManager = (function() {
                         const option = document.createElement('option');
                         option.value = modelId;
                         
-                        // Get simplified display name
-                        option.textContent = ModelInfoService.getDisplayName(modelId);
+                        // Get simplified display name with country flag
+                        const displayName = ModelInfoService.getDisplayName(modelId);
+                        option.textContent = window.ModelCountryMapping ? 
+                            window.ModelCountryMapping.formatModelWithFlag(modelId, displayName) : 
+                            displayName;
                         
                         // Set selected if it matches current model
                         if (modelId === currentModel) {
@@ -232,8 +238,11 @@ window.ModelManager = (function() {
                         const option = document.createElement('option');
                         option.value = modelId;
                         
-                        // Get simplified display name
-                        option.textContent = ModelInfoService.getDisplayName(modelId);
+                        // Get simplified display name with country flag
+                        const displayName = ModelInfoService.getDisplayName(modelId);
+                        option.textContent = window.ModelCountryMapping ? 
+                            window.ModelCountryMapping.formatModelWithFlag(modelId, displayName) : 
+                            displayName;
                         
                         // Set selected if it matches current model
                         if (modelId === currentModel) {
@@ -256,8 +265,11 @@ window.ModelManager = (function() {
                         const option = document.createElement('option');
                         option.value = model.id;
                         
-                        // Try to get a simplified name, or use the model ID
-                        option.textContent = ModelInfoService.getDisplayName(model.id);
+                        // Try to get a simplified name with country flag, or use the model ID
+                        const displayName = ModelInfoService.getDisplayName(model.id);
+                        option.textContent = window.ModelCountryMapping ? 
+                            window.ModelCountryMapping.formatModelWithFlag(model.id, displayName) : 
+                            displayName;
                         
                         // Set selected if it matches current model
                         if (model.id === currentModel) {
@@ -449,7 +461,9 @@ window.ModelManager = (function() {
                 if (!optionExists) {
                     var option = document.createElement('option');
                     option.value = modelId;
-                    option.textContent = modelId;
+                    option.textContent = window.ModelCountryMapping ? 
+                        window.ModelCountryMapping.formatModelWithFlag(modelId, modelId) : 
+                        modelId;
                     elements.modelSelect.appendChild(option);
                     elements.modelSelect.value = modelId;
                 }
