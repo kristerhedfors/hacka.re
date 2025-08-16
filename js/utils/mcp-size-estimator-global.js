@@ -60,29 +60,36 @@
             return global.mcpSizeCache.size;
         }
         
-        // For immediate sync response, check if we can quickly estimate GitHub token size
+        // For immediate sync response, check if we can quickly estimate connection sizes
         try {
-            // Quick check for token without async call
+            let estimatedSize = 0;
             const localStorage = global.localStorage;
             if (localStorage) {
-                // Look for stored GitHub token (adjust storage key as needed)
+                // Look for stored MCP connections
                 for (let i = 0; i < localStorage.length; i++) {
                     const key = localStorage.key(i);
-                    if (key && key.includes('mcp_github_token')) {
+                    if (key && (key.includes('mcp_github_token') || key.includes('mcp_gmail_oauth'))) {
                         try {
                             const tokenData = localStorage.getItem(key);
                             if (tokenData) {
                                 const parsed = JSON.parse(tokenData);
-                                if (typeof parsed === 'string' && parsed.length > 20) {
-                                    const estimatedSize = parsed.length + 20;
-                                    console.log(`MCP Size Estimator: Quick estimate from localStorage: ${estimatedSize} bytes`);
-                                    return estimatedSize;
+                                if (key.includes('mcp_github_token') && typeof parsed === 'string' && parsed.length > 20) {
+                                    estimatedSize += parsed.length + 15; // GitHub token + service key
+                                } else if (key.includes('mcp_gmail_oauth') && parsed && typeof parsed === 'object') {
+                                    const oauthSize = JSON.stringify(parsed).length;
+                                    estimatedSize += oauthSize + 10; // Gmail OAuth + service key
                                 }
                             }
                         } catch (e) {
                             // Not JSON or other error, continue
                         }
                     }
+                }
+                
+                if (estimatedSize > 0) {
+                    estimatedSize += 20; // JSON wrapper overhead
+                    console.log(`MCP Size Estimator: Quick estimate from localStorage: ${estimatedSize} bytes`);
+                    return estimatedSize;
                 }
             }
         } catch (error) {

@@ -516,21 +516,42 @@ function createSharedLinkDataProcessor() {
                 let appliedCount = 0;
                 
                 for (const serviceKey of connectionKeys) {
-                    const rawToken = sharedData.mcpConnections[serviceKey];
+                    const connectionData = sharedData.mcpConnections[serviceKey];
                     
-                    
-                    // FIX TOKEN: Extract string token from object if needed
-                    let token = rawToken;
-                    if (typeof rawToken === 'object' && rawToken !== null && rawToken.token) {
-                        token = rawToken.token;
-                    } else if (typeof rawToken !== 'string') {
-                        console.error(`🚨 INVALID TOKEN: Expected string or {token: string}, got ${typeof rawToken}:`, rawToken);
+                    // Handle different connection types
+                    if (serviceKey === 'gmail' && typeof connectionData === 'object' && connectionData.refreshToken) {
+                        // Gmail uses OAuth - store the complete OAuth object
+                        const storageKey = 'mcp_gmail_oauth';
+                        await window.CoreStorageService.setValue(storageKey, connectionData);
+                        console.log('Applied Gmail OAuth from shared link');
+                        
+                        // Automatically register Gmail functions after OAuth is restored
+                        if (window.MCPServiceConnectors && window.MCPServiceConnectors.registerGmailFunctions) {
+                            try {
+                                await window.MCPServiceConnectors.registerGmailFunctions(connectionData);
+                                console.log('Gmail functions automatically registered after OAuth restore');
+                            } catch (error) {
+                                console.warn('Failed to auto-register Gmail functions:', error);
+                            }
+                        }
+                    } else if (serviceKey === 'github') {
+                        // GitHub uses PAT tokens - extract string token from object if needed
+                        let token = connectionData;
+                        if (typeof connectionData === 'object' && connectionData !== null && connectionData.token) {
+                            token = connectionData.token;
+                        } else if (typeof connectionData !== 'string') {
+                            console.error(`🚨 INVALID GITHUB TOKEN: Expected string or {token: string}, got ${typeof connectionData}:`, connectionData);
+                            continue;
+                        }
+                        
+                        // Store the PAT token using the appropriate storage key
+                        const storageKey = 'mcp_github_token';
+                        await window.CoreStorageService.setValue(storageKey, token);
+                        console.log('Applied GitHub PAT from shared link');
+                    } else {
+                        console.warn(`Unknown MCP service type: ${serviceKey}`, connectionData);
                         continue;
                     }
-                    
-                    // Store the PAT token using the appropriate storage key
-                    const storageKey = `mcp_${serviceKey}_token`;
-                    await window.CoreStorageService.setValue(storageKey, token);
                     
                     
                     appliedCount++;

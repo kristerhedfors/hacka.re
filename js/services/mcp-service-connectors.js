@@ -1816,6 +1816,43 @@
                 return false;
             }
         }
+
+        /**
+         * Register Gmail functions with the function calling system
+         * Used when Gmail OAuth is restored from shared links
+         * @param {Object} oauthTokens - Gmail OAuth tokens
+         * @returns {Promise<boolean>} True if functions were registered successfully
+         */
+        async registerGmailFunctions(oauthTokens) {
+            try {
+                console.log('[MCP Service Connectors] Registering Gmail functions after OAuth restore');
+                
+                const serviceKey = 'gmail';
+                const config = SERVICE_CONFIGS[serviceKey];
+                
+                if (!config || !config.tools) {
+                    console.warn('[MCP Service Connectors] Gmail service config not found');
+                    return false;
+                }
+
+                // Create a temporary connection object for function registration
+                const tempConnection = {
+                    type: 'oauth',
+                    tokens: oauthTokens,
+                    connectedAt: Date.now()
+                };
+
+                // Register the service functions using the existing registerServiceTools method
+                await this.registerServiceTools(serviceKey, config, tempConnection.tokens);
+                
+                console.log('[MCP Service Connectors] Gmail functions registered successfully');
+                return true;
+                
+            } catch (error) {
+                console.error('[MCP Service Connectors] Failed to register Gmail functions:', error);
+                return false;
+            }
+        }
     }
 
     // Export to global scope
