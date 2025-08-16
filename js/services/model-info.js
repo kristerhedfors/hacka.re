@@ -99,14 +99,60 @@ window.ModelInfoService = (function() {
         
         // If we have model info from the API, use that
         if (modelInfo[modelIdStr] && modelInfo[modelIdStr].context_window) {
-            console.log(`Found context window size: ${modelInfo[modelIdStr].context_window}`);
+            console.log(`Found context window size from API: ${modelInfo[modelIdStr].context_window}`);
             return modelInfo[modelIdStr].context_window;
+        }
+        
+        // Try to get context window from models.dev data
+        if (window.ModelsDevData) {
+            // First try to get the provider from the base URL
+            const baseUrl = window.StorageService ? window.StorageService.getBaseUrl() : null;
+            const provider = window.ModelsDevData.getProviderFromUrl(baseUrl);
+            
+            if (provider) {
+                // Try exact match first
+                const contextWindow = window.ModelsDevData.getContextWindow(provider, modelIdStr);
+                if (contextWindow) {
+                    console.log(`Found context window from models.dev (${provider}): ${contextWindow}`);
+                    return contextWindow;
+                }
+            }
+            
+            // If no provider match or no model found, search across all providers
+            const searchResult = window.ModelsDevData.searchModel(modelIdStr);
+            if (searchResult && searchResult.model && searchResult.model.limit && searchResult.model.limit.context) {
+                console.log(`Found context window from models.dev search (${searchResult.provider}): ${searchResult.model.limit.context}`);
+                return searchResult.model.limit.context;
+            }
         }
         
         // Check if we have a hardcoded context window size for this model
         if (contextWindowSizes[modelIdStr]) {
             console.log(`Using hardcoded context window size for ${modelIdStr}: ${contextWindowSizes[modelIdStr]}`);
             return contextWindowSizes[modelIdStr];
+        }
+        
+        // Try to extract context window from model ID
+        // Many models include context size in their name, e.g., "mixtral-8x7b-32768", "llama-2-70b-4096"
+        // Look for a number at the end that's 4 digits or more (likely context window)
+        const contextMatch = modelIdStr.match(/[-_](\d{4,})$/);
+        if (contextMatch) {
+            const extractedContext = parseInt(contextMatch[1], 10);
+            // Sanity check: context windows are typically between 1k and 2M tokens
+            if (extractedContext >= 1000 && extractedContext <= 2000000) {
+                console.log(`Extracted context window from model ID ${modelIdStr}: ${extractedContext}`);
+                return extractedContext;
+            }
+        }
+        
+        // Also check for patterns like "32k", "128k", "200k" in the model name
+        const kMatch = modelIdStr.match(/[-_](\d+)k(?:[-_]|$)/i);
+        if (kMatch) {
+            const extractedContext = parseInt(kMatch[1], 10) * 1024;
+            if (extractedContext >= 1000 && extractedContext <= 2000000) {
+                console.log(`Extracted context window from model ID ${modelIdStr} (k notation): ${extractedContext}`);
+                return extractedContext;
+            }
         }
         
         // Return null if we don't know the context size
