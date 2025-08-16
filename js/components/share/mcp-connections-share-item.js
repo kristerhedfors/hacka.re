@@ -103,8 +103,8 @@ async function collectMcpConnectionsData() {
     try {
         const connections = {};
         
-        // Check for GitHub token
         if (window.CoreStorageService) {
+            // Check for GitHub token
             const githubToken = await window.CoreStorageService.getValue('mcp_github_token');
             if (githubToken) {
                 // Ensure we store as string, not object
@@ -118,6 +118,17 @@ async function collectMcpConnectionsData() {
             } else {
                 console.log('🔌 collectMcpConnectionsData: No GitHub token found');
             }
+            
+            // Check for Gmail OAuth tokens
+            const gmailAuth = await window.CoreStorageService.getValue('mcp_gmail_oauth');
+            if (gmailAuth) {
+                // Gmail uses OAuth, so we store the full auth object
+                connections.gmail = gmailAuth;
+                console.log('🔌 collectMcpConnectionsData: Found Gmail OAuth for sharing, type:', typeof gmailAuth);
+            } else {
+                console.log('🔌 collectMcpConnectionsData: No Gmail OAuth found');
+            }
+            
         } else {
             console.warn('🔌 collectMcpConnectionsData: CoreStorageService not available');
         }
