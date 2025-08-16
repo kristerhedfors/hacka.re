@@ -2922,12 +2922,13 @@ footer a:hover {
 }
 
 /* Theme-specific tooltip styling */
-.theme-dark .mini-tooltip {
-    background-color: var(--dark-color);
-    border-color: rgba(255, 255, 255, 0.2);
-    color: white !important;
-    -webkit-text-fill-color: white !important;
-    text-fill-color: white !important;
+.theme-dark .mini-tooltip,
+.dark-mode .mini-tooltip {
+    background-color: #f3f4f6; /* Light gray background for dark theme */
+    border-color: rgba(0, 0, 0, 0.1);
+    color: #1f2937 !important; /* Dark text for better contrast */
+    -webkit-text-fill-color: #1f2937 !important;
+    text-fill-color: #1f2937 !important;
 }
 
 .theme-light .mini-tooltip {
