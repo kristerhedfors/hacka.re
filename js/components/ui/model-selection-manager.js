@@ -401,10 +401,15 @@ window.ModelSelectionManager = (function() {
             const classes = ['model-item'];
             if (isSelected) classes.push('selected');
             
+            // Add country flag to model name if available
+            const modelNameWithFlag = window.ModelCountryMapping ? 
+                window.ModelCountryMapping.formatModelWithFlag(model.id, model.name) : 
+                model.name;
+            
             html += `
                 <div class="${classes.join(' ')}" data-model-id="${model.id}" data-index="${index}">
                     <div>
-                        <div class="model-name">${escapeHtml(model.name)}</div>
+                        <div class="model-name">${escapeHtml(modelNameWithFlag)}</div>
                         <div class="model-provider">${escapeHtml(model.provider)}</div>
                     </div>
                 </div>
