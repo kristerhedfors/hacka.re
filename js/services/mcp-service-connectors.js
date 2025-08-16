@@ -1845,7 +1845,10 @@
                 // Register the service functions using the existing registerServiceTools method
                 await this.registerServiceTools(serviceKey, config, tempConnection.tokens);
                 
-                console.log('[MCP Service Connectors] Gmail functions registered successfully');
+                // CRITICAL: Create the actual service connection so Gmail appears as "connected"
+                await this.createGoogleConnection(serviceKey, config, oauthTokens);
+                
+                console.log('[MCP Service Connectors] Gmail functions registered and service connected successfully');
                 return true;
                 
             } catch (error) {
