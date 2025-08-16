@@ -942,12 +942,12 @@ header .settings .icon-btn i,
     background-color: rgba(255, 255, 255, 0.1);
 }
 
-/* Modal styling for gradient themes */
+/* Modal styling for gradient themes - using header/footer background color for consistency */
 .theme-sunset .modal-content,
 .theme-ocean .modal-content,
 .theme-forest .modal-content,
 .theme-midnight .modal-content {
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: rgba(0, 0, 0, 0.2); /* Same as header/footer background */
     color: var(--light-text);
     border: 1px solid rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(8px);
@@ -965,6 +965,26 @@ header .settings .icon-btn i,
 .theme-ocean .modal-content p,
 .theme-forest .modal-content p,
 .theme-midnight .modal-content p {
+    color: var(--light-text);
+}
+
+/* Additional modal text elements for gradient themes */
+.theme-sunset .modal-content h3,
+.theme-sunset .modal-content h4,
+.theme-sunset .modal-content span,
+.theme-sunset .modal-content div,
+.theme-ocean .modal-content h3,
+.theme-ocean .modal-content h4,
+.theme-ocean .modal-content span,
+.theme-ocean .modal-content div,
+.theme-forest .modal-content h3,
+.theme-forest .modal-content h4,
+.theme-forest .modal-content span,
+.theme-forest .modal-content div,
+.theme-midnight .modal-content h3,
+.theme-midnight .modal-content h4,
+.theme-midnight .modal-content span,
+.theme-midnight .modal-content div {
     color: var(--light-text);
 }
 
@@ -1400,16 +1420,184 @@ header .settings .icon-btn i,
     background-color: var(--primary-color);
 }
 
-/* Model dropdown for gradient themes */
+/* Model dropdown for gradient themes - using header/footer background color for consistency */
 .theme-sunset .model-dropdown,
 .theme-ocean .model-dropdown,
 .theme-forest .model-dropdown,
 .theme-midnight .model-dropdown {
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: rgba(0, 0, 0, 0.2); /* Same as header/footer and modal background */
     color: var(--light-text);
     border: 1px solid rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
+}
+
+/* Model dropdown text elements for gradient themes */
+.theme-sunset .model-dropdown h3,
+.theme-sunset .model-dropdown p,
+.theme-sunset .model-dropdown label,
+.theme-ocean .model-dropdown h3,
+.theme-ocean .model-dropdown p,
+.theme-ocean .model-dropdown label,
+.theme-forest .model-dropdown h3,
+.theme-forest .model-dropdown p,
+.theme-forest .model-dropdown label,
+.theme-midnight .model-dropdown h3,
+.theme-midnight .model-dropdown p,
+.theme-midnight .model-dropdown label {
+    color: var(--light-text);
+}
+
+/* Model dropdown select styling for gradient themes - using consistent header/footer background */
+.theme-sunset .model-dropdown select,
+.theme-ocean .model-dropdown select,
+.theme-forest .model-dropdown select,
+.theme-midnight .model-dropdown select {
+    background-color: rgba(0, 0, 0, 0.2); /* Same as header/footer background for consistency */
+    color: var(--light-text);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.theme-sunset .model-dropdown select:focus,
+.theme-ocean .model-dropdown select:focus,
+.theme-forest .model-dropdown select:focus,
+.theme-midnight .model-dropdown select:focus {
+    border-color: var(--primary-color);
+    box-shadow: none;
+}
+
+/* Model dropdown select options styling for gradient themes */
+.theme-sunset .model-dropdown select option,
+.theme-ocean .model-dropdown select option,
+.theme-forest .model-dropdown select option,
+.theme-midnight .model-dropdown select option {
+    background-color: rgba(0, 0, 0, 0.2); /* Same consistent background */
+    color: var(--light-text);
+}
+
+/* Form group elements in modals for gradient themes */
+.theme-sunset .modal-content .form-group select,
+.theme-sunset .modal-content .form-group input,
+.theme-sunset .modal-content .form-group textarea,
+.theme-ocean .modal-content .form-group select,
+.theme-ocean .modal-content .form-group input,
+.theme-ocean .modal-content .form-group textarea,
+.theme-forest .modal-content .form-group select,
+.theme-forest .modal-content .form-group input,
+.theme-forest .modal-content .form-group textarea,
+.theme-midnight .modal-content .form-group select,
+.theme-midnight .modal-content .form-group input,
+.theme-midnight .modal-content .form-group textarea {
+    background-color: rgba(0, 0, 0, 0.2); /* Same consistent background */
+    color: var(--light-text);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Model search input for gradient themes */
+.theme-sunset .model-search-input,
+.theme-ocean .model-search-input,
+.theme-forest .model-search-input,
+.theme-midnight .model-search-input {
+    background-color: rgba(0, 0, 0, 0.2); /* Same consistent background */
+    color: var(--light-text);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.theme-sunset .model-search-input:focus,
+.theme-ocean .model-search-input:focus,
+.theme-forest .model-search-input:focus,
+.theme-midnight .model-search-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+}
+
+.theme-sunset .model-search-input::placeholder,
+.theme-ocean .model-search-input::placeholder,
+.theme-forest .model-search-input::placeholder,
+.theme-midnight .model-search-input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Model list container for gradient themes */
+.theme-sunset .model-list-container,
+.theme-ocean .model-list-container,
+.theme-forest .model-list-container,
+.theme-midnight .model-list-container {
+    background-color: rgba(0, 0, 0, 0.2); /* Same consistent background */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Model list items for gradient themes */
+.theme-sunset .model-item,
+.theme-ocean .model-item,
+.theme-forest .model-item,
+.theme-midnight .model-item {
+    background-color: transparent; /* Transparent to inherit container background */
+    color: var(--light-text);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.theme-sunset .model-item:hover,
+.theme-ocean .model-item:hover,
+.theme-forest .model-item:hover,
+.theme-midnight .model-item:hover {
+    background-color: rgba(255, 255, 255, 0.1); /* Subtle highlight on hover */
+}
+
+.theme-sunset .model-item.selected,
+.theme-ocean .model-item.selected,
+.theme-forest .model-item.selected,
+.theme-midnight .model-item.selected {
+    background-color: rgba(255, 255, 255, 0.15); /* Slightly more visible when selected */
+    border-left: 4px solid var(--primary-color);
+}
+
+.theme-sunset .model-item.highlighted,
+.theme-ocean .model-item.highlighted,
+.theme-forest .model-item.highlighted,
+.theme-midnight .model-item.highlighted {
+    background-color: rgba(255, 255, 255, 0.2); /* More visible when highlighted */
+}
+
+/* Model item text elements for gradient themes */
+.theme-sunset .model-name,
+.theme-sunset .model-description,
+.theme-ocean .model-name,
+.theme-ocean .model-description,
+.theme-forest .model-name,
+.theme-forest .model-description,
+.theme-midnight .model-name,
+.theme-midnight .model-description {
+    color: var(--light-text);
+}
+
+/* Comprehensive modal input/form element styling for gradient themes - catch all */
+.theme-sunset .modal input,
+.theme-sunset .modal select,
+.theme-sunset .modal textarea,
+.theme-ocean .modal input,
+.theme-ocean .modal select,
+.theme-ocean .modal textarea,
+.theme-forest .modal input,
+.theme-forest .modal select,
+.theme-forest .modal textarea,
+.theme-midnight .modal input,
+.theme-midnight .modal select,
+.theme-midnight .modal textarea {
+    background-color: rgba(0, 0, 0, 0.2) !important; /* Force consistent background */
+    color: var(--light-text) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.theme-sunset .modal input::placeholder,
+.theme-sunset .modal textarea::placeholder,
+.theme-ocean .modal input::placeholder,
+.theme-ocean .modal textarea::placeholder,
+.theme-forest .modal input::placeholder,
+.theme-forest .modal textarea::placeholder,
+.theme-midnight .modal input::placeholder,
+.theme-midnight .modal textarea::placeholder {
+    color: rgba(255, 255, 255, 0.6) !important;
 }
 
 .theme-sunset #model-card-info,
