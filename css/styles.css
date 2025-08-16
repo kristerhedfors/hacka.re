@@ -3809,6 +3809,18 @@ footer a:hover {
     padding: 0.25rem 0.75rem;
 }
 
+/* Quick Connector Card Subtitle Styling */
+.quick-connector-card .connector-info p {
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.85rem;
+}
+
+/* Dark mode support for connector info */
+.dark-mode .quick-connector-card .connector-info p,
+.theme-dark .quick-connector-card .connector-info p {
+    color: rgba(255, 255, 255, 0.6);
+}
+
 /* Manual OAuth Modal Styles */
 .manual-oauth-modal .modal-content {
     max-width: 700px;
