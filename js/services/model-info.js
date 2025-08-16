@@ -38,6 +38,14 @@ window.ModelInfoService = (function() {
         // Other models
         'allam-2-7b': 4096,
         'deepseek-r1-distill-llama-70b': 128 * 1024,
+        
+        // MAI DS models (DeepSeek R1 variants)
+        'mai-ds-r1-gguf': 128 * 1024,
+        'mai ds r1 gguf': 128 * 1024,
+        'MAI DS R1 GGUF': 128 * 1024,
+        'mai-ds-r1': 128 * 1024,
+        'mai ds r1': 128 * 1024,
+        
         'mistral-saba-24b': 32 * 1024,
         'playai-tts': 10 * 1024,
         'playai-tts-arabic': 10 * 1024,
@@ -124,6 +132,14 @@ window.ModelInfoService = (function() {
                 console.log(`Found context window from models.dev search (${searchResult.provider}): ${searchResult.model.limit.context}`);
                 return searchResult.model.limit.context;
             }
+        }
+        
+        // Special handling for MAI DS models (DeepSeek R1 variants)
+        if (modelIdStr.toLowerCase().includes('mai ds') || 
+            modelIdStr.toLowerCase().includes('mai-ds') || 
+            modelIdStr.toLowerCase().includes('mai_ds')) {
+            console.log(`Detected MAI DS model (DeepSeek R1 variant), using 128K context window`);
+            return 128 * 1024;
         }
         
         // Check if we have a hardcoded context window size for this model

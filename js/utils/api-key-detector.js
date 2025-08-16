@@ -11,19 +11,19 @@ window.ApiKeyDetector = (function() {
         openai: {
             pattern: /^sk-proj-[A-Za-z0-9\-_]{50,}$/,
             providerValue: 'openai',
-            providerName: 'OpenAI',
+            providerName: '🇺🇸 OpenAI',
             defaultModel: 'gpt-4o-mini'
         },
         groqcloud: {
             pattern: /^gsk_[A-Za-z0-9]{32,}$/,
             providerValue: 'groq',
-            providerName: 'GroqCloud',
+            providerName: '🇸🇦 GroqCloud',
             defaultModel: 'moonshotai/kimi-k2-instruct'
         },
         berget: {
             pattern: /^sk_ber_[A-Za-z0-9\-_]{30,}$/,
             providerValue: 'berget',
-            providerName: 'Berget.AI',
+            providerName: '🇸🇪 Berget.AI',
             defaultModel: 'mistralai/Magistral-Small-2506'
         }
     };

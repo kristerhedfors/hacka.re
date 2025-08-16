@@ -854,6 +854,23 @@ body.firefox-focus .heart-logo {
     background-clip: text;
     -webkit-text-fill-color: transparent;
     text-fill-color: transparent;
+    position: relative;
+}
+
+/* Flag prefix styling in header */
+.model-flag-prefix {
+    font-size: 0.85em;
+    position: relative;
+    top: -0.1em;
+    margin-right: 0.15em;
+    display: inline-block;
+    /* Reset the gradient effect for the flag */
+    background: none !important;
+    -webkit-background-clip: initial !important;
+    background-clip: initial !important;
+    -webkit-text-fill-color: initial !important;
+    text-fill-color: initial !important;
+    animation: none !important;
 }
 
 .active-model {
@@ -2922,12 +2939,13 @@ footer a:hover {
 }
 
 /* Theme-specific tooltip styling */
-.theme-dark .mini-tooltip {
-    background-color: var(--dark-color);
-    border-color: rgba(255, 255, 255, 0.2);
-    color: white !important;
-    -webkit-text-fill-color: white !important;
-    text-fill-color: white !important;
+.theme-dark .mini-tooltip,
+.dark-mode .mini-tooltip {
+    background-color: #f3f4f6; /* Light gray background for dark theme */
+    border-color: rgba(0, 0, 0, 0.1);
+    color: #1f2937 !important; /* Dark text for better contrast */
+    -webkit-text-fill-color: #1f2937 !important;
+    text-fill-color: #1f2937 !important;
 }
 
 .theme-light .mini-tooltip {
@@ -3806,6 +3824,18 @@ footer a:hover {
     margin-top: 0.5rem;
     font-size: 0.875rem;
     padding: 0.25rem 0.75rem;
+}
+
+/* Quick Connector Card Subtitle Styling */
+.quick-connector-card .connector-info p {
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.85rem;
+}
+
+/* Dark mode support for connector info */
+.dark-mode .quick-connector-card .connector-info p,
+.theme-dark .quick-connector-card .connector-info p {
+    color: rgba(255, 255, 255, 0.6);
 }
 
 /* Manual OAuth Modal Styles */
