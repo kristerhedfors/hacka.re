@@ -224,7 +224,7 @@ a[href="https://hacka.re/"] {
 }
 
 .heart-logo {
-    font-size: 2.0rem; /* Extra large heart icon for maximum visibility */
+    font-size: 2.0rem; /* Extra large icon for maximum visibility */
     position: relative;
     line-height: 1;
     display: inline-block;
@@ -237,6 +237,14 @@ a[href="https://hacka.re/"] {
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
+}
+
+.heart-logo svg {
+    width: 2.0rem;
+    height: 2.0rem;
+    color: #505050; /* Match the gradient base color */
+    opacity: 0.9;
+    transition: opacity 0.3s ease;
 }
 
 .serverless-gpts {
