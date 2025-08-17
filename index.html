@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="css/default-functions.css">
     <link rel="stylesheet" href="css/function-calling-modal.css">
     <link rel="stylesheet" href="css/function-details-modal.css">
+    <link rel="stylesheet" href="css/rag-modal.css">
     <link rel="stylesheet" href="css/checkbox-fix.css">
     <!-- Font Awesome for icons (local) -->
     <link rel="stylesheet" href="lib/font-awesome/all.min.css">
@@ -78,6 +79,9 @@
                 </button>
                 <button id="function-btn" class="icon-btn" title="Function Calling">
                     <span class="function-icon">𝑓</span>
+                </button>
+                <button id="rag-btn" class="icon-btn" title="Knowledge Base">
+                    <span class="rag-icon">RAG</span>
                 </button>
                 <button id="prompts-btn" class="icon-btn" title="System Prompt Menu">
                     <i class="fas fa-list-alt"></i>
@@ -654,6 +658,122 @@ async function getCurrentTimeInBerlin() {
             </div>
         </div>
         
+        <div id="rag-modal" class="modal">
+            <div class="modal-content">
+                <div class="settings-header">
+                    <h2>Knowledge Base</h2>
+                    <span class="info-icon" id="rag-info-icon">
+                        <i class="fas fa-info-circle"></i>
+                        <div class="tooltip">
+                            <div class="tooltip-content">
+                                <div class="important-notice">
+                                    <p><strong>Knowledge Base</strong>: Search and retrieve relevant information from indexed default prompts and user-defined documents to enhance AI responses.</p>
+                                </div>
+                                <div class="important-notice">
+                                    <p><strong>Default Prompts</strong>: Pre-indexed system prompts that can be searched for relevant context. Requires API key for embedding generation.</p>
+                                </div>
+                                <div class="important-notice">
+                                    <p><strong>User-Defined</strong>: Upload custom documents using the hackare tool to create your own searchable knowledge base.</p>
+                                </div>
+                                <div class="important-notice">
+                                    <p><strong>Privacy</strong>: All vector searches are performed locally in your browser. Embeddings are generated using your API key and stored encrypted.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </span>
+                </div>
+                
+                <!-- RAG Enable/Disable Section -->
+                <div class="rag-section rag-enable-section">
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="rag-enabled-checkbox" checked>
+                            <span class="checkmark"></span>
+                            <strong>Enable RAG (Retrieval-Augmented Generation)</strong>
+                        </label>
+                        <p class="form-help">When enabled, chat responses will be enhanced with relevant context from your indexed knowledge base.</p>
+                    </div>
+                </div>
+                
+                <!-- Default Prompts Section -->
+                <div class="rag-section">
+                    <h3>📝 Default Prompts Knowledge Base</h3>
+                    <p class="form-help">Select default prompts to include in the searchable knowledge base. Requires API key for vector embedding generation.</p>
+                    
+                    <div class="rag-status" id="rag-default-status">
+                        <div class="rag-stats">
+                            <span id="rag-default-chunks">0 chunks indexed</span>
+                            <span id="rag-default-model">No embeddings model</span>
+                        </div>
+                        <button type="button" id="rag-index-defaults-btn" class="btn primary-btn" disabled>
+                            Generate Embeddings
+                        </button>
+                    </div>
+                    
+                    <div id="rag-default-prompts-list" class="rag-prompts-list">
+                        <!-- Default prompts with checkboxes will be populated here -->
+                    </div>
+                </div>
+                
+                <!-- User-Defined Knowledge Base Section -->
+                <div class="rag-section">
+                    <h3>📚 User-Defined Knowledge Base</h3>
+                    <p class="form-help">Documents indexed using the hackare tool. Upload your own documents to create custom knowledge bases.</p>
+                    
+                    <div class="rag-status" id="rag-user-status">
+                        <div class="rag-stats">
+                            <span id="rag-user-chunks">0 chunks available</span>
+                            <span id="rag-user-files">0 files</span>
+                        </div>
+                        <button type="button" id="rag-upload-bundle-btn" class="btn secondary-btn">
+                            Load Bundle
+                        </button>
+                    </div>
+                    
+                    <div id="rag-user-bundles-list" class="rag-bundles-list">
+                        <div class="empty-bundles-state">
+                            <p>No knowledge base bundles loaded. Use the hackare tool to create custom bundles.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Search Interface -->
+                <div class="rag-section">
+                    <h3>🔍 Search Knowledge Base</h3>
+                    <div class="rag-search-container">
+                        <div class="form-group">
+                            <label for="rag-search-input">Search Query</label>
+                            <input type="text" id="rag-search-input" placeholder="Enter search query..." />
+                        </div>
+                        <div class="form-group">
+                            <label for="rag-search-limit">Max Results</label>
+                            <select id="rag-search-limit">
+                                <option value="3">3 results</option>
+                                <option value="5" selected>5 results</option>
+                                <option value="10">10 results</option>
+                            </select>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" id="rag-search-btn" class="btn primary-btn" disabled>
+                                Search
+                            </button>
+                            <button type="button" id="rag-clear-search-btn" class="btn secondary-btn">
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="rag-search-results" class="rag-search-results" style="display: none;">
+                        <!-- Search results will be populated here -->
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" id="close-rag-modal" class="btn secondary-btn">Close</button>
+                </div>
+            </div>
+        </div>
+        
         <!-- Model selection modal with live search -->
         <div id="model-selection-modal" class="modal">
             <div class="modal-content">
@@ -929,6 +1049,10 @@ async function getCurrentTimeInBerlin() {
     <script src="js/services/prompts-service.js"></script>
     <script src="js/services/model-country-mapping.js"></script>
     <script src="js/services/settings-info-modal-service.js"></script>
+    <!-- RAG Services -->
+    <script src="js/services/rag-storage-service.js"></script>
+    <script src="js/services/rag-indexing-service.js"></script>
+    <script src="js/services/vector-rag-service.js"></script>
     <!-- UI Utilities (modular) -->
     <!-- <script src="js/utils/function-icon-fix.js"></script> -->
     <script src="js/utils/function-call-renderer.js"></script>
@@ -1012,6 +1136,9 @@ async function getCurrentTimeInBerlin() {
     <script src="js/components/prompts/prompts-token-manager.js"></script>
     <script src="js/components/prompts/prompts-list-manager.js"></script>
     <script src="js/components/prompts-manager.js"></script>
+    <!-- RAG Components -->
+    <script src="js/components/rag/rag-user-bundles.js"></script>
+    <script src="js/components/rag-manager.js"></script>
     <script src="js/components/ai-hackare.js"></script>
     <script src="js/app.js"></script>
     <script src="js/themes.js"></script>

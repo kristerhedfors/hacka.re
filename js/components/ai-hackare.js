@@ -9,6 +9,12 @@ window.AIHackareComponent = (function() {
      * @constructor
      */
     function AIHackare() {
+        // Prevent multiple instances - only allow one AIHackare instance
+        if (window.aiHackare && window.aiHackare._initialized) {
+            console.warn('AIHackare: Instance already exists, returning existing instance');
+            return window.aiHackare;
+        }
+        
         // Get DOM elements
         this.elements = DOMElements.getElements();
         
@@ -26,9 +32,11 @@ window.AIHackareComponent = (function() {
         // Store globally for MCP and other components to access
         window.functionCallingManager = this.functionCallingManager;
         this.promptsManager = PromptsManager.createPromptsManager(this.elements);
+        this.ragManager = RAGManager;
         
         // Make chatManager accessible globally for the close GPT button
         window.aiHackare = this;
+        this._initialized = false; // Will be set to true in init()
         
         // Initialize model selector functionality after everything is loaded
         this.initializeModelSelection();
@@ -44,6 +52,14 @@ window.AIHackareComponent = (function() {
      * Initialize the application
      */
     AIHackare.prototype.init = function() {
+        // Prevent double initialization
+        if (this._initialized) {
+            console.warn('AIHackare: Already initialized, skipping');
+            return;
+        }
+        
+        console.log('🚀 AIHackare: Initializing...');
+        
         // Initialize share manager first to set up session key
         this.shareManager.init();
         
@@ -60,6 +76,7 @@ window.AIHackareComponent = (function() {
         this.apiToolsManager.init();
         this.functionCallingManager.init();
         this.promptsManager.init();
+        this.ragManager.init(this.elements);
         
         // Initialize context usage display with current messages and system prompt
         this.chatManager.estimateContextUsage(
@@ -78,6 +95,10 @@ window.AIHackareComponent = (function() {
         
         // Auto-resize textarea
         UIUtils.setupTextareaAutoResize(this.elements.messageInput);
+        
+        // Mark as initialized
+        this._initialized = true;
+        console.log('✅ AIHackare: Initialization complete');
     };
     
     /**
@@ -370,15 +391,22 @@ window.AIHackareComponent = (function() {
             });
         }
         
-        // Clear chat button
-        this.elements.clearChatBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation(); // Prevent event bubbling
+        // Clear chat button - remove any existing listeners first
+        if (this.elements.clearChatBtn) {
+            // Remove any existing listeners by cloning the element
+            const newClearBtn = this.elements.clearChatBtn.cloneNode(true);
+            this.elements.clearChatBtn.parentNode.replaceChild(newClearBtn, this.elements.clearChatBtn);
+            this.elements.clearChatBtn = newClearBtn;
             
-            if (confirm('Are you sure you want to clear the chat history?')) {
-                this.clearChatHistory();
-            }
-        });
+            this.elements.clearChatBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation(); // Prevent event bubbling
+                
+                if (confirm('Are you sure you want to clear the chat history?')) {
+                    this.clearChatHistory();
+                }
+            });
+        }
         
         // Show system prompt button
         if (this.elements.showSystemPromptBtn) {

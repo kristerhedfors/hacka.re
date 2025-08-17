@@ -138,7 +138,25 @@ window.DOMElements = (function() {
             modelSearchInput: document.getElementById('model-search-input'),
             modelListContainer: document.getElementById('model-list-container'),
             modelSelectionCancel: document.getElementById('model-selection-cancel'),
-            modelSelectionSelect: document.getElementById('model-selection-select')
+            modelSelectionSelect: document.getElementById('model-selection-select'),
+            
+            // RAG modal elements
+            ragBtn: document.getElementById('rag-btn'),
+            ragModal: document.getElementById('rag-modal'),
+            closeRagModal: document.getElementById('close-rag-modal'),
+            ragDefaultPromptsList: document.getElementById('rag-default-prompts-list'),
+            ragIndexDefaultsBtn: document.getElementById('rag-index-defaults-btn'),
+            ragDefaultChunks: document.getElementById('rag-default-chunks'),
+            ragDefaultModel: document.getElementById('rag-default-model'),
+            ragUserChunks: document.getElementById('rag-user-chunks'),
+            ragUserFiles: document.getElementById('rag-user-files'),
+            ragUploadBundleBtn: document.getElementById('rag-upload-bundle-btn'),
+            ragUserBundlesList: document.getElementById('rag-user-bundles-list'),
+            ragSearchInput: document.getElementById('rag-search-input'),
+            ragSearchLimit: document.getElementById('rag-search-limit'),
+            ragSearchBtn: document.getElementById('rag-search-btn'),
+            ragClearSearchBtn: document.getElementById('rag-clear-search-btn'),
+            ragSearchResults: document.getElementById('rag-search-results')
         };
     }
 
