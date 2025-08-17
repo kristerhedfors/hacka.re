@@ -291,13 +291,14 @@
 
 /* MCP servers button styling */
 .mcp-icon {
+    font-family: 'Courier New', Monaco, monospace;
     font-style: normal;
-    font-weight: 700;
+    font-weight: bold;
     font-size: 0.75em;
     display: flex;
     align-items: center;
     justify-content: center;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.5px;
 }
 
 /* Add a duplicate character with slight offset to create a bolder appearance */

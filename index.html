@@ -33,10 +33,17 @@
 <body>
     <div class="app-container">
         <header>
-            <span class="beta-tag">BETA</span>
             <div class="settings">
                 <button id="heart-btn" class="icon-btn" title="hacka.re Info">
-                    <span class="heart-logo">♥&#xFE0E;
+                    <span class="heart-logo">
+                        <svg width="24" height="24" viewBox="0 0 24 24" style="display: inline-block; vertical-align: middle;">
+                            <!-- Hat crown (rounded top) -->
+                            <ellipse cx="12" cy="10" rx="7" ry="5.5" fill="currentColor"/>
+                            <!-- Hat brim (oval) -->
+                            <ellipse cx="12" cy="15" rx="11" ry="3.5" fill="currentColor"/>
+                            <!-- Depth line following brim contour -->
+                            <path d="M 1 12 Q 12 15.5 23 12" stroke="var(--primary-color)" stroke-width="1.5" fill="none" opacity="0.7"/>
+                        </svg>
                         <!-- SVG fallback for Firefox Focus -->
                         <svg class="firefox-focus-fallback" width="16" height="6" viewBox="0 0 16 6" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 3; display: none;">
                             <circle cx="3" cy="3" r="1.5" fill="#22CC22" />
@@ -908,6 +915,7 @@ async function getCurrentTimeInBerlin() {
 
         <footer>
             <p><span id="site-identifier" style="font-family: 'Courier New', monospace;"></span> | <a href="about/index.html" target="_blank" rel="noopener noreferrer">About</a> | <a href="about/disclaimer.html" target="_blank" rel="noopener noreferrer">Disclaimer</a></p>
+            <span class="beta-tag footer-beta">BETA</span>
         </footer>
     </div>
 

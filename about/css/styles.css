@@ -429,6 +429,7 @@ footer {
     box-sizing: border-box;
     left: 0;
     right: 0;
+    position: relative;
 }
 
 footer a {
