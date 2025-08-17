@@ -72,6 +72,13 @@ while [[ $# -gt 0 ]]; do
         --help|-h)
             echo "Usage: $0 [options]"
             echo ""
+            echo "Runs all hacka.re tests including core functionality, advanced features, and RAG."
+            echo ""
+            echo "Specialized test scripts:"
+            echo "  ./run_core_tests.sh     - Core functionality only (page, API, chat)"
+            echo "  ./run_feature_tests.sh  - Advanced features (function calling, RAG, etc.)"
+            echo "  ./run_rag_tests.sh      - RAG functionality only (with categories)"
+            echo ""
             echo "Options:"
             echo "  --headless      Run tests in headless mode (no browser UI)"
             echo "  --firefox       Run tests in Firefox"
@@ -79,7 +86,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --verbose, -v   Run tests with verbose output"
             echo "  --test-file     Specify a test file to run"
             echo "  --timeout       Set timeout in milliseconds (default: 5000)"
-            echo "  -k              Filter tests by expression (e.g., -k \"not function_calling_api\")"
+            echo "  -k              Filter tests by expression (e.g., -k \"test_rag\")"
             echo "  --skip-server   Skip starting/stopping the HTTP server"
             echo "  --help, -h      Show this help message"
             exit 0

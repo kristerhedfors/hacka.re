@@ -26,6 +26,7 @@ window.AIHackareComponent = (function() {
         // Store globally for MCP and other components to access
         window.functionCallingManager = this.functionCallingManager;
         this.promptsManager = PromptsManager.createPromptsManager(this.elements);
+        this.ragManager = RAGManager;
         
         // Make chatManager accessible globally for the close GPT button
         window.aiHackare = this;
@@ -60,6 +61,7 @@ window.AIHackareComponent = (function() {
         this.apiToolsManager.init();
         this.functionCallingManager.init();
         this.promptsManager.init();
+        this.ragManager.init(this.elements);
         
         // Initialize context usage display with current messages and system prompt
         this.chatManager.estimateContextUsage(
