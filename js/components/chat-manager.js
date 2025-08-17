@@ -203,7 +203,9 @@ function finalizeResponse(finalContent, typingIndicator) {
     uiHandler.removeTypingIndicator(typingIndicator);
     
     // Update messages array with complete AI response
-    messages[messages.length - 1].content = finalContent;
+    if (messages.length > 0 && messages[messages.length - 1].role === 'assistant') {
+        messages[messages.length - 1].content = finalContent;
+    }
     
     // Save chat history
     StorageService.saveChatHistory(messages);
@@ -223,7 +225,7 @@ function handleGenerationError(error, typingIndicator) {
     // Remove typing indicator
     uiHandler.removeTypingIndicator(typingIndicator);
     
-    // Remove the empty assistant message if it was added (it might not be added yet with the new approach)
+    // Remove the empty assistant message if it was added
     if (messages.length > 0 && messages[messages.length - 1].role === 'assistant' && messages[messages.length - 1].content === '') {
         messages.pop();
     }
@@ -457,6 +459,7 @@ function cleanupGeneration(updateContextUsage, currentModel) {
                     // Update our messages array - but ONLY with the actual conversation (no welcome message)
                     // The welcome message is only for display, not for storage
                     messages = validMessages;
+                    
                     
                     // Display all messages including welcome message first
                     if (uiHandler && uiHandler.displayMessages) {
