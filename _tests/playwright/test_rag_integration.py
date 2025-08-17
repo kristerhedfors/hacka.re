@@ -92,7 +92,7 @@ def test_rag_chat_integration_setup(page: Page, serve_hacka_re, api_key):
     })
 
 def test_rag_enhanced_chat_response(page: Page, serve_hacka_re, api_key):
-    """Test that chat responses are enhanced with RAG context."""
+    """Test that chat responses are enhanced with RAG context and verify content inclusion."""
     # Navigate to the application
     page.goto(serve_hacka_re)
     
@@ -105,52 +105,71 @@ def test_rag_enhanced_chat_response(page: Page, serve_hacka_re, api_key):
     page.evaluate("localStorage.setItem('base_url', 'https://api.openai.com/v1')")
     page.evaluate("localStorage.setItem('selected_model', 'gpt-4o-mini')")
     
-    # Create comprehensive mock RAG index
-    comprehensive_rag_index = {
+    # Enable debug mode and RAG category to capture debug logs
+    page.evaluate("""
+        window.DebugService.setDebugMode(true);
+        window.DebugService.setCategoryEnabled('rag', true);
+    """)
+    
+    # Create comprehensive mock RAG index with very specific content that should be identifiable in responses
+    specific_rag_index = {
         "chunks": [
             {
-                "content": "Machine learning algorithms can be categorized into supervised, unsupervised, and reinforcement learning. Supervised learning uses labeled data to train models that can make predictions on new, unseen data.",
-                "embedding": [0.8, 0.1, 0.1, 0.0, 0.0],
+                "content": "UNIQUE_RAG_MARKER: Test-driven development (TDD) follows the Red-Green-Refactor cycle: write a failing test (Red), write minimal code to make it pass (Green), then improve the code structure (Refactor). This approach ensures high code quality and comprehensive test coverage.",
+                "embedding": [0.9, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                 "metadata": {
-                    "promptId": "ml_algorithms",
-                    "promptName": "Machine Learning Algorithm Types",
+                    "promptId": "tdd_process",
+                    "promptName": "Test-Driven Development Process",
                     "type": "default_prompt"
                 },
-                "id": "chunk_ml_algorithms"
-            },
-            {
-                "content": "Python is the most popular programming language for machine learning due to its extensive libraries like scikit-learn, TensorFlow, and PyTorch. These libraries provide powerful tools for data processing and model building.",
-                "embedding": [0.7, 0.2, 0.1, 0.0, 0.0],
-                "metadata": {
-                    "promptId": "python_ml",
-                    "promptName": "Python for Machine Learning",
-                    "type": "default_prompt"
-                },
-                "id": "chunk_python_ml"
+                "id": "chunk_tdd_specific"
             }
         ],
         "metadata": {
-            "totalChunks": 2,
+            "totalChunks": 1,
             "embeddingModel": "text-embedding-3-small"
         }
     }
     
     # Store mock index
-    page.evaluate(f"localStorage.setItem('rag_default_prompts_index', '{json.dumps(comprehensive_rag_index)}')")
+    page.evaluate(f"localStorage.setItem('rag_default_prompts_index', '{json.dumps(specific_rag_index)}')")
     
-    # Send a chat message that should trigger RAG enhancement
+    # Send a chat message that should match our specific RAG content
     chat_input = page.locator("#chat-input")
     send_button = page.locator("#send-btn")
     
-    # Type a question related to machine learning
-    chat_input.fill("What are the main types of machine learning algorithms?")
+    # Type a question that should trigger our specific RAG content
+    test_question = "What is test-driven development and how does it work?"
+    chat_input.fill(test_question)
+    
+    # Capture the system prompt enhancement process by monitoring network calls
+    system_prompt_captured = None
+    
+    def capture_api_request(route):
+        nonlocal system_prompt_captured
+        request_body = route.request.post_data
+        if request_body:
+            try:
+                data = json.loads(request_body)
+                if 'messages' in data and len(data['messages']) > 0:
+                    # Look for system message with RAG content
+                    for msg in data['messages']:
+                        if msg.get('role') == 'system' and 'UNIQUE_RAG_MARKER' in msg.get('content', ''):
+                            system_prompt_captured = msg['content']
+                            break
+            except:
+                pass
+        route.continue_()
+    
+    # Intercept API calls to verify RAG content inclusion
+    page.route("**/chat/completions", capture_api_request)
     
     # Take screenshot before sending
-    screenshot_with_markdown(page, "rag_chat_before_send", {
-        "Status": "About to send ML question",
-        "Question": "Main types of ML algorithms",
-        "RAG Index": "Loaded with relevant content",
-        "Expected": "RAG context should enhance response"
+    screenshot_with_markdown(page, "rag_enhanced_verification_before", {
+        "Status": "About to send TDD question with RAG verification",
+        "Question": test_question,
+        "RAG Content": "Contains UNIQUE_RAG_MARKER for verification",
+        "Debug Mode": "Enabled for RAG category"
     })
     
     # Send the message
@@ -159,10 +178,10 @@ def test_rag_enhanced_chat_response(page: Page, serve_hacka_re, api_key):
     # Wait for the message to appear in chat
     page.wait_for_selector(".message.user", timeout=5000)
     
-    # Wait for AI response (this will take longer due to real API call)
+    # Wait for AI response
     page.wait_for_selector(".message.assistant", timeout=30000)
     
-    # Check that both user message and assistant response are present
+    # Check that both messages are present
     user_messages = page.locator(".message.user")
     assistant_messages = page.locator(".message.assistant")
     
@@ -171,18 +190,46 @@ def test_rag_enhanced_chat_response(page: Page, serve_hacka_re, api_key):
     
     # Get the assistant response content
     assistant_response = assistant_messages.first.locator(".message-content").text_content()
+    user_message = user_messages.first.locator(".message-content").text_content()
     
-    # The response should ideally contain information that was enhanced by RAG context
-    # We can't easily verify this without mocking the API, but we can verify the workflow completed
-    assert len(assistant_response) > 10, "Assistant should provide a substantial response"
+    # Verify the messages contain expected content
+    assert test_question.lower() in user_message.lower(), "User message should contain the test question"
+    assert len(assistant_response) > 50, "Assistant should provide a substantial response"
     
-    # Take screenshot of completed chat interaction
-    screenshot_with_markdown(page, "rag_enhanced_chat_response", {
-        "Status": "RAG-enhanced chat response completed",
-        "User Message": "Sent successfully",
-        "Assistant Response": f"Received ({len(assistant_response)} chars)",
-        "RAG Integration": "Workflow completed successfully"
+    # Check if debug messages appeared in chat indicating RAG was used
+    debug_messages = page.locator(".debug-message.debug-rag")
+    debug_count = debug_messages.count()
+    
+    # Verify that RAG content was actually included in the API request
+    rag_content_included = system_prompt_captured is not None and 'UNIQUE_RAG_MARKER' in system_prompt_captured
+    
+    # Get debug logs from console for additional verification
+    console_logs = page.evaluate("""
+        () => {
+            const logs = [];
+            // Check if there were any RAG-related console logs
+            // This is a simplified check - in a real implementation you'd capture actual console logs
+            return logs;
+        }
+    """)
+    
+    # Take screenshot of completed interaction with verification results
+    screenshot_with_markdown(page, "rag_enhanced_verification_complete", {
+        "Status": "RAG enhancement verification completed",
+        "User Message": user_message[:50] + "...",
+        "Assistant Response": f"{len(assistant_response)} characters",
+        "RAG Content Included": "Yes" if rag_content_included else "No - API request did not contain RAG marker",
+        "Debug Messages": f"{debug_count} RAG debug messages in chat",
+        "System Prompt Captured": "Yes" if system_prompt_captured else "No"
     })
+    
+    # Assert that RAG content was actually used
+    assert rag_content_included, f"RAG content should be included in system prompt. Captured prompt: {system_prompt_captured[:200] if system_prompt_captured else 'None'}"
+    
+    # Additional verification: Check that debug messages were generated
+    assert debug_count > 0, f"RAG debug messages should appear in chat when debug mode is enabled. Found {debug_count} messages"
+    
+    print(f"✓ RAG integration verified: Content included in API request with {debug_count} debug messages")
 
 def test_rag_context_injection_mechanism(page: Page, serve_hacka_re):
     """Test the RAG context injection mechanism without making API calls."""
@@ -594,3 +641,230 @@ def test_rag_multiple_source_integration(page: Page, serve_hacka_re):
         "User Bundles": f"{multi_source_result['userBundlesAvailable']} bundles", 
         "Integration": "Both sources accessible"
     })
+
+def test_rag_enable_disable_state_integration(page: Page, serve_hacka_re):
+    """Test that RAG enable/disable state is properly integrated with chat enhancement."""
+    # Navigate to the application
+    page.goto(serve_hacka_re)
+    
+    # Dismiss welcome modal if present
+    dismiss_welcome_modal(page)
+    dismiss_settings_modal(page)
+    
+    # Test RAG state through browser console
+    rag_state_test_result = page.evaluate("""() => {
+        // Test getting and setting RAG enabled state
+        const initialState = window.RAGManager.getRAGEnabledState();
+        
+        // Test disabling RAG
+        window.RAGManager.setRAGEnabledState(false);
+        const disabledState = window.RAGManager.isRAGEnabled();
+        
+        // Test enabling RAG
+        window.RAGManager.setRAGEnabledState(true);
+        const enabledState = window.RAGManager.isRAGEnabled();
+        
+        // Test status includes enabled state
+        const status = window.RAGManager.getStatus();
+        
+        return {
+            initialState: initialState,
+            disabledState: disabledState,
+            enabledState: enabledState,
+            statusIncludesEnabled: 'enabled' in status,
+            currentStatus: status.enabled
+        };
+    }""")
+    
+    # Verify RAG state management
+    assert rag_state_test_result['initialState'] == True, "Initial RAG state should be enabled by default"
+    assert rag_state_test_result['disabledState'] == False, "RAG should be disabled when set to false"
+    assert rag_state_test_result['enabledState'] == True, "RAG should be enabled when set to true"
+    assert rag_state_test_result['statusIncludesEnabled'], "Status should include enabled property"
+    assert rag_state_test_result['currentStatus'] == True, "Current status should reflect enabled state"
+    
+    print(f"RAG state integration test results:")
+    print(f"  Initial state: {rag_state_test_result['initialState']}")
+    print(f"  Disabled state: {rag_state_test_result['disabledState']}")
+    print(f"  Enabled state: {rag_state_test_result['enabledState']}")
+    print(f"  Status integration: {rag_state_test_result['statusIncludesEnabled']}")
+    
+    # Take screenshot of state integration test
+    screenshot_with_markdown(page, "rag_enable_disable_integration", {
+        "Status": "RAG enable/disable state integration tested",
+        "State Management": "Working correctly",
+        "API Integration": "Functional",
+        "Default State": "Enabled"
+    })
+
+def test_rag_debug_logging_functionality(page: Page, serve_hacka_re):
+    """Test that RAG debug logging produces valuable information during operations."""
+    # Navigate to the application
+    page.goto(serve_hacka_re)
+    
+    # Dismiss welcome modal if present
+    dismiss_welcome_modal(page)
+    dismiss_settings_modal(page)
+    
+    # Create mock RAG index for testing
+    debug_test_index = {
+        "chunks": [
+            {
+                "content": "DEBUG_TEST_CONTENT: Machine learning is a powerful tool for data analysis and pattern recognition. It enables computers to learn from data without explicit programming.",
+                "embedding": [0.8, 0.2, 0.0, 0.0, 0.0],
+                "metadata": {
+                    "promptId": "ml_debug_test",
+                    "promptName": "ML Debug Test Content",
+                    "type": "default_prompt"
+                },
+                "id": "chunk_debug_test"
+            },
+            {
+                "content": "Python programming language is widely used in machine learning applications due to its rich ecosystem of libraries and frameworks.",
+                "embedding": [0.7, 0.3, 0.0, 0.0, 0.0],
+                "metadata": {
+                    "promptId": "python_debug_test", 
+                    "promptName": "Python Debug Test Content",
+                    "type": "default_prompt"
+                },
+                "id": "chunk_python_debug"
+            }
+        ],
+        "metadata": {
+            "totalChunks": 2,
+            "embeddingModel": "text-embedding-3-small"
+        }
+    }
+    
+    # Store mock index
+    page.evaluate(f"localStorage.setItem('rag_default_prompts_index', '{json.dumps(debug_test_index)}')")
+    
+    # Enable debug mode and RAG category
+    debug_setup_result = page.evaluate("""() => {
+        // Enable debug mode
+        window.DebugService.setDebugMode(true);
+        window.DebugService.setCategoryEnabled('rag', true);
+        
+        // Verify debug settings
+        return {
+            debugModeEnabled: window.DebugService.getDebugMode(),
+            ragCategoryEnabled: window.DebugService.isCategoryEnabled('rag'),
+            categories: window.DebugService.getCategories()
+        };
+    }""")
+    
+    # Verify debug mode setup
+    assert debug_setup_result['debugModeEnabled'], "Debug mode should be enabled"
+    assert debug_setup_result['ragCategoryEnabled'], "RAG debug category should be enabled"
+    
+    # Perform a RAG search to generate debug logs
+    search_debug_result = page.evaluate("""async () => {
+        try {
+            // Perform a search that should generate debug logs
+            const searchResults = await window.VectorRAGService.search('machine learning programming', {
+                maxResults: 2,
+                threshold: 0.3,
+                useTextFallback: true
+            });
+            
+            return {
+                searchCompleted: true,
+                resultsFound: searchResults.results.length,
+                searchType: searchResults.metadata.searchType,
+                totalResults: searchResults.metadata.totalResults
+            };
+        } catch (error) {
+            return {
+                searchCompleted: false,
+                error: error.message
+            };
+        }
+    }""")
+    
+    # Verify search was successful
+    assert search_debug_result['searchCompleted'], "RAG search should complete successfully"
+    assert search_debug_result['resultsFound'] > 0, "Search should find results in mock index"
+    
+    # Check that debug messages appeared in the chat
+    page.wait_for_selector(".debug-message.debug-rag", timeout=3000)
+    debug_messages = page.locator(".debug-message.debug-rag")
+    debug_count = debug_messages.count()
+    
+    # Verify we have a reasonable number of debug messages
+    assert debug_count >= 3, f"Should have at least 3 RAG debug messages, found {debug_count}"
+    
+    # Capture the content of debug messages for verification
+    debug_message_contents = []
+    for i in range(min(debug_count, 10)):  # Check up to 10 messages
+        message_text = debug_messages.nth(i).text_content()
+        debug_message_contents.append(message_text)
+    
+    # Verify that debug messages contain expected information
+    debug_content_str = " ".join(debug_message_contents)
+    
+    # Check for key debug information
+    expected_debug_info = [
+        "Starting search",  # Should indicate search initiation
+        "results found",    # Should show results count
+        "similarity",       # Should show similarity scores
+        "Search summary"    # Should provide search summary
+    ]
+    
+    found_info = []
+    for info in expected_debug_info:
+        if any(info.lower() in msg.lower() for msg in debug_message_contents):
+            found_info.append(info)
+    
+    # Take screenshot of debug logging
+    screenshot_with_markdown(page, "rag_debug_logging_test", {
+        "Status": "RAG debug logging functionality tested",
+        "Debug Mode": "Enabled",
+        "RAG Category": "Enabled", 
+        "Debug Messages": f"{debug_count} messages generated",
+        "Search Results": f"{search_debug_result['resultsFound']} results found",
+        "Debug Info Found": f"{len(found_info)}/{len(expected_debug_info)} types",
+        "Search Type": search_debug_result.get('searchType', 'unknown')
+    })
+    
+    # Verify that we found most of the expected debug information
+    assert len(found_info) >= 2, f"Should find at least 2 types of debug info, found: {found_info}"
+    
+    print(f"RAG debug logging test results:")
+    print(f"  Debug messages generated: {debug_count}")
+    print(f"  Search results found: {search_debug_result['resultsFound']}")
+    print(f"  Debug info types found: {found_info}")
+    print(f"  Sample debug messages:")
+    for i, msg in enumerate(debug_message_contents[:3]):
+        print(f"    {i+1}: {msg[:100]}...")
+    
+    # Additional test: Verify debug logging with disabled RAG
+    page.evaluate("window.RAGManager.setRAGEnabledState(false)")
+    
+    # Try another search with RAG disabled
+    disabled_search_result = page.evaluate("""async () => {
+        try {
+            // Clear previous debug messages for this test
+            const debugMessages = document.querySelectorAll('.debug-message.debug-rag');
+            const previousCount = debugMessages.length;
+            
+            // This should generate debug logs indicating RAG is disabled
+            // We'll simulate this by calling the chat manager enhancement function
+            const fakeMessages = [{ role: 'user', content: 'test query for disabled RAG' }];
+            
+            // Check if the RAG enhancement would be skipped
+            const ragEnabled = window.RAGManager.isRAGEnabled();
+            
+            return {
+                ragEnabled: ragEnabled,
+                previousDebugCount: previousCount
+            };
+        } catch (error) {
+            return {
+                error: error.message
+            };
+        }
+    }""")
+    
+    assert not disabled_search_result['ragEnabled'], "RAG should be disabled after setting state to false"
+    
+    print(f"✓ RAG debug logging verification completed with {debug_count} debug messages")

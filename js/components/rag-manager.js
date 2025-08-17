@@ -81,6 +81,16 @@ window.RAGManager = (function() {
             uploadBtn.addEventListener('click', uploadBundle);
         }
 
+        // RAG enable/disable checkbox
+        const ragEnabledCheckbox = document.getElementById('rag-enabled-checkbox');
+        if (ragEnabledCheckbox) {
+            ragEnabledCheckbox.addEventListener('change', handleRAGEnabledChange);
+            
+            // Load initial state
+            const isRAGEnabled = getRAGEnabledState();
+            ragEnabledCheckbox.checked = isRAGEnabled;
+        }
+
         // Modal click outside to close
         const modal = document.getElementById('rag-modal');
         if (modal) {
@@ -208,22 +218,34 @@ window.RAGManager = (function() {
                 return;
             }
 
+            // Get indexed prompts information
+            const indexedPrompts = getIndexedPromptsStatus();
+            
             const promptsHTML = defaultPrompts.map(prompt => {
                 const isSection = prompt.isSection && prompt.items && prompt.items.length > 0;
                 const prompts = isSection ? prompt.items : [prompt];
                 
-                return prompts.map(p => `
-                    <div class="rag-prompt-item">
-                        <input type="checkbox" 
-                               id="rag-prompt-${p.id}" 
-                               data-prompt-id="${p.id}"
-                               ${DefaultPromptsService.isDefaultPromptSelected(p.id) ? 'checked' : ''}>
-                        <label for="rag-prompt-${p.id}">${p.name || p.id}</label>
-                        <span class="rag-prompt-meta">
-                            ${p.content ? `${Math.round(p.content.length / 4)} tokens` : 'No content'}
-                        </span>
-                    </div>
-                `).join('');
+                return prompts.map(p => {
+                    const indexStatus = indexedPrompts[p.id] || 'not-indexed';
+                    const statusBadge = getIndexingStatusBadge(indexStatus);
+                    const itemClass = indexStatus === 'indexed' ? 'rag-prompt-item indexed' : 'rag-prompt-item';
+                    
+                    return `
+                        <div class="${itemClass}">
+                            <input type="checkbox" 
+                                   id="rag-prompt-${p.id}" 
+                                   data-prompt-id="${p.id}"
+                                   ${DefaultPromptsService.isDefaultPromptSelected(p.id) ? 'checked' : ''}>
+                            <label for="rag-prompt-${p.id}">${p.name || p.id}</label>
+                            <span class="rag-prompt-meta">
+                                ${p.content ? `${Math.round(p.content.length / 4)} tokens` : 'No content'}
+                            </span>
+                            <div class="rag-indexing-status">
+                                ${statusBadge}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
             }).join('');
 
             listContainer.innerHTML = promptsHTML;
@@ -621,12 +643,109 @@ window.RAGManager = (function() {
     }
 
     /**
+     * Handle RAG enabled/disabled state change
+     * @param {Event} event - Checkbox change event
+     */
+    function handleRAGEnabledChange(event) {
+        const isEnabled = event.target.checked;
+        setRAGEnabledState(isEnabled);
+        updateUI();
+        
+        console.log(`RAGManager: RAG ${isEnabled ? 'enabled' : 'disabled'}`);
+        
+        if (isEnabled) {
+            showSuccess('RAG enabled - chat responses will be enhanced with relevant context');
+        } else {
+            showInfo('RAG disabled - chat responses will not include knowledge base context');
+        }
+    }
+
+    /**
+     * Get RAG enabled state
+     * @returns {boolean} Whether RAG is enabled
+     */
+    function getRAGEnabledState() {
+        try {
+            const stored = localStorage.getItem('rag_enabled');
+            return stored !== null ? JSON.parse(stored) : true; // Default to enabled
+        } catch (error) {
+            console.warn('RAGManager: Error reading RAG enabled state:', error);
+            return true;
+        }
+    }
+
+    /**
+     * Set RAG enabled state
+     * @param {boolean} enabled - Whether RAG should be enabled
+     */
+    function setRAGEnabledState(enabled) {
+        try {
+            localStorage.setItem('rag_enabled', JSON.stringify(enabled));
+        } catch (error) {
+            console.error('RAGManager: Error saving RAG enabled state:', error);
+        }
+    }
+
+    /**
+     * Check if RAG is currently enabled
+     * @returns {boolean} Whether RAG is enabled
+     */
+    function isRAGEnabled() {
+        return getRAGEnabledState();
+    }
+
+    /**
+     * Get indexing status for all default prompts
+     * @returns {Object} Map of prompt IDs to their indexing status
+     */
+    function getIndexedPromptsStatus() {
+        const indexedPrompts = {};
+        
+        try {
+            // Get stored index data
+            const storedIndex = RAGStorageService.loadDefaultPromptsIndex();
+            
+            if (storedIndex && storedIndex.chunks) {
+                // Create a map of which prompts are indexed
+                storedIndex.chunks.forEach(chunk => {
+                    if (chunk.metadata && chunk.metadata.promptId) {
+                        indexedPrompts[chunk.metadata.promptId] = 'indexed';
+                    }
+                });
+            }
+            
+            return indexedPrompts;
+        } catch (error) {
+            console.warn('RAGManager: Error getting indexed prompts status:', error);
+            return {};
+        }
+    }
+
+    /**
+     * Get status badge HTML for indexing status
+     * @param {string} status - Indexing status ('indexed', 'not-indexed', 'indexing')
+     * @returns {string} Badge HTML
+     */
+    function getIndexingStatusBadge(status) {
+        switch (status) {
+            case 'indexed':
+                return '<span class="rag-status-badge indexed">✓ Indexed</span>';
+            case 'indexing':
+                return '<span class="rag-status-badge indexing">⏳ Indexing...</span>';
+            case 'not-indexed':
+            default:
+                return '<span class="rag-status-badge not-indexed">○ Not Indexed</span>';
+        }
+    }
+
+    /**
      * Get current RAG status
      * @returns {Object} Current status
      */
     function getStatus() {
         return {
             initialized: isInitialized,
+            enabled: getRAGEnabledState(),
             stats: VectorRAGService.getIndexStats()
         };
     }
@@ -640,6 +759,9 @@ window.RAGManager = (function() {
         copyResultToClipboard,
         useResultInChat,
         updateUI,
-        removeUserBundle
+        removeUserBundle,
+        isRAGEnabled,
+        getRAGEnabledState,
+        setRAGEnabledState
     };
 })();

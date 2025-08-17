@@ -27,6 +27,37 @@
     background-color: var(--bg-color-secondary);
 }
 
+/* RAG Enable/Disable Section */
+.rag-enable-section {
+    border-color: var(--accent-color);
+    background-color: var(--bg-color);
+}
+
+.rag-enable-section .checkbox-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    margin-bottom: 8px;
+}
+
+.rag-enable-section .checkbox-label strong {
+    margin-left: 8px;
+    color: var(--text-color);
+    font-size: 1.1em;
+}
+
+.rag-enable-section input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-right: 8px;
+}
+
+.rag-enable-section .form-help {
+    margin-left: 26px;
+    margin-bottom: 0;
+    font-style: italic;
+}
+
 .rag-section h3 {
     margin: 0 0 10px 0;
     color: var(--text-color);
@@ -82,6 +113,11 @@
     transition: background-color 0.2s ease;
 }
 
+.rag-prompt-item.indexed {
+    background-color: var(--bg-color-success);
+    border-left: 3px solid var(--success-color);
+}
+
 .rag-prompt-item:last-child {
     border-bottom: none;
 }
@@ -105,6 +141,45 @@
     font-size: 0.8em;
     color: var(--text-color-secondary);
     margin-left: 10px;
+}
+
+/* RAG Indexing Status Indicators */
+.rag-indexing-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    font-size: 0.8em;
+}
+
+.rag-status-badge {
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.75em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.rag-status-badge.indexed {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.rag-status-badge.not-indexed {
+    background-color: var(--text-color-secondary);
+    color: white;
+}
+
+.rag-status-badge.indexing {
+    background-color: var(--warning-color);
+    color: white;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
 }
 
 /* RAG Bundles List */

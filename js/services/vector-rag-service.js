@@ -300,6 +300,12 @@ window.VectorRAGService = (function() {
             throw new Error('Invalid search query provided');
         }
 
+        // Debug logging
+        if (window.DebugService) {
+            window.DebugService.debugLog('rag', `Starting search for query: "${query.substring(0, 50)}${query.length > 50 ? '...' : ''}"`);
+            window.DebugService.debugLog('rag', `Search parameters: maxResults=${maxResults}, threshold=${threshold}, embeddingModel=${embeddingModel}`);
+        }
+
         console.log(`VectorRAGService: Searching for: "${query}"`);
 
         let results = [];
@@ -310,11 +316,24 @@ window.VectorRAGService = (function() {
             // Try vector search first if we have API key
             if (apiKey && baseUrl) {
                 try {
+                    if (window.DebugService) {
+                        window.DebugService.debugLog('rag', 'Generating query embedding via API...');
+                    }
+                    
                     const queryEmbedding = await generateQueryEmbedding(query, apiKey, baseUrl, embeddingModel);
+                    
+                    if (window.DebugService) {
+                        window.DebugService.debugLog('rag', `Query embedding generated successfully (${queryEmbedding.length} dimensions)`);
+                    }
                     
                     // Search both indexes
                     const defaultResults = searchDefaultPromptsIndex(queryEmbedding, maxResults, threshold);
                     const userResults = searchUserBundlesIndex(queryEmbedding, maxResults, threshold);
+                    
+                    if (window.DebugService) {
+                        window.DebugService.debugLog('rag', `Default prompts search: ${defaultResults.length} matches`);
+                        window.DebugService.debugLog('rag', `User bundles search: ${userResults.length} matches`);
+                    }
                     
                     // Combine and re-rank results
                     results = [...defaultResults, ...userResults];
@@ -322,22 +341,48 @@ window.VectorRAGService = (function() {
                     results = results.slice(0, maxResults);
                     
                     searchType = 'vector';
+                    
+                    if (window.DebugService) {
+                        window.DebugService.debugLog('rag', `Vector search completed: ${results.length} final results`);
+                        if (results.length > 0) {
+                            const topResult = results[0];
+                            window.DebugService.debugLog('rag', `Top result: ${(topResult.similarity * 100).toFixed(1)}% similarity from ${topResult.source}`);
+                        }
+                    }
+                    
                     console.log(`VectorRAGService: Vector search found ${results.length} results`);
                     
                 } catch (vectorError) {
                     console.warn('VectorRAGService: Vector search failed, falling back to text search:', vectorError);
                     error = vectorError.message;
                     
+                    if (window.DebugService) {
+                        window.DebugService.debugLog('rag', `Vector search failed: ${vectorError.message}. Using text fallback...`);
+                    }
+                    
                     if (useTextFallback) {
                         results = textBasedSearch(query, maxResults);
                         searchType = 'text_fallback';
+                        
+                        if (window.DebugService) {
+                            window.DebugService.debugLog('rag', `Text fallback search found ${results.length} results`);
+                        }
                     }
                 }
             } else {
                 // Use text-based search as fallback
                 if (useTextFallback) {
+                    if (window.DebugService) {
+                        window.DebugService.debugLog('rag', 'No API key available - using text-based search only');
+                    }
+                    
                     results = textBasedSearch(query, maxResults);
                     searchType = 'text_only';
+                    
+                    if (window.DebugService) {
+                        window.DebugService.debugLog('rag', `Text-based search found ${results.length} results`);
+                    }
+                    
                     console.log(`VectorRAGService: Text-based search found ${results.length} results`);
                 }
             }
@@ -345,6 +390,19 @@ window.VectorRAGService = (function() {
         } catch (searchError) {
             console.error('VectorRAGService: Search failed:', searchError);
             error = searchError.message;
+            
+            if (window.DebugService) {
+                window.DebugService.debugLog('rag', `Search failed with error: ${searchError.message}`);
+            }
+        }
+
+        // Final debug summary
+        if (window.DebugService) {
+            window.DebugService.debugLog('rag', `Search summary: ${results.length} results found using ${searchType} search`);
+            if (results.length > 0) {
+                const avgSimilarity = results.reduce((sum, r) => sum + r.similarity, 0) / results.length;
+                window.DebugService.debugLog('rag', `Average similarity score: ${(avgSimilarity * 100).toFixed(1)}%`);
+            }
         }
 
         return {
