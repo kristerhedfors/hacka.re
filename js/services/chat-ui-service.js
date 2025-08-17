@@ -86,7 +86,15 @@ window.ChatUIService = (function() {
              * @returns {HTMLElement} The created message element
              */
             addAIMessageToUI(content, id) {
+                // Create the element but mark it as placeholder if empty
                 const messageElement = UIUtils.createMessageElement('assistant', content, id);
+                
+                // If content is empty, add a placeholder class that we can use to hide it
+                if (!content || content.trim() === '') {
+                    messageElement.classList.add('ai-message-placeholder');
+                    messageElement.style.display = 'none'; // Hide it initially
+                }
+                
                 elements.chatMessages.appendChild(messageElement);
                 UIUtils.scrollToBottom(elements.chatMessages);
                 return messageElement;
@@ -169,9 +177,14 @@ window.ChatUIService = (function() {
                         elements.chatMessages.appendChild(messageElement);
                         console.log('[ChatUIService] Added user message to DOM');
                     } else if (message.role === 'assistant') {
-                        const messageElement = UIUtils.createMessageElement('assistant', message.content);
-                        elements.chatMessages.appendChild(messageElement);
-                        console.log('[ChatUIService] Added assistant message to DOM');
+                        // Skip empty assistant messages
+                        if (!message.content || message.content.trim() === '') {
+                            console.log('[ChatUIService] Skipping empty assistant message');
+                        } else {
+                            const messageElement = UIUtils.createMessageElement('assistant', message.content);
+                            elements.chatMessages.appendChild(messageElement);
+                            console.log('[ChatUIService] Added assistant message to DOM');
+                        }
                     } else if (message.role === 'system') {
                         const messageElement = UIUtils.createMessageElement('system', message.content, null, message.className);
                         elements.chatMessages.appendChild(messageElement);

@@ -43,9 +43,10 @@ window.ChatStreamingService = (function() {
             updateStreamingMessage(content, id, updateContextUsage, addAIMessageFn, uiHandler) {
                 let messageElement = document.querySelector(`.message[data-id="${id}"]`);
                 
-                // Create the AI message element if it doesn't exist (first content chunk)
-                if (!messageElement && content.trim()) {
+                // Create the AI message element if it doesn't exist
+                if (!messageElement) {
                     if (uiHandler && uiHandler.addAIMessageToUI) {
+                        // Create with empty content initially (will be hidden)
                         uiHandler.addAIMessageToUI('', id);
                     }
                     // Also add to the messages array for the first time
@@ -56,6 +57,12 @@ window.ChatStreamingService = (function() {
                 }
                 
                 if (messageElement) {
+                    // Show the element if it has content and was previously hidden
+                    if (content && content.trim() && messageElement.style.display === 'none') {
+                        messageElement.style.display = '';
+                        messageElement.classList.remove('ai-message-placeholder');
+                    }
+                    
                     const contentElement = messageElement.querySelector('.message-content');
                     
                     // Use requestAnimationFrame for smoother UI updates
