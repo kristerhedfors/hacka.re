@@ -29,9 +29,6 @@ window.ChatManager = (function() {
             
             // Load chat history
             loadChatHistory();
-            
-            // One-time cleanup of any empty assistant messages in the loaded history
-            cleanupEmptyAssistantMessages();
         }
         
 /**
@@ -108,13 +105,6 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
         
         // Process function markers if needed
         const finalContent = processFunctionMarkers(aiResponse, aiMessageId);
-        
-        console.log('[ChatManager] AI Response received:', {
-            contentLength: finalContent?.length,
-            isEmpty: !finalContent || finalContent.trim() === '',
-            firstChars: finalContent?.substring(0, 50),
-            lastMessageInArray: messages[messages.length - 1]
-        });
         
         // Finalize response
         finalizeResponse(finalContent, typingIndicator);
@@ -212,38 +202,9 @@ function finalizeResponse(finalContent, typingIndicator) {
     // Remove typing indicator
     uiHandler.removeTypingIndicator(typingIndicator);
     
-    console.log('[ChatManager] finalizeResponse called with:', {
-        finalContentLength: finalContent?.length,
-        finalContentEmpty: !finalContent || finalContent.trim() === '',
-        messagesCount: messages.length,
-        lastMessage: messages[messages.length - 1]
-    });
-    
-    // Check if we have an empty assistant message to clean up
+    // Update messages array with complete AI response
     if (messages.length > 0 && messages[messages.length - 1].role === 'assistant') {
-        if (!finalContent || finalContent.trim() === '') {
-            // Remove the empty assistant message
-            console.log('[ChatManager] Removing empty assistant message after generation');
-            messages.pop();
-            // Also remove from UI - find all AI messages and remove the last one
-            const chatMessages = elements.chatMessages;
-            const aiMessages = chatMessages.querySelectorAll('.ai-message');
-            if (aiMessages.length > 0) {
-                const lastAiMessage = aiMessages[aiMessages.length - 1];
-                console.log('[ChatManager] Removing AI message from UI:', lastAiMessage);
-                lastAiMessage.remove();
-            }
-        } else {
-            // Update messages array with complete AI response
-            messages[messages.length - 1].content = finalContent;
-        }
-    }
-    
-    // Clean up any additional empty assistant messages that might have been added
-    while (messages.length > 0 && messages[messages.length - 1].role === 'assistant' && 
-           (!messages[messages.length - 1].content || messages[messages.length - 1].content.trim() === '')) {
-        console.log('[ChatManager] Cleaning up trailing empty assistant message');
-        messages.pop();
+        messages[messages.length - 1].content = finalContent;
     }
     
     // Save chat history
@@ -264,9 +225,8 @@ function handleGenerationError(error, typingIndicator) {
     // Remove typing indicator
     uiHandler.removeTypingIndicator(typingIndicator);
     
-    // Remove the empty assistant message if it was added (it might not be added yet with the new approach)
-    if (messages.length > 0 && messages[messages.length - 1].role === 'assistant' && 
-        (!messages[messages.length - 1].content || messages[messages.length - 1].content.trim() === '')) {
+    // Remove the empty assistant message if it was added
+    if (messages.length > 0 && messages[messages.length - 1].role === 'assistant' && messages[messages.length - 1].content === '') {
         messages.pop();
     }
     
@@ -345,26 +305,10 @@ function cleanupGeneration(updateContextUsage, currentModel) {
          * @param {string} id - Message ID
          */
         function addAIMessage(content, id) {
-            console.log('[ChatManager] addAIMessage called with:', {
-                content: content,
-                contentLength: content?.length,
-                id: id,
-                currentMessagesCount: messages.length,
-                lastMessage: messages[messages.length - 1]
-            });
-            
-            // Check if we already have an assistant message with this ID
-            const existingMessage = messages.find(msg => msg.id === id && msg.role === 'assistant');
-            if (existingMessage) {
-                console.log('[ChatManager] Assistant message with this ID already exists, skipping add');
-                return;
-            }
-            
             // Add to messages array
             messages.push({
                 role: 'assistant',
-                content: content,
-                id: id  // Add ID to track messages
+                content: content
             });
             
             // Add to UI
@@ -395,43 +339,6 @@ function cleanupGeneration(updateContextUsage, currentModel) {
         }
         
         /**
-         * Clean up any empty assistant messages from the current conversation
-         */
-        function cleanupEmptyAssistantMessages() {
-            console.log('[ChatManager] Running cleanup of empty assistant messages');
-            
-            let cleanedCount = 0;
-            const originalLength = messages.length;
-            
-            // Remove ALL empty assistant messages, not just trailing ones
-            messages = messages.filter(msg => {
-                const isEmpty = msg.role === 'assistant' && (!msg.content || msg.content.trim() === '');
-                if (isEmpty) {
-                    console.log('[ChatManager] Filtering out empty assistant message:', msg);
-                    cleanedCount++;
-                    return false;
-                }
-                return true;
-            });
-            
-            if (cleanedCount > 0) {
-                console.log(`[ChatManager] Cleaned ${cleanedCount} empty assistant messages from ${originalLength} total messages`);
-                
-                // Save the cleaned history back to storage
-                StorageService.saveChatHistory(messages);
-                
-                // Re-display the cleaned messages
-                uiHandler.clearChat();
-                uiHandler.displayMessages(messages);
-                
-                // Add a system message about the cleanup
-                addSystemMessage(`Cleaned up ${cleanedCount} empty message${cleanedCount > 1 ? 's' : ''} from conversation history.`);
-            } else {
-                console.log('[ChatManager] No empty assistant messages found to clean');
-            }
-        }
-        
-        /**
          * Load chat history from storage
          */
         function loadChatHistory() {
@@ -440,26 +347,6 @@ function cleanupGeneration(updateContextUsage, currentModel) {
             if (savedHistory) {
                 try {
                     messages = savedHistory;
-                    
-                    console.log('[ChatManager] Loaded history before cleanup:', {
-                        messageCount: messages.length,
-                        lastMessage: messages[messages.length - 1]
-                    });
-                    
-                    // Clean up dangling empty assistant messages
-                    let cleanedCount = 0;
-                    while (messages.length > 0 && messages[messages.length - 1].role === 'assistant' && 
-                           (!messages[messages.length - 1].content || messages[messages.length - 1].content.trim() === '')) {
-                        console.log('[ChatManager] Removing dangling empty assistant message from loaded history');
-                        messages.pop();
-                        cleanedCount++;
-                    }
-                    
-                    if (cleanedCount > 0) {
-                        console.log(`[ChatManager] Cleaned ${cleanedCount} empty assistant messages`);
-                        // Save the cleaned history back to storage
-                        StorageService.saveChatHistory(messages);
-                    }
                     
                     // Display messages using UI handler
                     uiHandler.displayMessages(messages);
@@ -573,22 +460,6 @@ function cleanupGeneration(updateContextUsage, currentModel) {
                     // The welcome message is only for display, not for storage
                     messages = validMessages;
                     
-                    // Clean up dangling empty assistant messages before display
-                    if (messages.length > 0 && messages[messages.length - 1].role === 'assistant' && 
-                        (!messages[messages.length - 1].content || messages[messages.length - 1].content.trim() === '')) {
-                        console.log('[ChatManager] Removing dangling empty assistant message from reloaded history');
-                        messages.pop();
-                        // Update validMessages to match
-                        validMessages = messages.slice();
-                        // Save the cleaned history back to storage
-                        StorageService.saveChatHistory(messages);
-                        // Update messagesToDisplay if needed
-                        if (welcomePrepended) {
-                            messagesToDisplay = [window._welcomeMessageToPrepend, ...validMessages];
-                        } else {
-                            messagesToDisplay = validMessages;
-                        }
-                    }
                     
                     // Display all messages including welcome message first
                     if (uiHandler && uiHandler.displayMessages) {
@@ -813,13 +684,6 @@ function cleanupGeneration(updateContextUsage, currentModel) {
             // Update messages array
             messages = newMessages;
             
-            // Clean up dangling empty assistant messages
-            if (messages.length > 0 && messages[messages.length - 1].role === 'assistant' && 
-                (!messages[messages.length - 1].content || messages[messages.length - 1].content.trim() === '')) {
-                console.log('[ChatManager] Removing dangling empty assistant message from setMessages');
-                messages.pop();
-            }
-            
             // Display messages using UI handler
             uiHandler.displayMessages(messages);
             
@@ -844,7 +708,6 @@ function cleanupGeneration(updateContextUsage, currentModel) {
             loadChatHistory,
             reloadConversationHistory,
             clearChatHistory,
-            cleanupEmptyAssistantMessages,
             estimateContextUsage,
             getMessages,
             getIsGenerating,
