@@ -561,7 +561,7 @@ header .settings .icon-btn i,
 
 /* Heart logo animation for light theme */
 .theme-modern:not(.dark-mode) .heart-logo {
-    animation: heartSweep 3s infinite alternate;
+    animation: hatSweep 3s infinite alternate;
     background: linear-gradient(90deg, #ffffff, #9ca3af, #ffffff);
     background-size: 200% auto;
     -webkit-background-clip: text;
@@ -571,7 +571,7 @@ header .settings .icon-btn i,
 
 /* Fix for heart logo animation in dark mode */
 .theme-modern.dark-mode .heart-logo {
-    animation: heartSweep 3s infinite alternate;
+    animation: hatSweep 3s infinite alternate;
     background: linear-gradient(90deg, #777777, #aaaaaa, #777777);
     background-size: 200% auto;
     -webkit-background-clip: text;
@@ -764,7 +764,7 @@ header .settings .icon-btn i,
 
 /* Heart logo styling for gradient themes */
 .theme-sunset .heart-logo {
-    animation: heartSweep 3s infinite alternate;
+    animation: hatSweep 3s infinite alternate;
     background: linear-gradient(90deg, #f8b500, #f9e0c3, #f8b500);
     background-size: 200% auto;
     -webkit-background-clip: text;
@@ -773,7 +773,7 @@ header .settings .icon-btn i,
 }
 
 .theme-ocean .heart-logo {
-    animation: heartSweep 3s infinite alternate;
+    animation: hatSweep 3s infinite alternate;
     background: linear-gradient(90deg, #00bcd4, #e0f7fa, #00bcd4);
     background-size: 200% auto;
     -webkit-background-clip: text;
@@ -782,7 +782,7 @@ header .settings .icon-btn i,
 }
 
 .theme-forest .heart-logo {
-    animation: heartSweep 3s infinite alternate;
+    animation: hatSweep 3s infinite alternate;
     background: linear-gradient(90deg, #8bc34a, #f1f8e9, #8bc34a);
     background-size: 200% auto;
     -webkit-background-clip: text;
@@ -791,7 +791,7 @@ header .settings .icon-btn i,
 }
 
 .theme-midnight .heart-logo {
-    animation: heartSweep 3s infinite alternate;
+    animation: hatSweep 3s infinite alternate;
     background: linear-gradient(90deg, #7e57c2, #e8eaf6, #7e57c2);
     background-size: 200% auto;
     -webkit-background-clip: text;
@@ -1642,9 +1642,21 @@ header .settings .icon-btn i,
 }
 
 /* Keyframes for heart sweep animation */
-@keyframes heartSweep {
+@keyframes hatSweep {
     0% { background-position: 0% center; }
     100% { background-position: 100% center; }
+}
+
+/* Hat depth line colors to match header backgrounds */
+.theme-modern.dark-mode .heart-logo svg path {
+    stroke: var(--bg-color-secondary);
+}
+
+.theme-sunset .heart-logo svg path,
+.theme-ocean .heart-logo svg path,
+.theme-forest .heart-logo svg path,
+.theme-midnight .heart-logo svg path {
+    stroke: rgba(0, 0, 0, 0.2);
 }
 
 /* ASCII Tree Menu White Text Override for Modern Theme */
