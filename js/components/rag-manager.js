@@ -25,6 +25,9 @@ window.RAGManager = (function() {
         // Initialize RAG services
         VectorRAGService.initialize();
         
+        // Migrate legacy localStorage settings to proper storage
+        RAGStorageService.migrateLegacyRAGSettings();
+        
         isInitialized = true;
         console.log('RAGManager: Initialized successfully');
         
@@ -235,7 +238,7 @@ window.RAGManager = (function() {
                             <input type="checkbox" 
                                    id="rag-prompt-${p.id}" 
                                    data-prompt-id="${p.id}"
-                                   ${DefaultPromptsService.isDefaultPromptSelected(p.id) ? 'checked' : ''}>
+                                   ${RAGStorageService.isRAGPromptSelected(p.id) ? 'checked' : ''}>
                             <label for="rag-prompt-${p.id}">${p.name || p.id}</label>
                             <span class="rag-prompt-meta">
                                 ${p.content ? `${Math.round(p.content.length / 4)} tokens` : 'No content'}
@@ -270,10 +273,10 @@ window.RAGManager = (function() {
         const promptId = e.target.dataset.promptId;
         const isSelected = e.target.checked;
         
-        // Update the default prompts service
-        DefaultPromptsService.toggleDefaultPromptSelection(promptId);
+        // Update the RAG storage service (NOT the default prompts service)
+        RAGStorageService.toggleRAGPromptSelection(promptId);
         
-        console.log(`RAGManager: Prompt ${promptId} ${isSelected ? 'selected' : 'deselected'}`);
+        console.log(`RAGManager: RAG prompt ${promptId} ${isSelected ? 'selected' : 'deselected'} for indexing`);
     }
 
     /**
@@ -357,12 +360,42 @@ window.RAGManager = (function() {
             return;
         }
 
-        // Get selected prompts
-        const selectedPrompts = DefaultPromptsService.getSelectedDefaultPrompts();
-        if (selectedPrompts.length === 0) {
-            showError('Please select at least one default prompt to index.');
+        // Get selected prompts for RAG indexing (separate from default prompts modal)
+        const selectedRAGPromptIds = RAGStorageService.getSelectedRAGPrompts();
+        if (selectedRAGPromptIds.length === 0) {
+            showError('Please select at least one default prompt to index for RAG.');
             return;
         }
+
+        // Get the actual prompt objects from the default prompts service
+        const allDefaultPrompts = DefaultPromptsService.getDefaultPrompts();
+        const selectedPrompts = [];
+        
+        // Collect all prompts that match the selected IDs (including nested ones)
+        allDefaultPrompts.forEach(prompt => {
+            if (selectedRAGPromptIds.includes(prompt.id)) {
+                selectedPrompts.push(prompt);
+            }
+            
+            // Check nested items in sections
+            if (prompt.isSection && prompt.items && prompt.items.length > 0) {
+                prompt.items.forEach(nestedPrompt => {
+                    if (selectedRAGPromptIds.includes(nestedPrompt.id)) {
+                        // If the content is a function, evaluate it
+                        if (nestedPrompt.id === 'function-library' && 
+                            window.FunctionLibraryPrompt && 
+                            typeof window.FunctionLibraryPrompt.content === 'function') {
+                            selectedPrompts.push({
+                                ...nestedPrompt,
+                                content: window.FunctionLibraryPrompt.content()
+                            });
+                        } else {
+                            selectedPrompts.push(nestedPrompt);
+                        }
+                    }
+                });
+            }
+        });
 
         try {
             // Disable button and show progress
@@ -619,6 +652,13 @@ window.RAGManager = (function() {
      */
     function showError(message) {
         console.error('RAGManager Error:', message);
+        // Prevent multiple alerts by debouncing
+        if (showError.lastMessage === message && Date.now() - showError.lastTime < 1000) {
+            return; // Skip if same message shown within 1 second
+        }
+        showError.lastMessage = message;
+        showError.lastTime = Date.now();
+        
         // You could show a toast notification or modal here
         alert(`Error: ${message}`);
     }
@@ -629,7 +669,14 @@ window.RAGManager = (function() {
      */
     function showSuccess(message) {
         console.log('RAGManager Success:', message);
-        // You could show a toast notification here
+        // Prevent multiple alerts by debouncing
+        if (showSuccess.lastMessage === message && Date.now() - showSuccess.lastTime < 1000) {
+            return; // Skip if same message shown within 1 second
+        }
+        showSuccess.lastMessage = message;
+        showSuccess.lastTime = Date.now();
+        
+        // You could show a toast notification here instead of alert
         alert(`Success: ${message}`);
     }
 
@@ -639,6 +686,13 @@ window.RAGManager = (function() {
      */
     function showWarning(message) {
         console.warn('RAGManager Warning:', message);
+        // Prevent multiple alerts by debouncing
+        if (showWarning.lastMessage === message && Date.now() - showWarning.lastTime < 1000) {
+            return; // Skip if same message shown within 1 second
+        }
+        showWarning.lastMessage = message;
+        showWarning.lastTime = Date.now();
+        
         alert(`Warning: ${message}`);
     }
 
@@ -665,13 +719,7 @@ window.RAGManager = (function() {
      * @returns {boolean} Whether RAG is enabled
      */
     function getRAGEnabledState() {
-        try {
-            const stored = localStorage.getItem('rag_enabled');
-            return stored !== null ? JSON.parse(stored) : true; // Default to enabled
-        } catch (error) {
-            console.warn('RAGManager: Error reading RAG enabled state:', error);
-            return true;
-        }
+        return RAGStorageService.isRAGEnabled();
     }
 
     /**
@@ -679,11 +727,7 @@ window.RAGManager = (function() {
      * @param {boolean} enabled - Whether RAG should be enabled
      */
     function setRAGEnabledState(enabled) {
-        try {
-            localStorage.setItem('rag_enabled', JSON.stringify(enabled));
-        } catch (error) {
-            console.error('RAGManager: Error saving RAG enabled state:', error);
-        }
+        RAGStorageService.setRAGEnabled(enabled);
     }
 
     /**
@@ -691,7 +735,7 @@ window.RAGManager = (function() {
      * @returns {boolean} Whether RAG is enabled
      */
     function isRAGEnabled() {
-        return getRAGEnabledState();
+        return RAGStorageService.isRAGEnabled();
     }
 
     /**
