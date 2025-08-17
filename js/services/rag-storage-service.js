@@ -9,7 +9,8 @@ window.RAGStorageService = (function() {
         DEFAULT_PROMPTS_INDEX: 'rag_default_prompts_index',
         USER_BUNDLES_INDEX: 'rag_user_bundles_index',
         RAG_SETTINGS: 'rag_settings',
-        EMBEDDINGS_CACHE: 'rag_embeddings_cache'
+        EMBEDDINGS_CACHE: 'rag_embeddings_cache',
+        SELECTED_RAG_PROMPTS: 'rag_selected_prompts'  // Separate from default prompts modal
     };
 
     /**
@@ -140,6 +141,7 @@ window.RAGStorageService = (function() {
                 maxResults: 5,
                 similarityThreshold: 0.3,
                 enableAutoSearch: false,
+                enabled: true,  // RAG enabled by default
                 ...settings
             };
         } catch (error) {
@@ -151,8 +153,66 @@ window.RAGStorageService = (function() {
                 chunkOverlap: 50,
                 maxResults: 5,
                 similarityThreshold: 0.3,
-                enableAutoSearch: false
+                enableAutoSearch: false,
+                enabled: true
             };
+        }
+    }
+
+    /**
+     * Get RAG enabled state
+     * @returns {boolean} Whether RAG is enabled
+     */
+    function isRAGEnabled() {
+        try {
+            const settings = loadRAGSettings();
+            return settings.enabled;
+        } catch (error) {
+            console.error('RAGStorageService: Error getting RAG enabled state:', error);
+            return true; // Default to enabled
+        }
+    }
+
+    /**
+     * Set RAG enabled state
+     * @param {boolean} enabled - Whether RAG should be enabled
+     * @returns {boolean} Success status
+     */
+    function setRAGEnabled(enabled) {
+        try {
+            const settings = loadRAGSettings();
+            settings.enabled = Boolean(enabled);
+            return saveRAGSettings(settings);
+        } catch (error) {
+            console.error('RAGStorageService: Error setting RAG enabled state:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Migrate legacy rag_enabled from localStorage to proper storage
+     * This should be called once during initialization
+     */
+    function migrateLegacyRAGSettings() {
+        try {
+            // Check if legacy rag_enabled exists in localStorage
+            const legacyEnabled = localStorage.getItem('rag_enabled');
+            if (legacyEnabled !== null) {
+                console.log('RAGStorageService: Migrating legacy rag_enabled setting');
+                
+                // Parse the legacy value
+                const enabled = JSON.parse(legacyEnabled);
+                
+                // Set it using the proper storage
+                setRAGEnabled(enabled);
+                
+                // Remove the legacy setting
+                localStorage.removeItem('rag_enabled');
+                
+                console.log('RAGStorageService: Legacy rag_enabled migrated and removed');
+            }
+        } catch (error) {
+            console.warn('RAGStorageService: Error migrating legacy RAG settings:', error);
         }
     }
 
@@ -271,6 +331,100 @@ window.RAGStorageService = (function() {
     }
 
     /**
+     * Get selected RAG prompts (for indexing)
+     * @returns {Array} Array of selected RAG prompt IDs
+     */
+    function getSelectedRAGPrompts() {
+        try {
+            const selectedIds = CoreStorageService.getValue(STORAGE_KEYS.SELECTED_RAG_PROMPTS);
+            return Array.isArray(selectedIds) ? selectedIds : [];
+        } catch (error) {
+            console.error('RAGStorageService: Error getting selected RAG prompts:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Set selected RAG prompts (for indexing)
+     * @param {Array} promptIds - Array of prompt IDs to select for RAG indexing
+     * @returns {boolean} Success status
+     */
+    function setSelectedRAGPrompts(promptIds) {
+        try {
+            if (!Array.isArray(promptIds)) {
+                console.error('RAGStorageService: Invalid prompt IDs array');
+                return false;
+            }
+            
+            CoreStorageService.setValue(STORAGE_KEYS.SELECTED_RAG_PROMPTS, promptIds);
+            console.log('RAGStorageService: RAG prompt selections saved:', promptIds);
+            return true;
+        } catch (error) {
+            console.error('RAGStorageService: Error saving selected RAG prompts:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Toggle RAG prompt selection (for indexing)
+     * @param {string} promptId - Prompt ID to toggle
+     * @returns {boolean} True if now selected, false if unselected
+     */
+    function toggleRAGPromptSelection(promptId) {
+        try {
+            const selectedIds = getSelectedRAGPrompts();
+            const index = selectedIds.indexOf(promptId);
+            
+            if (index >= 0) {
+                // Remove from selected
+                selectedIds.splice(index, 1);
+                setSelectedRAGPrompts(selectedIds);
+                console.log('RAGStorageService: Deselected RAG prompt:', promptId);
+                return false;
+            } else {
+                // Add to selected
+                selectedIds.push(promptId);
+                setSelectedRAGPrompts(selectedIds);
+                console.log('RAGStorageService: Selected RAG prompt:', promptId);
+                return true;
+            }
+        } catch (error) {
+            console.error('RAGStorageService: Error toggling RAG prompt selection:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Check if a prompt is selected for RAG indexing
+     * @param {string} promptId - Prompt ID to check
+     * @returns {boolean} True if selected for RAG
+     */
+    function isRAGPromptSelected(promptId) {
+        try {
+            const selectedIds = getSelectedRAGPrompts();
+            return selectedIds.includes(promptId);
+        } catch (error) {
+            console.error('RAGStorageService: Error checking RAG prompt selection:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Clear all RAG prompt selections
+     * @returns {boolean} Success status
+     */
+    function clearRAGPromptSelections() {
+        try {
+            CoreStorageService.removeValue(STORAGE_KEYS.SELECTED_RAG_PROMPTS);
+            console.log('RAGStorageService: All RAG prompt selections cleared');
+            return true;
+        } catch (error) {
+            console.error('RAGStorageService: Error clearing RAG prompt selections:', error);
+            return false;
+        }
+    }
+
+    /**
      * Validate storage integrity
      * @returns {Object} Validation results
      */
@@ -333,15 +487,25 @@ window.RAGStorageService = (function() {
         // Settings
         saveRAGSettings,
         loadRAGSettings,
+        isRAGEnabled,
+        setRAGEnabled,
         
         // Embeddings cache
         cacheEmbeddings,
         getCachedEmbeddings,
         
+        // RAG prompt selections (separate from default prompts modal)
+        getSelectedRAGPrompts,
+        setSelectedRAGPrompts,
+        toggleRAGPromptSelection,
+        isRAGPromptSelected,
+        clearRAGPromptSelections,
+        
         // Management
         clearAllRAGStorage,
         getStorageStats,
         validateStorage,
+        migrateLegacyRAGSettings,
         
         // Constants
         STORAGE_KEYS

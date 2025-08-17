@@ -777,7 +777,7 @@ function cleanupGeneration(updateContextUsage, currentModel) {
                     if (window.DebugService) {
                         window.DebugService.debugLog('rag', 'No relevant matches found - using original system prompt');
                     }
-                    return originalSystemPrompt;
+                    return originalSystemPrompt || '';
                 }
                 
                 // Format results for context injection
@@ -795,9 +795,11 @@ function cleanupGeneration(updateContextUsage, currentModel) {
                 }
                 
                 // Combine original system prompt with RAG context
-                const enhancedPrompt = originalSystemPrompt + '\n\n' + ragContext;
+                // Handle null/undefined originalSystemPrompt
+                const safeOriginalPrompt = originalSystemPrompt || '';
+                const enhancedPrompt = safeOriginalPrompt + '\n\n' + ragContext;
                 
-                const contextAddition = enhancedPrompt.length - originalSystemPrompt.length;
+                const contextAddition = enhancedPrompt.length - safeOriginalPrompt.length;
                 
                 if (window.DebugService) {
                     window.DebugService.debugLog('rag', `System prompt enhanced: +${contextAddition} characters from ${searchResults.results.length} knowledge base entries`);
@@ -811,7 +813,7 @@ function cleanupGeneration(updateContextUsage, currentModel) {
                     window.DebugService.debugLog('rag', `RAG enhancement failed: ${error.message}`);
                 }
                 console.warn('ChatManager: RAG enhancement failed, using original system prompt:', error);
-                return originalSystemPrompt;
+                return originalSystemPrompt || '';
             }
         }
         
