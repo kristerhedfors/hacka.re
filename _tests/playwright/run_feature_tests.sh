@@ -80,6 +80,7 @@ while [[ $# -gt 0 ]]; do
             echo "  - Context window features (test_context_window_*.py)"
             echo "  - Modal tests (test_modals.py)"
             echo "  - Welcome manager tests (test_welcome_manager.py)"
+            echo "  - RAG functionality (test_rag_*.py) - Knowledge base features"
             echo "  - And other advanced functionality"
             echo ""
             echo "Note: Excludes core functionality tests (use run_core_tests.sh for those)"
@@ -103,7 +104,7 @@ done
 
 # Define the feature tests filter - exclude core tests and include feature tests
 CORE_TESTS_EXCLUDE="test_page or test_api or test_chat or test_welcome_modal"
-FEATURE_TESTS_INCLUDE="test_function_modal or test_function_icons or test_sharing or test_default_prompts or test_themes or test_clear_chat or test_model_selection or test_copy_chat or test_button_tooltips or test_function_library or test_context_window or test_function_copy or test_function_deletion or test_function_editing or test_function_group or test_function_parsing or test_function_tooltip or test_deterministic_crypto or test_clear_namespace or test_system_prompt or test_token_counter or test_input_field or test_logo_tooltip or test_modals or test_debug_mode or test_model_context_window or test_owasp_prompt_bug or test_prompt_order_and_function_library_prompt"
+FEATURE_TESTS_INCLUDE="test_function_modal or test_function_icons or test_sharing or test_default_prompts or test_themes or test_clear_chat or test_model_selection or test_copy_chat or test_button_tooltips or test_function_library or test_context_window or test_function_copy or test_function_deletion or test_function_editing or test_function_group or test_function_parsing or test_function_tooltip or test_deterministic_crypto or test_clear_namespace or test_system_prompt or test_token_counter or test_input_field or test_logo_tooltip or test_modals or test_debug_mode or test_model_context_window or test_owasp_prompt_bug or test_prompt_order_and_function_library_prompt or test_rag_modal or test_rag_indexing or test_rag_search or test_rag_bundles or test_rag_integration"
 
 FEATURE_TESTS_FILTER="not ($CORE_TESTS_EXCLUDE) and ($FEATURE_TESTS_INCLUDE)"
 

@@ -91,6 +91,9 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
         // Prepare API messages
         const apiMessages = prepareAPIMessages();
         
+        // Enhance system prompt with RAG search if available
+        const enhancedSystemPrompt = await enhanceSystemPromptWithRAG(systemPrompt, apiMessages, apiKey);
+        
         // Generate response from API
         const aiResponse = await generateAPIResponse(
             apiKey, 
@@ -99,7 +102,7 @@ async function generateResponse(apiKey, currentModel, systemPrompt, updateContex
             generationState.signal, 
             aiMessageId, 
             updateContextUsage, 
-            systemPrompt, 
+            enhancedSystemPrompt, 
             combinedToolsManager
         );
         
@@ -693,6 +696,58 @@ function cleanupGeneration(updateContextUsage, currentModel) {
             // Notify cross-tab sync service
             if (window.CrossTabSyncService && window.CrossTabSyncService.isInitialized()) {
                 window.CrossTabSyncService.notifyHistoryUpdate();
+            }
+        }
+        
+        /**
+         * Enhance system prompt with RAG search results
+         * @param {string} originalSystemPrompt - Original system prompt
+         * @param {Array} messages - Chat messages for context
+         * @param {string} apiKey - API key for embedding generation
+         * @returns {Promise<string>} Enhanced system prompt with RAG context
+         */
+        async function enhanceSystemPromptWithRAG(originalSystemPrompt, messages, apiKey) {
+            try {
+                // Check if RAG is available and has indexed content
+                const ragStats = VectorRAGService.getIndexStats();
+                if (!ragStats.defaultPrompts.available && !ragStats.userBundles.available) {
+                    return originalSystemPrompt;
+                }
+                
+                // Get the last user message as search query
+                const lastUserMessage = messages.slice().reverse().find(msg => msg.role === 'user');
+                if (!lastUserMessage || !lastUserMessage.content) {
+                    return originalSystemPrompt;
+                }
+                
+                const query = lastUserMessage.content;
+                
+                // Perform RAG search
+                const searchResults = await VectorRAGService.search(query, {
+                    maxResults: 3, // Limit to 3 results to avoid context bloat
+                    threshold: 0.4, // Slightly higher threshold for relevance
+                    useTextFallback: true,
+                    apiKey: apiKey,
+                    baseUrl: StorageService.getBaseUrl()
+                });
+                
+                // If no relevant results found, return original prompt
+                if (!searchResults.results || searchResults.results.length === 0) {
+                    return originalSystemPrompt;
+                }
+                
+                // Format results for context injection
+                const ragContext = VectorRAGService.formatResultsForContext(searchResults.results, 1500);
+                
+                // Combine original system prompt with RAG context
+                const enhancedPrompt = originalSystemPrompt + '\n\n' + ragContext;
+                
+                console.log(`ChatManager: Enhanced system prompt with ${searchResults.results.length} relevant knowledge base entries`);
+                return enhancedPrompt;
+                
+            } catch (error) {
+                console.warn('ChatManager: RAG enhancement failed, using original system prompt:', error);
+                return originalSystemPrompt;
             }
         }
         
