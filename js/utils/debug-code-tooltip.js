@@ -343,8 +343,10 @@ window.DebugCodeTooltip = (function() {
      * Get the full file path based on filename patterns
      */
     function getFullFilePath(file) {
-        if (file.includes('api-') || file === 'api-service.js' || file.includes('function-tools-') || file.includes('storage-') || file.includes('mcp-') || file.includes('chat-') || file.includes('prompts-') || file.includes('model-') || file.includes('encryption-') || file.includes('namespace-') || file.includes('debug-') || file.includes('link-sharing-')) {
+        if (file.includes('api-') || file === 'api-service.js' || file.includes('function-tools-') || file.includes('storage-') || file.includes('mcp-') || file.includes('prompts-') || file.includes('model-') || file.includes('encryption-') || file.includes('namespace-') || file.includes('debug-') || file.includes('link-sharing-') || file.includes('vector-rag-') || file.includes('rag-indexing-') || file.includes('rag-storage-')) {
             return `js/services/${file}`;
+        } else if (file === 'chat-manager.js' || file.includes('rag-manager')) {
+            return `js/components/${file}`;
         } else if (file.includes('settings-') || file.includes('api-key-') || file.includes('model-manager') || file.includes('system-prompt-')) {
             return `js/components/settings/${file}`;
         } else if (file.includes('function-') && (file.includes('calling') || file.includes('editor') || file.includes('modal') || file.includes('list'))) {
@@ -410,11 +412,14 @@ window.DebugCodeTooltip = (function() {
         }
         
         try {
-            // Try to fetch the source file
-            const response = await fetch(`/js/${file}`);
+            // Use smart path detection first
+            const smartPath = getFullFilePath(file);
+            let response = await fetch(`/${smartPath}`);
+            
             if (!response.ok) {
-                // Try services or components subdirectories
+                // Fallback: Try common directories if smart detection failed
                 const paths = [
+                    `/js/${file}`,
                     `/js/services/${file}`,
                     `/js/components/${file}`,
                     `/js/components/settings/${file}`,
@@ -422,25 +427,15 @@ window.DebugCodeTooltip = (function() {
                 ];
                 
                 for (const path of paths) {
-                    const res = await fetch(path);
-                    if (res.ok) {
-                        const text = await res.text();
-                        const formatted = formatSourceCode(text, line, file);
-                        
-                        // Update header with file size info
-                        const lines = text.split('\n').length;
-                        const locationElement = document.querySelector('.debug-code-location');
-                        if (locationElement) {
-                            locationElement.textContent = `:${line} (Full File - ${lines} lines)`;
-                        }
-                        
-                        // Cache the result
-                        codeCache[cacheKey] = formatted;
-                        return formatted;
+                    response = await fetch(path);
+                    if (response.ok) {
+                        break;
                     }
                 }
                 
-                return formatFallbackCode(file, line);
+                if (!response.ok) {
+                    return formatFallbackCode(file, line);
+                }
             }
             
             const text = await response.text();
@@ -482,14 +477,20 @@ window.DebugCodeTooltip = (function() {
             
             // Check for the consistent debug pattern: "// Debug logging" comment and if-statement
             const isDebugComment = trimmed === '// Debug logging';
-            const isDebugIf = trimmed.startsWith('if (window.DebugService && window.DebugService.debugLog)');
+            const isDebugIf = trimmed.startsWith('if (window.DebugService && window.DebugService.debugLog)') || trimmed.startsWith('if (window.DebugService) {');
             const isDebugCall = trimmed.includes('window.DebugService.debugLog(');
-            const isDebugClosing = trimmed === '}' && i > 0 && lines[i-1].trim().includes('debugLog');
+            // Check if this is a closing brace for a debug block
+            const isDebugClosing = trimmed === '}' && i > 0 && (
+                lines[i-1].trim().includes('debugLog') || 
+                lines[i-1].trim().includes('});') ||
+                // Check if we're in a debug block by looking for debug calls in recent lines
+                (i >= 2 && (lines[i-2].trim().includes('debugLog') || lines[i-3]?.trim().includes('debugLog')))
+            );
             
             if (isDebugComment || isDebugIf || isDebugCall || isDebugClosing) {
                 debugLines.add(i);
                 // Mark the start of a debug block
-                if (isDebugComment) {
+                if (isDebugComment || isDebugIf) {
                     debugBlockStarts.add(i);
                 }
             }
@@ -698,8 +699,10 @@ window.DebugCodeTooltip = (function() {
             
             // If we couldn't get it from fullPath, use smart path detection based on filename patterns
             if (!fileUrl) {
-                if (file.includes('api-') || file === 'api-service.js' || file.includes('function-tools-') || file.includes('storage-') || file.includes('mcp-') || file.includes('chat-') || file.includes('prompts-') || file.includes('model-') || file.includes('encryption-') || file.includes('namespace-') || file.includes('debug-') || file.includes('link-sharing-')) {
+                if (file.includes('api-') || file === 'api-service.js' || file.includes('function-tools-') || file.includes('storage-') || file.includes('mcp-') || file.includes('prompts-') || file.includes('model-') || file.includes('encryption-') || file.includes('namespace-') || file.includes('debug-') || file.includes('link-sharing-') || file.includes('vector-rag-') || file.includes('rag-indexing-') || file.includes('rag-storage-')) {
                     fileUrl = `/js/services/${file}`;
+                } else if (file === 'chat-manager.js' || file.includes('rag-manager')) {
+                    fileUrl = `/js/components/${file}`;
                 } else if (file.includes('settings-') || file.includes('api-key-') || file.includes('model-manager') || file.includes('system-prompt-')) {
                     fileUrl = `/js/components/settings/${file}`;
                 } else if (file.includes('function-') && (file.includes('calling') || file.includes('editor') || file.includes('modal') || file.includes('list'))) {
