@@ -708,19 +708,53 @@ function cleanupGeneration(updateContextUsage, currentModel) {
          */
         async function enhanceSystemPromptWithRAG(originalSystemPrompt, messages, apiKey) {
             try {
+                // Debug: Start RAG enhancement process
+                if (window.DebugService) {
+                    window.DebugService.debugLog('rag', 'Starting RAG enhancement for chat message');
+                }
+                
+                // Check if RAG is enabled
+                if (!RAGManager.isRAGEnabled()) {
+                    if (window.DebugService) {
+                        window.DebugService.debugLog('rag', 'RAG is disabled - skipping enhancement');
+                    }
+                    console.log('ChatManager: RAG is disabled, skipping context enhancement');
+                    return originalSystemPrompt;
+                }
+                
+                if (window.DebugService) {
+                    window.DebugService.debugLog('rag', 'RAG is enabled - proceeding with enhancement');
+                }
+                
                 // Check if RAG is available and has indexed content
                 const ragStats = VectorRAGService.getIndexStats();
+                
+                if (window.DebugService) {
+                    window.DebugService.debugLog('rag', `Knowledge base status: default prompts=${ragStats.defaultPrompts.chunks} chunks, user bundles=${ragStats.userBundles.totalChunks} chunks`);
+                }
+                
                 if (!ragStats.defaultPrompts.available && !ragStats.userBundles.available) {
+                    if (window.DebugService) {
+                        window.DebugService.debugLog('rag', 'No indexed content available - skipping enhancement');
+                    }
                     return originalSystemPrompt;
                 }
                 
                 // Get the last user message as search query
                 const lastUserMessage = messages.slice().reverse().find(msg => msg.role === 'user');
                 if (!lastUserMessage || !lastUserMessage.content) {
+                    if (window.DebugService) {
+                        window.DebugService.debugLog('rag', 'No user message found for RAG query');
+                    }
                     return originalSystemPrompt;
                 }
                 
                 const query = lastUserMessage.content;
+                const queryPreview = query.length > 50 ? query.substring(0, 50) + '...' : query;
+                
+                if (window.DebugService) {
+                    window.DebugService.debugLog('rag', `Using user message as search query: "${queryPreview}"`);
+                }
                 
                 // Perform RAG search
                 const searchResults = await VectorRAGService.search(query, {
@@ -731,21 +765,51 @@ function cleanupGeneration(updateContextUsage, currentModel) {
                     baseUrl: StorageService.getBaseUrl()
                 });
                 
+                if (window.DebugService) {
+                    window.DebugService.debugLog('rag', `RAG search completed: ${searchResults.results.length} matches found`);
+                    if (searchResults.metadata.error) {
+                        window.DebugService.debugLog('rag', `Search encountered error: ${searchResults.metadata.error}`);
+                    }
+                }
+                
                 // If no relevant results found, return original prompt
                 if (!searchResults.results || searchResults.results.length === 0) {
+                    if (window.DebugService) {
+                        window.DebugService.debugLog('rag', 'No relevant matches found - using original system prompt');
+                    }
                     return originalSystemPrompt;
                 }
                 
                 // Format results for context injection
                 const ragContext = VectorRAGService.formatResultsForContext(searchResults.results, 1500);
                 
+                if (window.DebugService) {
+                    window.DebugService.debugLog('rag', `Formatted RAG context: ${ragContext.length} characters`);
+                    
+                    // Log details about each result
+                    searchResults.results.forEach((result, index) => {
+                        const similarity = (result.similarity * 100).toFixed(1);
+                        const source = result.promptName || result.fileName || result.bundleName || 'Unknown';
+                        window.DebugService.debugLog('rag', `  Result ${index + 1}: ${similarity}% similarity from "${source}"`);
+                    });
+                }
+                
                 // Combine original system prompt with RAG context
                 const enhancedPrompt = originalSystemPrompt + '\n\n' + ragContext;
+                
+                const contextAddition = enhancedPrompt.length - originalSystemPrompt.length;
+                
+                if (window.DebugService) {
+                    window.DebugService.debugLog('rag', `System prompt enhanced: +${contextAddition} characters from ${searchResults.results.length} knowledge base entries`);
+                }
                 
                 console.log(`ChatManager: Enhanced system prompt with ${searchResults.results.length} relevant knowledge base entries`);
                 return enhancedPrompt;
                 
             } catch (error) {
+                if (window.DebugService) {
+                    window.DebugService.debugLog('rag', `RAG enhancement failed: ${error.message}`);
+                }
                 console.warn('ChatManager: RAG enhancement failed, using original system prompt:', error);
                 return originalSystemPrompt;
             }

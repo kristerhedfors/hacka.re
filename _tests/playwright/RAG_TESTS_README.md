@@ -13,8 +13,10 @@ The RAG test suite validates all aspects of the knowledge base and retrieval-aug
 - **Key Tests**:
   - RAG button visibility and positioning in toolbar
   - Modal open/close functionality
-  - Section structure (default prompts, user bundles, search)
-  - Keyboard interactions (Enter to search, Escape to close)
+  - Section structure (enable section, default prompts, user bundles, search)
+  - RAG enable/disable checkbox functionality
+  - Default prompts indexing status indicators
+  - Keyboard interactions (Enter to search, close button)
 - **Dependencies**: None (UI only)
 - **Execution Time**: Fast (~30 seconds)
 
@@ -59,6 +61,7 @@ The RAG test suite validates all aspects of the knowledge base and retrieval-aug
   - Chat response enhancement with RAG context
   - Context injection mechanisms
   - Query extraction from user messages
+  - RAG enable/disable state integration
   - Complete end-to-end workflow (index → search → chat)
   - Multiple knowledge source integration
   - No relevant context handling

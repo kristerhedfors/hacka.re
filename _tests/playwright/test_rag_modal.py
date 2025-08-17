@@ -90,9 +90,18 @@ def test_rag_modal_structure(page: Page, serve_hacka_re):
     expect(modal_header).to_be_visible()
     expect(modal_header).to_have_text("Knowledge Base")
     
-    # Check modal sections (there are 3 rag-section divs)
+    # Check modal sections (there are now 4 rag-section divs with enable section)
     rag_sections = page.locator("#rag-modal .rag-section")
-    expect(rag_sections).to_have_count(3)
+    expect(rag_sections).to_have_count(4)
+    
+    # Check RAG enable section
+    enable_section = page.locator("#rag-modal .rag-enable-section")
+    expect(enable_section).to_be_visible()
+    
+    # Check RAG enable checkbox
+    rag_enabled_checkbox = page.locator("#rag-enabled-checkbox")
+    expect(rag_enabled_checkbox).to_be_visible()
+    expect(rag_enabled_checkbox).to_be_checked()  # Should be enabled by default
     
     # Check default prompts section elements
     generate_embeddings_btn = page.locator("#rag-index-defaults-btn")
@@ -137,8 +146,8 @@ def test_rag_modal_default_prompts_section(page: Page, serve_hacka_re):
     # Wait for modal to become visible
     page.wait_for_selector("#rag-modal", state="visible", timeout=3000)
     
-    # Check default prompts section content - it's the first rag-section
-    default_prompts_section = page.locator("#rag-modal .rag-section").first
+    # Check default prompts section content - it's the second rag-section (after enable section)
+    default_prompts_section = page.locator("#rag-modal .rag-section").nth(1)
     
     # Check section title
     section_title = default_prompts_section.locator("h3")
@@ -180,8 +189,8 @@ def test_rag_modal_search_section(page: Page, serve_hacka_re):
     # Wait for modal to become visible
     page.wait_for_selector("#rag-modal", state="visible", timeout=3000)
     
-    # Check search section elements - it's the third rag-section
-    search_section = page.locator("#rag-modal .rag-section").nth(2)
+    # Check search section elements - it's the fourth rag-section
+    search_section = page.locator("#rag-modal .rag-section").nth(3)
     
     # Check section title
     section_title = search_section.locator("h3")
@@ -225,8 +234,8 @@ def test_rag_modal_user_bundles_section(page: Page, serve_hacka_re):
     # Wait for modal to become visible
     page.wait_for_selector("#rag-modal", state="visible", timeout=3000)
     
-    # Check user bundles section elements - it's the second rag-section
-    user_bundles_section = page.locator("#rag-modal .rag-section").nth(1)
+    # Check user bundles section elements - it's the third rag-section
+    user_bundles_section = page.locator("#rag-modal .rag-section").nth(2)
     
     # Check section title
     section_title = user_bundles_section.locator("h3")
@@ -289,4 +298,79 @@ def test_rag_modal_keyboard_interaction(page: Page, serve_hacka_re):
         "Status": "Modal closed via close button",
         "Keyboard Test": "Enter key functional, close button works",
         "Search Input": "Responded to Enter key press"
+    })
+
+def test_rag_enable_disable_functionality(page: Page, serve_hacka_re):
+    """Test the RAG enable/disable checkbox functionality."""
+    # Navigate to the application
+    page.goto(serve_hacka_re)
+    
+    # Dismiss welcome modal if present
+    dismiss_welcome_modal(page)
+    dismiss_settings_modal(page)
+    
+    # Open the RAG modal
+    rag_button = page.locator("#rag-btn")
+    rag_button.click()
+    
+    # Wait for modal to become visible
+    page.wait_for_selector("#rag-modal", state="visible", timeout=3000)
+    
+    # Check RAG enable checkbox initial state (should be checked)
+    rag_enabled_checkbox = page.locator("#rag-enabled-checkbox")
+    expect(rag_enabled_checkbox).to_be_checked()
+    
+    # Test disabling RAG
+    rag_enabled_checkbox.uncheck()
+    expect(rag_enabled_checkbox).not_to_be_checked()
+    
+    # Test enabling RAG again
+    rag_enabled_checkbox.check()
+    expect(rag_enabled_checkbox).to_be_checked()
+    
+    # Take screenshot of enable/disable functionality
+    screenshot_with_markdown(page, "rag_enable_disable_functionality", {
+        "Status": "RAG enable/disable functionality tested",
+        "Checkbox": "Toggles correctly",
+        "State": "Currently enabled",
+        "Functionality": "Working as expected"
+    })
+
+def test_rag_default_prompts_indexing_status(page: Page, serve_hacka_re):
+    """Test that default prompts show their indexing status."""
+    # Navigate to the application
+    page.goto(serve_hacka_re)
+    
+    # Dismiss welcome modal if present
+    dismiss_welcome_modal(page)
+    dismiss_settings_modal(page)
+    
+    # Open the RAG modal
+    rag_button = page.locator("#rag-btn")
+    rag_button.click()
+    
+    # Wait for modal to become visible
+    page.wait_for_selector("#rag-modal", state="visible", timeout=3000)
+    
+    # Check that default prompts list is visible
+    prompts_list = page.locator("#rag-default-prompts-list")
+    expect(prompts_list).to_be_visible()
+    
+    # Check for status badges in the prompts
+    status_badges = page.locator(".rag-status-badge")
+    
+    # There should be at least some status badges
+    expect(status_badges.first).to_be_visible()
+    
+    # Check that default status is "Not Indexed"
+    not_indexed_badges = page.locator(".rag-status-badge.not-indexed")
+    expect(not_indexed_badges.first).to_be_visible()
+    expect(not_indexed_badges.first).to_contain_text("Not Indexed")
+    
+    # Take screenshot of indexing status display
+    screenshot_with_markdown(page, "rag_prompts_indexing_status", {
+        "Status": "Default prompts indexing status displayed",
+        "Status Badges": "Visible on each prompt",
+        "Default State": "Not Indexed",
+        "Functionality": "Working correctly"
     })

@@ -14,7 +14,8 @@ window.DebugService = (function() {
         'shared-links': { name: 'Shared Links', symbol: '🔗', enabled: false, description: 'Link sharing and password operations' },
         functions: { name: 'Functions', symbol: '⚙️', enabled: false, description: 'Function calling system' },
         'mcp-events': { name: 'MCP Events', symbol: '🔌', enabled: false, description: 'Model Context Protocol operations' },
-        api: { name: 'API', symbol: '🌐', enabled: false, description: 'API requests and responses' }
+        api: { name: 'API', symbol: '🌐', enabled: false, description: 'API requests and responses' },
+        rag: { name: 'RAG', symbol: '🧠', enabled: false, description: 'RAG knowledge base and search operations' }
     };
     
     // Current category states
