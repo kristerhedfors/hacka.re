@@ -804,8 +804,6 @@ function cleanupGeneration(updateContextUsage, currentModel) {
                 if (window.DebugService) {
                     window.DebugService.debugLog('rag', `System prompt enhanced: +${contextAddition} characters from ${searchResults.results.length} knowledge base entries`);
                 }
-                
-                console.log(`ChatManager: Enhanced system prompt with ${searchResults.results.length} relevant knowledge base entries`);
                 return enhancedPrompt;
                 
             } catch (error) {
