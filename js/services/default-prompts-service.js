@@ -12,177 +12,31 @@ window.DefaultPromptsService = (function() {
     
 /**
  * Initialize the default prompts
- * This function loads all registered default prompts
+ * This function loads only the three required default prompts for RAG functionality
  */
 function initializeDefaultPrompts() {
     // Clear the array first
     DEFAULT_PROMPTS = [];
     
-    // Add prompts from individual files if they exist in the specified order
+    // Only load the three specified default prompts at the bottom:
     
-    // 1. Code section with Function Library and Agent Orchestration
-    if (window.CodeSectionPrompt) {
-        // Create a copy of the Code section prompt
-        const codeSectionPrompt = { ...window.CodeSectionPrompt };
-        codeSectionPrompt.items = [];
-        
-        // Add Function Library to the Code section
-        if (window.FunctionLibraryPrompt) {
-            // If the content is a function, we need to evaluate it
-            if (typeof window.FunctionLibraryPrompt.content === 'function') {
-                // Create a copy of the prompt with the evaluated content
-                const evaluatedPrompt = {
-                    ...window.FunctionLibraryPrompt,
-                    content: window.FunctionLibraryPrompt.content()
-                };
-                codeSectionPrompt.items.push(evaluatedPrompt);
-            } else {
-                codeSectionPrompt.items.push(window.FunctionLibraryPrompt);
-            }
-        }
-        
-        // Add Agent orchestration example to the Code section
-        if (window.AgentOrchestrationPrompt) {
-            codeSectionPrompt.items.push(window.AgentOrchestrationPrompt);
-        }
-        
-        // Add API auth using libsodium to the Code section
-        if (window.defaultPrompts && window.defaultPrompts['API auth using libsodium']) {
-            codeSectionPrompt.items.push({
-                id: 'api-auth-libsodium',
-                name: 'API auth using libsodium',
-                content: window.defaultPrompts['API auth using libsodium'].content
-            });
-        }
-        
-        // Add OpenAI Proxies as a single comprehensive prompt to the Code section
-        if (window.OpenAIProxiesPythonPrompt) {
-            console.log("Adding OpenAI Proxies Python prompt to Code section:", window.OpenAIProxiesPythonPrompt);
-            codeSectionPrompt.items.push(window.OpenAIProxiesPythonPrompt);
-        } else {
-            console.log("OpenAI Proxies Python prompt not found!");
-        }
-        
-        // Add MCP SDK README to the Code section
-        if (window.McpSdkReadmePrompt) {
-            codeSectionPrompt.items.push(window.McpSdkReadmePrompt);
-        }
-        
-        // Add the Code section to the default prompts
-        DEFAULT_PROMPTS.push(codeSectionPrompt);
-    } else {
-        // Fallback if Code section is not available
-        // Function Library
-        if (window.FunctionLibraryPrompt) {
-            // If the content is a function, we need to evaluate it
-            if (typeof window.FunctionLibraryPrompt.content === 'function') {
-                // Create a copy of the prompt with the evaluated content
-                const evaluatedPrompt = {
-                    ...window.FunctionLibraryPrompt,
-                    content: window.FunctionLibraryPrompt.content()
-                };
-                DEFAULT_PROMPTS.push(evaluatedPrompt);
-            } else {
-                DEFAULT_PROMPTS.push(window.FunctionLibraryPrompt);
-            }
-        }
-        
-        // Agent orchestration example
-        if (window.AgentOrchestrationPrompt) {
-            DEFAULT_PROMPTS.push(window.AgentOrchestrationPrompt);
-        }
-        
-        // API auth using libsodium
-        if (window.defaultPrompts && window.defaultPrompts['API auth using libsodium']) {
-            DEFAULT_PROMPTS.push({
-                id: 'api-auth-libsodium',
-                name: 'API auth using libsodium',
-                content: window.defaultPrompts['API auth using libsodium'].content
-            });
-        }
-        
-        // OpenAI Proxies (fallback)
-        if (window.OpenAIProxiesPythonPrompt) {
-            DEFAULT_PROMPTS.push(window.OpenAIProxiesPythonPrompt);
-        }
-        
-        // MCP SDK README (fallback)
-        if (window.McpSdkReadmePrompt) {
-            DEFAULT_PROMPTS.push(window.McpSdkReadmePrompt);
-        }
-    }
-    
-    // 2. Agent Examples section with 8 agent prompts (immediately after Code)
-    if (window.AgentExamplesPrompt) {
-        // Create a copy of the Agent Examples section prompt
-        const agentExamplesPrompt = { ...window.AgentExamplesPrompt };
-        agentExamplesPrompt.items = [];
-        
-        // Add individual agent prompts to the section
-        if (window.AgentPlanningSpecialistPrompt) {
-            agentExamplesPrompt.items.push(window.AgentPlanningSpecialistPrompt);
-        }
-        
-        if (window.AgentResearchSpecialistPrompt) {
-            agentExamplesPrompt.items.push(window.AgentResearchSpecialistPrompt);
-        }
-        
-        if (window.AgentCodingSpecialistPrompt) {
-            agentExamplesPrompt.items.push(window.AgentCodingSpecialistPrompt);
-        }
-        
-        if (window.AgentTestingSpecialistPrompt) {
-            agentExamplesPrompt.items.push(window.AgentTestingSpecialistPrompt);
-        }
-        
-        if (window.AgentDocumentationSpecialistPrompt) {
-            agentExamplesPrompt.items.push(window.AgentDocumentationSpecialistPrompt);
-        }
-        
-        if (window.AgentSecurityAnalystPrompt) {
-            agentExamplesPrompt.items.push(window.AgentSecurityAnalystPrompt);
-        }
-        
-        if (window.AgentDataAnalystPrompt) {
-            agentExamplesPrompt.items.push(window.AgentDataAnalystPrompt);
-        }
-        
-        if (window.AgentProjectManagerPrompt) {
-            agentExamplesPrompt.items.push(window.AgentProjectManagerPrompt);
-        }
-        
-        // Add the Agent Examples section to the default prompts
-        DEFAULT_PROMPTS.push(agentExamplesPrompt);
-    }
-    
-    // 3. About hacka.re Project
+    // 1. About hacka.re Project
     if (window.HackaReProjectPrompt) {
         DEFAULT_PROMPTS.push(window.HackaReProjectPrompt);
     }
     
-    // 4. The urgency of interpretability
+    // 2. The urgency of interpretability
     if (window.InterpretabilityUrgencyPrompt) {
         DEFAULT_PROMPTS.push(window.InterpretabilityUrgencyPrompt);
     }
     
-    // 5. OWASP Top 10 for LLM Applications
+    // 3. OWASP Top 10 for LLM Applications
     if (window.OwaspLlmTop10Prompt) {
         DEFAULT_PROMPTS.push(window.OwaspLlmTop10Prompt);
     }
     
-    // Additional prompts can be added here in the future
-    
-    console.log(`Loaded ${DEFAULT_PROMPTS.length} default prompts`);
-    console.log("Default prompts structure:", DEFAULT_PROMPTS);
-    
-    // Debug the Code section specifically
-    const codeSection = DEFAULT_PROMPTS.find(p => p.id === 'code-section');
-    if (codeSection) {
-        console.log("Code section found with items:", codeSection.items);
-        console.log("Code section items count:", codeSection.items ? codeSection.items.length : 0);
-    } else {
-        console.log("Code section not found in DEFAULT_PROMPTS");
-    }
+    console.log(`Loaded ${DEFAULT_PROMPTS.length} default prompts for RAG functionality`);
+    console.log("Default prompts loaded:", DEFAULT_PROMPTS.map(p => p.name));
 }
     
     // Initialize prompts when the service is loaded
