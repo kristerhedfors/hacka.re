@@ -121,7 +121,7 @@ def test_agent_config_modal_closes_on_outside_click(page: Page, serve_hacka_re):
     })
 
 def test_agent_items_present(page: Page, serve_hacka_re):
-    """Test that agent items (Github, Gmail, Context7) are present in the modal."""
+    """Test that agent items (Github, Gmail) are present in the modal."""
     # Navigate to the application
     page.goto(serve_hacka_re)
     
@@ -149,16 +149,12 @@ def test_agent_items_present(page: Page, serve_hacka_re):
     expect(gmail_agent).to_be_visible()
     expect(gmail_agent.locator('h4')).to_have_text("Gmail")
     
-    # Check for Context7 agent item 
-    context7_agent = page.locator('[data-agent="context7"]')
-    expect(context7_agent).to_be_visible()
-    expect(context7_agent.locator('h4')).to_have_text("Context7")
     
     # Take a screenshot with debug info
     screenshot_with_markdown(page, "agent_items_present", {
         "Status": "Agent items verified",
         "Modal": "Agent Modal",
-        "Agents": "GitHub, Gmail, Context7 all present"
+        "Agents": "GitHub, Gmail all present"
     })
 
 def test_agent_checkboxes_and_buttons(page: Page, serve_hacka_re):
