@@ -290,7 +290,7 @@
         shodan: {
             name: 'Shodan',
             icon: 'fas fa-search',
-            description: 'Search engine for Internet-connected devices and services',
+            description: 'Comprehensive Internet intelligence platform - search, scan, monitor, and analyze Internet-connected devices',
             authType: 'api-key',
             apiBaseUrl: 'https://api.shodan.io',
             setupInstructions: {
@@ -300,20 +300,165 @@
                     'Visit your account page to find your API key',
                     'Copy your API key from the "API Key" section',
                     'Enter the API key when prompted',
-                    'The API key will be encrypted and stored locally'
+                    'The API key will be encrypted and stored locally',
+                    'Note: Some features require paid plans (scanning, alerts, etc.)'
                 ],
                 docUrl: 'https://developer.shodan.io/api'
             },
             tools: {
-                shodan_host_lookup: {
-                    description: 'Look up information about an IP address using Shodan',
+                // Search Methods
+                shodan_host_info: {
+                    description: 'Get detailed information about an IP address including services, vulnerabilities, and location',
                     parameters: {
                         type: 'object',
                         properties: {
-                            ip: {
-                                type: 'string',
-                                description: 'The IP address to look up (e.g., "8.8.8.8")'
-                            }
+                            ip: { type: 'string', description: 'The IP address to look up' },
+                            history: { type: 'boolean', description: 'Show historical banners', default: false },
+                            minify: { type: 'boolean', description: 'Minify banner and remove metadata', default: false }
+                        },
+                        required: ['ip']
+                    }
+                },
+                shodan_search: {
+                    description: 'Search Shodan database using filters and search queries',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            query: { type: 'string', description: 'Search query (e.g., "apache", "port:80", "country:US")' },
+                            facets: { type: 'string', description: 'Comma-separated list of facets (e.g., "country,port,org")' },
+                            page: { type: 'integer', description: 'Page number (1-indexed)', default: 1 },
+                            minify: { type: 'boolean', description: 'Minify results', default: false }
+                        },
+                        required: ['query']
+                    }
+                },
+                shodan_search_count: {
+                    description: 'Get the number of results for a search query without returning actual results',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            query: { type: 'string', description: 'Search query' },
+                            facets: { type: 'string', description: 'Comma-separated list of facets' }
+                        },
+                        required: ['query']
+                    }
+                },
+                shodan_search_facets: {
+                    description: 'List available search facets that can be used in queries',
+                    parameters: {
+                        type: 'object',
+                        properties: {},
+                        required: []
+                    }
+                },
+                shodan_search_filters: {
+                    description: 'List available search filters and their descriptions',
+                    parameters: {
+                        type: 'object',
+                        properties: {},
+                        required: []
+                    }
+                },
+                shodan_search_tokens: {
+                    description: 'Break down a search query into tokens and show how Shodan parses it',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            query: { type: 'string', description: 'Search query to tokenize' }
+                        },
+                        required: ['query']
+                    }
+                },
+                
+                // Scanning Methods
+                shodan_scan: {
+                    description: 'Request Shodan to crawl network blocks or IP addresses',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            ips: { type: 'string', description: 'Comma-separated list of IPs to scan' },
+                            force: { type: 'boolean', description: 'Force re-scan of IP addresses', default: false }
+                        },
+                        required: ['ips']
+                    }
+                },
+                shodan_scan_protocols: {
+                    description: 'List protocols that Shodan crawls',
+                    parameters: {
+                        type: 'object',
+                        properties: {},
+                        required: []
+                    }
+                },
+                
+                // DNS Methods
+                shodan_dns_domain: {
+                    description: 'Get information about a domain including subdomains and DNS records',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            domain: { type: 'string', description: 'Domain name (e.g., "google.com")' },
+                            history: { type: 'boolean', description: 'Include historical DNS data', default: false },
+                            type: { type: 'string', description: 'DNS record type filter', enum: ['A', 'AAAA', 'CNAME', 'NS', 'MX', 'TXT'] },
+                            page: { type: 'integer', description: 'Page number', default: 1 }
+                        },
+                        required: ['domain']
+                    }
+                },
+                shodan_dns_resolve: {
+                    description: 'Resolve hostnames to IP addresses',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            hostnames: { type: 'string', description: 'Comma-separated list of hostnames' }
+                        },
+                        required: ['hostnames']
+                    }
+                },
+                shodan_dns_reverse: {
+                    description: 'Resolve IP addresses to hostnames',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            ips: { type: 'string', description: 'Comma-separated list of IP addresses' }
+                        },
+                        required: ['ips']
+                    }
+                },
+                
+                // Account and Utility Methods
+                shodan_account_profile: {
+                    description: 'Get account profile information including credits and plan details',
+                    parameters: {
+                        type: 'object',
+                        properties: {},
+                        required: []
+                    }
+                },
+                shodan_api_info: {
+                    description: 'Get API plan information and usage statistics',
+                    parameters: {
+                        type: 'object',
+                        properties: {},
+                        required: []
+                    }
+                },
+                shodan_tools_myip: {
+                    description: 'Get your external IP address as seen by Shodan',
+                    parameters: {
+                        type: 'object',
+                        properties: {},
+                        required: []
+                    }
+                },
+                
+                // Security Analysis
+                shodan_labs_honeyscore: {
+                    description: 'Calculate the probability that an IP is a honeypot (0.0-1.0)',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            ip: { type: 'string', description: 'IP address to check' }
                         },
                         required: ['ip']
                     }
@@ -2056,23 +2201,125 @@
          */
         async executeShodanTool(toolName, params, connection) {
             const { apiKey } = connection;
-            let url, method = 'GET';
+            let url, method = 'GET', body = null;
 
+            // Build API request based on tool
             switch (toolName) {
-                case 'shodan_host_lookup':
+                // Search Methods
+                case 'shodan_host_info':
                     if (!params.ip) {
                         throw new Error('IP address is required for host lookup');
                     }
-                    
-                    // Validate IP format (basic validation)
                     const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
                     if (!ipRegex.test(params.ip)) {
                         throw new Error('Invalid IP address format. Please provide a valid IPv4 address.');
                     }
-                    
                     url = `https://api.shodan.io/shodan/host/${params.ip}?key=${encodeURIComponent(apiKey)}`;
+                    if (params.history) url += '&history=true';
+                    if (params.minify) url += '&minify=true';
                     break;
-                    
+
+                case 'shodan_search':
+                    if (!params.query) {
+                        throw new Error('Search query is required');
+                    }
+                    url = `https://api.shodan.io/shodan/host/search?key=${encodeURIComponent(apiKey)}&query=${encodeURIComponent(params.query)}`;
+                    if (params.facets) url += `&facets=${encodeURIComponent(params.facets)}`;
+                    if (params.page) url += `&page=${params.page}`;
+                    if (params.minify) url += '&minify=true';
+                    break;
+
+                case 'shodan_search_count':
+                    if (!params.query) {
+                        throw new Error('Search query is required');
+                    }
+                    url = `https://api.shodan.io/shodan/host/count?key=${encodeURIComponent(apiKey)}&query=${encodeURIComponent(params.query)}`;
+                    if (params.facets) url += `&facets=${encodeURIComponent(params.facets)}`;
+                    break;
+
+                case 'shodan_search_facets':
+                    url = `https://api.shodan.io/shodan/host/search/facets?key=${encodeURIComponent(apiKey)}`;
+                    break;
+
+                case 'shodan_search_filters':
+                    url = `https://api.shodan.io/shodan/host/search/filters?key=${encodeURIComponent(apiKey)}`;
+                    break;
+
+                case 'shodan_search_tokens':
+                    if (!params.query) {
+                        throw new Error('Search query is required');
+                    }
+                    url = `https://api.shodan.io/shodan/host/search/tokens?key=${encodeURIComponent(apiKey)}&query=${encodeURIComponent(params.query)}`;
+                    break;
+
+                // Scanning Methods
+                case 'shodan_scan':
+                    if (!params.ips) {
+                        throw new Error('IP addresses are required for scanning');
+                    }
+                    url = `https://api.shodan.io/shodan/scan?key=${encodeURIComponent(apiKey)}`;
+                    method = 'POST';
+                    body = new URLSearchParams({
+                        ips: params.ips,
+                        force: params.force || false
+                    });
+                    break;
+
+                case 'shodan_scan_protocols':
+                    url = `https://api.shodan.io/shodan/protocols?key=${encodeURIComponent(apiKey)}`;
+                    break;
+
+                // DNS Methods
+                case 'shodan_dns_domain':
+                    if (!params.domain) {
+                        throw new Error('Domain is required');
+                    }
+                    url = `https://api.shodan.io/dns/domain/${encodeURIComponent(params.domain)}?key=${encodeURIComponent(apiKey)}`;
+                    if (params.history) url += '&history=true';
+                    if (params.type) url += `&type=${params.type}`;
+                    if (params.page) url += `&page=${params.page}`;
+                    break;
+
+                case 'shodan_dns_resolve':
+                    if (!params.hostnames) {
+                        throw new Error('Hostnames are required');
+                    }
+                    url = `https://api.shodan.io/dns/resolve?key=${encodeURIComponent(apiKey)}&hostnames=${encodeURIComponent(params.hostnames)}`;
+                    break;
+
+                case 'shodan_dns_reverse':
+                    if (!params.ips) {
+                        throw new Error('IP addresses are required');
+                    }
+                    url = `https://api.shodan.io/dns/reverse?key=${encodeURIComponent(apiKey)}&ips=${encodeURIComponent(params.ips)}`;
+                    break;
+
+                // Account Methods
+                case 'shodan_account_profile':
+                    url = `https://api.shodan.io/account/profile?key=${encodeURIComponent(apiKey)}`;
+                    break;
+
+                case 'shodan_api_info':
+                    url = `https://api.shodan.io/api-info?key=${encodeURIComponent(apiKey)}`;
+                    break;
+
+                // Tools Methods
+                case 'shodan_tools_myip':
+                    url = `https://api.shodan.io/tools/myip?key=${encodeURIComponent(apiKey)}`;
+                    break;
+
+                // Labs Methods
+                case 'shodan_labs_honeyscore':
+                    if (!params.ip) {
+                        throw new Error('IP address is required');
+                    }
+                    const honeyIpRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
+                    if (!honeyIpRegex.test(params.ip)) {
+                        throw new Error('Invalid IP address format. Please provide a valid IPv4 address.');
+                    }
+                    url = `https://api.shodan.io/labs/honeyscore/${encodeURIComponent(params.ip)}?key=${encodeURIComponent(apiKey)}`;
+                    break;
+
                 default:
                     throw new Error(`Unknown Shodan tool: ${toolName}`);
             }
@@ -2080,18 +2327,29 @@
             try {
                 console.log(`[MCP Service Connectors] Calling Shodan API: ${url.replace(apiKey, 'REDACTED')}`);
                 
-                const response = await fetch(url, {
+                const requestOptions = {
                     method: method,
                     headers: {
-                        'Accept': 'application/json',
+                        'Accept': 'application/json'
                     }
-                });
+                };
+
+                if (body) {
+                    requestOptions.body = body;
+                    requestOptions.headers['Content-Type'] = 'application/x-www-form-urlencoded';
+                }
+
+                const response = await fetch(url, requestOptions);
 
                 if (!response.ok) {
                     if (response.status === 401) {
                         throw new Error('Invalid Shodan API key. Please check your API key.');
+                    } else if (response.status === 402) {
+                        throw new Error('Insufficient credits or plan limitations. Some features require a paid Shodan account.');
+                    } else if (response.status === 403) {
+                        throw new Error('Access forbidden. Check your API key permissions.');
                     } else if (response.status === 404) {
-                        throw new Error(`No information found for IP ${params.ip} in Shodan database.`);
+                        throw new Error(`Resource not found. ${params.ip ? `No information found for IP ${params.ip}` : 'The requested resource does not exist'}.`);
                     } else if (response.status === 429) {
                         throw new Error('Shodan API rate limit exceeded. Please try again later.');
                     } else {
@@ -2102,13 +2360,8 @@
 
                 const data = await response.json();
                 
-                // Format the response nicely for better readability
-                switch (toolName) {
-                    case 'shodan_host_lookup':
-                        return this.formatShodanHostResponse(data, params.ip);
-                    default:
-                        return data;
-                }
+                // Format the response for better readability
+                return this.formatShodanResponse(toolName, data, params);
                 
             } catch (error) {
                 console.error(`[MCP Service Connectors] Shodan API error:`, error);
@@ -2117,9 +2370,111 @@
         }
 
         /**
-         * Format Shodan host response for better readability
+         * Format Shodan API responses for better readability
          */
-        formatShodanHostResponse(data, ip) {
+        formatShodanResponse(toolName, data, params) {
+            switch (toolName) {
+                case 'shodan_host_info':
+                    return this.formatHostInfoResponse(data, params.ip);
+                
+                case 'shodan_search':
+                    return this.formatSearchResponse(data);
+                
+                case 'shodan_search_count':
+                    return {
+                        query: params.query,
+                        total_results: data.total,
+                        credits_consumed: data.credits || 'Unknown',
+                        facets: data.facets || {}
+                    };
+                
+                case 'shodan_search_facets':
+                case 'shodan_search_filters':
+                    return {
+                        available_items: data,
+                        count: Array.isArray(data) ? data.length : Object.keys(data).length
+                    };
+                
+                case 'shodan_search_tokens':
+                    return {
+                        query: params.query,
+                        parsed_tokens: data.tokens || data,
+                        filters: data.filters || {},
+                        errors: data.errors || []
+                    };
+                
+                case 'shodan_scan':
+                    return {
+                        scan_id: data.id,
+                        credits_left: data.credits_left,
+                        status: 'Scan submitted successfully',
+                        ips_scanned: params.ips
+                    };
+                
+                case 'shodan_scan_protocols':
+                    return {
+                        supported_protocols: data,
+                        count: Object.keys(data).length
+                    };
+                
+                case 'shodan_dns_domain':
+                    return this.formatDomainResponse(data, params.domain);
+                
+                case 'shodan_dns_resolve':
+                case 'shodan_dns_reverse':
+                    return {
+                        query: params.hostnames || params.ips,
+                        results: data,
+                        resolved_count: Object.keys(data).length
+                    };
+                
+                case 'shodan_account_profile':
+                    return {
+                        username: data.username || data.display_name,
+                        email: data.email,
+                        member_since: data.created,
+                        credits: data.credits,
+                        upgrade_type: data.upgrade_type || 'Free',
+                        total_usage: data.usage || {}
+                    };
+                
+                case 'shodan_api_info':
+                    return {
+                        plan: data.plan,
+                        usage: {
+                            query_credits: data.query_credits,
+                            scan_credits: data.scan_credits,
+                            monitored_ips: data.monitored_ips
+                        },
+                        unlocked_features: data.unlocked || []
+                    };
+                
+                case 'shodan_tools_myip':
+                    return {
+                        external_ip: data.ip || data,
+                        source: 'Shodan'
+                    };
+                
+                case 'shodan_labs_honeyscore':
+                    return {
+                        ip: params.ip,
+                        honeypot_probability: data,
+                        risk_level: data > 0.7 ? 'High' : data > 0.4 ? 'Medium' : 'Low',
+                        description: `${Math.round(data * 100)}% chance this IP is a honeypot`
+                    };
+                
+                default:
+                    return {
+                        tool: toolName,
+                        raw_response: data
+                    };
+            }
+        }
+
+        /**
+         * Format host information response
+         */
+        formatHostInfoResponse(data, ip) {
             const result = {
                 ip: ip,
                 basic_info: {}
@@ -2136,7 +2491,7 @@
             // Open ports and services
             if (data.data && data.data.length > 0) {
                 result.services = [];
-                for (const service of data.data.slice(0, 10)) { // Limit to first 10 services
+                for (const service of data.data.slice(0, 15)) {
                     const serviceInfo = {
                         port: service.port,
                         protocol: service.transport || 'tcp',
@@ -2144,7 +2499,8 @@
                     };
                     
                     if (service.version) serviceInfo.version = service.version;
-                    if (service.data && service.data.length < 200) {
+                    if (service.cpe && service.cpe.length > 0) serviceInfo.cpe = service.cpe;
+                    if (service.data && service.data.length < 300) {
                         serviceInfo.banner = service.data.trim();
                     }
                     
@@ -2154,16 +2510,87 @@
 
             // Vulnerabilities
             if (data.vulns && Object.keys(data.vulns).length > 0) {
-                result.vulnerabilities = Object.keys(data.vulns).slice(0, 5); // Limit to first 5 CVEs
+                result.vulnerabilities = Object.keys(data.vulns).slice(0, 10);
+                result.vulnerability_count = Object.keys(data.vulns).length;
             }
 
             // Additional metadata
             if (data.last_update) result.last_updated = data.last_update;
             if (data.hostnames && data.hostnames.length > 0) result.hostnames = data.hostnames;
+            if (data.tags && data.tags.length > 0) result.tags = data.tags;
 
             return {
-                formatted_result: result,
-                raw_data: data // Include raw data for advanced users
+                summary: result,
+                raw_data: data // Include raw data for advanced analysis
+            };
+        }
+
+        /**
+         * Format search response
+         */
+        formatSearchResponse(data) {
+            const result = {
+                total_results: data.total,
+                results_shown: data.matches ? data.matches.length : 0,
+                matches: []
+            };
+
+            if (data.matches) {
+                for (const match of data.matches.slice(0, 10)) {
+                    const matchInfo = {
+                        ip: match.ip_str,
+                        port: match.port,
+                        protocol: match.transport || 'tcp',
+                        service: match.product || 'Unknown',
+                        location: {
+                            country: match.location?.country_name,
+                            city: match.location?.city,
+                            region: match.location?.region_code
+                        },
+                        organization: match.org,
+                        timestamp: match.timestamp
+                    };
+                    
+                    if (match.vulns && Object.keys(match.vulns).length > 0) {
+                        matchInfo.vulnerabilities = Object.keys(match.vulns).slice(0, 3);
+                    }
+                    
+                    result.matches.push(matchInfo);
+                }
+            }
+
+            if (data.facets) {
+                result.facets = data.facets;
+            }
+
+            return result;
+        }
+
+        /**
+         * Format domain response
+         */
+        formatDomainResponse(data, domain) {
+            const result = {
+                domain: domain,
+                subdomains: data.subdomains || [],
+                subdomain_count: data.subdomains ? data.subdomains.length : 0,
+                dns_records: []
+            };
+
+            if (data.data) {
+                for (const record of data.data.slice(0, 20)) {
+                    result.dns_records.push({
+                        subdomain: record.subdomain,
+                        type: record.type,
+                        value: record.value,
+                        last_seen: record.last_seen
+                    });
+                }
+            }
+
+            return {
+                summary: result,
+                raw_data: data
             };
         }
 
