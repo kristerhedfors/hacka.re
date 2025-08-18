@@ -14,6 +14,11 @@
         min-height: auto; /* Allow header to grow */
     }
     
+    /* Tighten spacing between header buttons on mobile */
+    .settings {
+        gap: 0.0625rem; /* Reduce from 0.125rem to squeeze more space */
+    }
+    
     
     /* Logo text container adjustments for mobile */
     .logo-text-container {
