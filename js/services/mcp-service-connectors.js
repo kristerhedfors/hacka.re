@@ -2789,38 +2789,51 @@
          */
         async showAPIKeyInputDialog(serviceKey, config) {
             return new Promise((resolve) => {
+                // Remove any existing modal first
+                const existingModal = document.getElementById('api-key-modal');
+                if (existingModal) {
+                    existingModal.remove();
+                }
+                
                 const modal = document.createElement('div');
                 modal.className = 'modal active';
                 modal.id = 'api-key-modal';
                 
                 modal.innerHTML = `
                     <div class="modal-content">
-                        <h3><i class="${config.icon}"></i> ${config.name} API Key</h3>
+                        <h3>${config.name} API Key Setup</h3>
                         
-                        <div class="api-key-instructions">
-                            <p><strong>To connect ${config.name}:</strong></p>
+                        <div class="oauth-setup-instructions">
+                            <h4>Setup Instructions:</h4>
                             <ol>
                                 ${config.setupInstructions.steps.map(step => `<li>${step}</li>`).join('')}
                             </ol>
+                            
                             <p class="form-help">
                                 <a href="${config.setupInstructions.docUrl}" target="_blank">
-                                    View documentation <i class="fas fa-external-link-alt"></i>
+                                    View official documentation <i class="fas fa-external-link-alt"></i>
                                 </a>
                             </p>
                         </div>
                         
-                        <div class="form-group">
-                            <label for="api-key-input">API Key:</label>
-                            <input type="password" id="api-key-input" placeholder="Enter your ${config.name} API key" 
-                                   style="width: 100%; font-family: monospace;">
-                            <div class="form-help">Your API key will be encrypted and stored locally.</div>
-                        </div>
-                        
-                        <div class="modal-actions">
-                            <button id="api-key-connect" class="btn-primary">
-                                <i class="fas fa-link"></i> Connect
-                            </button>
-                            <button id="api-key-cancel" class="btn-secondary">Cancel</button>
+                        <div class="oauth-credentials-form">
+                            <div class="form-group">
+                                <label for="api-key-input">API Key</label>
+                                <input type="password" 
+                                       id="api-key-input" 
+                                       placeholder="Enter your ${config.name} API key" 
+                                       class="mcp-input" />
+                                <small class="form-help">Your API key will be encrypted and stored locally</small>
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button class="btn primary-btn" id="api-key-connect">
+                                    Save & Connect
+                                </button>
+                                <button class="btn secondary-btn" id="api-key-cancel">
+                                    Cancel
+                                </button>
+                            </div>
                         </div>
                     </div>
                 `;
