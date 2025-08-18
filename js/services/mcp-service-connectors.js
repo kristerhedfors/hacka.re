@@ -36,13 +36,13 @@
         gmail: {
             name: 'Gmail',
             icon: 'fas fa-envelope',
-            description: 'Access Gmail messages and send emails',
+            description: 'Comprehensive READ ONLY access to Gmail messages, threads, and labels',
             authType: 'oauth-web',
             apiBaseUrl: 'https://gmail.googleapis.com/gmail/v1',
             oauthConfig: {
                 authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
                 tokenEndpoint: 'https://oauth2.googleapis.com/token',
-                scope: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send',
+                scope: 'https://www.googleapis.com/auth/gmail.readonly',
                 clientId: '', // To be configured by user
                 requiresClientSecret: true,
                 redirectUri: 'urn:ietf:wg:oauth:2.0:oob',
@@ -63,51 +63,144 @@
             },
             tools: {
                 list_messages: {
-                    description: 'List Gmail messages',
+                    description: 'List Gmail messages with rich metadata (subject, sender, date, snippet)',
                     parameters: {
                         type: 'object',
                         properties: {
                             query: { type: 'string', description: 'Gmail search query (e.g., "is:unread")' },
                             maxResults: { type: 'number', default: 10, maximum: 100 },
-                            labelIds: { type: 'array', items: { type: 'string' } }
+                            labelIds: { type: 'array', items: { type: 'string' } },
+                            format: { type: 'string', enum: ['minimal', 'metadata', 'full'], default: 'metadata', description: 'Response format - metadata includes subject, from, snippet' },
+                            pageToken: { type: 'string', description: 'Token for pagination' }
                         }
                     }
                 },
                 get_message: {
-                    description: 'Get a specific email message',
+                    description: 'Get complete email message with headers, body, and attachments info',
                     parameters: {
                         type: 'object',
                         properties: {
-                            messageId: { type: 'string', description: 'Gmail message ID' }
+                            messageId: { type: 'string', description: 'Gmail message ID' },
+                            format: { type: 'string', enum: ['minimal', 'metadata', 'full'], default: 'full', description: 'Response format' }
                         },
                         required: ['messageId']
                     }
                 },
-                send_message: {
-                    description: 'Send an email',
+                search_messages: {
+                    description: 'Search Gmail messages with advanced criteria and rich results',
                     parameters: {
                         type: 'object',
                         properties: {
-                            to: { type: 'string' },
-                            subject: { type: 'string' },
-                            body: { type: 'string' },
-                            cc: { type: 'string' },
-                            bcc: { type: 'string' }
-                        },
-                        required: ['to', 'subject', 'body']
+                            from: { type: 'string', description: 'From email address' },
+                            to: { type: 'string', description: 'To email address' },
+                            subject: { type: 'string', description: 'Subject keywords' },
+                            after: { type: 'string', description: 'Date in YYYY/MM/DD format' },
+                            before: { type: 'string', description: 'Date in YYYY/MM/DD format' },
+                            hasAttachment: { type: 'boolean', description: 'Has attachments' },
+                            maxResults: { type: 'number', default: 10, maximum: 100 },
+                            format: { type: 'string', enum: ['minimal', 'metadata', 'full'], default: 'metadata', description: 'Response format' }
+                        }
                     }
                 },
-                search_messages: {
-                    description: 'Search Gmail messages with advanced query',
+                list_threads: {
+                    description: 'List Gmail conversation threads with participants and message counts',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            query: { type: 'string', description: 'Gmail search query' },
+                            maxResults: { type: 'number', default: 10, maximum: 100 },
+                            labelIds: { type: 'array', items: { type: 'string' } },
+                            pageToken: { type: 'string', description: 'Token for pagination' }
+                        }
+                    }
+                },
+                get_thread: {
+                    description: 'Get complete conversation thread with all messages',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            threadId: { type: 'string', description: 'Gmail thread ID' },
+                            format: { type: 'string', enum: ['minimal', 'metadata', 'full'], default: 'metadata', description: 'Message format in thread' }
+                        },
+                        required: ['threadId']
+                    }
+                },
+                list_labels: {
+                    description: 'List all Gmail labels with message counts',
+                    parameters: {
+                        type: 'object',
+                        properties: {}
+                    }
+                },
+                get_label: {
+                    description: 'Get specific Gmail label details and statistics',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            labelId: { type: 'string', description: 'Gmail label ID (e.g., "INBOX", "SENT")' }
+                        },
+                        required: ['labelId']
+                    }
+                },
+                get_profile: {
+                    description: 'Get Gmail user profile information',
+                    parameters: {
+                        type: 'object',
+                        properties: {}
+                    }
+                },
+                get_attachment: {
+                    description: 'Download email attachment',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            messageId: { type: 'string', description: 'Gmail message ID' },
+                            attachmentId: { type: 'string', description: 'Attachment ID from message' }
+                        },
+                        required: ['messageId', 'attachmentId']
+                    }
+                },
+                list_drafts: {
+                    description: 'List saved email drafts (READ ONLY)',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            maxResults: { type: 'number', default: 10, maximum: 100 },
+                            pageToken: { type: 'string', description: 'Token for pagination' }
+                        }
+                    }
+                },
+                get_history: {
+                    description: 'Get mailbox change history for synchronization',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            startHistoryId: { type: 'string', description: 'Start history ID for incremental sync' },
+                            maxResults: { type: 'number', default: 100, maximum: 500 },
+                            labelId: { type: 'string', description: 'Filter by label ID' }
+                        },
+                        required: ['startHistoryId']
+                    }
+                },
+                advanced_search: {
+                    description: 'Advanced Gmail search with multiple criteria and rich metadata',
                     parameters: {
                         type: 'object',
                         properties: {
                             from: { type: 'string' },
                             to: { type: 'string' },
                             subject: { type: 'string' },
+                            keywords: { type: 'string' },
                             after: { type: 'string', description: 'Date in YYYY/MM/DD format' },
                             before: { type: 'string', description: 'Date in YYYY/MM/DD format' },
-                            hasAttachment: { type: 'boolean' }
+                            hasAttachment: { type: 'boolean' },
+                            attachmentType: { type: 'string', description: 'File extension (pdf, doc, etc.)' },
+                            sizeOperator: { type: 'string', enum: ['larger', 'smaller'], description: 'Size comparison' },
+                            sizeBytes: { type: 'number', description: 'Size in bytes' },
+                            isUnread: { type: 'boolean' },
+                            isImportant: { type: 'boolean' },
+                            maxResults: { type: 'number', default: 20, maximum: 100 },
+                            format: { type: 'string', enum: ['minimal', 'metadata', 'full'], default: 'metadata' }
                         }
                     }
                 }
@@ -193,6 +286,185 @@
                     }
                 }
             }
+        },
+        shodan: {
+            name: 'Shodan',
+            icon: 'images/shodan-icon.svg',
+            iconType: 'svg',
+            description: 'Comprehensive Internet intelligence platform - search, scan, monitor, and analyze Internet-connected devices',
+            authType: 'api-key',
+            apiBaseUrl: 'https://api.shodan.io',
+            setupInstructions: {
+                title: 'Shodan API Key Setup',
+                steps: [
+                    'Go to shodan.io and create an account (or login if you have one)',
+                    'Visit your account page to find your API key',
+                    'Copy your API key from the "API Key" section',
+                    'Enter the API key when prompted',
+                    'The API key will be encrypted and stored locally',
+                    'Note: Some features require paid plans (scanning, alerts, etc.)'
+                ],
+                docUrl: 'https://developer.shodan.io/api'
+            },
+            tools: {
+                // Search Methods
+                shodan_host_info: {
+                    description: 'Get detailed information about an IP address including services, vulnerabilities, and location',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            ip: { type: 'string', description: 'The IP address to look up' },
+                            history: { type: 'boolean', description: 'Show historical banners', default: false },
+                            minify: { type: 'boolean', description: 'Minify banner and remove metadata', default: false }
+                        },
+                        required: ['ip']
+                    }
+                },
+                shodan_search: {
+                    description: 'Search Shodan database using filters and search queries',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            query: { type: 'string', description: 'Search query (e.g., "apache", "port:80", "country:US")' },
+                            facets: { type: 'string', description: 'Comma-separated list of facets (e.g., "country,port,org")' },
+                            page: { type: 'integer', description: 'Page number (1-indexed)', default: 1 },
+                            minify: { type: 'boolean', description: 'Minify results', default: false }
+                        },
+                        required: ['query']
+                    }
+                },
+                shodan_search_count: {
+                    description: 'Get the number of results for a search query without returning actual results',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            query: { type: 'string', description: 'Search query' },
+                            facets: { type: 'string', description: 'Comma-separated list of facets' }
+                        },
+                        required: ['query']
+                    }
+                },
+                shodan_search_facets: {
+                    description: 'List available search facets that can be used in queries',
+                    parameters: {
+                        type: 'object',
+                        properties: {},
+                        required: []
+                    }
+                },
+                shodan_search_filters: {
+                    description: 'List available search filters and their descriptions',
+                    parameters: {
+                        type: 'object',
+                        properties: {},
+                        required: []
+                    }
+                },
+                shodan_search_tokens: {
+                    description: 'Break down a search query into tokens and show how Shodan parses it',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            query: { type: 'string', description: 'Search query to tokenize' }
+                        },
+                        required: ['query']
+                    }
+                },
+                
+                // Scanning Methods
+                shodan_scan: {
+                    description: 'Request Shodan to crawl network blocks or IP addresses',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            ips: { type: 'string', description: 'Comma-separated list of IPs to scan' },
+                            force: { type: 'boolean', description: 'Force re-scan of IP addresses', default: false }
+                        },
+                        required: ['ips']
+                    }
+                },
+                shodan_scan_protocols: {
+                    description: 'List protocols that Shodan crawls',
+                    parameters: {
+                        type: 'object',
+                        properties: {},
+                        required: []
+                    }
+                },
+                
+                // DNS Methods
+                shodan_dns_domain: {
+                    description: 'Get information about a domain including subdomains and DNS records',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            domain: { type: 'string', description: 'Domain name (e.g., "google.com")' },
+                            history: { type: 'boolean', description: 'Include historical DNS data', default: false },
+                            type: { type: 'string', description: 'DNS record type filter', enum: ['A', 'AAAA', 'CNAME', 'NS', 'MX', 'TXT'] },
+                            page: { type: 'integer', description: 'Page number', default: 1 }
+                        },
+                        required: ['domain']
+                    }
+                },
+                shodan_dns_resolve: {
+                    description: 'Resolve hostnames to IP addresses',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            hostnames: { type: 'string', description: 'Comma-separated list of hostnames' }
+                        },
+                        required: ['hostnames']
+                    }
+                },
+                shodan_dns_reverse: {
+                    description: 'Resolve IP addresses to hostnames',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            ips: { type: 'string', description: 'Comma-separated list of IP addresses' }
+                        },
+                        required: ['ips']
+                    }
+                },
+                
+                // Account and Utility Methods
+                shodan_account_profile: {
+                    description: 'Get account profile information including credits and plan details',
+                    parameters: {
+                        type: 'object',
+                        properties: {},
+                        required: []
+                    }
+                },
+                shodan_api_info: {
+                    description: 'Get API plan information and usage statistics',
+                    parameters: {
+                        type: 'object',
+                        properties: {},
+                        required: []
+                    }
+                },
+                shodan_tools_myip: {
+                    description: 'Get your external IP address as seen by Shodan',
+                    parameters: {
+                        type: 'object',
+                        properties: {},
+                        required: []
+                    }
+                },
+                
+                // Security Analysis
+                shodan_labs_honeyscore: {
+                    description: 'Calculate the probability that an IP is a honeypot (0.0-1.0)',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            ip: { type: 'string', description: 'IP address to check' }
+                        },
+                        required: ['ip']
+                    }
+                }
+            }
         }
     };
 
@@ -226,6 +498,8 @@
             switch (config.authType) {
                 case 'pat':
                     return await this.connectWithPAT(serviceKey, config);
+                case 'api-key':
+                    return await this.connectWithAPIKey(serviceKey, config);
                 case 'oauth-device':
                     return await this.connectWithOAuthDevice(serviceKey, config);
                 case 'oauth-web':
@@ -528,6 +802,8 @@
                     return await this.executeGmailTool(toolName, params, connection);
                 case 'gdocs':
                     return await this.executeGDocsTool(toolName, params, connection);
+                case 'shodan':
+                    return await this.executeShodanTool(toolName, params, connection);
                 default:
                     throw new Error(`Unknown service: ${serviceKey}`);
             }
@@ -887,6 +1163,16 @@
                         return;
                     }
                     
+                    // For Gmail, check if we need to clear old tokens with outdated scope
+                    if (serviceKey === 'gmail') {
+                        const storedAuth = await window.CoreStorageService.getValue('mcp_gmail_oauth');
+                        if (storedAuth && storedAuth.scope && storedAuth.scope.includes('gmail.send')) {
+                            console.log('[MCP Service Connectors] Clearing old Gmail OAuth tokens with send permissions');
+                            await window.CoreStorageService.removeValue('mcp_gmail_oauth');
+                            await window.CoreStorageService.removeValue('gmail_mcp_connection');
+                        }
+                    }
+                    
                     // Save credentials - spread config first, then override with user values
                     const oauthConfig = {
                         ...config.oauthConfig,
@@ -1237,7 +1523,7 @@
         }
 
         /**
-         * Execute Gmail API calls
+         * Execute Gmail API calls with comprehensive READ ONLY functionality
          */
         async executeGmailTool(toolName, params, connection) {
             const { tokens } = connection;
@@ -1256,66 +1542,506 @@
                 case 'list_messages':
                     url = `https://gmail.googleapis.com/gmail/v1/users/me/messages?`;
                     if (params.query) url += `q=${encodeURIComponent(params.query)}&`;
+                    if (params.labelIds && params.labelIds.length > 0) {
+                        url += `&labelIds=${params.labelIds.map(id => encodeURIComponent(id)).join('&labelIds=')}`;
+                    }
+                    if (params.pageToken) url += `&pageToken=${encodeURIComponent(params.pageToken)}`;
+                    url += `&maxResults=${params.maxResults || 10}`;
+                    
+                    // Enhanced: If format is metadata or full, fetch rich message data
+                    const listFormat = params.format || 'metadata'; // Default to metadata for rich results
+                    if (listFormat === 'metadata' || listFormat === 'full') {
+                        const response = await this.fetchGmailData(url, tokens.accessToken);
+                        if (response.messages) {
+                            // Fetch detailed info for each message
+                            const enrichedMessages = await Promise.all(
+                                response.messages.slice(0, Math.min(response.messages.length, 50)).map(async (msg) => {
+                                    try {
+                                        const detailUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=metadata`;
+                                        const detail = await this.fetchGmailData(detailUrl, tokens.accessToken);
+                                        return this.formatMessageMetadata(detail);
+                                    } catch (error) {
+                                        console.warn(`Failed to fetch details for message ${msg.id}:`, error);
+                                        return { id: msg.id, error: 'Failed to fetch details' };
+                                    }
+                                })
+                            );
+                            response.messages = enrichedMessages;
+                        }
+                        return response;
+                    }
+                    break;
+
+                case 'get_message':
+                    const format = params.format || 'full';
+                    url = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${params.messageId}?format=${format}`;
+                    const response = await this.fetchGmailData(url, tokens.accessToken);
+                    return this.formatMessageResponse(response, format);
+
+                case 'search_messages':
+                    const searchQuery = this.buildGmailSearchQuery(params);
+                    url = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(searchQuery)}`;
+                    url += `&maxResults=${params.maxResults || 10}`;
+                    
+                    // Enhanced: Return rich metadata for search results
+                    const searchFormat = params.format || 'metadata'; // Default to metadata for rich results
+                    if (searchFormat === 'metadata' || searchFormat === 'full') {
+                        const searchResponse = await this.fetchGmailData(url, tokens.accessToken);
+                        if (searchResponse.messages) {
+                            const enrichedResults = await Promise.all(
+                                searchResponse.messages.slice(0, Math.min(searchResponse.messages.length, 20)).map(async (msg) => {
+                                    try {
+                                        const detailUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=metadata`;
+                                        const detail = await this.fetchGmailData(detailUrl, tokens.accessToken);
+                                        return this.formatMessageMetadata(detail);
+                                    } catch (error) {
+                                        return { id: msg.id, error: 'Failed to fetch details' };
+                                    }
+                                })
+                            );
+                            searchResponse.messages = enrichedResults;
+                        }
+                        return searchResponse;
+                    }
+                    break;
+
+                case 'list_threads':
+                    url = `https://gmail.googleapis.com/gmail/v1/users/me/threads?`;
+                    if (params.query) url += `q=${encodeURIComponent(params.query)}&`;
+                    if (params.labelIds && params.labelIds.length > 0) {
+                        url += `&labelIds=${params.labelIds.map(id => encodeURIComponent(id)).join('&labelIds=')}`;
+                    }
+                    if (params.pageToken) url += `&pageToken=${encodeURIComponent(params.pageToken)}`;
+                    url += `&maxResults=${params.maxResults || 10}`;
+                    break;
+
+                case 'get_thread':
+                    const threadFormat = params.format || 'metadata';
+                    url = `https://gmail.googleapis.com/gmail/v1/users/me/threads/${params.threadId}?format=${threadFormat}`;
+                    const threadResponse = await this.fetchGmailData(url, tokens.accessToken);
+                    return this.formatThreadResponse(threadResponse);
+
+                case 'list_labels':
+                    url = `https://gmail.googleapis.com/gmail/v1/users/me/labels`;
+                    break;
+
+                case 'get_label':
+                    url = `https://gmail.googleapis.com/gmail/v1/users/me/labels/${params.labelId}`;
+                    break;
+
+                case 'get_profile':
+                    url = `https://gmail.googleapis.com/gmail/v1/users/me/profile`;
+                    break;
+
+                case 'get_attachment':
+                    url = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${params.messageId}/attachments/${params.attachmentId}`;
+                    const attachmentResponse = await this.fetchGmailData(url, tokens.accessToken);
+                    return this.formatAttachmentResponse(attachmentResponse);
+
+                case 'list_drafts':
+                    url = `https://gmail.googleapis.com/gmail/v1/users/me/drafts?`;
+                    if (params.pageToken) url += `pageToken=${encodeURIComponent(params.pageToken)}&`;
                     url += `maxResults=${params.maxResults || 10}`;
                     break;
-                case 'get_message':
-                    url = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${params.messageId}`;
+
+                case 'get_history':
+                    url = `https://gmail.googleapis.com/gmail/v1/users/me/history?`;
+                    url += `startHistoryId=${encodeURIComponent(params.startHistoryId)}`;
+                    if (params.labelId) url += `&labelId=${encodeURIComponent(params.labelId)}`;
+                    url += `&maxResults=${params.maxResults || 100}`;
                     break;
-                case 'send_message':
-                    url = `https://gmail.googleapis.com/gmail/v1/users/me/messages/send`;
-                    method = 'POST';
-                    // Create email in RFC 2822 format
-                    const email = this.createEmailMessage(params);
-                    body = JSON.stringify({ raw: btoa(email).replace(/\+/g, '-').replace(/\//g, '_') });
-                    break;
-                case 'search_messages':
-                    const query = this.buildGmailSearchQuery(params);
-                    url = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}`;
-                    break;
+
+                case 'advanced_search':
+                    const advancedQuery = this.buildAdvancedGmailQuery(params);
+                    url = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(advancedQuery)}`;
+                    url += `&maxResults=${params.maxResults || 20}`;
+                    
+                    // Return rich results for advanced search
+                    const advancedResponse = await this.fetchGmailData(url, tokens.accessToken);
+                    const advancedFormat = params.format || 'metadata'; // Default to metadata for rich results
+                    if (advancedResponse.messages && (advancedFormat === 'metadata' || advancedFormat === 'full')) {
+                        const enrichedAdvanced = await Promise.all(
+                            advancedResponse.messages.slice(0, Math.min(advancedResponse.messages.length, 30)).map(async (msg) => {
+                                try {
+                                    const detailUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=metadata`;
+                                    const detail = await this.fetchGmailData(detailUrl, tokens.accessToken);
+                                    return this.formatMessageMetadata(detail);
+                                } catch (error) {
+                                    return { id: msg.id, error: 'Failed to fetch details' };
+                                }
+                            })
+                        );
+                        advancedResponse.messages = enrichedAdvanced;
+                        advancedResponse.searchQuery = advancedQuery;
+                        advancedResponse.searchCriteria = params;
+                    }
+                    return advancedResponse;
+
                 default:
                     throw new Error(`Unknown Gmail tool: ${toolName}`);
             }
 
-            const response = await fetch(url, {
-                method,
-                headers: {
-                    'Authorization': `Bearer ${tokens.accessToken}`,
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                },
-                body
-            });
+            // For simple cases without special processing
+            if (url) {
+                return await this.fetchGmailData(url, tokens.accessToken);
+            }
+        }
 
-            if (!response.ok) {
-                throw new Error(`Gmail API error: ${response.status} ${response.statusText}`);
+        /**
+         * Fetch Gmail data with proper error handling
+         */
+        async fetchGmailData(url, accessToken) {
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    let errorMessage = `Gmail API error: ${response.status} ${response.statusText}`;
+                    
+                    try {
+                        const errorJson = JSON.parse(errorText);
+                        if (errorJson.error && errorJson.error.message) {
+                            errorMessage += ` - ${errorJson.error.message}`;
+                        }
+                    } catch (e) {
+                        errorMessage += ` - ${errorText}`;
+                    }
+                    
+                    throw new Error(errorMessage);
+                }
+
+                return await response.json();
+            } catch (error) {
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    throw new Error('Network error while connecting to Gmail API');
+                }
+                throw error;
+            }
+        }
+
+        /**
+         * Format message metadata for rich display
+         */
+        formatMessageMetadata(message) {
+            const formatted = {
+                id: message.id,
+                threadId: message.threadId,
+                labelIds: message.labelIds || [],
+                snippet: message.snippet || '',
+                sizeEstimate: message.sizeEstimate || 0,
+                internalDate: message.internalDate ? new Date(parseInt(message.internalDate)).toISOString() : null
+            };
+
+            // Extract headers for better display
+            if (message.payload && message.payload.headers) {
+                const headers = {};
+                for (const header of message.payload.headers) {
+                    headers[header.name.toLowerCase()] = header.value;
+                }
+                
+                formatted.subject = headers.subject || '(No Subject)';
+                formatted.from = headers.from || 'Unknown Sender';
+                formatted.to = headers.to || '';
+                formatted.date = headers.date || '';
+                formatted.cc = headers.cc || '';
+                formatted.bcc = headers.bcc || '';
+                
+                // Parse date for better formatting
+                if (headers.date) {
+                    try {
+                        formatted.parsedDate = new Date(headers.date).toISOString();
+                    } catch (e) {
+                        formatted.parsedDate = null;
+                    }
+                }
             }
 
-            return await response.json();
+            // Check for attachments
+            if (message.payload) {
+                formatted.hasAttachments = this.messageHasAttachments(message.payload);
+                if (formatted.hasAttachments) {
+                    formatted.attachments = this.extractAttachmentInfo(message.payload);
+                }
+            }
+
+            // Determine read status
+            formatted.isUnread = message.labelIds ? message.labelIds.includes('UNREAD') : false;
+            formatted.isImportant = message.labelIds ? message.labelIds.includes('IMPORTANT') : false;
+
+            return formatted;
         }
 
         /**
-         * Create email message in RFC 2822 format
+         * Format full message response
          */
-        createEmailMessage(params) {
-            let email = '';
-            email += `To: ${params.to}\r\n`;
-            if (params.cc) email += `Cc: ${params.cc}\r\n`;
-            if (params.bcc) email += `Bcc: ${params.bcc}\r\n`;
-            email += `Subject: ${params.subject}\r\n`;
-            email += `Content-Type: text/plain; charset="UTF-8"\r\n`;
-            email += `\r\n`;
-            email += params.body;
-            return email;
+        formatMessageResponse(message, format) {
+            if (format === 'minimal') {
+                return { id: message.id, threadId: message.threadId };
+            }
+
+            const formatted = this.formatMessageMetadata(message);
+
+            if (format === 'full' && message.payload) {
+                // Extract body content
+                formatted.body = this.extractMessageBody(message.payload);
+                formatted.textContent = this.extractTextContent(message.payload);
+                formatted.htmlContent = this.extractHtmlContent(message.payload);
+            }
+
+            return formatted;
         }
 
         /**
-         * Build Gmail search query from parameters
+         * Format thread response with summary
+         */
+        formatThreadResponse(thread) {
+            const formatted = {
+                id: thread.id,
+                historyId: thread.historyId,
+                messageCount: thread.messages ? thread.messages.length : 0,
+                messages: []
+            };
+
+            if (thread.messages) {
+                // Get participants and subject from first message
+                const firstMessage = thread.messages[0];
+                if (firstMessage && firstMessage.payload && firstMessage.payload.headers) {
+                    const headers = {};
+                    for (const header of firstMessage.payload.headers) {
+                        headers[header.name.toLowerCase()] = header.value;
+                    }
+                    formatted.subject = headers.subject || '(No Subject)';
+                    formatted.participants = this.extractParticipants(thread.messages);
+                }
+
+                // Format each message in thread
+                formatted.messages = thread.messages.map(msg => this.formatMessageMetadata(msg));
+            }
+
+            return formatted;
+        }
+
+        /**
+         * Format attachment response
+         */
+        formatAttachmentResponse(attachment) {
+            return {
+                attachmentId: attachment.attachmentId,
+                size: attachment.size,
+                data: attachment.data, // Base64 encoded
+                filename: attachment.filename || 'attachment'
+            };
+        }
+
+        /**
+         * Check if message has attachments
+         */
+        messageHasAttachments(payload) {
+            if (payload.parts) {
+                return payload.parts.some(part => 
+                    part.filename && part.filename.length > 0 ||
+                    (part.body && part.body.attachmentId)
+                );
+            }
+            return payload.body && payload.body.attachmentId;
+        }
+
+        /**
+         * Extract attachment information
+         */
+        extractAttachmentInfo(payload) {
+            const attachments = [];
+            
+            const extractFromPart = (part) => {
+                if (part.filename && part.filename.length > 0 && part.body && part.body.attachmentId) {
+                    attachments.push({
+                        filename: part.filename,
+                        mimeType: part.mimeType,
+                        size: part.body.size || 0,
+                        attachmentId: part.body.attachmentId
+                    });
+                }
+                
+                if (part.parts) {
+                    part.parts.forEach(extractFromPart);
+                }
+            };
+
+            if (payload.parts) {
+                payload.parts.forEach(extractFromPart);
+            } else if (payload.filename && payload.body && payload.body.attachmentId) {
+                attachments.push({
+                    filename: payload.filename,
+                    mimeType: payload.mimeType,
+                    size: payload.body.size || 0,
+                    attachmentId: payload.body.attachmentId
+                });
+            }
+
+            return attachments;
+        }
+
+        /**
+         * Extract participants from thread messages
+         */
+        extractParticipants(messages) {
+            const participants = new Set();
+            
+            for (const message of messages) {
+                if (message.payload && message.payload.headers) {
+                    for (const header of message.payload.headers) {
+                        if (['from', 'to', 'cc', 'bcc'].includes(header.name.toLowerCase())) {
+                            // Parse email addresses
+                            const emails = this.parseEmailAddresses(header.value);
+                            emails.forEach(email => participants.add(email));
+                        }
+                    }
+                }
+            }
+            
+            return Array.from(participants);
+        }
+
+        /**
+         * Parse email addresses from header value
+         */
+        parseEmailAddresses(headerValue) {
+            if (!headerValue) return [];
+            
+            // Simple email extraction - could be enhanced with proper RFC parsing
+            const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
+            return (headerValue.match(emailRegex) || []).map(email => email.toLowerCase());
+        }
+
+        /**
+         * Extract text content from message payload
+         */
+        extractTextContent(payload) {
+            if (payload.mimeType === 'text/plain' && payload.body && payload.body.data) {
+                return this.decodeBase64Url(payload.body.data);
+            }
+            
+            if (payload.parts) {
+                for (const part of payload.parts) {
+                    if (part.mimeType === 'text/plain' && part.body && part.body.data) {
+                        return this.decodeBase64Url(part.body.data);
+                    }
+                    
+                    if (part.parts) {
+                        const textContent = this.extractTextContent(part);
+                        if (textContent) return textContent;
+                    }
+                }
+            }
+            
+            return null;
+        }
+
+        /**
+         * Extract HTML content from message payload
+         */
+        extractHtmlContent(payload) {
+            if (payload.mimeType === 'text/html' && payload.body && payload.body.data) {
+                return this.decodeBase64Url(payload.body.data);
+            }
+            
+            if (payload.parts) {
+                for (const part of payload.parts) {
+                    if (part.mimeType === 'text/html' && part.body && part.body.data) {
+                        return this.decodeBase64Url(part.body.data);
+                    }
+                    
+                    if (part.parts) {
+                        const htmlContent = this.extractHtmlContent(part);
+                        if (htmlContent) return htmlContent;
+                    }
+                }
+            }
+            
+            return null;
+        }
+
+        /**
+         * Extract message body (prefers text, falls back to HTML)
+         */
+        extractMessageBody(payload) {
+            const textContent = this.extractTextContent(payload);
+            if (textContent) return textContent;
+            
+            const htmlContent = this.extractHtmlContent(payload);
+            if (htmlContent) {
+                // Basic HTML to text conversion
+                return htmlContent
+                    .replace(/<[^>]*>/g, '')
+                    .replace(/&nbsp;/g, ' ')
+                    .replace(/&lt;/g, '<')
+                    .replace(/&gt;/g, '>')
+                    .replace(/&amp;/g, '&')
+                    .trim();
+            }
+            
+            return '';
+        }
+
+        /**
+         * Decode base64url encoded data
+         */
+        decodeBase64Url(data) {
+            if (!data) return '';
+            
+            try {
+                // Convert base64url to base64
+                let base64 = data.replace(/-/g, '+').replace(/_/g, '/');
+                
+                // Add padding if needed
+                while (base64.length % 4) {
+                    base64 += '=';
+                }
+                
+                return atob(base64);
+            } catch (error) {
+                console.warn('Failed to decode base64url data:', error);
+                return '';
+            }
+        }
+
+        /**
+         * Build advanced Gmail search query
+         */
+        buildAdvancedGmailQuery(params) {
+            const parts = [];
+            
+            if (params.from) parts.push(`from:${params.from}`);
+            if (params.to) parts.push(`to:${params.to}`);
+            if (params.subject) parts.push(`subject:"${params.subject}"`);
+            if (params.keywords) parts.push(params.keywords);
+            if (params.after) parts.push(`after:${params.after}`);
+            if (params.before) parts.push(`before:${params.before}`);
+            if (params.hasAttachment) parts.push('has:attachment');
+            if (params.attachmentType) parts.push(`filename:${params.attachmentType}`);
+            if (params.sizeOperator && params.sizeBytes) {
+                parts.push(`size:${params.sizeOperator}:${params.sizeBytes}`);
+            }
+            if (params.isUnread) parts.push('is:unread');
+            if (params.isImportant) parts.push('is:important');
+            
+            return parts.join(' ');
+        }
+
+        /**
+         * Build Gmail search query from parameters (enhanced version)
          */
         buildGmailSearchQuery(params) {
             const parts = [];
             if (params.from) parts.push(`from:${params.from}`);
             if (params.to) parts.push(`to:${params.to}`);
-            if (params.subject) parts.push(`subject:${params.subject}`);
+            if (params.subject) parts.push(`subject:"${params.subject}"`);
             if (params.after) parts.push(`after:${params.after}`);
             if (params.before) parts.push(`before:${params.before}`);
             if (params.hasAttachment) parts.push('has:attachment');
@@ -1472,6 +2198,404 @@
         }
 
         /**
+         * Execute Shodan API calls
+         */
+        async executeShodanTool(toolName, params, connection) {
+            const { apiKey } = connection;
+            let url, method = 'GET', body = null;
+
+            // Build API request based on tool
+            switch (toolName) {
+                // Search Methods
+                case 'shodan_host_info':
+                    if (!params.ip) {
+                        throw new Error('IP address is required for host lookup');
+                    }
+                    const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
+                    if (!ipRegex.test(params.ip)) {
+                        throw new Error('Invalid IP address format. Please provide a valid IPv4 address.');
+                    }
+                    url = `https://api.shodan.io/shodan/host/${params.ip}?key=${encodeURIComponent(apiKey)}`;
+                    if (params.history) url += '&history=true';
+                    if (params.minify) url += '&minify=true';
+                    break;
+
+                case 'shodan_search':
+                    if (!params.query) {
+                        throw new Error('Search query is required');
+                    }
+                    url = `https://api.shodan.io/shodan/host/search?key=${encodeURIComponent(apiKey)}&query=${encodeURIComponent(params.query)}`;
+                    if (params.facets) url += `&facets=${encodeURIComponent(params.facets)}`;
+                    if (params.page) url += `&page=${params.page}`;
+                    if (params.minify) url += '&minify=true';
+                    break;
+
+                case 'shodan_search_count':
+                    if (!params.query) {
+                        throw new Error('Search query is required');
+                    }
+                    url = `https://api.shodan.io/shodan/host/count?key=${encodeURIComponent(apiKey)}&query=${encodeURIComponent(params.query)}`;
+                    if (params.facets) url += `&facets=${encodeURIComponent(params.facets)}`;
+                    break;
+
+                case 'shodan_search_facets':
+                    url = `https://api.shodan.io/shodan/host/search/facets?key=${encodeURIComponent(apiKey)}`;
+                    break;
+
+                case 'shodan_search_filters':
+                    url = `https://api.shodan.io/shodan/host/search/filters?key=${encodeURIComponent(apiKey)}`;
+                    break;
+
+                case 'shodan_search_tokens':
+                    if (!params.query) {
+                        throw new Error('Search query is required');
+                    }
+                    url = `https://api.shodan.io/shodan/host/search/tokens?key=${encodeURIComponent(apiKey)}&query=${encodeURIComponent(params.query)}`;
+                    break;
+
+                // Scanning Methods
+                case 'shodan_scan':
+                    if (!params.ips) {
+                        throw new Error('IP addresses are required for scanning');
+                    }
+                    url = `https://api.shodan.io/shodan/scan?key=${encodeURIComponent(apiKey)}`;
+                    method = 'POST';
+                    body = new URLSearchParams({
+                        ips: params.ips,
+                        force: params.force || false
+                    });
+                    break;
+
+                case 'shodan_scan_protocols':
+                    url = `https://api.shodan.io/shodan/protocols?key=${encodeURIComponent(apiKey)}`;
+                    break;
+
+                // DNS Methods
+                case 'shodan_dns_domain':
+                    if (!params.domain) {
+                        throw new Error('Domain is required');
+                    }
+                    url = `https://api.shodan.io/dns/domain/${encodeURIComponent(params.domain)}?key=${encodeURIComponent(apiKey)}`;
+                    if (params.history) url += '&history=true';
+                    if (params.type) url += `&type=${params.type}`;
+                    if (params.page) url += `&page=${params.page}`;
+                    break;
+
+                case 'shodan_dns_resolve':
+                    if (!params.hostnames) {
+                        throw new Error('Hostnames are required');
+                    }
+                    url = `https://api.shodan.io/dns/resolve?key=${encodeURIComponent(apiKey)}&hostnames=${encodeURIComponent(params.hostnames)}`;
+                    break;
+
+                case 'shodan_dns_reverse':
+                    if (!params.ips) {
+                        throw new Error('IP addresses are required');
+                    }
+                    url = `https://api.shodan.io/dns/reverse?key=${encodeURIComponent(apiKey)}&ips=${encodeURIComponent(params.ips)}`;
+                    break;
+
+                // Account Methods
+                case 'shodan_account_profile':
+                    url = `https://api.shodan.io/account/profile?key=${encodeURIComponent(apiKey)}`;
+                    break;
+
+                case 'shodan_api_info':
+                    url = `https://api.shodan.io/api-info?key=${encodeURIComponent(apiKey)}`;
+                    break;
+
+                // Tools Methods
+                case 'shodan_tools_myip':
+                    url = `https://api.shodan.io/tools/myip?key=${encodeURIComponent(apiKey)}`;
+                    break;
+
+                // Labs Methods
+                case 'shodan_labs_honeyscore':
+                    if (!params.ip) {
+                        throw new Error('IP address is required');
+                    }
+                    const honeyIpRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
+                    if (!honeyIpRegex.test(params.ip)) {
+                        throw new Error('Invalid IP address format. Please provide a valid IPv4 address.');
+                    }
+                    url = `https://api.shodan.io/labs/honeyscore/${encodeURIComponent(params.ip)}?key=${encodeURIComponent(apiKey)}`;
+                    break;
+
+                default:
+                    throw new Error(`Unknown Shodan tool: ${toolName}`);
+            }
+
+            try {
+                console.log(`[MCP Service Connectors] Calling Shodan API: ${url.replace(apiKey, 'REDACTED')}`);
+                
+                const requestOptions = {
+                    method: method,
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                };
+
+                if (body) {
+                    requestOptions.body = body;
+                    requestOptions.headers['Content-Type'] = 'application/x-www-form-urlencoded';
+                }
+
+                const response = await fetch(url, requestOptions);
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        throw new Error('Invalid Shodan API key. Please check your API key.');
+                    } else if (response.status === 402) {
+                        throw new Error('Insufficient credits or plan limitations. Some features require a paid Shodan account.');
+                    } else if (response.status === 403) {
+                        throw new Error('Access forbidden. Check your API key permissions.');
+                    } else if (response.status === 404) {
+                        throw new Error(`Resource not found. ${params.ip ? `No information found for IP ${params.ip}` : 'The requested resource does not exist'}.`);
+                    } else if (response.status === 429) {
+                        throw new Error('Shodan API rate limit exceeded. Please try again later.');
+                    } else {
+                        const errorText = await response.text();
+                        throw new Error(`Shodan API error (${response.status}): ${errorText}`);
+                    }
+                }
+
+                const data = await response.json();
+                
+                // Format the response for better readability
+                return this.formatShodanResponse(toolName, data, params);
+                
+            } catch (error) {
+                console.error(`[MCP Service Connectors] Shodan API error:`, error);
+                throw error;
+            }
+        }
+
+        /**
+         * Format Shodan API responses for better readability
+         */
+        formatShodanResponse(toolName, data, params) {
+            switch (toolName) {
+                case 'shodan_host_info':
+                    return this.formatHostInfoResponse(data, params.ip);
+                
+                case 'shodan_search':
+                    return this.formatSearchResponse(data);
+                
+                case 'shodan_search_count':
+                    return {
+                        query: params.query,
+                        total_results: data.total,
+                        credits_consumed: data.credits || 'Unknown',
+                        facets: data.facets || {}
+                    };
+                
+                case 'shodan_search_facets':
+                case 'shodan_search_filters':
+                    return {
+                        available_items: data,
+                        count: Array.isArray(data) ? data.length : Object.keys(data).length
+                    };
+                
+                case 'shodan_search_tokens':
+                    return {
+                        query: params.query,
+                        parsed_tokens: data.tokens || data,
+                        filters: data.filters || {},
+                        errors: data.errors || []
+                    };
+                
+                case 'shodan_scan':
+                    return {
+                        scan_id: data.id,
+                        credits_left: data.credits_left,
+                        status: 'Scan submitted successfully',
+                        ips_scanned: params.ips
+                    };
+                
+                case 'shodan_scan_protocols':
+                    return {
+                        supported_protocols: data,
+                        count: Object.keys(data).length
+                    };
+                
+                case 'shodan_dns_domain':
+                    return this.formatDomainResponse(data, params.domain);
+                
+                case 'shodan_dns_resolve':
+                case 'shodan_dns_reverse':
+                    return {
+                        query: params.hostnames || params.ips,
+                        results: data,
+                        resolved_count: Object.keys(data).length
+                    };
+                
+                case 'shodan_account_profile':
+                    return {
+                        username: data.username || data.display_name,
+                        email: data.email,
+                        member_since: data.created,
+                        credits: data.credits,
+                        upgrade_type: data.upgrade_type || 'Free',
+                        total_usage: data.usage || {}
+                    };
+                
+                case 'shodan_api_info':
+                    return {
+                        plan: data.plan,
+                        usage: {
+                            query_credits: data.query_credits,
+                            scan_credits: data.scan_credits,
+                            monitored_ips: data.monitored_ips
+                        },
+                        unlocked_features: data.unlocked || []
+                    };
+                
+                case 'shodan_tools_myip':
+                    return {
+                        external_ip: data.ip || data,
+                        source: 'Shodan'
+                    };
+                
+                case 'shodan_labs_honeyscore':
+                    return {
+                        ip: params.ip,
+                        honeypot_probability: data,
+                        risk_level: data > 0.7 ? 'High' : data > 0.4 ? 'Medium' : 'Low',
+                        description: `${Math.round(data * 100)}% chance this IP is a honeypot`
+                    };
+                
+                default:
+                    return {
+                        tool: toolName,
+                        raw_response: data
+                    };
+            }
+        }
+
+        /**
+         * Format host information response
+         */
+        formatHostInfoResponse(data, ip) {
+            const result = {
+                ip: ip,
+                basic_info: {}
+            };
+
+            // Basic information
+            if (data.org) result.basic_info.organization = data.org;
+            if (data.isp) result.basic_info.isp = data.isp;
+            if (data.country_name) result.basic_info.country = data.country_name;
+            if (data.city) result.basic_info.city = data.city;
+            if (data.region_code) result.basic_info.region = data.region_code;
+            if (data.os) result.basic_info.operating_system = data.os;
+
+            // Open ports and services
+            if (data.data && data.data.length > 0) {
+                result.services = [];
+                for (const service of data.data.slice(0, 15)) {
+                    const serviceInfo = {
+                        port: service.port,
+                        protocol: service.transport || 'tcp',
+                        service: service.product || 'Unknown service'
+                    };
+                    
+                    if (service.version) serviceInfo.version = service.version;
+                    if (service.cpe && service.cpe.length > 0) serviceInfo.cpe = service.cpe;
+                    if (service.data && service.data.length < 300) {
+                        serviceInfo.banner = service.data.trim();
+                    }
+                    
+                    result.services.push(serviceInfo);
+                }
+            }
+
+            // Vulnerabilities
+            if (data.vulns && Object.keys(data.vulns).length > 0) {
+                result.vulnerabilities = Object.keys(data.vulns).slice(0, 10);
+                result.vulnerability_count = Object.keys(data.vulns).length;
+            }
+
+            // Additional metadata
+            if (data.last_update) result.last_updated = data.last_update;
+            if (data.hostnames && data.hostnames.length > 0) result.hostnames = data.hostnames;
+            if (data.tags && data.tags.length > 0) result.tags = data.tags;
+
+            return {
+                summary: result,
+                raw_data: data // Include raw data for advanced analysis
+            };
+        }
+
+        /**
+         * Format search response
+         */
+        formatSearchResponse(data) {
+            const result = {
+                total_results: data.total,
+                results_shown: data.matches ? data.matches.length : 0,
+                matches: []
+            };
+
+            if (data.matches) {
+                for (const match of data.matches.slice(0, 10)) {
+                    const matchInfo = {
+                        ip: match.ip_str,
+                        port: match.port,
+                        protocol: match.transport || 'tcp',
+                        service: match.product || 'Unknown',
+                        location: {
+                            country: match.location?.country_name,
+                            city: match.location?.city,
+                            region: match.location?.region_code
+                        },
+                        organization: match.org,
+                        timestamp: match.timestamp
+                    };
+                    
+                    if (match.vulns && Object.keys(match.vulns).length > 0) {
+                        matchInfo.vulnerabilities = Object.keys(match.vulns).slice(0, 3);
+                    }
+                    
+                    result.matches.push(matchInfo);
+                }
+            }
+
+            if (data.facets) {
+                result.facets = data.facets;
+            }
+
+            return result;
+        }
+
+        /**
+         * Format domain response
+         */
+        formatDomainResponse(data, domain) {
+            const result = {
+                domain: domain,
+                subdomains: data.subdomains || [],
+                subdomain_count: data.subdomains ? data.subdomains.length : 0,
+                dns_records: []
+            };
+
+            if (data.data) {
+                for (const record of data.data.slice(0, 20)) {
+                    result.dns_records.push({
+                        subdomain: record.subdomain,
+                        type: record.type,
+                        value: record.value,
+                        last_seen: record.last_seen
+                    });
+                }
+            }
+
+            return {
+                summary: result,
+                raw_data: data
+            };
+        }
+
+        /**
          * Refresh OAuth token
          */
         async refreshOAuthToken(serviceKey, authData) {
@@ -1596,6 +2720,173 @@
                     const result = await this.createGitHubConnection(serviceKey, config, token);
                     resolve(result);
                 };
+            });
+        }
+
+        /**
+         * Connect using API Key (Shodan)
+         */
+        async connectWithAPIKey(serviceKey, config) {
+            // Check for existing API key
+            const storageKey = `mcp_${serviceKey}_apikey`;
+            const existingApiKey = await window.CoreStorageService.getValue(storageKey);
+
+            if (existingApiKey) {
+                // Validate API key by making a test API call
+                const isValid = await this.validateShodanAPIKey(existingApiKey);
+                if (isValid) {
+                    console.log(`[MCP Service Connectors] Using existing ${config.name} API key`);
+                    return await this.createShodanConnection(serviceKey, config, existingApiKey);
+                }
+            }
+
+            // Show API key input UI
+            return await this.showAPIKeyInputDialog(serviceKey, config);
+        }
+
+        /**
+         * Validate Shodan API Key
+         */
+        async validateShodanAPIKey(apiKey) {
+            try {
+                console.log(`[MCP Service Connectors] Validating Shodan API key: ${apiKey.substring(0, 8)}...`);
+                
+                // Make a simple API call to validate the key
+                const response = await fetch(`https://api.shodan.io/api-info?key=${apiKey}`);
+                
+                console.log(`[MCP Service Connectors] Shodan API validation response: Status=${response.status}, OK=${response.ok}`);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.log(`[MCP Service Connectors] Shodan API error: ${errorText}`);
+                }
+
+                return response.ok;
+            } catch (error) {
+                console.error('[MCP Service Connectors] Shodan API validation exception:', error);
+                return false;
+            }
+        }
+
+        /**
+         * Create Shodan connection
+         */
+        async createShodanConnection(serviceKey, config, apiKey) {
+            // Store connection info
+            this.connectedServices.set(serviceKey, { 
+                config: config, 
+                apiKey: apiKey, 
+                type: 'shodan'
+            });
+
+            // Register tools with function calling system
+            await this.registerServiceTools(serviceKey, config, { apiKey: apiKey });
+
+            return true;
+        }
+
+        /**
+         * Show API key input dialog
+         */
+        async showAPIKeyInputDialog(serviceKey, config) {
+            return new Promise((resolve) => {
+                // Remove any existing modal first
+                const existingModal = document.getElementById('api-key-modal');
+                if (existingModal) {
+                    existingModal.remove();
+                }
+                
+                const modal = document.createElement('div');
+                modal.className = 'modal active';
+                modal.id = 'api-key-modal';
+                
+                modal.innerHTML = `
+                    <div class="modal-content">
+                        <h3>${config.name} API Key Setup</h3>
+                        
+                        <div class="oauth-setup-instructions">
+                            <h4>Setup Instructions:</h4>
+                            <ol>
+                                ${config.setupInstructions.steps.map(step => `<li>${step}</li>`).join('')}
+                            </ol>
+                            
+                            <p class="form-help">
+                                <a href="${config.setupInstructions.docUrl}" target="_blank">
+                                    View official documentation <i class="fas fa-external-link-alt"></i>
+                                </a>
+                            </p>
+                        </div>
+                        
+                        <div class="oauth-credentials-form">
+                            <div class="form-group">
+                                <label for="api-key-input">API Key</label>
+                                <input type="password" 
+                                       id="api-key-input" 
+                                       placeholder="Enter your ${config.name} API key" 
+                                       class="mcp-input" />
+                                <small class="form-help">Your API key will be encrypted and stored locally</small>
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button class="btn primary-btn" id="api-key-connect">
+                                    Save & Connect
+                                </button>
+                                <button class="btn secondary-btn" id="api-key-cancel">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+                
+                const apiKeyInput = modal.querySelector('#api-key-input');
+                const connectBtn = modal.querySelector('#api-key-connect');
+                const cancelBtn = modal.querySelector('#api-key-cancel');
+                
+                // Focus the input
+                apiKeyInput.focus();
+                
+                // Handle cancel
+                const handleCancel = () => {
+                    modal.remove();
+                    resolve(false);
+                };
+                
+                // Handle connect
+                const handleConnect = async () => {
+                    const apiKey = apiKeyInput.value.trim();
+                    if (!apiKey) {
+                        apiKeyInput.style.borderColor = '#ff6b6b';
+                        apiKeyInput.focus();
+                        return;
+                    }
+                    
+                    // Store API key
+                    const storageKey = `mcp_${serviceKey}_apikey`;
+                    await window.CoreStorageService.setValue(storageKey, apiKey);
+                    
+                    // Close dialog and connect
+                    modal.remove();
+                    const result = await this.createShodanConnection(serviceKey, config, apiKey);
+                    resolve(result);
+                };
+                
+                // Event listeners
+                connectBtn.addEventListener('click', handleConnect);
+                cancelBtn.addEventListener('click', handleCancel);
+                apiKeyInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        handleConnect();
+                    }
+                });
+                
+                // Close on background click
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        handleCancel();
+                    }
+                });
             });
         }
 
@@ -1849,6 +3140,17 @@
                 await this.createGoogleConnection(serviceKey, config, oauthTokens);
                 
                 console.log('[MCP Service Connectors] Gmail functions registered and service connected successfully');
+                
+                // Auto-activate Gmail integration prompt when Gmail is connected
+                if (window.DefaultPromptsService && window.GmailIntegrationGuide) {
+                    try {
+                        window.DefaultPromptsService.enablePrompt('Gmail Integration Guide');
+                        console.log('[MCP Service Connectors] Gmail integration prompt auto-enabled');
+                    } catch (error) {
+                        console.warn('[MCP Service Connectors] Failed to auto-enable Gmail prompt:', error);
+                    }
+                }
+                
                 return true;
                 
             } catch (error) {

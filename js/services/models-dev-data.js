@@ -9,20 +9,84 @@ window.ModelsDevData = (function() {
     // We'll populate this with the actual data
     const modelsData = {};
     
-    // Load the data asynchronously
+    // Load the data asynchronously with support for both HTTP and file:// protocols
     async function loadModelsData() {
         try {
-            const response = await fetch('/models_dev/models.json');
-            if (response.ok) {
-                const data = await response.json();
+            // Try multiple paths to handle different environments
+            const paths = [
+                '/models_dev/models.json',
+                './models_dev/models.json',
+                'models_dev/models.json'
+            ];
+            
+            let data = null;
+            for (const path of paths) {
+                try {
+                    const response = await fetch(path);
+                    if (response.ok) {
+                        data = await response.json();
+                        console.log(`Models.dev data loaded successfully from ${path}`);
+                        break;
+                    }
+                } catch (err) {
+                    console.debug(`Failed to load from ${path}:`, err.message);
+                }
+            }
+            
+            if (data) {
                 Object.assign(modelsData, data);
-                console.log('Models.dev data loaded successfully');
             } else {
-                console.warn('Could not load models.dev data, using fallback');
+                // Fallback: Use minimal embedded data for file:// protocol
+                console.warn('Could not load models.dev data from any path, using embedded fallback');
+                loadEmbeddedFallback();
             }
         } catch (error) {
             console.warn('Error loading models.dev data:', error);
+            loadEmbeddedFallback();
         }
+    }
+    
+    // Embedded fallback data for file:// protocol or when fetch fails
+    function loadEmbeddedFallback() {
+        const embeddedData = {
+            "openai": {
+                "models": {
+                    "gpt-4o": { "limit": { "context": 128000 } },
+                    "gpt-4o-mini": { "limit": { "context": 128000 } },
+                    "gpt-4": { "limit": { "context": 8192 } },
+                    "gpt-3.5-turbo": { "limit": { "context": 16385 } },
+                    "o1-preview": { "limit": { "context": 128000 } },
+                    "o1-mini": { "limit": { "context": 128000 } }
+                }
+            },
+            "anthropic": {
+                "models": {
+                    "claude-3-5-sonnet-20241022": { "limit": { "context": 200000 } },
+                    "claude-3-5-haiku-20241022": { "limit": { "context": 200000 } },
+                    "claude-3-opus-20240229": { "limit": { "context": 200000 } },
+                    "claude-3-sonnet-20240229": { "limit": { "context": 200000 } },
+                    "claude-3-haiku-20240307": { "limit": { "context": 200000 } }
+                }
+            },
+            "groq": {
+                "models": {
+                    "llama-3.1-405b-reasoning": { "limit": { "context": 32768 } },
+                    "llama-3.1-70b-versatile": { "limit": { "context": 131072 } },
+                    "llama-3.1-8b-instant": { "limit": { "context": 131072 } },
+                    "mixtral-8x7b-32768": { "limit": { "context": 32768 } }
+                }
+            },
+            "mistral": {
+                "models": {
+                    "mistral-large-latest": { "limit": { "context": 128000 } },
+                    "mistral-medium": { "limit": { "context": 32000 } },
+                    "mistral-small": { "limit": { "context": 32000 } }
+                }
+            }
+        };
+        
+        Object.assign(modelsData, embeddedData);
+        console.log('Using embedded fallback models.dev data');
     }
     
     /**
