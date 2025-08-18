@@ -1,11 +1,4 @@
-/**
- * About hacka.re Project Default Prompt
- */
-
-window.HackaReProjectPrompt = {
-    id: 'hacka-re-project',
-    name: 'Complete hacka.re Documentation',
-    content: `# hacka.re Complete Documentation
+# hacka.re Complete Documentation
 
 ## Table of Contents
 
@@ -56,7 +49,7 @@ hacka.re is a privacy-focused, serverless chat interface for OpenAI-compatible A
 
 ### Project Structure
 
-\`\`\`
+```
 hacka.re/
 ├── index.html                    # Main application page
 ├── css/                         # Stylesheets
@@ -82,37 +75,37 @@ hacka.re/
 ├── lib/                         # Third-party libraries (hosted locally)
 ├── about/                       # Information pages
 └── _tests/                      # Comprehensive test suite
-\`\`\`
+```
 
 ### Service Architecture
 
 The application follows a **service-oriented architecture** with specialized modules:
 
 **API Services (7 modules):**
-- \`api-service.js\` - Main API communication layer
-- \`api-request-builder.js\` - Request construction
-- \`api-response-parser.js\` - Response parsing
-- \`api-stream-processor.js\` - Streaming response handling
-- \`api-tool-call-handler.js\` - Tool call processing
-- \`api-debugger.js\` - API debugging utilities
-- \`api-tools-service.js\` - API tools integration
+- `api-service.js` - Main API communication layer
+- `api-request-builder.js` - Request construction
+- `api-response-parser.js` - Response parsing
+- `api-stream-processor.js` - Streaming response handling
+- `api-tool-call-handler.js` - Tool call processing
+- `api-debugger.js` - API debugging utilities
+- `api-tools-service.js` - API tools integration
 
 **Function Tools System (8 modules):**
 Refactored from monolithic ~800-line service into focused modules:
-- \`function-tools-service.js\` - Main orchestrator (public API, maintains backward compatibility)
-- \`function-tools-config.js\` - Configuration constants and storage keys
-- \`function-tools-logger.js\` - Centralized logging utilities with debug prefixes
-- \`function-tools-storage.js\` - localStorage operations and registry state management
-- \`function-tools-parser.js\` - Argument parsing with type conversion and JSDoc parsing
-- \`function-tools-executor.js\` - Sandboxed function execution with timeout handling
-- \`function-tools-registry.js\` - Function registry management and grouping logic
-- \`function-tools-processor.js\` - Tool call processing from API responses
+- `function-tools-service.js` - Main orchestrator (public API, maintains backward compatibility)
+- `function-tools-config.js` - Configuration constants and storage keys
+- `function-tools-logger.js` - Centralized logging utilities with debug prefixes
+- `function-tools-storage.js` - localStorage operations and registry state management
+- `function-tools-parser.js` - Argument parsing with type conversion and JSDoc parsing
+- `function-tools-executor.js` - Sandboxed function execution with timeout handling
+- `function-tools-registry.js` - Function registry management and grouping logic
+- `function-tools-processor.js` - Tool call processing from API responses
 
 **Storage Services (4 modules):**
-- \`storage-service.js\` - Main storage interface
-- \`core-storage-service.js\` - Core storage operations
-- \`encryption-service.js\` - Data encryption (TweetNaCl)
-- \`namespace-service.js\` - Multi-tenant data isolation
+- `storage-service.js` - Main storage interface
+- `core-storage-service.js` - Core storage operations
+- `encryption-service.js` - Data encryption (TweetNaCl)
+- `namespace-service.js` - Multi-tenant data isolation
 
 ### Component Management
 
@@ -143,13 +136,13 @@ The application uses **TweetNaCl.js** for cryptographic operations, providing hi
 The application dynamically determines storage type based on access method:
 
 **Direct Visit → Session Storage (Maximum Privacy)**
-- **Storage Type**: \`sessionStorage\` (temporary)
+- **Storage Type**: `sessionStorage` (temporary)
 - **Data Persistence**: Only while browser tab is open
 - **Privacy Level**: Maximum - all data cleared when tab closes
-- **Namespace**: Uses fixed \`default_session\` namespace
+- **Namespace**: Uses fixed `default_session` namespace
 
 **Shared Link → Local Storage (Persistent Conversations)**
-- **Storage Type**: \`localStorage\` (persistent)
+- **Storage Type**: `localStorage` (persistent)
 - **Data Persistence**: Survives browser restarts
 - **Privacy Level**: Balanced - data is encrypted and namespaced
 - **Namespace**: Derived from shared link content (first 8 characters of SHA-256 hash)
@@ -157,7 +150,7 @@ The application dynamically determines storage type based on access method:
 ### Namespace System
 
 **Namespace Isolation**: Different chat contexts are isolated using namespaces:
-- **Format**: \`aihackare_namespace_<8-random-alnum-chars>\`
+- **Format**: `aihackare_namespace_<8-random-alnum-chars>`
 - **Generation**: 8 random alphanumeric characters (~47.6 bits entropy)
 - **Storage Structure**: Each namespace contains encrypted API keys, model selections, chat history, system prompts, UI preferences, and custom functions
 
@@ -189,34 +182,34 @@ The application dynamically determines storage type based on access method:
 
 ### Function Calling System
 
-**Architecture**: 8-module refactored system in \`js/services/function-tools-*.js\`
+**Architecture**: 8-module refactored system in `js/services/function-tools-*.js`
 
 **Functionality**:
-- JavaScript functions tagged with \`@callable\` or \`@tool\` become available to models
+- JavaScript functions tagged with `@callable` or `@tool` become available to models
 - Functions execute in sandboxed environment with timeout handling
 - Built-in error handling and type conversion
 - JSDoc parsing for better tool definitions
 
-**Default Functions**: Pre-built function groups in \`js/default-functions/\`:
-- **RC4 Encryption** (\`rc4-encryption.js\`) - Encryption/decryption functions for testing
-- **Math Utilities** (\`math-utilities.js\`) - Mathematical operations
-- **API Authentication** (\`api-auth-client.js\`) - API authentication helpers
-- **MCP Examples** (\`mcp-example.js\`) - MCP integration examples
+**Default Functions**: Pre-built function groups in `js/default-functions/`:
+- **RC4 Encryption** (`rc4-encryption.js`) - Encryption/decryption functions for testing
+- **Math Utilities** (`math-utilities.js`) - Mathematical operations
+- **API Authentication** (`api-auth-client.js`) - API authentication helpers
+- **MCP Examples** (`mcp-example.js`) - MCP integration examples
 
 ### Model Context Protocol (MCP) Integration
 
 **MCP Client**: Zero-dependency MCP client implementation
 
 **Core Components**:
-- **MCPClientService** (\`js/services/mcp-client-service.js\`) - Core MCP protocol implementation
-- **MCPManager** (\`js/components/mcp-manager.js\`) - UI for managing connections
-- **mcp-stdio-proxy** (\`mcp-stdio-proxy/server.js\`) - Node.js proxy for local MCP servers
+- **MCPClientService** (`js/services/mcp-client-service.js`) - Core MCP protocol implementation
+- **MCPManager** (`js/components/mcp-manager.js`) - UI for managing connections
+- **mcp-stdio-proxy** (`mcp-stdio-proxy/server.js`) - Node.js proxy for local MCP servers
 
 **Transport Support**:
 - **SSE (Server-Sent Events)** - For HTTP-based MCP servers
 - **Stdio** - For local command-line MCP servers (requires proxy)
 
-**Integration**: MCP tools automatically register as hacka.re functions with prefix \`mcp_<server>_<tool>\`
+**Integration**: MCP tools automatically register as hacka.re functions with prefix `mcp_<server>_<tool>`
 
 ### Multi-Provider Support
 
@@ -239,13 +232,13 @@ The application dynamically determines storage type based on access method:
 ### Test Philosophy
 
 **Real API Testing**: No mocking - all tests use real API calls to validate actual functionality
-- Uses \`gpt-4o-mini\` model for cost efficiency
+- Uses `gpt-4o-mini` model for cost efficiency
 - Validates against actual LLM providers
 - Ensures real-world compatibility
 
 ### Test Architecture
 
-\`\`\`
+```
 _tests/playwright/
 ├── conftest.py                    # Core pytest fixtures and configuration
 ├── test_utils.py                  # Common utilities and helper functions
@@ -253,24 +246,24 @@ _tests/playwright/
 ├── debug_tests/                   # Temporary debugging tests
 ├── run_*.sh                      # Test execution scripts
 └── test_*.py                     # Main test files (80+ tests)
-\`\`\`
+```
 
 ### Test Categories
 
-**Core Tests** (\`./run_core_tests.sh\` - Quick validation):
-- \`test_page.py\` - Basic UI and page loading
-- \`test_api.py\` - API configuration and model selection
-- \`test_chat.py\` - Basic chat functionality
-- \`test_welcome_modal.py\` - Welcome modal behavior
+**Core Tests** (`./run_core_tests.sh` - Quick validation):
+- `test_page.py` - Basic UI and page loading
+- `test_api.py` - API configuration and model selection
+- `test_chat.py` - Basic chat functionality
+- `test_welcome_modal.py` - Welcome modal behavior
 
-**Feature Tests** (\`./run_feature_tests.sh\` - Advanced functionality):
-- \`test_function_*.py\` - Function calling system (multiple files)
-- \`test_mcp_*.py\` - Model Context Protocol integration
-- \`test_sharing.py\` - Secure sharing functionality
-- \`test_themes.py\` - Theme switching and mobile responsiveness
-- \`test_modals.py\` - Modal interactions
+**Feature Tests** (`./run_feature_tests.sh` - Advanced functionality):
+- `test_function_*.py` - Function calling system (multiple files)
+- `test_mcp_*.py` - Model Context Protocol integration
+- `test_sharing.py` - Secure sharing functionality
+- `test_themes.py` - Theme switching and mobile responsiveness
+- `test_modals.py` - Modal interactions
 
-**MCP Tests** (\`./run_mcp_tests.sh\`):
+**MCP Tests** (`./run_mcp_tests.sh`):
 - **Unit Tests** (18 tests) - Mocked dependencies for isolated testing
 - **Integration Tests** (8 tests) - Real MCP proxy and server testing
 
@@ -282,33 +275,33 @@ _tests/playwright/
 3. **Debug Screenshots** - Contextual screenshots with metadata
 
 **Debug Information Requirements**:
-\`\`\`python
+```python
 screenshot_with_markdown(page, "test_phase", {
     "Status": "After clicking button",
     "Component": "Function Calling Modal", 
     "Error": error_message if error else "None",
     "API Key": "Configured" if api_key else "None"
 })
-\`\`\`
+```
 
 ### Testing Best Practices
 
 **Modal Management**:
-- Always dismiss welcome modal with \`dismiss_welcome_modal(page)\` after navigation
-- Handle dialogs proactively with \`page.on("dialog")\` handlers
+- Always dismiss welcome modal with `dismiss_welcome_modal(page)` after navigation
+- Handle dialogs proactively with `page.on("dialog")` handlers
 
 **Function Name Auto-Population**:
 - Function name field is read-only and auto-populated from code editor
 - Set function code first, then wait for auto-population
 
 **Waiting Strategies**:
-\`\`\`python
+```python
 # Good - Wait for specific conditions
 page.wait_for_selector("#element", state="visible", timeout=5000)
 
 # Avoid - Arbitrary timeouts
 page.wait_for_timeout(500)  # Not recommended
-\`\`\`
+```
 
 **Debug Information**:
 - All tests must include comprehensive debug information with screenshots
@@ -320,7 +313,7 @@ page.wait_for_timeout(500)  # Not recommended
 
 ### Environment Setup
 
-\`\`\`bash
+```bash
 # One-time setup - creates Python virtual environment and installs dependencies
 ./setup_environment.sh
 
@@ -329,12 +322,12 @@ source _venv/bin/activate
 
 # To deactivate
 deactivate
-\`\`\`
+```
 
 ### Development Commands
 
 **Testing**:
-\`\`\`bash
+```bash
 cd _tests/playwright
 
 # Core functionality tests (quick validation)
@@ -350,12 +343,12 @@ cd _tests/playwright
 ./run_mcp_tests.sh              # All MCP tests (26 tests)
 ./run_mcp_tests.sh --unit       # Unit tests only (18 tests)
 ./run_mcp_tests.sh --integration # Integration tests (8 tests)
-\`\`\`
+```
 
 **Security Verification**:
-\`\`\`bash
+```bash
 python run_verifier.py
-\`\`\`
+```
 
 ### Code Organization Principles
 
@@ -385,7 +378,7 @@ python run_verifier.py
 **Function Calling**:
 1. Functions defined in Function Calling UI automatically become available
 2. Use JSDoc comments for better tool definitions
-3. Tag with \`@callable\` or \`@tool\` if selective calling enabled
+3. Tag with `@callable` or `@tool` if selective calling enabled
 
 **Services**:
 1. Follow module patterns: config → logger → storage → parser/registry → executor/processor → service
@@ -432,7 +425,7 @@ python run_verifier.py
 ### MCP Integration Examples
 
 **Local Servers**:
-\`\`\`bash
+```bash
 # Start MCP proxy
 cd mcp-stdio-proxy
 node server.js
@@ -442,16 +435,16 @@ mcp_connect_example("stdio", "filesystem", {
     command: "npx",
     args: ["@modelcontextprotocol/server-filesystem", "/path/to/directory"]
 })
-\`\`\`
+```
 
 **HTTP Servers**:
-\`\`\`javascript
+```javascript
 // Connect to HTTP MCP server
 mcp_connect_example("sse", "my-server", {
     url: "http://localhost:3000/mcp",
     headers: { "Authorization": "Bearer token" }
 })
-\`\`\`
+```
 
 ---
 
@@ -470,7 +463,7 @@ mcp_connect_example("sse", "my-server", {
 - **AgentOrchestrator** - High-level multi-agent coordination
 
 **Usage Patterns**:
-\`\`\`javascript
+```javascript
 // Quick agent switching
 await AgentOrchestrator.switchToAgent("researcher", {
     preloadNext: true,
@@ -483,7 +476,7 @@ await AgentOrchestrator.prepareAgents(["researcher", "coder", "analyst"], {
     background: true,
     onProgress: (stage, msg) => console.log(msg)
 });
-\`\`\`
+```
 
 ### Performance Optimizations
 
@@ -501,7 +494,7 @@ await AgentOrchestrator.prepareAgents(["researcher", "coder", "analyst"], {
 
 ## Command Line Interface
 
-### Future \`hackare\` Command
+### Future `hackare` Command
 
 *Placeholder section for future command-line interface development*
 
@@ -638,12 +631,12 @@ hacka.re incorporates security awareness from the OWASP Top 10 for Large Languag
 ### File Structure
 
 **Core Files**:
-- \`index.html\` - Main application entry point
-- \`css/styles.css\` - Main stylesheet
-- \`js/app.js\` - Application initialization
+- `index.html` - Main application entry point
+- `css/styles.css` - Main stylesheet
+- `js/app.js` - Application initialization
 
 **Dependencies**:
-- All libraries hosted locally in \`lib/\` directory
+- All libraries hosted locally in `lib/` directory
 - No CDN dependencies for privacy
 - TweetNaCl for cryptography
 - Marked for markdown parsing
@@ -695,5 +688,4 @@ MIT License - See project repository for full license text.
 
 ---
 
-*This documentation covers hacka.re as a privacy-focused, serverless chat interface for AI models. All features described are implemented and tested. For the most current information, refer to the project repository.*`
-};
+*This documentation covers hacka.re as a privacy-focused, serverless chat interface for AI models. All features described are implemented and tested. For the most current information, refer to the project repository.*
