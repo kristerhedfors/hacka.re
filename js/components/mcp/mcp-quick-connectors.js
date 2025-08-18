@@ -100,25 +100,6 @@ window.MCPQuickConnectors = (function() {
             }
         },
         */
-        context7: {
-            name: 'Context7',
-            icon: 'fas fa-book',
-            description: 'Search and access up-to-date documentation for any library or framework',
-            transport: 'mcp-server',
-            authType: 'none',
-            setupInstructions: {
-                title: 'Context7 Setup',
-                steps: [
-                    'Context7 provides instant access to current documentation:',
-                    '• Search docs for any library (React, FastAPI, pandas, etc.)',
-                    '• Get latest code examples and tutorials',
-                    '• Access version-specific documentation',
-                    'Click Connect to add Context7 tools to your function calling interface',
-                    'Use the tools in conversations to get real-time documentation'
-                ],
-                docUrl: 'https://github.com/upstash/context7-mcp'
-            }
-        }
     };
 
     let storageService = null;
@@ -224,45 +205,6 @@ window.MCPQuickConnectors = (function() {
             return;
         }
 
-        // Handle Context7 connection by directing user to use MCP Servers modal
-        if (serviceKey === 'context7' && config.transport === 'mcp-server') {
-            try {
-                // Remove any existing placeholder Context7 functions
-                if (window.FunctionToolsStorage) {
-                    const context7FunctionNames = ['context7_search_docs', 'context7_get_latest_docs', 'context7_get_examples'];
-                    context7FunctionNames.forEach(functionName => {
-                        if (window.FunctionToolsRegistry && window.FunctionToolsRegistry.removeFunction) {
-                            window.FunctionToolsRegistry.removeFunction(functionName);
-                        }
-                    });
-                    
-                    // Remove from enabled functions list
-                    const enabledFunctions = window.FunctionToolsStorage.getEnabledFunctions() || [];
-                    const filteredFunctions = enabledFunctions.filter(name => !context7FunctionNames.includes(name));
-                    if (filteredFunctions.length !== enabledFunctions.length) {
-                        window.FunctionToolsStorage.setEnabledFunctions(filteredFunctions);
-                        window.FunctionToolsStorage.save();
-                    }
-                }
-                
-                updateConnectorStatus(serviceKey, 'connected');
-                saveConnectorState(serviceKey, 'connected');
-                showNotification(`✅ Context7 Quick Connect enabled! To use Context7 tools:
-
-1. Start the Context7 proxy: ./start-with-context7.sh
-2. Go to Settings → MCP Servers  
-3. Set proxy URL to: http://localhost:3001
-4. Connect to load the real Context7 tools
-
-The real Context7 MCP server provides live documentation search.`, 'success');
-                
-            } catch (error) {
-                console.error(`[MCPQuickConnectors] Context7 connection error:`, error);
-                updateConnectorStatus(serviceKey, 'disconnected');
-                showNotification(`❌ Failed to connect to Context7: ${error.message}`, 'error');
-            }
-            return;
-        }
         
         // Check if this is a service connector type
         if (config.transport === 'service-connector') {
@@ -803,15 +745,7 @@ The real Context7 MCP server provides live documentation search.`, 'success');
             case 'connected':
                 let toolCount = 0;
                 
-                // Check Context7
-                if (serviceKey === 'context7' && config.transport === 'mcp-server') {
-                    // Count actual Context7 tools
-                    if (window.FunctionToolsStorage) {
-                        const jsFunctions = window.FunctionToolsStorage.getJsFunctions() || {};
-                        const context7Tools = Object.keys(jsFunctions).filter(name => name.startsWith('context7_'));
-                        toolCount = context7Tools.length;
-                    }
-                } else if (config.transport === 'service-connector') {
+                if (config.transport === 'service-connector') {
                     if (serviceKey === 'github' && window.MCPToolRegistry) {
                         // Use new provider system for GitHub
                         const githubTools = window.MCPToolRegistry.getProviderTools('github');
@@ -847,58 +781,6 @@ The real Context7 MCP server provides live documentation search.`, 'success');
         const config = QUICK_CONNECTORS[serviceKey];
         
         try {
-            // Handle Context7 disconnect
-            if (serviceKey === 'context7' && config.transport === 'mcp-server') {
-                // Remove Context7 tools from function calling system
-                let toolsRemoved = 0;
-                if (window.FunctionToolsStorage && window.FunctionToolsRegistry) {
-                    const context7ToolNames = [
-                        'context7_search_docs',
-                        'context7_get_latest_docs', 
-                        'context7_get_examples'
-                    ];
-                    
-                    context7ToolNames.forEach(toolName => {
-                        try {
-                            // Remove from enabled functions
-                            const enabledFunctions = window.FunctionToolsStorage.getEnabledFunctions() || [];
-                            const index = enabledFunctions.indexOf(toolName);
-                            if (index > -1) {
-                                enabledFunctions.splice(index, 1);
-                                window.FunctionToolsStorage.setEnabledFunctions(enabledFunctions);
-                            }
-                            
-                            // Remove from JS functions
-                            const jsFunctions = window.FunctionToolsStorage.getJsFunctions() || {};
-                            if (jsFunctions[toolName]) {
-                                delete jsFunctions[toolName];
-                                window.FunctionToolsStorage.setJsFunctions(jsFunctions);
-                                toolsRemoved++;
-                            }
-                            
-                            // Remove from function collections
-                            const functionCollections = window.FunctionToolsStorage.getFunctionCollections() || {};
-                            if (functionCollections[toolName]) {
-                                delete functionCollections[toolName];
-                                window.FunctionToolsStorage.setFunctionCollections(functionCollections);
-                            }
-                        } catch (error) {
-                            console.error(`[MCPQuickConnectors] Failed to remove Context7 tool ${toolName}:`, error);
-                        }
-                    });
-                    
-                    if (toolsRemoved > 0) {
-                        window.FunctionToolsStorage.save();
-                    }
-                }
-                
-                updateConnectorStatus(serviceKey, 'disconnected');
-                saveConnectorState(serviceKey, 'disconnected');
-                
-                showNotification(`Context7 disconnected. Removed ${toolsRemoved} tools.`, 'info');
-                
-                return;
-            }
             
             if (config.transport === 'service-connector') {
                 if (window.MCPServiceConnectors) {
@@ -937,20 +819,7 @@ The real Context7 MCP server provides live documentation search.`, 'success');
             const config = QUICK_CONNECTORS[serviceKey];
             let isConnected = false;
             
-            // Check Context7 connection status
-            if (serviceKey === 'context7' && config.transport === 'mcp-server') {
-                try {
-                    // Check if Context7 tools are in the function calling system
-                    if (window.FunctionToolsStorage) {
-                        const jsFunctions = window.FunctionToolsStorage.getJsFunctions() || {};
-                        isConnected = !!(jsFunctions['context7_search_docs'] || 
-                                       jsFunctions['context7_get_latest_docs'] || 
-                                       jsFunctions['context7_get_examples']);
-                    }
-                } catch (error) {
-                    console.error('[MCPQuickConnectors] Error checking Context7 status:', error);
-                }
-            } else if (config.transport === 'service-connector') {
+            if (config.transport === 'service-connector') {
                 if (serviceKey === 'github' && window.MCPToolRegistry) {
                     // Check if GitHub provider is connected via new system
                     const githubProvider = window.MCPToolRegistry.getProvider('github');
