@@ -1440,6 +1440,8 @@ Or error: bad request: unknown integration' rows="8" class="mcp-response-textare
         processDeviceCodeResponse,
         processTokenResponse,
         copyCommand,
-        closeManualOAuthFlow
+        closeManualOAuthFlow,
+        // Configuration access
+        QUICK_CONNECTORS
     };
 })();
