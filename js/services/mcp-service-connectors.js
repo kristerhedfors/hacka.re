@@ -289,7 +289,8 @@
         },
         shodan: {
             name: 'Shodan',
-            icon: 'fas fa-search',
+            icon: 'images/shodan-icon.svg',
+            iconType: 'svg',
             description: 'Comprehensive Internet intelligence platform - search, scan, monitor, and analyze Internet-connected devices',
             authType: 'api-key',
             apiBaseUrl: 'https://api.shodan.io',

@@ -102,7 +102,8 @@ window.MCPQuickConnectors = (function() {
         */
         shodan: {
             name: 'Shodan',
-            icon: 'fas fa-search',
+            icon: 'images/shodan-icon.svg',
+            iconType: 'svg',
             description: 'Search engine for Internet-connected devices and services',
             transport: 'service-connector',
             authType: 'api-key',
@@ -172,7 +173,12 @@ window.MCPQuickConnectors = (function() {
                 ${Object.entries(QUICK_CONNECTORS).map(([key, config]) => `
                     <div class="quick-connector-card" data-service="${key}">
                         <div class="connector-icon">
-                            <i class="${config.icon}"></i>
+                            ${config.iconType === 'svg' 
+                                ? `<img src="${config.icon}" alt="${config.name}" style="width: 32px; height: 32px;">`
+                                : config.iconType === 'image'
+                                ? `<img src="${config.icon}" alt="${config.name}" style="width: 32px; height: 32px; object-fit: contain;">`
+                                : `<i class="${config.icon}"></i>`
+                            }
                         </div>
                         <div class="connector-info">
                             <h4>${config.name}</h4>
