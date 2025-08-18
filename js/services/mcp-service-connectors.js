@@ -36,13 +36,13 @@
         gmail: {
             name: 'Gmail',
             icon: 'fas fa-envelope',
-            description: 'Access Gmail messages and send emails',
+            description: 'Comprehensive READ ONLY access to Gmail messages, threads, and labels',
             authType: 'oauth-web',
             apiBaseUrl: 'https://gmail.googleapis.com/gmail/v1',
             oauthConfig: {
                 authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
                 tokenEndpoint: 'https://oauth2.googleapis.com/token',
-                scope: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send',
+                scope: 'https://www.googleapis.com/auth/gmail.readonly',
                 clientId: '', // To be configured by user
                 requiresClientSecret: true,
                 redirectUri: 'urn:ietf:wg:oauth:2.0:oob',
@@ -63,51 +63,144 @@
             },
             tools: {
                 list_messages: {
-                    description: 'List Gmail messages',
+                    description: 'List Gmail messages with rich metadata (subject, sender, date, snippet)',
                     parameters: {
                         type: 'object',
                         properties: {
                             query: { type: 'string', description: 'Gmail search query (e.g., "is:unread")' },
                             maxResults: { type: 'number', default: 10, maximum: 100 },
-                            labelIds: { type: 'array', items: { type: 'string' } }
+                            labelIds: { type: 'array', items: { type: 'string' } },
+                            format: { type: 'string', enum: ['minimal', 'metadata', 'full'], default: 'metadata', description: 'Response format - metadata includes subject, from, snippet' },
+                            pageToken: { type: 'string', description: 'Token for pagination' }
                         }
                     }
                 },
                 get_message: {
-                    description: 'Get a specific email message',
+                    description: 'Get complete email message with headers, body, and attachments info',
                     parameters: {
                         type: 'object',
                         properties: {
-                            messageId: { type: 'string', description: 'Gmail message ID' }
+                            messageId: { type: 'string', description: 'Gmail message ID' },
+                            format: { type: 'string', enum: ['minimal', 'metadata', 'full'], default: 'full', description: 'Response format' }
                         },
                         required: ['messageId']
                     }
                 },
-                send_message: {
-                    description: 'Send an email',
+                search_messages: {
+                    description: 'Search Gmail messages with advanced criteria and rich results',
                     parameters: {
                         type: 'object',
                         properties: {
-                            to: { type: 'string' },
-                            subject: { type: 'string' },
-                            body: { type: 'string' },
-                            cc: { type: 'string' },
-                            bcc: { type: 'string' }
-                        },
-                        required: ['to', 'subject', 'body']
+                            from: { type: 'string', description: 'From email address' },
+                            to: { type: 'string', description: 'To email address' },
+                            subject: { type: 'string', description: 'Subject keywords' },
+                            after: { type: 'string', description: 'Date in YYYY/MM/DD format' },
+                            before: { type: 'string', description: 'Date in YYYY/MM/DD format' },
+                            hasAttachment: { type: 'boolean', description: 'Has attachments' },
+                            maxResults: { type: 'number', default: 10, maximum: 100 },
+                            format: { type: 'string', enum: ['minimal', 'metadata', 'full'], default: 'metadata', description: 'Response format' }
+                        }
                     }
                 },
-                search_messages: {
-                    description: 'Search Gmail messages with advanced query',
+                list_threads: {
+                    description: 'List Gmail conversation threads with participants and message counts',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            query: { type: 'string', description: 'Gmail search query' },
+                            maxResults: { type: 'number', default: 10, maximum: 100 },
+                            labelIds: { type: 'array', items: { type: 'string' } },
+                            pageToken: { type: 'string', description: 'Token for pagination' }
+                        }
+                    }
+                },
+                get_thread: {
+                    description: 'Get complete conversation thread with all messages',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            threadId: { type: 'string', description: 'Gmail thread ID' },
+                            format: { type: 'string', enum: ['minimal', 'metadata', 'full'], default: 'metadata', description: 'Message format in thread' }
+                        },
+                        required: ['threadId']
+                    }
+                },
+                list_labels: {
+                    description: 'List all Gmail labels with message counts',
+                    parameters: {
+                        type: 'object',
+                        properties: {}
+                    }
+                },
+                get_label: {
+                    description: 'Get specific Gmail label details and statistics',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            labelId: { type: 'string', description: 'Gmail label ID (e.g., "INBOX", "SENT")' }
+                        },
+                        required: ['labelId']
+                    }
+                },
+                get_profile: {
+                    description: 'Get Gmail user profile information',
+                    parameters: {
+                        type: 'object',
+                        properties: {}
+                    }
+                },
+                get_attachment: {
+                    description: 'Download email attachment',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            messageId: { type: 'string', description: 'Gmail message ID' },
+                            attachmentId: { type: 'string', description: 'Attachment ID from message' }
+                        },
+                        required: ['messageId', 'attachmentId']
+                    }
+                },
+                list_drafts: {
+                    description: 'List saved email drafts (READ ONLY)',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            maxResults: { type: 'number', default: 10, maximum: 100 },
+                            pageToken: { type: 'string', description: 'Token for pagination' }
+                        }
+                    }
+                },
+                get_history: {
+                    description: 'Get mailbox change history for synchronization',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            startHistoryId: { type: 'string', description: 'Start history ID for incremental sync' },
+                            maxResults: { type: 'number', default: 100, maximum: 500 },
+                            labelId: { type: 'string', description: 'Filter by label ID' }
+                        },
+                        required: ['startHistoryId']
+                    }
+                },
+                advanced_search: {
+                    description: 'Advanced Gmail search with multiple criteria and rich metadata',
                     parameters: {
                         type: 'object',
                         properties: {
                             from: { type: 'string' },
                             to: { type: 'string' },
                             subject: { type: 'string' },
+                            keywords: { type: 'string' },
                             after: { type: 'string', description: 'Date in YYYY/MM/DD format' },
                             before: { type: 'string', description: 'Date in YYYY/MM/DD format' },
-                            hasAttachment: { type: 'boolean' }
+                            hasAttachment: { type: 'boolean' },
+                            attachmentType: { type: 'string', description: 'File extension (pdf, doc, etc.)' },
+                            sizeOperator: { type: 'string', enum: ['larger', 'smaller'], description: 'Size comparison' },
+                            sizeBytes: { type: 'number', description: 'Size in bytes' },
+                            isUnread: { type: 'boolean' },
+                            isImportant: { type: 'boolean' },
+                            maxResults: { type: 'number', default: 20, maximum: 100 },
+                            format: { type: 'string', enum: ['minimal', 'metadata', 'full'], default: 'metadata' }
                         }
                     }
                 }
@@ -887,6 +980,16 @@
                         return;
                     }
                     
+                    // For Gmail, check if we need to clear old tokens with outdated scope
+                    if (serviceKey === 'gmail') {
+                        const storedAuth = await window.CoreStorageService.getValue('mcp_gmail_oauth');
+                        if (storedAuth && storedAuth.scope && storedAuth.scope.includes('gmail.send')) {
+                            console.log('[MCP Service Connectors] Clearing old Gmail OAuth tokens with send permissions');
+                            await window.CoreStorageService.removeValue('mcp_gmail_oauth');
+                            await window.CoreStorageService.removeValue('gmail_mcp_connection');
+                        }
+                    }
+                    
                     // Save credentials - spread config first, then override with user values
                     const oauthConfig = {
                         ...config.oauthConfig,
@@ -1237,7 +1340,7 @@
         }
 
         /**
-         * Execute Gmail API calls
+         * Execute Gmail API calls with comprehensive READ ONLY functionality
          */
         async executeGmailTool(toolName, params, connection) {
             const { tokens } = connection;
@@ -1256,66 +1359,506 @@
                 case 'list_messages':
                     url = `https://gmail.googleapis.com/gmail/v1/users/me/messages?`;
                     if (params.query) url += `q=${encodeURIComponent(params.query)}&`;
+                    if (params.labelIds && params.labelIds.length > 0) {
+                        url += `&labelIds=${params.labelIds.map(id => encodeURIComponent(id)).join('&labelIds=')}`;
+                    }
+                    if (params.pageToken) url += `&pageToken=${encodeURIComponent(params.pageToken)}`;
+                    url += `&maxResults=${params.maxResults || 10}`;
+                    
+                    // Enhanced: If format is metadata or full, fetch rich message data
+                    const listFormat = params.format || 'metadata'; // Default to metadata for rich results
+                    if (listFormat === 'metadata' || listFormat === 'full') {
+                        const response = await this.fetchGmailData(url, tokens.accessToken);
+                        if (response.messages) {
+                            // Fetch detailed info for each message
+                            const enrichedMessages = await Promise.all(
+                                response.messages.slice(0, Math.min(response.messages.length, 50)).map(async (msg) => {
+                                    try {
+                                        const detailUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=metadata`;
+                                        const detail = await this.fetchGmailData(detailUrl, tokens.accessToken);
+                                        return this.formatMessageMetadata(detail);
+                                    } catch (error) {
+                                        console.warn(`Failed to fetch details for message ${msg.id}:`, error);
+                                        return { id: msg.id, error: 'Failed to fetch details' };
+                                    }
+                                })
+                            );
+                            response.messages = enrichedMessages;
+                        }
+                        return response;
+                    }
+                    break;
+
+                case 'get_message':
+                    const format = params.format || 'full';
+                    url = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${params.messageId}?format=${format}`;
+                    const response = await this.fetchGmailData(url, tokens.accessToken);
+                    return this.formatMessageResponse(response, format);
+
+                case 'search_messages':
+                    const searchQuery = this.buildGmailSearchQuery(params);
+                    url = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(searchQuery)}`;
+                    url += `&maxResults=${params.maxResults || 10}`;
+                    
+                    // Enhanced: Return rich metadata for search results
+                    const searchFormat = params.format || 'metadata'; // Default to metadata for rich results
+                    if (searchFormat === 'metadata' || searchFormat === 'full') {
+                        const searchResponse = await this.fetchGmailData(url, tokens.accessToken);
+                        if (searchResponse.messages) {
+                            const enrichedResults = await Promise.all(
+                                searchResponse.messages.slice(0, Math.min(searchResponse.messages.length, 20)).map(async (msg) => {
+                                    try {
+                                        const detailUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=metadata`;
+                                        const detail = await this.fetchGmailData(detailUrl, tokens.accessToken);
+                                        return this.formatMessageMetadata(detail);
+                                    } catch (error) {
+                                        return { id: msg.id, error: 'Failed to fetch details' };
+                                    }
+                                })
+                            );
+                            searchResponse.messages = enrichedResults;
+                        }
+                        return searchResponse;
+                    }
+                    break;
+
+                case 'list_threads':
+                    url = `https://gmail.googleapis.com/gmail/v1/users/me/threads?`;
+                    if (params.query) url += `q=${encodeURIComponent(params.query)}&`;
+                    if (params.labelIds && params.labelIds.length > 0) {
+                        url += `&labelIds=${params.labelIds.map(id => encodeURIComponent(id)).join('&labelIds=')}`;
+                    }
+                    if (params.pageToken) url += `&pageToken=${encodeURIComponent(params.pageToken)}`;
+                    url += `&maxResults=${params.maxResults || 10}`;
+                    break;
+
+                case 'get_thread':
+                    const threadFormat = params.format || 'metadata';
+                    url = `https://gmail.googleapis.com/gmail/v1/users/me/threads/${params.threadId}?format=${threadFormat}`;
+                    const threadResponse = await this.fetchGmailData(url, tokens.accessToken);
+                    return this.formatThreadResponse(threadResponse);
+
+                case 'list_labels':
+                    url = `https://gmail.googleapis.com/gmail/v1/users/me/labels`;
+                    break;
+
+                case 'get_label':
+                    url = `https://gmail.googleapis.com/gmail/v1/users/me/labels/${params.labelId}`;
+                    break;
+
+                case 'get_profile':
+                    url = `https://gmail.googleapis.com/gmail/v1/users/me/profile`;
+                    break;
+
+                case 'get_attachment':
+                    url = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${params.messageId}/attachments/${params.attachmentId}`;
+                    const attachmentResponse = await this.fetchGmailData(url, tokens.accessToken);
+                    return this.formatAttachmentResponse(attachmentResponse);
+
+                case 'list_drafts':
+                    url = `https://gmail.googleapis.com/gmail/v1/users/me/drafts?`;
+                    if (params.pageToken) url += `pageToken=${encodeURIComponent(params.pageToken)}&`;
                     url += `maxResults=${params.maxResults || 10}`;
                     break;
-                case 'get_message':
-                    url = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${params.messageId}`;
+
+                case 'get_history':
+                    url = `https://gmail.googleapis.com/gmail/v1/users/me/history?`;
+                    url += `startHistoryId=${encodeURIComponent(params.startHistoryId)}`;
+                    if (params.labelId) url += `&labelId=${encodeURIComponent(params.labelId)}`;
+                    url += `&maxResults=${params.maxResults || 100}`;
                     break;
-                case 'send_message':
-                    url = `https://gmail.googleapis.com/gmail/v1/users/me/messages/send`;
-                    method = 'POST';
-                    // Create email in RFC 2822 format
-                    const email = this.createEmailMessage(params);
-                    body = JSON.stringify({ raw: btoa(email).replace(/\+/g, '-').replace(/\//g, '_') });
-                    break;
-                case 'search_messages':
-                    const query = this.buildGmailSearchQuery(params);
-                    url = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}`;
-                    break;
+
+                case 'advanced_search':
+                    const advancedQuery = this.buildAdvancedGmailQuery(params);
+                    url = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(advancedQuery)}`;
+                    url += `&maxResults=${params.maxResults || 20}`;
+                    
+                    // Return rich results for advanced search
+                    const advancedResponse = await this.fetchGmailData(url, tokens.accessToken);
+                    const advancedFormat = params.format || 'metadata'; // Default to metadata for rich results
+                    if (advancedResponse.messages && (advancedFormat === 'metadata' || advancedFormat === 'full')) {
+                        const enrichedAdvanced = await Promise.all(
+                            advancedResponse.messages.slice(0, Math.min(advancedResponse.messages.length, 30)).map(async (msg) => {
+                                try {
+                                    const detailUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=metadata`;
+                                    const detail = await this.fetchGmailData(detailUrl, tokens.accessToken);
+                                    return this.formatMessageMetadata(detail);
+                                } catch (error) {
+                                    return { id: msg.id, error: 'Failed to fetch details' };
+                                }
+                            })
+                        );
+                        advancedResponse.messages = enrichedAdvanced;
+                        advancedResponse.searchQuery = advancedQuery;
+                        advancedResponse.searchCriteria = params;
+                    }
+                    return advancedResponse;
+
                 default:
                     throw new Error(`Unknown Gmail tool: ${toolName}`);
             }
 
-            const response = await fetch(url, {
-                method,
-                headers: {
-                    'Authorization': `Bearer ${tokens.accessToken}`,
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                },
-                body
-            });
+            // For simple cases without special processing
+            if (url) {
+                return await this.fetchGmailData(url, tokens.accessToken);
+            }
+        }
 
-            if (!response.ok) {
-                throw new Error(`Gmail API error: ${response.status} ${response.statusText}`);
+        /**
+         * Fetch Gmail data with proper error handling
+         */
+        async fetchGmailData(url, accessToken) {
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    let errorMessage = `Gmail API error: ${response.status} ${response.statusText}`;
+                    
+                    try {
+                        const errorJson = JSON.parse(errorText);
+                        if (errorJson.error && errorJson.error.message) {
+                            errorMessage += ` - ${errorJson.error.message}`;
+                        }
+                    } catch (e) {
+                        errorMessage += ` - ${errorText}`;
+                    }
+                    
+                    throw new Error(errorMessage);
+                }
+
+                return await response.json();
+            } catch (error) {
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    throw new Error('Network error while connecting to Gmail API');
+                }
+                throw error;
+            }
+        }
+
+        /**
+         * Format message metadata for rich display
+         */
+        formatMessageMetadata(message) {
+            const formatted = {
+                id: message.id,
+                threadId: message.threadId,
+                labelIds: message.labelIds || [],
+                snippet: message.snippet || '',
+                sizeEstimate: message.sizeEstimate || 0,
+                internalDate: message.internalDate ? new Date(parseInt(message.internalDate)).toISOString() : null
+            };
+
+            // Extract headers for better display
+            if (message.payload && message.payload.headers) {
+                const headers = {};
+                for (const header of message.payload.headers) {
+                    headers[header.name.toLowerCase()] = header.value;
+                }
+                
+                formatted.subject = headers.subject || '(No Subject)';
+                formatted.from = headers.from || 'Unknown Sender';
+                formatted.to = headers.to || '';
+                formatted.date = headers.date || '';
+                formatted.cc = headers.cc || '';
+                formatted.bcc = headers.bcc || '';
+                
+                // Parse date for better formatting
+                if (headers.date) {
+                    try {
+                        formatted.parsedDate = new Date(headers.date).toISOString();
+                    } catch (e) {
+                        formatted.parsedDate = null;
+                    }
+                }
             }
 
-            return await response.json();
+            // Check for attachments
+            if (message.payload) {
+                formatted.hasAttachments = this.messageHasAttachments(message.payload);
+                if (formatted.hasAttachments) {
+                    formatted.attachments = this.extractAttachmentInfo(message.payload);
+                }
+            }
+
+            // Determine read status
+            formatted.isUnread = message.labelIds ? message.labelIds.includes('UNREAD') : false;
+            formatted.isImportant = message.labelIds ? message.labelIds.includes('IMPORTANT') : false;
+
+            return formatted;
         }
 
         /**
-         * Create email message in RFC 2822 format
+         * Format full message response
          */
-        createEmailMessage(params) {
-            let email = '';
-            email += `To: ${params.to}\r\n`;
-            if (params.cc) email += `Cc: ${params.cc}\r\n`;
-            if (params.bcc) email += `Bcc: ${params.bcc}\r\n`;
-            email += `Subject: ${params.subject}\r\n`;
-            email += `Content-Type: text/plain; charset="UTF-8"\r\n`;
-            email += `\r\n`;
-            email += params.body;
-            return email;
+        formatMessageResponse(message, format) {
+            if (format === 'minimal') {
+                return { id: message.id, threadId: message.threadId };
+            }
+
+            const formatted = this.formatMessageMetadata(message);
+
+            if (format === 'full' && message.payload) {
+                // Extract body content
+                formatted.body = this.extractMessageBody(message.payload);
+                formatted.textContent = this.extractTextContent(message.payload);
+                formatted.htmlContent = this.extractHtmlContent(message.payload);
+            }
+
+            return formatted;
         }
 
         /**
-         * Build Gmail search query from parameters
+         * Format thread response with summary
+         */
+        formatThreadResponse(thread) {
+            const formatted = {
+                id: thread.id,
+                historyId: thread.historyId,
+                messageCount: thread.messages ? thread.messages.length : 0,
+                messages: []
+            };
+
+            if (thread.messages) {
+                // Get participants and subject from first message
+                const firstMessage = thread.messages[0];
+                if (firstMessage && firstMessage.payload && firstMessage.payload.headers) {
+                    const headers = {};
+                    for (const header of firstMessage.payload.headers) {
+                        headers[header.name.toLowerCase()] = header.value;
+                    }
+                    formatted.subject = headers.subject || '(No Subject)';
+                    formatted.participants = this.extractParticipants(thread.messages);
+                }
+
+                // Format each message in thread
+                formatted.messages = thread.messages.map(msg => this.formatMessageMetadata(msg));
+            }
+
+            return formatted;
+        }
+
+        /**
+         * Format attachment response
+         */
+        formatAttachmentResponse(attachment) {
+            return {
+                attachmentId: attachment.attachmentId,
+                size: attachment.size,
+                data: attachment.data, // Base64 encoded
+                filename: attachment.filename || 'attachment'
+            };
+        }
+
+        /**
+         * Check if message has attachments
+         */
+        messageHasAttachments(payload) {
+            if (payload.parts) {
+                return payload.parts.some(part => 
+                    part.filename && part.filename.length > 0 ||
+                    (part.body && part.body.attachmentId)
+                );
+            }
+            return payload.body && payload.body.attachmentId;
+        }
+
+        /**
+         * Extract attachment information
+         */
+        extractAttachmentInfo(payload) {
+            const attachments = [];
+            
+            const extractFromPart = (part) => {
+                if (part.filename && part.filename.length > 0 && part.body && part.body.attachmentId) {
+                    attachments.push({
+                        filename: part.filename,
+                        mimeType: part.mimeType,
+                        size: part.body.size || 0,
+                        attachmentId: part.body.attachmentId
+                    });
+                }
+                
+                if (part.parts) {
+                    part.parts.forEach(extractFromPart);
+                }
+            };
+
+            if (payload.parts) {
+                payload.parts.forEach(extractFromPart);
+            } else if (payload.filename && payload.body && payload.body.attachmentId) {
+                attachments.push({
+                    filename: payload.filename,
+                    mimeType: payload.mimeType,
+                    size: payload.body.size || 0,
+                    attachmentId: payload.body.attachmentId
+                });
+            }
+
+            return attachments;
+        }
+
+        /**
+         * Extract participants from thread messages
+         */
+        extractParticipants(messages) {
+            const participants = new Set();
+            
+            for (const message of messages) {
+                if (message.payload && message.payload.headers) {
+                    for (const header of message.payload.headers) {
+                        if (['from', 'to', 'cc', 'bcc'].includes(header.name.toLowerCase())) {
+                            // Parse email addresses
+                            const emails = this.parseEmailAddresses(header.value);
+                            emails.forEach(email => participants.add(email));
+                        }
+                    }
+                }
+            }
+            
+            return Array.from(participants);
+        }
+
+        /**
+         * Parse email addresses from header value
+         */
+        parseEmailAddresses(headerValue) {
+            if (!headerValue) return [];
+            
+            // Simple email extraction - could be enhanced with proper RFC parsing
+            const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
+            return (headerValue.match(emailRegex) || []).map(email => email.toLowerCase());
+        }
+
+        /**
+         * Extract text content from message payload
+         */
+        extractTextContent(payload) {
+            if (payload.mimeType === 'text/plain' && payload.body && payload.body.data) {
+                return this.decodeBase64Url(payload.body.data);
+            }
+            
+            if (payload.parts) {
+                for (const part of payload.parts) {
+                    if (part.mimeType === 'text/plain' && part.body && part.body.data) {
+                        return this.decodeBase64Url(part.body.data);
+                    }
+                    
+                    if (part.parts) {
+                        const textContent = this.extractTextContent(part);
+                        if (textContent) return textContent;
+                    }
+                }
+            }
+            
+            return null;
+        }
+
+        /**
+         * Extract HTML content from message payload
+         */
+        extractHtmlContent(payload) {
+            if (payload.mimeType === 'text/html' && payload.body && payload.body.data) {
+                return this.decodeBase64Url(payload.body.data);
+            }
+            
+            if (payload.parts) {
+                for (const part of payload.parts) {
+                    if (part.mimeType === 'text/html' && part.body && part.body.data) {
+                        return this.decodeBase64Url(part.body.data);
+                    }
+                    
+                    if (part.parts) {
+                        const htmlContent = this.extractHtmlContent(part);
+                        if (htmlContent) return htmlContent;
+                    }
+                }
+            }
+            
+            return null;
+        }
+
+        /**
+         * Extract message body (prefers text, falls back to HTML)
+         */
+        extractMessageBody(payload) {
+            const textContent = this.extractTextContent(payload);
+            if (textContent) return textContent;
+            
+            const htmlContent = this.extractHtmlContent(payload);
+            if (htmlContent) {
+                // Basic HTML to text conversion
+                return htmlContent
+                    .replace(/<[^>]*>/g, '')
+                    .replace(/&nbsp;/g, ' ')
+                    .replace(/&lt;/g, '<')
+                    .replace(/&gt;/g, '>')
+                    .replace(/&amp;/g, '&')
+                    .trim();
+            }
+            
+            return '';
+        }
+
+        /**
+         * Decode base64url encoded data
+         */
+        decodeBase64Url(data) {
+            if (!data) return '';
+            
+            try {
+                // Convert base64url to base64
+                let base64 = data.replace(/-/g, '+').replace(/_/g, '/');
+                
+                // Add padding if needed
+                while (base64.length % 4) {
+                    base64 += '=';
+                }
+                
+                return atob(base64);
+            } catch (error) {
+                console.warn('Failed to decode base64url data:', error);
+                return '';
+            }
+        }
+
+        /**
+         * Build advanced Gmail search query
+         */
+        buildAdvancedGmailQuery(params) {
+            const parts = [];
+            
+            if (params.from) parts.push(`from:${params.from}`);
+            if (params.to) parts.push(`to:${params.to}`);
+            if (params.subject) parts.push(`subject:"${params.subject}"`);
+            if (params.keywords) parts.push(params.keywords);
+            if (params.after) parts.push(`after:${params.after}`);
+            if (params.before) parts.push(`before:${params.before}`);
+            if (params.hasAttachment) parts.push('has:attachment');
+            if (params.attachmentType) parts.push(`filename:${params.attachmentType}`);
+            if (params.sizeOperator && params.sizeBytes) {
+                parts.push(`size:${params.sizeOperator}:${params.sizeBytes}`);
+            }
+            if (params.isUnread) parts.push('is:unread');
+            if (params.isImportant) parts.push('is:important');
+            
+            return parts.join(' ');
+        }
+
+        /**
+         * Build Gmail search query from parameters (enhanced version)
          */
         buildGmailSearchQuery(params) {
             const parts = [];
             if (params.from) parts.push(`from:${params.from}`);
             if (params.to) parts.push(`to:${params.to}`);
-            if (params.subject) parts.push(`subject:${params.subject}`);
+            if (params.subject) parts.push(`subject:"${params.subject}"`);
             if (params.after) parts.push(`after:${params.after}`);
             if (params.before) parts.push(`before:${params.before}`);
             if (params.hasAttachment) parts.push('has:attachment');
@@ -1849,6 +2392,17 @@
                 await this.createGoogleConnection(serviceKey, config, oauthTokens);
                 
                 console.log('[MCP Service Connectors] Gmail functions registered and service connected successfully');
+                
+                // Auto-activate Gmail integration prompt when Gmail is connected
+                if (window.DefaultPromptsService && window.GmailIntegrationGuide) {
+                    try {
+                        window.DefaultPromptsService.enablePrompt('Gmail Integration Guide');
+                        console.log('[MCP Service Connectors] Gmail integration prompt auto-enabled');
+                    } catch (error) {
+                        console.warn('[MCP Service Connectors] Failed to auto-enable Gmail prompt:', error);
+                    }
+                }
+                
                 return true;
                 
             } catch (error) {
