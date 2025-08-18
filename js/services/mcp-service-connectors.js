@@ -286,6 +286,39 @@
                     }
                 }
             }
+        },
+        shodan: {
+            name: 'Shodan',
+            icon: 'fas fa-search',
+            description: 'Search engine for Internet-connected devices and services',
+            authType: 'api-key',
+            apiBaseUrl: 'https://api.shodan.io',
+            setupInstructions: {
+                title: 'Shodan API Key Setup',
+                steps: [
+                    'Go to shodan.io and create an account (or login if you have one)',
+                    'Visit your account page to find your API key',
+                    'Copy your API key from the "API Key" section',
+                    'Enter the API key when prompted',
+                    'The API key will be encrypted and stored locally'
+                ],
+                docUrl: 'https://developer.shodan.io/api'
+            },
+            tools: {
+                shodan_host_lookup: {
+                    description: 'Look up information about an IP address using Shodan',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            ip: {
+                                type: 'string',
+                                description: 'The IP address to look up (e.g., "8.8.8.8")'
+                            }
+                        },
+                        required: ['ip']
+                    }
+                }
+            }
         }
     };
 
@@ -319,6 +352,8 @@
             switch (config.authType) {
                 case 'pat':
                     return await this.connectWithPAT(serviceKey, config);
+                case 'api-key':
+                    return await this.connectWithAPIKey(serviceKey, config);
                 case 'oauth-device':
                     return await this.connectWithOAuthDevice(serviceKey, config);
                 case 'oauth-web':
@@ -621,6 +656,8 @@
                     return await this.executeGmailTool(toolName, params, connection);
                 case 'gdocs':
                     return await this.executeGDocsTool(toolName, params, connection);
+                case 'shodan':
+                    return await this.executeShodanTool(toolName, params, connection);
                 default:
                     throw new Error(`Unknown service: ${serviceKey}`);
             }
@@ -2015,6 +2052,122 @@
         }
 
         /**
+         * Execute Shodan API calls
+         */
+        async executeShodanTool(toolName, params, connection) {
+            const { apiKey } = connection;
+            let url, method = 'GET';
+
+            switch (toolName) {
+                case 'shodan_host_lookup':
+                    if (!params.ip) {
+                        throw new Error('IP address is required for host lookup');
+                    }
+                    
+                    // Validate IP format (basic validation)
+                    const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
+                    if (!ipRegex.test(params.ip)) {
+                        throw new Error('Invalid IP address format. Please provide a valid IPv4 address.');
+                    }
+                    
+                    url = `https://api.shodan.io/shodan/host/${params.ip}?key=${encodeURIComponent(apiKey)}`;
+                    break;
+                    
+                default:
+                    throw new Error(`Unknown Shodan tool: ${toolName}`);
+            }
+
+            try {
+                console.log(`[MCP Service Connectors] Calling Shodan API: ${url.replace(apiKey, 'REDACTED')}`);
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Accept': 'application/json',
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        throw new Error('Invalid Shodan API key. Please check your API key.');
+                    } else if (response.status === 404) {
+                        throw new Error(`No information found for IP ${params.ip} in Shodan database.`);
+                    } else if (response.status === 429) {
+                        throw new Error('Shodan API rate limit exceeded. Please try again later.');
+                    } else {
+                        const errorText = await response.text();
+                        throw new Error(`Shodan API error (${response.status}): ${errorText}`);
+                    }
+                }
+
+                const data = await response.json();
+                
+                // Format the response nicely for better readability
+                switch (toolName) {
+                    case 'shodan_host_lookup':
+                        return this.formatShodanHostResponse(data, params.ip);
+                    default:
+                        return data;
+                }
+                
+            } catch (error) {
+                console.error(`[MCP Service Connectors] Shodan API error:`, error);
+                throw error;
+            }
+        }
+
+        /**
+         * Format Shodan host response for better readability
+         */
+        formatShodanHostResponse(data, ip) {
+            const result = {
+                ip: ip,
+                basic_info: {}
+            };
+
+            // Basic information
+            if (data.org) result.basic_info.organization = data.org;
+            if (data.isp) result.basic_info.isp = data.isp;
+            if (data.country_name) result.basic_info.country = data.country_name;
+            if (data.city) result.basic_info.city = data.city;
+            if (data.region_code) result.basic_info.region = data.region_code;
+            if (data.os) result.basic_info.operating_system = data.os;
+
+            // Open ports and services
+            if (data.data && data.data.length > 0) {
+                result.services = [];
+                for (const service of data.data.slice(0, 10)) { // Limit to first 10 services
+                    const serviceInfo = {
+                        port: service.port,
+                        protocol: service.transport || 'tcp',
+                        service: service.product || 'Unknown service'
+                    };
+                    
+                    if (service.version) serviceInfo.version = service.version;
+                    if (service.data && service.data.length < 200) {
+                        serviceInfo.banner = service.data.trim();
+                    }
+                    
+                    result.services.push(serviceInfo);
+                }
+            }
+
+            // Vulnerabilities
+            if (data.vulns && Object.keys(data.vulns).length > 0) {
+                result.vulnerabilities = Object.keys(data.vulns).slice(0, 5); // Limit to first 5 CVEs
+            }
+
+            // Additional metadata
+            if (data.last_update) result.last_updated = data.last_update;
+            if (data.hostnames && data.hostnames.length > 0) result.hostnames = data.hostnames;
+
+            return {
+                formatted_result: result,
+                raw_data: data // Include raw data for advanced users
+            };
+        }
+
+        /**
          * Refresh OAuth token
          */
         async refreshOAuthToken(serviceKey, authData) {
@@ -2139,6 +2292,160 @@
                     const result = await this.createGitHubConnection(serviceKey, config, token);
                     resolve(result);
                 };
+            });
+        }
+
+        /**
+         * Connect using API Key (Shodan)
+         */
+        async connectWithAPIKey(serviceKey, config) {
+            // Check for existing API key
+            const storageKey = `mcp_${serviceKey}_apikey`;
+            const existingApiKey = await window.CoreStorageService.getValue(storageKey);
+
+            if (existingApiKey) {
+                // Validate API key by making a test API call
+                const isValid = await this.validateShodanAPIKey(existingApiKey);
+                if (isValid) {
+                    console.log(`[MCP Service Connectors] Using existing ${config.name} API key`);
+                    return await this.createShodanConnection(serviceKey, config, existingApiKey);
+                }
+            }
+
+            // Show API key input UI
+            return await this.showAPIKeyInputDialog(serviceKey, config);
+        }
+
+        /**
+         * Validate Shodan API Key
+         */
+        async validateShodanAPIKey(apiKey) {
+            try {
+                console.log(`[MCP Service Connectors] Validating Shodan API key: ${apiKey.substring(0, 8)}...`);
+                
+                // Make a simple API call to validate the key
+                const response = await fetch(`https://api.shodan.io/api-info?key=${apiKey}`);
+                
+                console.log(`[MCP Service Connectors] Shodan API validation response: Status=${response.status}, OK=${response.ok}`);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.log(`[MCP Service Connectors] Shodan API error: ${errorText}`);
+                }
+
+                return response.ok;
+            } catch (error) {
+                console.error('[MCP Service Connectors] Shodan API validation exception:', error);
+                return false;
+            }
+        }
+
+        /**
+         * Create Shodan connection
+         */
+        async createShodanConnection(serviceKey, config, apiKey) {
+            // Store connection info
+            this.connectedServices.set(serviceKey, { 
+                config: config, 
+                apiKey: apiKey, 
+                type: 'shodan'
+            });
+
+            // Register tools with function calling system
+            await this.registerServiceTools(serviceKey, config, { apiKey: apiKey });
+
+            return true;
+        }
+
+        /**
+         * Show API key input dialog
+         */
+        async showAPIKeyInputDialog(serviceKey, config) {
+            return new Promise((resolve) => {
+                const modal = document.createElement('div');
+                modal.className = 'modal active';
+                modal.id = 'api-key-modal';
+                
+                modal.innerHTML = `
+                    <div class="modal-content">
+                        <h3><i class="${config.icon}"></i> ${config.name} API Key</h3>
+                        
+                        <div class="api-key-instructions">
+                            <p><strong>To connect ${config.name}:</strong></p>
+                            <ol>
+                                ${config.setupInstructions.steps.map(step => `<li>${step}</li>`).join('')}
+                            </ol>
+                            <p class="form-help">
+                                <a href="${config.setupInstructions.docUrl}" target="_blank">
+                                    View documentation <i class="fas fa-external-link-alt"></i>
+                                </a>
+                            </p>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="api-key-input">API Key:</label>
+                            <input type="password" id="api-key-input" placeholder="Enter your ${config.name} API key" 
+                                   style="width: 100%; font-family: monospace;">
+                            <div class="form-help">Your API key will be encrypted and stored locally.</div>
+                        </div>
+                        
+                        <div class="modal-actions">
+                            <button id="api-key-connect" class="btn-primary">
+                                <i class="fas fa-link"></i> Connect
+                            </button>
+                            <button id="api-key-cancel" class="btn-secondary">Cancel</button>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+                
+                const apiKeyInput = modal.querySelector('#api-key-input');
+                const connectBtn = modal.querySelector('#api-key-connect');
+                const cancelBtn = modal.querySelector('#api-key-cancel');
+                
+                // Focus the input
+                apiKeyInput.focus();
+                
+                // Handle cancel
+                const handleCancel = () => {
+                    modal.remove();
+                    resolve(false);
+                };
+                
+                // Handle connect
+                const handleConnect = async () => {
+                    const apiKey = apiKeyInput.value.trim();
+                    if (!apiKey) {
+                        apiKeyInput.style.borderColor = '#ff6b6b';
+                        apiKeyInput.focus();
+                        return;
+                    }
+                    
+                    // Store API key
+                    const storageKey = `mcp_${serviceKey}_apikey`;
+                    await window.CoreStorageService.setValue(storageKey, apiKey);
+                    
+                    // Close dialog and connect
+                    modal.remove();
+                    const result = await this.createShodanConnection(serviceKey, config, apiKey);
+                    resolve(result);
+                };
+                
+                // Event listeners
+                connectBtn.addEventListener('click', handleConnect);
+                cancelBtn.addEventListener('click', handleCancel);
+                apiKeyInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        handleConnect();
+                    }
+                });
+                
+                // Close on background click
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        handleCancel();
+                    }
+                });
             });
         }
 

@@ -100,6 +100,24 @@ window.MCPQuickConnectors = (function() {
             }
         },
         */
+        shodan: {
+            name: 'Shodan',
+            icon: 'fas fa-search',
+            description: 'Search engine for Internet-connected devices and services',
+            transport: 'service-connector',
+            authType: 'api-key',
+            setupInstructions: {
+                title: 'Shodan API Key Setup',
+                steps: [
+                    'Go to shodan.io and create an account (or login if you have one)',
+                    'Visit your account page to find your API key',
+                    'Copy your API key from the "API Key" section',
+                    'Enter the API key when prompted',
+                    'The API key will be encrypted and stored locally'
+                ],
+                docUrl: 'https://developer.shodan.io/api'
+            }
+        }
     };
 
     let storageService = null;
