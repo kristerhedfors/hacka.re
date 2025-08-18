@@ -67,19 +67,43 @@
         padding: 0.3rem;
     }
     
-    /* Extra tight spacing around the function icon on mobile */
+    /* Create MORE space between hat and robot icons */
+    #heart-btn {
+        margin-right: 0.3rem; /* Add positive margin to create space */
+    }
+    
+    #agent-config-btn {
+        margin-left: 0rem; /* Reset to normal */
+    }
+    
+    /* Tighten spacing between all other icons */
+    #mcp-servers-btn {
+        margin-left: -0.15rem;
+        margin-right: -0.15rem;
+    }
+    
     #function-btn {
         margin-left: -0.2rem;
         margin-right: -0.2rem;
     }
     
-    /* Reduce the hat and robot gap slightly */
-    #heart-btn {
-        margin-right: -0.1rem;
+    #rag-btn {
+        margin-left: -0.2rem;
+        margin-right: -0.15rem;
     }
     
-    #agent-config-btn {
-        margin-left: -0.1rem;
+    #prompts-btn {
+        margin-left: -0.15rem;
+        margin-right: -0.15rem;
+    }
+    
+    #share-btn {
+        margin-left: -0.15rem;
+        margin-right: -0.15rem;
+    }
+    
+    #theme-toggle-btn {
+        margin-left: -0.15rem;
     }
     
     /* Improve chat container layout */
