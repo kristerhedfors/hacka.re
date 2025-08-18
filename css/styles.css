@@ -257,6 +257,8 @@ a[href="https://hacka.re/"] {
     opacity: 1;
     transition: opacity 0.3s ease;
     filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+    position: relative;
+    top: 2px; /* Move hat down slightly */
 }
 
 .serverless-gpts {
@@ -989,11 +991,17 @@ body.firefox-focus .heart-logo {
 /* Desktop-specific icon spacing */
 @media (min-width: 769px) {
     .settings {
-        gap: 0.5rem;  /* Increase spacing between icons on desktop */
+        gap: 0.25rem;  /* Tighter spacing between icons on desktop */
     }
     
     .icon-btn {
-        padding: 0.5rem;  /* Slightly larger padding for desktop */
+        padding: 0.4rem;  /* Slightly reduced padding for desktop */
+    }
+    
+    /* Even tighter spacing around the function icon */
+    #function-btn {
+        margin-left: -0.125rem;
+        margin-right: -0.125rem;
     }
 }
 
