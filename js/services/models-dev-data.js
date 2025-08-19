@@ -13,7 +13,7 @@ window.ModelsDevData = (function() {
     async function loadModelsData() {
         try {
             // Import the JavaScript module instead of fetching JSON
-            const module = await import('../../models_dev/models.js');
+            const module = await import('/models_dev/models.js');
             if (module.modelsData) {
                 Object.assign(modelsData, module.modelsData);
                 console.log('Models.dev data loaded successfully from JS module');
