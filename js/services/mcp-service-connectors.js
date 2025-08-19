@@ -485,6 +485,13 @@
         }
 
         /**
+         * Get service configuration by key
+         */
+        getServiceConfig(serviceKey) {
+            return SERVICE_CONFIGS[serviceKey] || null;
+        }
+
+        /**
          * Connect to a service (GitHub, Gmail, or Google Docs)
          */
         async connectService(serviceKey) {
@@ -595,6 +602,13 @@
          * Register service tools with function calling system
          */
         async registerServiceTools(serviceKey, config, authToken) {
+            console.log(`[MCP Service Connectors] registerServiceTools called for ${serviceKey}`, {
+                serviceKey,
+                configName: config?.name,
+                toolsCount: Object.keys(config?.tools || {}).length,
+                authToken: authToken ? 'provided' : 'missing'
+            });
+            
             // Continue with registration even if some services aren't available
             // We'll check for each service individually when we need it
 
@@ -648,10 +662,19 @@
                 }
             }
 
+            console.log(`[MCP Service Connectors] Processing ${Object.keys(toolsToRegister).length} tools for ${serviceKey}:`, Object.keys(toolsToRegister));
+            
             const tools = [];
             for (const [toolName, toolConfig] of Object.entries(toolsToRegister)) {
                 // For GitHub, toolName already includes the github_ prefix from GitHubProvider
-                const functionName = serviceKey === 'github' ? toolName : `${serviceKey}_${toolName}`;
+                // For Shodan, toolName already includes the shodan_ prefix from SERVICE_CONFIGS
+                let functionName;
+                if (serviceKey === 'github' || toolName.startsWith(`${serviceKey}_`)) {
+                    functionName = toolName;
+                } else {
+                    functionName = `${serviceKey}_${toolName}`;
+                }
+                console.log(`[MCP Service Connectors] Processing tool: ${toolName} -> ${functionName}`);
                 const functionCode = this.generateServiceFunction(serviceKey, toolName, toolConfig, authToken);
                 tools.push({
                     name: functionName,
@@ -659,6 +682,8 @@
                     description: toolConfig.description
                 });
             }
+            
+            console.log(`[MCP Service Connectors] Generated ${tools.length} tools for registration`);
 
             // Register each tool as a function
             for (const tool of tools) {
@@ -704,8 +729,12 @@
                                 // For GitHub, use the toolsToRegister that was populated from GitHubProvider
                                 currentToolConfig = toolsToRegister[tool.name];
                             } else {
-                                // For other services, use config.tools
-                                currentToolConfig = config.tools[tool.name.replace(`${serviceKey}_`, '')];
+                                // For other services, first try the full tool name (for services like Shodan where tools are prefixed)
+                                currentToolConfig = config.tools[tool.name];
+                                if (!currentToolConfig) {
+                                    // Fallback: try with prefix removed
+                                    currentToolConfig = config.tools[tool.name.replace(`${serviceKey}_`, '')];
+                                }
                             }
                             
                             // Generate tool definition for the function
@@ -769,10 +798,16 @@
                 paramNames.push(...Object.keys(toolConfig.parameters.properties));
             }
 
-            // For GitHub, toolName already includes the github_ prefix
-            const functionName = serviceKey === 'github' ? toolName : `${serviceKey}_${toolName}`;
-            // For executeServiceTool, we need the base tool name without service prefix
-            const baseToolName = serviceKey === 'github' ? toolName.replace('github_', '') : toolName;
+            // For GitHub and Shodan, toolName already includes the service prefix
+            let functionName, baseToolName;
+            if (serviceKey === 'github' || toolName.startsWith(`${serviceKey}_`)) {
+                functionName = toolName;
+                // For executeServiceTool, we need the base tool name without service prefix
+                baseToolName = toolName.replace(`${serviceKey}_`, '');
+            } else {
+                functionName = `${serviceKey}_${toolName}`;
+                baseToolName = toolName;
+            }
 
             return `async function ${functionName}(${paramNames.join(', ')}) {
                 try {
@@ -2784,7 +2819,14 @@
             }
 
             // Register tools with function calling system
-            await this.registerServiceTools(serviceKey, config, { apiKey: apiKey });
+            try {
+                console.log(`[MCP Service Connectors] About to call registerServiceTools for ${serviceKey}`);
+                await this.registerServiceTools(serviceKey, config, { apiKey: apiKey });
+                console.log(`[MCP Service Connectors] registerServiceTools completed for ${serviceKey}`);
+            } catch (error) {
+                console.error(`[MCP Service Connectors] registerServiceTools failed for ${serviceKey}:`, error);
+                throw error; // Re-throw to maintain error handling
+            }
 
             // Auto-activate Shodan integration prompt when Shodan is connected
             if (window.DefaultPromptsService && window.ShodanIntegrationGuide) {
