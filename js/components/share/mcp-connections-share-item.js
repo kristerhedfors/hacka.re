@@ -129,6 +129,21 @@ async function collectMcpConnectionsData() {
                 console.log('🔌 collectMcpConnectionsData: No Gmail OAuth found');
             }
             
+            // Check for Shodan API key
+            const shodanApiKey = await window.CoreStorageService.getValue('shodan_api_key');
+            if (shodanApiKey) {
+                // Ensure we store as string, not object
+                let keyToShare = shodanApiKey;
+                if (typeof shodanApiKey === 'object' && shodanApiKey !== null && shodanApiKey.key) {
+                    keyToShare = shodanApiKey.key;
+                }
+                
+                connections.shodan = keyToShare;
+                console.log('🔌 collectMcpConnectionsData: Found Shodan API key for sharing, type:', typeof keyToShare);
+            } else {
+                console.log('🔌 collectMcpConnectionsData: No Shodan API key found');
+            }
+            
         } else {
             console.warn('🔌 collectMcpConnectionsData: CoreStorageService not available');
         }
