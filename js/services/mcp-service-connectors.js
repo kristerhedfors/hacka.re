@@ -2778,6 +2778,11 @@
                 type: 'shodan'
             });
 
+            // Store API key in CoreStorageService for sharing functionality
+            if (window.CoreStorageService) {
+                await window.CoreStorageService.setValue('shodan_api_key', apiKey);
+            }
+
             // Register tools with function calling system
             await this.registerServiceTools(serviceKey, config, { apiKey: apiKey });
 
