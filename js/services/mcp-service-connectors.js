@@ -485,6 +485,13 @@
         }
 
         /**
+         * Get service configuration by key
+         */
+        getServiceConfig(serviceKey) {
+            return SERVICE_CONFIGS[serviceKey] || null;
+        }
+
+        /**
          * Connect to a service (GitHub, Gmail, or Google Docs)
          */
         async connectService(serviceKey) {
@@ -651,7 +658,13 @@
             const tools = [];
             for (const [toolName, toolConfig] of Object.entries(toolsToRegister)) {
                 // For GitHub, toolName already includes the github_ prefix from GitHubProvider
-                const functionName = serviceKey === 'github' ? toolName : `${serviceKey}_${toolName}`;
+                // For Shodan, toolName already includes the shodan_ prefix from SERVICE_CONFIGS
+                let functionName;
+                if (serviceKey === 'github' || toolName.startsWith(`${serviceKey}_`)) {
+                    functionName = toolName;
+                } else {
+                    functionName = `${serviceKey}_${toolName}`;
+                }
                 const functionCode = this.generateServiceFunction(serviceKey, toolName, toolConfig, authToken);
                 tools.push({
                     name: functionName,
@@ -664,38 +677,22 @@
             for (const tool of tools) {
                 try {
                     // Add the function to the global scope so it can be called
-                    console.log(`[MCP Service Connectors] Registering function ${tool.name} globally...`);
-                    console.log(`[MCP Service Connectors] Function code preview:`, tool.code.substring(0, 200) + '...');
-                    
                     try {
                         // Try eval approach
                         eval(`window.${tool.name} = ${tool.code}`);
                         
                         // Verify immediately
-                        if (typeof window[tool.name] === 'function') {
-                            console.log(`[MCP Service Connectors] Successfully registered function: ${tool.name}`);
-                        } else {
-                            console.error(`[MCP Service Connectors] Eval succeeded but function ${tool.name} not found in window`);
-                            
+                        if (typeof window[tool.name] !== 'function') {
                             // Try direct assignment as backup
-                            try {
-                                const func = new Function('return ' + tool.code)();
-                                window[tool.name] = func;
-                                console.log(`[MCP Service Connectors] Backup registration successful for: ${tool.name}`);
-                            } catch (backupError) {
-                                console.error(`[MCP Service Connectors] Backup registration failed for ${tool.name}:`, backupError);
-                            }
+                            const func = new Function('return ' + tool.code)();
+                            window[tool.name] = func;
                         }
                     } catch (evalError) {
-                        console.error(`[MCP Service Connectors] Eval failed for ${tool.name}:`, evalError);
-                        console.error(`[MCP Service Connectors] Function code that failed:`, tool.code);
+                        console.error(`[MCP Service Connectors] Failed to register function ${tool.name}:`, evalError);
                     }
                     
                     // Also register with the Function Calling system
                     try {
-                        console.log(`[MCP Service Connectors] Checking Function Calling system availability...`);
-                        console.log(`- FunctionToolsRegistry:`, !!window.FunctionToolsRegistry);
-                        console.log(`- FunctionToolsStorage:`, !!window.FunctionToolsStorage);
                         
                         if (window.FunctionToolsRegistry && window.FunctionToolsStorage) {
                             // Get the tool config for this specific tool
@@ -704,8 +701,12 @@
                                 // For GitHub, use the toolsToRegister that was populated from GitHubProvider
                                 currentToolConfig = toolsToRegister[tool.name];
                             } else {
-                                // For other services, use config.tools
-                                currentToolConfig = config.tools[tool.name.replace(`${serviceKey}_`, '')];
+                                // For other services, first try the full tool name (for services like Shodan where tools are prefixed)
+                                currentToolConfig = config.tools[tool.name];
+                                if (!currentToolConfig) {
+                                    // Fallback: try with prefix removed
+                                    currentToolConfig = config.tools[tool.name.replace(`${serviceKey}_`, '')];
+                                }
                             }
                             
                             // Generate tool definition for the function
@@ -739,15 +740,12 @@
                             );
                             
                             if (added) {
-                                console.log(`[MCP Service Connectors] Added ${tool.name} to Function Registry`);
-                                
                                 // Enable the function by default
                                 const enabledFunctions = window.FunctionToolsStorage.getEnabledFunctions() || [];
                                 if (!enabledFunctions.includes(tool.name)) {
                                     enabledFunctions.push(tool.name);
                                     window.FunctionToolsStorage.setEnabledFunctions(enabledFunctions);
                                     window.FunctionToolsStorage.save();
-                                    console.log(`[MCP Service Connectors] Enabled ${tool.name} in Function Calling`);
                                 }
                             }
                         }
@@ -769,10 +767,16 @@
                 paramNames.push(...Object.keys(toolConfig.parameters.properties));
             }
 
-            // For GitHub, toolName already includes the github_ prefix
-            const functionName = serviceKey === 'github' ? toolName : `${serviceKey}_${toolName}`;
-            // For executeServiceTool, we need the base tool name without service prefix
-            const baseToolName = serviceKey === 'github' ? toolName.replace('github_', '') : toolName;
+            // For GitHub and Shodan, toolName already includes the service prefix
+            let functionName, baseToolName;
+            if (serviceKey === 'github' || toolName.startsWith(`${serviceKey}_`)) {
+                functionName = toolName;
+                // For executeServiceTool, we need the base tool name without service prefix
+                baseToolName = toolName.replace(`${serviceKey}_`, '');
+            } else {
+                functionName = `${serviceKey}_${toolName}`;
+                baseToolName = toolName;
+            }
 
             return `async function ${functionName}(${paramNames.join(', ')}) {
                 try {
@@ -2778,8 +2782,29 @@
                 type: 'shodan'
             });
 
+            // Store API key in CoreStorageService for sharing functionality
+            if (window.CoreStorageService) {
+                await window.CoreStorageService.setValue('shodan_api_key', apiKey);
+            }
+
             // Register tools with function calling system
-            await this.registerServiceTools(serviceKey, config, { apiKey: apiKey });
+            try {
+                await this.registerServiceTools(serviceKey, config, { apiKey: apiKey });
+            } catch (error) {
+                console.error(`[MCP Service Connectors] Failed to register tools for ${serviceKey}:`, error);
+                throw error; // Re-throw to maintain error handling
+            }
+
+            // Auto-activate Shodan integration prompt when Shodan is connected
+            if (window.DefaultPromptsService && window.ShodanIntegrationGuide) {
+                try {
+                    window.DefaultPromptsService.registerPrompt(window.ShodanIntegrationGuide);
+                    window.DefaultPromptsService.enablePrompt('Shodan Integration Guide');
+                    console.log('[MCP Service Connectors] Shodan integration prompt auto-enabled');
+                } catch (error) {
+                    console.warn('[MCP Service Connectors] Failed to auto-enable Shodan prompt:', error);
+                }
+            }
 
             return true;
         }

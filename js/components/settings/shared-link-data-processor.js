@@ -591,6 +591,46 @@ function createSharedLinkDataProcessor() {
                         const storageKey = 'mcp_github_token';
                         await window.CoreStorageService.setValue(storageKey, token);
                         console.log('Applied GitHub PAT from shared link');
+                    } else if (serviceKey === 'shodan') {
+                        // Shodan uses API key - should be a string
+                        let apiKey = connectionData;
+                        if (typeof connectionData === 'object' && connectionData !== null && connectionData.key) {
+                            apiKey = connectionData.key;
+                        } else if (typeof connectionData !== 'string') {
+                            console.error(`🚨 INVALID SHODAN API KEY: Expected string or {key: string}, got ${typeof connectionData}:`, connectionData);
+                            continue;
+                        }
+                        
+                        // Store the API key using the appropriate storage key
+                        const storageKey = 'shodan_api_key';
+                        await window.CoreStorageService.setValue(storageKey, apiKey);
+                        console.log('Applied Shodan API key from shared link');
+                        
+                        // Automatically connect to Shodan if MCPServiceConnectors is available
+                        if (window.MCPServiceConnectors && window.MCPServiceConnectors.createShodanConnection) {
+                            try {
+                                // Use createShodanConnection directly to avoid the API key modal
+                                // Get the proper service configuration from MCPServiceConnectors
+                                const shodanConfig = window.MCPServiceConnectors.getServiceConfig('shodan');
+                                
+                                if (!shodanConfig) {
+                                    console.error('❌ Shodan service configuration not found');
+                                    return;
+                                }
+                                
+                                await window.MCPServiceConnectors.createShodanConnection('shodan', shodanConfig, apiKey);
+                                
+                                // Update the UI status indicators
+                                if (window.MCPQuickConnectors && window.MCPQuickConnectors.updateAllConnectorStatuses) {
+                                    // Use updateAllConnectorStatuses to refresh UI based on actual connection state
+                                    setTimeout(() => {
+                                        window.MCPQuickConnectors.updateAllConnectorStatuses();
+                                    }, 200); // Small delay to ensure connection is fully established
+                                }
+                            } catch (error) {
+                                console.warn('❌ Failed to auto-connect Shodan service:', error);
+                            }
+                        }
                     } else {
                         console.warn(`Unknown MCP service type: ${serviceKey}`, connectionData);
                         continue;
@@ -647,6 +687,10 @@ function createSharedLinkDataProcessor() {
                                         addSystemMessage(`${serviceKey} MCP connection restoration failed: ${error.message}. Please reconnect manually.`);
                                     }
                                 }
+                            } else if (serviceKey === 'shodan') {
+                                // Shodan connections are already established immediately during restore
+                                // Skip delayed reconnection to avoid double connection attempts
+                                console.log(`Skipping delayed reconnection for ${serviceKey} - already connected during restore`);
                             }
                         }
                     }, 100);

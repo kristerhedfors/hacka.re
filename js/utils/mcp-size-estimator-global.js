@@ -24,7 +24,7 @@
                 }
             }
             
-            // Check for other MCP connections (Gmail OAuth, etc.)
+            // Check for other MCP connections (Gmail OAuth, Shodan API key, etc.)
             if (global.CoreStorageService) {
                 const gmailOAuth = await global.CoreStorageService.getValue('mcp_gmail_oauth');
                 if (gmailOAuth && gmailOAuth.refreshToken) {
@@ -32,6 +32,14 @@
                     const oauthSize = JSON.stringify(gmailOAuth).length;
                     totalSize += oauthSize + 10;
                     console.log(`MCP Size Estimator: Gmail OAuth size: ${oauthSize} bytes`);
+                }
+                
+                // Check for Shodan API key
+                const shodanApiKey = await global.CoreStorageService.getValue('shodan_api_key');
+                if (shodanApiKey && typeof shodanApiKey === 'string') {
+                    // Shodan API key + service key + JSON structure
+                    totalSize += shodanApiKey.length + 15; // "shodan" key + quotes + colon
+                    console.log(`MCP Size Estimator: Shodan API key size: ${shodanApiKey.length} bytes`);
                 }
             }
             
@@ -68,7 +76,7 @@
                 // Look for stored MCP connections
                 for (let i = 0; i < localStorage.length; i++) {
                     const key = localStorage.key(i);
-                    if (key && (key.includes('mcp_github_token') || key.includes('mcp_gmail_oauth'))) {
+                    if (key && (key.includes('mcp_github_token') || key.includes('mcp_gmail_oauth') || key.includes('shodan_api_key'))) {
                         try {
                             const tokenData = localStorage.getItem(key);
                             if (tokenData) {
@@ -78,6 +86,8 @@
                                 } else if (key.includes('mcp_gmail_oauth') && parsed && typeof parsed === 'object') {
                                     const oauthSize = JSON.stringify(parsed).length;
                                     estimatedSize += oauthSize + 10; // Gmail OAuth + service key
+                                } else if (key.includes('shodan_api_key') && typeof parsed === 'string' && parsed.length > 10) {
+                                    estimatedSize += parsed.length + 15; // Shodan API key + service key
                                 }
                             }
                         } catch (e) {
