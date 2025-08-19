@@ -609,7 +609,6 @@ function createSharedLinkDataProcessor() {
                         // Automatically connect to Shodan if MCPServiceConnectors is available
                         if (window.MCPServiceConnectors && window.MCPServiceConnectors.createShodanConnection) {
                             try {
-                                console.log('🔄 Attempting to auto-connect Shodan service...');
                                 // Use createShodanConnection directly to avoid the API key modal
                                 // Get the proper service configuration from MCPServiceConnectors
                                 const shodanConfig = window.MCPServiceConnectors.getServiceConfig('shodan');
@@ -619,9 +618,7 @@ function createSharedLinkDataProcessor() {
                                     return;
                                 }
                                 
-                                console.log('🔧 Using Shodan config with', Object.keys(shodanConfig.tools || {}).length, 'tools');
                                 await window.MCPServiceConnectors.createShodanConnection('shodan', shodanConfig, apiKey);
-                                console.log('✅ Shodan service automatically connected');
                                 
                                 // Update the UI status indicators
                                 if (window.MCPQuickConnectors && window.MCPQuickConnectors.updateAllConnectorStatuses) {

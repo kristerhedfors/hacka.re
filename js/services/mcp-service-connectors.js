@@ -602,13 +602,6 @@
          * Register service tools with function calling system
          */
         async registerServiceTools(serviceKey, config, authToken) {
-            console.log(`[MCP Service Connectors] registerServiceTools called for ${serviceKey}`, {
-                serviceKey,
-                configName: config?.name,
-                toolsCount: Object.keys(config?.tools || {}).length,
-                authToken: authToken ? 'provided' : 'missing'
-            });
-            
             // Continue with registration even if some services aren't available
             // We'll check for each service individually when we need it
 
@@ -662,8 +655,6 @@
                 }
             }
 
-            console.log(`[MCP Service Connectors] Processing ${Object.keys(toolsToRegister).length} tools for ${serviceKey}:`, Object.keys(toolsToRegister));
-            
             const tools = [];
             for (const [toolName, toolConfig] of Object.entries(toolsToRegister)) {
                 // For GitHub, toolName already includes the github_ prefix from GitHubProvider
@@ -674,7 +665,6 @@
                 } else {
                     functionName = `${serviceKey}_${toolName}`;
                 }
-                console.log(`[MCP Service Connectors] Processing tool: ${toolName} -> ${functionName}`);
                 const functionCode = this.generateServiceFunction(serviceKey, toolName, toolConfig, authToken);
                 tools.push({
                     name: functionName,
@@ -682,45 +672,27 @@
                     description: toolConfig.description
                 });
             }
-            
-            console.log(`[MCP Service Connectors] Generated ${tools.length} tools for registration`);
 
             // Register each tool as a function
             for (const tool of tools) {
                 try {
                     // Add the function to the global scope so it can be called
-                    console.log(`[MCP Service Connectors] Registering function ${tool.name} globally...`);
-                    console.log(`[MCP Service Connectors] Function code preview:`, tool.code.substring(0, 200) + '...');
-                    
                     try {
                         // Try eval approach
                         eval(`window.${tool.name} = ${tool.code}`);
                         
                         // Verify immediately
-                        if (typeof window[tool.name] === 'function') {
-                            console.log(`[MCP Service Connectors] Successfully registered function: ${tool.name}`);
-                        } else {
-                            console.error(`[MCP Service Connectors] Eval succeeded but function ${tool.name} not found in window`);
-                            
+                        if (typeof window[tool.name] !== 'function') {
                             // Try direct assignment as backup
-                            try {
-                                const func = new Function('return ' + tool.code)();
-                                window[tool.name] = func;
-                                console.log(`[MCP Service Connectors] Backup registration successful for: ${tool.name}`);
-                            } catch (backupError) {
-                                console.error(`[MCP Service Connectors] Backup registration failed for ${tool.name}:`, backupError);
-                            }
+                            const func = new Function('return ' + tool.code)();
+                            window[tool.name] = func;
                         }
                     } catch (evalError) {
-                        console.error(`[MCP Service Connectors] Eval failed for ${tool.name}:`, evalError);
-                        console.error(`[MCP Service Connectors] Function code that failed:`, tool.code);
+                        console.error(`[MCP Service Connectors] Failed to register function ${tool.name}:`, evalError);
                     }
                     
                     // Also register with the Function Calling system
                     try {
-                        console.log(`[MCP Service Connectors] Checking Function Calling system availability...`);
-                        console.log(`- FunctionToolsRegistry:`, !!window.FunctionToolsRegistry);
-                        console.log(`- FunctionToolsStorage:`, !!window.FunctionToolsStorage);
                         
                         if (window.FunctionToolsRegistry && window.FunctionToolsStorage) {
                             // Get the tool config for this specific tool
@@ -768,15 +740,12 @@
                             );
                             
                             if (added) {
-                                console.log(`[MCP Service Connectors] Added ${tool.name} to Function Registry`);
-                                
                                 // Enable the function by default
                                 const enabledFunctions = window.FunctionToolsStorage.getEnabledFunctions() || [];
                                 if (!enabledFunctions.includes(tool.name)) {
                                     enabledFunctions.push(tool.name);
                                     window.FunctionToolsStorage.setEnabledFunctions(enabledFunctions);
                                     window.FunctionToolsStorage.save();
-                                    console.log(`[MCP Service Connectors] Enabled ${tool.name} in Function Calling`);
                                 }
                             }
                         }
@@ -2820,11 +2789,9 @@
 
             // Register tools with function calling system
             try {
-                console.log(`[MCP Service Connectors] About to call registerServiceTools for ${serviceKey}`);
                 await this.registerServiceTools(serviceKey, config, { apiKey: apiKey });
-                console.log(`[MCP Service Connectors] registerServiceTools completed for ${serviceKey}`);
             } catch (error) {
-                console.error(`[MCP Service Connectors] registerServiceTools failed for ${serviceKey}:`, error);
+                console.error(`[MCP Service Connectors] Failed to register tools for ${serviceKey}:`, error);
                 throw error; // Re-throw to maintain error handling
             }
 
