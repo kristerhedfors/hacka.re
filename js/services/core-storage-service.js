@@ -403,7 +403,8 @@ window.CoreStorageService = (function() {
                 'mcp-oauth-pending-flows',
                 'mcp-oauth-configs',
                 'mcp_github_token',
-                'mcp_gmail_oauth'
+                'mcp_gmail_oauth',
+                'shodan_api_key'
             ];
             
             // Define function tools storage keys (namespaced manually)
