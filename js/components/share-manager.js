@@ -324,6 +324,12 @@ window.ShareManager = (function() {
                         connections.push('Gmail');
                     }
                     
+                    // Check for Shodan API key
+                    const shodanApiKey = await window.CoreStorageService.getValue('shodan_api_key');
+                    if (shodanApiKey) {
+                        connections.push('Shodan');
+                    }
+                    
                     if (connections.length > 0) {
                         console.log(`🎯 updateMcpConnectionsStatus: Creating new status indicator, checkbox.checked = ${checkbox.checked}`);
                         const statusSpan = document.createElement('span');
@@ -351,6 +357,11 @@ window.ShareManager = (function() {
                     const gmailAuth = localStorage.getItem('mcp_gmail_oauth');
                     if (gmailAuth) {
                         connections.push('Gmail');
+                    }
+                    
+                    const shodanApiKey = localStorage.getItem('shodan_api_key');
+                    if (shodanApiKey) {
+                        connections.push('Shodan');
                     }
                     
                     if (connections.length > 0) {

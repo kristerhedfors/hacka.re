@@ -20,12 +20,19 @@ export async function estimateMcpConnectionsSize() {
             }
         }
         
-        // Check for other MCP connections (Gmail OAuth, etc.)
+        // Check for other MCP connections (Gmail OAuth, Shodan API key, etc.)
         if (window.CoreStorageService) {
             const gmailOAuth = await window.CoreStorageService.getValue('mcp_gmail_oauth');
             if (gmailOAuth && gmailOAuth.refreshToken) {
                 // OAuth data is larger than PAT tokens
                 totalSize += JSON.stringify(gmailOAuth).length + 10;
+            }
+            
+            // Check for Shodan API key
+            const shodanApiKey = await window.CoreStorageService.getValue('shodan_api_key');
+            if (shodanApiKey && typeof shodanApiKey === 'string') {
+                // Shodan API key + service key + JSON structure
+                totalSize += shodanApiKey.length + 15; // "shodan" key + quotes + colon
             }
         }
         

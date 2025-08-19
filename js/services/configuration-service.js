@@ -193,6 +193,12 @@ window.ConfigurationService = (function() {
                 connections.gmail = gmailOAuth;
             }
             
+            // Get Shodan API key if available
+            const shodanApiKey = CoreStorageService.getValue('shodan_api_key');
+            if (shodanApiKey) {
+                connections.shodan = { key: shodanApiKey };
+            }
+            
             // Get OAuth tokens if available
             const oauthTokens = CoreStorageService.getValue('mcp-oauth-tokens');
             if (oauthTokens && typeof oauthTokens === 'object') {
@@ -378,10 +384,15 @@ window.ConfigurationService = (function() {
             CoreStorageService.setValue('mcp_gmail_oauth', connections.gmail);
         }
         
+        // Apply Shodan API key
+        if (connections.shodan && connections.shodan.key && CoreStorageService && typeof CoreStorageService.setValue === 'function') {
+            CoreStorageService.setValue('shodan_api_key', connections.shodan.key);
+        }
+        
         // Apply other OAuth tokens
         const oauthTokens = {};
         Object.keys(connections).forEach(key => {
-            if (key !== 'github' && key !== 'gmail') {
+            if (key !== 'github' && key !== 'gmail' && key !== 'shodan') {
                 oauthTokens[key] = connections[key];
             }
         });
