@@ -2781,6 +2781,17 @@
             // Register tools with function calling system
             await this.registerServiceTools(serviceKey, config, { apiKey: apiKey });
 
+            // Auto-activate Shodan integration prompt when Shodan is connected
+            if (window.DefaultPromptsService && window.ShodanIntegrationGuide) {
+                try {
+                    window.DefaultPromptsService.registerPrompt(window.ShodanIntegrationGuide);
+                    window.DefaultPromptsService.enablePrompt('Shodan Integration Guide');
+                    console.log('[MCP Service Connectors] Shodan integration prompt auto-enabled');
+                } catch (error) {
+                    console.warn('[MCP Service Connectors] Failed to auto-enable Shodan prompt:', error);
+                }
+            }
+
             return true;
         }
 

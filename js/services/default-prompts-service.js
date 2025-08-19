@@ -251,6 +251,115 @@ function initializeDefaultPrompts() {
         }
     }
 
+    /**
+     * Register a new prompt dynamically (for MCP prompts)
+     * @param {Object} promptObject - The prompt object to register
+     * @returns {boolean} True if registered successfully
+     */
+    function registerPrompt(promptObject) {
+        if (!promptObject || !promptObject.id || !promptObject.name || !promptObject.content) {
+            console.warn('DefaultPromptsService.registerPrompt: Invalid prompt object', promptObject);
+            return false;
+        }
+        
+        // Check if prompt already exists
+        const existingPrompt = DEFAULT_PROMPTS.find(p => p.id === promptObject.id);
+        if (existingPrompt) {
+            console.log(`DefaultPromptsService.registerPrompt: Prompt '${promptObject.name}' already registered`);
+            return true;
+        }
+        
+        // Add to the prompts array
+        DEFAULT_PROMPTS.push(promptObject);
+        console.log(`DefaultPromptsService.registerPrompt: Registered MCP prompt '${promptObject.name}'`);
+        
+        return true;
+    }
+    
+    /**
+     * Enable/activate a prompt by name (for MCP auto-activation)
+     * @param {string} promptName - The name of the prompt to enable
+     * @returns {boolean} True if enabled successfully
+     */
+    function enablePrompt(promptName) {
+        const prompt = DEFAULT_PROMPTS.find(p => p.name === promptName);
+        if (!prompt) {
+            console.warn(`DefaultPromptsService.enablePrompt: Prompt '${promptName}' not found`);
+            return false;
+        }
+        
+        const selectedIds = getSelectedDefaultPromptIds();
+        if (!selectedIds.includes(prompt.id)) {
+            selectedIds.push(prompt.id);
+            setSelectedDefaultPromptIds(selectedIds);
+            
+            // Update system prompt
+            if (window.SystemPromptCoordinator) {
+                window.SystemPromptCoordinator.updateSystemPrompt(true);
+            }
+            
+            console.log(`DefaultPromptsService.enablePrompt: Enabled prompt '${promptName}'`);
+            return true;
+        }
+        
+        console.log(`DefaultPromptsService.enablePrompt: Prompt '${promptName}' already enabled`);
+        return true;
+    }
+    
+    /**
+     * Disable/deactivate a prompt by name (for MCP cleanup)
+     * @param {string} promptName - The name of the prompt to disable
+     * @returns {boolean} True if disabled successfully
+     */
+    function disablePrompt(promptName) {
+        const prompt = DEFAULT_PROMPTS.find(p => p.name === promptName);
+        if (!prompt) {
+            console.warn(`DefaultPromptsService.disablePrompt: Prompt '${promptName}' not found`);
+            return false;
+        }
+        
+        const selectedIds = getSelectedDefaultPromptIds();
+        const index = selectedIds.indexOf(prompt.id);
+        if (index >= 0) {
+            selectedIds.splice(index, 1);
+            setSelectedDefaultPromptIds(selectedIds);
+            
+            // Update system prompt
+            if (window.SystemPromptCoordinator) {
+                window.SystemPromptCoordinator.updateSystemPrompt(true);
+            }
+            
+            console.log(`DefaultPromptsService.disablePrompt: Disabled prompt '${promptName}'`);
+            return true;
+        }
+        
+        console.log(`DefaultPromptsService.disablePrompt: Prompt '${promptName}' was not enabled`);
+        return true;
+    }
+    
+    /**
+     * Unregister a prompt (for MCP disconnection cleanup)
+     * @param {string} promptName - The name of the prompt to unregister
+     * @returns {boolean} True if unregistered successfully
+     */
+    function unregisterPrompt(promptName) {
+        const index = DEFAULT_PROMPTS.findIndex(p => p.name === promptName);
+        if (index >= 0) {
+            const prompt = DEFAULT_PROMPTS[index];
+            
+            // First disable it if it's enabled
+            disablePrompt(promptName);
+            
+            // Remove from prompts array
+            DEFAULT_PROMPTS.splice(index, 1);
+            console.log(`DefaultPromptsService.unregisterPrompt: Unregistered prompt '${promptName}'`);
+            return true;
+        }
+        
+        console.warn(`DefaultPromptsService.unregisterPrompt: Prompt '${promptName}' not found`);
+        return false;
+    }
+
     // Public API
     return {
         getDefaultPrompts,
@@ -261,6 +370,11 @@ function initializeDefaultPrompts() {
         isDefaultPromptSelected,
         getSelectedDefaultPrompts,
         initializeDefaultPrompts,
-        clearSelectedDefaultPrompts
+        clearSelectedDefaultPrompts,
+        // MCP prompt management
+        registerPrompt,
+        enablePrompt,
+        disablePrompt,
+        unregisterPrompt
     };
 })();
