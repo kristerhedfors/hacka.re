@@ -9,39 +9,19 @@ window.ModelsDevData = (function() {
     // We'll populate this with the actual data
     const modelsData = {};
     
-    // Load the data asynchronously with support for both HTTP and file:// protocols
+    // Load the data from JavaScript module
     async function loadModelsData() {
         try {
-            // Try multiple paths to handle different environments
-            const paths = [
-                '/models_dev/models.json',
-                './models_dev/models.json',
-                'models_dev/models.json'
-            ];
-            
-            let data = null;
-            for (const path of paths) {
-                try {
-                    const response = await fetch(path);
-                    if (response.ok) {
-                        data = await response.json();
-                        console.log(`Models.dev data loaded successfully from ${path}`);
-                        break;
-                    }
-                } catch (err) {
-                    console.debug(`Failed to load from ${path}:`, err.message);
-                }
-            }
-            
-            if (data) {
-                Object.assign(modelsData, data);
+            // Import the JavaScript module instead of fetching JSON
+            const module = await import('../../models_dev/models.js');
+            if (module.modelsData) {
+                Object.assign(modelsData, module.modelsData);
+                console.log('Models.dev data loaded successfully from JS module');
             } else {
-                // Fallback: Use minimal embedded data for file:// protocol
-                console.warn('Could not load models.dev data from any path, using embedded fallback');
-                loadEmbeddedFallback();
+                throw new Error('No modelsData export found in module');
             }
         } catch (error) {
-            console.warn('Error loading models.dev data:', error);
+            console.warn('Error loading models.dev data from JS module:', error);
             loadEmbeddedFallback();
         }
     }
