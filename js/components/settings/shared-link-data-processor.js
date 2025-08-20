@@ -614,7 +614,7 @@ function createSharedLinkDataProcessor() {
                             try {
                                 console.log('🔧 Attempting auto-connect to Shodan service with API key');
                                 
-                                // Connect using the stored API key
+                                // Connect using the stored API key - back to awaiting to ensure completion
                                 const result = await window.mcpServiceManager.connectService('shodan', { apiKey: apiKey });
                                 
                                 if (result) {
@@ -624,6 +624,7 @@ function createSharedLinkDataProcessor() {
                                 }
                             } catch (error) {
                                 console.warn('❌ Failed to auto-connect Shodan service:', error);
+                                // Don't let Shodan connection errors break the entire shared link processing
                             }
                         }
                     } else {
@@ -1044,39 +1045,27 @@ function createSharedLinkDataProcessor() {
             // Apply conversation history with system messages prepended
             applyChatMessages(sharedData, collectSystemMessage, setMessages, systemMessages);
             
-            // Refresh MCP connection status and function calling UI after processing
-            if (window.MCPQuickConnectors && window.MCPQuickConnectors.updateAllConnectorStatuses) {
-                console.log('🔧 processSharedData: Refreshing MCP connector status display');
-                setTimeout(() => {
-                    // Debug current connection status before updating UI
-                    if (window.mcpServiceManager) {
-                        console.log('🔧 DEBUG: GitHub connected:', window.MCPToolRegistry ? !!window.MCPToolRegistry.getProvider('github')?.connected : 'MCPToolRegistry unavailable');
-                        console.log('🔧 DEBUG: Shodan connected:', window.mcpServiceManager.isConnected('shodan'));
-                    }
-                    
-                    // Update MCP connection status in UI
-                    window.MCPQuickConnectors.updateAllConnectorStatuses();
-                    
-                    // Refresh Function Calling UI to show newly registered functions
-                    if (window.FunctionCallingManager && window.FunctionCallingManager.renderFunctionList) {
-                        console.log('🔧 processSharedData: Refreshing Function Calling UI');
-                        window.FunctionCallingManager.renderFunctionList();
-                    }
-                    
-                    console.log('🔧 processSharedData: UI refresh completed');
-                }, 1000); // Short delay to ensure connections are fully established
-            }
+            // Note: Removed UI refresh logic as it may be interfering with API requests
+            // The MCP connections and function registrations happen automatically
+            console.log('🔧 processSharedData: MCP connections and functions registered automatically');
             
             console.log('✅ processSharedData completed successfully');
             
-            // Clear the processing flag
+            // Clear the processing flag immediately to avoid blocking chat
             window._processingSharedLink = false;
+            
+            // Add diagnostic logging for debugging message delays
+            console.log('🔧 [SharedLink Diagnostics] Processing flags after completion:', {
+                processingSharedLink: window._processingSharedLink,
+                sharedLinkProcessed: window._sharedLinkProcessed,
+                waitingForPassword: window._waitingForSharedLinkPassword
+            });
             
             // Clear the shared link processed flag after a delay to allow all related operations to complete
             setTimeout(() => {
                 window._sharedLinkProcessed = false;
-                console.log('[SharedLink] Cleared _sharedLinkProcessed flag after processing completion');
-            }, 5000); // 5 second delay
+                console.log('[SharedLink] Cleared _sharedLinkProcessed flag after processing completion - chat should work normally now');
+            }, 2000); // Allow more time for all async operations to complete
             
             return pendingSharedModel;
             
@@ -1090,7 +1079,7 @@ function createSharedLinkDataProcessor() {
             setTimeout(() => {
                 window._sharedLinkProcessed = false;
                 console.log('[SharedLink] Cleared _sharedLinkProcessed flag after error');
-            }, 5000); // 5 second delay
+            }, 500); // Short delay
             
             if (addSystemMessage) {
                 addSystemMessage(`Error processing shared data: ${error.message}`);
