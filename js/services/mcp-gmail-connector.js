@@ -8,7 +8,7 @@
 
     class GmailConnector extends global.OAuthConnector {
         constructor() {
-            const config = {
+            super('gmail', {
                 name: 'Gmail',
                 icon: 'fas fa-envelope',
                 description: 'Comprehensive READ ONLY access to Gmail messages, threads, and labels',
@@ -36,16 +36,14 @@
                     ],
                     docUrl: 'https://developers.google.com/gmail/api/quickstart/js'
                 },
-                tools: this.getGmailTools()
-            };
-            
-            super('gmail', config);
+                tools: GmailConnector.getGmailTools()
+            });
         }
 
         /**
          * Define Gmail tools
          */
-        getGmailTools() {
+        static getGmailTools() {
             return {
                 list_messages: {
                     description: 'List Gmail messages with rich metadata (subject, sender, date, snippet)',

@@ -45,6 +45,13 @@
          * Connect using OAuth
          */
         async connect() {
+            // First try to load existing connection
+            await this.loadConnection();
+            if (this.isConnected()) {
+                console.log(`[${this.constructor.name}] Using loaded connection`);
+                return true;
+            }
+
             // Check for existing OAuth tokens
             const storageKey = this.getStorageKey('oauth');
             const existingAuth = await this.storage.getValue(storageKey);
@@ -59,7 +66,14 @@
                 }
             }
 
-            // OAuth tokens not found or invalid - caller should show UI
+            // No valid OAuth tokens found - show UI to get them
+            if (window.mcpServiceUIHelper) {
+                const result = await window.mcpServiceUIHelper.showOAuthWebSetupDialog(this.serviceKey, this.config);
+                if (result) {
+                    return true;
+                }
+            }
+
             return false;
         }
 

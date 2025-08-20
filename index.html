@@ -1010,7 +1010,14 @@ async function getCurrentTimeInBerlin() {
     <script src="js/providers/github/github-provider-loader.js"></script>
     <script src="js/services/mcp-connection-manager.js"></script>
     <script src="js/services/mcp-client-core.js"></script>
-    <script src="js/services/mcp-service-connectors.js?v=20250723-1945-github-auth-fix"></script>
+    <!-- New refactored MCP service architecture -->
+    <script src="js/services/mcp-base-service-connector.js"></script>
+    <script src="js/services/mcp-oauth-connector.js"></script>
+    <script src="js/services/mcp-github-connector.js"></script>
+    <script src="js/services/mcp-shodan-connector.js"></script>
+    <script src="js/services/mcp-gmail-connector.js"></script>
+    <script src="js/services/mcp-service-manager.js"></script>
+    <script src="js/services/mcp-service-ui-helper.js"></script>
     <!-- Orchestration Services -->
     <script src="js/services/orchestration-mcp-server.js"></script>
     <script src="js/services/orchestration-agent-service.js"></script>
