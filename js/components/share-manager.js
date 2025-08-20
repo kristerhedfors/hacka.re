@@ -325,7 +325,7 @@ window.ShareManager = (function() {
                     }
                     
                     // Check for Shodan API key
-                    const shodanApiKey = await window.CoreStorageService.getValue('shodan_api_key');
+                    const shodanApiKey = await window.CoreStorageService.getValue('mcp_shodan_api_key');
                     if (shodanApiKey) {
                         connections.push('Shodan');
                     }
@@ -359,7 +359,7 @@ window.ShareManager = (function() {
                         connections.push('Gmail');
                     }
                     
-                    const shodanApiKey = localStorage.getItem('shodan_api_key');
+                    const shodanApiKey = localStorage.getItem('mcp_shodan_api_key');
                     if (shodanApiKey) {
                         connections.push('Shodan');
                     }
@@ -662,25 +662,35 @@ window.ShareManager = (function() {
             if (mcpConnectionsChecked) {
                 console.log('🔌 ShareManager: Collecting MCP connections...');
                 try {
-                    // Use the share item collector which handles this properly
-                    if (window.collectMcpConnectionsData) {
-                        console.log('🔌 ShareManager: window.collectMcpConnectionsData is available, calling it...');
-                        const collectedData = await window.collectMcpConnectionsData();
-                        console.log('🔌 ShareManager: collectMcpConnectionsData returned:', collectedData);
-                        if (collectedData) {
-                            mcpConnections = collectedData;
-                            console.log('🔌 ShareManager: Collected MCP connections:', Object.keys(collectedData));
-                        } else {
-                            console.log('🔌 ShareManager: collectMcpConnectionsData returned null/empty');
-                        }
+                    // Collect MCP connections from all active connectors
+                    mcpConnections = {};
+                    
+                    // Check GitHub connection
+                    const githubToken = await window.CoreStorageService.getValue('mcp_github_token');
+                    if (githubToken && typeof githubToken === 'string') {
+                        mcpConnections.github = githubToken;
+                        console.log('🔌 ShareManager: Found GitHub token');
+                    }
+                    
+                    // Check Shodan connection
+                    const shodanApiKey = await window.CoreStorageService.getValue('mcp_shodan_api_key');
+                    if (shodanApiKey && typeof shodanApiKey === 'string') {
+                        mcpConnections.shodan = shodanApiKey;
+                        console.log('🔌 ShareManager: Found Shodan API key');
+                    }
+                    
+                    // Check Gmail connection
+                    const gmailAuth = await window.CoreStorageService.getValue('mcp_gmail_oauth');
+                    if (gmailAuth) {
+                        mcpConnections.gmail = gmailAuth;
+                        console.log('🔌 ShareManager: Found Gmail OAuth');
+                    }
+                    
+                    if (Object.keys(mcpConnections).length > 0) {
+                        console.log('🔌 ShareManager: Collected MCP connections:', Object.keys(mcpConnections));
                     } else {
-                        console.warn('🔌 ShareManager: window.collectMcpConnectionsData is NOT available, using fallback');
-                        // Fallback: Try to get GitHub token directly
-                        const githubToken = await window.CoreStorageService.getValue('mcp_github_token');
-                        if (githubToken) {
-                            mcpConnections = { github: githubToken };
-                            console.log('🔌 ShareManager: Found GitHub token via fallback');
-                        }
+                        mcpConnections = null;
+                        console.log('🔌 ShareManager: No MCP connections found');
                     }
                 } catch (error) {
                     console.warn('🔌 ShareManager: Error collecting MCP connections:', error);

@@ -609,26 +609,18 @@ function createSharedLinkDataProcessor() {
                         // Also store in the sharing format for configuration service compatibility
                         await window.CoreStorageService.setValue('shodan_api_key', apiKey);
                         
-                        // Automatically connect to Shodan if MCPServiceConnectors is available
-                        if (window.mcpServiceManager && window.mcpServiceManager.createShodanConnection) {
+                        // Automatically connect to Shodan if mcpServiceManager is available
+                        if (window.mcpServiceManager && window.mcpServiceManager.connectService) {
                             try {
-                                // Use createShodanConnection directly to avoid the API key modal
-                                // Get the proper service configuration from MCPServiceConnectors
-                                const shodanConfig = window.mcpServiceManager.getServiceConfig('shodan');
+                                console.log('🔧 Attempting auto-connect to Shodan service with API key');
                                 
-                                if (!shodanConfig) {
-                                    console.error('❌ Shodan service configuration not found');
-                                    return;
-                                }
+                                // Connect using the stored API key
+                                const result = await window.mcpServiceManager.connectService('shodan', { apiKey: apiKey });
                                 
-                                await window.mcpServiceManager.createShodanConnection('shodan', shodanConfig, apiKey);
-                                
-                                // Update the UI status indicators
-                                if (window.MCPQuickConnectors && window.MCPQuickConnectors.updateAllConnectorStatuses) {
-                                    // Use updateAllConnectorStatuses to refresh UI based on actual connection state
-                                    setTimeout(() => {
-                                        window.MCPQuickConnectors.updateAllConnectorStatuses();
-                                    }, 200); // Small delay to ensure connection is fully established
+                                if (result) {
+                                    console.log('✅ Shodan auto-connection successful from shared link');
+                                } else {
+                                    console.warn('⚠️ Shodan auto-connection returned false');
                                 }
                             } catch (error) {
                                 console.warn('❌ Failed to auto-connect Shodan service:', error);
@@ -1051,6 +1043,29 @@ function createSharedLinkDataProcessor() {
             console.log('🔧 processSharedData: Applying chat messages');
             // Apply conversation history with system messages prepended
             applyChatMessages(sharedData, collectSystemMessage, setMessages, systemMessages);
+            
+            // Refresh MCP connection status and function calling UI after processing
+            if (window.MCPQuickConnectors && window.MCPQuickConnectors.updateAllConnectorStatuses) {
+                console.log('🔧 processSharedData: Refreshing MCP connector status display');
+                setTimeout(() => {
+                    // Debug current connection status before updating UI
+                    if (window.mcpServiceManager) {
+                        console.log('🔧 DEBUG: GitHub connected:', window.MCPToolRegistry ? !!window.MCPToolRegistry.getProvider('github')?.connected : 'MCPToolRegistry unavailable');
+                        console.log('🔧 DEBUG: Shodan connected:', window.mcpServiceManager.isConnected('shodan'));
+                    }
+                    
+                    // Update MCP connection status in UI
+                    window.MCPQuickConnectors.updateAllConnectorStatuses();
+                    
+                    // Refresh Function Calling UI to show newly registered functions
+                    if (window.FunctionCallingManager && window.FunctionCallingManager.renderFunctionList) {
+                        console.log('🔧 processSharedData: Refreshing Function Calling UI');
+                        window.FunctionCallingManager.renderFunctionList();
+                    }
+                    
+                    console.log('🔧 processSharedData: UI refresh completed');
+                }, 1000); // Short delay to ensure connections are fully established
+            }
             
             console.log('✅ processSharedData completed successfully');
             
