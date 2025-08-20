@@ -137,6 +137,12 @@
                 return true;
             }
 
+            // Check for invalid cached connection (boolean token from testing)
+            if (this.connection && typeof this.connection.token === 'boolean') {
+                console.log(`[GitHubConnector] Clearing invalid cached connection`);
+                await this.clearConnection();
+            }
+
             // Check for existing token
             const storageKey = this.getStorageKey('token');
             const existingToken = await this.storage.getValue(storageKey);
@@ -173,6 +179,12 @@
          * Create connection with token
          */
         async createConnection(token) {
+            // Check for invalid token (boolean from testing)
+            if (this.connection && typeof this.connection.token === 'boolean') {
+                console.log(`[GitHubConnector] Clearing invalid cached connection`);
+                await this.clearConnection();
+            }
+
             const connectionData = {
                 type: 'github',
                 token: token,

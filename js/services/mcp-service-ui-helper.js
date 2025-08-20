@@ -113,11 +113,9 @@
                             }
                         }
                         
-                        // Create connection
-                        await connector.createConnection(token);
-                        
+                        // Return the token - connector will create connection
                         modal.remove();
-                        resolve(true);
+                        resolve(token);
                     } catch (error) {
                         errorDiv.textContent = error.message || 'Failed to connect';
                         errorDiv.style.display = 'block';
