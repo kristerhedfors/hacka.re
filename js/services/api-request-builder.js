@@ -29,6 +29,13 @@ window.ApiRequestBuilder = (function() {
             throw new Error('API key is required');
         }
         
+        // Sanitize API key - remove any non-ASCII characters and trim
+        const sanitizedApiKey = apiKey.toString().trim().replace(/[^\x00-\x7F]/g, '');
+        
+        if (!sanitizedApiKey) {
+            throw new Error('API key contains invalid characters');
+        }
+        
         if (!model) {
             throw new Error('Model is required');
         }
@@ -67,7 +74,7 @@ window.ApiRequestBuilder = (function() {
         // Build headers
         const headers = {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
+            'Authorization': `Bearer ${sanitizedApiKey}`
         };
         
         // Get endpoint URL
@@ -94,9 +101,16 @@ window.ApiRequestBuilder = (function() {
             throw new Error('API key is required');
         }
         
+        // Sanitize API key - remove any non-ASCII characters and trim
+        const sanitizedApiKey = apiKey.toString().trim().replace(/[^\x00-\x7F]/g, '');
+        
+        if (!sanitizedApiKey) {
+            throw new Error('API key contains invalid characters');
+        }
+        
         // Build headers
         const headers = {
-            'Authorization': `Bearer ${apiKey}`,
+            'Authorization': `Bearer ${sanitizedApiKey}`,
             'Content-Type': 'application/json'
         };
         
@@ -127,6 +141,13 @@ window.ApiRequestBuilder = (function() {
         
         if (!apiKey) {
             throw new Error('API key is required');
+        }
+        
+        // Sanitize API key - remove any non-ASCII characters and trim
+        const sanitizedApiKey = apiKey.toString().trim().replace(/[^\x00-\x7F]/g, '');
+        
+        if (!sanitizedApiKey) {
+            throw new Error('API key contains invalid characters');
         }
         
         if (!messages || !Array.isArray(messages)) {
@@ -162,7 +183,7 @@ window.ApiRequestBuilder = (function() {
         // Build headers
         const headers = {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
+            'Authorization': `Bearer ${sanitizedApiKey}`
         };
         
         // Get endpoint URL
