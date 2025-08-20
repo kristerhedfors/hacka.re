@@ -150,7 +150,12 @@
                 throw new Error(`Unknown service: ${serviceKey}`);
             }
 
-            if (!connector.isConnected()) {
+            const connected = connector.isConnected();
+            console.log(`[MCPServiceManager] executeServiceTool ${serviceKey}:${toolName} - connected: ${connected}`);
+            
+            if (!connected) {
+                console.log(`[MCPServiceManager] Connection state:`, connector.connection);
+                console.log(`[MCPServiceManager] hasValidCredentials:`, connector.hasValidCredentials());
                 throw new Error(`Service ${serviceKey} not connected`);
             }
 
@@ -344,37 +349,5 @@
     global.MCPServiceManager = MCPServiceManager;
     global.mcpServiceManager = manager;
 
-    // For backward compatibility with existing code
-    global.MCPServiceConnectors = {
-        // Delegate to manager
-        connectService: (key) => manager.connectService(key),
-        disconnectService: (key) => manager.disconnectService(key),
-        isConnected: (key) => manager.isConnected(key),
-        getConnectedServices: () => manager.getConnectedServices(),
-        getAvailableServices: () => manager.getAvailableServices(),
-        executeServiceTool: (key, tool, params) => manager.executeServiceTool(key, tool, params),
-        bulkDisconnectServices: (keys) => manager.bulkDisconnectServices(keys),
-        quickConnect: (key) => manager.quickConnect(key),
-        getServiceConfig: (key) => manager.getServiceConfig(key),
-        registerGmailFunctions: (tokens) => manager.registerGmailFunctions(tokens),
-        
-        // UI helper methods for backward compatibility
-        showPATInputDialog: async (serviceKey, config) => {
-            console.warn('[MCPServiceConnectors] showPATInputDialog should be handled by UI layer');
-            return false;
-        },
-        showOAuthSetupDialog: async (serviceKey, config) => {
-            console.warn('[MCPServiceConnectors] showOAuthSetupDialog should be handled by UI layer');
-            return false;
-        },
-        showOAuthWebSetupDialog: async (serviceKey, config) => {
-            console.warn('[MCPServiceConnectors] showOAuthWebSetupDialog should be handled by UI layer');
-            return false;
-        },
-        showAPIKeyInputDialog: async (serviceKey, config) => {
-            console.warn('[MCPServiceConnectors] showAPIKeyInputDialog should be handled by UI layer');
-            return false;
-        }
-    };
 
 })(window);

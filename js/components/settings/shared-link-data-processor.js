@@ -538,14 +538,14 @@ function createSharedLinkDataProcessor() {
                         
                         // Automatically register Gmail functions after OAuth is restored
                         console.log('🔍 DEBUG: Checking Gmail function registration availability...');
-                        console.log('🔍 window.MCPServiceConnectors available:', !!window.MCPServiceConnectors);
-                        console.log('🔍 registerGmailFunctions method available:', !!(window.MCPServiceConnectors && window.MCPServiceConnectors.registerGmailFunctions));
+                        console.log('🔍 window.mcpServiceManager available:', !!window.mcpServiceManager);
+                        console.log('🔍 registerGmailFunctions method available:', !!(window.mcpServiceManager && window.mcpServiceManager.registerGmailFunctions));
                         
                         // Try immediate registration first
-                        if (window.MCPServiceConnectors && window.MCPServiceConnectors.registerGmailFunctions) {
+                        if (window.mcpServiceManager && window.mcpServiceManager.registerGmailFunctions) {
                             try {
                                 console.log('🔄 Calling registerGmailFunctions with data:', connectionData);
-                                await window.MCPServiceConnectors.registerGmailFunctions(connectionData);
+                                await window.mcpServiceManager.registerGmailFunctions(connectionData);
                                 console.log('✅ Gmail functions automatically registered after OAuth restore');
                             } catch (error) {
                                 console.warn('❌ Failed to auto-register Gmail functions:', error);
@@ -560,11 +560,11 @@ function createSharedLinkDataProcessor() {
                                 retryCount++;
                                 console.log(`🔄 Retry ${retryCount}/${maxRetries}: Checking for MCPServiceConnectors...`);
                                 
-                                if (window.MCPServiceConnectors && window.MCPServiceConnectors.registerGmailFunctions) {
+                                if (window.mcpServiceManager && window.mcpServiceManager.registerGmailFunctions) {
                                     clearInterval(retryInterval);
                                     console.log('✅ MCPServiceConnectors now available, registering Gmail functions...');
                                     
-                                    window.MCPServiceConnectors.registerGmailFunctions(connectionData)
+                                    window.mcpServiceManager.registerGmailFunctions(connectionData)
                                         .then(() => {
                                             console.log('✅ Gmail functions registered via delayed retry');
                                         })
@@ -610,18 +610,18 @@ function createSharedLinkDataProcessor() {
                         await window.CoreStorageService.setValue('shodan_api_key', apiKey);
                         
                         // Automatically connect to Shodan if MCPServiceConnectors is available
-                        if (window.MCPServiceConnectors && window.MCPServiceConnectors.createShodanConnection) {
+                        if (window.mcpServiceManager && window.mcpServiceManager.createShodanConnection) {
                             try {
                                 // Use createShodanConnection directly to avoid the API key modal
                                 // Get the proper service configuration from MCPServiceConnectors
-                                const shodanConfig = window.MCPServiceConnectors.getServiceConfig('shodan');
+                                const shodanConfig = window.mcpServiceManager.getServiceConfig('shodan');
                                 
                                 if (!shodanConfig) {
                                     console.error('❌ Shodan service configuration not found');
                                     return;
                                 }
                                 
-                                await window.MCPServiceConnectors.createShodanConnection('shodan', shodanConfig, apiKey);
+                                await window.mcpServiceManager.createShodanConnection('shodan', shodanConfig, apiKey);
                                 
                                 // Update the UI status indicators
                                 if (window.MCPQuickConnectors && window.MCPQuickConnectors.updateAllConnectorStatuses) {
@@ -652,20 +652,20 @@ function createSharedLinkDataProcessor() {
                 }
                 
                 // Trigger MCP service connector to recreate connections if available
-                if (window.MCPServiceConnectors) {
+                if (window.mcpServiceManager) {
                     // Delay slightly to ensure storage is committed
                     setTimeout(async () => {
                         for (const serviceKey of connectionKeys) {
                             // Try to recreate the connection automatically
-                            if (window.MCPServiceConnectors.quickConnect && serviceKey === 'github') {
+                            if (window.mcpServiceManager.quickConnect && serviceKey === 'github') {
                                 try {
                                     // First validate the token before attempting connection
                                     const storageKey = `mcp_${serviceKey}_token`;
                                     const token = await window.CoreStorageService.getValue(storageKey);
                                     
                                     
-                                    if (token && window.MCPServiceConnectors.validateGitHubToken) {
-                                        const isValid = await window.MCPServiceConnectors.validateGitHubToken(token);
+                                    if (token && window.mcpServiceManager.validateGitHubToken) {
+                                        const isValid = await window.mcpServiceManager.validateGitHubToken(token);
                                         if (!isValid) {
                                             console.warn(`[MCP Auto-reconnect] Invalid ${serviceKey} token detected, skipping auto-reconnection. Manual reconnection required.`);
                                             if (addSystemMessage) {
@@ -675,7 +675,7 @@ function createSharedLinkDataProcessor() {
                                         }
                                     }
                                     
-                                    const connected = await window.MCPServiceConnectors.quickConnect('github');
+                                    const connected = await window.mcpServiceManager.quickConnect('github');
                                     if (connected) {
                                         console.log(`Auto-reconnected to ${serviceKey} MCP service`);
                                     } else {
@@ -753,9 +753,9 @@ function createSharedLinkDataProcessor() {
         console.log('🧹 Required functions for agent:', requiredFunctions);
         
         // PRESERVE MCP connections - do not disconnect them
-        if (window.MCPServiceConnectors) {
+        if (window.mcpServiceManager) {
             try {
-                const services = window.MCPServiceConnectors.getConnectedServices();
+                const services = window.mcpServiceManager.getConnectedServices();
                 const serviceKeys = services.map(service => service.key);
                 console.log(`🧹 Preserving ${serviceKeys.length} existing MCP connections:`, serviceKeys);
             } catch (error) {
@@ -916,7 +916,7 @@ function createSharedLinkDataProcessor() {
         // Validate MCP connections state
         if (sharedData.mcpConnections || sharedData.cleanSlate) {
             try {
-                const connectedServices = window.MCPServiceConnectors ? window.MCPServiceConnectors.getConnectedServices() : [];
+                const connectedServices = window.mcpServiceManager ? window.mcpServiceManager.getConnectedServices() : [];
                 
                 console.log('🔍 MCP validation:', {
                     expectedConnections: sharedData.mcpConnections ? Object.keys(sharedData.mcpConnections) : [],
