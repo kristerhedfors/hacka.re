@@ -8,7 +8,7 @@
 
     class ShodanConnector extends global.BaseServiceConnector {
         constructor() {
-            const config = {
+            super('shodan', {
                 name: 'Shodan',
                 icon: 'images/shodan-icon.svg',
                 iconType: 'svg',
@@ -27,16 +27,14 @@
                     ],
                     docUrl: 'https://developer.shodan.io/api'
                 },
-                tools: this.getShodanTools()
-            };
-            
-            super('shodan', config);
+                tools: ShodanConnector.getShodanTools()
+            });
         }
 
         /**
          * Define Shodan tools
          */
-        getShodanTools() {
+        static getShodanTools() {
             return {
                 shodan_host_info: {
                     description: 'Get detailed information about an IP address including services, vulnerabilities, and location',
@@ -70,6 +68,32 @@
                         properties: {
                             query: { type: 'string', description: 'Search query' },
                             facets: { type: 'string', description: 'Comma-separated list of facets' }
+                        },
+                        required: ['query']
+                    }
+                },
+                shodan_search_facets: {
+                    description: 'List available search facets that can be used in queries',
+                    parameters: {
+                        type: 'object',
+                        properties: {},
+                        required: []
+                    }
+                },
+                shodan_search_filters: {
+                    description: 'List available search filters and their descriptions',
+                    parameters: {
+                        type: 'object',
+                        properties: {},
+                        required: []
+                    }
+                },
+                shodan_search_tokens: {
+                    description: 'Break down a search query into tokens and show how Shodan parses it',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            query: { type: 'string', description: 'Search query to tokenize' }
                         },
                         required: ['query']
                     }
@@ -118,6 +142,14 @@
                         required: ['ips']
                     }
                 },
+                shodan_scan_protocols: {
+                    description: 'List protocols that Shodan crawls',
+                    parameters: {
+                        type: 'object',
+                        properties: {},
+                        required: []
+                    }
+                },
                 shodan_account_profile: {
                     description: 'Get account profile information including credits and plan details',
                     parameters: {
@@ -159,6 +191,20 @@
          * Connect to Shodan using API key
          */
         async connect() {
+            // First try to load existing connection
+            await this.loadConnection();
+            
+            // Check for invalid cached connection (boolean apiKey from testing)
+            if (this.connection && typeof this.connection.apiKey === 'boolean') {
+                console.log(`[ShodanConnector] Clearing invalid cached connection`);
+                await this.clearConnection();
+            }
+            
+            if (this.isConnected()) {
+                console.log(`[ShodanConnector] Using loaded connection with ${Object.keys(this.getToolsToRegister()).length} tools`);
+                return true;
+            }
+
             // Check for existing API key
             const storageKey = this.getStorageKey('api_key');
             const existingKey = await this.storage.getValue(storageKey);
@@ -172,8 +218,27 @@
                 }
             }
 
-            // API key not found or invalid - caller should show UI
+            // No valid API key found - show UI to get one
+            if (window.mcpServiceUIHelper) {
+                const apiKey = await window.mcpServiceUIHelper.showAPIKeyInputDialog('shodan', this.config);
+                if (apiKey) {
+                    await this.createConnection(apiKey);
+                    return true;
+                }
+            }
+
             return false;
+        }
+
+        /**
+         * Check if credentials are valid
+         */
+        hasValidCredentials() {
+            if (!this.connection) {
+                return false;
+            }
+            
+            return !!(this.connection.apiKey && this.connection.apiKey.length > 0);
         }
 
         /**
@@ -250,6 +315,19 @@
                     if (params.facets) url += `&facets=${encodeURIComponent(params.facets)}`;
                     break;
 
+                case 'search_facets':
+                    url = `${this.config.apiBaseUrl}/shodan/host/search/facets?key=${encodeURIComponent(apiKey)}`;
+                    break;
+
+                case 'search_filters':
+                    url = `${this.config.apiBaseUrl}/shodan/host/search/filters?key=${encodeURIComponent(apiKey)}`;
+                    break;
+
+                case 'search_tokens':
+                    if (!params.query) throw new Error('Search query is required');
+                    url = `${this.config.apiBaseUrl}/shodan/host/search/tokens?key=${encodeURIComponent(apiKey)}&query=${encodeURIComponent(params.query)}`;
+                    break;
+
                 case 'dns_domain':
                     if (!params.domain) throw new Error('Domain is required');
                     url = `${this.config.apiBaseUrl}/dns/domain/${encodeURIComponent(params.domain)}?key=${encodeURIComponent(apiKey)}`;
@@ -276,6 +354,10 @@
                         ips: params.ips,
                         force: params.force || false
                     });
+                    break;
+
+                case 'scan_protocols':
+                    url = `${this.config.apiBaseUrl}/shodan/protocols?key=${encodeURIComponent(apiKey)}`;
                     break;
 
                 case 'account_profile':
@@ -361,6 +443,25 @@
                         facets: data.facets || {}
                     };
                 
+                case 'search_facets':
+                    return {
+                        available_facets: data,
+                        description: 'Available facets for Shodan search queries'
+                    };
+                
+                case 'search_filters':
+                    return {
+                        available_filters: data,
+                        description: 'Available filters for Shodan search queries'
+                    };
+                
+                case 'search_tokens':
+                    return {
+                        query: params.query,
+                        tokens: data.attributes || data,
+                        description: 'Query breakdown and parsing'
+                    };
+                
                 case 'dns_domain':
                     return this.formatDomainInfo(data, params.domain);
                 
@@ -378,6 +479,12 @@
                         credits_left: data.credits_left,
                         status: 'Scan submitted successfully',
                         ips_scanned: params.ips
+                    };
+                
+                case 'scan_protocols':
+                    return {
+                        protocols: data,
+                        description: 'List of protocols that Shodan crawls'
                     };
                 
                 case 'account_profile':
