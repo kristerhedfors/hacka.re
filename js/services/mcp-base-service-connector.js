@@ -139,9 +139,9 @@
 
             return `async function ${functionName}(${paramNames.join(', ')}) {
                 try {
-                    const MCPServiceConnectors = window.MCPServiceConnectors;
+                    const mcpServiceManager = window.mcpServiceManager;
                     const params = {${paramNames.map(name => `${name}: ${name}`).join(', ')}};
-                    const result = await MCPServiceConnectors.executeServiceTool('${this.serviceKey}', '${baseToolName}', params);
+                    const result = await mcpServiceManager.executeServiceTool('${this.serviceKey}', '${baseToolName}', params);
                     return { success: true, result: result };
                 } catch (error) {
                     return { success: false, error: error.message };

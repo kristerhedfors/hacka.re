@@ -232,11 +232,11 @@ window.MCPQuickConnectors = (function() {
         
         // Check if this is a service connector type
         if (config.transport === 'service-connector') {
-            // Use MCPServiceConnectors for all service connections
-            if (window.MCPServiceConnectors) {
+            // Use mcpServiceManager for all service connections
+            if (window.mcpServiceManager) {
                 try {
                     updateConnectorStatus(serviceKey, 'connecting');
-                    const result = await window.MCPServiceConnectors.connectService(serviceKey);
+                    const result = await window.mcpServiceManager.connectService(serviceKey);
                     if (result) {
                         updateConnectorStatus(serviceKey, 'connected');
                         saveConnectorState(serviceKey, 'connected');
@@ -250,8 +250,8 @@ window.MCPQuickConnectors = (function() {
                     showNotification(`❌ Failed to connect to ${config.name}: ${error.message}`, 'error');
                 }
             } else {
-                console.error('[MCPQuickConnectors] MCPServiceConnectors not available');
-                showNotification('Service connectors not loaded. Please refresh the page.', 'error');
+                console.error('[MCPQuickConnectors] mcpServiceManager not available');
+                showNotification('Service manager not loaded. Please refresh the page.', 'error');
             }
             return; // Exit early for all service-connector types
         }
@@ -774,9 +774,10 @@ window.MCPQuickConnectors = (function() {
                         // Use new provider system for GitHub
                         const githubTools = window.MCPToolRegistry.getProviderTools('github');
                         toolCount = githubTools.length;
-                    } else if (window.MCPServiceConnectors) {
-                        // Use old system for other services
-                        toolCount = window.MCPServiceConnectors.getToolCount(serviceKey);
+                    } else if (window.mcpServiceManager) {
+                        // Use mcpServiceManager for other services
+                        const connector = window.mcpServiceManager.getConnector(serviceKey);
+                        toolCount = connector ? Object.keys(connector.config.tools || {}).length : 0;
                     }
                 } else {
                     // Regular MCP connection
@@ -807,9 +808,9 @@ window.MCPQuickConnectors = (function() {
         try {
             
             if (config.transport === 'service-connector') {
-                if (window.MCPServiceConnectors) {
-                    // Use MCPServiceConnectors for all service connections
-                    await window.MCPServiceConnectors.disconnectService(serviceKey);
+                if (window.mcpServiceManager) {
+                    // Use mcpServiceManager for all service connections
+                    await window.mcpServiceManager.disconnectService(serviceKey);
                 }
             } else if (mcpClient) {
                 const serverName = `mcp-${serviceKey}`;
@@ -848,9 +849,9 @@ window.MCPQuickConnectors = (function() {
                     // Check if GitHub provider is connected via new system
                     const githubProvider = window.MCPToolRegistry.getProvider('github');
                     isConnected = githubProvider && githubProvider.connected;
-                } else if (window.MCPServiceConnectors) {
-                    // Use old system for other services
-                    isConnected = window.MCPServiceConnectors.isConnected(serviceKey);
+                } else if (window.mcpServiceManager) {
+                    // Use mcpServiceManager for other services
+                    isConnected = window.mcpServiceManager.isConnected(serviceKey);
                 }
             } else if (mcpClient) {
                 const serverName = `mcp-${serviceKey}`;
