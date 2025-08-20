@@ -770,14 +770,13 @@ window.MCPQuickConnectors = (function() {
                 let toolCount = 0;
                 
                 if (config.transport === 'service-connector') {
-                    if (serviceKey === 'github' && window.MCPToolRegistry) {
-                        // Use new provider system for GitHub
-                        const githubTools = window.MCPToolRegistry.getProviderTools('github');
-                        toolCount = githubTools.length;
-                    } else if (window.mcpServiceManager) {
-                        // Use mcpServiceManager for other services
+                    if (window.mcpServiceManager) {
+                        // Use mcpServiceManager for all service-connector services including GitHub
                         const connector = window.mcpServiceManager.getConnector(serviceKey);
-                        toolCount = connector ? Object.keys(connector.config.tools || {}).length : 0;
+                        if (connector) {
+                            const tools = connector.getToolsToRegister();
+                            toolCount = Object.keys(tools || {}).length;
+                        }
                     }
                 } else {
                     // Regular MCP connection
@@ -845,12 +844,8 @@ window.MCPQuickConnectors = (function() {
             let isConnected = false;
             
             if (config.transport === 'service-connector') {
-                if (serviceKey === 'github' && window.MCPToolRegistry) {
-                    // Check if GitHub provider is connected via new system
-                    const githubProvider = window.MCPToolRegistry.getProvider('github');
-                    isConnected = githubProvider && githubProvider.connected;
-                } else if (window.mcpServiceManager) {
-                    // Use mcpServiceManager for other services
+                if (window.mcpServiceManager) {
+                    // Use mcpServiceManager for all service-connector services including GitHub
                     isConnected = window.mcpServiceManager.isConnected(serviceKey);
                 }
             } else if (mcpClient) {
