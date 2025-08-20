@@ -771,8 +771,13 @@
             let functionName, baseToolName;
             if (serviceKey === 'github' || toolName.startsWith(`${serviceKey}_`)) {
                 functionName = toolName;
-                // For executeServiceTool, we need the base tool name without service prefix
-                baseToolName = toolName.replace(`${serviceKey}_`, '');
+                // For Shodan, keep full tool name since executeShodanTool expects it
+                // For GitHub, remove prefix since executeGitHubTool expects base name
+                if (serviceKey === 'shodan') {
+                    baseToolName = toolName;
+                } else {
+                    baseToolName = toolName.replace(`${serviceKey}_`, '');
+                }
             } else {
                 functionName = `${serviceKey}_${toolName}`;
                 baseToolName = toolName;
@@ -2814,15 +2819,15 @@
          */
         async showAPIKeyInputDialog(serviceKey, config) {
             return new Promise((resolve) => {
-                // Remove any existing modal first
-                const existingModal = document.getElementById('api-key-modal');
+                // Remove any existing modal first - use unique ID to avoid conflicts with main API modal
+                const existingModal = document.getElementById('mcp-service-api-key-modal');
                 if (existingModal) {
                     existingModal.remove();
                 }
                 
                 const modal = document.createElement('div');
                 modal.className = 'modal active';
-                modal.id = 'api-key-modal';
+                modal.id = 'mcp-service-api-key-modal';
                 
                 modal.innerHTML = `
                     <div class="modal-content">
