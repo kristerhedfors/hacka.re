@@ -68,7 +68,26 @@
             // If credentials provided, use them directly
             if (credentials) {
                 if (connector.createConnection) {
-                    return await connector.createConnection(credentials);
+                    // Handle different credential formats
+                    let credentialValue = credentials;
+                    
+                    // For object credentials, extract the actual value
+                    if (typeof credentials === 'object' && credentials !== null) {
+                        // Try different property names based on service type
+                        if (serviceKey === 'shodan' && credentials.apiKey) {
+                            credentialValue = credentials.apiKey;
+                        } else if (serviceKey === 'github' && credentials.token) {
+                            credentialValue = credentials.token;
+                        } else if (credentials.key) {
+                            credentialValue = credentials.key;
+                        } else if (credentials.token) {
+                            credentialValue = credentials.token;
+                        } else if (credentials.apiKey) {
+                            credentialValue = credentials.apiKey;
+                        }
+                    }
+                    
+                    return await connector.createConnection(credentialValue);
                 }
             }
 

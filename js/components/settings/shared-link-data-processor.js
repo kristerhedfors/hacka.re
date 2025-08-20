@@ -525,7 +525,7 @@ function createSharedLinkDataProcessor() {
                         }
                         
                         // Store the API key using the same storage key as MCP service connectors
-                        const storageKey = 'mcp_shodan_apikey';
+                        const storageKey = 'mcp_shodan_api_key';
                         await window.CoreStorageService.setValue(storageKey, apiKey);
                         console.log('Applied Shodan API key from shared link');
                         
@@ -535,7 +535,7 @@ function createSharedLinkDataProcessor() {
                         // Automatically connect to Shodan if mcpServiceManager is available
                         if (window.mcpServiceManager && window.mcpServiceManager.connectService) {
                             try {
-                                // Connect using the stored API key - back to awaiting to ensure completion
+                                // Connect using the stored API key with proper object format
                                 const result = await window.mcpServiceManager.connectService('shodan', { apiKey: apiKey });
                                 
                                 if (result) {
