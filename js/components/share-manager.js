@@ -134,6 +134,15 @@ window.ShareManager = (function() {
          * Update status indicators for each share item
          */
         async function updateShareItemStatuses() {
+            // Update base URL status
+            updateBaseUrlStatus();
+            
+            // Update API key status
+            updateApiKeyStatus();
+            
+            // Update model status
+            updateModelStatus();
+            
             // Update prompt library status
             updatePromptLibraryStatus();
             
@@ -145,6 +154,124 @@ window.ShareManager = (function() {
             
             // Update conversation status
             updateConversationStatus();
+        }
+        
+        /**
+         * Update base URL status display
+         */
+        function updateBaseUrlStatus() {
+            const checkbox = elements.shareBaseUrlCheckbox;
+            if (!checkbox) return;
+            
+            const label = checkbox.parentElement ? checkbox.parentElement.querySelector('label[for="share-base-url"]') : null;
+            if (!label) return;
+            
+            // Remove existing status indicators
+            const allExistingStatus = label.querySelectorAll('.share-item-status');
+            allExistingStatus.forEach(status => status.remove());
+            
+            // Get current base URL
+            const baseUrl = StorageService.getBaseUrl();
+            
+            if (baseUrl) {
+                const statusSpan = document.createElement('span');
+                statusSpan.className = 'share-item-status';
+                statusSpan.style.marginLeft = '10px';
+                statusSpan.style.color = 'var(--text-color-secondary)';
+                statusSpan.style.fontSize = '0.85em';
+                statusSpan.style.fontWeight = 'normal';
+                
+                // Truncate URL if too long for display
+                let displayUrl = baseUrl;
+                if (baseUrl.length > 40) {
+                    displayUrl = baseUrl.substring(0, 37) + '...';
+                }
+                
+                const actionText = checkbox.checked ? 'will be shared' : 'available';
+                statusSpan.textContent = `(${displayUrl} ${actionText})`;
+                label.appendChild(statusSpan);
+            }
+        }
+        
+        /**
+         * Update API key status display
+         */
+        function updateApiKeyStatus() {
+            const checkbox = elements.shareApiKeyCheckbox;
+            if (!checkbox) return;
+            
+            const label = checkbox.parentElement ? checkbox.parentElement.querySelector('label[for="share-api-key"]') : null;
+            if (!label) return;
+            
+            // Remove existing status indicators
+            const allExistingStatus = label.querySelectorAll('.share-item-status');
+            allExistingStatus.forEach(status => status.remove());
+            
+            // Get current API key
+            const apiKey = StorageService.getApiKey();
+            
+            if (apiKey) {
+                const statusSpan = document.createElement('span');
+                statusSpan.className = 'share-item-status';
+                statusSpan.style.marginLeft = '10px';
+                statusSpan.style.color = 'var(--text-color-secondary)';
+                statusSpan.style.fontSize = '0.85em';
+                statusSpan.style.fontWeight = 'normal';
+                
+                // Mask the API key using the same pattern as SharedLinkDataProcessor
+                let maskedKey = '';
+                if (window.SharedLinkDataProcessor && window.SharedLinkDataProcessor.maskApiKey) {
+                    maskedKey = window.SharedLinkDataProcessor.maskApiKey(apiKey);
+                } else {
+                    // Fallback masking pattern
+                    if (apiKey.length >= 14) {
+                        const first10 = apiKey.substring(0, 10);
+                        const last4 = apiKey.substring(apiKey.length - 4);
+                        maskedKey = `${first10}${'*'.repeat(16)}${last4}`;
+                    } else if (apiKey.length >= 8) {
+                        const first4 = apiKey.substring(0, 4);
+                        const last4 = apiKey.substring(apiKey.length - 4);
+                        maskedKey = `${first4}${'*'.repeat(apiKey.length - 8)}${last4}`;
+                    } else {
+                        maskedKey = '*'.repeat(apiKey.length);
+                    }
+                }
+                
+                const actionText = checkbox.checked ? 'will be shared' : 'available';
+                statusSpan.textContent = `(${maskedKey} ${actionText})`;
+                label.appendChild(statusSpan);
+            }
+        }
+        
+        /**
+         * Update model status display
+         */
+        function updateModelStatus() {
+            const checkbox = elements.shareModelCheckbox;
+            if (!checkbox) return;
+            
+            const label = checkbox.parentElement ? checkbox.parentElement.querySelector('label[for="share-model"]') : null;
+            if (!label) return;
+            
+            // Remove existing status indicators
+            const allExistingStatus = label.querySelectorAll('.share-item-status');
+            allExistingStatus.forEach(status => status.remove());
+            
+            // Get current model
+            const currentModel = StorageService.getModel();
+            
+            if (currentModel) {
+                const statusSpan = document.createElement('span');
+                statusSpan.className = 'share-item-status';
+                statusSpan.style.marginLeft = '10px';
+                statusSpan.style.color = 'var(--text-color-secondary)';
+                statusSpan.style.fontSize = '0.85em';
+                statusSpan.style.fontWeight = 'normal';
+                
+                const actionText = checkbox.checked ? 'will be shared' : 'available';
+                statusSpan.textContent = `(${currentModel} ${actionText})`;
+                label.appendChild(statusSpan);
+            }
         }
         
         /**
@@ -165,16 +292,21 @@ window.ShareManager = (function() {
             let enabledUserPrompts = 0;
             let enabledDefaultPrompts = 0;
             
-            // Get user-defined prompts
+            // Get user-defined prompts (excluding MCP prompts)
             if (window.PromptsService) {
                 const selectedPrompts = window.PromptsService.getSelectedPrompts();
-                enabledUserPrompts = selectedPrompts.length;
+                // Filter out MCP prompts
+                const userPrompts = selectedPrompts.filter(prompt => !prompt.isMcpPrompt);
+                enabledUserPrompts = userPrompts.length;
             }
             
-            // Get default prompts
+            // Get default prompts (excluding MCP prompts)
             if (window.DefaultPromptsService) {
                 const selectedDefaultPrompts = window.DefaultPromptsService.getSelectedDefaultPrompts();
-                enabledDefaultPrompts = selectedDefaultPrompts.length;
+                // Filter out MCP prompts by ID
+                const mcpPromptIds = ['shodan-integration-guide', 'github-integration-guide', 'gmail-integration-guide'];
+                const nonMcpDefaultPrompts = selectedDefaultPrompts.filter(prompt => !mcpPromptIds.includes(prompt.id));
+                enabledDefaultPrompts = nonMcpDefaultPrompts.length;
             }
             
             // Only show status if there are enabled prompts
@@ -221,10 +353,23 @@ window.ShareManager = (function() {
             let enabledUserFunctions = 0;
             let enabledDefaultFunctions = 0;
             
-            // Get user-defined functions
+            // Get user-defined functions (excluding MCP functions)
             if (window.FunctionToolsService) {
                 const jsFunctions = window.FunctionToolsService.getJsFunctions();
                 const enabledFunctions = window.FunctionToolsService.getEnabledFunctionNames();
+                const functionCollections = window.FunctionToolsService.getFunctionCollections();
+                const allCollections = window.FunctionToolsService.getAllFunctionCollections();
+                
+                // Identify MCP collections
+                const mcpCollectionIds = [];
+                Object.values(allCollections).forEach(collection => {
+                    const isMcpCollection = collection.metadata.source === 'mcp' || 
+                                          collection.metadata.source === 'mcp-service' ||
+                                          collection.id.startsWith('mcp_');
+                    if (isMcpCollection) {
+                        mcpCollectionIds.push(collection.id);
+                    }
+                });
                 
                 // Filter out default functions from the counts
                 const defaultFunctionNames = [];
@@ -237,9 +382,13 @@ window.ShareManager = (function() {
                     });
                 }
                 
-                // Count user functions (excluding default functions)
+                // Count user functions (excluding default functions and MCP functions)
                 for (const funcName in jsFunctions) {
-                    if (!defaultFunctionNames.includes(funcName) && enabledFunctions.includes(funcName)) {
+                    const collectionId = functionCollections[funcName];
+                    const isDefault = defaultFunctionNames.includes(funcName);
+                    const isMcp = collectionId && mcpCollectionIds.includes(collectionId);
+                    
+                    if (!isDefault && !isMcp && enabledFunctions.includes(funcName)) {
                         enabledUserFunctions++;
                     }
                 }

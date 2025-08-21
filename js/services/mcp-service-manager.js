@@ -68,7 +68,26 @@
             // If credentials provided, use them directly
             if (credentials) {
                 if (connector.createConnection) {
-                    return await connector.createConnection(credentials);
+                    // Handle different credential formats
+                    let credentialValue = credentials;
+                    
+                    // For object credentials, extract the actual value
+                    if (typeof credentials === 'object' && credentials !== null) {
+                        // Try different property names based on service type
+                        if (serviceKey === 'shodan' && credentials.apiKey) {
+                            credentialValue = credentials.apiKey;
+                        } else if (serviceKey === 'github' && credentials.token) {
+                            credentialValue = credentials.token;
+                        } else if (credentials.key) {
+                            credentialValue = credentials.key;
+                        } else if (credentials.token) {
+                            credentialValue = credentials.token;
+                        } else if (credentials.apiKey) {
+                            credentialValue = credentials.apiKey;
+                        }
+                    }
+                    
+                    return await connector.createConnection(credentialValue);
                 }
             }
 
@@ -324,13 +343,16 @@
                 
                 console.log('[MCPServiceManager] Gmail functions registered after OAuth restore');
                 
-                // Auto-activate Gmail integration prompt if available
+                // Auto-register and enable Gmail integration prompt if available
                 if (window.DefaultPromptsService && window.GmailIntegrationGuide) {
                     try {
-                        window.DefaultPromptsService.enablePrompt('Gmail Integration Guide');
-                        console.log('[MCPServiceManager] Gmail integration prompt auto-enabled');
+                        // First register the prompt (safe to call multiple times)
+                        window.DefaultPromptsService.registerPrompt(window.GmailIntegrationGuide);
+                        // Then enable it
+                        window.DefaultPromptsService.enablePrompt('Gmail MCP prompt');
+                        console.log('[MCPServiceManager] Gmail MCP prompt registered and auto-enabled');
                     } catch (error) {
-                        console.warn('[MCPServiceManager] Failed to auto-enable Gmail prompt:', error);
+                        console.warn('[MCPServiceManager] Failed to register/enable Gmail prompt:', error);
                     }
                 }
                 
@@ -348,6 +370,21 @@
     // Export both the class and instance
     global.MCPServiceManager = MCPServiceManager;
     global.mcpServiceManager = manager;
-
+    
+    // Create bridge for backwards compatibility (used by GitHub UI and other components)
+    global.MCPServiceConnectors = {
+        connectService: (serviceKey, credentials = null) => manager.connectService(serviceKey, credentials),
+        disconnectService: (serviceKey) => manager.disconnectService(serviceKey),
+        isConnected: (serviceKey) => manager.isConnected(serviceKey),
+        getConnectedServices: () => manager.getConnectedServices(),
+        bulkDisconnectServices: (serviceKeys) => manager.bulkDisconnectServices(serviceKeys),
+        quickConnect: (serviceKey) => manager.quickConnect(serviceKey),
+        validateService: (serviceKey) => manager.validateService(serviceKey),
+        executeServiceTool: (serviceKey, toolName, params) => manager.executeServiceTool(serviceKey, toolName, params),
+        getServiceConfig: (serviceKey) => manager.getServiceConfig(serviceKey),
+        loadStoredConnections: () => manager.loadStoredConnections()
+    };
+    
+    console.log('[MCPServiceManager] Bridge created: MCPServiceConnectors -> mcpServiceManager');
 
 })(window);

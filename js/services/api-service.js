@@ -196,7 +196,7 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
      * Make follow-up request after tool calls
      * @private
      */
-    async function makeFollowUpRequest(initialRequestConfig, toolCalls, toolResults, currentContent, onChunk, signal) {
+    async function makeFollowUpRequest(initialRequestConfig, toolCalls, toolResults, currentContent, onChunk, originalSignal) {
         // Build messages array with tool calls and results
         const messages = JSON.parse(initialRequestConfig.body).messages;
         
@@ -210,11 +210,25 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
         
         ApiDebugger.logRequest('Follow-up request', followUpRequestConfig);
         
+        // Create a fresh AbortController for the follow-up request
+        // The original signal may have been aborted after the first stream completed
+        const followUpController = new AbortController();
+        
+        // If the original signal is already aborted, abort the follow-up immediately
+        if (originalSignal && originalSignal.aborted) {
+            followUpController.abort(originalSignal.reason);
+        } else if (originalSignal) {
+            // Listen for abort events on the original signal
+            originalSignal.addEventListener('abort', () => {
+                followUpController.abort(originalSignal.reason);
+            });
+        }
+        
         const response = await fetch(followUpRequestConfig.url, {
             method: followUpRequestConfig.method,
             headers: followUpRequestConfig.headers,
             body: followUpRequestConfig.body,
-            signal: signal
+            signal: followUpController.signal
         });
         
         if (!response.ok) {
@@ -223,7 +237,7 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
         }
         
         // Process follow-up stream
-        const { reader } = await ApiStreamProcessor.createReadableStream(response, signal);
+        const { reader } = await ApiStreamProcessor.createReadableStream(response, followUpController.signal);
         
         let followUpContent = '';
         await ApiStreamProcessor.processStream(
@@ -236,7 +250,7 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
                 }
             },
             null, // No tool calls expected in follow-up
-            signal
+            followUpController.signal
         );
         
         return currentContent + followUpContent.trimStart();

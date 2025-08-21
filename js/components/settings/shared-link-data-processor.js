@@ -360,24 +360,17 @@ function createSharedLinkDataProcessor() {
      * @param {boolean} systematicActivation - Whether to systematically control tool activation (default: false for backwards compatibility)
      */
     function applyFunctions(sharedData, addSystemMessage, systematicActivation = false) {
-        console.log('🔧 SharedLinkDataProcessor.applyFunctions called with:', {
-            hasFunctions: !!(sharedData.functions && typeof sharedData.functions === 'object'),
-            functionCount: sharedData.functions ? Object.keys(sharedData.functions).length : 0,
-            hasEnabledFunctions: !!(sharedData.enabledFunctions && Array.isArray(sharedData.enabledFunctions)),
-            enabledCount: sharedData.enabledFunctions ? sharedData.enabledFunctions.length : 0,
-            hasSelectedDefaultFunctionIds: !!(sharedData.selectedDefaultFunctionIds && sharedData.selectedDefaultFunctionIds.length > 0),
-            selectedDefaultFunctionIdsCount: sharedData.selectedDefaultFunctionIds ? sharedData.selectedDefaultFunctionIds.length : 0,
-            hasSelectedDefaultFunctionCollectionIds: !!(sharedData.selectedDefaultFunctionCollectionIds && sharedData.selectedDefaultFunctionCollectionIds.length > 0),
-            selectedDefaultFunctionCollectionIdsCount: sharedData.selectedDefaultFunctionCollectionIds ? sharedData.selectedDefaultFunctionCollectionIds.length : 0,
-            systematicActivation
-        });
+        const functionCount = sharedData.functions ? Object.keys(sharedData.functions).length : 0;
+        const enabledCount = sharedData.enabledFunctions ? sharedData.enabledFunctions.length : 0;
+        
+        if (functionCount > 0 || enabledCount > 0) {
+            console.log(`Applying ${functionCount} functions with ${enabledCount} enabled`);
+        }
         
         // If there are shared functions, save them with collection information
         if (sharedData.functions && typeof sharedData.functions === 'object') {
             const functionCollections = sharedData.functionCollections || {};
             const collectionMetadata = sharedData.functionCollectionMetadata || {};
-            
-            console.log('🔧 Adding functions to registry:', Object.keys(sharedData.functions));
             
             Object.keys(sharedData.functions).forEach(functionName => {
                 const functionData = sharedData.functions[functionName];
@@ -385,15 +378,13 @@ function createSharedLinkDataProcessor() {
                 const metadata = collectionId ? collectionMetadata[collectionId] : null;
                 
                 // Add function with preserved collection information
-                const added = FunctionToolsService.addJsFunction(
+                FunctionToolsService.addJsFunction(
                     functionName,
                     functionData.code,
                     functionData.toolDefinition,
                     collectionId,
                     metadata
                 );
-                
-                console.log(`🔧 Function ${functionName} ${added ? 'added' : 'failed to add'} to registry`);
             });
             
             if (addSystemMessage) {
@@ -407,12 +398,7 @@ function createSharedLinkDataProcessor() {
         if (sharedData.enabledFunctions && Array.isArray(sharedData.enabledFunctions)) {
             if (systematicActivation) {
                 // Systematic activation: Only activate/deactivate functions that match the agent's configuration
-                console.log('🔧 Applying systematic function activation');
-                
-                // Get all currently available functions
                 const allFunctions = Object.keys(FunctionToolsService.getJsFunctions());
-                console.log('🔧 All available functions:', allFunctions);
-                console.log('🔧 Functions to enable:', sharedData.enabledFunctions);
                 
                 // Disable functions that are not in the enabled list
                 allFunctions.forEach(functionName => {
@@ -421,18 +407,13 @@ function createSharedLinkDataProcessor() {
                     
                     if (shouldBeEnabled && !isCurrentlyEnabled) {
                         FunctionToolsService.enableJsFunction(functionName);
-                        console.log(`🔧 Enabled function: ${functionName}`);
                     } else if (!shouldBeEnabled && isCurrentlyEnabled) {
                         FunctionToolsService.disableJsFunction(functionName);
-                        console.log(`🔧 Disabled function: ${functionName}`);
                     }
                 });
                 
             } else {
                 // Legacy behavior: Disable all, then enable specified ones
-                console.log('🔧 Applying legacy function activation (disable all, then enable selected)');
-                
-                // First disable all functions
                 const allFunctions = Object.keys(FunctionToolsService.getJsFunctions());
                 allFunctions.forEach(functionName => {
                     FunctionToolsService.disableJsFunction(functionName);
@@ -453,7 +434,6 @@ function createSharedLinkDataProcessor() {
         // Apply function tools enabled state
         if (typeof sharedData.functionToolsEnabled === 'boolean' && FunctionToolsService && typeof FunctionToolsService.setFunctionToolsEnabled === 'function') {
             FunctionToolsService.setFunctionToolsEnabled(sharedData.functionToolsEnabled, addSystemMessage);
-            console.log(`🔧 Function tools ${sharedData.functionToolsEnabled ? 'enabled' : 'disabled'} during shared data application`);
         } else {
             // Fallback: Enable function tools if we have functions
             const hasFunctions = (sharedData.functions && Object.keys(sharedData.functions).length > 0) ||
@@ -461,32 +441,23 @@ function createSharedLinkDataProcessor() {
             
             if (hasFunctions && FunctionToolsService && typeof FunctionToolsService.setFunctionToolsEnabled === 'function') {
                 FunctionToolsService.setFunctionToolsEnabled(true, addSystemMessage);
-                console.log('🔧 Function tools enabled during shared data application (fallback)');
             }
         }
         
         // Apply default function selections if present
         if (window.DefaultFunctionsService && (sharedData.selectedDefaultFunctionIds || sharedData.selectedDefaultFunctionCollectionIds)) {
-            console.log('🔧 Applying default function selections from shared data:', {
-                selectedDefaultFunctionIds: sharedData.selectedDefaultFunctionIds || [],
-                selectedDefaultFunctionCollectionIds: sharedData.selectedDefaultFunctionCollectionIds || []
-            });
-            
             // Apply default function collection selections
             if (sharedData.selectedDefaultFunctionCollectionIds && typeof window.DefaultFunctionsService.setSelectedDefaultFunctionIds === 'function') {
                 window.DefaultFunctionsService.setSelectedDefaultFunctionIds(sharedData.selectedDefaultFunctionCollectionIds);
-                console.log('🔧 Applied default function collection selections:', sharedData.selectedDefaultFunctionCollectionIds);
             }
             
             // Apply individual default function selections
             if (sharedData.selectedDefaultFunctionIds && typeof window.DefaultFunctionsService.setSelectedIndividualFunctionIds === 'function') {
                 window.DefaultFunctionsService.setSelectedIndividualFunctionIds(sharedData.selectedDefaultFunctionIds);
-                console.log('🔧 Applied individual default function selections:', sharedData.selectedDefaultFunctionIds);
                 
                 // Load the selected default functions into the system
                 if (typeof window.DefaultFunctionsService.loadSelectedDefaultFunctions === 'function') {
                     window.DefaultFunctionsService.loadSelectedDefaultFunctions();
-                    console.log('🔧 Loaded selected default functions into the system');
                 }
             }
             
@@ -497,10 +468,6 @@ function createSharedLinkDataProcessor() {
                 }
             }
         }
-        
-        // Log final state
-        const finalEnabledFunctions = FunctionToolsService.getEnabledFunctionNames();
-        console.log('🔧 Final enabled functions after applyFunctions:', finalEnabledFunctions);
     }
     
     /**
@@ -509,26 +476,14 @@ function createSharedLinkDataProcessor() {
      * @param {Function} addSystemMessage - Function to add system messages
      */
     async function applyMcpConnections(sharedData, addSystemMessage) {
-        console.log('🚨🚨🚨 UPDATED VERSION OF applyMcpConnections called! 🚨🚨🚨');
-        console.log('🔧 applyMcpConnections called with data:', !!sharedData.mcpConnections);
         // If there are shared MCP connections, restore them
         if (sharedData.mcpConnections && typeof sharedData.mcpConnections === 'object') {
-            console.log('🔧 MCP connections found, processing...', Object.keys(sharedData.mcpConnections));
             try {
                 const connectionKeys = Object.keys(sharedData.mcpConnections);
                 let appliedCount = 0;
                 
                 for (const serviceKey of connectionKeys) {
                     const connectionData = sharedData.mcpConnections[serviceKey];
-                    
-                    // Handle different connection types
-                    console.log('🔍 PROCESSING SERVICE:', serviceKey, 'with data type:', typeof connectionData);
-                    if (serviceKey === 'gmail') {
-                        console.log('🔍 Gmail detected - checking conditions...');
-                        console.log('🔍 - connectionData is object:', typeof connectionData === 'object');
-                        console.log('🔍 - connectionData.refreshToken exists:', !!connectionData.refreshToken);
-                        console.log('🔍 - connectionData keys:', Object.keys(connectionData || {}));
-                    }
                     
                     if (serviceKey === 'gmail' && typeof connectionData === 'object' && connectionData.refreshToken) {
                         // Gmail uses OAuth - store the complete OAuth object
@@ -537,45 +492,13 @@ function createSharedLinkDataProcessor() {
                         console.log('Applied Gmail OAuth from shared link');
                         
                         // Automatically register Gmail functions after OAuth is restored
-                        console.log('🔍 DEBUG: Checking Gmail function registration availability...');
-                        console.log('🔍 window.mcpServiceManager available:', !!window.mcpServiceManager);
-                        console.log('🔍 registerGmailFunctions method available:', !!(window.mcpServiceManager && window.mcpServiceManager.registerGmailFunctions));
-                        
-                        // Try immediate registration first
                         if (window.mcpServiceManager && window.mcpServiceManager.registerGmailFunctions) {
                             try {
-                                console.log('🔄 Calling registerGmailFunctions with data:', connectionData);
                                 await window.mcpServiceManager.registerGmailFunctions(connectionData);
                                 console.log('✅ Gmail functions automatically registered after OAuth restore');
                             } catch (error) {
-                                console.warn('❌ Failed to auto-register Gmail functions:', error);
+                                console.warn('Failed to auto-register Gmail functions:', error);
                             }
-                        } else {
-                            console.warn('⚠️ MCPServiceConnectors not available yet, setting up delayed registration...');
-                            
-                            // Set up delayed registration - retry every 500ms for up to 10 seconds
-                            let retryCount = 0;
-                            const maxRetries = 20;
-                            const retryInterval = setInterval(() => {
-                                retryCount++;
-                                console.log(`🔄 Retry ${retryCount}/${maxRetries}: Checking for MCPServiceConnectors...`);
-                                
-                                if (window.mcpServiceManager && window.mcpServiceManager.registerGmailFunctions) {
-                                    clearInterval(retryInterval);
-                                    console.log('✅ MCPServiceConnectors now available, registering Gmail functions...');
-                                    
-                                    window.mcpServiceManager.registerGmailFunctions(connectionData)
-                                        .then(() => {
-                                            console.log('✅ Gmail functions registered via delayed retry');
-                                        })
-                                        .catch(error => {
-                                            console.warn('❌ Delayed Gmail function registration failed:', error);
-                                        });
-                                } else if (retryCount >= maxRetries) {
-                                    clearInterval(retryInterval);
-                                    console.error('❌ Timeout waiting for MCPServiceConnectors - Gmail functions not registered');
-                                }
-                            }, 500);
                         }
                     } else if (serviceKey === 'github') {
                         // GitHub uses PAT tokens - extract string token from object if needed
@@ -583,7 +506,7 @@ function createSharedLinkDataProcessor() {
                         if (typeof connectionData === 'object' && connectionData !== null && connectionData.token) {
                             token = connectionData.token;
                         } else if (typeof connectionData !== 'string') {
-                            console.error(`🚨 INVALID GITHUB TOKEN: Expected string or {token: string}, got ${typeof connectionData}:`, connectionData);
+                            console.error(`Invalid GitHub token format`);
                             continue;
                         }
                         
@@ -597,12 +520,12 @@ function createSharedLinkDataProcessor() {
                         if (typeof connectionData === 'object' && connectionData !== null && connectionData.key) {
                             apiKey = connectionData.key;
                         } else if (typeof connectionData !== 'string') {
-                            console.error(`🚨 INVALID SHODAN API KEY: Expected string or {key: string}, got ${typeof connectionData}:`, connectionData);
+                            console.error(`Invalid Shodan API key format`);
                             continue;
                         }
                         
                         // Store the API key using the same storage key as MCP service connectors
-                        const storageKey = 'mcp_shodan_apikey';
+                        const storageKey = 'mcp_shodan_api_key';
                         await window.CoreStorageService.setValue(storageKey, apiKey);
                         console.log('Applied Shodan API key from shared link');
                         
@@ -612,18 +535,16 @@ function createSharedLinkDataProcessor() {
                         // Automatically connect to Shodan if mcpServiceManager is available
                         if (window.mcpServiceManager && window.mcpServiceManager.connectService) {
                             try {
-                                console.log('🔧 Attempting auto-connect to Shodan service with API key');
-                                
-                                // Connect using the stored API key - back to awaiting to ensure completion
+                                // Connect using the stored API key with proper object format
                                 const result = await window.mcpServiceManager.connectService('shodan', { apiKey: apiKey });
                                 
                                 if (result) {
-                                    console.log('✅ Shodan auto-connection successful from shared link');
+                                    console.log('Shodan auto-connection successful from shared link');
                                 } else {
-                                    console.warn('⚠️ Shodan auto-connection returned false');
+                                    console.warn('Shodan auto-connection returned false');
                                 }
                             } catch (error) {
-                                console.warn('❌ Failed to auto-connect Shodan service:', error);
+                                console.warn('Failed to auto-connect Shodan service:', error);
                                 // Don't let Shodan connection errors break the entire shared link processing
                             }
                         }
@@ -1054,17 +975,10 @@ function createSharedLinkDataProcessor() {
             // Clear the processing flag immediately to avoid blocking chat
             window._processingSharedLink = false;
             
-            // Add diagnostic logging for debugging message delays
-            console.log('🔧 [SharedLink Diagnostics] Processing flags after completion:', {
-                processingSharedLink: window._processingSharedLink,
-                sharedLinkProcessed: window._sharedLinkProcessed,
-                waitingForPassword: window._waitingForSharedLinkPassword
-            });
-            
             // Clear the shared link processed flag after a delay to allow all related operations to complete
             setTimeout(() => {
                 window._sharedLinkProcessed = false;
-                console.log('[SharedLink] Cleared _sharedLinkProcessed flag after processing completion - chat should work normally now');
+                console.log('[SharedLink] Processing complete - chat functionality restored');
             }, 2000); // Allow more time for all async operations to complete
             
             return pendingSharedModel;

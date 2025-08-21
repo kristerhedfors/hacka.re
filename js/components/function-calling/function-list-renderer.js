@@ -134,6 +134,16 @@ window.FunctionListRenderer = (function() {
             collectionContainer.className = 'function-collection-container';
             collectionContainer.dataset.collectionId = collection.id;
             
+            // Add data attribute for MCP collections for CSS targeting
+            // Check for MCP collections by source or by collection ID pattern
+            const isMcpCollection = collection.metadata.source === 'mcp' || 
+                                   collection.metadata.source === 'mcp-service' ||
+                                   collection.id.startsWith('mcp_');
+            
+            if (isMcpCollection) {
+                collectionContainer.dataset.mcpSource = 'true';
+            }
+            
             // Assign a color to this collection
             const collectionColor = `color-${colorIndex}`;
             collectionContainer.dataset.collectionColor = collectionColor;
@@ -264,21 +274,25 @@ window.FunctionListRenderer = (function() {
             functionCount.style.marginLeft = '10px';
             functionCount.style.color = 'var(--text-color-secondary)';
             functionCount.style.fontSize = '14px';
-            functionCount.style.display = 'none'; // Initially hidden
-            updateUserCollectionCount(collection, callableFunctions);
+            
+            // Set the initial count directly
+            let enabledCount = 0;
+            callableFunctions.forEach(funcName => {
+                if (FunctionToolsService.isJsFunctionEnabled(funcName)) {
+                    enabledCount++;
+                }
+            });
+            const totalCount = callableFunctions.length;
+            const pluralText = totalCount !== 1 ? 's' : '';
+            functionCount.textContent = `(${enabledCount}/${totalCount} function${pluralText} enabled)`;
+            functionCount.style.display = 'inline';
+            
             collectionHeader.appendChild(functionCount);
             
-            // Add source info if MCP
-            if (collection.metadata.source === 'mcp' && collection.metadata.mcpCommand) {
-                const sourceInfo = document.createElement('span');
-                sourceInfo.className = 'function-collection-source';
-                sourceInfo.textContent = `MCP: ${collection.metadata.mcpCommand}`;
-                sourceInfo.style.marginLeft = 'auto';
-                sourceInfo.style.marginRight = '10px';
-                sourceInfo.style.color = 'var(--text-color-secondary)';
-                sourceInfo.style.fontSize = '12px';
-                collectionHeader.appendChild(sourceInfo);
-            }
+            // Check if this is an MCP collection
+            const isMcpCollection = collection.metadata.source === 'mcp' || 
+                                   collection.metadata.source === 'mcp-service' ||
+                                   collection.id.startsWith('mcp_');
             
             // Add delete button for the entire collection
             const deleteCollectionButton = document.createElement('button');
@@ -286,10 +300,27 @@ window.FunctionListRenderer = (function() {
             deleteCollectionButton.innerHTML = '<i class="fas fa-trash"></i>';
             deleteCollectionButton.title = 'Delete entire collection';
             
+            // Disable delete button for MCP collections
+            if (isMcpCollection) {
+                deleteCollectionButton.disabled = true;
+                deleteCollectionButton.style.opacity = '0.3';
+                deleteCollectionButton.style.cursor = 'not-allowed';
+                deleteCollectionButton.style.filter = 'grayscale(100%)';
+                // Don't use pointerEvents='none' so cursor can show
+                deleteCollectionButton.title = 'Disconnect MCP Server to delete collection';
+            }
+            
             // Add click handler with proper event stopping
-            deleteCollectionButton.onclick = (e) => {
+            deleteCollectionButton.addEventListener('click', (e) => {
                 e.stopPropagation();
                 e.preventDefault();
+                
+                // Don't proceed if disabled (MCP collection)
+                if (deleteCollectionButton.disabled) {
+                    // Ensure we stop the event from bubbling to expand/collapse
+                    e.stopImmediatePropagation();
+                    return false;
+                }
                 
                 const confirmMessage = `Are you sure you want to delete the entire "${collection.metadata.name}" collection with ${callableFunctions.length} function${callableFunctions.length !== 1 ? 's' : ''}?`;
                 
@@ -307,7 +338,9 @@ window.FunctionListRenderer = (function() {
                         }
                     }
                 }, 0);
-            };
+                
+                return false;
+            }, true); // Use capture phase to handle event before bubble
             
             collectionHeader.appendChild(deleteCollectionButton);
             
@@ -325,7 +358,7 @@ window.FunctionListRenderer = (function() {
             copyCollectionButton.style.borderRadius = '0';
             
             // Add click handler with proper event stopping
-            copyCollectionButton.onclick = (e) => {
+            copyCollectionButton.addEventListener('click', (e) => {
                 e.stopPropagation();
                 e.preventDefault();
                 
@@ -362,7 +395,7 @@ window.FunctionListRenderer = (function() {
                             addSystemMessage('Failed to copy functions. Please try again.');
                         }
                     });
-            };
+            });
             
             collectionHeader.appendChild(copyCollectionButton);
             
@@ -531,7 +564,7 @@ window.FunctionListRenderer = (function() {
         
         /**
          * Update the user collection count display to show enabled/total format
-         * Only show if at least 1 function is enabled, otherwise hide
+         * Always show the count, even if 0 functions are enabled
          * @param {Object} collection - The collection object
          * @param {Array} callableFunctions - Array of callable function names
          */
@@ -549,14 +582,10 @@ window.FunctionListRenderer = (function() {
             
             const totalCount = callableFunctions.length;
             
-            // Only show count if at least 1 function is enabled
-            if (enabledCount > 0) {
-                const pluralText = totalCount !== 1 ? 's' : '';
-                countElement.textContent = `(${enabledCount}/${totalCount} function${pluralText} enabled)`;
-                countElement.style.display = 'inline';
-            } else {
-                countElement.style.display = 'none';
-            }
+            // Always show the count
+            const pluralText = totalCount !== 1 ? 's' : '';
+            countElement.textContent = `(${enabledCount}/${totalCount} function${pluralText} enabled)`;
+            countElement.style.display = 'inline';
         }
         
         /**

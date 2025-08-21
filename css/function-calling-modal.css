@@ -95,8 +95,37 @@
     justify-content: center;
 }
 
-.function-collection-delete:hover {
+.function-collection-delete:hover:not(:disabled) {
     color: var(--error-color);
+}
+
+/* Disabled state for MCP collection delete buttons */
+.function-collection-delete:disabled,
+.function-collection-delete[disabled] {
+    opacity: 0.3 !important;
+    cursor: not-allowed !important;
+    color: var(--text-color-secondary) !important;
+    filter: grayscale(100%);
+}
+
+/* Ensure cursor shows properly on disabled buttons */
+.function-collection-delete:disabled:hover,
+.function-collection-delete[disabled]:hover {
+    cursor: not-allowed !important;
+    color: var(--text-color-secondary) !important;
+}
+
+/* Additional visual feedback for MCP collections */
+.function-collection-container[data-mcp-source="true"] .function-collection-delete {
+    opacity: 0.3 !important;
+    cursor: not-allowed !important;
+    filter: grayscale(100%);
+}
+
+/* Ensure the icon inside also shows the correct cursor */
+.function-collection-delete:disabled i,
+.function-collection-delete[disabled] i {
+    cursor: not-allowed !important;
 }
 
 .function-collection-functions {

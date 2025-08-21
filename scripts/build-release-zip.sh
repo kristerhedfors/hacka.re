@@ -34,20 +34,15 @@ echo "Copying essential files..."
 cp index.html "$TEMP_DIR/"
 cp LICENSE "$TEMP_DIR/"
 
-# JavaScript files (only copy existing files)
-mkdir -p "$TEMP_DIR/js"
-for file in app.js script.js themes.js button-tooltips.js copy-code.js default-functions-tooltip.js function-tooltip.js link-sharing-tooltip.js logo-animation.js mobile-utils.js modal-effects.js settings-tooltip.js ascii-tree-menu.js; do
-    if [ -f "js/$file" ]; then
-        cp "js/$file" "$TEMP_DIR/js/"
-    fi
-done
+# Copy entire js directory with all its subdirectories
+echo "Copying JavaScript files..."
+cp -r js "$TEMP_DIR/"
 
-# Copy entire subdirectories (only existing ones)
-for dir in components services utils default-functions default-prompts plugins providers; do
-    if [ -d "js/$dir" ]; then
-        cp -r "js/$dir" "$TEMP_DIR/js/"
-    fi
-done
+# Remove any development or test specific files from the copy
+echo "Cleaning development files from JS copy..."
+find "$TEMP_DIR/js" -name "*.md" -delete 2>/dev/null || true
+find "$TEMP_DIR/js" -name "*.test.js" -delete 2>/dev/null || true
+find "$TEMP_DIR/js" -name "*-test.js" -delete 2>/dev/null || true
 
 # CSS files
 cp -r css "$TEMP_DIR/"

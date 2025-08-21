@@ -98,9 +98,11 @@ window.ConfigurationService = (function() {
     function collectPromptConfiguration() {
         const config = {};
         
-        // Get prompts library
+        // Get prompts library (excluding MCP-derived prompts)
         if (PromptsService && typeof PromptsService.getPrompts === 'function') {
-            config.library = PromptsService.getPrompts();
+            const allPrompts = PromptsService.getPrompts();
+            // Filter out MCP prompts - they should not be shared
+            config.library = allPrompts.filter(prompt => !prompt.isMcpPrompt);
         }
         
         // Get selected prompt IDs
@@ -108,9 +110,12 @@ window.ConfigurationService = (function() {
             config.selectedIds = PromptsService.getSelectedPromptIds();
         }
         
-        // Get selected default prompt IDs
+        // Get selected default prompt IDs (excluding MCP prompts)
         if (window.DefaultPromptsService && typeof window.DefaultPromptsService.getSelectedDefaultPromptIds === 'function') {
-            config.selectedDefaultIds = window.DefaultPromptsService.getSelectedDefaultPromptIds();
+            const allSelectedIds = window.DefaultPromptsService.getSelectedDefaultPromptIds();
+            // Filter out MCP prompt IDs
+            const mcpPromptIds = ['shodan-integration-guide', 'github-integration-guide', 'gmail-integration-guide'];
+            config.selectedDefaultIds = allSelectedIds.filter(id => !mcpPromptIds.includes(id));
         }
         
         return config;
@@ -123,14 +128,47 @@ window.ConfigurationService = (function() {
     function collectFunctionConfiguration() {
         const config = {};
         
-        // Get functions library
-        if (window.FunctionToolsService && typeof window.FunctionToolsService.getJsFunctions === 'function') {
-            config.library = window.FunctionToolsService.getJsFunctions();
+        // Identify MCP collections first
+        const mcpCollectionIds = [];
+        if (window.FunctionToolsService && typeof window.FunctionToolsService.getAllFunctionCollections === 'function') {
+            const allCollections = window.FunctionToolsService.getAllFunctionCollections();
+            Object.values(allCollections).forEach(collection => {
+                const isMcpCollection = collection.metadata.source === 'mcp' || 
+                                      collection.metadata.source === 'mcp-service' ||
+                                      collection.id.startsWith('mcp_');
+                if (isMcpCollection) {
+                    mcpCollectionIds.push(collection.id);
+                }
+            });
         }
         
-        // Get enabled function names
+        // Get functions library (excluding MCP functions)
+        if (window.FunctionToolsService && typeof window.FunctionToolsService.getJsFunctions === 'function') {
+            const allFunctions = window.FunctionToolsService.getJsFunctions();
+            const functionCollections = window.FunctionToolsService.getFunctionCollections ? 
+                                       window.FunctionToolsService.getFunctionCollections() : {};
+            
+            const userFunctions = {};
+            Object.entries(allFunctions).forEach(([funcName, funcSpec]) => {
+                const collectionId = functionCollections[funcName];
+                // Only include if not in an MCP collection
+                if (!collectionId || !mcpCollectionIds.includes(collectionId)) {
+                    userFunctions[funcName] = funcSpec;
+                }
+            });
+            config.library = userFunctions;
+        }
+        
+        // Get enabled function names (excluding MCP functions)
         if (window.FunctionToolsService && typeof window.FunctionToolsService.getEnabledFunctionNames === 'function') {
-            config.enabled = window.FunctionToolsService.getEnabledFunctionNames();
+            const allEnabled = window.FunctionToolsService.getEnabledFunctionNames();
+            const functionCollections = window.FunctionToolsService.getFunctionCollections ? 
+                                       window.FunctionToolsService.getFunctionCollections() : {};
+            
+            config.enabled = allEnabled.filter(funcName => {
+                const collectionId = functionCollections[funcName];
+                return !collectionId || !mcpCollectionIds.includes(collectionId);
+            });
         }
         
         // Get tools enabled status
@@ -138,17 +176,25 @@ window.ConfigurationService = (function() {
             config.toolsEnabled = window.FunctionToolsService.isFunctionToolsEnabled();
         }
         
-        // Get function collections mapping for preserving collection organization
+        // Get function collections mapping (excluding MCP collections)
         if (window.FunctionToolsService && typeof window.FunctionToolsService.getFunctionCollections === 'function') {
-            config.collections = window.FunctionToolsService.getFunctionCollections();
+            const allCollections = window.FunctionToolsService.getFunctionCollections();
+            const userCollections = {};
+            Object.entries(allCollections).forEach(([funcName, collectionId]) => {
+                if (!mcpCollectionIds.includes(collectionId)) {
+                    userCollections[funcName] = collectionId;
+                }
+            });
+            config.collections = userCollections;
         }
         
-        // Get collection metadata for preserving server-specific collection names
+        // Get collection metadata (excluding MCP collections)
         if (window.FunctionToolsService && typeof window.FunctionToolsService.getAllFunctionCollections === 'function') {
             const allCollections = window.FunctionToolsService.getAllFunctionCollections();
             config.collectionMetadata = {};
             Object.keys(allCollections).forEach(collectionId => {
-                if (allCollections[collectionId].metadata) {
+                // Only include metadata for non-MCP collections
+                if (!mcpCollectionIds.includes(collectionId) && allCollections[collectionId].metadata) {
                     config.collectionMetadata[collectionId] = allCollections[collectionId].metadata;
                 }
             });
