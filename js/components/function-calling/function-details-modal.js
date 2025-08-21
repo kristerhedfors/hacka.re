@@ -9,6 +9,7 @@ window.FunctionDetailsModal = (function() {
     let modal = null;
     let elements = {};
     let currentData = {}; // Store current modal data for copying
+    let currentActiveTab = 'call'; // Track current active tab
     
     /**
      * Initialize the function details modal
@@ -21,15 +22,17 @@ window.FunctionDetailsModal = (function() {
             modal: modal,
             title: document.getElementById('function-details-title'),
             functionName: document.getElementById('function-details-function-name'),
-            parametersGroup: document.getElementById('function-details-parameters-group'),
             parameters: document.getElementById('function-details-parameters'),
-            resultGroup: document.getElementById('function-details-result-group'),
             resultType: document.getElementById('function-details-result-type'),
             executionTime: document.getElementById('function-details-execution-time'),
             resultValue: document.getElementById('function-details-result-value'),
             copyParametersBtn: document.getElementById('copy-parameters-btn'),
             copyResultBtn: document.getElementById('copy-result-btn'),
-            closeBtn: document.getElementById('close-function-details-modal')
+            closeBtn: document.getElementById('close-function-details-modal'),
+            // Tab elements
+            callTab: document.getElementById('call-tab'),
+            resultTab: document.getElementById('result-tab'),
+            tabButtons: modal ? modal.querySelectorAll('.tab-btn') : []
         };
         
         // Set up event listeners
@@ -52,6 +55,14 @@ window.FunctionDetailsModal = (function() {
                 copyToClipboard(compactJson, elements.copyResultBtn);
             });
         }
+        
+        // Set up tab switching
+        elements.tabButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabName = btn.dataset.tab;
+                switchToTab(tabName);
+            });
+        });
         
         // Close modal when clicking outside
         if (modal) {
@@ -91,32 +102,30 @@ window.FunctionDetailsModal = (function() {
         // Store current data for copying
         currentData = { functionName, parameters, resultType, resultValue, executionTime, type };
         
-        // Set title and function name
-        if (type === 'result') {
-            elements.title.textContent = 'Function Result Details';
-            elements.functionName.textContent = `${functionName} (Result)`;
-        } else {
-            elements.title.textContent = 'Function Call Details';
-            elements.functionName.textContent = functionName;
-        }
+        // Set function name
+        elements.functionName.textContent = functionName;
         
-        // Always show parameters if available (both for calls and results)
+        // Always populate parameters if available
         if (parameters !== undefined && parameters !== null) {
-            elements.parametersGroup.style.display = 'block';
             elements.parameters.textContent = formatParameters(parameters);
         } else {
-            elements.parametersGroup.style.display = 'none';
+            elements.parameters.textContent = '{}';
         }
         
-        // Show result section if we have result data (only for results or completed calls)
+        // Always populate result data if available
         if (resultValue !== undefined && resultValue !== null) {
-            elements.resultGroup.style.display = 'block';
             elements.resultType.textContent = resultType || 'unknown';
             elements.executionTime.textContent = formatExecutionTime(executionTime);
             elements.resultValue.textContent = formatResultValue(resultValue, resultType);
         } else {
-            elements.resultGroup.style.display = 'none';
+            elements.resultType.textContent = 'N/A';
+            elements.executionTime.textContent = 'N/A';
+            elements.resultValue.textContent = 'No result available';
         }
+        
+        // Switch to appropriate tab based on type
+        const targetTab = type === 'result' ? 'result' : 'call';
+        switchToTab(targetTab);
         
         // Show the modal
         modal.classList.add('active');
@@ -292,6 +301,41 @@ window.FunctionDetailsModal = (function() {
         } catch (e) {
             console.error('Error creating compact result JSON:', e);
             return String(currentData.resultValue);
+        }
+    }
+    
+    /**
+     * Switch to a specific tab
+     * @param {string} tabName - Name of tab to switch to ('call' or 'result')
+     */
+    function switchToTab(tabName) {
+        // Update active tab tracking
+        currentActiveTab = tabName;
+        
+        // Update tab buttons
+        elements.tabButtons.forEach(btn => {
+            if (btn.dataset.tab === tabName) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+        
+        // Update tab panes
+        if (elements.callTab) {
+            if (tabName === 'call') {
+                elements.callTab.classList.add('active');
+            } else {
+                elements.callTab.classList.remove('active');
+            }
+        }
+        
+        if (elements.resultTab) {
+            if (tabName === 'result') {
+                elements.resultTab.classList.add('active');
+            } else {
+                elements.resultTab.classList.remove('active');
+            }
         }
     }
     

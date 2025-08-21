@@ -1,24 +1,39 @@
 /* 
  * Function Details Modal CSS
- * Styles for the function call details modal that appears when clicking function indicators
+ * Styles for the tabbed function call/result details modal
  */
 
-.function-details-container {
+/* Override modal centering for function details modal */
+#function-details-modal.modal {
+    align-items: flex-start;
+    padding-top: 90px; /* Position below header (approximately 80px header + 10px gap) */
+}
+
+#function-details-modal .modal-content {
+    position: relative;
+    max-width: 800px;
+    width: 90%;
+    height: 70vh; /* Fixed height to prevent jumping */
+    max-height: calc(100vh - 120px); /* Leave space for header and bottom */
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    resize: both;
+    overflow: auto;
+}
+
+/* Fixed header height to prevent jumping */
+#function-details-modal .settings-header {
+    flex-shrink: 0;
+    min-height: 50px; /* Fixed height for header */
 }
 
 .function-details-section {
     display: flex;
     flex-direction: column;
     gap: 1rem;
-}
-
-.function-details-content {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
+    margin-bottom: 1rem;
+    flex-shrink: 0; /* Prevent shrinking */
+    min-height: 60px; /* Fixed minimum height */
 }
 
 .function-details-group {
@@ -36,6 +51,73 @@
     font-size: 14px;
     font-weight: 600;
     color: var(--text-color);
+}
+
+/* Tab container styles inheriting from the system prompt viewer */
+#function-details-modal .tab-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    flex: 1; /* Take remaining space */
+    min-height: 0; /* Allow shrinking */
+    overflow: hidden; /* Prevent overflow from container */
+}
+
+#function-details-modal .tab-buttons {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 0;
+    flex-shrink: 0; /* Don't shrink tab buttons */
+}
+
+#function-details-modal .tab-btn {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 12px 24px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-color-secondary);
+    transition: all 0.2s ease;
+}
+
+#function-details-modal .tab-btn.active {
+    color: var(--accent-color);
+    border-bottom-color: var(--accent-color);
+}
+
+#function-details-modal .tab-btn:hover {
+    color: var(--text-color);
+    background-color: var(--bg-color-hover, rgba(0, 0, 0, 0.05));
+}
+
+#function-details-modal .tab-content {
+    flex: 1;
+    min-height: 0; /* Allow shrinking */
+    display: flex;
+    flex-direction: column;
+}
+
+#function-details-modal .tab-pane {
+    display: none;
+    flex: 1;
+    min-height: 0; /* Allow shrinking */
+}
+
+#function-details-modal .tab-pane.active {
+    display: flex;
+    flex-direction: column;
+}
+
+#function-details-modal .scrollable-content {
+    flex: 1;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 0;
+    background-color: var(--background-color);
+    min-height: 200px; /* Minimum height for content */
 }
 
 .function-details-meta {
@@ -75,8 +157,31 @@
     white-space: pre-wrap;
     word-wrap: break-word;
     overflow-x: auto;
-    max-height: 300px;
-    overflow-y: auto;
+}
+
+/* Inside scrollable-content, remove height restrictions from pre elements */
+#function-details-modal .scrollable-content .function-details-value pre {
+    max-height: none;
+    overflow-y: visible;
+}
+
+#function-details-modal .scrollable-content .function-details-group {
+    border: none;
+    margin: 0;
+}
+
+#function-details-modal .scrollable-content .function-details-value {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--bg-color);
+    overflow: hidden;
+}
+
+#function-details-modal .scrollable-content .function-details-meta {
+    padding: 12px 16px;
+    background-color: var(--bg-color-secondary);
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 0;
 }
 
 .function-details-value .copy-btn {
@@ -141,6 +246,16 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
+    #function-details-modal.modal {
+        padding-top: 70px; /* Less padding on mobile */
+    }
+    
+    #function-details-modal .modal-content {
+        width: 95%;
+        height: 75vh; /* Slightly more height on mobile */
+        max-height: calc(100vh - 100px);
+    }
+    
     .function-details-meta {
         flex-direction: column;
         gap: 0.5rem;
@@ -156,5 +271,10 @@
         right: 8px;
         width: 28px;
         height: 28px;
+    }
+    
+    #function-details-modal .tab-btn {
+        padding: 10px 16px;
+        font-size: 13px;
     }
 }

@@ -545,38 +545,52 @@ async function getCurrentTimeInBerlin() {
         <div id="function-details-modal" class="modal">
             <div class="modal-content">
                 <div class="settings-header">
-                    <h2 id="function-details-title">Function Call Details</h2>
+                    <h2 id="function-details-title">Function Details</h2>
+                    <button type="button" id="close-function-details-modal" class="btn icon-btn" title="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
-                <div class="function-details-container">
-                    <div class="function-details-section">
-                        <h3 id="function-details-function-name">Function Name</h3>
-                        <div class="function-details-content">
-                            <div class="function-details-group" id="function-details-parameters-group">
-                                <h4>Parameters</h4>
-                                <div class="function-details-value">
-                                    <pre id="function-details-parameters"></pre>
-                                    <button type="button" class="copy-btn" id="copy-parameters-btn" title="Copy parameters">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="function-details-group" id="function-details-result-group" style="display: none;">
-                                <h4>Result</h4>
-                                <div class="function-details-meta">
-                                    <span class="function-details-type">Type: <span id="function-details-result-type"></span></span>
-                                    <span class="function-details-time">Time: <span id="function-details-execution-time"></span></span>
-                                </div>
-                                <div class="function-details-value">
-                                    <pre id="function-details-result-value"></pre>
-                                    <button type="button" class="copy-btn" id="copy-result-btn" title="Copy result">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
+                
+                <div class="function-details-section">
+                    <h3 id="function-details-function-name">Function Name</h3>
+                </div>
+
+                <div class="tab-container">
+                    <div class="tab-buttons">
+                        <button type="button" class="tab-btn active" data-tab="call">Function Call</button>
+                        <button type="button" class="tab-btn" data-tab="result">Function Result</button>
+                    </div>
+                    
+                    <div class="tab-content">
+                        <div class="tab-pane active" id="call-tab">
+                            <div class="scrollable-content">
+                                <div class="function-details-group">
+                                    <div class="function-details-value">
+                                        <pre id="function-details-parameters"></pre>
+                                        <button type="button" class="copy-btn" id="copy-parameters-btn" title="Copy parameters">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="form-actions">
-                        <button type="button" id="close-function-details-modal" class="btn secondary-btn">Close</button>
+                        
+                        <div class="tab-pane" id="result-tab">
+                            <div class="scrollable-content">
+                                <div class="function-details-group">
+                                    <div class="function-details-meta">
+                                        <span class="function-details-type">Type: <span id="function-details-result-type"></span></span>
+                                        <span class="function-details-time">Time: <span id="function-details-execution-time"></span></span>
+                                    </div>
+                                    <div class="function-details-value">
+                                        <pre id="function-details-result-value"></pre>
+                                        <button type="button" class="copy-btn" id="copy-result-btn" title="Copy result">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

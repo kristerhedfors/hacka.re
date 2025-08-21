@@ -204,7 +204,7 @@ window.ChatToolsService = (function() {
             const toolCall = functionToolCalls[i];
             const result = functionResults[i];
             
-            if (toolCall.function && toolCall.function.name && result && result.name) {
+            if (toolCall.function && toolCall.function.name && result) {
                 const functionName = toolCall.function.name;
                 const encodedArgs = encodeURIComponent(toolCall.function.arguments || '{}');
                 const functionCallMarker = `[FUNCTION_CALL:${functionName}:${encodedArgs}]`;
@@ -221,10 +221,10 @@ window.ChatToolsService = (function() {
                     resultType = 'string';
                 }
                 
-                // Create the result marker
+                // Create the result marker - use function name from toolCall, not result
                 const encodedResult = encodeURIComponent(resultContent);
                 const executionTime = result.executionTime || 0;
-                const functionResultMarker = `[FUNCTION_RESULT:${result.name}:${resultType}:${encodedResult}:${executionTime}]`;
+                const functionResultMarker = `[FUNCTION_RESULT:${functionName}:${resultType}:${encodedResult}:${executionTime}]`;
                 
                 // Add both markers together at the end (for now - can be improved to insert inline)
                 finalContent += functionCallMarker + functionResultMarker;
