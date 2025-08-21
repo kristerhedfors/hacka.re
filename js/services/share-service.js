@@ -151,13 +151,54 @@ window.ShareService = (function() {
             let functions = options.functions;
             let enabledFunctions = options.enabledFunctions;
             
-            // If not provided, try to collect them
+            // If not provided, try to collect them (excluding MCP functions)
             if (!functions && window.FunctionToolsService) {
-                functions = window.FunctionToolsService.getJsFunctions();
-                enabledFunctions = window.FunctionToolsService.getEnabledFunctionNames();
+                const allFunctions = window.FunctionToolsService.getJsFunctions();
+                const allEnabledFunctions = window.FunctionToolsService.getEnabledFunctionNames();
+                const allCollections = window.FunctionToolsService.getAllFunctionCollections();
+                const functionCollections = window.FunctionToolsService.getFunctionCollections();
+                
+                // Identify MCP collections
+                const mcpCollectionIds = [];
+                Object.values(allCollections).forEach(collection => {
+                    const isMcpCollection = collection.metadata.source === 'mcp' || 
+                                          collection.metadata.source === 'mcp-service' ||
+                                          collection.id.startsWith('mcp_');
+                    if (isMcpCollection) {
+                        mcpCollectionIds.push(collection.id);
+                        console.log('🚫 ShareService: Identified MCP collection:', collection.id, collection.metadata.name);
+                    }
+                });
+                
+                console.log('🔍 ShareService: Total functions before filtering:', Object.keys(allFunctions).length);
+                console.log('🔍 ShareService: MCP collections to exclude:', mcpCollectionIds);
+                
+                // Filter out MCP functions
+                functions = {};
+                const excludedFunctions = [];
+                Object.entries(allFunctions).forEach(([funcName, funcSpec]) => {
+                    const collectionId = functionCollections[funcName];
+                    // Only include if not in an MCP collection
+                    if (!collectionId || !mcpCollectionIds.includes(collectionId)) {
+                        functions[funcName] = funcSpec;
+                    } else {
+                        excludedFunctions.push(`${funcName} (collection: ${collectionId})`);
+                    }
+                });
+                
+                console.log('🔍 ShareService: Functions after filtering:', Object.keys(functions).length);
+                console.log('🚫 ShareService: Excluded MCP functions:', excludedFunctions);
+                
+                // Filter enabled functions to exclude MCP functions
+                enabledFunctions = allEnabledFunctions.filter(funcName => {
+                    const collectionId = functionCollections[funcName];
+                    return !collectionId || !mcpCollectionIds.includes(collectionId);
+                });
+                
+                console.log('🔍 ShareService: Enabled functions after filtering:', enabledFunctions.length);
             }
             
-            if (functions) {
+            if (functions && Object.keys(functions).length > 0) {
                 payload.functions = functions;
                 payload.enabledFunctions = enabledFunctions || [];
                 itemsIncluded.push(`✅ FUNCTION LIBRARY (${Object.keys(functions).length} functions)`);
@@ -169,13 +210,15 @@ window.ShareService = (function() {
             let prompts = options.prompts;
             let selectedPromptIds = options.selectedPromptIds;
             
-            // If not provided, try to collect them
+            // If not provided, try to collect them (excluding MCP prompts)
             if (!prompts && window.PromptsService) {
-                prompts = window.PromptsService.getPrompts();
+                const allPrompts = window.PromptsService.getPrompts();
+                // Filter out MCP prompts - they should not be shared
+                prompts = allPrompts.filter(prompt => !prompt.isMcpPrompt);
                 selectedPromptIds = window.PromptsService.getSelectedPromptIds();
             }
             
-            if (prompts) {
+            if (prompts && prompts.length > 0) {
                 payload.prompts = prompts;
                 payload.selectedPromptIds = selectedPromptIds || [];
                 itemsIncluded.push(`✅ PROMPT LIBRARY (${prompts.length} prompts)`);
