@@ -367,6 +367,21 @@
     // Export both the class and instance
     global.MCPServiceManager = MCPServiceManager;
     global.mcpServiceManager = manager;
-
+    
+    // Create bridge for backwards compatibility (used by GitHub UI and other components)
+    global.MCPServiceConnectors = {
+        connectService: (serviceKey, credentials = null) => manager.connectService(serviceKey, credentials),
+        disconnectService: (serviceKey) => manager.disconnectService(serviceKey),
+        isConnected: (serviceKey) => manager.isConnected(serviceKey),
+        getConnectedServices: () => manager.getConnectedServices(),
+        bulkDisconnectServices: (serviceKeys) => manager.bulkDisconnectServices(serviceKeys),
+        quickConnect: (serviceKey) => manager.quickConnect(serviceKey),
+        validateService: (serviceKey) => manager.validateService(serviceKey),
+        executeServiceTool: (serviceKey, toolName, params) => manager.executeServiceTool(serviceKey, toolName, params),
+        getServiceConfig: (serviceKey) => manager.getServiceConfig(serviceKey),
+        loadStoredConnections: () => manager.loadStoredConnections()
+    };
+    
+    console.log('[MCPServiceManager] Bridge created: MCPServiceConnectors -> mcpServiceManager');
 
 })(window);
