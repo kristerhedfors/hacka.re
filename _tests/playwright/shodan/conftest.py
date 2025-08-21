@@ -28,76 +28,113 @@ def shodan_api_key():
     return api_key
 
 
-@pytest.fixture(scope="session")
-def serve_hacka_re():
-    """Start HTTP server for testing"""
-    import subprocess
-    import time
-    
-    port = 8000
-    project_root = Path(__file__).parent.parent.parent.parent
-    
-    # Check if server is already running
-    try:
-        import requests
-        response = requests.get(f"http://localhost:{port}", timeout=1)
-        # Server already running
-        return f"http://localhost:{port}"
-    except:
-        pass
-    
-    # Start server
-    server_process = subprocess.Popen(
-        ["python", "-m", "http.server", str(port)],
-        cwd=str(project_root),
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL
-    )
-    
-    # Wait for server to start
-    time.sleep(2)
-    
-    yield f"http://localhost:{port}"
-    
-    # Cleanup
-    server_process.terminate()
-    server_process.wait()
+# serve_hacka_re fixture removed - using the main one from conftest.py
 
 
 @pytest.fixture
 def shodan_ready_page(page, serve_hacka_re, shodan_api_key):
     """
     Fixture that returns a page ready for Shodan MCP testing.
-    Uses the same pattern as core tests for proper setup.
+    Properly configures API keys through the UI to avoid modal issues.
     """
+    # Get OpenAI API key from environment
+    openai_api_key = os.environ.get("OPENAI_API_KEY")
+    if not openai_api_key:
+        pytest.skip("OPENAI_API_KEY not set in environment - needed for Shodan chat integration")
+    
     # Navigate to app
     page.goto(serve_hacka_re)
     
     # Dismiss welcome modal
     dismiss_welcome_modal(page)
+    
+    # Check if API key modal appears and configure it properly
+    try:
+        api_key_modal = page.locator('#api-key-modal')
+        if api_key_modal.is_visible(timeout=2000):
+            # Fill in the API key
+            api_key_input = page.locator('#api-key-input')
+            api_key_input.fill(openai_api_key)
+            
+            # Click save
+            save_btn = page.locator('#save-api-key-btn')
+            save_btn.click()
+            
+            # Wait for modal to close
+            page.wait_for_selector('#api-key-modal', state='hidden', timeout=5000)
+    except:
+        # Modal didn't appear, configure through settings
+        pass
+    
+    # Dismiss settings modal if it appears
     dismiss_settings_modal(page)
     
-    # Step 1: Configure basic API first (following core test pattern)
-    page.locator('#settings-btn').click()
-    page.wait_for_timeout(1000)
+    # Ensure API key is configured through settings if not done via modal
+    try:
+        # Open settings if needed
+        if not page.locator('#api-key-update').is_visible(timeout=1000):
+            page.locator('#settings-btn').click()
+            page.wait_for_timeout(1000)
+        
+        # Configure API key if field is visible and empty
+        api_key_field = page.locator('#api-key-update')
+        if api_key_field.is_visible() and api_key_field.input_value() == "":
+            api_key_field.fill(openai_api_key)
+        
+        # Close settings
+        close_settings = page.locator('#close-settings')
+        if close_settings.is_visible():
+            close_settings.click()
+            page.wait_for_timeout(1000)
+            
+    except:
+        # Settings configuration failed, use direct storage as fallback
+        page.evaluate(f"""() => {{
+            if (window.CoreStorageService) {{
+                window.CoreStorageService.setValue('openai_api_key', '{openai_api_key}');
+                window.CoreStorageService.setValue('openai_base_url', 'https://api.openai.com/v1');
+                window.CoreStorageService.setValue('openai_model', 'gpt-4o-mini');
+            }}
+        }}""")
     
-    # Basic API setup (minimal, just to get system working)
-    page.locator('#api-key-update').fill(shodan_api_key)  # Use Shodan key as temp
-    page.locator('#base-url-select').select_option('openai')  # Keep basic setup
-    
-    # Step 2: Configure Shodan via storage (simpler than modal navigation)
+    # Set Shodan API key in storage first
     page.evaluate(f"""() => {{
-        // Set Shodan API key directly in storage
         if (window.CoreStorageService) {{
             window.CoreStorageService.setValue('shodan_api_key', '{shodan_api_key}');
-            // Mark Shodan as configured
-            window.CoreStorageService.setValue('mcp_shodan_configured', true);
+            window.CoreStorageService.setValue('mcp_service_shodan_api_key', '{shodan_api_key}');
+            console.log('Shodan API key set in storage');
         }}
     }}""")
     
-    # Close settings
-    page.locator('#close-settings').click()
-    page.wait_for_timeout(1000)
+    # Handle any API key modal that appears
+    try:
+        api_key_modal = page.locator('#service-apikey-input-modal')
+        if api_key_modal.is_visible(timeout=2000):
+            print("API key modal is visible, filling it out")
+            api_key_input = page.locator('#service-api-key-input')
+            if api_key_input.is_visible():
+                api_key_input.fill(shodan_api_key)
+                save_btn = page.locator('#save-service-api-key-btn')
+                if save_btn.is_visible():
+                    save_btn.click()
+                    page.wait_for_selector('#service-apikey-input-modal', state='hidden', timeout=5000)
+                    print("API key modal handled")
+    except Exception as e:
+        print(f"No API key modal or handled: {e}")
+    
+    # Now try to connect Shodan service
+    page.evaluate("""() => {
+        if (window.mcpServiceManager) {
+            window.mcpServiceManager.connectService('shodan').then(result => {
+                console.log('Shodan service connection result:', result);
+            }).catch(error => {
+                console.error('Shodan service connection error:', error);
+            });
+        }
+    }""")
+    
+    # Wait a moment for the service to connect
+    page.wait_for_timeout(3000)
     
     return page
 
@@ -136,20 +173,19 @@ def execute_shodan_tool(page, tool_name: str, params: Dict[str, Any] = None) -> 
         prompt = f"Use the Shodan {tool_name} tool"
     
     # Send the message
-    chat_input = page.locator("#userInput")
+    chat_input = page.locator("#message-input")
     chat_input.fill(prompt)
     
-    send_btn = page.locator("#sendButton")
+    send_btn = page.locator("#send-btn")
     send_btn.click()
     
     # Wait for response
     page.wait_for_timeout(3000)  # Allow time for API call
     
     # Extract the response
-    messages = page.locator(".message").all()
-    if messages:
-        last_message = messages[-1]
-        response_text = last_message.text_content()
+    message_content = page.locator(".message.assistant .message-content").last
+    if message_content:
+        response_text = message_content.text_content()
         
         # Try to parse JSON from response
         try:
