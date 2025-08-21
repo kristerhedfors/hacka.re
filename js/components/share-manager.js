@@ -134,6 +134,15 @@ window.ShareManager = (function() {
          * Update status indicators for each share item
          */
         async function updateShareItemStatuses() {
+            // Update base URL status
+            updateBaseUrlStatus();
+            
+            // Update API key status
+            updateApiKeyStatus();
+            
+            // Update model status
+            updateModelStatus();
+            
             // Update prompt library status
             updatePromptLibraryStatus();
             
@@ -145,6 +154,124 @@ window.ShareManager = (function() {
             
             // Update conversation status
             updateConversationStatus();
+        }
+        
+        /**
+         * Update base URL status display
+         */
+        function updateBaseUrlStatus() {
+            const checkbox = elements.shareBaseUrlCheckbox;
+            if (!checkbox) return;
+            
+            const label = checkbox.parentElement ? checkbox.parentElement.querySelector('label[for="share-base-url"]') : null;
+            if (!label) return;
+            
+            // Remove existing status indicators
+            const allExistingStatus = label.querySelectorAll('.share-item-status');
+            allExistingStatus.forEach(status => status.remove());
+            
+            // Get current base URL
+            const baseUrl = StorageService.getBaseUrl();
+            
+            if (baseUrl) {
+                const statusSpan = document.createElement('span');
+                statusSpan.className = 'share-item-status';
+                statusSpan.style.marginLeft = '10px';
+                statusSpan.style.color = 'var(--text-color-secondary)';
+                statusSpan.style.fontSize = '0.85em';
+                statusSpan.style.fontWeight = 'normal';
+                
+                // Truncate URL if too long for display
+                let displayUrl = baseUrl;
+                if (baseUrl.length > 40) {
+                    displayUrl = baseUrl.substring(0, 37) + '...';
+                }
+                
+                const actionText = checkbox.checked ? 'will be shared' : 'available';
+                statusSpan.textContent = `(${displayUrl} ${actionText})`;
+                label.appendChild(statusSpan);
+            }
+        }
+        
+        /**
+         * Update API key status display
+         */
+        function updateApiKeyStatus() {
+            const checkbox = elements.shareApiKeyCheckbox;
+            if (!checkbox) return;
+            
+            const label = checkbox.parentElement ? checkbox.parentElement.querySelector('label[for="share-api-key"]') : null;
+            if (!label) return;
+            
+            // Remove existing status indicators
+            const allExistingStatus = label.querySelectorAll('.share-item-status');
+            allExistingStatus.forEach(status => status.remove());
+            
+            // Get current API key
+            const apiKey = StorageService.getApiKey();
+            
+            if (apiKey) {
+                const statusSpan = document.createElement('span');
+                statusSpan.className = 'share-item-status';
+                statusSpan.style.marginLeft = '10px';
+                statusSpan.style.color = 'var(--text-color-secondary)';
+                statusSpan.style.fontSize = '0.85em';
+                statusSpan.style.fontWeight = 'normal';
+                
+                // Mask the API key using the same pattern as SharedLinkDataProcessor
+                let maskedKey = '';
+                if (window.SharedLinkDataProcessor && window.SharedLinkDataProcessor.maskApiKey) {
+                    maskedKey = window.SharedLinkDataProcessor.maskApiKey(apiKey);
+                } else {
+                    // Fallback masking pattern
+                    if (apiKey.length >= 14) {
+                        const first10 = apiKey.substring(0, 10);
+                        const last4 = apiKey.substring(apiKey.length - 4);
+                        maskedKey = `${first10}${'*'.repeat(16)}${last4}`;
+                    } else if (apiKey.length >= 8) {
+                        const first4 = apiKey.substring(0, 4);
+                        const last4 = apiKey.substring(apiKey.length - 4);
+                        maskedKey = `${first4}${'*'.repeat(apiKey.length - 8)}${last4}`;
+                    } else {
+                        maskedKey = '*'.repeat(apiKey.length);
+                    }
+                }
+                
+                const actionText = checkbox.checked ? 'will be shared' : 'available';
+                statusSpan.textContent = `(${maskedKey} ${actionText})`;
+                label.appendChild(statusSpan);
+            }
+        }
+        
+        /**
+         * Update model status display
+         */
+        function updateModelStatus() {
+            const checkbox = elements.shareModelCheckbox;
+            if (!checkbox) return;
+            
+            const label = checkbox.parentElement ? checkbox.parentElement.querySelector('label[for="share-model"]') : null;
+            if (!label) return;
+            
+            // Remove existing status indicators
+            const allExistingStatus = label.querySelectorAll('.share-item-status');
+            allExistingStatus.forEach(status => status.remove());
+            
+            // Get current model
+            const currentModel = StorageService.getModel();
+            
+            if (currentModel) {
+                const statusSpan = document.createElement('span');
+                statusSpan.className = 'share-item-status';
+                statusSpan.style.marginLeft = '10px';
+                statusSpan.style.color = 'var(--text-color-secondary)';
+                statusSpan.style.fontSize = '0.85em';
+                statusSpan.style.fontWeight = 'normal';
+                
+                const actionText = checkbox.checked ? 'will be shared' : 'available';
+                statusSpan.textContent = `(${currentModel} ${actionText})`;
+                label.appendChild(statusSpan);
+            }
         }
         
         /**

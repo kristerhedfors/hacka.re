@@ -233,12 +233,24 @@ window.AIHackareComponent = (function() {
             if (this.elements.shareBaseUrlCheckbox) {
                 this.elements.shareBaseUrlCheckbox.addEventListener('change', () => {
                     this.updateLinkLengthBar();
+                    // Update status indicators
+                    if (this.shareManager && this.shareManager.updateShareItemStatuses) {
+                        this.shareManager.updateShareItemStatuses().catch(error => {
+                            console.warn('Error updating share item statuses:', error);
+                        });
+                    }
                 });
             }
             
             if (this.elements.shareApiKeyCheckbox) {
                 this.elements.shareApiKeyCheckbox.addEventListener('change', () => {
                     this.updateLinkLengthBar();
+                    // Update status indicators
+                    if (this.shareManager && this.shareManager.updateShareItemStatuses) {
+                        this.shareManager.updateShareItemStatuses().catch(error => {
+                            console.warn('Error updating share item statuses:', error);
+                        });
+                    }
                 });
             }
             
@@ -251,6 +263,12 @@ window.AIHackareComponent = (function() {
             if (this.elements.shareModelCheckbox) {
                 this.elements.shareModelCheckbox.addEventListener('change', () => {
                     this.updateLinkLengthBar();
+                    // Update status indicators
+                    if (this.shareManager && this.shareManager.updateShareItemStatuses) {
+                        this.shareManager.updateShareItemStatuses().catch(error => {
+                            console.warn('Error updating share item statuses:', error);
+                        });
+                    }
                 });
             }
             
