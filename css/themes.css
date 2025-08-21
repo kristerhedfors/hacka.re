@@ -276,6 +276,29 @@ html.theme-midnight {
     -webkit-backdrop-filter: blur(8px);
 }
 
+/* Fix icon button colors in dark mode for share modal */
+.theme-modern.dark-mode .password-input-container .icon-btn {
+    background-color: var(--bg-color-tertiary);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+.theme-modern.dark-mode .password-input-container .icon-btn:hover {
+    background-color: var(--hover-color);
+    border-color: var(--accent-color);
+}
+
+.theme-modern.dark-mode #copy-generated-link {
+    background-color: var(--bg-color-tertiary);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+.theme-modern.dark-mode #copy-generated-link:hover {
+    background-color: var(--hover-color);
+    border-color: var(--accent-color);
+}
+
 .theme-modern.dark-mode input, 
 .theme-modern.dark-mode select, 
 .theme-modern.dark-mode textarea {
