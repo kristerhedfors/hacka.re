@@ -58,6 +58,15 @@ window.PromptsModalRenderer = (function() {
         deleteIcon.className = 'prompt-item-delete';
         deleteIcon.innerHTML = '<i class="fas fa-trash"></i>';
         deleteIcon.title = 'Delete prompt';
+        
+        // Disable delete button for MCP prompts
+        if (prompt.isMcpPrompt) {
+            deleteIcon.disabled = true;
+            deleteIcon.style.opacity = '0.3';
+            deleteIcon.style.cursor = 'not-allowed';
+            deleteIcon.title = 'Disconnect Shodan MCP Server to delete prompt';
+        }
+        
         promptItem.appendChild(deleteIcon);
         
         return promptItem;

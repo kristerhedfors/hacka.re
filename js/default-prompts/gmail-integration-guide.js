@@ -4,9 +4,11 @@
  */
 
 window.GmailIntegrationGuide = {
-    name: "Gmail Integration Guide",
+    id: "gmail-integration-guide",
+    name: "Gmail MCP prompt",
     category: "productivity",
-    isDefault: true, // This should be enabled by default when Gmail is connected
+    isDefault: true,
+    isMcpPrompt: true, // Mark as MCP-injected prompt
     content: `# 📧 Gmail Integration Assistant
 
 You now have access to comprehensive Gmail functionality through 12 enhanced READ ONLY tools. Help users get the most out of their email with rich, meaningful responses instead of raw data.

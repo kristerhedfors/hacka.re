@@ -351,14 +351,17 @@ window.ShareUIManager = (function() {
                 estimatedLength += currentModel.length;
             }
             
-            // Add prompt library if selected
+            // Add prompt library if selected (excluding MCP prompts)
             if (elements.sharePromptLibraryCheckbox && elements.sharePromptLibraryCheckbox.checked) {
                 // Count USER prompts (full content is included in shared URLs)
-                const prompts = PromptsService.getPrompts();
+                const allPrompts = PromptsService.getPrompts();
                 const selectedPromptIds = PromptsService.getSelectedPromptIds();
                 
-                if (prompts && prompts.length > 0) {
-                    prompts.forEach(prompt => {
+                // Filter out MCP prompts
+                const userPrompts = allPrompts.filter(prompt => !prompt.isMcpPrompt);
+                
+                if (userPrompts && userPrompts.length > 0) {
+                    userPrompts.forEach(prompt => {
                         estimatedLength += prompt.name.length + prompt.content.length + 20;
                     });
                 }
@@ -371,28 +374,62 @@ window.ShareUIManager = (function() {
                 // Only include when selections deviate from default (empty) state
                 const selectedDefaultPromptIds = window.DefaultPromptsService ? 
                     window.DefaultPromptsService.getSelectedDefaultPromptIds() : [];
+                
+                // Filter out MCP prompt IDs
+                const mcpPromptIds = ['shodan-integration-guide', 'github-integration-guide', 'gmail-integration-guide'];
+                const filteredDefaultPromptIds = selectedDefaultPromptIds.filter(id => !mcpPromptIds.includes(id));
                     
-                if (selectedDefaultPromptIds && selectedDefaultPromptIds.length > 0) {
-                    estimatedLength += selectedDefaultPromptIds.join(',').length + 25; // field name + IDs
+                if (filteredDefaultPromptIds && filteredDefaultPromptIds.length > 0) {
+                    estimatedLength += filteredDefaultPromptIds.join(',').length + 25; // field name + IDs
                 }
             }
             
-            // Add function library if selected
+            // Add function library if selected (excluding MCP functions)
             if (elements.shareFunctionLibraryCheckbox && elements.shareFunctionLibraryCheckbox.checked) {
-                const functions = FunctionToolsService.getJsFunctions();
-                const enabledFunctions = FunctionToolsService.getEnabledFunctionNames();
+                const allFunctions = FunctionToolsService.getJsFunctions();
+                const allEnabledFunctions = FunctionToolsService.getEnabledFunctionNames();
+                const allCollections = FunctionToolsService.getAllFunctionCollections();
+                const functionCollections = FunctionToolsService.getFunctionCollections();
                 
-                if (functions) {
-                    Object.keys(functions).forEach(functionName => {
-                        const functionData = functions[functionName];
+                // Identify MCP collections
+                const mcpCollectionIds = [];
+                Object.values(allCollections).forEach(collection => {
+                    const isMcpCollection = collection.metadata.source === 'mcp' || 
+                                          collection.metadata.source === 'mcp-service' ||
+                                          collection.id.startsWith('mcp_');
+                    if (isMcpCollection) {
+                        mcpCollectionIds.push(collection.id);
+                    }
+                });
+                
+                // Filter out MCP functions
+                const userFunctions = {};
+                Object.entries(allFunctions).forEach(([funcName, funcSpec]) => {
+                    const collectionId = functionCollections[funcName];
+                    // Only include if not in an MCP collection
+                    if (!collectionId || !mcpCollectionIds.includes(collectionId)) {
+                        userFunctions[funcName] = funcSpec;
+                    }
+                });
+                
+                // Calculate size for user functions only
+                if (userFunctions) {
+                    Object.keys(userFunctions).forEach(functionName => {
+                        const functionData = userFunctions[functionName];
                         estimatedLength += functionData.code.length + 
                                           JSON.stringify(functionData.toolDefinition).length + 
                                           functionName.length + 50;
                     });
                 }
                 
-                if (enabledFunctions && enabledFunctions.length > 0) {
-                    estimatedLength += enabledFunctions.join(',').length + 20;
+                // Filter enabled functions to exclude MCP functions
+                const enabledUserFunctions = allEnabledFunctions.filter(funcName => {
+                    const collectionId = functionCollections[funcName];
+                    return !collectionId || !mcpCollectionIds.includes(collectionId);
+                });
+                
+                if (enabledUserFunctions && enabledUserFunctions.length > 0) {
+                    estimatedLength += enabledUserFunctions.join(',').length + 20;
                 }
             }
             

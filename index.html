@@ -297,6 +297,39 @@
             </div>
         </div>
         
+        <!-- System Prompt Viewer Modal -->
+        <div id="system-prompt-viewer-modal" class="modal">
+            <div class="modal-content" style="max-width: 800px; max-height: 80vh;">
+                <div class="settings-header">
+                    <h2>System Prompt Viewer</h2>
+                    <button type="button" class="btn icon-btn" id="copy-system-prompt-viewer-btn" title="Copy system prompt to clipboard">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+                
+                <div class="tab-container">
+                    <div class="tab-buttons">
+                        <button type="button" class="tab-btn active" data-tab="raw">Raw Markdown</button>
+                        <button type="button" class="tab-btn" data-tab="rendered">Rendered</button>
+                    </div>
+                    
+                    <div class="tab-content">
+                        <div class="tab-pane active" id="raw-tab">
+                            <div class="scrollable-content">
+                                <pre id="raw-system-prompt" class="code-block"></pre>
+                            </div>
+                        </div>
+                        
+                        <div class="tab-pane" id="rendered-tab">
+                            <div class="scrollable-content">
+                                <div id="rendered-system-prompt" class="markdown-content"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <div id="agent-config-modal" class="modal">
             <div class="modal-content">
                 <span class="experimental-tag">EXPERIMENTAL</span>
@@ -378,8 +411,8 @@
             <div class="modal-content">
                 <div class="settings-header">
                     <h2>System Prompt Menu</h2>
-                    <button type="button" id="copy-system-prompt-btn" class="icon-btn" title="Copy entire system prompt to clipboard">
-                        <i class="fas fa-copy"></i>
+                    <button type="button" id="show-system-prompt-btn" class="icon-btn" title="Show system prompt">
+                        <i class="fas fa-search"></i>
                     </button>
                 </div>
                 <div class="prompts-container single-column">
@@ -572,6 +605,11 @@ async function getCurrentTimeInBerlin() {
                     </span>
                 </div>
                 
+                <!-- Quick Connectors Section (outside expandables) -->
+                <div id="mcp-quick-connectors-placeholder">
+                    <!-- Quick connectors will be inserted here by JavaScript -->
+                </div>
+                
                 <!-- Advanced Section (Expandable) -->
                 <div class="mcp-advanced-section">
                     <div class="mcp-advanced-header">
@@ -636,27 +674,6 @@ async function getCurrentTimeInBerlin() {
                             <!-- OAuth status will be inserted here by JavaScript -->
                         </div>
                     </div>
-                </div>
-                
-                <!-- Connected MCP Servers Section (Expandable) -->
-                <div class="mcp-servers-section">
-                    <div class="mcp-servers-header">
-                        <i class="fas fa-chevron-right"></i>
-                        <h4>Connected MCP Servers (<span id="mcp-servers-count">0</span>)</h4>
-                    </div>
-                    <div class="mcp-servers-list" style="display: none;">
-                        <p class="form-help">Manage your connected MCP servers and their available tools.</p>
-                        <div id="mcp-servers-list">
-                            <div class="empty-mcp-servers-state" id="empty-mcp-servers-state">
-                                <p>No MCP servers connected. Add a server above.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Quick Connectors Section (outside expandables) -->
-                <div id="mcp-quick-connectors-placeholder">
-                    <!-- Quick connectors will be inserted here by JavaScript -->
                 </div>
                 
                 <div class="form-actions">
@@ -1045,6 +1062,7 @@ async function getCurrentTimeInBerlin() {
     <script src="js/default-prompts/mcp-sdk-readme.js"></script>
     <script src="js/default-prompts/code-section.js"></script>
     <script src="js/default-prompts/gmail-integration-guide.js"></script>
+    <script src="js/default-prompts/github-integration-guide.js"></script>
     <script src="js/default-prompts/shodan-integration-guide.js"></script>
     <!-- Agent Examples Section -->
     <script src="js/default-prompts/agent-examples-section.js"></script>

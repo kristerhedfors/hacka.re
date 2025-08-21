@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Prompt Viewer Test</title>
+    <script src="lib/marked/marked.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+        .btn { padding: 10px 15px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>System Prompt Viewer Test</h1>
+    
+    <div class="test-section">
+        <h2>Component Tests</h2>
+        <div id="test-results"></div>
+        
+        <button class="btn" onclick="testComponents()">Test Components</button>
+        <button class="btn" onclick="testModal()">Test Modal</button>
+        <button class="btn" onclick="testSystemPromptButton()">Test System Prompt Button</button>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const results = document.getElementById('test-results');
+            const div = document.createElement('div');
+            div.className = type === 'error' ? 'error' : (type === 'success' ? 'success' : '');
+            div.textContent = message;
+            results.appendChild(div);
+        }
+
+        function testComponents() {
+            log('Testing component existence...');
+            
+            // Test if show-system-prompt-btn exists
+            const showBtn = document.getElementById('show-system-prompt-btn');
+            log(`Show System Prompt Button: ${showBtn ? 'FOUND' : 'NOT FOUND'}`, showBtn ? 'success' : 'error');
+            
+            // Test if system-prompt-viewer-modal exists  
+            const modal = document.getElementById('system-prompt-viewer-modal');
+            log(`System Prompt Viewer Modal: ${modal ? 'FOUND' : 'NOT FOUND'}`, modal ? 'success' : 'error');
+            
+            // Test if close button exists
+            const closeBtn = document.getElementById('close-system-prompt-viewer-modal');
+            log(`Close Button: ${closeBtn ? 'FOUND' : 'NOT FOUND'}`, closeBtn ? 'success' : 'error');
+            
+            // Test if tab elements exist
+            const rawTab = document.getElementById('raw-system-prompt');
+            const renderedTab = document.getElementById('rendered-system-prompt');
+            log(`Raw Tab Element: ${rawTab ? 'FOUND' : 'NOT FOUND'}`, rawTab ? 'success' : 'error');
+            log(`Rendered Tab Element: ${renderedTab ? 'FOUND' : 'NOT FOUND'}`, renderedTab ? 'success' : 'error');
+            
+            // Test marked.js availability
+            log(`Marked.js: ${window.marked ? 'AVAILABLE' : 'NOT AVAILABLE'}`, window.marked ? 'success' : 'error');
+        }
+
+        function testModal() {
+            log('Testing modal functionality...');
+            
+            const modal = document.getElementById('system-prompt-viewer-modal');
+            if (!modal) {
+                log('Modal not found!', 'error');
+                return;
+            }
+            
+            // Test adding active class
+            modal.classList.add('active');
+            log(`Modal active class added: ${modal.classList.contains('active')}`, 'success');
+            
+            // Test removing active class
+            modal.classList.remove('active');
+            log(`Modal active class removed: ${!modal.classList.contains('active')}`, 'success');
+        }
+
+        function testSystemPromptButton() {
+            log('Testing if button is in share modal context...');
+            
+            // Check if button is inside generated link container (share modal)
+            const linkContainer = document.getElementById('generated-link-container');
+            const showBtn = document.getElementById('show-system-prompt-btn');
+            
+            if (linkContainer && showBtn) {
+                const isInContainer = linkContainer.contains(showBtn);
+                log(`Button is in share modal: ${isInContainer}`, isInContainer ? 'success' : 'error');
+            } else {
+                log('Link container or button not found', 'error');
+            }
+        }
+
+        // Auto-run tests when page loads
+        window.onload = function() {
+            testComponents();
+        };
+    </script>
+</body>
+</html>

@@ -58,11 +58,10 @@ window.MCPUIManager = (function() {
     function setupExistingElements() {
         elements.mcpButton = document.getElementById('mcp-servers-btn');
         elements.mcpModal = document.getElementById('mcp-servers-modal');
-        elements.serversList = document.getElementById('mcp-servers-list');
         elements.addServerForm = document.getElementById('mcp-server-form');
         elements.commandHistoryList = document.getElementById('mcp-command-history');
         
-        if (!elements.mcpButton || !elements.mcpModal || !elements.serversList || 
+        if (!elements.mcpButton || !elements.mcpModal || 
             !elements.addServerForm || !elements.commandHistoryList) {
             console.error('[MCPUIManager] Could not find existing MCP elements');
             return false;

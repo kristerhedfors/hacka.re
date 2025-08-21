@@ -42,6 +42,21 @@ function createPromptsListManager() {
         
         const selectedPromptIds = PromptsService.getSelectedPromptIds();
         
+        // Get MCP prompts from Default prompts that should appear in Custom section
+        let mcpPrompts = [];
+        if (window.DefaultPromptsService) {
+            const defaultPrompts = DefaultPromptsService.getDefaultPrompts();
+            mcpPrompts = defaultPrompts.filter(p => p.isMcpPrompt === true);
+            
+            // Convert MCP prompts to user prompt format but mark them as MCP
+            mcpPrompts = mcpPrompts.map(p => ({
+                ...p,
+                isDefault: false,  // Show in custom section
+                isMcpPrompt: true,  // Mark as MCP prompt
+                isSelected: DefaultPromptsService.getSelectedDefaultPromptIds().includes(p.id)
+            }));
+        }
+        
         // STEP 1: Create user prompts section FIRST
         const userPromptsSection = document.createElement('div');
         userPromptsSection.className = 'user-prompts-section';
@@ -53,20 +68,27 @@ function createPromptsListManager() {
         userSectionHeader.innerHTML = '<h4>Your Custom Prompts</h4>';
         userPromptsSection.appendChild(userSectionHeader);
         
+        // Combine user prompts with MCP prompts
+        const allCustomPrompts = [...prompts, ...mcpPrompts];
+        
         // Show "no prompts" message if needed
-        if (prompts.length === 0) {
+        if (allCustomPrompts.length === 0) {
             const noPromptsMessage = PromptsModalRenderer.renderNoPromptsMessage();
             userPromptsSection.appendChild(noPromptsMessage);
         }
         
         // Render each prompt item
-        prompts.forEach(prompt => {
-            const isSelected = selectedPromptIds.includes(prompt.id);
+        allCustomPrompts.forEach(prompt => {
+            const isSelected = prompt.isMcpPrompt ? prompt.isSelected : selectedPromptIds.includes(prompt.id);
             const isActive = currentPrompt && prompt.id === currentPrompt.id;
             const promptItem = PromptsModalRenderer.renderPromptItem(prompt, isSelected, isActive);
             
-            // Bind event handlers
-            bindPromptItemEvents(promptItem, prompt);
+            // Bind event handlers (different for MCP prompts)
+            if (prompt.isMcpPrompt) {
+                bindMcpPromptItemEvents(promptItem, prompt);
+            } else {
+                bindPromptItemEvents(promptItem, prompt);
+            }
             
             userPromptsSection.appendChild(promptItem);
         });
@@ -75,12 +97,14 @@ function createPromptsListManager() {
         let defaultPromptsSection = null;
         if (window.DefaultPromptsService) {
             const defaultPrompts = DefaultPromptsService.getDefaultPrompts();
+            // Filter out MCP prompts from default prompts since they appear in custom section
+            const nonMcpDefaultPrompts = defaultPrompts.filter(p => !p.isMcpPrompt);
             const selectedDefaultIds = DefaultPromptsService.getSelectedDefaultPromptIds();
-            defaultPromptsSection = PromptsModalRenderer.renderDefaultPromptsSection(defaultPrompts, selectedDefaultIds);
+            defaultPromptsSection = PromptsModalRenderer.renderDefaultPromptsSection(nonMcpDefaultPrompts, selectedDefaultIds);
             defaultPromptsSection.style.order = '2'; // Force CSS order
             
             // Bind default prompts events inline
-            bindDefaultPromptsEvents(defaultPromptsSection, defaultPrompts);
+            bindDefaultPromptsEvents(defaultPromptsSection, nonMcpDefaultPrompts);
         }
         
         // STEP 3: Create new prompt form THIRD
@@ -116,6 +140,56 @@ function createPromptsListManager() {
         }
         
         return { promptsUsageFill, promptsUsageText };
+    }
+    
+    /**
+     * Bind event handlers to an MCP prompt item
+     * @param {HTMLElement} promptItem - Prompt item element
+     * @param {Object} prompt - MCP prompt object
+     */
+    function bindMcpPromptItemEvents(promptItem, prompt) {
+        const checkbox = promptItem.querySelector('.prompt-item-checkbox');
+        const deleteBtn = promptItem.querySelector('.prompt-item-delete');
+        
+        // Checkbox handler for MCP prompts (uses DefaultPromptsService)
+        if (checkbox) {
+            const checkboxHandler = PromptsEventHandlers.createCheckboxHandler(
+                prompt.id,
+                true, // isDefault = true for MCP prompts (uses DefaultPromptsService)
+                () => updateAfterSelectionChange()
+            );
+            checkbox.addEventListener('change', checkboxHandler);
+        }
+        
+        // No delete handler for MCP prompts - button is disabled
+        
+        // Click handler for viewing MCP prompt content (only on prompt name, not checkbox)
+        const promptName = promptItem.querySelector('.prompt-item-name');
+        if (promptName) {
+            const viewHandler = PromptsEventHandlers.createDefaultPromptViewHandler(
+                prompt,
+                (viewedPrompt) => {
+                    // Load prompt content into the new prompt form editor
+                    const labelField = document.getElementById('new-prompt-label');
+                    const contentField = document.getElementById('new-prompt-content');
+                    
+                    if (labelField && contentField) {
+                        labelField.value = viewedPrompt.name || '';
+                        contentField.value = viewedPrompt.content || '';
+                        
+                        // Make fields read-only when viewing MCP prompts
+                        labelField.setAttribute('readonly', 'readonly');
+                        contentField.setAttribute('readonly', 'readonly');
+                        
+                        // Scroll to the form fields so they're visible
+                        contentField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            );
+            promptName.addEventListener('click', viewHandler);
+            promptName.style.cursor = 'pointer';
+            promptName.title = 'Click to view prompt content';
+        }
     }
     
     /**
@@ -367,6 +441,7 @@ function createPromptsListManager() {
     return {
         loadPromptsList,
         bindPromptItemEvents,
+        bindMcpPromptItemEvents,
         bindFormEvents,
         bindDefaultPromptsEvents,
         setCallbacks

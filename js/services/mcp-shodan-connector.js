@@ -261,6 +261,19 @@
             // Register tools
             await this.registerTools(apiKey);
             
+            // Auto-register and enable the Shodan Integration Guide prompt
+            if (window.DefaultPromptsService && window.ShodanIntegrationGuide) {
+                try {
+                    // First register the prompt (safe to call multiple times)
+                    window.DefaultPromptsService.registerPrompt(window.ShodanIntegrationGuide);
+                    // Then enable it
+                    window.DefaultPromptsService.enablePrompt('Shodan MCP prompt');
+                    console.log('[ShodanConnector] Shodan MCP prompt registered and auto-enabled');
+                } catch (error) {
+                    console.warn('[ShodanConnector] Failed to register/enable Shodan prompt:', error);
+                }
+            }
+            
             console.log(`[ShodanConnector] Connected successfully`);
             return true;
         }

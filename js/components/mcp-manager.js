@@ -148,9 +148,25 @@ window.MCPManager = (function() {
         // Load saved connections
         await serverManager.loadSavedConnections();
         
+        // Load service manager connections (GitHub, Shodan, etc.)
+        if (window.mcpServiceManager) {
+            try {
+                await window.mcpServiceManager.loadStoredConnections();
+                console.log('[MCPManager] Loaded service manager connections');
+            } catch (error) {
+                console.warn('[MCPManager] Failed to load service manager connections:', error);
+            }
+        }
+        
         // Update displays
         await serverManager.updateServersList();
         commandHistory.updateHistoryDisplay();
+        
+        // Update quick connectors status after connections are restored
+        if (quickConnectors) {
+            quickConnectors.updateAllConnectorStatuses();
+            console.log('[MCPManager] Updated quick connectors status after restore');
+        }
     }
     
     /**
@@ -160,6 +176,11 @@ window.MCPManager = (function() {
         await proxyManager.checkConnection();
         await serverManager.updateServersList();
         commandHistory.updateHistoryDisplay();
+        
+        // Update quick connectors status to ensure UI is in sync
+        if (quickConnectors) {
+            quickConnectors.updateAllConnectorStatuses();
+        }
         
         // Ensure form visibility is properly set
         if (oauthIntegration) {
