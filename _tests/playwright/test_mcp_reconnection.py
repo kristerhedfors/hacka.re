@@ -5,6 +5,8 @@ import time
 from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
 
 
+
+# NOTE: Connected MCP Servers functionality removed - tests updated
 def test_mcp_proxy_connection_status_updates(page: Page, serve_hacka_re):
     """Test that proxy connection status updates correctly"""
     page.goto(serve_hacka_re)
@@ -223,8 +225,8 @@ def test_mcp_server_list_visibility(page: Page, serve_hacka_re):
     expect(page.locator("#mcp-servers-modal")).to_be_visible()
     
     # Server list should be visible even without connection
-    server_list = page.locator("#mcp-servers-list")
-    expect(server_list).to_be_visible()
+    server_list = page.locator("#mcp-quick-connectors-placeholder")
+    expect(quick_connectors).to_be_visible()
     
     # Mock connection
     page.route("**/localhost:3001/health", lambda route: route.fulfill(
@@ -237,7 +239,7 @@ def test_mcp_server_list_visibility(page: Page, serve_hacka_re):
     time.sleep(0.5)
     
     # Server list should still be visible after connection
-    expect(server_list).to_be_visible()
+    expect(quick_connectors).to_be_visible()
     
     screenshot_with_markdown(page, "mcp_server_list", {
         "Status": "Server list visibility tested",
