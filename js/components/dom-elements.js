@@ -48,6 +48,7 @@ window.DOMElements = (function() {
             generatedLinkContainer: document.getElementById('generated-link-container'),
             generatedLink: document.getElementById('generated-link'),
             copyGeneratedLinkBtn: document.getElementById('copy-generated-link'),
+            showSystemPromptBtn: document.getElementById('show-system-prompt-btn'),
             shareQrCodeContainer: document.getElementById('share-qr-code-container'),
             qrCodeWarning: document.getElementById('qr-code-warning'),
             linkLengthText: document.getElementById('link-length-text'),
@@ -156,7 +157,13 @@ window.DOMElements = (function() {
             ragSearchLimit: document.getElementById('rag-search-limit'),
             ragSearchBtn: document.getElementById('rag-search-btn'),
             ragClearSearchBtn: document.getElementById('rag-clear-search-btn'),
-            ragSearchResults: document.getElementById('rag-search-results')
+            ragSearchResults: document.getElementById('rag-search-results'),
+            
+            // System prompt viewer modal elements  
+            systemPromptViewerModal: document.getElementById('system-prompt-viewer-modal'),
+            copySystemPromptViewerBtn: document.getElementById('copy-system-prompt-viewer-btn'),
+            rawSystemPrompt: document.getElementById('raw-system-prompt'),
+            renderedSystemPrompt: document.getElementById('rendered-system-prompt')
         };
     }
 
