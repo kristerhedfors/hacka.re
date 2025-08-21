@@ -283,34 +283,6 @@ window.FunctionListRenderer = (function() {
                                    collection.metadata.source === 'mcp-service' ||
                                    collection.id.startsWith('mcp_');
             
-            // Debug logging to verify MCP detection
-            if (collection.id.includes('mcp') || collection.metadata.source) {
-                console.log('[FunctionListRenderer] Collection debug:', {
-                    id: collection.id,
-                    source: collection.metadata.source,
-                    isMcpCollection: isMcpCollection,
-                    metadata: collection.metadata
-                });
-            }
-            
-            // Add source info if MCP
-            if (isMcpCollection) {
-                const sourceInfo = document.createElement('span');
-                sourceInfo.className = 'function-collection-source';
-                
-                // Determine the MCP server name from collection ID or metadata
-                let mcpServerName = collection.metadata.mcpCommand || 
-                                   (collection.id.match(/mcp_(.+)_collection/) || [])[1] ||
-                                   'MCP';
-                
-                sourceInfo.textContent = `MCP: ${mcpServerName}`;
-                sourceInfo.style.marginLeft = 'auto';
-                sourceInfo.style.marginRight = '10px';
-                sourceInfo.style.color = 'var(--text-color-secondary)';
-                sourceInfo.style.fontSize = '12px';
-                collectionHeader.appendChild(sourceInfo);
-            }
-            
             // Add delete button for the entire collection
             const deleteCollectionButton = document.createElement('button');
             deleteCollectionButton.className = 'function-collection-delete';

@@ -185,7 +185,7 @@
 
                     const collectionId = `mcp_${this.serviceKey}_collection`;
                     const collectionMetadata = {
-                        name: `${this.config.name} MCP Functions`,
+                        name: `${this.config.name} MCP tools`,
                         createdAt: Date.now(),
                         source: 'mcp-service'
                     };
