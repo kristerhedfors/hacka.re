@@ -109,25 +109,65 @@ window.LinkSharingService = (function() {
             
             // Add prompt library if requested (legacy support)
             if (options.includePromptLibrary) {
-                const prompts = PromptsService.getPrompts();
-                finalPayload.prompts = prompts;
+                // Get user prompts (excluding MCP-derived prompts)
+                const allPrompts = PromptsService.getPrompts();
+                // Filter out MCP prompts - they should not be shared
+                const userPrompts = allPrompts.filter(prompt => !prompt.isMcpPrompt);
+                finalPayload.prompts = userPrompts;
                 
                 const selectedPromptIds = PromptsService.getSelectedPromptIds();
                 finalPayload.selectedPromptIds = selectedPromptIds;
                 
+                // Get selected default prompts, excluding MCP prompts
                 const selectedDefaultPromptIds = window.DefaultPromptsService ? 
                     window.DefaultPromptsService.getSelectedDefaultPromptIds() : [];
-                if (selectedDefaultPromptIds.length > 0) {
-                    finalPayload.selectedDefaultPromptIds = selectedDefaultPromptIds;
+                
+                // Filter out MCP prompt IDs from selected default prompts
+                const mcpPromptIds = ['shodan-integration-guide', 'github-integration-guide', 'gmail-integration-guide'];
+                const filteredDefaultPromptIds = selectedDefaultPromptIds.filter(id => !mcpPromptIds.includes(id));
+                
+                if (filteredDefaultPromptIds.length > 0) {
+                    finalPayload.selectedDefaultPromptIds = filteredDefaultPromptIds;
                 }
             }
             
             // Add function library if requested (legacy support)
             if (options.includeFunctionLibrary) {
-                const functions = FunctionToolsService.getJsFunctions();
-                finalPayload.functions = functions;
+                const allFunctions = FunctionToolsService.getJsFunctions();
+                const allCollections = FunctionToolsService.getAllFunctionCollections();
                 
-                const enabledFunctions = FunctionToolsService.getEnabledFunctionNames();
+                // Filter out MCP-derived functions
+                const userFunctions = {};
+                const mcpCollectionIds = [];
+                
+                // First identify MCP collections
+                Object.values(allCollections).forEach(collection => {
+                    const isMcpCollection = collection.metadata.source === 'mcp' || 
+                                          collection.metadata.source === 'mcp-service' ||
+                                          collection.id.startsWith('mcp_');
+                    if (isMcpCollection) {
+                        mcpCollectionIds.push(collection.id);
+                    }
+                });
+                
+                // Now filter functions - only include non-MCP functions
+                const functionCollections = FunctionToolsService.getFunctionCollections();
+                Object.entries(allFunctions).forEach(([funcName, funcSpec]) => {
+                    const collectionId = functionCollections[funcName];
+                    // Only include if not in an MCP collection
+                    if (!collectionId || !mcpCollectionIds.includes(collectionId)) {
+                        userFunctions[funcName] = funcSpec;
+                    }
+                });
+                
+                finalPayload.functions = userFunctions;
+                
+                // Filter enabled functions to exclude MCP functions
+                const allEnabledFunctions = FunctionToolsService.getEnabledFunctionNames();
+                const enabledFunctions = allEnabledFunctions.filter(funcName => {
+                    const collectionId = functionCollections[funcName];
+                    return !collectionId || !mcpCollectionIds.includes(collectionId);
+                });
                 finalPayload.enabledFunctions = enabledFunctions;
                 
                 // Add default function selections if available (legacy support)
