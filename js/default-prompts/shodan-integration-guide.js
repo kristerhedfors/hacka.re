@@ -5,7 +5,7 @@
 
 window.ShodanIntegrationGuide = {
     id: "shodan-integration-guide",
-    name: "Shodan Integration Guide",
+    name: "Shodan MCP prompt",
     category: "cybersecurity",
     isDefault: true,
     isMcpPrompt: true, // Mark as MCP-injected prompt
