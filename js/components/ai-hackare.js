@@ -372,10 +372,14 @@ window.AIHackareComponent = (function() {
                 });
             }
             
+            
             // Close modal when clicking outside
             window.addEventListener('click', (e) => {
                 if (e.target === this.elements.shareModal) {
                     this.uiManager.hideShareModal();
+                }
+                if (e.target === this.elements.systemPromptViewerModal) {
+                    this.hideSystemPromptViewerModal();
                 }
             });
         }
@@ -426,26 +430,12 @@ window.AIHackareComponent = (function() {
             });
         }
         
-        // Show system prompt button
+        // Show system prompt viewer button
         if (this.elements.showSystemPromptBtn) {
             this.elements.showSystemPromptBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                // Toggle system prompt preview
-                if (this.elements.systemPromptPreview) {
-                    const isVisible = this.elements.systemPromptPreview.style.display !== 'none';
-                    
-                    if (isVisible) {
-                        // Hide the preview
-                        this.elements.systemPromptPreview.style.display = 'none';
-                        this.elements.showSystemPromptBtn.textContent = 'Show System Prompt';
-                    } else {
-                        // Show the preview with the current system prompt
-                        const currentPrompt = this.settingsManager.getSystemPrompt();
-                        this.elements.systemPromptPreview.innerHTML = `<pre style="margin: 0; white-space: pre-wrap; word-break: break-word;">${currentPrompt}</pre>`;
-                        this.elements.systemPromptPreview.style.display = 'block';
-                        this.elements.showSystemPromptBtn.textContent = 'Hide System Prompt';
-                    }
-                }
+                // Open the system prompt viewer modal
+                this.showSystemPromptViewerModal();
             });
         }
         
@@ -488,12 +478,22 @@ window.AIHackareComponent = (function() {
             if (e.target === this.elements.functionModal) {
                 this.uiManager.hideFunctionModal();
             }
+            if (e.target === this.elements.systemPromptViewerModal) {
+                this.hideSystemPromptViewerModal();
+            }
         });
         
         // Close function modal button
         if (this.elements.closeFunctionModal) {
             this.elements.closeFunctionModal.addEventListener('click', () => {
                 this.uiManager.hideFunctionModal();
+            });
+        }
+        
+        // Copy system prompt viewer button
+        if (this.elements.copySystemPromptViewerBtn) {
+            this.elements.copySystemPromptViewerBtn.addEventListener('click', () => {
+                this.copySystemPromptFromViewer();
             });
         }
         
@@ -1703,6 +1703,189 @@ window.AIHackareComponent = (function() {
                 agent: agentName
             }
         }));
+    };
+
+    /**
+     * Show the system prompt viewer modal
+     */
+    AIHackare.prototype.showSystemPromptViewerModal = function() {
+        const modal = this.elements.systemPromptViewerModal;
+        if (modal) {
+            this.populateSystemPromptViewerModal();
+            modal.classList.add('active');
+            this.setupSystemPromptTabSwitching();
+        }
+    };
+
+    /**
+     * Hide the system prompt viewer modal
+     */
+    AIHackare.prototype.hideSystemPromptViewerModal = function() {
+        const modal = this.elements.systemPromptViewerModal;
+        if (modal) {
+            modal.classList.remove('active');
+        }
+    };
+
+    /**
+     * Populate the system prompt viewer modal with current system prompt data
+     */
+    AIHackare.prototype.populateSystemPromptViewerModal = function() {
+        const rawElement = this.elements.rawSystemPrompt;
+        const renderedElement = this.elements.renderedSystemPrompt;
+        
+        if (window.SystemPromptCoordinator) {
+            const systemPrompt = window.SystemPromptCoordinator.assembleSystemPrompt();
+            
+            // Populate raw markdown tab
+            if (rawElement) {
+                rawElement.textContent = systemPrompt || 'No system prompt configured.';
+            }
+            
+            // Populate rendered markdown tab
+            if (renderedElement && systemPrompt) {
+                try {
+                    if (window.marked) {
+                        const html = window.marked.parse(systemPrompt);
+                        // Use DOMPurify if available, otherwise just set innerHTML
+                        if (window.DOMPurify) {
+                            renderedElement.innerHTML = window.DOMPurify.sanitize(html);
+                        } else {
+                            renderedElement.innerHTML = html;
+                        }
+                    } else {
+                        // Fallback: simple text content
+                        renderedElement.textContent = systemPrompt;
+                    }
+                } catch (error) {
+                    console.error('Error rendering system prompt markdown:', error);
+                    renderedElement.textContent = systemPrompt;
+                }
+            } else if (renderedElement) {
+                renderedElement.textContent = 'No system prompt configured.';
+            }
+        } else {
+            // Fallback if SystemPromptCoordinator is not available
+            if (rawElement) rawElement.textContent = 'System prompt coordinator not available.';
+            if (renderedElement) renderedElement.textContent = 'System prompt coordinator not available.';
+        }
+    };
+
+    /**
+     * Copy system prompt from viewer modal to clipboard
+     */
+    AIHackare.prototype.copySystemPromptFromViewer = function() {
+        if (window.SystemPromptCoordinator) {
+            const systemPrompt = window.SystemPromptCoordinator.assembleSystemPrompt();
+            
+            // Check if system prompt is truly empty or contains only whitespace
+            if (systemPrompt && systemPrompt.trim() !== '' && systemPrompt.trim() !== 'No system prompt configured.') {
+                // Use clipboard API if available
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(systemPrompt).then(() => {
+                        this.showCopySuccess('System prompt copied to clipboard');
+                    }).catch((err) => {
+                        console.error('Failed to copy system prompt:', err);
+                        this.fallbackCopyToClipboard(systemPrompt);
+                    });
+                } else {
+                    // Fallback for non-secure contexts
+                    this.fallbackCopyToClipboard(systemPrompt);
+                }
+            } else {
+                // System prompt is empty - show message but don't copy anything
+                this.showCopyError('System prompt is empty - no prompts are currently selected');
+                return; // Exit early, don't attempt to copy
+            }
+        } else {
+            this.showCopyError('System prompt coordinator not available');
+        }
+    };
+
+    /**
+     * Fallback method to copy text to clipboard
+     */
+    AIHackare.prototype.fallbackCopyToClipboard = function(text) {
+        // Double-check that we have valid text to copy
+        if (!text || text.trim() === '' || text.trim() === 'No system prompt configured.') {
+            this.showCopyError('No valid system prompt to copy');
+            return;
+        }
+        
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+            const successful = document.execCommand('copy');
+            if (successful) {
+                this.showCopySuccess('System prompt copied to clipboard');
+            } else {
+                this.showCopyError('Failed to copy system prompt');
+            }
+        } catch (err) {
+            console.error('Fallback copy failed:', err);
+            this.showCopyError('Failed to copy system prompt');
+        } finally {
+            document.body.removeChild(textArea);
+        }
+    };
+
+    /**
+     * Show copy success message
+     */
+    AIHackare.prototype.showCopySuccess = function(message) {
+        if (this.chatManager && typeof this.chatManager.addSystemMessage === 'function') {
+            this.chatManager.addSystemMessage(`✅ ${message}`);
+        } else {
+            console.log(`✅ ${message}`);
+        }
+    };
+
+    /**
+     * Show copy error message
+     */
+    AIHackare.prototype.showCopyError = function(message) {
+        if (this.chatManager && typeof this.chatManager.addSystemMessage === 'function') {
+            this.chatManager.addSystemMessage(`❌ ${message}`);
+        } else {
+            console.error(`❌ ${message}`);
+        }
+    };
+
+    /**
+     * Setup tab switching functionality for system prompt viewer
+     */
+    AIHackare.prototype.setupSystemPromptTabSwitching = function() {
+        const modal = this.elements.systemPromptViewerModal;
+        if (!modal) return;
+        
+        const tabButtons = modal.querySelectorAll('.tab-btn');
+        const tabPanes = modal.querySelectorAll('.tab-pane');
+        
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetTab = button.getAttribute('data-tab');
+                
+                // Remove active class from all buttons and panes
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                tabPanes.forEach(pane => pane.classList.remove('active'));
+                
+                // Add active class to clicked button
+                button.classList.add('active');
+                
+                // Show corresponding tab pane
+                const targetPane = modal.querySelector(`#${targetTab}-tab`);
+                if (targetPane) {
+                    targetPane.classList.add('active');
+                }
+            });
+        });
     };
 
     /**
