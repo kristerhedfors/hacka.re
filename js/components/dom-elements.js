@@ -97,8 +97,6 @@ window.DOMElements = (function() {
             // MCP servers modal elements
             mcpServersBtn: document.getElementById('mcp-servers-btn'),
             mcpServersModal: document.getElementById('mcp-servers-modal'),
-            mcpServersList: document.getElementById('mcp-servers-list'),
-            emptyMcpServersState: document.getElementById('empty-mcp-servers-state'),
             mcpServerForm: document.getElementById('mcp-server-form'),
             mcpServerName: document.getElementById('mcp-server-name'),
             mcpServerUrl: document.getElementById('mcp-server-url'),
