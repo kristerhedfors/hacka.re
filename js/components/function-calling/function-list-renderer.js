@@ -134,6 +134,16 @@ window.FunctionListRenderer = (function() {
             collectionContainer.className = 'function-collection-container';
             collectionContainer.dataset.collectionId = collection.id;
             
+            // Add data attribute for MCP collections for CSS targeting
+            // Check for MCP collections by source or by collection ID pattern
+            const isMcpCollection = collection.metadata.source === 'mcp' || 
+                                   collection.metadata.source === 'mcp-service' ||
+                                   collection.id.startsWith('mcp_');
+            
+            if (isMcpCollection) {
+                collectionContainer.dataset.mcpSource = 'true';
+            }
+            
             // Assign a color to this collection
             const collectionColor = `color-${colorIndex}`;
             collectionContainer.dataset.collectionColor = collectionColor;
@@ -268,11 +278,32 @@ window.FunctionListRenderer = (function() {
             updateUserCollectionCount(collection, callableFunctions);
             collectionHeader.appendChild(functionCount);
             
+            // Check if this is an MCP collection
+            const isMcpCollection = collection.metadata.source === 'mcp' || 
+                                   collection.metadata.source === 'mcp-service' ||
+                                   collection.id.startsWith('mcp_');
+            
+            // Debug logging to verify MCP detection
+            if (collection.id.includes('mcp') || collection.metadata.source) {
+                console.log('[FunctionListRenderer] Collection debug:', {
+                    id: collection.id,
+                    source: collection.metadata.source,
+                    isMcpCollection: isMcpCollection,
+                    metadata: collection.metadata
+                });
+            }
+            
             // Add source info if MCP
-            if (collection.metadata.source === 'mcp' && collection.metadata.mcpCommand) {
+            if (isMcpCollection) {
                 const sourceInfo = document.createElement('span');
                 sourceInfo.className = 'function-collection-source';
-                sourceInfo.textContent = `MCP: ${collection.metadata.mcpCommand}`;
+                
+                // Determine the MCP server name from collection ID or metadata
+                let mcpServerName = collection.metadata.mcpCommand || 
+                                   (collection.id.match(/mcp_(.+)_collection/) || [])[1] ||
+                                   'MCP';
+                
+                sourceInfo.textContent = `MCP: ${mcpServerName}`;
                 sourceInfo.style.marginLeft = 'auto';
                 sourceInfo.style.marginRight = '10px';
                 sourceInfo.style.color = 'var(--text-color-secondary)';
@@ -286,10 +317,27 @@ window.FunctionListRenderer = (function() {
             deleteCollectionButton.innerHTML = '<i class="fas fa-trash"></i>';
             deleteCollectionButton.title = 'Delete entire collection';
             
+            // Disable delete button for MCP collections
+            if (isMcpCollection) {
+                deleteCollectionButton.disabled = true;
+                deleteCollectionButton.style.opacity = '0.3';
+                deleteCollectionButton.style.cursor = 'not-allowed';
+                deleteCollectionButton.style.filter = 'grayscale(100%)';
+                // Don't use pointerEvents='none' so cursor can show
+                deleteCollectionButton.title = 'Disconnect MCP Server to delete collection';
+            }
+            
             // Add click handler with proper event stopping
-            deleteCollectionButton.onclick = (e) => {
+            deleteCollectionButton.addEventListener('click', (e) => {
                 e.stopPropagation();
                 e.preventDefault();
+                
+                // Don't proceed if disabled (MCP collection)
+                if (deleteCollectionButton.disabled) {
+                    // Ensure we stop the event from bubbling to expand/collapse
+                    e.stopImmediatePropagation();
+                    return false;
+                }
                 
                 const confirmMessage = `Are you sure you want to delete the entire "${collection.metadata.name}" collection with ${callableFunctions.length} function${callableFunctions.length !== 1 ? 's' : ''}?`;
                 
@@ -307,7 +355,9 @@ window.FunctionListRenderer = (function() {
                         }
                     }
                 }, 0);
-            };
+                
+                return false;
+            }, true); // Use capture phase to handle event before bubble
             
             collectionHeader.appendChild(deleteCollectionButton);
             
@@ -325,7 +375,7 @@ window.FunctionListRenderer = (function() {
             copyCollectionButton.style.borderRadius = '0';
             
             // Add click handler with proper event stopping
-            copyCollectionButton.onclick = (e) => {
+            copyCollectionButton.addEventListener('click', (e) => {
                 e.stopPropagation();
                 e.preventDefault();
                 
@@ -362,7 +412,7 @@ window.FunctionListRenderer = (function() {
                             addSystemMessage('Failed to copy functions. Please try again.');
                         }
                     });
-            };
+            });
             
             collectionHeader.appendChild(copyCollectionButton);
             
