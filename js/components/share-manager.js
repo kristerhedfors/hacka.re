@@ -292,16 +292,21 @@ window.ShareManager = (function() {
             let enabledUserPrompts = 0;
             let enabledDefaultPrompts = 0;
             
-            // Get user-defined prompts
+            // Get user-defined prompts (excluding MCP prompts)
             if (window.PromptsService) {
                 const selectedPrompts = window.PromptsService.getSelectedPrompts();
-                enabledUserPrompts = selectedPrompts.length;
+                // Filter out MCP prompts
+                const userPrompts = selectedPrompts.filter(prompt => !prompt.isMcpPrompt);
+                enabledUserPrompts = userPrompts.length;
             }
             
-            // Get default prompts
+            // Get default prompts (excluding MCP prompts)
             if (window.DefaultPromptsService) {
                 const selectedDefaultPrompts = window.DefaultPromptsService.getSelectedDefaultPrompts();
-                enabledDefaultPrompts = selectedDefaultPrompts.length;
+                // Filter out MCP prompts by ID
+                const mcpPromptIds = ['shodan-integration-guide', 'github-integration-guide', 'gmail-integration-guide'];
+                const nonMcpDefaultPrompts = selectedDefaultPrompts.filter(prompt => !mcpPromptIds.includes(prompt.id));
+                enabledDefaultPrompts = nonMcpDefaultPrompts.length;
             }
             
             // Only show status if there are enabled prompts
@@ -348,10 +353,23 @@ window.ShareManager = (function() {
             let enabledUserFunctions = 0;
             let enabledDefaultFunctions = 0;
             
-            // Get user-defined functions
+            // Get user-defined functions (excluding MCP functions)
             if (window.FunctionToolsService) {
                 const jsFunctions = window.FunctionToolsService.getJsFunctions();
                 const enabledFunctions = window.FunctionToolsService.getEnabledFunctionNames();
+                const functionCollections = window.FunctionToolsService.getFunctionCollections();
+                const allCollections = window.FunctionToolsService.getAllFunctionCollections();
+                
+                // Identify MCP collections
+                const mcpCollectionIds = [];
+                Object.values(allCollections).forEach(collection => {
+                    const isMcpCollection = collection.metadata.source === 'mcp' || 
+                                          collection.metadata.source === 'mcp-service' ||
+                                          collection.id.startsWith('mcp_');
+                    if (isMcpCollection) {
+                        mcpCollectionIds.push(collection.id);
+                    }
+                });
                 
                 // Filter out default functions from the counts
                 const defaultFunctionNames = [];
@@ -364,9 +382,13 @@ window.ShareManager = (function() {
                     });
                 }
                 
-                // Count user functions (excluding default functions)
+                // Count user functions (excluding default functions and MCP functions)
                 for (const funcName in jsFunctions) {
-                    if (!defaultFunctionNames.includes(funcName) && enabledFunctions.includes(funcName)) {
+                    const collectionId = functionCollections[funcName];
+                    const isDefault = defaultFunctionNames.includes(funcName);
+                    const isMcp = collectionId && mcpCollectionIds.includes(collectionId);
+                    
+                    if (!isDefault && !isMcp && enabledFunctions.includes(funcName)) {
                         enabledUserFunctions++;
                     }
                 }
