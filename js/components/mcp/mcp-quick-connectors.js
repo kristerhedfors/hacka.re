@@ -776,6 +776,15 @@ window.MCPQuickConnectors = (function() {
                         if (connector) {
                             const tools = connector.getToolsToRegister();
                             toolCount = Object.keys(tools || {}).length;
+                            
+                            // Debug for GitHub
+                            if (serviceKey === 'github') {
+                                console.log(`[MCPQuickConnectors] GitHub connector:`, connector);
+                                console.log(`[MCPQuickConnectors] GitHub connection:`, connector.connection);
+                                console.log(`[MCPQuickConnectors] GitHub isConnected():`, connector.isConnected());
+                                console.log(`[MCPQuickConnectors] GitHub tools:`, tools);
+                                console.log(`[MCPQuickConnectors] GitHub tool count:`, toolCount);
+                            }
                         }
                     }
                 } else {
@@ -847,6 +856,17 @@ window.MCPQuickConnectors = (function() {
                 if (window.mcpServiceManager) {
                     // Use mcpServiceManager for all service-connector services including GitHub
                     isConnected = window.mcpServiceManager.isConnected(serviceKey);
+                    
+                    // Debug for GitHub
+                    if (serviceKey === 'github') {
+                        const connector = window.mcpServiceManager.getConnector('github');
+                        console.log(`[MCPQuickConnectors] GitHub connection check:`, {
+                            isConnected,
+                            connector: !!connector,
+                            connection: connector?.connection,
+                            hasValidCredentials: connector?.hasValidCredentials()
+                        });
+                    }
                 }
             } else if (mcpClient) {
                 const serverName = `mcp-${serviceKey}`;
