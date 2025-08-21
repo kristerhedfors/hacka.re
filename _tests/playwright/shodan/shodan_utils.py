@@ -4,10 +4,221 @@ Utility functions for Shodan MCP testing
 Helper functions for interacting with Shodan API through the MCP interface.
 """
 import json
+import os
 import re
 import time
 from typing import Dict, Any, List, Optional
 from playwright.sync_api import Page
+
+
+def handle_active_modals(page: Page):
+    """
+    Intelligently detect and handle any active modals that might block interaction.
+    """
+    max_attempts = 3
+    for attempt in range(max_attempts):
+        # Check for different types of modals in priority order
+        modals_to_check = [
+            {
+                'selector': '#service-apikey-input-modal',
+                'name': 'Shodan API Key Modal',
+                'handler': handle_shodan_api_key_modal
+            },
+            {
+                'selector': '#api-key-modal', 
+                'name': 'LLM API Key Modal',
+                'handler': handle_llm_api_key_modal
+            },
+            {
+                'selector': '#openai-api-key-modal',
+                'name': 'OpenAI API Key Modal', 
+                'handler': handle_llm_api_key_modal
+            },
+            {
+                'selector': '.modal[style*="display: block"]',
+                'name': 'Visible Modal (style)',
+                'handler': handle_generic_modal
+            },
+            {
+                'selector': '.modal.active',
+                'name': 'Generic Active Modal',
+                'handler': handle_generic_modal
+            }
+        ]
+        
+        modal_found = False
+        for modal_config in modals_to_check:
+            modal = page.locator(modal_config['selector'])
+            if modal.is_visible(timeout=500):
+                modal_found = True
+                success = modal_config['handler'](page, modal)
+                if success:
+                    break
+        
+        if not modal_found:
+            break
+            
+        # Wait and check again
+        page.wait_for_timeout(2000)
+        
+        # Final verification - check if any modal is still blocking
+        blocking_modals = page.locator('.modal.active')
+        if not blocking_modals.is_visible():
+            break
+
+
+def handle_shodan_api_key_modal(page: Page, modal) -> bool:
+    """Handle Shodan API key setup modal"""
+    shodan_api_key = os.environ.get("SHODAN_API_KEY", "t2hW0hPlKpQY1KF0bn3kuhp3Mef7hptV")
+    
+    try:
+        # Fill API key input
+        input_selectors = [
+            '#service-apikey-input-modal input[type="password"]',
+            '#service-apikey-input-modal input[type="text"]',
+            'input[placeholder*="API key"]',
+            'input[placeholder*="api key"]'
+        ]
+        
+        for selector in input_selectors:
+            try:
+                api_input = page.locator(selector).first
+                if api_input.is_visible():
+                    api_input.clear()
+                    api_input.fill(shodan_api_key)
+                    break
+            except:
+                continue
+        else:
+            return False
+        
+        # Look for Connect/Save button
+        button_selectors = [
+            'button:text("Connect")',
+            'button:text("Save & Connect")', 
+            'button:text("Save")',
+            '#service-apikey-input-modal .btn-primary',
+            '#service-apikey-input-modal button[type="submit"]'
+        ]
+        
+        for selector in button_selectors:
+            try:
+                button = page.locator(selector).first
+                if button.is_visible():
+                    button.click()
+                    break
+            except:
+                continue
+        else:
+            return False
+        
+        # Wait for modal to close
+        page.wait_for_selector('#service-apikey-input-modal', state='hidden', timeout=8000)
+        return True
+        
+    except Exception:
+        return False
+
+
+def handle_llm_api_key_modal(page: Page, modal) -> bool:
+    """Handle LLM API key modal"""
+    openai_api_key = os.environ.get("OPENAI_API_KEY")
+    
+    if not openai_api_key:
+        return False
+    
+    try:
+        # Try multiple selectors for API key input
+        input_selectors = [
+            '#api-key-modal input[type="text"]',
+            '#api-key-modal input[type="password"]',
+            '#openai-api-key-modal input[type="text"]',
+            '#openai-api-key-modal input[type="password"]',
+            '#api-key-input',
+            'input[placeholder*="API key"]',
+            'input[placeholder*="OpenAI"]'
+        ]
+        
+        for selector in input_selectors:
+            try:
+                api_input = page.locator(selector).first
+                if api_input.is_visible():
+                    api_input.clear()
+                    api_input.fill(openai_api_key)
+                    break
+            except:
+                continue
+        else:
+            return False
+        
+        # Try multiple selectors for save button
+        button_selectors = [
+            'button:text("Save")',
+            'button:text("Save & Continue")',
+            'button:text("Connect")',
+            '#api-key-modal .btn-primary',
+            '#openai-api-key-modal .btn-primary',
+            '#save-api-key-btn',
+            'button[type="submit"]'
+        ]
+        
+        for selector in button_selectors:
+            try:
+                save_btn = page.locator(selector).first
+                if save_btn.is_visible():
+                    save_btn.click()
+                    break
+            except:
+                continue
+        else:
+            return False
+        
+        # Wait for modal to close (try multiple modal IDs)
+        modal_selectors = ['#api-key-modal', '#openai-api-key-modal']
+        for modal_selector in modal_selectors:
+            try:
+                page.wait_for_selector(modal_selector, state='hidden', timeout=3000)
+                break
+            except:
+                continue
+        
+        return True
+        
+    except Exception:
+        return False
+
+
+def handle_generic_modal(page: Page, modal) -> bool:
+    """Handle any generic modal by trying common close methods"""
+    try:
+        # Try common close buttons
+        close_selectors = [
+            'button:text("Cancel")',
+            'button:text("Close")', 
+            'button:text("Skip")',
+            '.modal-close',
+            '.btn-secondary',
+            '.close-btn'
+        ]
+        
+        for selector in close_selectors:
+            try:
+                close_btn = page.locator(selector).first
+                if close_btn.is_visible():
+                    close_btn.click()
+                    page.wait_for_timeout(500)
+                    return True
+            except:
+                continue
+        
+        # Try pressing Escape
+        page.keyboard.press('Escape')
+        page.wait_for_timeout(500)
+        
+        return True
+        
+    except Exception:
+        return False
 
 
 def send_shodan_query(page: Page, query: str) -> str:
@@ -21,21 +232,83 @@ def send_shodan_query(page: Page, query: str) -> str:
     Returns:
         The response text from the assistant
     """
-    chat_input = page.locator("#userInput")
+    chat_input = page.locator("#message-input")
+    
+    # Handle any modals before typing the message
+    handle_active_modals(page)
+    
+    # Fill the message and verify it's there
     chat_input.fill(query)
     
-    send_btn = page.locator("#sendButton")
-    send_btn.click()
+    # Verify the message is in the input field
+    current_value = chat_input.input_value()
+    if current_value != query:
+        chat_input.clear()
+        chat_input.fill(query)
     
-    # Wait for response to appear
-    page.wait_for_selector(".message.assistant", timeout=10000)
-    page.wait_for_timeout(2000)  # Additional wait for complete response
+    send_btn = page.locator("#send-btn")
     
-    # Get the last assistant message
-    messages = page.locator(".message.assistant").all()
-    if messages:
-        return messages[-1].text_content()
-    return ""
+    # Try to click send button, but handle any modals that appear
+    max_click_attempts = 3
+    for attempt in range(max_click_attempts):
+        # Re-check message is still there before clicking send
+        current_value = chat_input.input_value()
+        if current_value != query:
+            chat_input.clear()
+            chat_input.fill(query)
+        
+        try:
+            # Check if send button is actually clickable
+            if send_btn.is_visible() and send_btn.is_enabled():
+                send_btn.click()
+                
+                # After clicking, check if message was sent or if modal appeared
+                page.wait_for_timeout(500)
+                remaining_value = chat_input.input_value()
+                if remaining_value == "":
+                    break  # Message successfully sent
+                else:
+                    handle_active_modals(page)
+                    # Continue to next attempt
+            else:
+                handle_active_modals(page)
+        except Exception:
+            handle_active_modals(page)
+            
+        page.wait_for_timeout(1000)
+    else:
+        return ""  # Failed to send after all attempts
+    
+    # After successful send, handle any new modals that might appear
+    handle_active_modals(page)
+    
+    # Wait for response to appear (using working test pattern)
+    try:
+        page.wait_for_selector(".message.assistant .message-content", state="visible", timeout=15000)
+        
+        # Wait a short time to ensure content is fully loaded
+        page.wait_for_timeout(500)
+        
+        # Get all assistant messages (check all, not just last)
+        assistant_messages = page.locator(".message.assistant .message-content")
+        message_count = assistant_messages.count()
+        
+        # Check all assistant messages for content, return the best one
+        best_response = ""
+        
+        for i in range(message_count):
+            message_text = assistant_messages.nth(i).text_content()
+            
+            # If this message has substantial content, use it
+            if message_text and len(message_text.strip()) > 5:
+                best_response = message_text
+        
+        return best_response
+        
+    except Exception:
+        # Check one more time for modals that might be blocking
+        handle_active_modals(page)
+        return ""
 
 
 def extract_json_from_response(response: str) -> Optional[Dict[str, Any]]:

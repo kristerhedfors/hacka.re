@@ -116,7 +116,8 @@ def test_mcp_modal_ui_interactions(page: Page, serve_hacka_re):
     expect(page.locator("#test-proxy-btn")).to_be_visible()
     expect(page.locator("#proxy-status")).to_be_visible()
     expect(page.locator("#mcp-server-url")).to_be_visible()
-    expect(page.locator("#mcp-servers-list")).to_be_visible()
+    # mcp-servers-list removed - test Quick Connectors instead
+    expect(page.locator("#mcp-quick-connectors-placeholder")).to_be_visible()
     
     # Test modal close
     close_btn = page.locator("#close-mcp-servers-modal")
@@ -176,13 +177,13 @@ def test_mcp_server_list_area(page: Page, serve_hacka_re):
     # Open MCP modal
     page.locator("#mcp-servers-btn").click()
     
-    # Check server list area
-    server_list = page.locator("#mcp-servers-list")
-    expect(server_list).to_be_visible()
+    # Check Quick Connectors area instead of server list
+    quick_connectors = page.locator("#mcp-quick-connectors-placeholder")
+    expect(quick_connectors).to_be_visible()
     
-    # Should be empty initially
-    server_items = page.locator(".mcp-server-item")
-    expect(server_items).to_have_count(0)
+    # Advanced section should be present at the bottom
+    advanced_section = page.locator(".mcp-advanced-section")
+    expect(advanced_section).to_be_visible()
     
     screenshot_with_markdown(page, "mcp_server_list", {
         "Status": "MCP server list area tested",
