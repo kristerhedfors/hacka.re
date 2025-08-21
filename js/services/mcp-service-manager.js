@@ -343,13 +343,16 @@
                 
                 console.log('[MCPServiceManager] Gmail functions registered after OAuth restore');
                 
-                // Auto-activate Gmail integration prompt if available
+                // Auto-register and enable Gmail integration prompt if available
                 if (window.DefaultPromptsService && window.GmailIntegrationGuide) {
                     try {
-                        window.DefaultPromptsService.enablePrompt('Gmail Integration Guide');
-                        console.log('[MCPServiceManager] Gmail integration prompt auto-enabled');
+                        // First register the prompt (safe to call multiple times)
+                        window.DefaultPromptsService.registerPrompt(window.GmailIntegrationGuide);
+                        // Then enable it
+                        window.DefaultPromptsService.enablePrompt('Gmail MCP prompt');
+                        console.log('[MCPServiceManager] Gmail MCP prompt registered and auto-enabled');
                     } catch (error) {
-                        console.warn('[MCPServiceManager] Failed to auto-enable Gmail prompt:', error);
+                        console.warn('[MCPServiceManager] Failed to register/enable Gmail prompt:', error);
                     }
                 }
                 

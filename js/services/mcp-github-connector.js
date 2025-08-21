@@ -201,6 +201,19 @@
             // Register tools
             await this.registerTools(token);
             
+            // Auto-register and enable the GitHub Integration Guide prompt
+            if (window.DefaultPromptsService && window.GitHubIntegrationGuide) {
+                try {
+                    // First register the prompt (safe to call multiple times)
+                    window.DefaultPromptsService.registerPrompt(window.GitHubIntegrationGuide);
+                    // Then enable it
+                    window.DefaultPromptsService.enablePrompt('GitHub MCP prompt');
+                    console.log('[GitHubConnector] GitHub MCP prompt registered and auto-enabled');
+                } catch (error) {
+                    console.warn('[GitHubConnector] Failed to register/enable GitHub prompt:', error);
+                }
+            }
+            
             console.log(`[GitHubConnector] Connected successfully`);
             return true;
         }
