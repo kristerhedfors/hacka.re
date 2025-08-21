@@ -20,15 +20,7 @@ window.MCPModalRenderer = (function() {
             });
         }
         
-        // Setup expand/collapse for Connected Servers section  
-        const serversHeader = document.querySelector('.mcp-servers-header');
-        const serversList = document.querySelector('.mcp-servers-list');
-        
-        if (serversHeader && serversList) {
-            serversHeader.addEventListener('click', () => {
-                toggleSection(serversHeader, serversList);
-            });
-        }
+        // Connected Servers section removed
     }
     
     /**
@@ -78,10 +70,8 @@ window.MCPModalRenderer = (function() {
         if (sectionName === 'advanced') {
             header = document.querySelector('.mcp-advanced-header');
             list = document.querySelector('.mcp-advanced-list');
-        } else if (sectionName === 'servers') {
-            header = document.querySelector('.mcp-servers-header');
-            list = document.querySelector('.mcp-servers-list');
         }
+        // servers section removed
         
         if (header && list && list.style.display === 'none') {
             toggleSection(header, list);
@@ -98,10 +88,8 @@ window.MCPModalRenderer = (function() {
         if (sectionName === 'advanced') {
             header = document.querySelector('.mcp-advanced-header');
             list = document.querySelector('.mcp-advanced-list');
-        } else if (sectionName === 'servers') {
-            header = document.querySelector('.mcp-servers-header');
-            list = document.querySelector('.mcp-servers-list');
         }
+        // servers section removed
         
         if (header && list && list.style.display !== 'none') {
             toggleSection(header, list);

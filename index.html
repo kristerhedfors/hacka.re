@@ -605,6 +605,11 @@ async function getCurrentTimeInBerlin() {
                     </span>
                 </div>
                 
+                <!-- Quick Connectors Section (outside expandables) -->
+                <div id="mcp-quick-connectors-placeholder">
+                    <!-- Quick connectors will be inserted here by JavaScript -->
+                </div>
+                
                 <!-- Advanced Section (Expandable) -->
                 <div class="mcp-advanced-section">
                     <div class="mcp-advanced-header">
@@ -669,27 +674,6 @@ async function getCurrentTimeInBerlin() {
                             <!-- OAuth status will be inserted here by JavaScript -->
                         </div>
                     </div>
-                </div>
-                
-                <!-- Connected MCP Servers Section (Expandable) -->
-                <div class="mcp-servers-section">
-                    <div class="mcp-servers-header">
-                        <i class="fas fa-chevron-right"></i>
-                        <h4>Connected MCP Servers (<span id="mcp-servers-count">0</span>)</h4>
-                    </div>
-                    <div class="mcp-servers-list" style="display: none;">
-                        <p class="form-help">Manage your connected MCP servers and their available tools.</p>
-                        <div id="mcp-servers-list">
-                            <div class="empty-mcp-servers-state" id="empty-mcp-servers-state">
-                                <p>No MCP servers connected. Add a server above.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Quick Connectors Section (outside expandables) -->
-                <div id="mcp-quick-connectors-placeholder">
-                    <!-- Quick connectors will be inserted here by JavaScript -->
                 </div>
                 
                 <div class="form-actions">

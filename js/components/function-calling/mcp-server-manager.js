@@ -54,10 +54,8 @@ window.McpServerManager = (function() {
          * Render the list of connected MCP servers
          */
         function renderMcpServersList() {
-            if (!elements.mcpServersList) {
-                console.warn('renderMcpServersList called but elements.mcpServersList is not available');
-                return;
-            }
+            // Server list functionality removed - no longer displaying connected servers
+            return;
             
             // Clear the list
             elements.mcpServersList.innerHTML = '';
