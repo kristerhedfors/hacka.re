@@ -274,8 +274,19 @@ window.FunctionListRenderer = (function() {
             functionCount.style.marginLeft = '10px';
             functionCount.style.color = 'var(--text-color-secondary)';
             functionCount.style.fontSize = '14px';
-            functionCount.style.display = 'none'; // Initially hidden
-            updateUserCollectionCount(collection, callableFunctions);
+            
+            // Set the initial count directly
+            let enabledCount = 0;
+            callableFunctions.forEach(funcName => {
+                if (FunctionToolsService.isJsFunctionEnabled(funcName)) {
+                    enabledCount++;
+                }
+            });
+            const totalCount = callableFunctions.length;
+            const pluralText = totalCount !== 1 ? 's' : '';
+            functionCount.textContent = `(${enabledCount}/${totalCount} function${pluralText} enabled)`;
+            functionCount.style.display = 'inline';
+            
             collectionHeader.appendChild(functionCount);
             
             // Check if this is an MCP collection
@@ -553,7 +564,7 @@ window.FunctionListRenderer = (function() {
         
         /**
          * Update the user collection count display to show enabled/total format
-         * Only show if at least 1 function is enabled, otherwise hide
+         * Always show the count, even if 0 functions are enabled
          * @param {Object} collection - The collection object
          * @param {Array} callableFunctions - Array of callable function names
          */
@@ -571,14 +582,10 @@ window.FunctionListRenderer = (function() {
             
             const totalCount = callableFunctions.length;
             
-            // Only show count if at least 1 function is enabled
-            if (enabledCount > 0) {
-                const pluralText = totalCount !== 1 ? 's' : '';
-                countElement.textContent = `(${enabledCount}/${totalCount} function${pluralText} enabled)`;
-                countElement.style.display = 'inline';
-            } else {
-                countElement.style.display = 'none';
-            }
+            // Always show the count
+            const pluralText = totalCount !== 1 ? 's' : '';
+            countElement.textContent = `(${enabledCount}/${totalCount} function${pluralText} enabled)`;
+            countElement.style.display = 'inline';
         }
         
         /**
