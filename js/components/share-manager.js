@@ -67,7 +67,8 @@ window.ShareManager = (function() {
                     includePromptLibrary: elements.sharePromptLibraryCheckbox ? elements.sharePromptLibraryCheckbox.checked : false,
                     includeFunctionLibrary: elements.shareFunctionLibraryCheckbox ? elements.shareFunctionLibraryCheckbox.checked : false,
                     includeMcpConnections: elements.shareMcpConnectionsCheckbox ? elements.shareMcpConnectionsCheckbox.checked : false,
-                    includeWelcomeMessage: elements.shareWelcomeMessageCheckbox ? elements.shareWelcomeMessageCheckbox.checked : false
+                    includeWelcomeMessage: elements.shareWelcomeMessageCheckbox ? elements.shareWelcomeMessageCheckbox.checked : false,
+                    includeTheme: elements.shareThemeCheckbox ? elements.shareThemeCheckbox.checked : false
                 };
                 
                 StorageService.saveShareOptions(options);
@@ -108,6 +109,11 @@ window.ShareManager = (function() {
                 // Set welcome message checkbox if it exists
                 if (elements.shareWelcomeMessageCheckbox) {
                     elements.shareWelcomeMessageCheckbox.checked = options.includeWelcomeMessage || false;
+                }
+                
+                // Set theme checkbox if it exists
+                if (elements.shareThemeCheckbox) {
+                    elements.shareThemeCheckbox.checked = options.includeTheme || false;
                 }
                 
                 // Update message history input state
@@ -151,6 +157,9 @@ window.ShareManager = (function() {
             
             // Update MCP connections status (now async)
             await updateMcpConnectionsStatus();
+            
+            // Update theme status
+            updateThemeStatus();
             
             // Update conversation status
             updateConversationStatus();
@@ -535,6 +544,63 @@ window.ShareManager = (function() {
         }
         
         /**
+         * Update theme status display
+         */
+        function updateThemeStatus() {
+            const checkbox = elements.shareThemeCheckbox;
+            if (!checkbox) return;
+            
+            const label = checkbox.parentElement ? checkbox.parentElement.querySelector('label[for="share-theme"]') : null;
+            if (!label) return;
+            
+            // Remove ALL existing status indicators
+            const allExistingStatus = label.querySelectorAll('.share-item-status');
+            allExistingStatus.forEach(status => status.remove());
+            
+            // Get current theme
+            let currentTheme = 'light'; // Default
+            if (window.ThemeService && window.ThemeService.getThemeMode) {
+                currentTheme = window.ThemeService.getThemeMode();
+            }
+            
+            // Disable checkbox and gray out if theme is light
+            if (currentTheme === 'light') {
+                checkbox.disabled = true;
+                checkbox.checked = false;
+                label.style.opacity = '0.5';
+                label.style.cursor = 'not-allowed';
+                
+                // Add status text explaining why it's disabled
+                const statusSpan = document.createElement('span');
+                statusSpan.className = 'share-item-status';
+                statusSpan.style.marginLeft = '10px';
+                statusSpan.style.color = 'var(--text-color-secondary)';
+                statusSpan.style.fontSize = '0.85em';
+                statusSpan.style.fontWeight = 'normal';
+                statusSpan.textContent = '(Light theme is default)';
+                label.appendChild(statusSpan);
+            } else {
+                // Enable checkbox for non-light themes
+                checkbox.disabled = false;
+                label.style.opacity = '1';
+                label.style.cursor = 'pointer';
+                
+                const statusSpan = document.createElement('span');
+                statusSpan.className = 'share-item-status';
+                statusSpan.style.marginLeft = '10px';
+                statusSpan.style.color = 'var(--text-color-secondary)';
+                statusSpan.style.fontSize = '0.85em';
+                statusSpan.style.fontWeight = 'normal';
+                
+                // Capitalize theme name for display
+                const displayTheme = currentTheme.charAt(0).toUpperCase() + currentTheme.slice(1);
+                const actionText = checkbox.checked ? 'will be shared' : 'available';
+                statusSpan.textContent = `(${displayTheme} ${actionText})`;
+                label.appendChild(statusSpan);
+            }
+        }
+        
+        /**
          * Update conversation status display
          */
         function updateConversationStatus() {
@@ -777,6 +843,7 @@ window.ShareManager = (function() {
             console.log('📚 Prompt Library checkbox:', !!elements.sharePromptLibraryCheckbox, '- checked:', elements.sharePromptLibraryCheckbox ? elements.sharePromptLibraryCheckbox.checked : 'N/A');
             console.log('⚙️ Function Library checkbox:', !!elements.shareFunctionLibraryCheckbox, '- checked:', elements.shareFunctionLibraryCheckbox ? elements.shareFunctionLibraryCheckbox.checked : 'N/A');
             console.log('🔌 MCP Connections checkbox (elements):', !!elements.shareMcpConnectionsCheckbox, '- checked:', elements.shareMcpConnectionsCheckbox ? elements.shareMcpConnectionsCheckbox.checked : 'N/A');
+            console.log('🎨 Theme checkbox:', !!elements.shareThemeCheckbox, '- checked:', elements.shareThemeCheckbox ? elements.shareThemeCheckbox.checked : 'N/A');
             
             // ALWAYS try fresh DOM query for MCP checkbox as fallback
             const mcpCheckboxFallback = document.getElementById('share-mcp-connections');
@@ -804,6 +871,20 @@ window.ShareManager = (function() {
                 console.log('🎯 Using ELEMENTS for MCP checkbox state:', mcpConnectionsChecked);
             } else {
                 console.log('🎯 NO MCP checkbox found - defaulting to false');
+            }
+            
+            // Get theme if checkbox is checked
+            let theme = null;
+            if (elements.shareThemeCheckbox && elements.shareThemeCheckbox.checked) {
+                if (window.ThemeService && window.ThemeService.getThemeMode) {
+                    theme = window.ThemeService.getThemeMode();
+                    // Only include theme if it's not the default 'light' theme
+                    if (theme === 'light') {
+                        theme = null;
+                    } else {
+                        console.log('🎨 ShareManager: Including theme:', theme);
+                    }
+                }
             }
             
             // Collect MCP connections if needed
@@ -865,7 +946,9 @@ window.ShareManager = (function() {
                 includeWelcomeMessage: (elements.shareWelcomeMessageCheckbox ? elements.shareWelcomeMessageCheckbox.checked : false) && welcomeMessage,
                 includePromptLibrary: elements.sharePromptLibraryCheckbox ? elements.sharePromptLibraryCheckbox.checked : false,
                 includeFunctionLibrary: elements.shareFunctionLibraryCheckbox ? elements.shareFunctionLibraryCheckbox.checked : false,
-                includeMcpConnections: mcpConnectionsChecked
+                includeMcpConnections: mcpConnectionsChecked,
+                includeTheme: elements.shareThemeCheckbox ? elements.shareThemeCheckbox.checked : false,
+                theme: theme
             };
             
             console.log('🎯 ShareManager: Final options object:', JSON.stringify(options, null, 2));
@@ -873,7 +956,8 @@ window.ShareManager = (function() {
             // Validate options - at least one item should be selected
             const hasSelection = options.includeBaseUrl || options.includeApiKey || options.includeSystemPrompt || 
                                options.includeModel || options.includeConversation || options.includePromptLibrary || 
-                               options.includeFunctionLibrary || options.includeMcpConnections || options.includeWelcomeMessage;
+                               options.includeFunctionLibrary || options.includeMcpConnections || options.includeWelcomeMessage || 
+                               options.includeTheme;
             
             if (!hasSelection) {
                 if (addSystemMessage) {

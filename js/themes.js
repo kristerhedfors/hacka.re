@@ -395,6 +395,7 @@ window.ThemeService = (function() {
         enableMidnightTheme: enableMidnightTheme,
         isDarkMode: isDarkMode,
         isSunsetTheme: isSunsetTheme,
-        getThemeMode: getThemeMode
+        getThemeMode: getThemeMode,
+        applyTheme: applyTheme
     };
 })();

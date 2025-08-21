@@ -111,6 +111,12 @@ window.ShareService = (function() {
             itemsIncluded.push(`✅ WELCOME MESSAGE (${options.welcomeMessage.length} chars)`);
         }
         
+        // Handle theme
+        if (options.includeTheme && options.theme) {
+            payload.theme = options.theme;
+            itemsIncluded.push(`✅ THEME (${options.theme})`);
+        }
+        
         // Handle MCP connections
         if (options.includeMcpConnections) {
             let mcpConnections = options.mcpConnections;

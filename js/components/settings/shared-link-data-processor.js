@@ -471,6 +471,26 @@ function createSharedLinkDataProcessor() {
     }
     
     /**
+     * Apply theme from shared data
+     * @param {Object} sharedData - Shared data object
+     * @param {Function} addSystemMessage - Function to add system messages
+     */
+    function applyTheme(sharedData, addSystemMessage) {
+        if (sharedData.theme && window.ThemeService) {
+            // Apply the theme using ThemeService
+            if (window.ThemeService.applyTheme) {
+                window.ThemeService.applyTheme(sharedData.theme);
+                
+                if (addSystemMessage) {
+                    // Capitalize theme name for display
+                    const displayTheme = sharedData.theme.charAt(0).toUpperCase() + sharedData.theme.slice(1);
+                    addSystemMessage(`Theme set to ${displayTheme}.`);
+                }
+            }
+        }
+    }
+    
+    /**
      * Apply MCP connections from shared data
      * @param {Object} sharedData - Shared data object
      * @param {Function} addSystemMessage - Function to add system messages
@@ -940,6 +960,10 @@ function createSharedLinkDataProcessor() {
             console.log('🔧 processSharedData: Applying MCP connections');
             await applyMcpConnections(sharedData, collectSystemMessage);
             
+            // Apply theme if included in shared data
+            console.log('🔧 processSharedData: Applying theme');
+            applyTheme(sharedData, collectSystemMessage);
+            
             // Session key is now applied immediately in shared-link-manager.js when password is validated
             // This redundant call is no longer needed
             // applySessionKey(password, elements, collectSystemMessage);
@@ -1035,6 +1059,7 @@ function createSharedLinkDataProcessor() {
         applyPrompts,
         applyFunctions,
         applyMcpConnections,
+        applyTheme,
         applySessionKey,
         processSharedData,
         analyzeSharedDataOptions,

@@ -377,6 +377,12 @@ window.LinkSharingService = (function() {
                     console.log('Extracted welcome message from shared link:', data.welcomeMessage.substring(0, 50) + '...');
                 }
                 
+                // Include theme if present
+                if (data.theme) {
+                    result.theme = data.theme;
+                    console.log('Extracted theme from shared link:', data.theme);
+                }
+                
                 // Cache the result with the password for future access
                 result._password = password; // Store password for cache validation
                 _cachedSharedData = result;
