@@ -89,6 +89,8 @@ def mcp_proxy():
         proxy.stop()
 
 
+
+# NOTE: Connected MCP Servers functionality removed - tests updated
 def test_mcp_filesystem_server_integration(page: Page, serve_hacka_re, mcp_proxy):
     """Test full integration with MCP filesystem server"""
     # Check if npx is available for filesystem server
@@ -150,8 +152,8 @@ def test_mcp_filesystem_server_integration(page: Page, serve_hacka_re, mcp_proxy
     time.sleep(0.5)
     
     # Check if server appears in list (may or may not work)
-    server_list = page.locator("#mcp-servers-list")
-    expect(server_list).to_be_visible()
+    server_list = page.locator("#mcp-quick-connectors-placeholder")
+    expect(quick_connectors).to_be_visible()
     
     screenshot_with_markdown(page, "mcp_filesystem_integration", {
         "Status": "MCP Filesystem Server Integration attempted",
@@ -240,8 +242,8 @@ def test_mcp_multiple_servers(page: Page, serve_hacka_re, mcp_proxy):
     time.sleep(0.5)
     
     # Verify server list area is visible
-    server_list = page.locator("#mcp-servers-list")
-    expect(server_list).to_be_visible()
+    server_list = page.locator("#mcp-quick-connectors-placeholder")
+    expect(quick_connectors).to_be_visible()
     
     screenshot_with_markdown(page, "mcp_multiple_servers", {
         "Status": "Multiple server form submissions tested",

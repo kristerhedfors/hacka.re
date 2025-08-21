@@ -10,6 +10,8 @@ import os
 import time
 import re
 
+
+# NOTE: Connected MCP Servers functionality removed - tests updated
 def test_mcp_expandable_modal():
     """Test the new MCP modal with expandable sections"""
     
@@ -62,23 +64,14 @@ def test_mcp_expandable_modal():
         
         print("✅ Advanced section exists and is collapsed")
         
-        # Check that Connected Servers section exists and is collapsed by default
-        servers_section = page.locator('.mcp-servers-section')
-        expect(servers_section).to_be_visible()
+        # Connected Servers section removed - check Quick Connectors instead
+        quick_connectors = page.locator('#mcp-quick-connectors-placeholder')
+        expect(quick_connectors).to_be_visible()
         
-        servers_header = page.locator('.mcp-servers-header')
-        expect(servers_header).to_be_visible()
+        print("✅ Quick Connectors section exists")
         
-        servers_list = page.locator('.mcp-servers-list')
-        expect(servers_list).to_have_css('display', 'none')
-        
-        print("✅ Connected Servers section exists and is collapsed")
-        
-        # Check server count is initially 0
-        server_count = page.locator('#mcp-servers-count')
-        expect(server_count).to_have_text('0')
-        
-        print("✅ Server count shows 0 initially")
+        # No longer testing server count as feature was removed
+        print("✅ Server list functionality removed as planned")
         
         # Test expanding Advanced section
         advanced_header.click()
@@ -134,7 +127,7 @@ def test_mcp_expandable_modal():
         page.screenshot(path="_tests/playwright/screenshots/mcp_expandable_modal_servers_expanded.png")
         
         # Check that empty state message is visible
-        empty_state = page.locator('.empty-mcp-servers-state')
+        empty_state = page.locator(".mcp-advanced-section")
         expect(empty_state).to_be_visible()
         expect(empty_state).to_contain_text('No MCP servers connected')
         

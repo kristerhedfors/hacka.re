@@ -5,6 +5,8 @@ import time
 from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
 
 
+
+# NOTE: Connected MCP Servers functionality removed - tests updated
 def test_mcp_form_basic_functionality(page: Page, serve_hacka_re):
     """Test basic MCP form functionality without proxy dependency"""
     page.goto(serve_hacka_re)
@@ -161,8 +163,8 @@ def test_mcp_stdio_form_submission(page: Page, serve_hacka_re):
     time.sleep(0.5)
     
     # Check that the server list is visible (whether or not the server actually connects)
-    server_list = page.locator("#mcp-servers-list")
-    expect(server_list).to_be_visible()
+    server_list = page.locator("#mcp-quick-connectors-placeholder")
+    expect(quick_connectors).to_be_visible()
     
     screenshot_with_markdown(page, "mcp_stdio_form_submission", {
         "Status": "MCP stdio form submission completed",

@@ -99,6 +99,8 @@ def mcp_proxy():
     proxy.stop()
 
 
+
+# NOTE: Connected MCP Servers functionality removed - tests updated
 def test_mcp_proxy_connection(page: Page, serve_hacka_re, mcp_proxy):
     """Test basic MCP proxy connection"""
     # Verify proxy is running
@@ -226,8 +228,8 @@ def test_mcp_filesystem_server_attempt(page: Page, serve_hacka_re, mcp_proxy):
     time.sleep(0.5)
     
     # Check if server appears in list (may or may not work)
-    server_list = page.locator("#mcp-servers-list")
-    expect(server_list).to_be_visible()
+    server_list = page.locator("#mcp-quick-connectors-placeholder")
+    expect(quick_connectors).to_be_visible()
     
     screenshot_with_markdown(page, "mcp_filesystem_attempt", {
         "Status": "Filesystem server start attempted", 
@@ -251,7 +253,7 @@ def test_mcp_modal_ui_with_proxy(page: Page, serve_hacka_re, mcp_proxy):
     # Test all the UI elements exist
     expect(page.locator("#test-proxy-btn")).to_be_visible()
     expect(page.locator("#proxy-status")).to_be_visible()
-    expect(page.locator("#mcp-servers-list")).to_be_visible()
+    expect(page.locator("#mcp-quick-connectors-placeholder")).to_be_visible()
     
     # Test form fields (after ensuring OAuth integration is set up)
     page.evaluate("window.MCPOAuthIntegration && window.MCPOAuthIntegration.updateFormVisibility('stdio')")

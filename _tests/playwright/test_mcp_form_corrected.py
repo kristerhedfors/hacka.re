@@ -6,6 +6,8 @@ from pathlib import Path
 from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
 
 
+
+# NOTE: Connected MCP Servers functionality removed - tests updated
 def test_mcp_stdio_form_functionality(page: Page, serve_hacka_re):
     """Test MCP stdio form functionality (equivalent to previous server form test)"""
     page.goto(serve_hacka_re)
@@ -44,7 +46,7 @@ def test_mcp_stdio_form_functionality(page: Page, serve_hacka_re):
     time.sleep(0.5)
     
     # Verify that the server list area is visible
-    expect(page.locator("#mcp-servers-list")).to_be_visible()
+    expect(page.locator("#mcp-quick-connectors-placeholder")).to_be_visible()
     
     screenshot_with_markdown(page, "mcp_stdio_form_functionality", {
         "Status": "MCP stdio form functionality tested",
@@ -93,8 +95,8 @@ def test_mcp_filesystem_server_form(page: Page, serve_hacka_re):
     time.sleep(0.5)
     
     # Verify server list area is visible
-    server_list = page.locator("#mcp-servers-list")
-    expect(server_list).to_be_visible()
+    server_list = page.locator("#mcp-quick-connectors-placeholder")
+    expect(quick_connectors).to_be_visible()
     
     screenshot_with_markdown(page, "mcp_filesystem_server_form", {
         "Status": "Filesystem server form tested",
@@ -118,7 +120,7 @@ def test_mcp_modal_ui_elements(page: Page, serve_hacka_re):
     # Test all the UI elements exist
     expect(page.locator("#test-proxy-btn")).to_be_visible()
     expect(page.locator("#proxy-status")).to_be_visible()
-    expect(page.locator("#mcp-servers-list")).to_be_visible()
+    expect(page.locator("#mcp-quick-connectors-placeholder")).to_be_visible()
     
     # Test form fields (after ensuring OAuth integration is set up)
     page.evaluate("window.MCPOAuthIntegration && window.MCPOAuthIntegration.updateFormVisibility('stdio')")
