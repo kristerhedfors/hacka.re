@@ -12,8 +12,8 @@ from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 def test_shared_link_conversation_continuity(page: Page, serve_hacka_re):
     """Test that shared links properly display conversation history"""
     
-    # The specific shared link from the user with password 'asd'
-    shared_link_url = f"{serve_hacka_re}#gpt=EEGWCBjnHy5OER+ulp2SVa0MxHnFBugLuYrrsmyN7l/42BVoZ2z5Am9Jwh/5ewqJkGJjljOaxDie8TCvM38gvgoOf5GxWAj0gfLrjzY9jCH27GLZrxVLzmtuokCmqIZ9EQVdpSDcUHcLQ5PoxihTWLlGAV9po/lq8wA+H5FqdeCRKdKnIXRX1RV3m0GhXupKHTNnGnCrw58+oaCm0MlUT6iWVK1GSMJbSzfnjrzRhqF7nk4OTwSwOL+upPwR3C+K0F0kh7wt0DELIA7Oz/Mylz5IC/W+ef+3n/NJqwFFiLUVn7EvWMvBTOJbABORe+RIoaDgGqWtqwTbM/OG3ckxENEHQmn3HKxV+7hCe31IrnXUAKRQ85uEWPwCAJib+wt1y6V/fsZRx8Mqg4WRhCP6DeU37B6SsMADv6s2JR5PjL2h1S0VEcuok4dG/AXwAyAuA/lBEucbrwFdy9iVvAnTCQ1ta2bQn2Q2TVcTAOyjoVaHRr5vWkQf+lTMfwW22FGvsL1oDQSSOXrJUZuDejtGEHToTULcwN7UgKVUY2t6krOjkfjT+tuPtLBJ0EfI//zce6pIaIM+xen5DQ=="
+    # The specific shared link from the user with password 'asd' (new format)
+    shared_link_url = f"{serve_hacka_re}#gpt=f-PxXzUQNN3B20mEQwBo98AsPcubktRIltFvOlnveEAHzvANDihLmqLrrD9XCi1lj8QiXplzleLo7Kc5OYa1DwQmbzlLc8hIDStSdfT2yqG9wQQWrtFpbpjqvsnWAQzrjbB3a3C4Qzntq0QltfJt5njkLfq43_jLK9CeyAxW73S2c_d1W_6jqeW1ww6JjEK5CJXftSuEGAI8-mv-QFvkC_GpNJLgSh4vF38Hz1DKTUmXL0-LBntvADcUCkRsfh3pP-cxbaHjpxRJZFMflcitzlZaIFHstMieTBYVzYSOtf3H7pxfnAQOq-y62nFlojUIQh-x_1TxYYePw4EFNg6x_eHyc8weP9Jmm6Hadk9WjTQluX9KOB87_VdA4Y8Gl659Lln9nkdplxWqLPMD1fl1Sl4jRGzbuUw8S5fTwSrtqlRDoVlGNRvvOvTQWsuOECKd0JsmgT6Np9QvNY_4xen27wf5rUBI3eNKmPUjZOrDTF743tRT8SURMrLFaBg_F_I0Fj-c1wRj8kW-gmTulA19l95i3Ms"
     
     # Setup console logging to capture debug information
     console_messages = []

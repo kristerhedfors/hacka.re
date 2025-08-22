@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compression Debug Test</title>
+    <style>
+        body { 
+            font-family: monospace; 
+            padding: 20px; 
+            max-width: 1200px; 
+            margin: 0 auto;
+            background: #1a1a1a;
+            color: #0f0;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #0f0;
+            background: #000;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            background: #111;
+        }
+        .success { color: #0f0; }
+        .warning { color: #ff0; }
+        .error { color: #f00; }
+        .info { color: #0ff; }
+        h2 { color: #0ff; }
+        .data-display {
+            word-break: break-all;
+            font-size: 0.85em;
+            color: #888;
+            margin: 5px 0;
+            padding: 5px;
+            background: #0a0a0a;
+        }
+        button {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px 5px;
+            cursor: pointer;
+            font-family: monospace;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #0ff;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Compression Layer Debug Test</h1>
+    
+    <div class="test-section">
+        <h2>Step-by-Step Testing</h2>
+        <button onclick="testCompressionOnly()">Test Compression Only</button>
+        <button onclick="testEncryptionOnly()">Test Encryption Only</button>
+        <button onclick="testFullPipeline()">Test Full Pipeline</button>
+        <button onclick="testRoundTrip()">Test Round Trip</button>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+    
+    <div id="test-results"></div>
+
+    <script src="lib/tweetnacl/nacl-fast.min.js"></script>
+    <script src="lib/tweetnacl/nacl-util.min.js"></script>
+    <script src="js/utils/crypto-utils.js"></script>
+    <script src="js/utils/compression-utils.js"></script>
+    <script src="js/services/link-sharing-service.js"></script>
+    
+    <script>
+        const resultsDiv = document.getElementById('test-results');
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerHTML = message;
+            resultsDiv.appendChild(div);
+            console.log(message.replace(/<[^>]*>/g, ''));
+        }
+        
+        function logData(label, data) {
+            const div = document.createElement('div');
+            div.className = 'data-display';
+            const displayData = typeof data === 'string' ? 
+                (data.length > 200 ? data.substring(0, 200) + '...' : data) :
+                JSON.stringify(data, null, 2);
+            div.innerHTML = `<strong>${label}:</strong><br>${displayData}`;
+            resultsDiv.appendChild(div);
+        }
+        
+        function clearResults() {
+            resultsDiv.innerHTML = '';
+        }
+        
+        function testCompressionOnly() {
+            clearResults();
+            log('<h2>Testing Compression Only</h2>', 'info');
+            
+            const testPayload = {
+                apiKey: "sk-test-123456789",
+                model: "gpt-4",
+                messages: [
+                    { role: "user", content: "Hello" },
+                    { role: "assistant", content: "Hi there!" }
+                ]
+            };
+            
+            try {
+                log('1. Original payload:', 'info');
+                logData('Payload', testPayload);
+                
+                const originalJson = JSON.stringify(testPayload);
+                log(`Original JSON size: ${originalJson.length} chars`, 'info');
+                
+                log('2. Compressing payload...', 'info');
+                const compressed = CompressionUtils.compressPayload(testPayload);
+                log(`Compressed size: ${compressed.length} chars`, 'success');
+                log(`Reduction: ${Math.round((1 - compressed.length / originalJson.length) * 100)}%`, 'warning');
+                logData('Compressed string', compressed);
+                
+                log('3. Decompressing...', 'info');
+                const decompressed = CompressionUtils.decompressPayload(compressed);
+                logData('Decompressed', decompressed);
+                
+                log('4. Validation:', 'info');
+                const isValid = JSON.stringify(decompressed) === originalJson;
+                if (isValid) {
+                    log('✅ Compression/Decompression successful!', 'success');
+                } else {
+                    log('❌ Decompressed data does not match original!', 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+                console.error(error);
+            }
+        }
+        
+        function testEncryptionOnly() {
+            clearResults();
+            log('<h2>Testing Encryption Only (without compression)</h2>', 'info');
+            
+            const testPayload = {
+                apiKey: "sk-test-123456789",
+                model: "gpt-4"
+            };
+            const password = "TestPassword123";
+            
+            try {
+                log('1. Original payload:', 'info');
+                logData('Payload', testPayload);
+                
+                log('2. Encrypting with CryptoUtils...', 'info');
+                const encrypted = CryptoUtils.encryptData(testPayload, password);
+                log(`Encrypted size: ${encrypted.length} chars`, 'success');
+                logData('Encrypted string', encrypted);
+                
+                log('3. Decrypting...', 'info');
+                const decrypted = CryptoUtils.decryptData(encrypted, password);
+                logData('Decrypted', decrypted);
+                
+                log('4. Validation:', 'info');
+                const isValid = JSON.stringify(decrypted) === JSON.stringify(testPayload);
+                if (isValid) {
+                    log('✅ Encryption/Decryption successful!', 'success');
+                } else {
+                    log('❌ Decrypted data does not match original!', 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+                console.error(error);
+            }
+        }
+        
+        function testFullPipeline() {
+            clearResults();
+            log('<h2>Testing Full Pipeline (Compression + Encryption)</h2>', 'info');
+            
+            const testPayload = {
+                apiKey: "sk-test-123456789",
+                model: "gpt-4",
+                baseUrl: "https://api.openai.com/v1",
+                messages: [
+                    { role: "user", content: "What is 2+2?" },
+                    { role: "assistant", content: "2+2 equals 4." }
+                ]
+            };
+            const password = "TestPassword123";
+            
+            try {
+                log('1. Original payload:', 'info');
+                logData('Payload', testPayload);
+                
+                log('2. Step 1: Compress payload', 'info');
+                const compressed = CompressionUtils.compressPayload(testPayload);
+                log(`Compressed to: ${compressed.length} chars`, 'success');
+                logData('Compressed', compressed);
+                
+                log('3. Step 2: Encrypt compressed data', 'info');
+                // NOTE: CryptoUtils expects an object, but we're passing a string
+                // This might be the issue!
+                log('⚠️ Testing what happens when we encrypt a string vs object...', 'warning');
+                
+                // Test encrypting the compressed string directly
+                const encryptedString = CryptoUtils.encryptData(compressed, password);
+                log(`Encrypted compressed string size: ${encryptedString.length} chars`, 'info');
+                
+                log('4. Step 3: Decrypt', 'info');
+                const decryptedString = CryptoUtils.decryptData(encryptedString, password);
+                log(`Decrypted type: ${typeof decryptedString}`, 'info');
+                logData('Decrypted value', decryptedString);
+                
+                log('5. Step 4: Decompress', 'info');
+                if (typeof decryptedString === 'string') {
+                    const decompressed = CompressionUtils.decompressPayload(decryptedString);
+                    logData('Final decompressed', decompressed);
+                    
+                    const isValid = JSON.stringify(decompressed) === JSON.stringify(testPayload);
+                    if (isValid) {
+                        log('✅ Full pipeline successful!', 'success');
+                    } else {
+                        log('❌ Final data does not match original!', 'error');
+                    }
+                } else {
+                    log('❌ Decrypted data is not a string as expected!', 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+                console.error(error);
+            }
+        }
+        
+        async function testRoundTrip() {
+            clearResults();
+            log('<h2>Testing Complete Round Trip with LinkSharingService</h2>', 'info');
+            
+            const testPayload = {
+                apiKey: "sk-test-123456789",
+                model: "gpt-4",
+                baseUrl: "https://api.openai.com/v1"
+            };
+            const password = "TestPassword123";
+            
+            try {
+                log('1. Creating shareable link...', 'info');
+                const link = await LinkSharingService.createCustomShareableLink(testPayload, password);
+                log(`Generated link: ${link.length} chars`, 'success');
+                logData('Link', link);
+                
+                // Extract the hash part
+                const hashPart = link.split('#gpt=')[1];
+                if (!hashPart) {
+                    log('❌ No #gpt= fragment in link!', 'error');
+                    return;
+                }
+                
+                log('2. Simulating link extraction...', 'info');
+                // Set up the mock location for LinkSharingService
+                LinkSharingService._setTestingObjects({
+                    hash: `#gpt=${hashPart}`,
+                    href: link,
+                    pathname: '/',
+                    search: ''
+                }, null);
+                
+                log('3. Extracting shared data...', 'info');
+                const extracted = LinkSharingService.extractSharedApiKey(password);
+                
+                if (extracted) {
+                    log('✅ Extraction successful!', 'success');
+                    logData('Extracted data', extracted);
+                    
+                    // Check if all fields match
+                    const matches = 
+                        extracted.apiKey === testPayload.apiKey &&
+                        extracted.model === testPayload.model &&
+                        extracted.baseUrl === testPayload.baseUrl;
+                    
+                    if (matches) {
+                        log('✅ All fields match original!', 'success');
+                    } else {
+                        log('❌ Some fields do not match!', 'error');
+                        log(`API Key match: ${extracted.apiKey === testPayload.apiKey}`, 'info');
+                        log(`Model match: ${extracted.model === testPayload.model}`, 'info');
+                        log(`Base URL match: ${extracted.baseUrl === testPayload.baseUrl}`, 'info');
+                    }
+                } else {
+                    log('❌ Extraction failed - returned null!', 'error');
+                }
+                
+                // Reset testing objects
+                LinkSharingService._resetTestingObjects();
+                
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+                log(`Stack: ${error.stack}`, 'error');
+                console.error(error);
+            }
+        }
+        
+        // Add some initial info
+        log('<h2>Ready for Testing</h2>', 'info');
+        log('Click the buttons above to test different parts of the compression pipeline.', 'info');
+        log('This will help identify where the issue is occurring.', 'info');
+    </script>
+</body>
+</html>
