@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Drag and Drop</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-info { background: #f0f0f0; padding: 15px; margin: 20px 0; border-radius: 8px; }
+        .instructions { background: #e8f4f8; padding: 10px; border-left: 4px solid #0ea5e9; }
+    </style>
+</head>
+<body>
+    <h1>Drag and Drop Test Page</h1>
+    
+    <div class="instructions">
+        <strong>Test Instructions:</strong>
+        <ol>
+            <li>Open the hacka.re interface in another tab: <a href="http://localhost:8000" target="_blank">http://localhost:8000</a></li>
+            <li>Click on the "Prompts" button to open the prompts modal</li>
+            <li>Try dragging the test files below onto the prompts modal</li>
+            <li>Verify that files appear in the "Your Custom Prompts" section with appropriate icons</li>
+            <li>Click the trash icon to delete files and verify the confirmation dialog</li>
+        </ol>
+    </div>
+    
+    <div class="test-info">
+        <h3>Test Files Available:</h3>
+        <ul>
+            <li><strong>test-file.py</strong> - Python file with functions</li>
+            <li><strong>test-readme.md</strong> - Markdown file with documentation</li>
+        </ul>
+        <p>You can drag these files from your file explorer to test the drag-and-drop functionality.</p>
+    </div>
+    
+    <div class="test-info">
+        <h3>Expected Features:</h3>
+        <ul>
+            <li>✅ Drag highlight on modal when dragging files</li>
+            <li>✅ File icons based on extension (Python, Markdown, etc.)</li>
+            <li>✅ Files appear with complete filename in prompts list</li>
+            <li>✅ Trash can icon for file deletion</li>
+            <li>✅ Confirmation dialog when deleting files</li>
+            <li>✅ Support for multiple file extensions</li>
+            <li>✅ Files can be selected/deselected like regular prompts</li>
+        </ul>
+    </div>
+    
+    <div class="test-info">
+        <h3>Supported File Extensions:</h3>
+        <p>.md, .txt, .py, .html, .css, .js, .json, .conf, .cfg, .c, .cpp, .h, .hpp, .java, .rs, .go, .sh, .bash, .zsh, .fish, .yml, .yaml, .toml, .ini, .xml, .sql, .php, .rb, .swift, .kt, .ts, .tsx, .jsx, .vue, .svelte, .astro, .env, .gitignore, .dockerfile, .makefile, .cmake</p>
+    </div>
+</body>
+</html>
