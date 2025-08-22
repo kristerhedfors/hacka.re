@@ -582,3 +582,98 @@
     font-weight: 600;
     color: var(--secondary-color);
 }
+
+/* Drag and drop styles */
+#prompts-modal.drag-highlight {
+    position: relative;
+}
+
+#prompts-modal.drag-highlight::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(59, 130, 246, 0.1);
+    border: 2px dashed var(--primary-color);
+    border-radius: 12px;
+    pointer-events: none;
+    z-index: 100;
+}
+
+#prompts-modal.drag-highlight .modal-content {
+    opacity: 0.9;
+}
+
+/* File prompt styles */
+.file-prompt-item {
+    background-color: rgba(59, 130, 246, 0.03);
+    border-left: 3px solid var(--primary-color);
+}
+
+.file-prompt-item:hover {
+    background-color: rgba(59, 130, 246, 0.06);
+}
+
+.file-prompt-item .prompt-item-name {
+    display: flex;
+    align-items: center;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 13px;
+}
+
+.file-prompt-item .file-prompt-delete {
+    transition: all 0.2s ease;
+}
+
+.file-prompt-item .file-prompt-delete:hover {
+    color: var(--danger-color, #dc3545);
+    transform: scale(1.1);
+}
+
+/* Drop zone indicator */
+.prompts-list.drop-ready {
+    min-height: 200px;
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.prompts-list.drop-ready::after {
+    content: "Drop files here to add them as prompts";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--text-color-secondary);
+    font-size: 14px;
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* User prompts header styles */
+.user-prompts-header {
+    display: flex;
+    align-items: center;
+    padding: 8px 0 12px 0;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 12px;
+}
+
+.user-prompts-header h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.drag-drop-hint {
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+}
+
+.drag-drop-hint:hover {
+    opacity: 1;
+}
