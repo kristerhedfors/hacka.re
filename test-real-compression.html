@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Compression Test</title>
+    <style>
+        body { 
+            font-family: monospace; 
+            padding: 20px; 
+            background: #1a1a1a;
+            color: #0f0;
+        }
+        .test {
+            margin: 15px 0;
+            padding: 15px;
+            border: 1px solid #0f0;
+            background: #0a0a0a;
+        }
+        .result { color: #ff0; font-weight: bold; }
+        .success { color: #0f0; }
+        .data { 
+            color: #888; 
+            font-size: 0.9em;
+            word-break: break-all;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🗜️ Real Deflate Compression Test</h1>
+    <div id="output"></div>
+
+    <script src="lib/tweetnacl/nacl-fast.min.js"></script>
+    <script src="lib/tweetnacl/nacl-util.min.js"></script>
+    <script src="js/utils/crypto-utils.js"></script>
+    <script src="js/utils/compression-utils-simple.js"></script>
+    
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(message, data = null) {
+            const div = document.createElement('div');
+            div.className = 'test';
+            div.innerHTML = message;
+            if (data) {
+                const dataDiv = document.createElement('div');
+                dataDiv.className = 'data';
+                dataDiv.textContent = typeof data === 'object' ? JSON.stringify(data) : data;
+                div.appendChild(dataDiv);
+            }
+            output.appendChild(div);
+        }
+        
+        async function testRealCompression() {
+            log("<h2>Testing Browser's Built-in Deflate Compression</h2>");
+            
+            // Check if compression is available
+            if (typeof CompressionStream === 'undefined') {
+                log("❌ CompressionStream not available in this browser", "Browser too old or not supporting Compression Streams API");
+                return;
+            }
+            
+            const tests = [
+                { 
+                    name: "Repetitive Text (100 A's)", 
+                    payload: { welcomeMessage: "A".repeat(100) }
+                },
+                { 
+                    name: "Repetitive Text (500 A's)", 
+                    payload: { welcomeMessage: "A".repeat(500) }
+                },
+                { 
+                    name: "JSON with Repetition", 
+                    payload: { 
+                        messages: Array(10).fill({ role: "user", content: "Hello world!" })
+                    }
+                },
+                { 
+                    name: "Complex JSON", 
+                    payload: {
+                        apiKey: "sk-test-key-123456789",
+                        model: "gpt-4-turbo-preview",
+                        messages: [
+                            { role: "user", content: "What is artificial intelligence?" },
+                            { role: "assistant", content: "Artificial Intelligence (AI) is..." }
+                        ],
+                        functions: {
+                            testFunc: { code: "function test() { return 'hello'; }", enabled: true }
+                        }
+                    }
+                }
+            ];
+            
+            for (const test of tests) {
+                try {
+                    const originalJson = JSON.stringify(test.payload);
+                    const originalSize = originalJson.length;
+                    
+                    log(`<h3>${test.name}</h3>Original: ${originalSize} chars`);
+                    
+                    // Test our real compression
+                    const compressed = await CompressionUtils.compressPayload(test.payload);
+                    const compressedSize = compressed.length;
+                    const reduction = Math.round((1 - compressedSize / originalSize) * 100);
+                    
+                    log(`<span class="result">Compressed: ${compressedSize} chars (${reduction}% reduction)</span>`, 
+                         compressed.substring(0, 100) + '...');
+                    
+                    // Test decompression
+                    const decompressed = await CompressionUtils.decompressPayload(compressed);
+                    const isValid = JSON.stringify(decompressed) === originalJson;
+                    
+                    if (isValid) {
+                        log('<span class="success">✅ Round trip successful!</span>');
+                    } else {
+                        log("❌ DECOMPRESSION FAILED! Data mismatch!");
+                        log("Expected vs Got:", { expected: test.payload, got: decompressed });
+                    }
+                    
+                } catch (error) {
+                    log(`❌ Error: ${error.message}`, error.stack);
+                }
+            }
+            
+            log("<h2>Analysis</h2>");
+            log("With real deflate compression, repetitive text should compress by 80-95%!");
+            log("JSON with repeated structures should compress by 50-70%.");
+        }
+        
+        // Run the test
+        testRealCompression();
+    </script>
+</body>
+</html>

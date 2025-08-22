@@ -51,7 +51,7 @@ window.AIHackareComponent = (function() {
     /**
      * Initialize the application
      */
-    AIHackare.prototype.init = function() {
+    AIHackare.prototype.init = async function() {
         // Prevent double initialization
         if (this._initialized) {
             console.warn('AIHackare: Already initialized, skipping');
@@ -64,7 +64,7 @@ window.AIHackareComponent = (function() {
         this.shareManager.init();
         
         // Initialize settings manager with access to share manager's session key and chat manager's setMessages
-        this.settingsManager.init(
+        await this.settingsManager.init(
             this.uiManager.updateModelInfoDisplay.bind(this.uiManager),
             this.uiManager.showApiKeyModal.bind(this.uiManager),
             this.chatManager.addSystemMessage.bind(this.chatManager),

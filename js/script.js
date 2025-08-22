@@ -3,10 +3,10 @@
  * A simple chat interface for OpenAI-compatible APIs
  */
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     // Initialize the chat application
     const aiHackare = new AIHackare();
-    aiHackare.init();
+    await aiHackare.init();
 });
 
 class AIHackare {

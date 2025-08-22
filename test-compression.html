@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compression Test</title>
+    <style>
+        body { 
+            font-family: monospace; 
+            padding: 20px; 
+            max-width: 1200px; 
+            margin: 0 auto;
+            background: #1a1a1a;
+            color: #0f0;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #0f0;
+            background: #000;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            background: #111;
+        }
+        .success { color: #0f0; }
+        .reduction { color: #ff0; }
+        .error { color: #f00; }
+        h2 { color: #0ff; }
+        .url-display {
+            word-break: break-all;
+            font-size: 0.9em;
+            color: #888;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🗜️ Compression Layer Test</h1>
+    
+    <div id="test-results"></div>
+
+    <script src="js/lib/nacl.min.js"></script>
+    <script src="js/utils/crypto-utils.js"></script>
+    <script src="js/utils/compression-utils.js"></script>
+    <script src="js/services/link-sharing-service.js"></script>
+    
+    <script>
+        const resultsDiv = document.getElementById('test-results');
+        
+        // Test payloads of different sizes
+        const testCases = [
+            {
+                name: "Small: API Key Only",
+                payload: {
+                    apiKey: "sk-proj-abc123def456ghi789jkl012mno345pqr678stu901vwx234"
+                }
+            },
+            {
+                name: "Medium: API Key + Model + Prompt",
+                payload: {
+                    apiKey: "sk-proj-abc123def456ghi789jkl012mno345pqr678stu901vwx234",
+                    model: "gpt-4-turbo-preview",
+                    systemPrompt: "You are a helpful assistant. Be concise and accurate in your responses. Focus on providing practical solutions.",
+                    baseUrl: "https://api.openai.com/v1"
+                }
+            },
+            {
+                name: "Large: Full Conversation",
+                payload: {
+                    apiKey: "sk-proj-abc123def456ghi789jkl012mno345pqr678stu901vwx234",
+                    model: "gpt-4-turbo-preview",
+                    systemPrompt: "You are a helpful assistant.",
+                    messages: [
+                        { role: "user", content: "What is the capital of France?" },
+                        { role: "assistant", content: "The capital of France is Paris." },
+                        { role: "user", content: "Tell me more about Paris." },
+                        { role: "assistant", content: "Paris is the capital and most populous city of France. Located in the north-central part of the country, it has an estimated population of over 2 million people in the city proper and over 12 million in the greater metropolitan area. Paris is known for its iconic landmarks like the Eiffel Tower, Notre-Dame Cathedral, and the Louvre Museum." }
+                    ]
+                }
+            },
+            {
+                name: "Extra Large: Functions + Prompts",
+                payload: {
+                    apiKey: "sk-proj-abc123def456ghi789jkl012mno345pqr678stu901vwx234",
+                    functions: {
+                        calculateArea: {
+                            code: `function calculateArea(length, width) {
+                                // Calculate the area of a rectangle
+                                if (typeof length !== 'number' || typeof width !== 'number') {
+                                    throw new Error('Both length and width must be numbers');
+                                }
+                                return length * width;
+                            }`,
+                            enabled: true
+                        },
+                        fetchWeather: {
+                            code: `async function fetchWeather(city) {
+                                // Fetch weather data for a given city
+                                const apiKey = 'your-api-key';
+                                const url = \`https://api.weather.com/v1/weather?city=\${city}&key=\${apiKey}\`;
+                                const response = await fetch(url);
+                                const data = await response.json();
+                                return {
+                                    temperature: data.temp,
+                                    description: data.description,
+                                    humidity: data.humidity
+                                };
+                            }`,
+                            enabled: true
+                        }
+                    },
+                    prompts: [
+                        { id: "1", title: "Code Review", prompt: "Review this code for bugs and improvements", selected: true },
+                        { id: "2", title: "Documentation", prompt: "Generate documentation for this function", selected: false }
+                    ],
+                    enabledFunctions: ["calculateArea", "fetchWeather"],
+                    selectedPromptIds: ["1"]
+                }
+            }
+        ];
+        
+        async function runTests() {
+            const password = "TestPassword123";
+            
+            for (const testCase of testCases) {
+                const section = document.createElement('div');
+                section.className = 'test-section';
+                
+                const title = document.createElement('h2');
+                title.textContent = testCase.name;
+                section.appendChild(title);
+                
+                try {
+                    // Original JSON size
+                    const originalJson = JSON.stringify(testCase.payload);
+                    const originalSize = originalJson.length;
+                    
+                    // Test compression alone
+                    const compressed = CompressionUtils.compressPayload(testCase.payload);
+                    const compressedSize = compressed.length;
+                    const compressionReduction = Math.round((1 - compressedSize / originalSize) * 100);
+                    
+                    // Test decompression
+                    const decompressed = CompressionUtils.decompressPayload(compressed);
+                    const isValid = JSON.stringify(decompressed) === originalJson;
+                    
+                    // Create shareable link (with compression + encryption)
+                    const link = await LinkSharingService.createCustomShareableLink(testCase.payload, password);
+                    const linkSize = link.length;
+                    
+                    // Calculate old method size (no compression)
+                    const encryptedOnly = CryptoUtils.encryptData(testCase.payload, password);
+                    const oldLink = `http://localhost:8000/#gpt=${encryptedOnly}`;
+                    const oldLinkSize = oldLink.length;
+                    
+                    const totalReduction = Math.round((1 - linkSize / oldLinkSize) * 100);
+                    
+                    // Display results
+                    const result = document.createElement('div');
+                    result.className = 'result';
+                    result.innerHTML = `
+                        <div class="success">✅ Compression/Decompression: ${isValid ? 'PASSED' : 'FAILED'}</div>
+                        <div>Original JSON: ${originalSize} chars</div>
+                        <div>Compressed: ${compressedSize} chars</div>
+                        <div class="reduction">Compression alone: ${compressionReduction}% reduction</div>
+                        <div>Old link (no compression): ${oldLinkSize} chars</div>
+                        <div>New link (with compression): ${linkSize} chars</div>
+                        <div class="reduction">Total link reduction: ${totalReduction}% smaller</div>
+                        <div class="url-display">Sample URL: ${link.substring(0, 100)}...</div>
+                    `;
+                    section.appendChild(result);
+                    
+                    // Test extraction
+                    const extracted = LinkSharingService.extractSharedApiKey(password);
+                    if (extracted) {
+                        const extractResult = document.createElement('div');
+                        extractResult.className = 'success';
+                        extractResult.textContent = '✅ Link extraction: PASSED';
+                        section.appendChild(extractResult);
+                    }
+                    
+                } catch (error) {
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'error';
+                    errorDiv.textContent = `❌ Error: ${error.message}`;
+                    section.appendChild(errorDiv);
+                }
+                
+                resultsDiv.appendChild(section);
+            }
+        }
+        
+        // Run tests on page load
+        runTests();
+    </script>
+</body>
+</html>
