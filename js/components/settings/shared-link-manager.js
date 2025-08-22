@@ -202,7 +202,8 @@ window.SharedLinkManager = (function() {
             
             try {
                 const sharedData = await LinkSharingService.extractSharedApiKey(sessionKey);
-                if (!sharedData || !sharedData.apiKey) {
+                // Allow shared data with MCP connections even without API key
+                if (!sharedData || (!sharedData.apiKey && !sharedData.mcpConnections)) {
                     return null;
                 }
                 
