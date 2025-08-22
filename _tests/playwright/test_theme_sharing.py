@@ -5,8 +5,8 @@ import time
 def test_theme_shared_link_application(page: Page):
     """Test that theme is applied when loading a shared link with theme included"""
     
-    # Shared link with dark theme
-    shared_link = "file:///Users/user/dev/hacka.re/index.html#gpt=JcUUGDZkHiWiWUC_upM_k6lXOokWtMIe4reMVPgsSYqKIpnyoGeFytQYxIgV-sPWNBVm4Fa6P8WMYaT2yk6ZjIRONNKNoMYqCxPBCeLfQIKcNFqle3QcfPfuAEHlSmUvmQovoPRNf8UF4ao-88pEV5FYSwEBVc4b3GPF_uV244fA3qbNgvEelCSy4vQ9MehjDWfItA6FoFC5huvoUlrXIN7xmxo1kZrwUlsgmfyWRcYfeBaoewvK9wKv7KgD1Zv4OrWsceECRli0Lj7Lo7zbmcxKHKZTzN7w9Qq-KhqPxER1fnKK0mbk0hGBl6Mey7r1D9ZaL5fOZDhBROAu-1F1NXmqf22w28Yku55rWC1elx9pX80gWIsv9MCd_FdctUtzyL8xGVcss_ed-75Isl3ip4k8H5r3qiHNd2G465LfI1lnDAGXID6hCrevPoC3"
+    # Shared link with dark theme (new format)
+    shared_link = "file:///Users/user/dev/hacka.re/index.html#gpt=f-PxXzUQNN3B20mEQwBo98AsPcubktRIltFvOlnveEAHzvANDihLmqLrrD9XCi1lj8QiXplzleLo7Kc5OYa1DwQmbzlLc8hIDStSdfT2yqG9wQQWrtFpbpjqvsnWAQzrjbB3a3C4Qzntq0QltfJt5njkLfq43_jLK9CeyAxW73S2c_d1W_6jqeW1ww6JjEK5CJXftSuEGAI8-mv-QFvkC_GpNJLgSh4vF38Hz1DKTUmXL0-LBntvADcUCkRsfh3pP-cxbaHjpxRJZFMflcitzlZaIFHstMieTBYVzYSOtf3H7pxfnAQOq-y62nFlojUIQh-x_1TxYYePw4EFNg6x_eHyc8weP9Jmm6Hadk9WjTQluX9KOB87_VdA4Y8Gl659Lln9nkdplxWqLPMD1fl1Sl4jRGzbuUw8S5fTwSrtqlRDoVlGNRvvOvTQWsuOECKd0JsmgT6Np9QvNY_4xen27wf5rUBI3eNKmPUjZOrDTF743tRT8SURMrLFaBg_F_I0Fj-c1wRj8kW-gmTulA19l95i3Ms"
     
     # Set up console logging to capture theme application
     console_messages = []
