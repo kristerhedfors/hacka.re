@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Isolated Compression Test</title>
+    <style>
+        body { 
+            font-family: monospace; 
+            padding: 20px; 
+            background: #1a1a1a;
+            color: #0f0;
+        }
+        .step {
+            margin: 15px 0;
+            padding: 10px;
+            border-left: 3px solid #0f0;
+            background: #0a0a0a;
+        }
+        .error { color: #f00; }
+        .success { color: #0f0; }
+        .data { 
+            color: #888; 
+            font-size: 0.9em;
+            word-break: break-all;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Isolated Compression Test</h1>
+    <div id="output"></div>
+
+    <script src="lib/tweetnacl/nacl-fast.min.js"></script>
+    <script src="lib/tweetnacl/nacl-util.min.js"></script>
+    <script src="js/utils/crypto-utils.js"></script>
+    <script src="js/utils/compression-utils-simple.js"></script>
+    
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(step, message, data = null) {
+            const div = document.createElement('div');
+            div.className = 'step';
+            div.innerHTML = `<strong>Step ${step}:</strong> ${message}`;
+            if (data) {
+                const dataDiv = document.createElement('div');
+                dataDiv.className = 'data';
+                dataDiv.textContent = typeof data === 'object' ? JSON.stringify(data, null, 2) : data;
+                div.appendChild(dataDiv);
+            }
+            output.appendChild(div);
+        }
+        
+        function runTest() {
+            try {
+                // Step 1: Create test payload
+                const payload = {
+                    apiKey: "sk-test-123",
+                    model: "gpt-4",
+                    messages: [
+                        { role: "user", content: "Hello" },
+                        { role: "assistant", content: "Hi!" }
+                    ]
+                };
+                log(1, "Original payload", payload);
+                
+                // Step 2: Compress
+                const compressed = CompressionUtils.compressPayload(payload);
+                log(2, `Compressed to ${compressed.length} chars`, compressed.substring(0, 50) + "...");
+                
+                // Step 3: Wrap for encryption
+                const wrapped = {
+                    _compressed: true,
+                    data: compressed
+                };
+                log(3, "Wrapped for encryption", wrapped);
+                
+                // Step 4: Encrypt
+                const password = "TestPassword123";
+                const encrypted = CryptoUtils.encryptData(wrapped, password);
+                log(4, `Encrypted to ${encrypted.length} chars`, encrypted.substring(0, 50) + "...");
+                
+                // Step 5: Create URL
+                const url = `file:///Users/user/dev/hacka.re/test.html#gpt=${encrypted}`;
+                log(5, "Created URL", url.substring(0, 100) + "...");
+                
+                // Step 6: Decrypt
+                const decrypted = CryptoUtils.decryptData(encrypted, password);
+                log(6, "Decrypted", decrypted);
+                
+                // Step 7: Check for compression marker
+                if (decrypted._compressed && decrypted.data) {
+                    log(7, "Found compression marker", "Will decompress...");
+                    
+                    // Step 8: Decompress
+                    const decompressed = CompressionUtils.decompressPayload(decrypted.data);
+                    log(8, "Decompressed", decompressed);
+                    
+                    // Step 9: Validate
+                    const isValid = JSON.stringify(decompressed) === JSON.stringify(payload);
+                    if (isValid) {
+                        log(9, '<span class="success">✅ SUCCESS! Round trip complete!</span>');
+                    } else {
+                        log(9, '<span class="error">❌ FAILED! Data mismatch!</span>');
+                    }
+                } else {
+                    log(7, '<span class="error">❌ No compression marker found!</span>');
+                }
+                
+            } catch (error) {
+                const div = document.createElement('div');
+                div.className = 'step error';
+                div.innerHTML = `<strong>ERROR:</strong> ${error.message}<br><pre>${error.stack}</pre>`;
+                output.appendChild(div);
+            }
+        }
+        
+        // Run test immediately
+        runTest();
+    </script>
+</body>
+</html>

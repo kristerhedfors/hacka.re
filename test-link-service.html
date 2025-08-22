@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Link Service Test</title>
+    <style>
+        body { 
+            font-family: monospace; 
+            padding: 20px; 
+            background: #1a1a1a;
+            color: #0f0;
+        }
+        .step {
+            margin: 15px 0;
+            padding: 10px;
+            border-left: 3px solid #0f0;
+            background: #0a0a0a;
+        }
+        .error { color: #f00; }
+        .success { color: #0f0; }
+        .warning { color: #ff0; }
+        .data { 
+            color: #888; 
+            font-size: 0.9em;
+            word-break: break-all;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Link Sharing Service Test</h1>
+    <div id="output"></div>
+
+    <script src="lib/tweetnacl/nacl-fast.min.js"></script>
+    <script src="lib/tweetnacl/nacl-util.min.js"></script>
+    <script src="js/utils/crypto-utils.js"></script>
+    <script src="js/utils/compression-utils-simple.js"></script>
+    <script src="js/services/link-sharing-service.js"></script>
+    
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(message, type = '', data = null) {
+            const div = document.createElement('div');
+            div.className = 'step';
+            if (type) {
+                div.innerHTML = `<span class="${type}">${message}</span>`;
+            } else {
+                div.innerHTML = message;
+            }
+            if (data) {
+                const dataDiv = document.createElement('div');
+                dataDiv.className = 'data';
+                const displayData = typeof data === 'object' ? JSON.stringify(data, null, 2) : data;
+                dataDiv.textContent = displayData.length > 500 ? displayData.substring(0, 500) + '...' : displayData;
+                div.appendChild(dataDiv);
+            }
+            output.appendChild(div);
+        }
+        
+        async function runTest() {
+            try {
+                log('=== Starting Link Sharing Service Test ===', 'success');
+                
+                // Test 1: Simple payload
+                log('Test 1: Simple API key sharing');
+                const simplePayload = {
+                    apiKey: "sk-test-simple-key-123"
+                };
+                const password = "TestPassword123";
+                
+                log('Creating link with simple payload...');
+                const simpleLink = await LinkSharingService.createCustomShareableLink(simplePayload, password);
+                log(`Created link: ${simpleLink.length} chars`, '', simpleLink);
+                
+                // Extract hash
+                const hashPart = simpleLink.split('#gpt=')[1];
+                if (!hashPart) {
+                    log('ERROR: No #gpt= fragment found!', 'error');
+                    return;
+                }
+                log(`Hash part: ${hashPart.length} chars`);
+                
+                // Set up mock location
+                log('Setting up mock location for extraction...');
+                LinkSharingService._setTestingObjects({
+                    hash: `#gpt=${hashPart}`,
+                    href: simpleLink,
+                    pathname: '/',
+                    search: ''
+                }, {
+                    replaceState: function() {}
+                });
+                
+                // Try extraction
+                log('Attempting extraction...');
+                const extracted = LinkSharingService.extractSharedApiKey(password);
+                
+                if (extracted) {
+                    log('✅ Extraction successful!', 'success');
+                    log('Extracted data:', '', extracted);
+                    
+                    if (extracted.apiKey === simplePayload.apiKey) {
+                        log('✅ API key matches!', 'success');
+                    } else {
+                        log('❌ API key mismatch!', 'error');
+                        log(`Expected: ${simplePayload.apiKey}`, 'warning');
+                        log(`Got: ${extracted.apiKey}`, 'warning');
+                    }
+                } else {
+                    log('❌ Extraction returned null!', 'error');
+                }
+                
+                // Test 2: Complex payload
+                log('\n=== Test 2: Complex payload with compression benefit ===', 'success');
+                const complexPayload = {
+                    apiKey: "sk-proj-abc123def456ghi789jkl012mno345pqr678stu901vwx234yz567",
+                    model: "gpt-4-turbo-preview",
+                    baseUrl: "https://api.openai.com/v1",
+                    messages: [
+                        { role: "user", content: "What is the meaning of life?" },
+                        { role: "assistant", content: "The meaning of life is a profound philosophical question that has been contemplated throughout human history. Different perspectives offer various answers." },
+                        { role: "user", content: "Can you elaborate?" },
+                        { role: "assistant", content: "Certainly! From a philosophical standpoint, existentialists like Sartre suggest we create our own meaning. Religious traditions often point to serving a higher purpose or deity. Scientists might focus on evolution and survival. Ultimately, the meaning of life may be deeply personal and unique to each individual." }
+                    ]
+                };
+                
+                log('Creating link with complex payload...');
+                const complexLink = await LinkSharingService.createCustomShareableLink(complexPayload, password);
+                log(`Created link: ${complexLink.length} chars`);
+                
+                // Calculate compression ratio
+                const uncompressedSize = JSON.stringify(complexPayload).length;
+                const compressedLinkSize = complexLink.length;
+                const ratio = Math.round((1 - compressedLinkSize / (uncompressedSize * 1.5)) * 100); // 1.5x for encryption overhead estimate
+                log(`Compression estimate: ~${ratio}% reduction`, 'warning');
+                
+                // Reset
+                LinkSharingService._resetTestingObjects();
+                log('\n✅ All tests completed!', 'success');
+                
+            } catch (error) {
+                log(`❌ ERROR: ${error.message}`, 'error');
+                log('Stack trace:', 'error', error.stack);
+            }
+        }
+        
+        // Run test immediately
+        runTest();
+    </script>
+</body>
+</html>

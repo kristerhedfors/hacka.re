@@ -190,7 +190,7 @@ window.SharedLinkManager = (function() {
          * @param {Function} setMessages - Function to set chat messages
          * @returns {Promise|null} Promise if successful, null if failed
          */
-        function trySessionKeyDecryption(addSystemMessage, setMessages) {
+        async function trySessionKeyDecryption(addSystemMessage, setMessages) {
             if (!window.aiHackare || !window.aiHackare.shareManager) {
                 return null;
             }
@@ -201,7 +201,7 @@ window.SharedLinkManager = (function() {
             }
             
             try {
-                const sharedData = LinkSharingService.extractSharedApiKey(sessionKey);
+                const sharedData = await LinkSharingService.extractSharedApiKey(sessionKey);
                 if (!sharedData || !sharedData.apiKey) {
                     return null;
                 }
@@ -247,9 +247,9 @@ window.SharedLinkManager = (function() {
          * @param {Function} setMessages - Function to set chat messages
          * @returns {Promise} Promise that resolves with success status and pending model
          */
-        function promptForDecryptionPassword(addSystemMessage, setMessages) {
+        async function promptForDecryptionPassword(addSystemMessage, setMessages) {
             // First try to use the current session key if available
-            const sessionResult = trySessionKeyDecryption(addSystemMessage, setMessages);
+            const sessionResult = await trySessionKeyDecryption(addSystemMessage, setMessages);
             if (sessionResult) {
                 return sessionResult;
             }
@@ -258,9 +258,9 @@ window.SharedLinkManager = (function() {
             const modalElements = SharedLinkModalManager.createPasswordModal();
             
             return new Promise((resolve) => {
-                const handleSubmit = (password, { input, paragraph }) => {
+                const handleSubmit = async (password, { input, paragraph }) => {
                     try {
-                        const sharedData = LinkSharingService.extractSharedApiKey(password);
+                        const sharedData = await LinkSharingService.extractSharedApiKey(password);
                         
                         if (sharedData && sharedData.apiKey) {
                             // FIRST: Apply session key immediately when password is validated
@@ -339,6 +339,7 @@ window.SharedLinkManager = (function() {
         return {
             hasSharedLink,
             promptForDecryptionPassword,
+            trySessionKeyDecryption,
             getPendingSharedModel,
             clearPendingSharedModel,
             maskApiKey

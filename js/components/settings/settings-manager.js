@@ -36,7 +36,7 @@ window.SettingsManager = (function() {
          * @param {Function} sessionKeyGetter - Function to get the session key
          * @param {Function} messagesUpdater - Function to update chat messages
          */
-        function init(updateModelInfoDisplay, showApiKeyModal, addSystemMessage, sessionKeyGetter, messagesUpdater) {
+        async function init(updateModelInfoDisplay, showApiKeyModal, addSystemMessage, sessionKeyGetter, messagesUpdater) {
             // Update state with callback functions
             SettingsStateManager.updateStateCallbacks(state, sessionKeyGetter, messagesUpdater, updateModelInfoDisplay);
             
@@ -44,7 +44,7 @@ window.SettingsManager = (function() {
             SettingsStateManager.initializeComponents(componentManagers, elements);
             
             // Process shared link initialization or normal initialization
-            SettingsInitialization.processSharedLinkInitialization(
+            await SettingsInitialization.processSharedLinkInitialization(
                 elements, 
                 componentManagers, 
                 state, 

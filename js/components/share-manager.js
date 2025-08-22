@@ -17,7 +17,7 @@ window.ShareManager = (function() {
         
         // Create a consistent session key storage key based on the shared link hash
         function getSessionKeyStorageKey() {
-            if (LinkSharingService && LinkSharingService.hasSharedApiKey && LinkSharingService.hasSharedApiKey()) {
+            if (window.LinkSharingService && window.LinkSharingService.hasSharedApiKey && window.LinkSharingService.hasSharedApiKey()) {
                 const hash = window.location.hash;
                 let encryptedData = null;
                 if (hash.includes('#gpt=')) {

@@ -155,7 +155,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Initialize the chat application
     const aiHackare = new AIHackareComponent.AIHackare();
-    aiHackare.init();
+    await aiHackare.init();
     
     // Initialize SystemPromptCoordinator if available
     if (window.SystemPromptCoordinator) {
