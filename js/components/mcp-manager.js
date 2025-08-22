@@ -130,20 +130,20 @@ window.MCPManager = (function() {
      * Setup event handlers and connections between components
      */
     function setupEventHandlers() {
-        // When modal is shown, refresh state
-        const originalShowModal = uiManager.showModal;
-        uiManager.showModal = function() {
-            originalShowModal.call(uiManager);
-            refreshState();
-        };
+        // Don't automatically refresh state when modal opens - wait for user action
+        // const originalShowModal = uiManager.showModal;
+        // uiManager.showModal = function() {
+        //     originalShowModal.call(uiManager);
+        //     refreshState();
+        // };
     }
     
     /**
      * Check initial state on load
      */
     async function checkInitialState() {
-        // Check proxy connection
-        await proxyManager.checkConnection();
+        // Don't check proxy connection automatically - wait for user action
+        // await proxyManager.checkConnection();
         
         // Load saved connections
         await serverManager.loadSavedConnections();
