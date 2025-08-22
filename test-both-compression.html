@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compression Comparison Test</title>
+    <style>
+        body { 
+            font-family: monospace; 
+            padding: 20px; 
+            background: #1a1a1a;
+            color: #0f0;
+        }
+        .test {
+            margin: 15px 0;
+            padding: 15px;
+            border: 1px solid #0f0;
+            background: #0a0a0a;
+        }
+        .error { color: #f00; }
+        .success { color: #0f0; }
+        .warning { color: #ff0; }
+        .data { 
+            color: #888; 
+            font-size: 0.9em;
+            margin-top: 5px;
+            max-height: 100px;
+            overflow-y: auto;
+            word-break: break-all;
+        }
+        h2 { color: #0ff; }
+    </style>
+</head>
+<body>
+    <h1>Compression Methods Comparison</h1>
+    <div id="output"></div>
+
+    <script src="lib/tweetnacl/nacl-fast.min.js"></script>
+    <script src="lib/tweetnacl/nacl-util.min.js"></script>
+    <script src="js/utils/crypto-utils.js"></script>
+    <!-- Test the simple version -->
+    <script src="js/utils/compression-utils-simple.js"></script>
+    
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(title, message, type = '', data = null) {
+            const div = document.createElement('div');
+            div.className = 'test';
+            div.innerHTML = `<h2>${title}</h2><div class="${type}">${message}</div>`;
+            if (data) {
+                const dataDiv = document.createElement('div');
+                dataDiv.className = 'data';
+                dataDiv.textContent = typeof data === 'object' ? JSON.stringify(data, null, 2) : data;
+                div.appendChild(dataDiv);
+            }
+            output.appendChild(div);
+        }
+        
+        function runTests() {
+            const testPayloads = [
+                {
+                    name: "Small: API Key",
+                    payload: { apiKey: "sk-test-123" }
+                },
+                {
+                    name: "Medium: API + Messages", 
+                    payload: {
+                        apiKey: "sk-test-123",
+                        model: "gpt-4",
+                        messages: [
+                            { role: "user", content: "Hello" },
+                            { role: "assistant", content: "Hi there! How can I help you?" }
+                        ]
+                    }
+                },
+                {
+                    name: "Large: Full Configuration",
+                    payload: {
+                        apiKey: "sk-proj-abc123def456ghi789jkl012mno345",
+                        model: "gpt-4-turbo-preview",
+                        baseUrl: "https://api.openai.com/v1",
+                        messages: [
+                            { role: "user", content: "What is artificial intelligence?" },
+                            { role: "assistant", content: "Artificial Intelligence (AI) refers to the simulation of human intelligence in machines that are programmed to think and learn like humans. It encompasses various techniques including machine learning, natural language processing, computer vision, and robotics." },
+                            { role: "user", content: "How does machine learning work?" },
+                            { role: "assistant", content: "Machine learning works by training algorithms on large datasets to recognize patterns and make predictions. The system learns from examples without being explicitly programmed for each specific task." }
+                        ],
+                        prompts: [
+                            { id: "1", title: "Helper", prompt: "You are a helpful assistant", selected: true }
+                        ],
+                        functions: {
+                            testFunc: { code: "function test() { return 'hello'; }", enabled: true }
+                        }
+                    }
+                }
+            ];
+            
+            testPayloads.forEach(testCase => {
+                const originalJson = JSON.stringify(testCase.payload);
+                const originalSize = originalJson.length;
+                
+                log(`${testCase.name} Test`, `Original size: ${originalSize} chars`);
+                
+                try {
+                    // Test simple compression
+                    const compressed = CompressionUtils.compressPayload(testCase.payload);
+                    const compressedSize = compressed.length;
+                    const reduction = Math.round((1 - compressedSize / originalSize) * 100);
+                    
+                    log("Simple Compression", `✅ ${compressedSize} chars (${reduction}% reduction)`, 'success', compressed.substring(0, 100) + '...');
+                    
+                    // Test decompression
+                    const decompressed = CompressionUtils.decompressPayload(compressed);
+                    const isValid = JSON.stringify(decompressed) === originalJson;
+                    
+                    if (isValid) {
+                        log("Round Trip", "✅ SUCCESS - Data matches perfectly!", 'success');
+                    } else {
+                        log("Round Trip", "❌ FAILED - Data mismatch!", 'error');
+                        log("Expected vs Got", "", 'error', {
+                            expected: testCase.payload,
+                            got: decompressed
+                        });
+                    }
+                    
+                } catch (error) {
+                    log("Error", `❌ ${error.message}`, 'error', error.stack);
+                }
+                
+                // Add separator
+                const sep = document.createElement('hr');
+                sep.style.border = '1px solid #0f0';
+                sep.style.margin = '20px 0';
+                output.appendChild(sep);
+            });
+        }
+        
+        // Run tests immediately
+        runTests();
+    </script>
+</body>
+</html>

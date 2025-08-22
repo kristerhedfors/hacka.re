@@ -8,8 +8,6 @@ window.LinkSharingService = (function() {
     let _location = window.location;
     let _history = window.history;
     
-    // Cache for extracted shared data to avoid repeated decryption
-    let _cachedSharedData = null;
     
     /**
      * Set custom location and history objects for testing
@@ -65,7 +63,7 @@ window.LinkSharingService = (function() {
      * @param {boolean} options.includeChatData - Whether to include chat data in the link
      * @returns {string} Shareable URL with #gpt= fragment
      */
-    function createCustomShareableLink(payload, password, options = {}) {
+    async function createCustomShareableLink(payload, password, options = {}) {
         let finalPayload;
         
         // If no payload provided, collect current configuration
@@ -197,11 +195,21 @@ window.LinkSharingService = (function() {
         // Debug logging
         if (window.DebugService && window.DebugService.debugLog) {
             const payloadKeys = Object.keys(finalPayload);
-            window.DebugService.debugLog('crypto', `🔐 Encrypting custom shareable link payload with ${payloadKeys.length} components: ${payloadKeys.join(', ')}`);
+            window.DebugService.debugLog('crypto', `🔐 Compressing and encrypting custom shareable link payload with ${payloadKeys.length} components: ${payloadKeys.join(', ')}`);
         }
         
-        // Encrypt the payload
-        const encryptedData = CryptoUtils.encryptData(finalPayload, password);
+        // Compress the payload first (now async)
+        const compressedPayload = await CompressionUtils.compressPayload(finalPayload);
+        
+        // Wrap compressed string in an object for CryptoUtils (it expects an object)
+        // Use a marker to identify compressed data
+        const wrappedPayload = {
+            _compressed: true,
+            data: compressedPayload
+        };
+        
+        // Encrypt the wrapped compressed payload
+        const encryptedData = CryptoUtils.encryptData(wrappedPayload, password);
         
         // Create URL with hash fragment
         const baseUrl = _location.href.split('#')[0];
@@ -271,13 +279,7 @@ window.LinkSharingService = (function() {
      * @param {string} password - The password to use for decryption
      * @returns {Object} Object containing the decrypted data (apiKey, systemPrompt, messages, prompts, selectedPromptIds, etc.)
      */
-    function extractSharedApiKey(password) {
-        // Return cached data if available and password matches
-        if (_cachedSharedData && _cachedSharedData._password === password) {
-            console.log('Returning cached shared data');
-            return _cachedSharedData;
-        }
-        
+    async function extractSharedApiKey(password) {
         try {
             // Get the hash fragment
             const hash = _location.hash;
@@ -299,14 +301,30 @@ window.LinkSharingService = (function() {
                 
                 // Debug logging
                 if (window.DebugService && window.DebugService.debugLog) {
-                    window.DebugService.debugLog('crypto', `🔓 Decrypting shared link data from URL hash fragment`);
+                    window.DebugService.debugLog('crypto', `🔓 Decrypting and decompressing shared link data from URL hash fragment`);
                 }
                 
                 // Decrypt the data
-                const data = CryptoUtils.decryptData(encryptedData, password);
+                const decryptedData = CryptoUtils.decryptData(encryptedData, password);
                 
-                if (!data) {
+                if (!decryptedData) {
                     console.error('Decryption failed or returned null');
+                    return null;
+                }
+                
+                // Check if data is compressed (has our marker)
+                let data;
+                if (decryptedData._compressed === true && decryptedData.data) {
+                    // Decompress the data (now async)
+                    try {
+                        data = await CompressionUtils.decompressPayload(decryptedData.data);
+                    } catch (decompressError) {
+                        console.error('Decompression failed:', decompressError);
+                        return null;
+                    }
+                } else {
+                    // This shouldn't happen with new links, but handle it gracefully
+                    console.error('Unexpected data format - missing compression marker');
                     return null;
                 }
                 
@@ -383,17 +401,13 @@ window.LinkSharingService = (function() {
                     console.log('Extracted theme from shared link:', data.theme);
                 }
                 
-                // Cache the result with the password for future access
-                result._password = password; // Store password for cache validation
-                _cachedSharedData = result;
-                console.log('Cached shared data for future access');
-                
                 return result;
             }
             
             return null;
         } catch (error) {
             console.error('Error extracting shared data:', error);
+            // No backward compatibility - just fail
             return null;
         }
     }

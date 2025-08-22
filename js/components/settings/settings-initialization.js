@@ -60,6 +60,46 @@ window.SettingsInitialization = (function() {
     }
     
     /**
+     * Process shared model when password verification was already completed
+     * @param {string} pendingModel - The pending shared model
+     * @param {Object} componentManagers - Component managers object
+     * @param {Object} state - Current state object
+     * @param {Function} updateModelInfoDisplay - Function to update model info display
+     */
+    function processSharedModel(pendingModel, componentManagers, state, updateModelInfoDisplay) {
+        // Get the API key and base URL
+        const apiKey = componentManagers.apiKey.getApiKey();
+        const baseUrl = componentManagers.baseUrl.getBaseUrl();
+        
+        // Fetch models with the new values and pass the callback
+        componentManagers.model.fetchAvailableModels(
+            apiKey, 
+            baseUrl, 
+            true, 
+            SettingsCoordinator.createContextUsageCallback(state, componentManagers)
+        ).then(modelResult => {
+            if (modelResult.success && modelResult.model) {
+                // If a shared model was applied successfully
+                const displayName = ModelInfoService.getDisplayName(modelResult.model);
+                // Skip showing system message about model being applied
+                
+                // Update model info display
+                if (updateModelInfoDisplay) {
+                    updateModelInfoDisplay(componentManagers.model.getCurrentModel());
+                }
+            } else if (modelResult.model) {
+                // If a shared model was not available
+                const displayName = ModelInfoService.getDisplayName(modelResult.model);
+                // Note: No addSystemMessage available in this path
+                console.warn(`Shared model "${displayName}" is not available with your API key. Using default model instead.`);
+            }
+            
+            // Welcome message is now handled by the prepending system in ChatManager
+            // No need for deferred display - message will appear first when conversation loads
+        });
+    }
+    
+    /**
      * Process shared link initialization
      * @param {Object} elements - DOM elements
      * @param {Object} componentManagers - Component managers object
@@ -68,8 +108,30 @@ window.SettingsInitialization = (function() {
      * @param {Function} addSystemMessage - Function to add system message
      * @param {Function} showApiKeyModal - Function to show API key modal
      */
-    function processSharedLinkInitialization(elements, componentManagers, state, updateModelInfoDisplay, addSystemMessage, showApiKeyModal) {
+    async function processSharedLinkInitialization(elements, componentManagers, state, updateModelInfoDisplay, addSystemMessage, showApiKeyModal) {
         if (componentManagers.sharedLink.hasSharedLink()) {
+            // Check if password verification was already completed by the early shared link system
+            if (window._passwordVerificationComplete) {
+                console.log('[Settings Init] Password already verified by early system, processing shared data...');
+                
+                // The early system only verified the password but didn't process the data
+                // We need to extract and process the shared data using the stored session key
+                try {
+                    const sessionResult = await componentManagers.sharedLink.trySessionKeyDecryption ?
+                        await componentManagers.sharedLink.trySessionKeyDecryption(addSystemMessage, state.setMessages) :
+                        null;
+                    
+                    if (sessionResult && sessionResult.success && sessionResult.pendingSharedModel) {
+                        processSharedModel(sessionResult.pendingSharedModel, componentManagers, state, updateModelInfoDisplay);
+                    } else {
+                        console.warn('[Settings Init] Early password verification completed but no shared data could be processed');
+                    }
+                } catch (error) {
+                    console.error('[Settings Init] Error processing early verified shared data:', error);
+                }
+                return;
+            }
+            
             // Show password prompt for decryption
             componentManagers.sharedLink.promptForDecryptionPassword(
                 addSystemMessage, 
@@ -78,37 +140,7 @@ window.SettingsInitialization = (function() {
                 if (result.success) {
                     // If a shared model was provided, fetch models to check if it's available
                     if (result.pendingSharedModel) {
-                        // Get the API key and base URL
-                        const apiKey = componentManagers.apiKey.getApiKey();
-                        const baseUrl = componentManagers.baseUrl.getBaseUrl();
-                        
-                        // Fetch models with the new values and pass the callback
-                        componentManagers.model.fetchAvailableModels(
-                            apiKey, 
-                            baseUrl, 
-                            true, 
-                            SettingsCoordinator.createContextUsageCallback(state, componentManagers)
-                        ).then(modelResult => {
-                            if (modelResult.success && modelResult.model) {
-                                // If a shared model was applied successfully
-                                const displayName = ModelInfoService.getDisplayName(modelResult.model);
-                                // Skip showing system message about model being applied
-                                
-                                // Update model info display
-                                if (updateModelInfoDisplay) {
-                                    updateModelInfoDisplay(componentManagers.model.getCurrentModel());
-                                }
-                            } else if (modelResult.model) {
-                                // If a shared model was not available
-                                const displayName = ModelInfoService.getDisplayName(modelResult.model);
-                                if (addSystemMessage) {
-                                    addSystemMessage(`Warning: Shared model "${displayName}" is not available with your API key. Using default model instead.`);
-                                }
-                            }
-                            
-                            // Welcome message is now handled by the prepending system in ChatManager
-                            // No need for deferred display - message will appear first when conversation loads
-                        });
+                        processSharedModel(result.pendingSharedModel, componentManagers, state, updateModelInfoDisplay);
                     } else {
                         // No shared model, just fetch models
                         const apiKey = componentManagers.apiKey.getApiKey();

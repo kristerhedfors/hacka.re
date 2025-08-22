@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compression Test Simple</title>
+    <style>
+        body { 
+            font-family: monospace; 
+            padding: 20px; 
+            background: #1a1a1a;
+            color: #0f0;
+        }
+        .test {
+            margin: 15px 0;
+            padding: 15px;
+            border: 1px solid #0f0;
+            background: #0a0a0a;
+        }
+        .result { color: #ff0; }
+        .data { 
+            color: #888; 
+            font-size: 0.9em;
+            word-break: break-all;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🗜️ Compression Test - Repetitive Text</h1>
+    <div id="output"></div>
+
+    <script src="lib/tweetnacl/nacl-fast.min.js"></script>
+    <script src="lib/tweetnacl/nacl-util.min.js"></script>
+    <script src="js/utils/crypto-utils.js"></script>
+    <script src="js/utils/compression-utils-simple.js"></script>
+    
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(message, data = null) {
+            const div = document.createElement('div');
+            div.className = 'test';
+            div.innerHTML = message;
+            if (data) {
+                const dataDiv = document.createElement('div');
+                dataDiv.className = 'data';
+                dataDiv.textContent = typeof data === 'object' ? JSON.stringify(data) : data;
+                div.appendChild(dataDiv);
+            }
+            output.appendChild(div);
+        }
+        
+        function testRepetitiveText() {
+            const tests = [
+                { name: "10 A's", text: "A".repeat(10) },
+                { name: "50 A's", text: "A".repeat(50) },
+                { name: "100 A's", text: "A".repeat(100) },
+                { name: "500 A's", text: "A".repeat(500) },
+                { name: "Mixed repetitive", text: "Hello world! ".repeat(50) }
+            ];
+            
+            tests.forEach(test => {
+                const payload = {
+                    welcomeMessage: test.text
+                };
+                
+                const originalJson = JSON.stringify(payload);
+                const originalSize = originalJson.length;
+                
+                try {
+                    // Test our compression
+                    const compressed = CompressionUtils.compressPayload(payload);
+                    const compressedSize = compressed.length;
+                    const reduction = Math.round((1 - compressedSize / originalSize) * 100);
+                    
+                    log(`<h3>${test.name}</h3>
+                         Original: ${originalSize} chars<br>
+                         Compressed: ${compressedSize} chars<br>
+                         <span class="result">Reduction: ${reduction}%</span>`, 
+                         compressed.substring(0, 100) + '...');
+                    
+                    // Test decompression
+                    const decompressed = CompressionUtils.decompressPayload(compressed);
+                    const isValid = JSON.stringify(decompressed) === originalJson;
+                    
+                    if (!isValid) {
+                        log("❌ DECOMPRESSION FAILED!");
+                    }
+                    
+                } catch (error) {
+                    log(`❌ Error: ${error.message}`);
+                }
+            });
+        }
+        
+        // Test what base64 does to repetitive text
+        function testBase64Only() {
+            log("<h2>Testing Base64 Encoding Only (No Compression)</h2>");
+            
+            const text = "A".repeat(100);
+            const originalSize = text.length;
+            
+            // Base64 encode
+            const base64 = btoa(text);
+            const base64Size = base64.length;
+            const base64Change = Math.round((base64Size / originalSize) * 100);
+            
+            log(`Base64 Test:<br>
+                 Original: ${originalSize} chars<br>
+                 Base64: ${base64Size} chars<br>
+                 <span class="result">Size change: ${base64Change}% (should be ~133%)</span>`, 
+                 base64.substring(0, 50) + '...');
+        }
+        
+        // Run tests
+        testRepetitiveText();
+        testBase64Only();
+        
+        log("<h2>Analysis</h2>");
+        log("If compression reduction is low (under 50% for repetitive text), something is wrong.");
+        log("Base64 encoding should increase size by ~33% (133% of original).");
+    </script>
+</body>
+</html>
