@@ -40,6 +40,11 @@ window.PromptsModalRenderer = (function() {
             promptItem.classList.add('active');
         }
         
+        // Add special class for file prompts
+        if (prompt.isFilePrompt) {
+            promptItem.classList.add('file-prompt-item');
+        }
+        
         // Create checkbox
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
@@ -47,10 +52,17 @@ window.PromptsModalRenderer = (function() {
         checkbox.checked = isSelected;
         promptItem.appendChild(checkbox);
         
-        // Create prompt name
+        // Create prompt name with file icon for file prompts
         const promptName = document.createElement('div');
         promptName.className = 'prompt-item-name';
-        promptName.textContent = prompt.name || 'Unnamed Prompt';
+        if (prompt.isFilePrompt) {
+            // Add file icon before filename
+            const fileIcon = getFileIcon(prompt.fileName);
+            promptName.innerHTML = `<i class="${fileIcon}" style="margin-right: 6px; opacity: 0.7;"></i>`;
+            promptName.appendChild(document.createTextNode(prompt.name || 'Unnamed File'));
+        } else {
+            promptName.textContent = prompt.name || 'Unnamed Prompt';
+        }
         promptItem.appendChild(promptName);
         
         // Create delete button
@@ -67,9 +79,69 @@ window.PromptsModalRenderer = (function() {
             deleteIcon.title = 'Disconnect Shodan MCP Server to delete prompt';
         }
         
+        // Style the delete button for file prompts
+        if (prompt.isFilePrompt) {
+            deleteIcon.title = 'Remove file from prompts';
+            deleteIcon.classList.add('file-prompt-delete');
+        }
+        
         promptItem.appendChild(deleteIcon);
         
         return promptItem;
+    }
+    
+    /**
+     * Get appropriate file icon based on file extension
+     * @param {string} fileName - Name of the file
+     * @returns {string} Font Awesome icon class
+     */
+    function getFileIcon(fileName) {
+        if (!fileName) return 'fas fa-file';
+        
+        const ext = fileName.split('.').pop().toLowerCase();
+        const iconMap = {
+            'md': 'fab fa-markdown',
+            'txt': 'fas fa-file-alt',
+            'py': 'fab fa-python',
+            'js': 'fab fa-js-square',
+            'ts': 'fab fa-js-square',
+            'jsx': 'fab fa-react',
+            'tsx': 'fab fa-react',
+            'html': 'fab fa-html5',
+            'css': 'fab fa-css3-alt',
+            'json': 'fas fa-file-code',
+            'yml': 'fas fa-file-code',
+            'yaml': 'fas fa-file-code',
+            'xml': 'fas fa-file-code',
+            'sql': 'fas fa-database',
+            'php': 'fab fa-php',
+            'rb': 'fas fa-gem',
+            'java': 'fab fa-java',
+            'c': 'fas fa-file-code',
+            'cpp': 'fas fa-file-code',
+            'h': 'fas fa-file-code',
+            'hpp': 'fas fa-file-code',
+            'go': 'fas fa-file-code',
+            'rs': 'fab fa-rust',
+            'swift': 'fab fa-swift',
+            'kt': 'fas fa-file-code',
+            'vue': 'fab fa-vuejs',
+            'svelte': 'fas fa-file-code',
+            'sh': 'fas fa-terminal',
+            'bash': 'fas fa-terminal',
+            'zsh': 'fas fa-terminal',
+            'fish': 'fas fa-terminal',
+            'env': 'fas fa-cog',
+            'gitignore': 'fab fa-git-alt',
+            'dockerfile': 'fab fa-docker',
+            'makefile': 'fas fa-tools',
+            'conf': 'fas fa-cog',
+            'cfg': 'fas fa-cog',
+            'ini': 'fas fa-cog',
+            'toml': 'fas fa-cog'
+        };
+        
+        return iconMap[ext] || 'fas fa-file';
     }
     
     /**
@@ -163,7 +235,7 @@ window.PromptsModalRenderer = (function() {
         const defaultPromptsSection = document.createElement('div');
         defaultPromptsSection.className = 'default-prompts-section';
         
-        // Create main section header
+        // Create main section header with help text
         const sectionHeader = renderSectionHeader('Default Prompts');
         defaultPromptsSection.appendChild(sectionHeader);
         
@@ -334,6 +406,7 @@ window.PromptsModalRenderer = (function() {
         renderNewPromptForm,
         renderNoPromptsMessage,
         renderInfoPopup,
-        getPromptDescription
+        getPromptDescription,
+        getFileIcon
     };
 })();

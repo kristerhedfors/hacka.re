@@ -21,6 +21,15 @@ function createPromptsListManager() {
             existingTokenUsageContainer.remove();
         }
         
+        // Reset setup flags when modal is loaded
+        resetSetupFlags();
+        
+        // Setup drag and drop for the entire prompts list container
+        setupDragAndDrop(elements);
+        
+        // Setup file upload button as alternative to drag-and-drop
+        setupFileUploadButton();
+        
         // Create and insert token usage container
         const tokenUsageContainer = PromptsModalRenderer.renderTokenUsageContainer();
         const formHelpElement = elements.promptsModal.querySelector('.form-help');
@@ -62,10 +71,20 @@ function createPromptsListManager() {
         userPromptsSection.className = 'user-prompts-section';
         userPromptsSection.style.order = '1'; // Force CSS order
         
-        // Add section header for user prompts
+        // Add section header for user prompts with drag-drop hint
         const userSectionHeader = document.createElement('div');
         userSectionHeader.className = 'user-prompts-header';
-        userSectionHeader.innerHTML = '<h4>Your Custom Prompts</h4>';
+        userSectionHeader.innerHTML = `
+            <h4>Your Custom Prompts</h4>
+            <span class="drag-drop-hint" style="font-size: 12px; color: var(--text-color-secondary); margin-left: 10px;">
+                <i class="fas fa-info-circle" style="margin-right: 4px;"></i>
+                Drag & drop text files here
+            </span>
+            <input type="file" id="file-upload-input" multiple accept=".md,.txt,.py,.html,.css,.js,.json,.conf,.cfg,.c,.cpp,.h,.hpp,.java,.rs,.go,.sh,.bash,.zsh,.fish,.yml,.yaml,.toml,.ini,.xml,.sql,.php,.rb,.swift,.kt,.ts,.tsx,.jsx,.vue,.svelte,.astro,.env,.gitignore,.dockerfile,.makefile,.cmake" style="display: none;">
+            <button type="button" id="file-upload-btn" style="font-size: 11px; padding: 2px 6px; margin-left: 8px; background: var(--primary-color); color: white; border: none; border-radius: 3px; cursor: pointer;">
+                Browse Files
+            </button>
+        `;
         userPromptsSection.appendChild(userSectionHeader);
         
         // Combine user prompts with MCP prompts
@@ -216,7 +235,8 @@ function createPromptsListManager() {
             const deleteHandler = PromptsEventHandlers.createDeleteHandler(
                 prompt.id,
                 prompt.name,
-                () => reloadPromptsList()
+                () => reloadPromptsList(),
+                prompt.isFilePrompt || false
             );
             deleteBtn.addEventListener('click', deleteHandler);
         }
@@ -291,6 +311,11 @@ function createPromptsListManager() {
                     // Update context usage
                     if (updateAfterSelectionChange) {
                         updateAfterSelectionChange();
+                    }
+                    
+                    // Notify RAG modal to refresh if it's open
+                    if (window.RAGManager && document.getElementById('rag-modal').classList.contains('active')) {
+                        window.RAGManager.refreshPromptsList();
                     }
                 }
             });
@@ -438,13 +463,332 @@ function createPromptsListManager() {
         getCurrentPrompt = callbacks.getCurrentPrompt || getCurrentPrompt;
     }
     
+    // Track if drag-and-drop has been set up to prevent duplicate listeners
+    let dragDropSetup = false;
+    let dragCounter = 0; // Track drag enter/leave to prevent flickering
+    
+    /**
+     * Reset setup flags to allow fresh setup
+     */
+    function resetSetupFlags() {
+        // Only reset if the modal doesn't exist anymore or has been cleared
+        const promptsModal = document.getElementById('prompts-modal');
+        if (!promptsModal || !promptsModal.hasAttribute('data-dragdrop-setup')) {
+            dragDropSetup = false;
+            fileUploadSetup = false;
+            dragCounter = 0;
+        }
+    }
+    
+    /**
+     * Setup drag and drop for file uploads
+     * @param {Object} elements - DOM elements
+     */
+    function setupDragAndDrop(elements) {
+        const promptsList = elements.promptsList;
+        const promptsModal = elements.promptsModal;
+        
+        if (!promptsList || !promptsModal) {
+            console.error('setupDragAndDrop: Missing required elements', { promptsList, promptsModal });
+            return;
+        }
+        
+        // Prevent duplicate setup
+        if (dragDropSetup && promptsModal.hasAttribute('data-dragdrop-setup')) {
+            return;
+        }
+        
+        // Mark as set up
+        dragDropSetup = true;
+        promptsModal.setAttribute('data-dragdrop-setup', 'true');
+        
+        // Reset drag counter
+        dragCounter = 0;
+        
+        // Supported file extensions
+        const supportedExtensions = [
+            '.md', '.txt', '.py', '.html', '.css', '.js', '.json',
+            '.conf', '.cfg', '.c', '.cpp', '.h', '.hpp', '.java',
+            '.rs', '.go', '.sh', '.bash', '.zsh', '.fish',
+            '.yml', '.yaml', '.toml', '.ini', '.xml',
+            '.sql', '.php', '.rb', '.swift', '.kt', '.ts', '.tsx', '.jsx',
+            '.vue', '.svelte', '.astro', '.env', '.gitignore',
+            '.dockerfile', '.makefile', '.cmake'
+        ];
+        
+        // Prevent default drag behaviors on modal
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            promptsModal.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        // Handle drag enter - increment counter and highlight
+        promptsModal.addEventListener('dragenter', handleDragEnter, false);
+        
+        function handleDragEnter(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dragCounter++;
+            
+            if (dragCounter === 1) {
+                promptsModal.classList.add('drag-highlight');
+            }
+        }
+        
+        // Handle drag over - just prevent default
+        promptsModal.addEventListener('dragover', handleDragOver, false);
+        
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        // Handle drag leave - decrement counter and unhighlight when needed
+        promptsModal.addEventListener('dragleave', handleDragLeave, false);
+        
+        function handleDragLeave(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dragCounter--;
+            
+            if (dragCounter <= 0) {
+                dragCounter = 0;
+                promptsModal.classList.remove('drag-highlight');
+            }
+        }
+        
+        // Handle dropped files
+        promptsModal.addEventListener('drop', handleDrop, false);
+        
+        async function handleDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Reset drag state
+            dragCounter = 0;
+            promptsModal.classList.remove('drag-highlight');
+            
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length > 0) {
+                await handleFilesUpload(files);
+            }
+        }
+    }
+    
+    // Track if file upload button has been set up to prevent duplicates
+    let fileUploadSetup = false;
+    
+    /**
+     * Setup file upload button as alternative to drag-and-drop
+     */
+    function setupFileUploadButton() {
+        // Wait for the DOM to be updated
+        setTimeout(() => {
+            const fileInput = document.getElementById('file-upload-input');
+            const browseBtn = document.getElementById('file-upload-btn');
+            
+            // Prevent duplicate setup
+            if (fileUploadSetup || !fileInput || !browseBtn) {
+                return;
+            }
+            
+            // Mark as set up
+            fileUploadSetup = true;
+            
+            browseBtn.addEventListener('click', () => {
+                fileInput.click();
+            });
+            
+            fileInput.addEventListener('change', async (e) => {
+                const files = e.target.files;
+                if (files.length > 0) {
+                    await handleFilesUpload(files);
+                    // Clear the input so the same file can be selected again
+                    fileInput.value = '';
+                }
+            });
+        }, 100);
+    }
+    
+    // Debounce file processing to prevent rapid duplicates
+    let processingFiles = false;
+    let processedFilesCache = new Set(); // Track recently processed files to prevent duplicates
+    
+    /**
+     * Handle uploaded files (shared between drag-and-drop and browse button)
+     * @param {FileList} files - Files to process
+     */
+    async function handleFilesUpload(files) {
+        // Prevent rapid successive processing
+        if (processingFiles) {
+            console.log('File processing already in progress, skipping duplicate request');
+            return;
+        }
+        
+        processingFiles = true;
+        
+        try {
+            // Supported file extensions
+            const supportedExtensions = [
+                '.md', '.txt', '.py', '.html', '.css', '.js', '.json',
+                '.conf', '.cfg', '.c', '.cpp', '.h', '.hpp', '.java',
+                '.rs', '.go', '.sh', '.bash', '.zsh', '.fish',
+                '.yml', '.yaml', '.toml', '.ini', '.xml',
+                '.sql', '.php', '.rb', '.swift', '.kt', '.ts', '.tsx', '.jsx',
+                '.vue', '.svelte', '.astro', '.env', '.gitignore',
+                '.dockerfile', '.makefile', '.cmake'
+            ];
+            
+            const fileArray = [...files];
+            const validFiles = fileArray.filter(file => {
+                const extension = '.' + file.name.split('.').pop().toLowerCase();
+                return supportedExtensions.includes(extension) || 
+                       supportedExtensions.includes('.' + file.name.toLowerCase());
+            });
+            
+            if (validFiles.length === 0) {
+                alert('Please select supported plaintext files. Supported extensions: ' + 
+                      supportedExtensions.join(', '));
+                return;
+            }
+            
+            // Check for existing files by name to prevent duplicates
+            const existingPrompts = window.PromptsService ? window.PromptsService.getPrompts() : [];
+            const existingFileNames = existingPrompts
+                .filter(p => p.isFilePrompt)
+                .map(p => p.fileName || p.name);
+            
+            let processedCount = 0;
+            let duplicateCount = 0;
+            
+            for (const file of validFiles) {
+                // Create a unique key for this file based on name and size
+                const fileKey = `${file.name}_${file.size}`;
+                
+                // Check if file was recently processed
+                if (processedFilesCache.has(fileKey)) {
+                    console.log('Skipping duplicate file:', file.name);
+                    duplicateCount++;
+                    continue;
+                }
+                
+                // Check if file already exists in prompts
+                if (existingFileNames.includes(file.name)) {
+                    const overwrite = confirm(`File "${file.name}" already exists in prompts. Overwrite it?`);
+                    if (!overwrite) {
+                        duplicateCount++;
+                        continue;
+                    }
+                    
+                    // Remove existing file prompt
+                    const existingPrompt = existingPrompts.find(p => p.isFilePrompt && (p.fileName === file.name || p.name === file.name));
+                    if (existingPrompt) {
+                        window.PromptsService.deletePrompt(existingPrompt.id);
+                    }
+                }
+                
+                // Add to cache to prevent immediate duplicates
+                processedFilesCache.add(fileKey);
+                
+                await processFileUpload(file);
+                processedCount++;
+            }
+            
+            // Clear cache after a delay to allow re-uploading the same file later
+            setTimeout(() => {
+                processedFilesCache.clear();
+            }, 5000);
+            
+            // Show status if any files were processed or skipped
+            if (processedCount > 0 || duplicateCount > 0) {
+                let message = '';
+                if (processedCount > 0) {
+                    message += `Added ${processedCount} file${processedCount > 1 ? 's' : ''} as prompt${processedCount > 1 ? 's' : ''}`;
+                }
+                if (duplicateCount > 0) {
+                    if (message) message += ', ';
+                    message += `skipped ${duplicateCount} duplicate${duplicateCount > 1 ? 's' : ''}`;
+                }
+                console.log(message);
+            }
+            
+            // Reload the prompts list to show new files only if files were processed
+            if (processedCount > 0 && reloadPromptsList) {
+                reloadPromptsList();
+                
+                // Update context usage
+                if (updateAfterSelectionChange) {
+                    updateAfterSelectionChange();
+                }
+                
+                // Notify RAG modal to refresh if it's open
+                if (window.RAGManager && document.getElementById('rag-modal').classList.contains('active')) {
+                    window.RAGManager.refreshPromptsList();
+                }
+            }
+        } finally {
+            processingFiles = false;
+        }
+    }
+    
+    async function processFileUpload(file) {
+        try {
+            const content = await readFileContent(file);
+            
+            // Create a prompt object for the file
+            const filePrompt = {
+                id: 'file_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                name: file.name,
+                content: content,
+                isDefault: false,
+                isFilePrompt: true,  // Mark as file-based prompt
+                fileName: file.name,
+                fileSize: file.size,
+                fileType: file.type || 'text/plain'
+            };
+            
+            // Save to prompts service
+            if (window.PromptsService) {
+                window.PromptsService.savePrompt(filePrompt);
+                console.log('Added file as prompt:', file.name);
+            }
+        } catch (error) {
+            console.error('Error processing file:', file.name, error);
+            alert(`Error reading file ${file.name}: ${error.message}`);
+        }
+    }
+    
+    function readFileContent(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            
+            reader.onload = e => {
+                resolve(e.target.result);
+            };
+            
+            reader.onerror = e => {
+                reject(new Error('Failed to read file'));
+            };
+            
+            reader.readAsText(file);
+        });
+    }
+    
     return {
         loadPromptsList,
         bindPromptItemEvents,
         bindMcpPromptItemEvents,
         bindFormEvents,
         bindDefaultPromptsEvents,
-        setCallbacks
+        setCallbacks,
+        setupDragAndDrop,
+        setupFileUploadButton
     };
 }
 

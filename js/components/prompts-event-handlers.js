@@ -48,13 +48,18 @@ window.PromptsEventHandlers = (function() {
      * @param {string} promptId - Prompt ID
      * @param {string} promptName - Prompt name for confirmation
      * @param {Function} onDelete - Callback for deletion
+     * @param {boolean} isFilePrompt - Whether this is a file-based prompt
      * @returns {Function} Event handler function
      */
-    function createDeleteHandler(promptId, promptName, onDelete) {
+    function createDeleteHandler(promptId, promptName, onDelete, isFilePrompt = false) {
         return function(e) {
             e.stopPropagation(); // Prevent triggering parent click events
             
-            if (confirm(`Are you sure you want to delete the prompt "${promptName}"?`)) {
+            const confirmMessage = isFilePrompt ? 
+                `Are you sure you want to remove the file "${promptName}" from prompts?` :
+                `Are you sure you want to delete the prompt "${promptName}"?`;
+            
+            if (confirm(confirmMessage)) {
                 window.PromptsService.deletePrompt(promptId);
                 
                 // Notify caller of deletion
