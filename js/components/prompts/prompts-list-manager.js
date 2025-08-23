@@ -312,6 +312,11 @@ function createPromptsListManager() {
                     if (updateAfterSelectionChange) {
                         updateAfterSelectionChange();
                     }
+                    
+                    // Notify RAG modal to refresh if it's open
+                    if (window.RAGManager && document.getElementById('rag-modal').classList.contains('active')) {
+                        window.RAGManager.refreshPromptsList();
+                    }
                 }
             });
             saveButton.addEventListener('click', saveHandler);
@@ -720,6 +725,11 @@ function createPromptsListManager() {
                 // Update context usage
                 if (updateAfterSelectionChange) {
                     updateAfterSelectionChange();
+                }
+                
+                // Notify RAG modal to refresh if it's open
+                if (window.RAGManager && document.getElementById('rag-modal').classList.contains('active')) {
+                    window.RAGManager.refreshPromptsList();
                 }
             }
         } finally {

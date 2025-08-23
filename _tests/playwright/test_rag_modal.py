@@ -151,7 +151,7 @@ def test_rag_modal_default_prompts_section(page: Page, serve_hacka_re):
     
     # Check section title
     section_title = default_prompts_section.locator("h3")
-    expect(section_title).to_contain_text("Default Prompts Knowledge Base")
+    expect(section_title).to_contain_text("Prompts as Knowledge Base")
     
     # Check description
     description = default_prompts_section.locator("p")
