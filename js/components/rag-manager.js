@@ -207,41 +207,86 @@ window.RAGManager = (function() {
     }
 
     /**
-     * Load and display default prompts list
+     * Load and display default prompts list (now includes user prompts)
      */
     function loadDefaultPromptsList() {
         const listContainer = document.getElementById('rag-default-prompts-list');
         if (!listContainer) return;
 
         try {
+            // Get default prompts
             const defaultPrompts = DefaultPromptsService.getDefaultPrompts();
             
-            if (!defaultPrompts || defaultPrompts.length === 0) {
-                listContainer.innerHTML = '<p class="form-help">No default prompts available.</p>';
-                return;
-            }
-
+            // Get user prompts (including file-originated ones)
+            const userPrompts = window.PromptsService ? window.PromptsService.getPrompts() : [];
+            
             // Get indexed prompts information
             const indexedPrompts = getIndexedPromptsStatus();
             
-            const promptsHTML = defaultPrompts.map(prompt => {
-                const isSection = prompt.isSection && prompt.items && prompt.items.length > 0;
-                const prompts = isSection ? prompt.items : [prompt];
+            let promptsHTML = '';
+            
+            // Process default prompts first
+            if (defaultPrompts && defaultPrompts.length > 0) {
+                promptsHTML += '<div class="rag-prompts-section"><h4 class="rag-section-title">Default Prompts</h4>';
                 
-                return prompts.map(p => {
+                const defaultHTML = defaultPrompts.map(prompt => {
+                    const isSection = prompt.isSection && prompt.items && prompt.items.length > 0;
+                    const prompts = isSection ? prompt.items : [prompt];
+                    
+                    return prompts.map(p => {
+                        const indexStatus = indexedPrompts[p.id] || 'not-indexed';
+                        const statusBadge = getIndexingStatusBadge(indexStatus);
+                        const itemClass = indexStatus === 'indexed' ? 'rag-prompt-item indexed' : 'rag-prompt-item';
+                        
+                        return `
+                            <div class="${itemClass}">
+                                <input type="checkbox" 
+                                       id="rag-prompt-${p.id}" 
+                                       data-prompt-id="${p.id}"
+                                       data-prompt-type="default"
+                                       ${RAGStorageService.isRAGPromptSelected(p.id) ? 'checked' : ''}>
+                                <label for="rag-prompt-${p.id}">${p.name || p.id}</label>
+                                <span class="rag-prompt-meta">
+                                    ${p.content ? `${Math.round(p.content.length / 4)} tokens` : 'No content'}
+                                </span>
+                                <div class="rag-indexing-status">
+                                    ${statusBadge}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }).join('');
+                
+                promptsHTML += defaultHTML + '</div>';
+            }
+            
+            // Process user prompts (including file-originated ones)
+            if (userPrompts && userPrompts.length > 0) {
+                promptsHTML += '<div class="rag-prompts-section"><h4 class="rag-section-title">Your Custom Prompts</h4>';
+                
+                const userHTML = userPrompts.map(p => {
                     const indexStatus = indexedPrompts[p.id] || 'not-indexed';
                     const statusBadge = getIndexingStatusBadge(indexStatus);
                     const itemClass = indexStatus === 'indexed' ? 'rag-prompt-item indexed' : 'rag-prompt-item';
                     
+                    // Add special class and icon for file-originated prompts
+                    const isFilePrompt = p.isFilePrompt;
+                    const fileIcon = isFilePrompt ? PromptsModalRenderer.getFileIcon(p.fileName) : '';
+                    const displayName = isFilePrompt ? 
+                        `<i class="${fileIcon}" style="margin-right: 6px; opacity: 0.7;"></i>${p.name}` : 
+                        p.name;
+                    
                     return `
-                        <div class="${itemClass}">
+                        <div class="${itemClass}${isFilePrompt ? ' file-prompt-item' : ''}">
                             <input type="checkbox" 
                                    id="rag-prompt-${p.id}" 
                                    data-prompt-id="${p.id}"
+                                   data-prompt-type="user"
                                    ${RAGStorageService.isRAGPromptSelected(p.id) ? 'checked' : ''}>
-                            <label for="rag-prompt-${p.id}">${p.name || p.id}</label>
+                            <label for="rag-prompt-${p.id}">${displayName}</label>
                             <span class="rag-prompt-meta">
                                 ${p.content ? `${Math.round(p.content.length / 4)} tokens` : 'No content'}
+                                ${isFilePrompt ? ` • ${Math.round(p.fileSize / 1024)}KB file` : ''}
                             </span>
                             <div class="rag-indexing-status">
                                 ${statusBadge}
@@ -249,7 +294,14 @@ window.RAGManager = (function() {
                         </div>
                     `;
                 }).join('');
-            }).join('');
+                
+                promptsHTML += userHTML + '</div>';
+            }
+            
+            // Show message if no prompts available
+            if ((!defaultPrompts || defaultPrompts.length === 0) && (!userPrompts || userPrompts.length === 0)) {
+                promptsHTML = '<p class="form-help">No prompts available. Create some prompts in the Prompts modal or drag-and-drop files first.</p>';
+            }
 
             listContainer.innerHTML = promptsHTML;
 
@@ -260,8 +312,8 @@ window.RAGManager = (function() {
             });
 
         } catch (error) {
-            console.error('RAGManager: Error loading default prompts list:', error);
-            listContainer.innerHTML = '<p class="rag-error">Error loading default prompts.</p>';
+            console.error('RAGManager: Error loading prompts list:', error);
+            listContainer.innerHTML = '<p class="rag-error">Error loading prompts.</p>';
         }
     }
 
@@ -348,7 +400,7 @@ window.RAGManager = (function() {
     }
 
     /**
-     * Generate embeddings for selected default prompts
+     * Generate embeddings for selected prompts (default and user prompts)
      */
     async function generateDefaultPromptsEmbeddings() {
         const generateBtn = document.getElementById('rag-index-defaults-btn');
@@ -363,15 +415,16 @@ window.RAGManager = (function() {
         // Get selected prompts for RAG indexing (separate from default prompts modal)
         const selectedRAGPromptIds = RAGStorageService.getSelectedRAGPrompts();
         if (selectedRAGPromptIds.length === 0) {
-            showError('Please select at least one default prompt to index for RAG.');
+            showError('Please select at least one prompt to index for RAG.');
             return;
         }
 
-        // Get the actual prompt objects from the default prompts service
+        // Get the actual prompt objects from both default and user prompts services
         const allDefaultPrompts = DefaultPromptsService.getDefaultPrompts();
+        const allUserPrompts = window.PromptsService ? window.PromptsService.getPrompts() : [];
         const selectedPrompts = [];
         
-        // Collect all prompts that match the selected IDs (including nested ones)
+        // Collect default prompts that match the selected IDs (including nested ones)
         allDefaultPrompts.forEach(prompt => {
             if (selectedRAGPromptIds.includes(prompt.id)) {
                 selectedPrompts.push(prompt);
@@ -394,6 +447,13 @@ window.RAGManager = (function() {
                         }
                     }
                 });
+            }
+        });
+        
+        // Collect user prompts (including file-originated ones) that match the selected IDs
+        allUserPrompts.forEach(prompt => {
+            if (selectedRAGPromptIds.includes(prompt.id)) {
+                selectedPrompts.push(prompt);
             }
         });
 
@@ -806,6 +866,7 @@ window.RAGManager = (function() {
         removeUserBundle,
         isRAGEnabled,
         getRAGEnabledState,
-        setRAGEnabledState
+        setRAGEnabledState,
+        refreshPromptsList: loadDefaultPromptsList // Alias for external use
     };
 })();
