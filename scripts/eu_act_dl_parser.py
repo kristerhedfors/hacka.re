@@ -67,7 +67,7 @@ class EURLexHTMLToMarkdown:
         return text.strip()
     
     def html_to_markdown(self, html_content, regulation_name, source_url):
-        """Convert EUR-Lex HTML to structured Markdown"""
+        """Convert EUR-Lex HTML to clean Markdown preserving original structure"""
         
         # Add metadata headers
         generation_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -93,12 +93,11 @@ class EURLexHTMLToMarkdown:
         markdown += f"*Generated on: {generation_time}*\n\n"
         markdown += "---\n\n"
         
-        # Remove scripts and styles
+        # Remove scripts and styles but preserve structure
         html_content = re.sub(r'<script[^>]*>.*?</script>', '', html_content, flags=re.DOTALL | re.IGNORECASE)
         html_content = re.sub(r'<style[^>]*>.*?</style>', '', html_content, flags=re.DOTALL | re.IGNORECASE)
         
-        # Extract the complete document text content first
-        # Find the main document body - EUR-Lex puts content in specific div containers
+        # Extract main document content - try different container patterns
         body_patterns = [
             r'<div[^>]*id="document1"[^>]*>(.*?)</div>',
             r'<div[^>]*class="[^"]*document[^"]*"[^>]*>(.*?)</div>',
@@ -115,105 +114,12 @@ class EURLexHTMLToMarkdown:
         if not main_content:
             main_content = html_content
         
-        # Extract regulation header information
-        # Look for regulation number pattern like "2024/1689"
-        reg_number_match = re.search(r'(\d{4}/\d{4})', main_content)
-        if reg_number_match:
-            markdown += f"**Regulation Number:** {reg_number_match.group(1)}\n\n"
+        # Simple approach: Strip HTML tags and preserve text with minimal processing
+        clean_text = self.strip_tags(main_content)
+        clean_text = self.clean_text(clean_text)
         
-        # Extract date pattern like "12.7.2024"
-        date_match = re.search(r'(\d{1,2}\.\d{1,2}\.\d{4})', main_content)
-        if date_match:
-            markdown += f"**Date:** {date_match.group(1)}\n\n"
-        
-        # Extract the full regulation title
-        title_patterns = [
-            r'REGULATION \(EU\) \d{4}/\d{4} OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL[^<]*?of [^<]*?\d{4}[^<]*?laying down[^<]*?(?=\(Text with EEA relevance\)|THE EUROPEAN PARLIAMENT)',
-            r'laying down harmonised rules on artificial intelligence[^<]*?(?=\(Text with EEA relevance\)|THE EUROPEAN PARLIAMENT)'
-        ]
-        
-        for pattern in title_patterns:
-            title_match = re.search(pattern, main_content, re.DOTALL | re.IGNORECASE)
-            if title_match:
-                clean_title = self.clean_text(self.strip_tags(title_match.group(0)))
-                markdown += f"**Title:** {clean_title}\n\n"
-                break
-        
-        markdown += "---\n\n"
-        
-        # Extract "Having regard to" section
-        having_regard_match = re.search(r'Having regard to[^<]*?(?=Whereas:)', main_content, re.DOTALL | re.IGNORECASE)
-        if having_regard_match:
-            markdown += "## Preamble\n\n"
-            clean_preamble = self.clean_text(self.strip_tags(having_regard_match.group(0)))
-            markdown += f"{clean_preamble}\n\n---\n\n"
-        
-        # Extract "Whereas" clauses - these are the numbered recitals
-        whereas_section = re.search(r'Whereas:\s*(.*?)(?=HAVE ADOPTED|Article\s+1)', main_content, re.DOTALL | re.IGNORECASE)
-        if whereas_section:
-            markdown += "## Whereas Clauses\n\n"
-            whereas_content = whereas_section.group(1)
-            
-            # Extract numbered whereas clauses like "(1)" "(2)" etc.
-            whereas_clauses = re.findall(r'\((\d+)\)\s*(.*?)(?=\(\d+\)|$)', whereas_content, re.DOTALL)
-            
-            for number, content in whereas_clauses:
-                clean_content = self.clean_text(self.strip_tags(content))
-                if clean_content:
-                    markdown += f"**({number})** {clean_content}\n\n"
-            
-            markdown += "---\n\n"
-        
-        # Extract "HAVE ADOPTED" section
-        have_adopted_match = re.search(r'HAVE ADOPTED THIS REGULATION:[^<]*?(?=CHAPTER|Article\s+1)', main_content, re.DOTALL | re.IGNORECASE)
-        if have_adopted_match:
-            clean_adoption = self.clean_text(self.strip_tags(have_adopted_match.group(0)))
-            markdown += f"## Adoption\n\n{clean_adoption}\n\n---\n\n"
-        
-        # Extract chapters and articles
-        markdown += "## Content\n\n"
-        
-        # Find all structural elements in order
-        # Look for CHAPTER, TITLE, Article patterns
-        structure_pattern = r'(CHAPTER\s+[IVXLC]+[^<]*?|TITLE\s+[IVXLC]+[^<]*?|Article\s+(\d+)[^<]*?)'
-        
-        # Split content by articles to process sequentially
-        article_splits = re.split(r'(Article\s+\d+)', main_content, flags=re.IGNORECASE)
-        
-        current_section = ""
-        
-        for i, section in enumerate(article_splits):
-            if re.match(r'Article\s+\d+', section, re.IGNORECASE):
-                # This is an article header
-                article_match = re.match(r'Article\s+(\d+)', section, re.IGNORECASE)
-                if article_match:
-                    article_num = article_match.group(1)
-                    markdown += f"### Article {article_num}\n\n"
-            elif section.strip() and i > 0:  # Article content
-                # Clean and process the article content
-                clean_content = self.clean_text(self.strip_tags(section))
-                
-                if clean_content:
-                    # Split into paragraphs and format
-                    paragraphs = [p.strip() for p in clean_content.split('\n') if p.strip()]
-                    
-                    for para in paragraphs:
-                        # Check for numbered points
-                        if re.match(r'^\d+\.', para):
-                            markdown += f"{para}\n\n"
-                        elif re.match(r'^\([a-z]\)', para):
-                            markdown += f"   {para}\n\n"
-                        elif len(para) > 10:  # Skip very short fragments
-                            markdown += f"{para}\n\n"
-                
-                markdown += "---\n\n"
-        
-        # Extract annexes if present
-        annex_match = re.search(r'(ANNEX.*?)$', main_content, re.DOTALL | re.IGNORECASE)
-        if annex_match:
-            markdown += "## Annexes\n\n"
-            clean_annex = self.clean_text(self.strip_tags(annex_match.group(1)))
-            markdown += f"{clean_annex}\n\n"
+        # Add the cleaned content directly
+        markdown += clean_text
         
         return markdown
     
@@ -275,14 +181,23 @@ class EURLexHTMLToMarkdown:
         # Escape content for JavaScript string
         escaped_content = clean_content.replace('\\', '\\\\').replace('`', '\\`').replace('${', '\\${')
         
+        # Map regulation keys to window global names
+        window_var_map = {
+            'AI_ACT': 'euRegulationAiActData',
+            'DORA': 'euRegulationDoraData', 
+            'CRA': 'euRegulationCraData'
+        }
+        
+        window_var = window_var_map.get(reg_key, f'euRegulation{reg_key.title()}Data')
+        
         js_content = f'''/**
  * {reg_info['name']}
  * Generated by eu_act_dl_parser.py
  * For RAG integration in hacka.re
  */
 
-export const regulationData = {{
-    id: '{reg_key.lower()}',
+window.{window_var} = {{
+    id: '{reg_key.lower().replace('_', '_')}',
     name: `{reg_info['name']}`,
     metadata: {{
         title: `{metadata.get('Title', reg_info['name'])}`,
@@ -295,22 +210,6 @@ export const regulationData = {{
     }},
     content: `{escaped_content}`
 }};
-
-// For RAG system integration
-export const getRegulationContent = () => regulationData.content;
-export const getRegulationMetadata = () => regulationData.metadata;
-export const getRegulationSummary = () => ({{
-    id: regulationData.id,
-    name: regulationData.name,
-    title: regulationData.metadata.title,
-    regulationNumber: regulationData.metadata.regulationNumber,
-    officialDate: regulationData.metadata.officialDate,
-    contentLength: regulationData.content.length,
-    generated: regulationData.metadata.generated
-}});
-
-// Default export for easier importing
-export default regulationData;
 '''
         
         try:
