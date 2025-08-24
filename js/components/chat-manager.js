@@ -730,10 +730,10 @@ function cleanupGeneration(updateContextUsage, currentModel) {
                 const ragStats = VectorRAGService.getIndexStats();
                 
                 if (window.DebugService) {
-                    window.DebugService.debugLog('rag', `Knowledge base status: default prompts=${ragStats.defaultPrompts.chunks} chunks, user bundles=${ragStats.userBundles.totalChunks} chunks`);
+                    window.DebugService.debugLog('rag', `Knowledge base status: default prompts=${ragStats.defaultPrompts.chunks} chunks, user bundles=${ragStats.userBundles.totalChunks} chunks, EU documents=${ragStats.euDocuments.chunks} chunks`);
                 }
                 
-                if (!ragStats.defaultPrompts.available && !ragStats.userBundles.available) {
+                if (!ragStats.defaultPrompts.available && !ragStats.userBundles.available && !ragStats.euDocuments.available) {
                     if (window.DebugService) {
                         window.DebugService.debugLog('rag', 'No indexed content available - skipping enhancement');
                     }
