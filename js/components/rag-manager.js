@@ -1423,35 +1423,95 @@ window.RAGManager = (function() {
             // Get document settings
             const settings = getDocumentSettings(docId);
             
-            // For demo purposes, simulate document processing
-            // In real implementation, you would fetch and process the actual document
+            // Get actual regulation content
+            let regulationContent = null;
+            const regulationId = EU_DOCUMENTS[docId].regulationId || docId;
+            
+            if (regulationId === 'ai_act' || docId === 'aia') {
+                if (window.euRegulationAiActData && window.euRegulationAiActData.content) {
+                    regulationContent = window.euRegulationAiActData.content;
+                }
+            } else if (regulationId === 'dora' || docId === 'dora') {
+                if (window.euRegulationDoraData && window.euRegulationDoraData.content) {
+                    regulationContent = window.euRegulationDoraData.content;
+                }
+            } else if (regulationId === 'cra' || docId === 'cra') {
+                if (window.euRegulationCraData && window.euRegulationCraData.content) {
+                    regulationContent = window.euRegulationCraData.content;
+                }
+            }
+            
+            if (!regulationContent) {
+                throw new Error(`Regulation content not available for ${docId}`);
+            }
+            
             showProgress(`Processing ${EU_DOCUMENTS[docId].name}...`, 25);
-            await new Promise(resolve => setTimeout(resolve, 1000));
             
-            showProgress('Generating embeddings...', 75);
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            // Chunk the actual regulation content
+            const chunks = RAGIndexingService.chunkText(
+                regulationContent,
+                settings.chunkSize || 512,
+                Math.floor((settings.chunkSize || 512) * (settings.chunkOverlap || 10) / 100)
+            );
             
-            // Store mock indexed data
+            showProgress('Generating embeddings...', 50);
+            
+            // Get API credentials for embeddings
+            const apiKey = StorageService.getApiKey();
+            const baseUrl = StorageService.getBaseUrl() || 'https://api.openai.com/v1';
+            
+            if (!apiKey) {
+                throw new Error('API key required for generating embeddings');
+            }
+            
+            // Generate real embeddings for chunks
+            const embeddingsData = await RAGIndexingService.generateEmbeddings(
+                chunks,
+                apiKey,
+                baseUrl,
+                settings.embeddingModel || 'text-embedding-3-small',
+                (progress, message) => {
+                    showProgress(message, Math.min(50 + Math.floor(progress * 0.45), 95));
+                }
+            );
+            
+            showProgress('Saving indexed data...', 95);
+            
+            // Store real indexed data
             const indexed = JSON.parse(localStorage.getItem('ragEUDocuments') || '{}');
             indexed[docId] = {
-                chunks: Array.from({ length: Math.floor(Math.random() * 50) + 10 }, (_, i) => ({
-                    id: `${docId}_chunk_${i}`,
-                    content: `Sample chunk ${i + 1} from ${EU_DOCUMENTS[docId].name}`,
-                    embedding: new Array(1536).fill(0).map(() => Math.random())
-                })),
+                name: EU_DOCUMENTS[docId].name,
+                chunks: embeddingsData.chunks,
                 settings: settings,
-                lastIndexed: new Date().toISOString()
+                lastIndexed: new Date().toISOString(),
+                regulationId: regulationId,
+                contentLength: regulationContent.length
             };
             localStorage.setItem('ragEUDocuments', JSON.stringify(indexed));
             
             updateDocumentStatus(docId);
-            showSuccess(`Successfully indexed ${EU_DOCUMENTS[docId].name}`);
+            showSuccess(`Successfully indexed ${EU_DOCUMENTS[docId].name} (${embeddingsData.chunks.length} chunks)`);
             
         } catch (error) {
+            console.error('RAG indexing error:', error);
             showError(`Failed to refresh ${EU_DOCUMENTS[docId].name}: ${error.message}`);
         } finally {
-            // Remove spinning animation
-            if (icon) icon.classList.remove('spinning');
+            // Remove spinning animation with debugging
+            console.log('Finally block: removing spinner for docId:', docId);
+            console.log('refreshBtn found:', !!refreshBtn);
+            console.log('icon found:', !!icon);
+            
+            if (icon) {
+                icon.classList.remove('spinning');
+                console.log('Spinner removed from icon');
+            } else {
+                // Fallback: find any spinning icons and remove them
+                const allSpinningIcons = document.querySelectorAll('.spinning');
+                allSpinningIcons.forEach(spinningIcon => {
+                    spinningIcon.classList.remove('spinning');
+                    console.log('Removed spinning class from fallback icon');
+                });
+            }
             hideProgress();
         }
     }
