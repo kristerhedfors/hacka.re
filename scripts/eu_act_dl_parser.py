@@ -69,9 +69,6 @@ class EURLexHTMLToMarkdown:
     def html_to_markdown(self, html_content, regulation_name):
         """Convert EUR-Lex HTML to structured Markdown"""
         
-        # Parse the HTML using a simple approach
-        # EUR-Lex has a predictable structure we can exploit
-        
         markdown = f"# {regulation_name}\n\n"
         markdown += f"*Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*\n\n"
         markdown += "---\n\n"
@@ -80,99 +77,123 @@ class EURLexHTMLToMarkdown:
         html_content = re.sub(r'<script[^>]*>.*?</script>', '', html_content, flags=re.DOTALL | re.IGNORECASE)
         html_content = re.sub(r'<style[^>]*>.*?</style>', '', html_content, flags=re.DOTALL | re.IGNORECASE)
         
-        # Extract title if present
-        title_match = re.search(r'<title[^>]*>(.*?)</title>', html_content, re.IGNORECASE | re.DOTALL)
-        if title_match:
-            markdown += f"## Document Title\n\n{self.clean_text(title_match.group(1))}\n\n---\n\n"
+        # Extract the complete document text content first
+        # Find the main document body - EUR-Lex puts content in specific div containers
+        body_patterns = [
+            r'<div[^>]*id="document1"[^>]*>(.*?)</div>',
+            r'<div[^>]*class="[^"]*document[^"]*"[^>]*>(.*?)</div>',
+            r'<body[^>]*>(.*?)</body>'
+        ]
         
-        # Process the main content
-        # EUR-Lex typically uses specific patterns for articles, recitals, etc.
+        main_content = None
+        for pattern in body_patterns:
+            match = re.search(pattern, html_content, re.DOTALL | re.IGNORECASE)
+            if match:
+                main_content = match.group(1)
+                break
         
-        # Extract recitals (whereas clauses)
-        recitals = re.findall(r'<p[^>]*class="[^"]*recital[^"]*"[^>]*>(.*?)</p>', 
-                             html_content, re.IGNORECASE | re.DOTALL)
-        if recitals:
-            markdown += "## RECITALS\n\n"
-            for i, recital in enumerate(recitals, 1):
-                clean_recital = self.clean_text(self.strip_tags(recital))
-                if clean_recital:
-                    markdown += f"**({i})** {clean_recital}\n\n"
+        if not main_content:
+            main_content = html_content
+        
+        # Extract regulation header information
+        # Look for regulation number pattern like "2024/1689"
+        reg_number_match = re.search(r'(\d{4}/\d{4})', main_content)
+        if reg_number_match:
+            markdown += f"**Regulation Number:** {reg_number_match.group(1)}\n\n"
+        
+        # Extract date pattern like "12.7.2024"
+        date_match = re.search(r'(\d{1,2}\.\d{1,2}\.\d{4})', main_content)
+        if date_match:
+            markdown += f"**Date:** {date_match.group(1)}\n\n"
+        
+        # Extract the full regulation title
+        title_patterns = [
+            r'REGULATION \(EU\) \d{4}/\d{4} OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL[^<]*?of [^<]*?\d{4}[^<]*?laying down[^<]*?(?=\(Text with EEA relevance\)|THE EUROPEAN PARLIAMENT)',
+            r'laying down harmonised rules on artificial intelligence[^<]*?(?=\(Text with EEA relevance\)|THE EUROPEAN PARLIAMENT)'
+        ]
+        
+        for pattern in title_patterns:
+            title_match = re.search(pattern, main_content, re.DOTALL | re.IGNORECASE)
+            if title_match:
+                clean_title = self.clean_text(self.strip_tags(title_match.group(0)))
+                markdown += f"**Title:** {clean_title}\n\n"
+                break
+        
+        markdown += "---\n\n"
+        
+        # Extract "Having regard to" section
+        having_regard_match = re.search(r'Having regard to[^<]*?(?=Whereas:)', main_content, re.DOTALL | re.IGNORECASE)
+        if having_regard_match:
+            markdown += "## Preamble\n\n"
+            clean_preamble = self.clean_text(self.strip_tags(having_regard_match.group(0)))
+            markdown += f"{clean_preamble}\n\n---\n\n"
+        
+        # Extract "Whereas" clauses - these are the numbered recitals
+        whereas_section = re.search(r'Whereas:\s*(.*?)(?=HAVE ADOPTED|Article\s+1)', main_content, re.DOTALL | re.IGNORECASE)
+        if whereas_section:
+            markdown += "## Whereas Clauses\n\n"
+            whereas_content = whereas_section.group(1)
+            
+            # Extract numbered whereas clauses like "(1)" "(2)" etc.
+            whereas_clauses = re.findall(r'\((\d+)\)\s*(.*?)(?=\(\d+\)|$)', whereas_content, re.DOTALL)
+            
+            for number, content in whereas_clauses:
+                clean_content = self.clean_text(self.strip_tags(content))
+                if clean_content:
+                    markdown += f"**({number})** {clean_content}\n\n"
+            
             markdown += "---\n\n"
         
-        # Extract chapters
-        chapters = re.findall(r'<p[^>]*class="[^"]*title-chapter[^"]*"[^>]*>(.*?)</p>|CHAPTER\s+[IVXLC]+[^<]*', 
-                             html_content, re.IGNORECASE | re.DOTALL)
+        # Extract "HAVE ADOPTED" section
+        have_adopted_match = re.search(r'HAVE ADOPTED THIS REGULATION:[^<]*?(?=CHAPTER|Article\s+1)', main_content, re.DOTALL | re.IGNORECASE)
+        if have_adopted_match:
+            clean_adoption = self.clean_text(self.strip_tags(have_adopted_match.group(0)))
+            markdown += f"## Adoption\n\n{clean_adoption}\n\n---\n\n"
         
-        # Extract articles - this is the main content
-        markdown += "## ARTICLES\n\n"
+        # Extract chapters and articles
+        markdown += "## Content\n\n"
         
-        # Pattern for articles in EUR-Lex
-        article_pattern = r'Article\s+(\d+)[^<]*</[^>]+>(.*?)(?=Article\s+\d+|</body>|$)'
-        articles = re.findall(article_pattern, html_content, re.IGNORECASE | re.DOTALL)
+        # Find all structural elements in order
+        # Look for CHAPTER, TITLE, Article patterns
+        structure_pattern = r'(CHAPTER\s+[IVXLC]+[^<]*?|TITLE\s+[IVXLC]+[^<]*?|Article\s+(\d+)[^<]*?)'
         
-        if not articles:
-            # Try alternative pattern
-            article_pattern = r'<p[^>]*class="[^"]*article[^"]*"[^>]*>Article\s+(\d+)(.*?)</p>(.*?)(?=<p[^>]*class="[^"]*article|$)'
-            articles = re.findall(article_pattern, html_content, re.IGNORECASE | re.DOTALL)
+        # Split content by articles to process sequentially
+        article_splits = re.split(r'(Article\s+\d+)', main_content, flags=re.IGNORECASE)
         
-        if articles:
-            for article in articles:
-                if len(article) >= 2:
-                    article_num = article[0]
-                    article_content = article[1] if len(article) == 2 else article[1] + article[2]
-                    
+        current_section = ""
+        
+        for i, section in enumerate(article_splits):
+            if re.match(r'Article\s+\d+', section, re.IGNORECASE):
+                # This is an article header
+                article_match = re.match(r'Article\s+(\d+)', section, re.IGNORECASE)
+                if article_match:
+                    article_num = article_match.group(1)
                     markdown += f"### Article {article_num}\n\n"
+            elif section.strip() and i > 0:  # Article content
+                # Clean and process the article content
+                clean_content = self.clean_text(self.strip_tags(section))
+                
+                if clean_content:
+                    # Split into paragraphs and format
+                    paragraphs = [p.strip() for p in clean_content.split('\n') if p.strip()]
                     
-                    # Clean the article content
-                    clean_content = self.strip_tags(article_content)
-                    clean_content = self.clean_text(clean_content)
-                    
-                    # Process paragraphs within articles
-                    paragraphs = clean_content.split('\n')
                     for para in paragraphs:
-                        para = para.strip()
-                        if para:
-                            # Check if it's a numbered point
-                            if re.match(r'^\d+\.', para):
-                                markdown += f"\n{para}\n"
-                            elif re.match(r'^\([a-z]\)', para):
-                                markdown += f"   {para}\n"
-                            else:
-                                markdown += f"{para}\n\n"
-                    
-                    markdown += "\n---\n\n"
-        else:
-            # Fallback: extract all paragraph content
-            print("⚠️  Could not find articles with standard pattern, using fallback extraction...")
-            
-            # Extract all paragraphs
-            paragraphs = re.findall(r'<p[^>]*>(.*?)</p>', html_content, re.IGNORECASE | re.DOTALL)
-            
-            for para in paragraphs:
-                clean_para = self.clean_text(self.strip_tags(para))
-                if clean_para and len(clean_para) > 20:  # Skip very short paragraphs
-                    # Detect structure
-                    if clean_para.startswith('CHAPTER'):
-                        markdown += f"\n## {clean_para}\n\n"
-                    elif clean_para.startswith('Article'):
-                        markdown += f"\n### {clean_para}\n\n"
-                    elif clean_para.startswith('TITLE'):
-                        markdown += f"\n## {clean_para}\n\n"
-                    elif re.match(r'^\d+\.', clean_para):
-                        markdown += f"{clean_para}\n\n"
-                    elif re.match(r'^\([a-z]\)', clean_para):
-                        markdown += f"   {clean_para}\n\n"
-                    else:
-                        markdown += f"{clean_para}\n\n"
+                        # Check for numbered points
+                        if re.match(r'^\d+\.', para):
+                            markdown += f"{para}\n\n"
+                        elif re.match(r'^\([a-z]\)', para):
+                            markdown += f"   {para}\n\n"
+                        elif len(para) > 10:  # Skip very short fragments
+                            markdown += f"{para}\n\n"
+                
+                markdown += "---\n\n"
         
         # Extract annexes if present
-        annexes = re.findall(r'ANNEX[^<]*', html_content, re.IGNORECASE)
-        if annexes:
-            markdown += "\n## ANNEXES\n\n"
-            for annex in annexes:
-                clean_annex = self.clean_text(annex)
-                if clean_annex:
-                    markdown += f"### {clean_annex}\n\n"
+        annex_match = re.search(r'(ANNEX.*?)$', main_content, re.DOTALL | re.IGNORECASE)
+        if annex_match:
+            markdown += "## Annexes\n\n"
+            clean_annex = self.clean_text(self.strip_tags(annex_match.group(1)))
+            markdown += f"{clean_annex}\n\n"
         
         return markdown
     
