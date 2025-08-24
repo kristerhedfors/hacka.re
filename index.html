@@ -734,11 +734,15 @@ async function getCurrentTimeInBerlin() {
                         <div class="rag-document-info">
                             <input type="checkbox" id="rag-doc-aia" checked>
                             <label for="rag-doc-aia">
-                                <strong>AIA - EU's AI Act</strong>
+                                <div class="rag-document-title">AIA</div>
+                                <div class="rag-document-subtitle">EU's AI Act</div>
                                 <span class="rag-document-status" id="aia-status">Not indexed</span>
                             </label>
                         </div>
                         <div class="rag-document-actions">
+                            <button type="button" class="btn icon-btn" onclick="RAGManager.viewDocument('aia')" title="View indexed document">
+                                <i class="fas fa-eye"></i>
+                            </button>
                             <button type="button" class="btn icon-btn" onclick="RAGManager.refreshDocument('aia')" title="Refresh embeddings">
                                 <i class="fas fa-sync-alt"></i>
                             </button>
@@ -753,11 +757,15 @@ async function getCurrentTimeInBerlin() {
                         <div class="rag-document-info">
                             <input type="checkbox" id="rag-doc-cra" checked>
                             <label for="rag-doc-cra">
-                                <strong>CRA - EU's Cyber Resilience Act</strong>
+                                <div class="rag-document-title">CRA</div>
+                                <div class="rag-document-subtitle">EU's Cyber Resilience Act</div>
                                 <span class="rag-document-status" id="cra-status">Not indexed</span>
                             </label>
                         </div>
                         <div class="rag-document-actions">
+                            <button type="button" class="btn icon-btn" onclick="RAGManager.viewDocument('cra')" title="View indexed document">
+                                <i class="fas fa-eye"></i>
+                            </button>
                             <button type="button" class="btn icon-btn" onclick="RAGManager.refreshDocument('cra')" title="Refresh embeddings">
                                 <i class="fas fa-sync-alt"></i>
                             </button>
@@ -772,11 +780,15 @@ async function getCurrentTimeInBerlin() {
                         <div class="rag-document-info">
                             <input type="checkbox" id="rag-doc-dora" checked>
                             <label for="rag-doc-dora">
-                                <strong>DORA - EU's Digital Operational Resilience Act</strong>
+                                <div class="rag-document-title">DORA</div>
+                                <div class="rag-document-subtitle">EU's Digital Operational Resilience Act</div>
                                 <span class="rag-document-status" id="dora-status">Not indexed</span>
                             </label>
                         </div>
                         <div class="rag-document-actions">
+                            <button type="button" class="btn icon-btn" onclick="RAGManager.viewDocument('dora')" title="View indexed document">
+                                <i class="fas fa-eye"></i>
+                            </button>
                             <button type="button" class="btn icon-btn" onclick="RAGManager.refreshDocument('dora')" title="Refresh embeddings">
                                 <i class="fas fa-sync-alt"></i>
                             </button>
@@ -939,6 +951,39 @@ async function getCurrentTimeInBerlin() {
                 <div class="modal-actions">
                     <button type="button" class="btn secondary-btn" onclick="RAGManager.closeDocumentSettings()">Cancel</button>
                     <button type="button" class="btn primary-btn" onclick="RAGManager.saveDocumentSettings()">Save Settings</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- RAG Document Viewer Modal -->
+        <div id="rag-document-viewer-modal" class="modal">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h2 id="rag-viewer-title">Document Viewer</h2>
+                    <button type="button" class="close-btn" onclick="RAGManager.closeDocumentViewer()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="rag-viewer-info">
+                        <div class="rag-viewer-stats">
+                            <span>Chunks: <strong id="rag-viewer-chunks">0</strong></span>
+                            <span>Chunk Size: <strong id="rag-viewer-chunk-size">512 tokens</strong></span>
+                            <span>Overlap: <strong id="rag-viewer-overlap">10%</strong></span>
+                        </div>
+                        <div class="rag-viewer-legend">
+                            <span class="legend-item">
+                                <span class="chunk-border-line"></span>
+                                Chunk boundaries
+                            </span>
+                        </div>
+                    </div>
+                    <div class="rag-document-content" id="rag-document-content">
+                        <!-- Document content with chunk boundaries will be rendered here -->
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn secondary-btn" onclick="RAGManager.closeDocumentViewer()">Close</button>
                 </div>
             </div>
         </div>
