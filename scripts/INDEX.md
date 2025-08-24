@@ -1,6 +1,6 @@
 # EU Regulations - Markdown Versions
 
-*Generated on: 2025-08-24 20:47:53*
+*Generated on: 2025-08-24 21:01:38*
 
 ## Available Regulations
 

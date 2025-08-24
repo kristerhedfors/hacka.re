@@ -25,6 +25,13 @@ window.RAGManager = (function() {
         // Initialize RAG services
         VectorRAGService.initialize();
         
+        // Initialize regulations service
+        if (window.ragRegulationsService) {
+            window.ragRegulationsService.initialize().catch(error => {
+                console.warn('Failed to initialize regulations service:', error);
+            });
+        }
+        
         // Migrate legacy localStorage settings to proper storage
         RAGStorageService.migrateLegacyRAGSettings();
         
@@ -350,6 +357,59 @@ window.RAGManager = (function() {
             `;
         }
         
+        // Add EU Regulations section
+        if (window.ragRegulationsService && window.ragRegulationsService.isReady()) {
+            const regulations = window.ragRegulationsService.getAvailableRegulations();
+            
+            if (regulations && regulations.length > 0) {
+                html += `
+                    <div class="rag-tree-section">
+                        <div class="rag-tree-header rag-tree-subsection" data-section="regulations">
+                            <span class="rag-tree-toggle expanded">▼</span>
+                            <span class="rag-tree-title">EU Regulations</span>
+                        </div>
+                        <div class="rag-tree-content expanded">
+                `;
+                
+                regulations.forEach(regulation => {
+                    const indexStatus = indexedPrompts[`regulation_${regulation.id}`] || 'not-indexed';
+                    const statusBadge = getIndexingStatusBadge(indexStatus);
+                    const itemClass = indexStatus === 'indexed' ? 'rag-prompt-item indexed' : 'rag-prompt-item';
+                    
+                    html += `
+                        <div class="${itemClass}">
+                            <input type="checkbox" 
+                                   id="rag-regulation-${regulation.id}" 
+                                   data-regulation-id="${regulation.id}"
+                                   data-prompt-type="regulation"
+                                   ${RAGStorageService.isRAGPromptSelected(`regulation_${regulation.id}`) ? 'checked' : ''}>
+                            <label for="rag-regulation-${regulation.id}">
+                                📋 ${regulation.name}
+                            </label>
+                            <span class="rag-prompt-meta">
+                                ${regulation.regulationNumber} • ${Math.round(regulation.contentLength / 4)} tokens
+                            </span>
+                            <div class="rag-indexing-status">
+                                ${statusBadge}
+                            </div>
+                            <div class="rag-item-actions">
+                                <button type="button" class="btn icon-btn" 
+                                        onclick="RAGManager.viewDocument('regulation_${regulation.id}')"
+                                        title="View full regulation document">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
         // Add User-Defined Prompts section
         html += `
                 <div class="rag-tree-section">
@@ -477,12 +537,19 @@ window.RAGManager = (function() {
      */
     function handlePromptSelectionChange(e) {
         const promptId = e.target.dataset.promptId;
+        const regulationId = e.target.dataset.regulationId;
         const isSelected = e.target.checked;
         
-        // Update the RAG storage service (NOT the default prompts service)
-        RAGStorageService.toggleRAGPromptSelection(promptId);
-        
-        console.log(`RAGManager: RAG prompt ${promptId} ${isSelected ? 'selected' : 'deselected'} for indexing`);
+        if (regulationId) {
+            // Handle regulation selection
+            const regulationItemId = `regulation_${regulationId}`;
+            RAGStorageService.toggleRAGPromptSelection(regulationItemId);
+            console.log(`RAGManager: EU regulation ${regulationId} ${isSelected ? 'selected' : 'deselected'} for indexing`);
+        } else if (promptId) {
+            // Handle prompt selection
+            RAGStorageService.toggleRAGPromptSelection(promptId);
+            console.log(`RAGManager: RAG prompt ${promptId} ${isSelected ? 'selected' : 'deselected'} for indexing`);
+        }
     }
 
     /**
@@ -1512,46 +1579,204 @@ window.RAGManager = (function() {
     }
     
     /**
+     * Generate chunks from content on-the-fly
+     * @param {string} content - Document content
+     * @param {Object} settings - Chunk settings
+     * @returns {Array} Array of chunks
+     */
+    function generateChunksFromContent(content, settings) {
+        const chunkSize = settings.chunkSize * 4; // Convert tokens to characters (approx)
+        const overlapSize = Math.floor(chunkSize * settings.chunkOverlap / 100);
+        
+        const chunks = [];
+        let currentPos = 0;
+        let chunkNumber = 1;
+        
+        while (currentPos < content.length) {
+            const chunkEnd = Math.min(currentPos + chunkSize, content.length);
+            const chunkContent = content.substring(currentPos, chunkEnd);
+            
+            chunks.push({
+                id: `chunk_${chunkNumber}`,
+                content: chunkContent,
+                start: currentPos,
+                end: chunkEnd,
+                number: chunkNumber
+            });
+            
+            currentPos += chunkSize - overlapSize;
+            chunkNumber++;
+        }
+        
+        return chunks;
+    }
+
+    /**
+     * Generate document HTML with chunk visualization for regulations
+     * @param {string} content - Document content
+     * @param {Array} chunks - Array of chunks
+     * @param {Object} settings - Settings object
+     * @returns {string} HTML with chunks visualized
+     */
+    function generateRegulationWithChunks(content, chunks, settings) {
+        const overlapSize = Math.floor(settings.chunkSize * 4 * settings.chunkOverlap / 100);
+        
+        let html = '';
+        
+        chunks.forEach((chunk, index) => {
+            // Add chunk boundary marker (uses existing CSS .chunk-boundary)
+            html += `<div class="chunk-boundary" data-chunk-number="${chunk.number}"></div>`;
+            
+            // Show overlap region if this isn't the first chunk and there is overlap
+            if (index > 0 && overlapSize > 0) {
+                const overlapStart = Math.max(0, chunk.start - overlapSize);
+                const overlapContent = content.substring(overlapStart, chunk.start);
+                if (overlapContent.trim()) {
+                    // Format overlap content with proper paragraph breaks
+                    const formattedOverlap = overlapContent
+                        .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+                        .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+                        .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+                        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/^\*(.+)\*$/gm, '<em>$1</em>')
+                        .replace(/\n\n/g, '</p><p>')
+                        .replace(/^(.+)$/gm, '<p>$1</p>')
+                        .replace(/(<\/p><p>)+/g, '</p><p>')
+                        .replace(/^<p><\/p>/g, '')
+                        .replace(/<\/p><p>$/g, '');
+                    
+                    html += `<div class="chunk-overlap">${formattedOverlap}</div>`;
+                }
+            }
+            
+            // Add chunk content with proper markdown formatting
+            const chunkContent = chunk.content
+                .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+                .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+                .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/^\*(.+)\*$/gm, '<em>$1</em>')
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/^(.+)$/gm, '<p>$1</p>')
+                .replace(/(<\/p><p>)+/g, '</p><p>')
+                .replace(/^<p><\/p>/g, '')
+                .replace(/<\/p><p>$/g, '');
+            
+            html += chunkContent;
+        });
+        
+        return html;
+    }
+
+    /**
      * View document with chunk boundaries
      * @param {string} docId - Document ID
      */
     function viewDocument(docId) {
-        if (!EU_DOCUMENTS[docId]) {
+        console.log(`🔍 DEBUG: viewDocument called with docId: "${docId}"`);
+        let documentInfo = null;
+        let documentContent = null;
+        
+        // Map HTML docIds to regulation IDs
+        const regulationIdMap = {
+            'aia': 'ai_act',
+            'dora': 'dora', 
+            'cra': 'cra'
+        };
+        
+        // Check if it's a regulation (either regulation_ prefix or mapped docId)
+        let regulationId = null;
+        if (docId.startsWith('regulation_')) {
+            regulationId = docId.replace('regulation_', '');
+        } else if (regulationIdMap[docId]) {
+            regulationId = regulationIdMap[docId];
+        }
+        
+        if (regulationId && window.ragRegulationsService) {
+            console.log(`🔍 DEBUG: Regulation path - mapped "${docId}" to regulationId "${regulationId}"`);
+            const regulation = window.ragRegulationsService.getAvailableRegulations()
+                .find(reg => reg.id === regulationId);
+            
+            if (regulation) {
+                documentInfo = {
+                    name: regulation.name,
+                    description: `${regulation.regulationNumber} - Official Date: ${regulation.officialDate}`
+                };
+                documentContent = window.ragRegulationsService.getRegulationContent(regulationId);
+                console.log(`🔍 DEBUG: Found regulation "${regulation.name}", content length: ${documentContent?.length || 'NULL'}`);
+                
+                // Get settings for this regulation
+                const settings = getDocumentSettings(docId);
+                console.log(`🔍 DEBUG: Settings:`, settings);
+                
+                // Generate chunks on-the-fly
+                const chunks = generateChunksFromContent(documentContent, settings);
+                console.log(`🔍 DEBUG: Generated ${chunks.length} chunks`);
+                
+                // Show regulation with chunk visualization
+                const modal = document.getElementById('rag-document-viewer-modal');
+                const titleEl = document.getElementById('rag-viewer-title');
+                const chunksEl = document.getElementById('rag-viewer-chunks');
+                const chunkSizeEl = document.getElementById('rag-viewer-chunk-size');
+                const overlapEl = document.getElementById('rag-viewer-overlap');
+                const contentEl = document.getElementById('rag-document-content');
+                
+                if (!modal) return;
+                
+                titleEl.textContent = `${documentInfo.name} - Document with Chunks`;
+                chunksEl.textContent = chunks.length;
+                chunkSizeEl.textContent = `${settings.chunkSize} tokens`;
+                overlapEl.textContent = `${settings.chunkOverlap}%`;
+                
+                const documentHTML = generateRegulationWithChunks(documentContent, chunks, settings);
+                console.log(`🔍 DEBUG: Generated HTML length: ${documentHTML.length}`);
+                contentEl.innerHTML = `<div class="rag-document-content">${documentHTML}</div>`;
+                
+                modal.classList.add('active');
+                return;
+            }
+        } 
+        // Check if it's an old EU document
+        else if (EU_DOCUMENTS[docId]) {
+            console.log(`🔍 DEBUG: EU_DOCUMENTS path - found docId "${docId}"`);
+            console.log(`🔍 DEBUG: EU_DOCUMENTS[docId]:`, EU_DOCUMENTS[docId]);
+            documentInfo = EU_DOCUMENTS[docId];
+            const indexed = JSON.parse(localStorage.getItem('ragEUDocuments') || '{}');
+            const docData = indexed[docId];
+            
+            if (docData && docData.chunks && docData.chunks.length > 0) {
+                // For old documents, use existing logic
+                const modal = document.getElementById('rag-document-viewer-modal');
+                const titleEl = document.getElementById('rag-viewer-title');
+                const chunksEl = document.getElementById('rag-viewer-chunks');
+                const chunkSizeEl = document.getElementById('rag-viewer-chunk-size');
+                const overlapEl = document.getElementById('rag-viewer-overlap');
+                const contentEl = document.getElementById('rag-document-content');
+                
+                if (!modal) return;
+                
+                titleEl.textContent = `${EU_DOCUMENTS[docId].name} - Document Viewer`;
+                const settings = docData.settings || getDocumentSettings(docId);
+                chunksEl.textContent = docData.chunks.length;
+                chunkSizeEl.textContent = `${settings.chunkSize} tokens`;
+                overlapEl.textContent = `${settings.chunkOverlap}%`;
+                
+                const documentHTML = generateDocumentWithChunks(docId, docData, settings);
+                contentEl.innerHTML = documentHTML;
+                modal.classList.add('active');
+                return;
+            } else {
+                showError(`Document ${EU_DOCUMENTS[docId].name} is not indexed yet. Please refresh it first.`);
+                return;
+            }
+        }
+        
+        if (!documentInfo) {
             showError(`Unknown document: ${docId}`);
             return;
         }
         
-        const indexed = JSON.parse(localStorage.getItem('ragEUDocuments') || '{}');
-        const docData = indexed[docId];
-        
-        if (!docData || !docData.chunks || docData.chunks.length === 0) {
-            showError(`Document ${EU_DOCUMENTS[docId].name} is not indexed yet. Please refresh it first.`);
-            return;
-        }
-        
-        const modal = document.getElementById('rag-document-viewer-modal');
-        const titleEl = document.getElementById('rag-viewer-title');
-        const chunksEl = document.getElementById('rag-viewer-chunks');
-        const chunkSizeEl = document.getElementById('rag-viewer-chunk-size');
-        const overlapEl = document.getElementById('rag-viewer-overlap');
-        const contentEl = document.getElementById('rag-document-content');
-        
-        if (!modal) return;
-        
-        // Set title
-        titleEl.textContent = `${EU_DOCUMENTS[docId].name} - Document Viewer`;
-        
-        // Update stats
-        const settings = docData.settings || getDocumentSettings(docId);
-        chunksEl.textContent = docData.chunks.length;
-        chunkSizeEl.textContent = `${settings.chunkSize} tokens`;
-        overlapEl.textContent = `${settings.chunkOverlap}%`;
-        
-        // Generate document content with chunk boundaries
-        const documentHTML = generateDocumentWithChunks(docId, docData, settings);
-        contentEl.innerHTML = documentHTML;
-        
-        modal.classList.add('active');
+        showError(`Document ${documentInfo.name} content not available. Please check if it's properly loaded.`);
     }
     
     /**

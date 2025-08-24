@@ -1364,6 +1364,11 @@ async function getCurrentTimeInBerlin() {
     <script src="js/components/prompts/prompts-list-manager.js"></script>
     <script src="js/components/prompts-manager.js"></script>
     <!-- RAG Components -->
+    <!-- EU Regulation Data (must load before rag-regulations-service.js) -->
+    <script src="js/data/regulations/eu-regulation-ai-act.js"></script>
+    <script src="js/data/regulations/eu-regulation-dora.js"></script>
+    <script src="js/data/regulations/eu-regulation-cra.js"></script>
+    <script src="js/services/rag-regulations-service.js"></script>
     <script src="js/components/rag/rag-user-bundles.js"></script>
     <script src="js/components/rag-manager.js"></script>
     <script src="js/components/ai-hackare.js"></script>
