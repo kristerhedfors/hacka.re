@@ -83,6 +83,20 @@ window.RAGManager = (function() {
         if (uploadBtn) {
             uploadBtn.addEventListener('click', uploadBundle);
         }
+        
+        // File upload for Files as Knowledge
+        const fileUploadBtn = document.getElementById('rag-file-upload-btn');
+        if (fileUploadBtn) {
+            fileUploadBtn.addEventListener('click', () => {
+                const fileInput = document.getElementById('rag-file-input');
+                if (fileInput) fileInput.click();
+            });
+        }
+        
+        const fileInput = document.getElementById('rag-file-input');
+        if (fileInput) {
+            fileInput.addEventListener('change', handleFileUpload);
+        }
 
         // RAG enable/disable checkbox
         const ragEnabledCheckbox = document.getElementById('rag-enabled-checkbox');
@@ -113,7 +127,9 @@ window.RAGManager = (function() {
         if (modal) {
             modal.classList.add('active');
             updateUI();
+            loadEUDocuments();
             loadDefaultPromptsList();
+            loadFilesAsKnowledge();
         }
     }
 
@@ -207,7 +223,7 @@ window.RAGManager = (function() {
     }
 
     /**
-     * Load and display default prompts list (now includes user prompts)
+     * Load and display default prompts list with tree structure
      */
     function loadDefaultPromptsList() {
         const listContainer = document.getElementById('rag-default-prompts-list');
@@ -223,88 +239,14 @@ window.RAGManager = (function() {
             // Get indexed prompts information
             const indexedPrompts = getIndexedPromptsStatus();
             
-            let promptsHTML = '';
+            // Create tree structure HTML
+            const treeHTML = createTreeStructure(defaultPrompts, userPrompts, indexedPrompts);
             
-            // Process default prompts first
-            if (defaultPrompts && defaultPrompts.length > 0) {
-                promptsHTML += '<div class="rag-prompts-section"><h4 class="rag-section-title">Default Prompts</h4>';
-                
-                const defaultHTML = defaultPrompts.map(prompt => {
-                    const isSection = prompt.isSection && prompt.items && prompt.items.length > 0;
-                    const prompts = isSection ? prompt.items : [prompt];
-                    
-                    return prompts.map(p => {
-                        const indexStatus = indexedPrompts[p.id] || 'not-indexed';
-                        const statusBadge = getIndexingStatusBadge(indexStatus);
-                        const itemClass = indexStatus === 'indexed' ? 'rag-prompt-item indexed' : 'rag-prompt-item';
-                        
-                        return `
-                            <div class="${itemClass}">
-                                <input type="checkbox" 
-                                       id="rag-prompt-${p.id}" 
-                                       data-prompt-id="${p.id}"
-                                       data-prompt-type="default"
-                                       ${RAGStorageService.isRAGPromptSelected(p.id) ? 'checked' : ''}>
-                                <label for="rag-prompt-${p.id}">${p.name || p.id}</label>
-                                <span class="rag-prompt-meta">
-                                    ${p.content ? `${Math.round(p.content.length / 4)} tokens` : 'No content'}
-                                </span>
-                                <div class="rag-indexing-status">
-                                    ${statusBadge}
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
-                }).join('');
-                
-                promptsHTML += defaultHTML + '</div>';
-            }
-            
-            // Process user prompts (including file-originated ones)
-            if (userPrompts && userPrompts.length > 0) {
-                promptsHTML += '<div class="rag-prompts-section"><h4 class="rag-section-title">Your Custom Prompts</h4>';
-                
-                const userHTML = userPrompts.map(p => {
-                    const indexStatus = indexedPrompts[p.id] || 'not-indexed';
-                    const statusBadge = getIndexingStatusBadge(indexStatus);
-                    const itemClass = indexStatus === 'indexed' ? 'rag-prompt-item indexed' : 'rag-prompt-item';
-                    
-                    // Add special class and icon for file-originated prompts
-                    const isFilePrompt = p.isFilePrompt;
-                    const fileIcon = isFilePrompt ? PromptsModalRenderer.getFileIcon(p.fileName) : '';
-                    const displayName = isFilePrompt ? 
-                        `<i class="${fileIcon}" style="margin-right: 6px; opacity: 0.7;"></i>${p.name}` : 
-                        p.name;
-                    
-                    return `
-                        <div class="${itemClass}${isFilePrompt ? ' file-prompt-item' : ''}">
-                            <input type="checkbox" 
-                                   id="rag-prompt-${p.id}" 
-                                   data-prompt-id="${p.id}"
-                                   data-prompt-type="user"
-                                   ${RAGStorageService.isRAGPromptSelected(p.id) ? 'checked' : ''}>
-                            <label for="rag-prompt-${p.id}">${displayName}</label>
-                            <span class="rag-prompt-meta">
-                                ${p.content ? `${Math.round(p.content.length / 4)} tokens` : 'No content'}
-                                ${isFilePrompt ? ` • ${Math.round(p.fileSize / 1024)}KB file` : ''}
-                            </span>
-                            <div class="rag-indexing-status">
-                                ${statusBadge}
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-                
-                promptsHTML += userHTML + '</div>';
-            }
-            
-            // Show message if no prompts available
-            if ((!defaultPrompts || defaultPrompts.length === 0) && (!userPrompts || userPrompts.length === 0)) {
-                promptsHTML = '<p class="form-help">No prompts available. Create some prompts in the Prompts modal or drag-and-drop files first.</p>';
-            }
+            listContainer.innerHTML = treeHTML;
 
-            listContainer.innerHTML = promptsHTML;
-
+            // Setup tree event handlers
+            setupTreeHandlers();
+            
             // Add event listeners to checkboxes
             const checkboxes = listContainer.querySelectorAll('input[type="checkbox"]');
             checkboxes.forEach(checkbox => {
@@ -315,6 +257,218 @@ window.RAGManager = (function() {
             console.error('RAGManager: Error loading prompts list:', error);
             listContainer.innerHTML = '<p class="rag-error">Error loading prompts.</p>';
         }
+    }
+
+    /**
+     * Create tree structure HTML for prompts
+     */
+    function createTreeStructure(defaultPrompts, userPrompts, indexedPrompts) {
+        let html = '';
+        
+        // Create root node "Prompts as Knowledge"
+        html += `
+            <div class="rag-tree-root">
+                <div class="rag-tree-header" data-section="prompts-root">
+                    <span class="rag-tree-toggle expanded">▼</span>
+                    <span class="rag-tree-title">Prompts as Knowledge</span>
+                </div>
+                <div class="rag-tree-content expanded">
+        `;
+        
+        // Add Default Prompts section
+        if (defaultPrompts && defaultPrompts.length > 0) {
+            html += `
+                <div class="rag-tree-section">
+                    <div class="rag-tree-header rag-tree-subsection" data-section="default-prompts">
+                        <span class="rag-tree-toggle expanded">▼</span>
+                        <span class="rag-tree-title">Default Prompts</span>
+                    </div>
+                    <div class="rag-tree-content expanded">
+            `;
+            
+            // Group prompts by category
+            const promptsByCategory = {};
+            defaultPrompts.forEach(prompt => {
+                const category = prompt.category || 'Other';
+                if (!promptsByCategory[category]) {
+                    promptsByCategory[category] = [];
+                }
+                
+                // Handle sections with nested items
+                if (prompt.isSection && prompt.items) {
+                    promptsByCategory[category].push(...prompt.items);
+                } else {
+                    promptsByCategory[category].push(prompt);
+                }
+            });
+            
+            // Create category sections
+            Object.keys(promptsByCategory).sort().forEach(category => {
+                html += `
+                    <div class="rag-tree-category">
+                        <div class="rag-tree-header rag-tree-category-header" data-section="category-${category}">
+                            <span class="rag-tree-toggle">▶</span>
+                            <span class="rag-tree-title">${category}</span>
+                        </div>
+                        <div class="rag-tree-content">
+                `;
+                
+                promptsByCategory[category].forEach(prompt => {
+                    const indexStatus = indexedPrompts[prompt.id] || 'not-indexed';
+                    const statusBadge = getIndexingStatusBadge(indexStatus);
+                    const itemClass = indexStatus === 'indexed' ? 'rag-prompt-item indexed' : 'rag-prompt-item';
+                    
+                    html += `
+                        <div class="${itemClass}">
+                            <input type="checkbox" 
+                                   id="rag-prompt-${prompt.id}" 
+                                   data-prompt-id="${prompt.id}"
+                                   data-prompt-type="default"
+                                   ${RAGStorageService.isRAGPromptSelected(prompt.id) ? 'checked' : ''}>
+                            <label for="rag-prompt-${prompt.id}">
+                                ${getFileIcon(prompt.name)} ${prompt.name || prompt.id}
+                            </label>
+                            <span class="rag-prompt-meta">
+                                ${prompt.content ? `${Math.round(prompt.content.length / 4)} tokens` : 'No content'}
+                            </span>
+                            <div class="rag-indexing-status">
+                                ${statusBadge}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Add User-Defined Prompts section
+        html += `
+                <div class="rag-tree-section">
+                    <div class="rag-tree-header rag-tree-subsection" data-section="user-prompts">
+                        <span class="rag-tree-toggle expanded">▼</span>
+                        <span class="rag-tree-title">User-Defined Prompts</span>
+                    </div>
+                    <div class="rag-tree-content expanded">
+        `;
+        
+        if (userPrompts && userPrompts.length > 0) {
+            userPrompts.forEach(prompt => {
+                const indexStatus = indexedPrompts[prompt.id] || 'not-indexed';
+                const statusBadge = getIndexingStatusBadge(indexStatus);
+                const itemClass = indexStatus === 'indexed' ? 'rag-prompt-item indexed' : 'rag-prompt-item';
+                const isFilePrompt = prompt.isFilePrompt;
+                
+                html += `
+                    <div class="${itemClass}${isFilePrompt ? ' file-prompt-item' : ''}">
+                        <input type="checkbox" 
+                               id="rag-prompt-${prompt.id}" 
+                               data-prompt-id="${prompt.id}"
+                               data-prompt-type="user"
+                               ${RAGStorageService.isRAGPromptSelected(prompt.id) ? 'checked' : ''}>
+                        <label for="rag-prompt-${prompt.id}">
+                            ${getFileIcon(isFilePrompt ? prompt.fileName : prompt.name)} ${prompt.name}
+                        </label>
+                        <span class="rag-prompt-meta">
+                            ${prompt.content ? `${Math.round(prompt.content.length / 4)} tokens` : 'No content'}
+                            ${isFilePrompt ? ` • ${Math.round(prompt.fileSize / 1024)}KB file` : ''}
+                        </span>
+                        <div class="rag-indexing-status">
+                            ${statusBadge}
+                        </div>
+                    </div>
+                `;
+            });
+        } else {
+            html += '<div class="rag-empty-message">No user-defined prompts</div>';
+        }
+        
+        html += `
+                    </div>
+                </div>
+                </div>
+            </div>
+        `;
+        
+        return html;
+    }
+
+    /**
+     * Get file icon for a filename
+     */
+    function getFileIcon(filename) {
+        if (!filename) return '';
+        
+        // Check if we can use the PromptsModalRenderer function
+        if (window.PromptsModalRenderer && typeof window.PromptsModalRenderer.getFileIcon === 'function') {
+            const iconClass = window.PromptsModalRenderer.getFileIcon(filename);
+            return `<i class="${iconClass}" style="margin-right: 6px; opacity: 0.7;"></i>`;
+        }
+        
+        // Fallback to emoji icons
+        const ext = filename.split('.').pop().toLowerCase();
+        const icons = {
+            'txt': '📄',
+            'md': '📝',
+            'pdf': '📑',
+            'doc': '📃',
+            'docx': '📃',
+            'json': '📊',
+            'xml': '📋',
+            'csv': '📊',
+            'html': '🌐',
+            'js': '📜',
+            'py': '🐍',
+            'java': '☕',
+            'cpp': '⚙️',
+            'c': '⚙️',
+            'sh': '🖥️',
+            'sql': '🗄️'
+        };
+        return icons[ext] || '';
+    }
+
+    /**
+     * Setup tree expand/collapse handlers
+     */
+    function setupTreeHandlers() {
+        const headers = document.querySelectorAll('.rag-tree-header');
+        
+        headers.forEach(header => {
+            header.style.cursor = 'pointer';
+            
+            header.addEventListener('click', (e) => {
+                // Don't toggle if clicking on checkbox or label
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'LABEL') {
+                    return;
+                }
+                
+                const toggle = header.querySelector('.rag-tree-toggle');
+                const content = header.nextElementSibling;
+                
+                if (toggle && content && content.classList.contains('rag-tree-content')) {
+                    const isExpanded = content.classList.contains('expanded');
+                    
+                    if (isExpanded) {
+                        content.classList.remove('expanded');
+                        toggle.textContent = '▶';
+                        toggle.classList.remove('expanded');
+                    } else {
+                        content.classList.add('expanded');
+                        toggle.textContent = '▼';
+                        toggle.classList.add('expanded');
+                    }
+                }
+            });
+        });
     }
 
     /**
@@ -853,6 +1007,509 @@ window.RAGManager = (function() {
             stats: VectorRAGService.getIndexStats()
         };
     }
+    
+    /**
+     * Handle file upload for Files as Knowledge
+     * @param {Event} event - File input change event
+     */
+    async function handleFileUpload(event) {
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
+        
+        for (const file of files) {
+            try {
+                showProgress(`Processing ${file.name}...`, 0);
+                
+                // Read file content
+                const content = await readFileContent(file);
+                
+                // Process content based on file type
+                const processedContent = await processFileContent(file, content);
+                
+                // Store as RAG file knowledge
+                storeFileAsKnowledge(file.name, processedContent, file.size);
+                
+                showSuccess(`Added ${file.name} to knowledge base`);
+            } catch (error) {
+                console.error('RAGManager: Error processing file:', error);
+                showError(`Failed to process ${file.name}: ${error.message}`);
+            }
+        }
+        
+        // Clear the input
+        event.target.value = '';
+        
+        // Reload the files list
+        loadFilesAsKnowledge();
+        hideProgress();
+    }
+    
+    /**
+     * Read file content
+     * @param {File} file - File to read
+     * @returns {Promise<string>} File content
+     */
+    function readFileContent(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                resolve(e.target.result);
+            };
+            
+            reader.onerror = (e) => {
+                reject(new Error('Failed to read file'));
+            };
+            
+            // Read as text for most files
+            if (file.type === 'application/pdf') {
+                // For PDFs, we'd need to use a PDF library to extract text
+                // For now, we'll just read as text and show a warning
+                reader.readAsText(file);
+                showWarning('PDF text extraction is basic - consider using plain text files for better results');
+            } else {
+                reader.readAsText(file);
+            }
+        });
+    }
+    
+    /**
+     * Process file content based on type
+     * @param {File} file - Original file
+     * @param {string} content - Raw file content
+     * @returns {Promise<string>} Processed content
+     */
+    async function processFileContent(file, content) {
+        const extension = file.name.split('.').pop().toLowerCase();
+        
+        // For PDFs, we'd ideally use a proper PDF parser
+        // For now, just return the raw text
+        if (extension === 'pdf') {
+            // Basic PDF text extraction (very limited)
+            // In production, use a library like pdf.js
+            return content.replace(/[^\x20-\x7E\n]/g, ' ').trim();
+        }
+        
+        // For other text files, return as-is
+        return content;
+    }
+    
+    /**
+     * Store file as knowledge in RAG storage
+     * @param {string} filename - File name
+     * @param {string} content - Processed content
+     * @param {number} fileSize - Original file size
+     */
+    function storeFileAsKnowledge(filename, content, fileSize) {
+        const files = getStoredFiles();
+        
+        // Create unique ID for the file
+        const fileId = `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        files.push({
+            id: fileId,
+            name: filename,
+            content: content,
+            size: fileSize,
+            addedAt: new Date().toISOString(),
+            tokens: Math.round(content.length / 4)
+        });
+        
+        localStorage.setItem('ragFileKnowledge', JSON.stringify(files));
+    }
+    
+    /**
+     * Get stored files from localStorage
+     * @returns {Array} Stored files
+     */
+    function getStoredFiles() {
+        const stored = localStorage.getItem('ragFileKnowledge');
+        return stored ? JSON.parse(stored) : [];
+    }
+    
+    /**
+     * Load and display Files as Knowledge
+     */
+    function loadFilesAsKnowledge() {
+        const container = document.getElementById('rag-files-list');
+        if (!container) return;
+        
+        const files = getStoredFiles();
+        
+        if (files.length === 0) {
+            container.innerHTML = `
+                <div class="rag-empty-message">
+                    No files uploaded yet. Click "Browse Files" to add documents to the knowledge base.
+                </div>
+            `;
+            return;
+        }
+        
+        const filesHTML = files.map(file => {
+            const indexStatus = getFileIndexStatus(file.id);
+            const statusBadge = getIndexingStatusBadge(indexStatus);
+            
+            return `
+                <div class="rag-file-item ${indexStatus === 'indexed' ? 'indexed' : ''}">
+                    <input type="checkbox" 
+                           id="rag-file-${file.id}" 
+                           data-file-id="${file.id}"
+                           data-file-type="knowledge"
+                           ${isFileSelected(file.id) ? 'checked' : ''}>
+                    <label for="rag-file-${file.id}">
+                        ${getFileIcon(file.name)} ${file.name}
+                    </label>
+                    <span class="rag-file-meta">
+                        ${file.tokens} tokens • ${Math.round(file.size / 1024)}KB
+                    </span>
+                    <div class="rag-file-actions">
+                        <button type="button" class="btn icon-btn" onclick="RAGManager.removeFile('${file.id}')" title="Remove file">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    <div class="rag-indexing-status">
+                        ${statusBadge}
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        container.innerHTML = filesHTML;
+        
+        // Add event listeners to checkboxes
+        const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', handleFileSelectionChange);
+        });
+    }
+    
+    /**
+     * Handle file selection change
+     * @param {Event} event - Change event
+     */
+    function handleFileSelectionChange(event) {
+        const fileId = event.target.dataset.fileId;
+        const isSelected = event.target.checked;
+        
+        const selectedFiles = getSelectedFiles();
+        
+        if (isSelected) {
+            if (!selectedFiles.includes(fileId)) {
+                selectedFiles.push(fileId);
+            }
+        } else {
+            const index = selectedFiles.indexOf(fileId);
+            if (index > -1) {
+                selectedFiles.splice(index, 1);
+            }
+        }
+        
+        localStorage.setItem('ragSelectedFiles', JSON.stringify(selectedFiles));
+        console.log(`RAGManager: File ${fileId} ${isSelected ? 'selected' : 'deselected'} for indexing`);
+    }
+    
+    /**
+     * Get selected files for indexing
+     * @returns {Array} Selected file IDs
+     */
+    function getSelectedFiles() {
+        const stored = localStorage.getItem('ragSelectedFiles');
+        return stored ? JSON.parse(stored) : [];
+    }
+    
+    /**
+     * Check if file is selected
+     * @param {string} fileId - File ID
+     * @returns {boolean} Whether file is selected
+     */
+    function isFileSelected(fileId) {
+        return getSelectedFiles().includes(fileId);
+    }
+    
+    /**
+     * Get file index status
+     * @param {string} fileId - File ID
+     * @returns {string} Index status
+     */
+    function getFileIndexStatus(fileId) {
+        // Check if file has been indexed
+        const indexedFiles = JSON.parse(localStorage.getItem('ragIndexedFiles') || '{}');
+        return indexedFiles[fileId] ? 'indexed' : 'not-indexed';
+    }
+    
+    /**
+     * Remove file from knowledge base
+     * @param {string} fileId - File ID to remove
+     */
+    function removeFile(fileId) {
+        if (!confirm('Remove this file from the knowledge base? This cannot be undone.')) {
+            return;
+        }
+        
+        const files = getStoredFiles();
+        const updatedFiles = files.filter(f => f.id !== fileId);
+        
+        localStorage.setItem('ragFileKnowledge', JSON.stringify(updatedFiles));
+        
+        // Also remove from selected files
+        const selectedFiles = getSelectedFiles();
+        const updatedSelected = selectedFiles.filter(id => id !== fileId);
+        localStorage.setItem('ragSelectedFiles', JSON.stringify(updatedSelected));
+        
+        // Remove from indexed files
+        const indexedFiles = JSON.parse(localStorage.getItem('ragIndexedFiles') || '{}');
+        delete indexedFiles[fileId];
+        localStorage.setItem('ragIndexedFiles', JSON.stringify(indexedFiles));
+        
+        showSuccess('File removed from knowledge base');
+        loadFilesAsKnowledge();
+    }
+    
+    /**
+     * Show info message
+     * @param {string} message - Info message
+     */
+    function showInfo(message) {
+        console.log('RAGManager Info:', message);
+        // Could show a toast notification
+        alert(`Info: ${message}`);
+    }
+    
+    /**
+     * EU Documents data and management
+     */
+    const EU_DOCUMENTS = {
+        'aia': {
+            name: 'AIA - EU\'s AI Act',
+            url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R1689',
+            description: 'Regulation on Artificial Intelligence (AI Act)',
+            defaultSettings: { chunkSize: 512, chunkOverlap: 10, embeddingModel: 'text-embedding-3-small' }
+        },
+        'cra': {
+            name: 'CRA - EU\'s Cyber Resilience Act',
+            url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R2847',
+            description: 'Regulation on Cybersecurity Requirements for Digital Products',
+            defaultSettings: { chunkSize: 512, chunkOverlap: 10, embeddingModel: 'text-embedding-3-small' }
+        },
+        'dora': {
+            name: 'DORA - EU\'s Digital Operational Resilience Act',
+            url: 'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32022R2554',
+            description: 'Regulation on Digital Operational Resilience for the Financial Sector',
+            defaultSettings: { chunkSize: 512, chunkOverlap: 10, embeddingModel: 'text-embedding-3-small' }
+        }
+    };
+    
+    /**
+     * Load EU documents status
+     */
+    function loadEUDocuments() {
+        Object.keys(EU_DOCUMENTS).forEach(docId => {
+            updateDocumentStatus(docId);
+        });
+    }
+    
+    /**
+     * Update document status display
+     * @param {string} docId - Document ID
+     */
+    function updateDocumentStatus(docId) {
+        const statusEl = document.getElementById(`${docId}-status`);
+        if (!statusEl) return;
+        
+        const isIndexed = getDocumentIndexStatus(docId);
+        if (isIndexed) {
+            statusEl.textContent = 'Indexed';
+            statusEl.className = 'rag-document-status indexed';
+        } else {
+            statusEl.textContent = 'Not indexed';
+            statusEl.className = 'rag-document-status';
+        }
+    }
+    
+    /**
+     * Get document index status from storage
+     * @param {string} docId - Document ID
+     * @returns {boolean} Whether document is indexed
+     */
+    function getDocumentIndexStatus(docId) {
+        const indexed = JSON.parse(localStorage.getItem('ragEUDocuments') || '{}');
+        return indexed[docId] && indexed[docId].chunks && indexed[docId].chunks.length > 0;
+    }
+    
+    /**
+     * Refresh document embeddings
+     * @param {string} docId - Document ID
+     */
+    async function refreshDocument(docId) {
+        const refreshBtn = document.querySelector(`[onclick="RAGManager.refreshDocument('${docId}')"]`);
+        const icon = refreshBtn?.querySelector('i');
+        
+        if (!EU_DOCUMENTS[docId]) {
+            showError(`Unknown document: ${docId}`);
+            return;
+        }
+        
+        try {
+            // Add spinning animation
+            if (icon) icon.classList.add('spinning');
+            
+            // Get document settings
+            const settings = getDocumentSettings(docId);
+            
+            // For demo purposes, simulate document processing
+            // In real implementation, you would fetch and process the actual document
+            showProgress(`Processing ${EU_DOCUMENTS[docId].name}...`, 25);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            showProgress('Generating embeddings...', 75);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Store mock indexed data
+            const indexed = JSON.parse(localStorage.getItem('ragEUDocuments') || '{}');
+            indexed[docId] = {
+                chunks: Array.from({ length: Math.floor(Math.random() * 50) + 10 }, (_, i) => ({
+                    id: `${docId}_chunk_${i}`,
+                    content: `Sample chunk ${i + 1} from ${EU_DOCUMENTS[docId].name}`,
+                    embedding: new Array(1536).fill(0).map(() => Math.random())
+                })),
+                settings: settings,
+                lastIndexed: new Date().toISOString()
+            };
+            localStorage.setItem('ragEUDocuments', JSON.stringify(indexed));
+            
+            updateDocumentStatus(docId);
+            showSuccess(`Successfully indexed ${EU_DOCUMENTS[docId].name}`);
+            
+        } catch (error) {
+            showError(`Failed to refresh ${EU_DOCUMENTS[docId].name}: ${error.message}`);
+        } finally {
+            // Remove spinning animation
+            if (icon) icon.classList.remove('spinning');
+            hideProgress();
+        }
+    }
+    
+    /**
+     * Open document settings modal
+     * @param {string} docId - Document ID
+     */
+    function openDocumentSettings(docId) {
+        if (!EU_DOCUMENTS[docId]) return;
+        
+        const modal = document.getElementById('rag-document-settings-modal');
+        const titleEl = document.getElementById('rag-settings-title');
+        const docIdInput = document.getElementById('rag-settings-doc-id');
+        const chunkSizeInput = document.getElementById('rag-chunk-size');
+        const chunkOverlapInput = document.getElementById('rag-chunk-overlap');
+        const embeddingModelSelect = document.getElementById('rag-embedding-model');
+        const chunkCountEl = document.getElementById('rag-settings-chunk-count');
+        const lastIndexedEl = document.getElementById('rag-settings-last-indexed');
+        
+        if (!modal) return;
+        
+        // Set title and document ID
+        titleEl.textContent = `${EU_DOCUMENTS[docId].name} Settings`;
+        docIdInput.value = docId;
+        
+        // Load current settings
+        const settings = getDocumentSettings(docId);
+        chunkSizeInput.value = settings.chunkSize;
+        chunkOverlapInput.value = settings.chunkOverlap;
+        embeddingModelSelect.value = settings.embeddingModel;
+        
+        // Load document info
+        const indexed = JSON.parse(localStorage.getItem('ragEUDocuments') || '{}');
+        const docData = indexed[docId];
+        
+        chunkCountEl.textContent = docData?.chunks?.length || 0;
+        lastIndexedEl.textContent = docData?.lastIndexed 
+            ? new Date(docData.lastIndexed).toLocaleString()
+            : 'Never';
+        
+        modal.classList.add('active');
+    }
+    
+    /**
+     * Close document settings modal
+     */
+    function closeDocumentSettings() {
+        const modal = document.getElementById('rag-document-settings-modal');
+        if (modal) modal.classList.remove('active');
+    }
+    
+    /**
+     * Save document settings
+     */
+    function saveDocumentSettings() {
+        const docId = document.getElementById('rag-settings-doc-id').value;
+        const chunkSize = parseInt(document.getElementById('rag-chunk-size').value);
+        const chunkOverlap = parseInt(document.getElementById('rag-chunk-overlap').value);
+        const embeddingModel = document.getElementById('rag-embedding-model').value;
+        
+        if (!EU_DOCUMENTS[docId]) return;
+        
+        // Validate settings
+        if (chunkSize < 100 || chunkSize > 2000) {
+            showError('Chunk size must be between 100 and 2000 tokens');
+            return;
+        }
+        
+        if (chunkOverlap < 0 || chunkOverlap > 50) {
+            showError('Chunk overlap must be between 0 and 50 percent');
+            return;
+        }
+        
+        // Save settings
+        setDocumentSettings(docId, { chunkSize, chunkOverlap, embeddingModel });
+        
+        showSuccess('Settings saved successfully');
+        closeDocumentSettings();
+    }
+    
+    /**
+     * Get document settings
+     * @param {string} docId - Document ID
+     * @returns {Object} Settings object
+     */
+    function getDocumentSettings(docId) {
+        const settings = JSON.parse(localStorage.getItem('ragDocumentSettings') || '{}');
+        return settings[docId] || EU_DOCUMENTS[docId]?.defaultSettings || {
+            chunkSize: 512,
+            chunkOverlap: 10,
+            embeddingModel: 'text-embedding-3-small'
+        };
+    }
+    
+    /**
+     * Set document settings
+     * @param {string} docId - Document ID
+     * @param {Object} settings - Settings object
+     */
+    function setDocumentSettings(docId, settings) {
+        const allSettings = JSON.parse(localStorage.getItem('ragDocumentSettings') || '{}');
+        allSettings[docId] = settings;
+        localStorage.setItem('ragDocumentSettings', JSON.stringify(allSettings));
+    }
+    
+    /**
+     * Toggle advanced section
+     */
+    function toggleAdvanced() {
+        const content = document.getElementById('rag-advanced-content');
+        const toggle = document.getElementById('rag-advanced-toggle');
+        
+        if (!content || !toggle) return;
+        
+        if (content.style.display === 'none' || !content.style.display) {
+            content.style.display = 'block';
+            toggle.textContent = '▼';
+            toggle.classList.add('expanded');
+        } else {
+            content.style.display = 'none';
+            toggle.textContent = '▶';
+            toggle.classList.remove('expanded');
+        }
+    }
 
     // Public API
     return {
@@ -864,9 +1521,15 @@ window.RAGManager = (function() {
         useResultInChat,
         updateUI,
         removeUserBundle,
+        removeFile,
         isRAGEnabled,
         getRAGEnabledState,
         setRAGEnabledState,
-        refreshPromptsList: loadDefaultPromptsList // Alias for external use
+        refreshPromptsList: loadDefaultPromptsList, // Alias for external use
+        refreshDocument,
+        openDocumentSettings,
+        closeDocumentSettings,
+        saveDocumentSettings,
+        toggleAdvanced
     };
 })();
