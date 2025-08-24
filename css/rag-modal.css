@@ -660,9 +660,18 @@
     flex: 1;
 }
 
-.rag-document-info label strong {
-    font-size: 14px;
+.rag-document-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-color);
     margin-bottom: 2px;
+}
+
+.rag-document-subtitle {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-color-secondary);
+    margin-bottom: 4px;
 }
 
 .rag-document-status {
@@ -766,4 +775,118 @@
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+/* Document Viewer Modal */
+.modal-large {
+    max-width: 800px;
+    max-height: 90vh;
+}
+
+.modal-large .modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.rag-viewer-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background-color: var(--background-color-secondary);
+    border-radius: 4px;
+    border: 1px solid var(--border-color-light);
+    margin-bottom: 20px;
+}
+
+.rag-viewer-stats {
+    display: flex;
+    gap: 20px;
+}
+
+.rag-viewer-stats span {
+    font-size: 13px;
+    color: var(--text-color-secondary);
+}
+
+.rag-viewer-stats strong {
+    color: var(--text-color);
+}
+
+.rag-viewer-legend {
+    display: flex;
+    align-items: center;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+    color: var(--text-color-secondary);
+}
+
+.chunk-border-line {
+    display: inline-block;
+    width: 20px;
+    height: 3px;
+    background: linear-gradient(90deg, #ff8c00 0%, #ffa500 50%, #ff8c00 100%);
+    margin-right: 8px;
+    border-radius: 2px;
+}
+
+.rag-document-content {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    line-height: 1.6;
+    font-size: 14px;
+    color: var(--text-color);
+    background-color: var(--background-color);
+    border: 1px solid var(--border-color-light);
+    border-radius: 4px;
+    padding: 20px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.rag-document-content p {
+    margin-bottom: 12px;
+}
+
+.rag-document-content .chunk-boundary {
+    border-top: 3px solid #ff8c00;
+    margin: 16px -20px 16px -20px;
+    position: relative;
+}
+
+.rag-document-content .chunk-boundary::after {
+    content: 'Chunk ' attr(data-chunk-number);
+    position: absolute;
+    top: -12px;
+    left: 20px;
+    background-color: var(--background-color);
+    padding: 2px 8px;
+    font-size: 10px;
+    color: #ff8c00;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.rag-document-content .chunk-boundary:first-child {
+    margin-top: -20px;
+}
+
+.rag-document-content .chunk-overlap {
+    background: linear-gradient(90deg, rgba(255, 140, 0, 0.1) 0%, rgba(255, 140, 0, 0.05) 100%);
+    margin: 0 -20px;
+    padding: 8px 20px;
+    border-left: 3px solid rgba(255, 140, 0, 0.3);
+}
+
+.rag-document-content .chunk-overlap::before {
+    content: '↔ Overlap region';
+    display: block;
+    font-size: 10px;
+    color: #ff8c00;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 4px;
 }

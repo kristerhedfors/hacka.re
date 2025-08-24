@@ -1510,6 +1510,208 @@ window.RAGManager = (function() {
             toggle.classList.remove('expanded');
         }
     }
+    
+    /**
+     * View document with chunk boundaries
+     * @param {string} docId - Document ID
+     */
+    function viewDocument(docId) {
+        if (!EU_DOCUMENTS[docId]) {
+            showError(`Unknown document: ${docId}`);
+            return;
+        }
+        
+        const indexed = JSON.parse(localStorage.getItem('ragEUDocuments') || '{}');
+        const docData = indexed[docId];
+        
+        if (!docData || !docData.chunks || docData.chunks.length === 0) {
+            showError(`Document ${EU_DOCUMENTS[docId].name} is not indexed yet. Please refresh it first.`);
+            return;
+        }
+        
+        const modal = document.getElementById('rag-document-viewer-modal');
+        const titleEl = document.getElementById('rag-viewer-title');
+        const chunksEl = document.getElementById('rag-viewer-chunks');
+        const chunkSizeEl = document.getElementById('rag-viewer-chunk-size');
+        const overlapEl = document.getElementById('rag-viewer-overlap');
+        const contentEl = document.getElementById('rag-document-content');
+        
+        if (!modal) return;
+        
+        // Set title
+        titleEl.textContent = `${EU_DOCUMENTS[docId].name} - Document Viewer`;
+        
+        // Update stats
+        const settings = docData.settings || getDocumentSettings(docId);
+        chunksEl.textContent = docData.chunks.length;
+        chunkSizeEl.textContent = `${settings.chunkSize} tokens`;
+        overlapEl.textContent = `${settings.chunkOverlap}%`;
+        
+        // Generate document content with chunk boundaries
+        const documentHTML = generateDocumentWithChunks(docId, docData, settings);
+        contentEl.innerHTML = documentHTML;
+        
+        modal.classList.add('active');
+    }
+    
+    /**
+     * Close document viewer modal
+     */
+    function closeDocumentViewer() {
+        const modal = document.getElementById('rag-document-viewer-modal');
+        if (modal) modal.classList.remove('active');
+    }
+    
+    /**
+     * Generate document HTML with chunk boundaries
+     * @param {string} docId - Document ID
+     * @param {Object} docData - Document data
+     * @param {Object} settings - Chunk settings
+     * @returns {string} HTML content
+     */
+    function generateDocumentWithChunks(docId, docData, settings) {
+        // Generate sample document content based on EU document
+        const sampleContent = generateSampleDocumentContent(docId);
+        
+        // Calculate chunk boundaries based on settings
+        const chunkSize = settings.chunkSize * 4; // Convert tokens to characters (approx)
+        const overlapSize = Math.floor(chunkSize * settings.chunkOverlap / 100);
+        
+        let html = '';
+        let currentPos = 0;
+        let chunkNumber = 1;
+        
+        while (currentPos < sampleContent.length) {
+            // Add chunk boundary marker
+            if (chunkNumber > 1) {
+                // Show overlap region if there is one
+                if (overlapSize > 0) {
+                    const overlapStart = Math.max(0, currentPos - overlapSize);
+                    const overlapContent = sampleContent.substring(overlapStart, currentPos);
+                    html += `<div class="chunk-overlap">${escapeHtml(overlapContent)}</div>`;
+                }
+            }
+            
+            html += `<div class="chunk-boundary" data-chunk-number="${chunkNumber}"></div>`;
+            
+            // Add chunk content
+            const chunkEnd = Math.min(currentPos + chunkSize, sampleContent.length);
+            const chunkContent = sampleContent.substring(currentPos, chunkEnd);
+            
+            // Split into paragraphs for better readability
+            const paragraphs = chunkContent.split(/\n\n+/).filter(p => p.trim());
+            paragraphs.forEach(paragraph => {
+                if (paragraph.trim()) {
+                    html += `<p>${escapeHtml(paragraph.trim())}</p>`;
+                }
+            });
+            
+            currentPos += chunkSize - overlapSize;
+            chunkNumber++;
+            
+            if (chunkNumber > docData.chunks.length) break;
+        }
+        
+        return html;
+    }
+    
+    /**
+     * Generate sample document content for EU documents
+     * @param {string} docId - Document ID
+     * @returns {string} Sample content
+     */
+    function generateSampleDocumentContent(docId) {
+        const contents = {
+            'aia': `REGULATION (EU) 2024/1689 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL
+
+laying down harmonised rules on artificial intelligence and amending Regulations (EC) No 300/2008, (EU) No 167/2013, (EU) No 168/2013, (EU) 2018/858, (EU) 2018/1139 and (EU) 2019/2144 and Directives 2014/90/EU, (EU) 2016/797 and (EU) 2020/1828 (Artificial Intelligence Act)
+
+Article 1 - Subject matter and scope
+
+This Regulation lays down harmonised rules for the placing on the market, the putting into service, and the use of artificial intelligence systems in the Union. This Regulation aims to improve the functioning of the internal market and promote the uptake of human-centric and trustworthy artificial intelligence, while ensuring a high level of protection of health, safety and fundamental rights enshrined in the Charter, including democracy, rule of law and environmental protection, against the harmful effects of artificial intelligence systems in the Union, and supporting innovation.
+
+Article 3 - Definitions
+
+For the purposes of this Regulation, the following definitions apply:
+
+(1) 'artificial intelligence system' (AI system) means a machine-based system designed to operate with varying levels of autonomy, that may exhibit adaptiveness after deployment, and that, for explicit or implicit objectives, infers, from the input it receives, how to generate outputs such as predictions, content, recommendations, or decisions that can influence physical or virtual environments;
+
+(2) 'algorithm' means a finite sequence of well-defined instructions, rules or operations for the solution of a problem;
+
+(3) 'model' means a set of elements, including algorithms, data and weights derived from training, designed to generate outputs when given inputs;
+
+Article 4 - Prohibited AI practices
+
+AI systems that deploy subliminal techniques beyond a person's consciousness or exploit vulnerabilities of specific groups of persons due to their age, disability or specific social or economic situation in order to materially distort their behaviour are prohibited.
+
+Article 5 - High-risk AI systems
+
+AI systems identified as high-risk are subject to the requirements set out in this Chapter before they can be placed on the market or put into service. High-risk AI systems include those intended to be used as safety components of products covered by Union harmonisation legislation listed in Annex I.`,
+
+            'cra': `REGULATION (EU) 2024/2847 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL
+
+on cybersecurity requirements for digital products and ancillary services
+
+Article 1 - Subject matter and scope
+
+This Regulation lays down essential cybersecurity requirements for digital products with digital elements that are placed on the Union market, in order to ensure that products with digital elements are cyber secure. This Regulation aims to create incentives for manufacturers to improve the cybersecurity of products with digital elements throughout their life cycle.
+
+Article 2 - Definitions
+
+For the purposes of this Regulation, the following definitions apply:
+
+(1) 'digital product' means any software or hardware product and its remote data processing solutions, including software or hardware components to be integrated into or interconnected with other products;
+
+(2) 'cybersecurity risk' means any reasonably identifiable circumstance or event having a potential adverse effect on the cybersecurity of digital products;
+
+(3) 'vulnerability' means a weakness, susceptibility or flaw of a digital product or of its deployment that can be exploited by a threat;
+
+Article 10 - Essential cybersecurity requirements
+
+Digital products shall be designed, developed and produced in such a way that they ensure an appropriate level of cybersecurity based on the risks. Manufacturers shall ensure that digital products meet the essential cybersecurity requirements set out in Annex I.
+
+Article 11 - Cybersecurity risk assessment
+
+Before placing digital products on the market, manufacturers shall carry out a cybersecurity risk assessment in accordance with the methodology set out in Annex II. The risk assessment shall identify and analyse cybersecurity risks that the digital product may pose to itself or to other digital products.`,
+
+            'dora': `REGULATION (EU) 2022/2554 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL
+
+on digital operational resilience for the financial sector and amending Regulations (EC) No 1060/2009, (EU) No 648/2012, (EU) No 600/2014, (EU) No 909/2014 and (EU) 2016/1011
+
+Article 1 - Subject matter and scope
+
+This Regulation lays down uniform requirements concerning the digital operational resilience for financial entities. It aims to consolidate and upgrade the information and communication technology (ICT) risk management, reporting of major ICT-related incidents, operational resilience testing, and management of third-party ICT risk.
+
+Article 2 - Definitions
+
+For the purposes of this Regulation, the following definitions apply:
+
+(1) 'digital operational resilience' means the ability of a financial entity to build, assure and review its operational integrity and reliability by ensuring, either directly or indirectly through the use of services provided by ICT third-party service providers, the full range of ICT-related capabilities needed to address the security, availability, integrity, reliability and resilience of ICT systems, and to maintain high standards of availability, reliability, safety and security of ICT systems;
+
+(2) 'ICT risk' means any reasonably identifiable circumstance in relation to the use of information and communication technology that, if materialised, may compromise the security, availability, integrity or reliability of ICT systems and any data stored therein;
+
+Article 8 - ICT risk management framework
+
+Financial entities shall have in place a sound, comprehensive and well-documented ICT risk management framework as part of their overall risk management system, which enables them to address ICT risk quickly, efficiently and comprehensively, and to ensure high standards of availability, authenticity, integrity and reliability of ICT systems.
+
+Article 17 - Classification of ICT-related incidents
+
+Financial entities shall classify ICT-related incidents and shall determine their impact based on the criteria set out in the regulatory technical standards referred to in paragraph 2. Major ICT-related incidents shall be classified as such where they have a high adverse impact on the network and information systems.`
+        };
+        
+        return contents[docId] || 'Sample document content not available.';
+    }
+    
+    /**
+     * Escape HTML entities
+     * @param {string} text - Text to escape
+     * @returns {string} Escaped HTML
+     */
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
 
     // Public API
     return {
@@ -1530,6 +1732,8 @@ window.RAGManager = (function() {
         openDocumentSettings,
         closeDocumentSettings,
         saveDocumentSettings,
-        toggleAdvanced
+        toggleAdvanced,
+        viewDocument,
+        closeDocumentViewer
     };
 })();
