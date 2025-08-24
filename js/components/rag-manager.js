@@ -1624,9 +1624,6 @@ window.RAGManager = (function() {
         let html = '';
         
         chunks.forEach((chunk, index) => {
-            // Add chunk boundary marker (uses existing CSS .chunk-boundary)
-            html += `<div class="chunk-boundary" data-chunk-number="${chunk.number}"></div>`;
-            
             // Show overlap region if this isn't the first chunk and there is overlap
             if (index > 0 && overlapSize > 0) {
                 const overlapStart = Math.max(0, chunk.start - overlapSize);
@@ -1645,7 +1642,10 @@ window.RAGManager = (function() {
                         .replace(/^<p><\/p>/g, '')
                         .replace(/<\/p><p>$/g, '');
                     
-                    html += `<div class="chunk-overlap">${formattedOverlap}</div>`;
+                    // Create overlap with specific chunk numbers
+                    const prevChunkNum = chunks[index - 1].number;
+                    const currentChunkNum = chunk.number;
+                    html += `<div class="chunk-overlap" data-overlap-chunks="${prevChunkNum}-${currentChunkNum}">${formattedOverlap}</div>`;
                 }
             }
             
