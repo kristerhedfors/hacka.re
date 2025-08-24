@@ -1730,7 +1730,8 @@ window.RAGManager = (function() {
                 
                 const documentHTML = generateRegulationWithChunks(documentContent, chunks, settings);
                 console.log(`🔍 DEBUG: Generated HTML length: ${documentHTML.length}`);
-                contentEl.innerHTML = `<div class="rag-document-content">${documentHTML}</div>`;
+                contentEl.innerHTML = documentHTML;
+                contentEl.className = 'rag-document-content';
                 
                 modal.classList.add('active');
                 return;
