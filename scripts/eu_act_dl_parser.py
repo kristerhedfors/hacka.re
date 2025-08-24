@@ -67,7 +67,7 @@ class EURLexHTMLToMarkdown:
         return text.strip()
     
     def html_to_markdown(self, html_content, regulation_name, source_url):
-        """Convert EUR-Lex HTML to clean Markdown preserving original structure"""
+        """Convert EUR-Lex HTML to structured Markdown preserving original formatting"""
         
         # Add metadata headers
         generation_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -114,14 +114,102 @@ class EURLexHTMLToMarkdown:
         if not main_content:
             main_content = html_content
         
-        # Simple approach: Strip HTML tags and preserve text with minimal processing
-        clean_text = self.strip_tags(main_content)
-        clean_text = self.clean_text(clean_text)
-        
-        # Add the cleaned content directly
-        markdown += clean_text
+        # Convert HTML to structured markdown with proper formatting
+        structured_content = self.html_to_structured_markdown(main_content)
+        markdown += structured_content
         
         return markdown
+    
+    def html_to_structured_markdown(self, html_content):
+        """Convert HTML to markdown while preserving structure like headers, lists, etc."""
+        
+        # Replace common HTML elements with markdown equivalents
+        content = html_content
+        
+        # Convert headers (h1-h6) to markdown headers
+        content = re.sub(r'<h1[^>]*>(.*?)</h1>', r'# \1', content, flags=re.DOTALL | re.IGNORECASE)
+        content = re.sub(r'<h2[^>]*>(.*?)</h2>', r'## \1', content, flags=re.DOTALL | re.IGNORECASE)
+        content = re.sub(r'<h3[^>]*>(.*?)</h3>', r'### \1', content, flags=re.DOTALL | re.IGNORECASE)
+        content = re.sub(r'<h4[^>]*>(.*?)</h4>', r'#### \1', content, flags=re.DOTALL | re.IGNORECASE)
+        content = re.sub(r'<h5[^>]*>(.*?)</h5>', r'##### \1', content, flags=re.DOTALL | re.IGNORECASE)
+        content = re.sub(r'<h6[^>]*>(.*?)</h6>', r'###### \1', content, flags=re.DOTALL | re.IGNORECASE)
+        
+        # Convert paragraph breaks - add proper spacing
+        content = re.sub(r'<p[^>]*>', '\n\n', content, flags=re.IGNORECASE)
+        content = re.sub(r'</p>', '\n\n', content, flags=re.IGNORECASE)
+        
+        # Convert line breaks
+        content = re.sub(r'<br[^>]*/?>', '\n', content, flags=re.IGNORECASE)
+        
+        # Convert div tags to line breaks
+        content = re.sub(r'<div[^>]*>', '\n', content, flags=re.IGNORECASE)
+        content = re.sub(r'</div>', '\n', content, flags=re.IGNORECASE)
+        
+        # Convert strong/bold text
+        content = re.sub(r'<strong[^>]*>(.*?)</strong>', r'**\1**', content, flags=re.DOTALL | re.IGNORECASE)
+        content = re.sub(r'<b[^>]*>(.*?)</b>', r'**\1**', content, flags=re.DOTALL | re.IGNORECASE)
+        
+        # Convert emphasis/italic text
+        content = re.sub(r'<em[^>]*>(.*?)</em>', r'*\1*', content, flags=re.DOTALL | re.IGNORECASE)
+        content = re.sub(r'<i[^>]*>(.*?)</i>', r'*\1*', content, flags=re.DOTALL | re.IGNORECASE)
+        
+        # Convert unordered lists
+        content = re.sub(r'<ul[^>]*>', '\n', content, flags=re.IGNORECASE)
+        content = re.sub(r'</ul>', '\n', content, flags=re.IGNORECASE)
+        content = re.sub(r'<li[^>]*>(.*?)</li>', r'- \1', content, flags=re.DOTALL | re.IGNORECASE)
+        
+        # Convert ordered lists
+        content = re.sub(r'<ol[^>]*>', '\n', content, flags=re.IGNORECASE)
+        content = re.sub(r'</ol>', '\n', content, flags=re.IGNORECASE)
+        
+        # Handle numbered list items - this is trickier, let's use a callback
+        def convert_ol_items(match):
+            items = re.findall(r'<li[^>]*>(.*?)</li>', match.group(0), flags=re.DOTALL | re.IGNORECASE)
+            result = ""
+            for i, item in enumerate(items, 1):
+                clean_item = self.strip_tags(item).strip()
+                if clean_item:
+                    result += f"{i}. {clean_item}\n"
+            return result
+        
+        # Convert blockquotes
+        content = re.sub(r'<blockquote[^>]*>(.*?)</blockquote>', r'> \1', content, flags=re.DOTALL | re.IGNORECASE)
+        
+        # Handle div elements that might represent sections
+        content = re.sub(r'<div[^>]*class="[^"]*title[^"]*"[^>]*>(.*?)</div>', r'\n## \1\n', content, flags=re.DOTALL | re.IGNORECASE)
+        content = re.sub(r'<div[^>]*class="[^"]*subtitle[^"]*"[^>]*>(.*?)</div>', r'\n### \1\n', content, flags=re.DOTALL | re.IGNORECASE)
+        
+        # Identify Article patterns and convert to headers with proper spacing
+        content = re.sub(r'Article\s+(\d+)', r'\n\n## Article \1\n\n', content, flags=re.IGNORECASE)
+        content = re.sub(r'CHAPTER\s+([IVXLC]+)', r'\n\n# CHAPTER \1\n\n', content, flags=re.IGNORECASE)
+        content = re.sub(r'TITLE\s+([IVXLC]+)', r'\n\n# TITLE \1\n\n', content, flags=re.IGNORECASE)
+        
+        # Handle numbered clauses like "(1)" "(2)" etc. - make them subheaders with spacing
+        content = re.sub(r'\((\d+)\)', r'\n\n### (\1)\n\n', content)
+        
+        # Handle lettered clauses like "(a)" "(b)" etc. - make them list items  
+        content = re.sub(r'\(([a-z])\)', r'\n\n- (\1)', content)
+        
+        # Fix common EU document patterns
+        content = re.sub(r'REGULATION\s+\(EU\)\s+(\d{4}/\d+)', r'\n\n## REGULATION (EU) \1\n\n', content, flags=re.IGNORECASE)
+        content = re.sub(r'Whereas:', r'\n\n## Whereas Clauses\n\n', content, flags=re.IGNORECASE)
+        
+        # Remove remaining HTML tags
+        content = self.strip_tags(content)
+        
+        # Clean up text
+        content = self.clean_text(content)
+        
+        # Fix multiple newlines and spacing
+        content = re.sub(r'\n\s*\n\s*\n+', '\n\n', content)  # Max 2 newlines
+        content = re.sub(r'^\s+', '', content, flags=re.MULTILINE)  # Remove leading spaces
+        
+        # Force line breaks before key patterns that should be on new lines
+        content = re.sub(r'(\S)\s*(##\s)', r'\1\n\n\2', content)  # Add line break before ##
+        content = re.sub(r'(\S)\s*(###\s)', r'\1\n\n\2', content)  # Add line break before ###
+        content = re.sub(r'(\S)\s*(#\s)', r'\1\n\n\2', content)  # Add line break before #
+        
+        return content
     
     def strip_tags(self, html):
         """Remove HTML tags from text"""
