@@ -100,8 +100,8 @@ ul {
 /* ===== Experimental Tag ===== */
 .experimental-tag {
     display: inline-block;
-    background-color: #fecaca; /* Red 200 for experimental warning */
-    color: #7f1d1d; /* Red 900 for text */
+    background-color: #fecaca !important; /* Red 200 for experimental warning */
+    color: #7f1d1d !important; /* Red 900 for text - important to override theme colors */
     padding: 3px 8px;
     font-size: 0.7rem;
     font-weight: bold;
