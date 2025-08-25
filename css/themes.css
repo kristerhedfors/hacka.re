@@ -459,14 +459,14 @@ header .settings .icon-btn i,
     border-radius: 50%; /* Ensure the focus ring is circular */
 }
 
-/* Ensure the send button is always circular */
-#send-btn {
+/* Ensure the send button is circular in Modern theme only */
+.theme-modern #send-btn {
     border-radius: 50% !important;
     overflow: hidden;
 }
 
-/* Ensure the hover effect is circular */
-#send-btn:hover {
+/* Ensure the hover effect is circular in Modern theme only */
+.theme-modern #send-btn:hover {
     border-radius: 50% !important;
 }
 
@@ -925,7 +925,7 @@ header .settings .icon-btn i,
 .theme-ocean #send-btn,
 .theme-forest #send-btn,
 .theme-midnight #send-btn {
-    background-color: rgba(0, 0, 0, 0.3); /* Match message input background */
+    background-color: transparent; /* Remove background circle */
     color: #ffffff; /* White icon */
     margin: auto 0; /* Vertically center the button */
     width: 44px; /* Match the size in styles.css */
@@ -936,7 +936,7 @@ header .settings .icon-btn i,
 .theme-ocean #send-btn:hover,
 .theme-forest #send-btn:hover,
 .theme-midnight #send-btn:hover {
-    background-color: rgba(0, 0, 0, 0.5); /* Slightly darker background on hover */
+    background-color: rgba(255, 255, 255, 0.1); /* Subtle white highlight on hover */
     color: #ffffff; /* Keep icon white on hover */
 }
 
