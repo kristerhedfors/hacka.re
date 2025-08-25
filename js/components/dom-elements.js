@@ -42,7 +42,6 @@ window.DOMElements = (function() {
             shareFunctionLibraryCheckbox: document.getElementById('share-function-library'),
             shareMcpConnectionsCheckbox: document.getElementById('share-mcp-connections'),
             shareThemeCheckbox: document.getElementById('share-theme'),
-            shareDebugModeCheckbox: document.getElementById('share-debug-mode'),
             shareWelcomeMessageCheckbox: document.getElementById('share-welcome-message-checkbox'),
             shareWelcomeMessageInput: document.getElementById('share-welcome-message'),
             generateShareLinkBtn: document.getElementById('generate-share-link-btn'),

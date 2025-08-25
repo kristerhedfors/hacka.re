@@ -164,8 +164,6 @@ window.ShareManager = (function() {
             // Update conversation status
             updateConversationStatus();
             
-            // Update debug mode status
-            updateDebugModeStatus();
             
         }
         
@@ -636,58 +634,6 @@ window.ShareManager = (function() {
             }
         }
         
-        /**
-         * Update debug mode status display
-         */
-        function updateDebugModeStatus() {
-            // Find debug mode checkbox in share modal
-            const checkbox = elements.shareDebugModeCheckbox || document.getElementById('share-debug-mode');
-            if (!checkbox) return;
-            
-            const label = checkbox.parentElement ? checkbox.parentElement.querySelector('label[for="share-debug-mode"]') : null;
-            if (!label) return;
-            
-            // Remove existing status indicators
-            const allExistingStatus = label.querySelectorAll('.share-item-status');
-            allExistingStatus.forEach(status => status.remove());
-            
-            // Get debug mode status
-            let debugEnabled = false;
-            let debugCategories = [];
-            
-            if (window.DebugService) {
-                debugEnabled = window.DebugService.getDebugMode();
-                if (debugEnabled) {
-                    const categories = window.DebugService.getCategories();
-                    debugCategories = Object.entries(categories)
-                        .filter(([key, cat]) => cat.enabled)
-                        .map(([key, cat]) => cat.name);
-                }
-            }
-            
-            // Create status span
-            const statusSpan = document.createElement('span');
-            statusSpan.className = 'share-item-status';
-            statusSpan.style.marginLeft = '10px';
-            statusSpan.style.color = 'var(--text-color-secondary)';
-            statusSpan.style.fontSize = '0.85em';
-            statusSpan.style.fontWeight = 'normal';
-            
-            if (debugEnabled) {
-                if (debugCategories.length > 0) {
-                    const categoryText = debugCategories.length > 3 
-                        ? `${debugCategories.slice(0, 3).join(', ')}...` 
-                        : debugCategories.join(', ');
-                    statusSpan.textContent = `(Enabled for ${categoryText})`;
-                } else {
-                    statusSpan.textContent = '(Enabled for all categories)';
-                }
-            } else {
-                statusSpan.textContent = '(Disabled)';
-            }
-            
-            label.appendChild(statusSpan);
-        }
         
         
         /**
