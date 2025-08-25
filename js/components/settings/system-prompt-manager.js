@@ -50,6 +50,12 @@ window.SystemPromptManager = (function() {
                 // Fallback to simple debug checkbox if DebugManager is not available
                 addDebugModeCheckbox();
             }
+            
+            // Initialize voice control manager
+            if (window.VoiceControlManager) {
+                const voiceControlManager = VoiceControlManager.createVoiceControlManager(elements);
+                voiceControlManager.init();
+            }
         }
         
         /**
