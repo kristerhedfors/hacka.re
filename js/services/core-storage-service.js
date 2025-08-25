@@ -404,7 +404,10 @@ window.CoreStorageService = (function() {
                 'mcp-oauth-configs',
                 'mcp_github_token',
                 'mcp_gmail_oauth',
-                'shodan_api_key'
+                'shodan_api_key',
+                'rag_regulations_data',
+                'rag_regulations_metadata', 
+                'rag_regulations_index'
             ];
             
             // Define function tools storage keys (namespaced manually)

@@ -63,7 +63,7 @@ window.ApiToolCallHandler = (function() {
      * @private
      */
     function displayDebugInformation(toolCalls, addSystemMessage) {
-        if (!addSystemMessage || !window.DebugService || !DebugService.getDebugMode()) {
+        if (!addSystemMessage || !window.DebugService || !DebugService.isCategoryEnabled('functions')) {
             return;
         }
         
@@ -196,7 +196,7 @@ window.ApiToolCallHandler = (function() {
      * @private
      */
     function showArgumentFixes(functionName, originalArgs, fixedArgs, changes, addSystemMessage) {
-        if (!addSystemMessage || !window.DebugService || !DebugService.getDebugMode()) {
+        if (!addSystemMessage || !window.DebugService || !DebugService.isCategoryEnabled('functions')) {
             return;
         }
         

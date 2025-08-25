@@ -153,14 +153,14 @@ window.ApiToolsService = (function() {
                 // Check if the tool is a built-in tool
                 if (builtInTools[name]) {
                     // Log tool execution
-                    if (addSystemMessage && window.DebugService && DebugService.getDebugMode()) {
+                    if (addSystemMessage && window.DebugService && DebugService.isCategoryEnabled('functions')) {
                         addSystemMessage(`Executing built-in tool "${name}"`);
                     }
                     
                     const result = await executeBuiltInTool(toolCall);
                     
                     // Log successful execution
-                    if (addSystemMessage && window.DebugService && DebugService.getDebugMode()) {
+                    if (addSystemMessage && window.DebugService && DebugService.isCategoryEnabled('functions')) {
                         addSystemMessage(`Built-in tool "${name}" executed successfully`);
                     }
                     

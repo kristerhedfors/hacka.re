@@ -126,7 +126,7 @@ window.FunctionToolsProcessor = (function() {
         _logFunctionExecution: function(name, argsString, addSystemMessage) {
             Logger.debug(`About to execute function "${name}"`);
             
-            if (addSystemMessage && window.DebugService && DebugService.getDebugMode()) {
+            if (addSystemMessage && window.DebugService && DebugService.isCategoryEnabled('functions')) {
                 try {
                     const parsedArgs = JSON.parse(argsString);
                     const formattedArgs = JSON.stringify(parsedArgs);
@@ -139,7 +139,7 @@ window.FunctionToolsProcessor = (function() {
         },
         
         _logSuccessfulExecution: function(name, result, addSystemMessage) {
-            if (addSystemMessage && window.DebugService && DebugService.getDebugMode()) {
+            if (addSystemMessage && window.DebugService && DebugService.isCategoryEnabled('functions')) {
                 let resultText = '';
                 try {
                     // Pretty-print the result

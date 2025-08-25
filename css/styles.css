@@ -4563,3 +4563,81 @@ html.dark-mode:not(.theme-modern) .heart-modal-header .info-icon {
         flex: 1;
     }
 }
+
+/* Voice Control Microphone Button */
+.microphone-btn {
+    background: var(--button-background);
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    color: var(--text-color);
+    cursor: pointer;
+    margin-left: 8px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+}
+
+.microphone-btn:hover:not(.processing) {
+    background: var(--button-hover-background);
+}
+
+.microphone-btn.recording {
+    background: #e74c3c;
+    color: white;
+}
+
+.microphone-btn.recording:hover {
+    background: #c0392b;
+}
+
+.microphone-btn.processing {
+    background: #f39c12;
+    color: white;
+    cursor: not-allowed;
+}
+
+/* Sound bars animation for recording state */
+.sound-bars {
+    display: flex;
+    gap: 2px;
+    align-items: center;
+    justify-content: center;
+    height: 16px;
+}
+
+.sound-bar {
+    width: 3px;
+    background: currentColor;
+    border-radius: 2px;
+    animation: soundWave 0.8s ease-in-out infinite alternate;
+}
+
+.sound-bar:nth-child(1) {
+    height: 8px;
+    animation-delay: 0s;
+}
+
+.sound-bar:nth-child(2) {
+    height: 16px;
+    animation-delay: 0.2s;
+}
+
+.sound-bar:nth-child(3) {
+    height: 12px;
+    animation-delay: 0.4s;
+}
+
+@keyframes soundWave {
+    0% {
+        transform: scaleY(0.3);
+        opacity: 0.7;
+    }
+    100% {
+        transform: scaleY(1);
+        opacity: 1;
+    }
+}
