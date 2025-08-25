@@ -390,8 +390,14 @@ window.CoreStorageService = (function() {
                 NamespaceService.BASE_STORAGE_KEYS.BASE_URL,
                 NamespaceService.BASE_STORAGE_KEYS.BASE_URL_PROVIDER,
                 NamespaceService.BASE_STORAGE_KEYS.DEBUG_MODE,
+                NamespaceService.BASE_STORAGE_KEYS.DEBUG_CATEGORIES,
                 NamespaceService.BASE_STORAGE_KEYS.HISTORY,
-                NamespaceService.BASE_STORAGE_KEYS.THEME_MODE
+                NamespaceService.BASE_STORAGE_KEYS.THEME_MODE,
+                NamespaceService.BASE_STORAGE_KEYS.MODEL_LAST_UPDATED,
+                NamespaceService.BASE_STORAGE_KEYS.PROVIDER_LAST_UPDATED,
+                NamespaceService.BASE_STORAGE_KEYS.SAVED_AGENTS,
+                NamespaceService.BASE_STORAGE_KEYS.AGENT_METADATA,
+                NamespaceService.BASE_STORAGE_KEYS.ENABLED_AGENTS
             ];
             
             // Define encrypted storage keys handled by CoreStorageService directly
@@ -407,7 +413,8 @@ window.CoreStorageService = (function() {
                 'shodan_api_key',
                 'rag_regulations_data',
                 'rag_regulations_metadata', 
-                'rag_regulations_index'
+                'rag_regulations_index',
+                'voice_control_enabled'
             ];
             
             // Define function tools storage keys (namespaced manually)
@@ -465,6 +472,11 @@ window.CoreStorageService = (function() {
             localStorage.removeItem('hacka_re_mcp_servers');
             clearedKeys.push('hacka_re_mcp_servers');
             console.log('Cleared MCP servers: hacka_re_mcp_servers');
+            
+            // Clear any legacy non-namespaced voice_control_enabled if it exists
+            storage.removeItem('voice_control_enabled');
+            clearedKeys.push('voice_control_enabled (legacy)');
+            console.log('Cleared legacy non-namespaced key: voice_control_enabled');
             
             // Reset the session key if ShareManager is available
             if (window.aiHackare && window.aiHackare.shareManager) {
