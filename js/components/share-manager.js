@@ -167,8 +167,6 @@ window.ShareManager = (function() {
             // Update debug mode status
             updateDebugModeStatus();
             
-            // Update voice control status
-            updateVoiceControlStatus();
         }
         
         /**
@@ -691,43 +689,6 @@ window.ShareManager = (function() {
             label.appendChild(statusSpan);
         }
         
-        /**
-         * Update voice control status display
-         */
-        function updateVoiceControlStatus() {
-            // Find voice control checkbox in share modal
-            const checkbox = elements.shareVoiceControlCheckbox || document.getElementById('share-voice-control');
-            if (!checkbox) return;
-            
-            const label = checkbox.parentElement ? checkbox.parentElement.querySelector('label[for="share-voice-control"]') : null;
-            if (!label) return;
-            
-            // Remove existing status indicators
-            const allExistingStatus = label.querySelectorAll('.share-item-status');
-            allExistingStatus.forEach(status => status.remove());
-            
-            // Create status span
-            const statusSpan = document.createElement('span');
-            statusSpan.className = 'share-item-status';
-            statusSpan.style.marginLeft = '10px';
-            statusSpan.style.color = 'var(--text-color-secondary)';
-            statusSpan.style.fontSize = '0.85em';
-            statusSpan.style.fontWeight = 'normal';
-            
-            // Get voice control status
-            if (window.VoiceControlManager) {
-                const voiceControlManager = window.VoiceControlManager.createVoiceControlManager({});
-                statusSpan.textContent = `(${voiceControlManager.getVoiceControlStatus()})`;
-            } else {
-                // Fallback to direct localStorage check
-                const voiceEnabled = localStorage.getItem('voice_control_enabled') === 'true';
-                statusSpan.textContent = voiceEnabled 
-                    ? '(Enabled, using Whisper API)'
-                    : '(Disabled)';
-            }
-            
-            label.appendChild(statusSpan);
-        }
         
         /**
          * Regenerate a strong password/session key

@@ -43,7 +43,6 @@ window.DOMElements = (function() {
             shareMcpConnectionsCheckbox: document.getElementById('share-mcp-connections'),
             shareThemeCheckbox: document.getElementById('share-theme'),
             shareDebugModeCheckbox: document.getElementById('share-debug-mode'),
-            shareVoiceControlCheckbox: document.getElementById('share-voice-control'),
             shareWelcomeMessageCheckbox: document.getElementById('share-welcome-message-checkbox'),
             shareWelcomeMessageInput: document.getElementById('share-welcome-message'),
             generateShareLinkBtn: document.getElementById('generate-share-link-btn'),
