@@ -113,10 +113,11 @@
 
         <main style="overflow-y: auto; overflow-x: auto; padding: 2rem;">
             <div class="container" style="max-width: 1000px; margin: 0 auto; word-wrap: break-word; overflow-wrap: break-word; width: 100%;">
-            <h2 class="page-title">Development & Extension</h2>
+            <h2 class="page-title">Development</h2>
 
             <div class="page-nav">
                 <a href="index.html">About</a>
+                <a href="philosophy.html">Philosophy</a>
                 <a href="architecture.html">Architecture</a>
                 <a href="development.html">Development</a>
                 <a href="local-llm-toolbox.html">Local LLMs</a>
@@ -155,58 +156,10 @@
                 <p>99%+ of hacka.re's code was created through LLM-assisted development (vibe coding) using Anthropic's Claude Sonnet models.</p>
             </div>
 
-            <div class="placeholder-section">
-                <h3><i class="fas fa-tools"></i> Implementation Philosophy</h3>
-                <p>hacka.re follows three core implementation principles:</p>
-                <br>
-                <br>
-                <h4>1. Zero Trust</h4>
-                <p>Stored variables are encrypted, all communication with LLMs occurs over HTTPS with end-to-end encryption. Shared links are always encrypted.</p>
-                <br>
-                <p>We want full control of our data without third-party insight, and ensure end-to-end encryption all the way to the chosen LLM API, regardless of whether it runs on own hardware or in the cloud.</p>
-                <br>
-                <p>An additional source of information leakage is "the middle man" - all these AI startups that don't train their own models but build LLM applications on top of models from other providers, e.g., OpenAI, or Meta's open models. This risk is managed by choosing the right API provider or simply by running models locally.</p>
-                <br>
-                <p>The cost in terms of information leakage to third parties carries potentially significant risks that also tend to increase over time, both in number and potential impact, as LLM usage increases.</p>
-                <br>
-                <br>
-                <h4>2. Zero Dependencies</h4>
-                <p>Given the now growing supply chain threat where malicious code finds its way into all kinds of open source libraries, you really don't want dependencies. Additionally, the last major dependency problem is that you still rely on someone else's software - code that might be acquired, hacked, experience new bugs, or be negatively affected in other ways through unexpected changes.</p>
-                <br>
-                <p>BIY - Build it yourself. We build everything ourselves instead. The model gets to show what it's capable of. Code built this way is traditionally considered very expensive to maintain (why reinvent all wheels again?), but we can always test and see how far we get - and consider that where we get stuck now, we'll probably be able to continue working when the next major language model is released anyway.</p>
-                <br>
-                <p>At the same time: The application we can prompt into existence without major difficulties will never be as hard to maintain or develop further as it was during development to its current existing state.</p>
-                <br>
-                <p>Logically, BIY is of course also a direct consequence of Zero Dependencies.</p>
-                <br>
-                <p><strong>Note:</strong> While Zero Dependencies is our ambition, we do import the following four libraries locally, as they contain implementations of functionality particularly difficult to get right when building from scratch, under any circumstances, LLM-assistance or not:</p>
-                <ul>
-                    <li><strong>marked</strong> - For markdown rendering</li>
-                    <li><strong>dompurify</strong> - To prevent cross-site scripting (XSS)</li>
-                    <li><strong>tweetnacl</strong> - For minimal-complexity strong in-browser encryption</li>
-                    <li><strong>qrcode</strong> - For generating QR codes for shareable links</li>
-                </ul>
-                <br>
-                <br>
-                <h4>3. Zero Infrastructure</h4>
-                <p>Infrastructure remains a threshold in many contexts when hacking data. If you think of a broader definition of infrastructure, you sometimes also have the challenge that you can't even install software on your endpoint, depending on permissions. What can you even build that can be used under such limitations?</p>
-                <br>
-                <p>We kill several birds with one stone. We build everything in pure static HTML, JavaScript and CSS - the raw data for web pages - which naturally introduces major limitations on what functionality we can even implement, as all code executes inside the browser's security sandbox.</p>
-                <br>
-                <p>At the same time, we have the following advantages: it significantly limits what types of backdoors can be introduced at all, if an attacker gains write access to the code. And above all: we need no infrastructure. As long as your browser finds the files, over HTTPS or locally from disk, the application works.</p>
-                <br>
-                <p>Additional implemented Zero Infrastructure features:</p>
-                <ul>
-                    <li>Ability to create links that themselves contain an encrypted complete configuration of the chat - i.e., which LLM provider is used, API key, MCP configuration, prompt library, and selected parts of the conversation history.</li>
-                </ul>
-                <br>
-                <p>These links are thus completely self-contained, have no connection to any server-side, and only require being able to open the application's HTML, JavaScript and CSS in your browser to function. A shared configuration CANNOT disappear as long as you have the link.</p>
-                <br>
-                <p>In cases where the amount of data in the link is limited enough to fit in a QR code, these can be printed on paper. Thus, you have a paper copy of an encrypted chat configuration, potentially completely without digital traces. The traces left in the browser, e.g., conversation history, are also encrypted, in the browser's localStorage or sessionStorage.</p>
-            </div>
 
             <div class="page-nav">
                 <a href="index.html">About</a>
+                <a href="philosophy.html">Philosophy</a>
                 <a href="architecture.html">Architecture</a>
                 <a href="development.html">Development</a>
                 <a href="local-llm-toolbox.html">Local LLMs</a>
