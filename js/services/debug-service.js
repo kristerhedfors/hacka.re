@@ -15,7 +15,8 @@ window.DebugService = (function() {
         functions: { name: 'Functions', symbol: '⚙️', enabled: false, description: 'Function calling system' },
         'mcp-events': { name: 'MCP Events', symbol: '🔌', enabled: false, description: 'Model Context Protocol operations' },
         api: { name: 'API', symbol: '🌐', enabled: false, description: 'API requests and responses' },
-        rag: { name: 'RAG', symbol: '🧠', enabled: false, description: 'RAG knowledge base and search operations' }
+        rag: { name: 'RAG', symbol: '🧠', enabled: false, description: 'RAG knowledge base and search operations' },
+        voice: { name: 'Voice', symbol: '🎤', enabled: false, description: 'Voice control and speech-to-text operations' }
     };
     
     // Current category states
