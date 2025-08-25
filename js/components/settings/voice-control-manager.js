@@ -479,12 +479,19 @@ window.VoiceControlManager = (function() {
         }
         
         function getVoiceControlEnabled() {
-            const stored = localStorage.getItem('voice_control_enabled');
-            return stored === 'true';
+            // Use CoreStorageService for namespaced, encrypted storage
+            if (window.CoreStorageService) {
+                return window.CoreStorageService.getValue('voice_control_enabled') === true;
+            }
+            // Fallback for initialization
+            return false;
         }
         
         function setVoiceControlEnabled(enabled) {
-            localStorage.setItem('voice_control_enabled', enabled ? 'true' : 'false');
+            // Use CoreStorageService for namespaced, encrypted storage
+            if (window.CoreStorageService) {
+                window.CoreStorageService.setValue('voice_control_enabled', enabled);
+            }
         }
         
         function updateVoiceControlStatus(statusSpan, enabled) {
