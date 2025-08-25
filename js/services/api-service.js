@@ -84,7 +84,7 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
         ApiDebugger.logRequest('Chat Completion', requestConfig, requestConfig.requestBody);
         
         // Show debug information about tools if enabled
-        if (apiToolsManager && addSystemMessage && window.DebugService && DebugService.getDebugMode()) {
+        if (apiToolsManager && addSystemMessage && window.DebugService && DebugService.isCategoryEnabled('api')) {
             showToolsDebugInfo(apiToolsManager, addSystemMessage);
         }
         
