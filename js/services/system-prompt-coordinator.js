@@ -20,6 +20,49 @@ window.SystemPromptCoordinator = (function() {
     }
     
     /**
+     * Get all selected content for RAG including regulations
+     * @returns {Array} Combined array of all selected content sources
+     */
+    function getAllSelectedRAGContent() {
+        const ragSelectedItems = [];
+        
+        // Get selected prompts
+        const allSelectedPrompts = getAllSelectedPrompts();
+        ragSelectedItems.push(...allSelectedPrompts.map(prompt => ({
+            id: prompt.id,
+            name: prompt.name,
+            content: getPromptContent(prompt),
+            type: 'prompt',
+            source: prompt.isDefault ? 'default' : 'user'
+        })));
+        
+        // Get selected regulations
+        if (window.ragRegulationsService && window.ragRegulationsService.isReady()) {
+            const ragStorage = window.RAGStorageService;
+            const availableRegulations = window.ragRegulationsService.getAvailableRegulations();
+            
+            availableRegulations.forEach(regulation => {
+                const regulationItemId = `regulation_${regulation.id}`;
+                if (ragStorage && ragStorage.isRAGPromptSelected(regulationItemId)) {
+                    const content = window.ragRegulationsService.getRegulationContent(regulation.id);
+                    if (content) {
+                        ragSelectedItems.push({
+                            id: regulationItemId,
+                            name: regulation.name,
+                            content: content,
+                            type: 'regulation',
+                            source: 'eu_regulation',
+                            metadata: window.ragRegulationsService.getRegulationMetadata(regulation.id)
+                        });
+                    }
+                }
+            });
+        }
+        
+        return ragSelectedItems;
+    }
+    
+    /**
      * Get the current content for a prompt, handling dynamic content
      * @param {Object} prompt - Prompt object
      * @returns {string} Current prompt content
@@ -225,6 +268,7 @@ window.SystemPromptCoordinator = (function() {
     // Public API
     return {
         getAllSelectedPrompts,
+        getAllSelectedRAGContent,
         getPromptContent,
         assembleSystemPrompt,
         updateSystemPrompt,

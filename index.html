@@ -589,7 +589,6 @@ async function getCurrentTimeInBerlin() {
         
         <div id="mcp-servers-modal" class="modal">
             <div class="modal-content">
-                <span class="experimental-tag">EXPERIMENTAL</span>
                 <div class="settings-header">
                     <h2>MCP Servers</h2>
                     <span class="info-icon" id="mcp-servers-info-icon">
@@ -689,6 +688,7 @@ async function getCurrentTimeInBerlin() {
         
         <div id="rag-modal" class="modal">
             <div class="modal-content">
+                <span class="experimental-tag">EXPERIMENTAL</span>
                 <div class="settings-header">
                     <h2>Knowledge Base</h2>
                     <span class="info-icon" id="rag-info-icon">
@@ -724,44 +724,144 @@ async function getCurrentTimeInBerlin() {
                     </div>
                 </div>
                 
-                <!-- Default Prompts Section -->
+                <!-- EU Regulatory Documents Section -->
                 <div class="rag-section">
-                    <h3>📝 Prompts as Knowledge Base</h3>
-                    <p class="form-help">Select default prompts to include in the searchable knowledge base. Requires API key for vector embedding generation.</p>
+                    <h3>📜 EU Regulatory Documents</h3>
+                    <p class="form-help">Pre-configured regulatory documents for testing RAG capabilities. Configure chunking parameters and refresh embeddings as needed.</p>
                     
-                    <div class="rag-status" id="rag-default-status">
-                        <div class="rag-stats">
-                            <span id="rag-default-chunks">0 chunks indexed</span>
-                            <span id="rag-default-model">No embeddings model</span>
+                    <!-- AIA Document -->
+                    <div class="rag-document-item" data-doc-id="aia">
+                        <div class="rag-document-info">
+                            <input type="checkbox" id="rag-doc-aia" checked>
+                            <label for="rag-doc-aia">
+                                <div class="rag-document-title">AIA</div>
+                                <div class="rag-document-subtitle">EU's AI Act</div>
+                                <span class="rag-document-status" id="aia-status">Not indexed</span>
+                            </label>
                         </div>
-                        <button type="button" id="rag-index-defaults-btn" class="btn primary-btn" disabled>
-                            Generate Embeddings
-                        </button>
+                        <div class="rag-document-actions">
+                            <button type="button" class="btn icon-btn" onclick="RAGManager.viewDocument('aia')" title="View indexed document">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button type="button" class="btn icon-btn" onclick="RAGManager.refreshDocument('aia')" title="Refresh embeddings">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button type="button" class="btn icon-btn" onclick="RAGManager.openDocumentSettings('aia')" title="Settings">
+                                <i class="fas fa-cog"></i>
+                            </button>
+                        </div>
                     </div>
                     
-                    <div id="rag-default-prompts-list" class="rag-prompts-list">
-                        <!-- Default prompts with checkboxes will be populated here -->
+                    <!-- CRA Document -->
+                    <div class="rag-document-item" data-doc-id="cra">
+                        <div class="rag-document-info">
+                            <input type="checkbox" id="rag-doc-cra" checked>
+                            <label for="rag-doc-cra">
+                                <div class="rag-document-title">CRA</div>
+                                <div class="rag-document-subtitle">EU's Cyber Resilience Act</div>
+                                <span class="rag-document-status" id="cra-status">Not indexed</span>
+                            </label>
+                        </div>
+                        <div class="rag-document-actions">
+                            <button type="button" class="btn icon-btn" onclick="RAGManager.viewDocument('cra')" title="View indexed document">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button type="button" class="btn icon-btn" onclick="RAGManager.refreshDocument('cra')" title="Refresh embeddings">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button type="button" class="btn icon-btn" onclick="RAGManager.openDocumentSettings('cra')" title="Settings">
+                                <i class="fas fa-cog"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- DORA Document -->
+                    <div class="rag-document-item" data-doc-id="dora">
+                        <div class="rag-document-info">
+                            <input type="checkbox" id="rag-doc-dora" checked>
+                            <label for="rag-doc-dora">
+                                <div class="rag-document-title">DORA</div>
+                                <div class="rag-document-subtitle">EU's Digital Operational Resilience Act</div>
+                                <span class="rag-document-status" id="dora-status">Not indexed</span>
+                            </label>
+                        </div>
+                        <div class="rag-document-actions">
+                            <button type="button" class="btn icon-btn" onclick="RAGManager.viewDocument('dora')" title="View indexed document">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button type="button" class="btn icon-btn" onclick="RAGManager.refreshDocument('dora')" title="Refresh embeddings">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button type="button" class="btn icon-btn" onclick="RAGManager.openDocumentSettings('dora')" title="Settings">
+                                <i class="fas fa-cog"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
                 
-                <!-- User-Defined Knowledge Base Section -->
+                <!-- Advanced Section (Collapsible) -->
                 <div class="rag-section">
-                    <h3>📚 User-Defined Knowledge Base</h3>
-                    <p class="form-help">Documents indexed using the hackare tool. Upload your own documents to create custom knowledge bases.</p>
-                    
-                    <div class="rag-status" id="rag-user-status">
-                        <div class="rag-stats">
-                            <span id="rag-user-chunks">0 chunks available</span>
-                            <span id="rag-user-files">0 files</span>
-                        </div>
-                        <button type="button" id="rag-upload-bundle-btn" class="btn secondary-btn">
-                            Load Bundle
-                        </button>
+                    <div class="rag-advanced-header" onclick="RAGManager.toggleAdvanced()">
+                        <span class="rag-advanced-toggle" id="rag-advanced-toggle">▶</span>
+                        <h3>⚙️ Advanced</h3>
                     </div>
-                    
-                    <div id="rag-user-bundles-list" class="rag-bundles-list">
-                        <div class="empty-bundles-state">
-                            <p>No knowledge base bundles loaded. Use the hackare tool to create custom bundles.</p>
+                    <div class="rag-advanced-content" id="rag-advanced-content" style="display: none;">
+                        <!-- Prompts as Knowledge Section -->
+                        <div class="rag-subsection">
+                            <h4>Prompts as Knowledge</h4>
+                            <div class="rag-status" id="rag-default-status">
+                                <div class="rag-stats">
+                                    <span id="rag-default-chunks">0 chunks indexed</span>
+                                    <span id="rag-default-model">No embeddings model</span>
+                                </div>
+                                <button type="button" id="rag-index-defaults-btn" class="btn primary-btn" disabled>
+                                    Generate Embeddings
+                                </button>
+                            </div>
+                            
+                            <div id="rag-default-prompts-list" class="rag-prompts-list">
+                                <!-- Tree structure for prompts will be populated here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Files as Knowledge Section -->
+                        <div class="rag-subsection">
+                            <h4>Files as Knowledge</h4>
+                            <p class="form-help">Upload documents to extract text content for indexing and semantic search.</p>
+                            
+                            <div class="rag-file-upload-section">
+                                <input type="file" id="rag-file-input" multiple accept=".txt,.md,.json,.csv,.xml,.html,.js,.py,.java,.cpp,.c,.h,.cs,.php,.rb,.go,.rs,.swift,.kt,.ts,.tsx,.jsx,.vue,.svelte,.astro,.env,.gitignore,.dockerfile,.makefile,.cmake,.sql" style="display: none;">
+                                <button type="button" id="rag-file-upload-btn" class="btn secondary-btn">
+                                    <i class="fas fa-file-upload"></i> Browse Files
+                                </button>
+                                <span class="file-upload-hint">Supported: TXT, MD, JSON, and most code files</span>
+                            </div>
+                            
+                            <div id="rag-files-list" class="rag-files-list">
+                                <!-- Files will be populated here -->
+                            </div>
+                        </div>
+                        
+                        <!-- User-Defined Knowledge Base Section -->
+                        <div class="rag-subsection">
+                            <h4>User-Defined Knowledge Base</h4>
+                            <p class="form-help">Documents indexed using the hackare tool.</p>
+                            
+                            <div class="rag-status" id="rag-user-status">
+                                <div class="rag-stats">
+                                    <span id="rag-user-chunks">0 chunks available</span>
+                                    <span id="rag-user-files">0 files</span>
+                                </div>
+                                <button type="button" id="rag-upload-bundle-btn" class="btn secondary-btn">
+                                    Load Bundle
+                                </button>
+                            </div>
+                            
+                            <div id="rag-user-bundles-list" class="rag-bundles-list">
+                                <div class="empty-bundles-state">
+                                    <p>No knowledge base bundles loaded.</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -799,6 +899,91 @@ async function getCurrentTimeInBerlin() {
                 
                 <div class="form-actions">
                     <button type="button" id="close-rag-modal" class="btn secondary-btn">Close</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- RAG Document Settings Modal -->
+        <div id="rag-document-settings-modal" class="modal">
+            <div class="modal-content modal-compact">
+                <div class="modal-header">
+                    <h2 id="rag-settings-title">Document Settings</h2>
+                    <button type="button" class="close-btn" onclick="RAGManager.closeDocumentSettings()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="rag-settings-doc-id" value="">
+                    
+                    <div class="form-group">
+                        <label for="rag-chunk-size">Chunk Size (tokens)</label>
+                        <input type="number" id="rag-chunk-size" min="100" max="2000" value="512" step="50">
+                        <p class="form-help">Number of tokens per chunk. Tokens are approximated as characters/4.</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="rag-chunk-overlap">Chunk Overlap (%)</label>
+                        <input type="number" id="rag-chunk-overlap" min="0" max="50" value="10" step="5">
+                        <p class="form-help">Percentage of overlap between consecutive chunks.</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="rag-embedding-model">Embedding Model</label>
+                        <select id="rag-embedding-model">
+                            <option value="text-embedding-3-small" selected>text-embedding-3-small</option>
+                            <option value="text-embedding-3-large">text-embedding-3-large</option>
+                            <option value="text-embedding-ada-002">text-embedding-ada-002</option>
+                        </select>
+                        <p class="form-help">OpenAI embedding model to use for vector generation.</p>
+                    </div>
+                    
+                    <div class="rag-settings-info">
+                        <div class="info-item">
+                            <span class="info-label">Current Chunks:</span>
+                            <span id="rag-settings-chunk-count">0</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Last Indexed:</span>
+                            <span id="rag-settings-last-indexed">Never</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn secondary-btn" onclick="RAGManager.closeDocumentSettings()">Cancel</button>
+                    <button type="button" class="btn primary-btn" onclick="RAGManager.saveDocumentSettings()">Save Settings</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- RAG Document Viewer Modal -->
+        <div id="rag-document-viewer-modal" class="modal">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h2 id="rag-viewer-title">Document Viewer</h2>
+                    <button type="button" class="close-btn" onclick="RAGManager.closeDocumentViewer()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="rag-viewer-info">
+                        <div class="rag-viewer-stats">
+                            <span>Chunks: <strong id="rag-viewer-chunks">0</strong></span>
+                            <span>Chunk Size: <strong id="rag-viewer-chunk-size">512 tokens</strong></span>
+                            <span>Overlap: <strong id="rag-viewer-overlap">10%</strong></span>
+                        </div>
+                        <div class="rag-viewer-legend">
+                            <span class="legend-item">
+                                <span class="chunk-overlap-example"></span>
+                                Overlap regions (between chunks)
+                            </span>
+                        </div>
+                    </div>
+                    <div class="rag-document-content" id="rag-document-content">
+                        <!-- Document content with chunk boundaries will be rendered here -->
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn secondary-btn" onclick="RAGManager.closeDocumentViewer()">Close</button>
                 </div>
             </div>
         </div>
@@ -1179,6 +1364,11 @@ async function getCurrentTimeInBerlin() {
     <script src="js/components/prompts/prompts-list-manager.js"></script>
     <script src="js/components/prompts-manager.js"></script>
     <!-- RAG Components -->
+    <!-- EU Regulation Data (must load before rag-regulations-service.js) -->
+    <script src="js/data/regulations/eu-regulation-ai-act.js"></script>
+    <script src="js/data/regulations/eu-regulation-dora.js"></script>
+    <script src="js/data/regulations/eu-regulation-cra.js"></script>
+    <script src="js/services/rag-regulations-service.js"></script>
     <script src="js/components/rag/rag-user-bundles.js"></script>
     <script src="js/components/rag-manager.js"></script>
     <script src="js/components/ai-hackare.js"></script>
