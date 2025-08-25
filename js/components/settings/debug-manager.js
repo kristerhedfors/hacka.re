@@ -12,6 +12,36 @@ window.DebugManager = (function() {
      */
     function createDebugManager(elements) {
         /**
+         * Update debug status text based on enabled categories
+         * @param {HTMLElement} statusSpan - The status span element
+         * @param {boolean} debugEnabled - Whether debug mode is enabled
+         */
+        function updateDebugStatusText(statusSpan, debugEnabled) {
+            if (!statusSpan) return;
+            
+            if (!debugEnabled) {
+                statusSpan.textContent = '(Disabled)';
+                return;
+            }
+            
+            // Get enabled categories
+            const categories = DebugService.getCategories();
+            const enabledCategories = Object.entries(categories)
+                .filter(([key, cat]) => cat.enabled)
+                .map(([key, cat]) => cat.name);
+            
+            if (enabledCategories.length === 0) {
+                statusSpan.textContent = '(Enabled, no categories selected)';
+            } else if (enabledCategories.length === Object.keys(categories).length) {
+                statusSpan.textContent = '(Enabled for all categories)';
+            } else if (enabledCategories.length <= 3) {
+                statusSpan.textContent = `(Enabled for ${enabledCategories.join(', ')})`;
+            } else {
+                statusSpan.textContent = `(Enabled for ${enabledCategories.slice(0, 3).join(', ')}...)`;
+            }
+        }
+        
+        /**
          * Initialize the debug manager
          */
         function init() {
@@ -43,10 +73,24 @@ window.DebugManager = (function() {
             debugModeLabel.htmlFor = 'debug-mode';
             debugModeLabel.textContent = 'Debug mode';
             
+            // Add status text
+            const statusSpan = document.createElement('span');
+            statusSpan.className = 'settings-item-status';
+            statusSpan.id = 'debug-mode-status';
+            statusSpan.style.marginLeft = '10px';
+            statusSpan.style.color = 'var(--text-color-secondary)';
+            statusSpan.style.fontSize = '0.85em';
+            statusSpan.style.fontWeight = 'normal';
+            updateDebugStatusText(statusSpan, debugModeCheckbox.checked);
+            debugModeLabel.appendChild(statusSpan);
+            
             // Add event listener to the main checkbox
             debugModeCheckbox.addEventListener('change', function() {
                 DebugService.setDebugMode(this.checked);
                 DebugService.log('Debug mode ' + (this.checked ? 'enabled' : 'disabled'));
+                
+                // Update status text
+                updateDebugStatusText(statusSpan, this.checked);
                 
                 // Show/hide the dropdown
                 const dropdown = document.getElementById('debug-categories-dropdown');
@@ -125,6 +169,12 @@ window.DebugManager = (function() {
                         categoryCheckbox.checked = this.checked;
                     }
                 });
+                // Update main debug status text
+                const mainStatusSpan = document.getElementById('debug-mode-status');
+                if (mainStatusSpan) {
+                    const debugEnabled = DebugService.getDebugMode();
+                    updateDebugStatusText(mainStatusSpan, debugEnabled);
+                }
             });
             
             masterCheckboxGroup.appendChild(masterCheckbox);
@@ -156,6 +206,12 @@ window.DebugManager = (function() {
                 categoryCheckbox.addEventListener('change', function() {
                     DebugService.setCategoryEnabled(key, this.checked);
                     updateMasterCheckboxState(masterCheckbox);
+                    // Update main debug status text
+                    const mainStatusSpan = document.getElementById('debug-mode-status');
+                    if (mainStatusSpan) {
+                        const debugEnabled = DebugService.getDebugMode();
+                        updateDebugStatusText(mainStatusSpan, debugEnabled);
+                    }
                 });
                 
                 categoryGroup.appendChild(categoryCheckbox);
