@@ -1,7 +1,8 @@
 /**
  * RAG Regulations Service
- * Manages EU regulation documents for RAG integration
+ * Manages EU regulation documents for RAG integration with encrypted storage
  * Integrates with existing RAG system in hacka.re
+ * Uses CoreStorageService for encrypted storage of regulation data
  * No ES6 modules to avoid CORS issues with file:// protocol
  */
 
@@ -10,6 +11,13 @@ window.RagRegulationsService = class RagRegulationsService {
         this.regulations = new Map();
         this.initialized = false;
         this.loadingPromises = new Map();
+        
+        // Storage keys for encrypted regulation data
+        this.STORAGE_KEYS = {
+            REGULATIONS_DATA: 'rag_regulations_data',
+            REGULATIONS_METADATA: 'rag_regulations_metadata',
+            REGULATIONS_INDEX: 'rag_regulations_index'
+        };
     }
 
     /**
@@ -21,10 +29,19 @@ window.RagRegulationsService = class RagRegulationsService {
         }
 
         try {
-            // Load all available regulation modules
-            await this.loadAllRegulations();
+            // First try to load from encrypted storage
+            const success = await this.loadFromEncryptedStorage();
+            
+            if (!success) {
+                // If no encrypted data found, try to load from global variables and migrate
+                await this.loadAllRegulations();
+                
+                // Save to encrypted storage for future use
+                await this.saveToEncryptedStorage();
+            }
+            
             this.initialized = true;
-            console.log('✓ RAG Regulations Service initialized');
+            console.log('✓ RAG Regulations Service initialized with encrypted storage');
             return true;
         } catch (error) {
             console.error('❌ Failed to initialize RAG Regulations Service:', error);
@@ -33,7 +50,83 @@ window.RagRegulationsService = class RagRegulationsService {
     }
 
     /**
+     * Load regulations from encrypted storage
+     * @returns {boolean} True if data was successfully loaded from storage
+     */
+    async loadFromEncryptedStorage() {
+        try {
+            const regulationsData = CoreStorageService.getValue(this.STORAGE_KEYS.REGULATIONS_DATA);
+            const regulationsIndex = CoreStorageService.getValue(this.STORAGE_KEYS.REGULATIONS_INDEX);
+            
+            if (regulationsData && regulationsIndex) {
+                // Restore regulations from encrypted storage
+                Object.entries(regulationsData).forEach(([id, data]) => {
+                    this.regulations.set(id, {
+                        ...data,
+                        loadedAt: new Date().toISOString(),
+                        fromEncryptedStorage: true
+                    });
+                });
+                
+                console.log(`✓ Loaded ${this.regulations.size} regulations from encrypted storage`);
+                return true;
+            }
+            
+            return false;
+        } catch (error) {
+            console.error('❌ Failed to load regulations from encrypted storage:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Save regulations to encrypted storage
+     * @returns {boolean} True if successfully saved
+     */
+    async saveToEncryptedStorage() {
+        try {
+            const regulationsData = {};
+            const regulationsIndex = {
+                lastUpdated: new Date().toISOString(),
+                totalRegulations: this.regulations.size,
+                regulations: []
+            };
+            
+            // Convert regulations Map to serializable object
+            for (const [id, data] of this.regulations) {
+                regulationsData[id] = {
+                    ...data,
+                    savedAt: new Date().toISOString()
+                };
+                
+                regulationsIndex.regulations.push({
+                    id,
+                    name: data.name,
+                    size: data.content ? data.content.length : 0,
+                    metadata: data.metadata
+                });
+            }
+            
+            // Save to encrypted storage
+            const dataSaved = CoreStorageService.setValue(this.STORAGE_KEYS.REGULATIONS_DATA, regulationsData);
+            const indexSaved = CoreStorageService.setValue(this.STORAGE_KEYS.REGULATIONS_INDEX, regulationsIndex);
+            
+            if (dataSaved && indexSaved) {
+                console.log(`✓ Saved ${this.regulations.size} regulations to encrypted storage`);
+                return true;
+            } else {
+                console.error('❌ Failed to save regulations to encrypted storage');
+                return false;
+            }
+        } catch (error) {
+            console.error('❌ Error saving regulations to encrypted storage:', error);
+            return false;
+        }
+    }
+
+    /**
      * Load all regulation data from global variables set by regulation scripts
+     * This method is used for initial migration to encrypted storage
      */
     async loadAllRegulations() {
         // Wait a bit for regulation scripts to load
@@ -65,9 +158,10 @@ window.RagRegulationsService = class RagRegulationsService {
                     this.regulations.set(regInfo.id, {
                         ...regulationData,
                         loaded: true,
-                        loadedAt: new Date().toISOString()
+                        loadedAt: new Date().toISOString(),
+                        migratedFromGlobal: true
                     });
-                    console.log(`✓ Loaded regulation: ${regInfo.name}`);
+                    console.log(`✓ Migrated regulation from global variable: ${regInfo.name}`);
                 } else {
                     console.warn(`⚠️ Global variable ${regInfo.globalVar} not found for: ${regInfo.name}`);
                 }
@@ -250,6 +344,45 @@ window.RagRegulationsService = class RagRegulationsService {
             }
         } else {
             console.warn('⚠️ RAG manager not found - will retry later');
+        }
+    }
+
+    /**
+     * Clear all regulation data from encrypted storage
+     * @returns {boolean} True if successfully cleared
+     */
+    clearEncryptedStorage() {
+        try {
+            CoreStorageService.removeValue(this.STORAGE_KEYS.REGULATIONS_DATA);
+            CoreStorageService.removeValue(this.STORAGE_KEYS.REGULATIONS_METADATA);
+            CoreStorageService.removeValue(this.STORAGE_KEYS.REGULATIONS_INDEX);
+            
+            this.regulations.clear();
+            this.initialized = false;
+            
+            console.log('✓ Cleared all regulation data from encrypted storage');
+            return true;
+        } catch (error) {
+            console.error('❌ Failed to clear regulation data from encrypted storage:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Update regulations in storage (useful when regulations are updated)
+     * @returns {boolean} True if successfully updated
+     */
+    async updateEncryptedStorage() {
+        try {
+            if (this.regulations.size === 0) {
+                // If no regulations loaded, try to reload from global variables
+                await this.loadAllRegulations();
+            }
+            
+            return await this.saveToEncryptedStorage();
+        } catch (error) {
+            console.error('❌ Failed to update encrypted storage:', error);
+            return false;
         }
     }
 
