@@ -33,6 +33,12 @@ window.FunctionExecuteModal = (function() {
                 closeBtn.addEventListener('click', hideExecuteModal);
             }
             
+            // Function selection dropdown
+            const functionSelect = document.getElementById('function-execute-function-select');
+            if (functionSelect) {
+                functionSelect.addEventListener('change', handleFunctionSelectionChange);
+            }
+            
             if (executeBtn) {
                 executeBtn.addEventListener('click', handleExecuteFunction);
             }
@@ -70,28 +76,21 @@ window.FunctionExecuteModal = (function() {
             const modal = document.getElementById('function-execute-modal');
             if (!modal) return;
             
-            currentFunctionName = functionName;
-            
             // Reset modal state
             resetModal();
             
-            // Parse function to get metadata
-            const functionInfo = parseFunctionInfo(functionName, functionCode);
+            // Populate function dropdown with all available functions
+            populateFunctionDropdown();
             
-            // Set function name and description
-            const nameElement = document.getElementById('function-execute-function-name');
-            const descElement = document.getElementById('function-execute-function-description');
-            
-            if (nameElement) {
-                nameElement.textContent = functionName;
+            // Set the selected function
+            const functionSelect = document.getElementById('function-execute-function-select');
+            if (functionSelect) {
+                functionSelect.value = functionName;
+                currentFunctionName = functionName;
             }
             
-            if (descElement) {
-                descElement.textContent = functionInfo.description || 'No description available';
-            }
-            
-            // Generate parameter inputs
-            generateParameterInputs(functionInfo.parameters);
+            // Update function description and parameters for the selected function
+            updateFunctionDetails(functionName, functionCode);
             
             // Show modal
             modal.classList.add('active');
@@ -135,6 +134,131 @@ window.FunctionExecuteModal = (function() {
             
             // Reset button state
             resetExecuteButton();
+        }
+        
+        /**
+         * Populate the function dropdown with all available functions
+         */
+        function populateFunctionDropdown() {
+            const functionSelect = document.getElementById('function-execute-function-select');
+            if (!functionSelect) return;
+            
+            // Clear existing options
+            functionSelect.innerHTML = '';
+            
+            const functions = [];
+            
+            // Get user-defined functions
+            const userFunctions = FunctionToolsService.getJsFunctions();
+            Object.keys(userFunctions).forEach(name => {
+                functions.push({
+                    name: name,
+                    code: userFunctions[name].code,
+                    source: 'User-defined',
+                    description: extractDescriptionFromCode(userFunctions[name].code)
+                });
+            });
+            
+            // Get default functions
+            if (window.DefaultFunctionsService) {
+                const defaultFunctions = window.DefaultFunctionsService.getEnabledDefaultFunctions();
+                Object.keys(defaultFunctions).forEach(name => {
+                    functions.push({
+                        name: name,
+                        code: defaultFunctions[name].code,
+                        source: 'Default',
+                        description: extractDescriptionFromCode(defaultFunctions[name].code)
+                    });
+                });
+            }
+            
+            // Sort functions alphabetically
+            functions.sort((a, b) => a.name.localeCompare(b.name));
+            
+            // Add options to dropdown
+            if (functions.length === 0) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'No functions available';
+                option.disabled = true;
+                functionSelect.appendChild(option);
+            } else {
+                functions.forEach(func => {
+                    const option = document.createElement('option');
+                    option.value = func.name;
+                    option.textContent = `${func.name} (${func.source})`;
+                    option.setAttribute('data-source', func.source);
+                    option.setAttribute('data-description', func.description || 'No description');
+                    functionSelect.appendChild(option);
+                });
+            }
+        }
+        
+        /**
+         * Handle function selection change in dropdown
+         */
+        function handleFunctionSelectionChange() {
+            const functionSelect = document.getElementById('function-execute-function-select');
+            if (!functionSelect || !functionSelect.value) return;
+            
+            const selectedFunctionName = functionSelect.value;
+            currentFunctionName = selectedFunctionName;
+            
+            // Get function code from appropriate source
+            let functionCode = '';
+            const userFunctions = FunctionToolsService.getJsFunctions();
+            
+            if (userFunctions[selectedFunctionName]) {
+                functionCode = userFunctions[selectedFunctionName].code;
+            } else if (window.DefaultFunctionsService) {
+                const defaultFunctions = window.DefaultFunctionsService.getEnabledDefaultFunctions();
+                if (defaultFunctions[selectedFunctionName]) {
+                    functionCode = defaultFunctions[selectedFunctionName].code;
+                }
+            }
+            
+            // Update function details
+            updateFunctionDetails(selectedFunctionName, functionCode);
+        }
+        
+        /**
+         * Update function details (description and parameters)
+         * @param {string} functionName - Function name
+         * @param {string} functionCode - Function code
+         */
+        function updateFunctionDetails(functionName, functionCode) {
+            // Parse function to get metadata
+            const functionInfo = parseFunctionInfo(functionName, functionCode);
+            
+            // Set function description
+            const descElement = document.getElementById('function-execute-function-description');
+            if (descElement) {
+                descElement.textContent = functionInfo.description || 'No description available';
+            }
+            
+            // Generate parameter inputs
+            generateParameterInputs(functionInfo.parameters);
+        }
+        
+        /**
+         * Extract description from function code
+         * @param {string} code - Function code
+         * @returns {string} Description or empty string
+         */
+        function extractDescriptionFromCode(code) {
+            // Try to extract JSDoc description
+            const descMatch = code.match(/@description\s+(.+?)(?:\n|\*\/)/);
+            if (descMatch) {
+                return descMatch[1].trim();
+            }
+            
+            // Try to get description from JSDoc comment block
+            const docMatch = code.match(/\/\*\*\s*\n\s*\*\s*(.+?)\n/);
+            if (docMatch) {
+                return docMatch[1].trim();
+            }
+            
+            return '';
         }
         
         /**
@@ -212,20 +336,11 @@ window.FunctionExecuteModal = (function() {
                 input.setAttribute('data-param-name', param.name);
                 input.setAttribute('data-param-type', param.type);
                 
-                // Set placeholder with example values
-                input.placeholder = getParameterPlaceholder(param);
+                // Set placeholder with JSDoc description if available, otherwise use example values
+                input.placeholder = param.description || getParameterPlaceholder(param);
                 
                 paramDiv.appendChild(label);
                 paramDiv.appendChild(typeInfo);
-                if (param.description) {
-                    const desc = document.createElement('div');
-                    desc.className = 'function-parameter-description';
-                    desc.style.fontSize = '12px';
-                    desc.style.color = 'var(--text-color-secondary)';
-                    desc.style.marginBottom = '5px';
-                    desc.textContent = param.description;
-                    paramDiv.appendChild(desc);
-                }
                 paramDiv.appendChild(input);
                 
                 container.appendChild(paramDiv);

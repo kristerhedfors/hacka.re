@@ -78,9 +78,10 @@ function test_add(a, b) {
     execute_modal = page.locator("#function-execute-modal")
     expect(execute_modal).to_have_class("modal active")
     
-    # Verify function info is displayed
-    function_name = page.locator("#function-execute-function-name")
-    expect(function_name).to_contain_text("test_add")
+    # Verify function dropdown is displayed and populated
+    function_select = page.locator("#function-execute-function-select")
+    expect(function_select).to_be_visible()
+    expect(function_select).to_have_value("test_add")
     
     function_desc = page.locator("#function-execute-function-description")
     expect(function_desc).to_contain_text("A simple test function that adds two numbers")
