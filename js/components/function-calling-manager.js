@@ -13,6 +13,7 @@ window.FunctionCallingManager = (function() {
     function createFunctionCallingManager(elements, addSystemMessage) {
         // Component instances
         let functionModalManager = null;
+        let functionExecuteModal = null;
         let mcpServerManager = null;
         let functionListRenderer = null;
         let functionEditorManager = null;
@@ -26,6 +27,13 @@ window.FunctionCallingManager = (function() {
             if (window.FunctionModalManager) {
                 functionModalManager = window.FunctionModalManager.createFunctionModalManager(elements, addSystemMessage);
                 functionModalManager.init();
+            }
+            
+            if (window.FunctionExecuteModal) {
+                functionExecuteModal = window.FunctionExecuteModal.createFunctionExecuteModal(elements, addSystemMessage);
+                functionExecuteModal.init();
+                // Store globally for other components to access
+                window.functionExecuteModal = functionExecuteModal;
             }
             
             if (window.McpServerManager) {
