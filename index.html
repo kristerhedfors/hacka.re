@@ -622,6 +622,24 @@ async function getCurrentTimeInBerlin() {
                         <h4>Advanced</h4>
                     </div>
                     <div class="mcp-advanced-list" style="display: none;">
+                        <!-- Share Link MCP built-in tool -->
+                        <div id="mcp-share-link-section" class="mcp-built-in-tool">
+                            <div class="mcp-tool-header">
+                                <h4><i class="fas fa-share-alt"></i> Share Link MCP</h4>
+                                <button id="mcp-share-link-enable" class="btn btn-sm btn-primary">Enable</button>
+                            </div>
+                            <div class="mcp-tool-description">
+                                <p>Built-in MCP tool for creating secure share links with selected content.</p>
+                                <ul class="mcp-tool-features">
+                                    <li>Check available content (API keys, conversations, settings)</li>
+                                    <li>Generate secure encrypted share links</li>
+                                    <li>Create QR codes for easy sharing</li>
+                                    <li>Full control over what to include in shared links</li>
+                                </ul>
+                                <div id="mcp-share-link-status" class="mcp-tool-status" style="display: none;"></div>
+                            </div>
+                        </div>
+                        
                         <!-- Proxy connection UI will be inserted here by JavaScript -->
                         <div id="mcp-proxy-section-placeholder"></div>
                         
@@ -1322,6 +1340,8 @@ async function getCurrentTimeInBerlin() {
     <!-- MCP Components (refactored into multiple modules) -->
     <script src="js/components/mcp/mcp-utils.js"></script>
     <script src="js/components/mcp/mcp-modal-renderer.js"></script>
+    <script src="js/services/mcp-share-link-service.js"></script>
+    <script src="js/components/mcp/mcp-share-link-ui.js"></script>
     <script src="js/components/mcp/mcp-ui-manager.js"></script>
     <script src="js/components/mcp/mcp-proxy-manager.js"></script>
     <script src="js/components/mcp/mcp-command-history.js"></script>

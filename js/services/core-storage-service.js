@@ -414,7 +414,8 @@ window.CoreStorageService = (function() {
                 'rag_regulations_data',
                 'rag_regulations_metadata', 
                 'rag_regulations_index',
-                'voice_control_enabled'
+                'voice_control_enabled',
+                'mcp_share_link_enabled'
             ];
             
             // Define function tools storage keys (namespaced manually)
@@ -482,6 +483,12 @@ window.CoreStorageService = (function() {
             if (window.aiHackare && window.aiHackare.shareManager) {
                 window.aiHackare.shareManager.setSessionKey(null);
                 console.log('Reset session key via ShareManager');
+            }
+            
+            // Reset Share Link MCP state if available
+            if (window.MCPShareLinkUI && typeof window.MCPShareLinkUI.resetState === 'function') {
+                window.MCPShareLinkUI.resetState();
+                console.log('Reset Share Link MCP state');
             }
             
             return {

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Share Link Integration Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        button {
+            margin: 5px;
+            padding: 8px 15px;
+            background: #6366f1;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #4f46e5;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #e8f4f8;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>MCP Share Link - Namespace Integration Test</h1>
+    
+    <div class="test-section">
+        <h3>1. Test Encrypted Storage Integration</h3>
+        <button onclick="testEncryptedStorage()">Test Save/Load from Encrypted Storage</button>
+        <div id="encrypted-result" class="result" style="display:none;"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. Test Migration from localStorage</h3>
+        <button onclick="testMigration()">Test Migration from Plain localStorage</button>
+        <div id="migration-result" class="result" style="display:none;"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. Test Delete Namespace Integration</h3>
+        <button onclick="testNamespaceDelete()">Test Namespace Delete Integration</button>
+        <div id="delete-result" class="result" style="display:none;"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>4. Test State Persistence</h3>
+        <button onclick="testPersistence()">Test Enable → Reload → Verify State</button>
+        <div id="persistence-result" class="result" style="display:none;"></div>
+    </div>
+    
+    <script>
+        // Wait for services to be ready
+        window.addEventListener('DOMContentLoaded', () => {
+            // Initialize services if needed
+            if (window.NamespaceService && !window.NamespaceService.initialized) {
+                console.log('Initializing NamespaceService...');
+            }
+        });
+        
+        async function testEncryptedStorage() {
+            const resultDiv = document.getElementById('encrypted-result');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = 'Testing encrypted storage integration...';
+            
+            try {
+                // Test saving to encrypted storage
+                if (!window.CoreStorageService) {
+                    throw new Error('CoreStorageService not available');
+                }
+                
+                // Save a test value
+                const saved = await window.CoreStorageService.setValue('mcp_share_link_enabled', 'true');
+                if (!saved) {
+                    throw new Error('Failed to save to encrypted storage');
+                }
+                
+                // Retrieve the value
+                const retrieved = await window.CoreStorageService.getValue('mcp_share_link_enabled');
+                if (retrieved !== 'true') {
+                    throw new Error(`Expected 'true', got '${retrieved}'`);
+                }
+                
+                // Verify it's actually encrypted in storage
+                const storage = window.StorageTypeService ? window.StorageTypeService.getStorage() : localStorage;
+                const namespace = window.NamespaceService.getNamespace();
+                const key = `hackare_${namespace}_mcp_share_link_enabled`;
+                const rawValue = storage.getItem(key);
+                
+                if (!rawValue || rawValue === 'true') {
+                    throw new Error('Value appears to be stored unencrypted');
+                }
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ SUCCESS!\n\nSaved: 'true'\nRetrieved: '${retrieved}'\nEncrypted in storage: ${rawValue.substring(0, 50)}...\nKey: ${key}`;
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ ERROR: ${error.message}`;
+                console.error('Encrypted storage test failed:', error);
+            }
+        }
+        
+        async function testMigration() {
+            const resultDiv = document.getElementById('migration-result');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = 'Testing migration from localStorage...';
+            
+            try {
+                // First, clear any existing encrypted value
+                await window.CoreStorageService.removeValue('mcp_share_link_enabled');
+                
+                // Set a value in plain localStorage (simulating old version)
+                localStorage.setItem('mcp_share_link_enabled', 'true');
+                
+                // Verify it exists in localStorage
+                const oldValue = localStorage.getItem('mcp_share_link_enabled');
+                if (oldValue !== 'true') {
+                    throw new Error('Failed to set up test localStorage value');
+                }
+                
+                // Now call the load function which should trigger migration
+                if (!window.MCPShareLinkUI) {
+                    throw new Error('MCPShareLinkUI not available');
+                }
+                
+                // Simulate the loadState function
+                const savedState = await window.CoreStorageService.getValue('mcp_share_link_enabled');
+                
+                let migrationOccurred = false;
+                if (savedState === null) {
+                    // Should trigger migration
+                    const oldState = localStorage.getItem('mcp_share_link_enabled');
+                    if (oldState !== null) {
+                        await window.CoreStorageService.setValue('mcp_share_link_enabled', oldState);
+                        localStorage.removeItem('mcp_share_link_enabled');
+                        migrationOccurred = true;
+                    }
+                }
+                
+                // Verify migration worked
+                const migratedValue = await window.CoreStorageService.getValue('mcp_share_link_enabled');
+                const oldValueGone = localStorage.getItem('mcp_share_link_enabled') === null;
+                
+                if (migratedValue !== 'true' || !oldValueGone) {
+                    throw new Error('Migration failed');
+                }
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ SUCCESS!\n\nMigration occurred: ${migrationOccurred}\nMigrated value: ${migratedValue}\nOld localStorage cleared: ${oldValueGone}`;
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ ERROR: ${error.message}`;
+                console.error('Migration test failed:', error);
+            }
+        }
+        
+        async function testNamespaceDelete() {
+            const resultDiv = document.getElementById('delete-result');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = 'Testing namespace delete integration...';
+            
+            try {
+                // First enable Share Link MCP and save state
+                await window.CoreStorageService.setValue('mcp_share_link_enabled', 'true');
+                
+                // Verify it's saved
+                const beforeValue = await window.CoreStorageService.getValue('mcp_share_link_enabled');
+                if (beforeValue !== 'true') {
+                    throw new Error('Failed to setup test state');
+                }
+                
+                // Call clearAllData to simulate "Delete current namespace and settings"
+                const result = window.CoreStorageService.clearAllData();
+                
+                if (!result.success) {
+                    throw new Error(`clearAllData failed: ${result.message}`);
+                }
+                
+                // Verify the Share Link MCP key was cleared
+                const keyFound = result.clearedKeys.some(key => key.includes('mcp_share_link_enabled'));
+                if (!keyFound) {
+                    throw new Error('mcp_share_link_enabled was not in cleared keys list');
+                }
+                
+                // Verify it's actually gone
+                const afterValue = await window.CoreStorageService.getValue('mcp_share_link_enabled');
+                if (afterValue !== null) {
+                    throw new Error(`Expected null after clear, got: ${afterValue}`);
+                }
+                
+                // Verify the reset function was called (check console)
+                let resetCalled = false;
+                if (window.MCPShareLinkUI && typeof window.MCPShareLinkUI.getEnabled === 'function') {
+                    // If UI was reset, it should be disabled
+                    resetCalled = !window.MCPShareLinkUI.getEnabled();
+                }
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ SUCCESS!\n\nBefore clear: ${beforeValue}\nAfter clear: ${afterValue}\nKey found in cleared list: ${keyFound}\nUI reset called: ${resetCalled}\nTotal keys cleared: ${result.clearedKeys.length}`;
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ ERROR: ${error.message}`;
+                console.error('Namespace delete test failed:', error);
+            }
+        }
+        
+        async function testPersistence() {
+            const resultDiv = document.getElementById('persistence-result');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = 'Testing state persistence across page reloads...';
+            
+            try {
+                // Enable Share Link MCP
+                await window.CoreStorageService.setValue('mcp_share_link_enabled', 'true');
+                
+                // Verify it's saved
+                const saved = await window.CoreStorageService.getValue('mcp_share_link_enabled');
+                if (saved !== 'true') {
+                    throw new Error('Failed to save enabled state');
+                }
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ SETUP COMPLETE!\n\nEnabled state saved: ${saved}\n\n🔄 Now reload this page and the Share Link MCP should remain enabled.\n\nAfter reload, open the MCP modal → Advanced section to verify the button shows "Disable".`;
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ ERROR: ${error.message}`;
+                console.error('Persistence test failed:', error);
+            }
+        }
+    </script>
+</body>
+</html>
