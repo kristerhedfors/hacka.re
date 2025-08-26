@@ -11,6 +11,18 @@
     /* Removed max-height and overflow-y to prevent double scrolling */
 }
 
+/* Function editor form buttons - make them 23% smaller (15% + 8%) */
+#function-editor-form .form-actions .btn {
+    padding: 0.58rem 1.16rem; /* 23% smaller than default 0.75rem 1.5rem */
+    border-radius: calc(var(--border-radius) * 0.77); /* 23% smaller border radius */
+}
+
+/* Specific styling for the execute button in function editor */
+#function-editor-form .form-actions .btn.execute-btn {
+    padding: 0.58rem 1.16rem; /* 23% smaller than default */
+    border-radius: calc(6px * 0.77); /* 23% smaller border radius (4.6px) */
+}
+
 .function-list {
     max-height: 300px;
     overflow-y: auto;

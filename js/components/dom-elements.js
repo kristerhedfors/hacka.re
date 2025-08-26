@@ -91,6 +91,7 @@ window.DOMElements = (function() {
             functionToolDefinition: document.getElementById('function-tool-definition'),
             copyToolDefinitionBtn: document.getElementById('copy-tool-definition-btn'),
             copyToolDefinitionsBtn: document.getElementById('copy-tool-definitions-btn'),
+            functionExecuteBtn: document.getElementById('function-execute-btn'),
             functionValidateBtn: document.getElementById('function-validate-btn'),
             functionClearBtn: document.getElementById('function-clear-btn'),
             closeFunctionModal: document.getElementById('close-function-modal'),

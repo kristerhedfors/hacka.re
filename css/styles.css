@@ -11,6 +11,10 @@
     --dark-color: #1f2937;         /* Gray 800 */
     --light-color: #f9fafb;        /* Gray 50 */
     --text-color: #374151;         /* Gray 700 */
+    --success-bg: #d1fae5;         /* Green 100 */
+    --success-color: #065f46;      /* Green 800 */
+    --error-bg: #fee2e2;           /* Red 100 */
+    --error-color: #991b1b;        /* Red 800 */
     --light-text: #ffffff;
     --accent-color: #f59e0b;       /* Amber */
     --border-radius: 8px;
@@ -3675,6 +3679,77 @@ footer a:hover {
 .mcp-manual-connection-modal .manual-curl-section,
 .mcp-manual-connection-modal .manual-response-section {
     margin-bottom: 1.5rem;
+}
+
+/* Share Link MCP Built-in Tool Styles */
+.mcp-built-in-tool {
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.mcp-tool-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.mcp-tool-header h4 {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.mcp-tool-header h4 i {
+    color: var(--primary-color);
+}
+
+.mcp-tool-description {
+    color: var(--text-color-secondary);
+    font-size: 0.9rem;
+}
+
+.mcp-tool-description p {
+    margin: 0 0 0.5rem 0;
+}
+
+.mcp-tool-features {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0;
+}
+
+.mcp-tool-features li {
+    padding: 0.25rem 0;
+    padding-left: 1.2rem;
+    position: relative;
+}
+
+.mcp-tool-features li:before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: var(--primary-color);
+}
+
+.mcp-tool-status {
+    margin-top: 0.75rem;
+    padding: 0.5rem;
+    background: var(--success-bg);
+    color: var(--success-color);
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+
+.mcp-tool-status.error {
+    background: var(--error-bg);
+    color: var(--error-color);
 }
 
 .mcp-manual-connection-modal .code-block {

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Share Link MCP Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            margin: 5px;
+            padding: 10px 15px;
+            background: #6366f1;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #4f46e5;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .qr-code {
+            margin-top: 10px;
+            text-align: center;
+        }
+        .qr-code img {
+            max-width: 256px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <h1>Share Link MCP Test</h1>
+    
+    <div class="test-section">
+        <h2>1. Check Available Content</h2>
+        <button onclick="checkAvailable()">Check What Can Be Shared</button>
+        <div id="available-result" class="result" style="display:none;"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. Generate Custom Share Link</h2>
+        <p>Select what to include:</p>
+        <label><input type="checkbox" id="include-api-key" checked> API Key</label><br>
+        <label><input type="checkbox" id="include-model" checked> Model</label><br>
+        <label><input type="checkbox" id="include-conversation"> Conversation</label><br>
+        <label><input type="checkbox" id="include-prompts"> Prompt Library</label><br>
+        <label><input type="checkbox" id="include-functions"> Function Library</label><br>
+        <label><input type="checkbox" id="include-mcp"> MCP Connections</label><br>
+        <label><input type="checkbox" id="include-theme"> Theme</label><br>
+        <label><input type="checkbox" id="include-welcome" checked> Welcome Message</label><br>
+        <br>
+        <label>Custom Welcome Message (optional):<br>
+            <input type="text" id="welcome-message" style="width: 100%; padding: 5px;" 
+                   placeholder="Leave empty for default message">
+        </label><br><br>
+        <button onclick="generateCustomLink()">Generate Custom Link</button>
+        <div id="custom-result" class="result" style="display:none;"></div>
+        <div id="custom-qr" class="qr-code" style="display:none;"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. Generate Link with All Available Content</h2>
+        <button onclick="generateAllLink()">Generate Link with Everything</button>
+        <div id="all-result" class="result" style="display:none;"></div>
+        <div id="all-qr" class="qr-code" style="display:none;"></div>
+    </div>
+    
+    <script>
+        // Wait for services to be ready
+        window.addEventListener('DOMContentLoaded', () => {
+            // Initialize Share Link MCP Service if not already done
+            if (window.MCPShareLinkService && !window.MCPShareLinkService.initialized) {
+                window.MCPShareLinkService.init();
+            }
+            
+            // Set some test data
+            if (window.StorageService) {
+                // These are just test values
+                localStorage.setItem('openai_api_key', 'test-api-key-123456789');
+                localStorage.setItem('model', 'gpt-4o-mini');
+                localStorage.setItem('base_url', 'https://api.openai.com/v1');
+            }
+        });
+        
+        async function checkAvailable() {
+            const resultDiv = document.getElementById('available-result');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = 'Checking available content...';
+            
+            try {
+                const available = await window.MCPShareLinkService.checkAvailableContent();
+                resultDiv.textContent = JSON.stringify(available, null, 2);
+            } catch (error) {
+                resultDiv.textContent = 'Error: ' + error.message;
+            }
+        }
+        
+        async function generateCustomLink() {
+            const resultDiv = document.getElementById('custom-result');
+            const qrDiv = document.getElementById('custom-qr');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = 'Generating share link...';
+            qrDiv.style.display = 'none';
+            
+            try {
+                const options = {
+                    includeApiKey: document.getElementById('include-api-key').checked,
+                    includeModel: document.getElementById('include-model').checked,
+                    includeConversation: document.getElementById('include-conversation').checked,
+                    includePromptLibrary: document.getElementById('include-prompts').checked,
+                    includeFunctionLibrary: document.getElementById('include-functions').checked,
+                    includeMcpConnections: document.getElementById('include-mcp').checked,
+                    includeTheme: document.getElementById('include-theme').checked,
+                    includeWelcomeMessage: document.getElementById('include-welcome').checked
+                };
+                
+                const welcomeMsg = document.getElementById('welcome-message').value.trim();
+                if (welcomeMsg) {
+                    options.welcomeMessage = welcomeMsg;
+                }
+                
+                const result = await window.MCPShareLinkService.generateShareLink(options);
+                
+                if (result.success) {
+                    resultDiv.textContent = `Success!\n\nLink: ${result.link}\n\nPassword: ${result.password}\n\nItems Included:\n${JSON.stringify(result.itemsIncluded, null, 2)}`;
+                    
+                    if (result.qrCode) {
+                        qrDiv.innerHTML = `<h3>QR Code:</h3><img src="${result.qrCode}" alt="QR Code">`;
+                        qrDiv.style.display = 'block';
+                    }
+                } else {
+                    resultDiv.textContent = 'Error: ' + result.error;
+                }
+            } catch (error) {
+                resultDiv.textContent = 'Error: ' + error.message;
+            }
+        }
+        
+        async function generateAllLink() {
+            const resultDiv = document.getElementById('all-result');
+            const qrDiv = document.getElementById('all-qr');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = 'Generating share link with all available content...';
+            qrDiv.style.display = 'none';
+            
+            try {
+                const result = await window.MCPShareLinkService.handleToolCall('share_link_generate_all', {
+                    welcomeMessage: 'Welcome to this comprehensive share link test!'
+                });
+                
+                if (result.success) {
+                    resultDiv.textContent = `Success!\n\nLink: ${result.link}\n\nPassword: ${result.password}\n\nItems Included:\n${JSON.stringify(result.itemsIncluded, null, 2)}`;
+                    
+                    if (result.qrCode) {
+                        qrDiv.innerHTML = `<h3>QR Code:</h3><img src="${result.qrCode}" alt="QR Code">`;
+                        qrDiv.style.display = 'block';
+                    }
+                } else {
+                    resultDiv.textContent = 'Error: ' + result.error;
+                }
+            } catch (error) {
+                resultDiv.textContent = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>
