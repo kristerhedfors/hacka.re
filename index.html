@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="css/default-functions.css">
     <link rel="stylesheet" href="css/function-calling-modal.css">
     <link rel="stylesheet" href="css/function-details-modal.css">
+    <link rel="stylesheet" href="css/function-execute-modal.css">
     <link rel="stylesheet" href="css/rag-modal.css">
     <link rel="stylesheet" href="css/checkbox-fix.css">
     <!-- Font Awesome for icons (local) -->
@@ -526,11 +527,12 @@ async function getCurrentTimeInBerlin() {
                                 </div>
                                 <div class="form-actions" style="margin-top: 10px; margin-bottom: 15px;">
                                     <button type="submit" class="btn primary-btn" tabindex="3">Save Functions</button>
-                                    <button type="button" id="function-validate-btn" class="btn secondary-btn" tabindex="4">Validate</button>
-                                    <button type="button" id="function-clear-btn" class="btn secondary-btn" tabindex="5">Reset</button>
+                                    <button type="button" id="function-execute-btn" class="btn execute-btn" tabindex="4" title="Test function execution">Run</button>
+                                    <button type="button" id="function-validate-btn" class="btn secondary-btn" tabindex="5">Validate</button>
+                                    <button type="button" id="function-clear-btn" class="btn secondary-btn" tabindex="6">Reset</button>
                                 </div>
                                 <div class="form-actions" style="margin-bottom: 15px;">
-                                    <button type="button" id="copy-tool-definitions-btn" class="btn secondary-btn" tabindex="6" title="Copy tool definitions to clipboard">
+                                    <button type="button" id="copy-tool-definitions-btn" class="btn secondary-btn" tabindex="7" title="Copy tool definitions to clipboard">
                                         Copy tool-definitions to clipboard <i class="fas fa-copy"></i>
                                     </button>
                                 </div>
@@ -583,6 +585,66 @@ async function getCurrentTimeInBerlin() {
                     </div>
                     <div class="form-actions">
                         <button type="button" id="close-function-details-modal" class="btn secondary-btn">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="function-execute-modal" class="modal">
+            <div class="modal-content">
+                <div class="settings-header">
+                    <h2 id="function-execute-title">Execute Function</h2>
+                </div>
+                <div class="function-execute-container">
+                    <div class="function-execute-section">
+                        <div class="function-execute-function-info">
+                            <h3 id="function-execute-function-name">Function Name</h3>
+                            <div id="function-execute-function-description" class="function-execute-description"></div>
+                        </div>
+                        
+                        <div id="function-execute-parameters-section" class="function-execute-parameters">
+                            <h4>Parameters</h4>
+                            <div id="function-execute-parameters-container">
+                                <!-- Parameter inputs will be dynamically generated here -->
+                            </div>
+                        </div>
+                        
+                        <div class="function-execute-actions">
+                            <button type="button" id="function-execute-run-btn" class="btn execute-btn">
+                                <i id="function-execute-run-icon" class="fas fa-play"></i>
+                                <span id="function-execute-run-text">Execute</span>
+                            </button>
+                            <div id="function-execute-timing" class="function-execute-timing"></div>
+                        </div>
+                        
+                        <div id="function-execute-output-section" class="function-execute-output" style="display: none;">
+                            <div class="function-execute-output-header">
+                                <h4>Output</h4>
+                                <div class="function-execute-output-controls">
+                                    <button type="button" id="function-execute-output-toggle" class="btn secondary-btn small-btn">JSON</button>
+                                    <button type="button" class="copy-btn" id="function-execute-copy-output-btn" title="Copy output">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="function-execute-output-value">
+                                <pre id="function-execute-output-content"></pre>
+                            </div>
+                        </div>
+                        
+                        <div id="function-execute-error-section" class="function-execute-error" style="display: none;">
+                            <h4>Error</h4>
+                            <div class="function-execute-error-content">
+                                <pre id="function-execute-error-message"></pre>
+                                <button type="button" class="copy-btn" id="function-execute-copy-error-btn" title="Copy error">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" id="close-function-execute-modal" class="btn secondary-btn">Close</button>
                     </div>
                 </div>
             </div>
@@ -1326,6 +1388,7 @@ async function getCurrentTimeInBerlin() {
     <!-- Function Calling Components -->
     <script src="js/components/function-calling/function-modal-manager.js"></script>
     <script src="js/components/function-calling/function-details-modal.js"></script>
+    <script src="js/components/function-calling/function-execute-modal.js"></script>
     <script src="js/components/function-calling/mcp-server-manager.js"></script>
     <script src="js/components/function-calling/function-list-renderer.js"></script>
     <!-- Modular function editor components (load in dependency order) -->
