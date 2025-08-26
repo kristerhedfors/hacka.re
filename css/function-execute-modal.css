@@ -25,10 +25,48 @@
     font-weight: 600;
 }
 
+.function-execute-label {
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 14px;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.function-execute-function-select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--input-bg, var(--background));
+    color: var(--text-color);
+    font-size: 14px;
+    font-family: 'Courier New', monospace;
+    cursor: pointer;
+    margin-bottom: 12px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.function-execute-function-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
+}
+
+.function-execute-function-select option {
+    padding: 8px;
+    font-family: 'Courier New', monospace;
+}
+
 .function-execute-description {
     color: var(--text-color-secondary);
     font-size: 14px;
     line-height: 1.4;
+    margin-top: 8px;
+    padding: 8px;
+    background: var(--secondary-bg, rgba(0, 0, 0, 0.05));
+    border-radius: 4px;
+    border-left: 3px solid var(--primary-color);
 }
 
 /* Parameters Section */
