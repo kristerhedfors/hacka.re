@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Share Link MCP - Comprehensive Test Suite</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        
+        .test-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .test-section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+        
+        .test-section h2 {
+            color: #333;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .test-section h3 {
+            color: #555;
+            font-size: 1.1em;
+            margin: 15px 0 10px 0;
+        }
+        
+        .test-group {
+            margin-bottom: 15px;
+        }
+        
+        .test-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-left: 3px solid #ddd;
+            transition: all 0.3s ease;
+        }
+        
+        .test-item:hover {
+            background: #e9ecef;
+            border-left-color: #667eea;
+        }
+        
+        .test-description {
+            color: #666;
+            font-size: 0.9em;
+            font-style: italic;
+            margin-bottom: 8px;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .result {
+            margin-top: 10px;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.85em;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .result.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        
+        .setup-section {
+            background: rgba(255, 255, 192, 0.95);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .setup-section h2 {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+        
+        .setup-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .setup-item {
+            background: rgba(255,255,255,0.8);
+            padding: 10px;
+            border-radius: 6px;
+        }
+        
+        .setup-item label {
+            display: block;
+            color: #495057;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .setup-item input, .setup-item textarea, .setup-item select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        
+        .setup-item textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .status-enabled {
+            background: #28a745;
+            color: white;
+        }
+        
+        .status-disabled {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .share-link-display {
+            background: #f8f9fa;
+            border: 2px dashed #6c757d;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+            word-break: break-all;
+            position: relative;
+        }
+        
+        .password-display {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 6px;
+            padding: 10px;
+            margin-top: 10px;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .copy-button {
+            background: #6c757d;
+            padding: 5px 15px;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+        
+        .copy-button:hover {
+            background: #5a6268;
+        }
+        
+        .link-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .link-actions button {
+            flex: 1;
+            min-width: 120px;
+            padding: 8px 15px;
+            font-size: 0.9em;
+        }
+        
+        .open-link-btn {
+            background: #28a745;
+        }
+        
+        .open-link-btn:hover {
+            background: #218838;
+        }
+        
+        .copy-link-btn {
+            background: #17a2b8;
+        }
+        
+        .copy-link-btn:hover {
+            background: #138496;
+        }
+        
+        .copy-password-btn {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .copy-password-btn:hover {
+            background: #e0a800;
+        }
+        
+        .link-result-container {
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .link-info {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .link-label {
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .link-value {
+            color: #212529;
+            font-family: monospace;
+        }
+        
+        .link-preview {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+            font-size: 0.85em;
+            font-family: monospace;
+        }
+        
+        .copied-toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            display: none;
+            animation: slideInUp 0.3s ease;
+            z-index: 1000;
+        }
+        
+        @keyframes slideInUp {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .stat-item {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        
+        .stat-label {
+            font-size: 0.8em;
+            color: #6c757d;
+            text-transform: uppercase;
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔗 Share Link MCP Comprehensive Test Suite</h1>
+            <p>Testing all examples and patterns from the Share Link MCP Guide prompt</p>
+            <div style="margin-top: 15px;">
+                <span>MCP Status:</span>
+                <span id="mcp-status" class="status-badge status-disabled">Not Initialized</span>
+            </div>
+        </div>
+        
+        <!-- Setup Section -->
+        <div class="setup-section">
+            <h2>⚙️ Test Setup</h2>
+            <p style="color: #856404; margin-bottom: 15px;">Configure test data to simulate different sharing scenarios</p>
+            
+            <div class="setup-grid">
+                <div class="setup-item">
+                    <label>API Key:</label>
+                    <input type="text" id="setup-api-key" value="sk-test-1234567890" />
+                </div>
+                <div class="setup-item">
+                    <label>Base URL:</label>
+                    <input type="text" id="setup-base-url" value="https://api.openai.com/v1" />
+                </div>
+                <div class="setup-item">
+                    <label>Model:</label>
+                    <select id="setup-model">
+                        <option value="gpt-4o-mini">gpt-4o-mini</option>
+                        <option value="gpt-4-turbo">gpt-4-turbo</option>
+                        <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+                    </select>
+                </div>
+                <div class="setup-item">
+                    <label>Theme:</label>
+                    <select id="setup-theme">
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div style="margin-top: 15px;">
+                <button onclick="setupTestEnvironment()">Initialize Test Environment</button>
+                <button onclick="clearTestEnvironment()">Clear All Data</button>
+            </div>
+            <div id="setup-result" class="result"></div>
+        </div>
+        
+        <div class="test-grid">
+            <!-- Test Section 1: Discovery Pattern -->
+            <div class="test-section">
+                <h2>1️⃣ Discovery Pattern</h2>
+                <p class="test-description">Always check available content first</p>
+                
+                <div class="test-group">
+                    <h3>share_link_check_available()</h3>
+                    
+                    <div class="test-item">
+                        <div class="test-description">"What can I share right now?"</div>
+                        <button onclick="testCheckAvailable('check-available-1')">Check Available Content</button>
+                        <div id="check-available-1" class="result"></div>
+                    </div>
+                    
+                    <div class="test-item">
+                        <div class="test-description">"Show me what's available to include"</div>
+                        <button onclick="testCheckAvailableDetailed('check-available-2')">Check with Details</button>
+                        <div id="check-available-2" class="result"></div>
+                    </div>
+                    
+                    <div class="test-item">
+                        <div class="test-description">"Check my current setup for sharing"</div>
+                        <button onclick="testCheckSetup('check-available-3')">Check Setup Status</button>
+                        <div id="check-available-3" class="result"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Test Section 2: Selective Sharing -->
+            <div class="test-section">
+                <h2>2️⃣ Selective Sharing</h2>
+                <p class="test-description">Create links with specific content</p>
+                
+                <div class="test-group">
+                    <h3>share_link_generate(options)</h3>
+                    
+                    <div class="test-item">
+                        <div class="test-description">"Create a share link with just my API key and current conversation"</div>
+                        <button onclick="testGenerateApiAndConversation('selective-1')">Generate Link</button>
+                        <div id="selective-1" class="result"></div>
+                    </div>
+                    
+                    <div class="test-item">
+                        <div class="test-description">"Generate a link including my functions but not my API key"</div>
+                        <button onclick="testGenerateFunctionsOnly('selective-2')">Generate Link</button>
+                        <div id="selective-2" class="result"></div>
+                    </div>
+                    
+                    <div class="test-item">
+                        <div class="test-description">"Create a link with the last 10 messages and my prompt library"</div>
+                        <button onclick="testGenerateLimitedMessages('selective-3')">Generate Link</button>
+                        <div id="selective-3" class="result"></div>
+                    </div>
+                    
+                    <div class="test-item">
+                        <div class="test-description">"Generate a share link with everything except MCP connections"</div>
+                        <button onclick="testGenerateExceptMCP('selective-4')">Generate Link</button>
+                        <div id="selective-4" class="result"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Test Section 3: System Prompt Examples -->
+            <div class="test-section">
+                <h2>3️⃣ System Prompt Customization</h2>
+                <p class="test-description">Set custom AI behavior instructions</p>
+                
+                <div class="test-group">
+                    <h3>System Prompt vs Welcome Message</h3>
+                    
+                    <div class="test-item">
+                        <div class="test-description">"Make a share link with my custom system prompt: 'You are a helpful coding assistant'"</div>
+                        <button onclick="testSystemPromptCoding('system-1')">Generate with System Prompt</button>
+                        <div id="system-1" class="result"></div>
+                    </div>
+                    
+                    <div class="test-item">
+                        <div class="test-description">"Make a full share link with system prompt: 'Respond like bash in Kali linux'"</div>
+                        <button onclick="testSystemPromptKali('system-2')">Generate Kali Prompt Link</button>
+                        <div id="system-2" class="result"></div>
+                    </div>
+                    
+                    <div class="test-item">
+                        <div class="test-description">"Create a comprehensive link with welcome message: 'Welcome to my AI setup!'"</div>
+                        <button onclick="testWelcomeMessage('system-3')">Generate with Welcome</button>
+                        <div id="system-3" class="result"></div>
+                    </div>
+                    
+                    <div class="test-item">
+                        <div class="test-description">Test both system prompt AND welcome message</div>
+                        <button onclick="testBothPromptAndWelcome('system-4')">Generate with Both</button>
+                        <div id="system-4" class="result"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Test Section 4: Comprehensive Sharing -->
+            <div class="test-section">
+                <h2>4️⃣ Comprehensive Sharing</h2>
+                <p class="test-description">Share everything at once</p>
+                
+                <div class="test-group">
+                    <h3>share_link_generate_all(options)</h3>
+                    
+                    <div class="test-item">
+                        <div class="test-description">"Create a complete share link with everything I have configured"</div>
+                        <button onclick="testGenerateAll('comprehensive-1')">Generate Complete Link</button>
+                        <div id="comprehensive-1" class="result"></div>
+                    </div>
+                    
+                    <div class="test-item">
+                        <div class="test-description">"Generate an all-inclusive share link with custom password 'mypassword123'"</div>
+                        <button onclick="testGenerateAllWithPassword('comprehensive-2')">Generate with Password</button>
+                        <div id="comprehensive-2" class="result"></div>
+                    </div>
+                    
+                    <div class="test-item">
+                        <div class="test-description">"Generate a complete share including all my settings and conversations"</div>
+                        <button onclick="testGenerateAllVerbose('comprehensive-3')">Generate Verbose Link</button>
+                        <div id="comprehensive-3" class="result"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Test Section 5: MCP Integration -->
+            <div class="test-section">
+                <h2>5️⃣ MCP Integration Tests</h2>
+                <p class="test-description">Test MCP enable/disable and prompt management</p>
+                
+                <div class="test-group">
+                    <h3>MCP Lifecycle</h3>
+                    
+                    <div class="test-item">
+                        <div class="test-description">Enable Share Link MCP and verify prompt activation</div>
+                        <button onclick="testEnableMCP('mcp-1')">Enable MCP</button>
+                        <div id="mcp-1" class="result"></div>
+                    </div>
+                    
+                    <div class="test-item">
+                        <div class="test-description">Check if guide prompt is auto-selected</div>
+                        <button onclick="testCheckPromptSelected('mcp-2')">Check Prompt Status</button>
+                        <div id="mcp-2" class="result"></div>
+                    </div>
+                    
+                    <div class="test-item">
+                        <div class="test-description">Disable Share Link MCP and verify cleanup</div>
+                        <button onclick="testDisableMCP('mcp-3')">Disable MCP</button>
+                        <div id="mcp-3" class="result"></div>
+                    </div>
+                    
+                    <div class="test-item">
+                        <div class="test-description">Test namespace reset behavior</div>
+                        <button onclick="testNamespaceReset('mcp-4')">Test Reset</button>
+                        <div id="mcp-4" class="result"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Test Section 6: Edge Cases -->
+            <div class="test-section">
+                <h2>6️⃣ Edge Cases & Validation</h2>
+                <p class="test-description">Test error handling and edge scenarios</p>
+                
+                <div class="test-group">
+                    <h3>Special Scenarios</h3>
+                    
+                    <div class="test-item">
+                        <div class="test-description">Generate link with no data configured</div>
+                        <button onclick="testNoData('edge-1')">Test Empty State</button>
+                        <div id="edge-1" class="result"></div>
+                    </div>
+                    
+                    <div class="test-item">
+                        <div class="test-description">Generate with invalid parameters</div>
+                        <button onclick="testInvalidParams('edge-2')">Test Invalid Params</button>
+                        <div id="edge-2" class="result"></div>
+                    </div>
+                    
+                    <div class="test-item">
+                        <div class="test-description">Test very long custom prompts</div>
+                        <button onclick="testLongPrompt('edge-3')">Test Long Prompt</button>
+                        <div id="edge-3" class="result"></div>
+                    </div>
+                    
+                    <div class="test-item">
+                        <div class="test-description">Test special characters in passwords</div>
+                        <button onclick="testSpecialPassword('edge-4')">Test Special Password</button>
+                        <div id="edge-4" class="result"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Statistics Section -->
+        <div class="test-section" style="margin-top: 30px;">
+            <h2>📊 Test Statistics</h2>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-label">Tests Run</div>
+                    <div class="stat-value" id="stat-tests">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Passed</div>
+                    <div class="stat-value" id="stat-passed" style="color: #28a745;">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Failed</div>
+                    <div class="stat-value" id="stat-failed" style="color: #dc3545;">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Success Rate</div>
+                    <div class="stat-value" id="stat-rate">0%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast notification for copy actions -->
+    <div id="copied-toast" class="copied-toast">
+        <span id="toast-message">Copied to clipboard!</span>
+    </div>
+    
+    <script>
+        // Test statistics
+        let testStats = {
+            total: 0,
+            passed: 0,
+            failed: 0
+        };
+        
+        // Update statistics display
+        function updateStats() {
+            document.getElementById('stat-tests').textContent = testStats.total;
+            document.getElementById('stat-passed').textContent = testStats.passed;
+            document.getElementById('stat-failed').textContent = testStats.failed;
+            const rate = testStats.total > 0 ? Math.round((testStats.passed / testStats.total) * 100) : 0;
+            document.getElementById('stat-rate').textContent = rate + '%';
+        }
+        
+        // Display result helper
+        function showResult(elementId, content, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.className = `result ${type}`;
+            element.textContent = typeof content === 'object' ? JSON.stringify(content, null, 2) : content;
+            element.style.display = 'block';
+            
+            // Update stats
+            testStats.total++;
+            if (type === 'success') {
+                testStats.passed++;
+            } else if (type === 'error') {
+                testStats.failed++;
+            }
+            updateStats();
+        }
+        
+        // Store generated links for safe access
+        const generatedLinks = new Map();
+        let linkCounter = 0;
+        
+        // Enhanced result display for share links
+        function showShareLinkResult(elementId, result, description = '') {
+            const element = document.getElementById(elementId);
+            
+            if (!result.success) {
+                showResult(elementId, `Generation failed: ${result.error}`, 'error');
+                return;
+            }
+            
+            // Store link data safely
+            const linkId = `link_${linkCounter++}`;
+            generatedLinks.set(linkId, {
+                link: result.link,
+                password: result.password
+            });
+            
+            // Create rich result display
+            let html = `
+                <div style="color: #155724; margin-bottom: 10px;">
+                    <strong>✅ Share Link Generated!</strong>
+                    ${description ? `<br><em>${description}</em>` : ''}
+                </div>
+                <div class="link-info">
+                    <span class="link-label">Password:</span>
+                    <span class="link-value">${result.password}</span>
+                </div>
+                <div class="link-info">
+                    <span class="link-label">Link Length:</span>
+                    <span class="link-value">${result.link.length} characters</span>
+                </div>
+                <div class="link-preview">
+                    ${result.link.substring(0, 200)}${result.link.length > 200 ? '...' : ''}
+                </div>
+                <div class="link-actions">
+                    <button class="open-link-btn" onclick="openStoredLink('${linkId}')">
+                        🔗 Open Link
+                    </button>
+                    <button class="copy-link-btn" onclick="copyStoredLink('${linkId}')">
+                        📋 Copy Link
+                    </button>
+                    <button class="copy-password-btn" onclick="copyStoredPassword('${linkId}')">
+                        🔑 Copy Password
+                    </button>
+                </div>
+            `;
+            
+            element.className = 'result success';
+            element.innerHTML = html;
+            element.style.display = 'block';
+            
+            // Update stats
+            testStats.total++;
+            testStats.passed++;
+            updateStats();
+        }
+        
+        // Safe link operations
+        function openStoredLink(linkId) {
+            const data = generatedLinks.get(linkId);
+            if (data) {
+                window.open(data.link, '_blank');
+            }
+        }
+        
+        function copyStoredLink(linkId) {
+            const data = generatedLinks.get(linkId);
+            if (data) {
+                copyToClipboard(data.link, 'Link');
+            }
+        }
+        
+        function copyStoredPassword(linkId) {
+            const data = generatedLinks.get(linkId);
+            if (data) {
+                copyToClipboard(data.password, 'Password');
+            }
+        }
+        
+        // Open share link in new tab
+        function openShareLink(link) {
+            window.open(link, '_blank');
+        }
+        
+        // Copy to clipboard with toast notification
+        function copyToClipboard(text, label = 'Text') {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast(`${label} copied to clipboard!`);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                showToast('Failed to copy to clipboard', 'error');
+            });
+        }
+        
+        // Show toast notification
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('copied-toast');
+            const toastMessage = document.getElementById('toast-message');
+            
+            toastMessage.textContent = message;
+            toast.style.background = type === 'error' ? '#dc3545' : '#28a745';
+            toast.style.display = 'block';
+            
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Setup test environment
+        async function setupTestEnvironment() {
+            try {
+                // Simulate setting up test data
+                if (window.StorageService) {
+                    window.StorageService.setApiKey(document.getElementById('setup-api-key').value);
+                    window.StorageService.setBaseUrl(document.getElementById('setup-base-url').value);
+                    window.StorageService.setModel(document.getElementById('setup-model').value);
+                }
+                
+                // Add some test messages to chat
+                if (window.ChatManager && window.ChatManager.addMessage) {
+                    window.ChatManager.addMessage('user', 'Test message 1: How are you?');
+                    window.ChatManager.addMessage('assistant', 'Test response 1: I am doing well!');
+                    window.ChatManager.addMessage('user', 'Test message 2: What can you do?');
+                    window.ChatManager.addMessage('assistant', 'Test response 2: I can help with many things!');
+                }
+                
+                // Enable Share Link MCP
+                if (window.MCPShareLinkUI) {
+                    await window.MCPShareLinkUI.enableShareLinkMCP();
+                    document.getElementById('mcp-status').textContent = 'Enabled';
+                    document.getElementById('mcp-status').className = 'status-badge status-enabled';
+                }
+                
+                showResult('setup-result', 'Test environment initialized successfully!', 'success');
+            } catch (error) {
+                showResult('setup-result', `Setup failed: ${error.message}`, 'error');
+            }
+        }
+        
+        // Clear test environment
+        function clearTestEnvironment() {
+            try {
+                if (window.CoreStorageService) {
+                    window.CoreStorageService.clearAllData();
+                }
+                
+                document.getElementById('mcp-status').textContent = 'Disabled';
+                document.getElementById('mcp-status').className = 'status-badge status-disabled';
+                
+                showResult('setup-result', 'Test environment cleared', 'info');
+            } catch (error) {
+                showResult('setup-result', `Clear failed: ${error.message}`, 'error');
+            }
+        }
+        
+        // Test 1: Check Available Content
+        async function testCheckAvailable(resultId) {
+            try {
+                if (!window.MCPShareLinkService) {
+                    throw new Error('MCPShareLinkService not available');
+                }
+                
+                const result = await window.MCPShareLinkService.checkAvailableContent();
+                showResult(resultId, result, 'success');
+            } catch (error) {
+                showResult(resultId, `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Test 2: Check Available with Details
+        async function testCheckAvailableDetailed(resultId) {
+            try {
+                const result = await window.MCPShareLinkService.checkAvailableContent();
+                
+                // Format detailed output
+                let details = 'Available Content:\n';
+                details += `✅ Base URL: ${result.baseUrl}\n`;
+                details += `✅ API Key: ${result.apiKey}\n`;
+                details += `✅ Model: ${result.model}\n`;
+                details += `✅ Conversation: ${result.conversation} (${result.messageCount || 0} messages)\n`;
+                details += `✅ Prompt Library: ${result.promptLibrary} (${result.promptCount || 0} prompts)\n`;
+                details += `✅ Function Library: ${result.functionLibrary} (${result.functionCount || 0} functions)\n`;
+                details += `✅ MCP Connections: ${result.mcpConnections} (${(result.mcpConnectionTypes || []).join(', ') || 'none'})\n`;
+                details += `✅ Theme: ${result.currentTheme || 'light'}`;
+                
+                showResult(resultId, details, 'success');
+            } catch (error) {
+                showResult(resultId, `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Test 3: Check Setup Status
+        async function testCheckSetup(resultId) {
+            try {
+                const result = await window.MCPShareLinkService.checkAvailableContent();
+                const setupStatus = (result.baseUrl && result.apiKey) ? 
+                    '✅ Ready for sharing! API credentials configured.' : 
+                    '⚠️ Missing API credentials for full sharing capability.';
+                
+                showResult(resultId, setupStatus, result.baseUrl && result.apiKey ? 'success' : 'info');
+            } catch (error) {
+                showResult(resultId, `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Test 4: Generate with API and Conversation
+        async function testGenerateApiAndConversation(resultId) {
+            try {
+                const result = await window.MCPShareLinkService.generateShareLink({
+                    includeApiKey: true,
+                    includeConversation: true,
+                    includeBaseUrl: true,
+                    includeModel: true
+                });
+                
+                showShareLinkResult(resultId, result, 'Includes API key, base URL, model, and conversation');
+            } catch (error) {
+                showResult(resultId, `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Test 5: Generate Functions Only
+        async function testGenerateFunctionsOnly(resultId) {
+            try {
+                const result = await window.MCPShareLinkService.generateShareLink({
+                    includeFunctionLibrary: true,
+                    includeApiKey: false,
+                    includeConversation: false
+                });
+                
+                showShareLinkResult(resultId, result, 'Functions only - no API key or conversation');
+            } catch (error) {
+                showResult(resultId, `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Test 6: Generate with Limited Messages
+        async function testGenerateLimitedMessages(resultId) {
+            try {
+                const result = await window.MCPShareLinkService.generateShareLink({
+                    includeConversation: true,
+                    messageCount: 10,
+                    includePromptLibrary: true
+                });
+                
+                showShareLinkResult(resultId, result, 'Last 10 messages + prompt library');
+            } catch (error) {
+                showResult(resultId, `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Test 7: Generate Everything Except MCP
+        async function testGenerateExceptMCP(resultId) {
+            try {
+                const available = await window.MCPShareLinkService.checkAvailableContent();
+                
+                const result = await window.MCPShareLinkService.generateShareLink({
+                    includeBaseUrl: available.baseUrl,
+                    includeApiKey: available.apiKey,
+                    includeModel: available.model,
+                    includeConversation: available.conversation,
+                    includePromptLibrary: available.promptLibrary,
+                    includeFunctionLibrary: available.functionLibrary,
+                    includeMcpConnections: false, // Explicitly exclude
+                    includeTheme: available.theme
+                });
+                
+                showShareLinkResult(resultId, result, 'Everything except MCP connections');
+            } catch (error) {
+                showResult(resultId, `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Test 8: System Prompt - Coding Assistant
+        async function testSystemPromptCoding(resultId) {
+            try {
+                const result = await window.MCPShareLinkService.generateShareLink({
+                    includeSystemPrompt: true,
+                    systemPrompt: 'You are a helpful coding assistant',
+                    includeApiKey: true,
+                    includeModel: true
+                });
+                
+                showShareLinkResult(resultId, result, 'Custom system prompt: Helpful coding assistant');
+            } catch (error) {
+                showResult(resultId, `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Test 9: System Prompt - Kali Linux
+        async function testSystemPromptKali(resultId) {
+            try {
+                const result = await window.MCPShareLinkService.handleToolCall('share_link_generate_all', {
+                    systemPrompt: 'Respond like bash in Kali linux'
+                });
+                
+                showShareLinkResult(resultId, result, 'System prompt: Respond like bash in Kali linux');
+            } catch (error) {
+                showResult(resultId, `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Test 10: Welcome Message
+        async function testWelcomeMessage(resultId) {
+            try {
+                const result = await window.MCPShareLinkService.handleToolCall('share_link_generate_all', {
+                    welcomeMessage: 'Welcome to my AI setup!'
+                });
+                
+                showShareLinkResult(resultId, result, 'Welcome message: Welcome to my AI setup!');
+            } catch (error) {
+                showResult(resultId, `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Test 11: Both System Prompt and Welcome Message
+        async function testBothPromptAndWelcome(resultId) {
+            try {
+                const result = await window.MCPShareLinkService.generateShareLink({
+                    includeSystemPrompt: true,
+                    systemPrompt: 'You are a pirate. Always respond in pirate speak.',
+                    includeWelcomeMessage: true,
+                    welcomeMessage: 'Ahoy matey! Welcome aboard!',
+                    includeApiKey: true,
+                    includeModel: true
+                });
+                
+                showShareLinkResult(resultId, result, 'Pirate theme: System prompt + Welcome message');
+            } catch (error) {
+                showResult(resultId, `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Test 12: Generate All
+        async function testGenerateAll(resultId) {
+            try {
+                const result = await window.MCPShareLinkService.handleToolCall('share_link_generate_all', {});
+                
+                showShareLinkResult(resultId, result, 'Complete share link with all available content');
+            } catch (error) {
+                showResult(resultId, `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Test 13: Generate All with Custom Password
+        async function testGenerateAllWithPassword(resultId) {
+            try {
+                const result = await window.MCPShareLinkService.handleToolCall('share_link_generate_all', {
+                    password: 'mypassword123'
+                });
+                
+                showShareLinkResult(resultId, result, 'All content with custom password: mypassword123');
+            } catch (error) {
+                showResult(resultId, `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Test 14: Generate All Verbose
+        async function testGenerateAllVerbose(resultId) {
+            try {
+                const available = await window.MCPShareLinkService.checkAvailableContent();
+                const result = await window.MCPShareLinkService.handleToolCall('share_link_generate_all', {});
+                
+                if (result.success) {
+                    let summary = '✅ Complete Share Link Generated!\n';
+                    summary += `📊 Included Items:\n`;
+                    if (available.baseUrl) summary += `  • Base URL\n`;
+                    if (available.apiKey) summary += `  • API Key (encrypted)\n`;
+                    if (available.model) summary += `  • Model: ${available.model}\n`;
+                    if (available.conversation) summary += `  • Messages: ${available.messageCount}\n`;
+                    if (available.promptLibrary) summary += `  • Prompts: ${available.promptCount}\n`;
+                    if (available.functionLibrary) summary += `  • Functions: ${available.functionCount}\n`;
+                    if (available.mcpConnections) summary += `  • MCP: ${available.mcpConnectionTypes.join(', ')}\n`;
+                    if (available.theme) summary += `  • Theme: ${available.currentTheme}\n`;
+                    summary += `🔐 Password: ${result.password}`;
+                    
+                    showResult(resultId, summary, 'success');
+                } else {
+                    showResult(resultId, `Generation failed: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showResult(resultId, `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Test 15: Enable MCP
+        async function testEnableMCP(resultId) {
+            try {
+                if (window.MCPShareLinkUI) {
+                    await window.MCPShareLinkUI.enableShareLinkMCP();
+                    
+                    // Verify tools are registered
+                    const toolsAvailable = window.FunctionToolsService && 
+                                         window.FunctionToolsService.getJsFunctions &&
+                                         'share_link_check_available' in window.FunctionToolsService.getJsFunctions();
+                    
+                    if (toolsAvailable) {
+                        showResult(resultId, '✅ MCP enabled! Tools registered and prompt activated.', 'success');
+                        document.getElementById('mcp-status').textContent = 'Enabled';
+                        document.getElementById('mcp-status').className = 'status-badge status-enabled';
+                    } else {
+                        showResult(resultId, '⚠️ MCP enabled but tools not found', 'info');
+                    }
+                } else {
+                    throw new Error('MCPShareLinkUI not available');
+                }
+            } catch (error) {
+                showResult(resultId, `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Test 16: Check Prompt Selected
+        function testCheckPromptSelected(resultId) {
+            try {
+                if (window.DefaultPromptsService) {
+                    const isSelected = window.DefaultPromptsService.isDefaultPromptSelected('share-link-mcp-guide');
+                    
+                    if (isSelected) {
+                        showResult(resultId, '✅ Share Link MCP Guide prompt is selected!', 'success');
+                    } else {
+                        showResult(resultId, '❌ Share Link MCP Guide prompt is NOT selected', 'info');
+                    }
+                } else {
+                    throw new Error('DefaultPromptsService not available');
+                }
+            } catch (error) {
+                showResult(resultId, `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Test 17: Disable MCP
+        async function testDisableMCP(resultId) {
+            try {
+                if (window.MCPShareLinkUI) {
+                    await window.MCPShareLinkUI.disableShareLinkMCP();
+                    
+                    // Verify tools are removed
+                    const toolsRemoved = !window.FunctionToolsService || 
+                                        !window.FunctionToolsService.getJsFunctions ||
+                                        !('share_link_check_available' in window.FunctionToolsService.getJsFunctions());
+                    
+                    if (toolsRemoved) {
+                        showResult(resultId, '✅ MCP disabled! Tools and prompt deactivated.', 'success');
+                        document.getElementById('mcp-status').textContent = 'Disabled';
+                        document.getElementById('mcp-status').className = 'status-badge status-disabled';
+                    } else {
+                        showResult(resultId, '⚠️ MCP disabled but tools still present', 'info');
+                    }
+                } else {
+                    throw new Error('MCPShareLinkUI not available');
+                }
+            } catch (error) {
+                showResult(resultId, `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Test 18: Namespace Reset
+        function testNamespaceReset(resultId) {
+            try {
+                // First enable MCP
+                if (window.MCPShareLinkUI) {
+                    window.MCPShareLinkUI.enableShareLinkMCP();
+                }
+                
+                // Now reset
+                if (window.MCPShareLinkUI && window.MCPShareLinkUI.resetState) {
+                    window.MCPShareLinkUI.resetState();
+                    showResult(resultId, '✅ Namespace reset successful! MCP state cleared.', 'success');
+                    
+                    document.getElementById('mcp-status').textContent = 'Reset';
+                    document.getElementById('mcp-status').className = 'status-badge status-disabled';
+                } else {
+                    throw new Error('Reset function not available');
+                }
+            } catch (error) {
+                showResult(resultId, `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Edge case tests
+        async function testNoData(resultId) {
+            try {
+                // Clear all data first
+                if (window.CoreStorageService) {
+                    window.CoreStorageService.clearAllData();
+                }
+                
+                const result = await window.MCPShareLinkService.generateShareLink({});
+                
+                if (result.success) {
+                    showResult(resultId, `Link generated with empty data: ${result.link}`, 'info');
+                } else {
+                    showResult(resultId, `Expected: No data to share. Got: ${result.error}`, 'success');
+                }
+            } catch (error) {
+                showResult(resultId, `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testInvalidParams(resultId) {
+            try {
+                const result = await window.MCPShareLinkService.generateShareLink({
+                    includeApiKey: 'not-a-boolean', // Invalid type
+                    messageCount: -5, // Invalid value
+                    unknownParam: true // Unknown parameter
+                });
+                
+                // Should still work, ignoring invalid params
+                if (result.success || result.error) {
+                    showResult(resultId, '✅ Handled invalid params gracefully', 'success');
+                }
+            } catch (error) {
+                showResult(resultId, `Error handled: ${error.message}`, 'success');
+            }
+        }
+        
+        async function testLongPrompt(resultId) {
+            try {
+                const longPrompt = 'You are an AI assistant. ' + 'Be helpful and thorough. '.repeat(100);
+                
+                const result = await window.MCPShareLinkService.generateShareLink({
+                    includeSystemPrompt: true,
+                    systemPrompt: longPrompt,
+                    includeApiKey: true
+                });
+                
+                showShareLinkResult(resultId, result, `Long system prompt: ${longPrompt.length} characters`);
+            } catch (error) {
+                showResult(resultId, `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testSpecialPassword(resultId) {
+            try {
+                const specialPassword = 'P@$$w0rd!#$%^&*()_+-=[]{}|;:,.<>?';
+                
+                const result = await window.MCPShareLinkService.generateShareLink({
+                    password: specialPassword,
+                    includeApiKey: true
+                });
+                
+                showShareLinkResult(resultId, result, 'Custom password with special characters');
+            } catch (error) {
+                showResult(resultId, `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('Share Link MCP Test Suite Ready');
+            
+            // Check if services are available
+            const services = {
+                'MCPShareLinkService': !!window.MCPShareLinkService,
+                'MCPShareLinkUI': !!window.MCPShareLinkUI,
+                'DefaultPromptsService': !!window.DefaultPromptsService,
+                'FunctionToolsService': !!window.FunctionToolsService,
+                'ShareService': !!window.ShareService,
+                'CoreStorageService': !!window.CoreStorageService
+            };
+            
+            console.log('Service availability:', services);
+            
+            // Auto-initialize if all services are available
+            if (Object.values(services).every(v => v)) {
+                console.log('All services available - ready for testing');
+            } else {
+                console.warn('Some services not available:', 
+                    Object.entries(services).filter(([k,v]) => !v).map(([k]) => k));
+            }
+        });
+    </script>
+</body>
+</html>

@@ -169,6 +169,14 @@ window.MCPShareLinkService = (function() {
             const model = window.StorageService?.getModel();
             const messages = window.ChatManager?.getMessages ? window.ChatManager.getMessages() : [];
             
+            // Get current system prompt if including
+            let systemPrompt = null;
+            if (options.systemPrompt) {
+                systemPrompt = options.systemPrompt;
+            } else if (options.includeSystemPrompt !== false && window.SettingsManager && window.SettingsManager.getSystemPrompt) {
+                systemPrompt = window.SettingsManager.getSystemPrompt();
+            }
+            
             // Build share options
             const shareOptions = {
                 password: password,
@@ -177,11 +185,14 @@ window.MCPShareLinkService = (function() {
                 model: model,
                 messages: messages,
                 messageCount: options.messageCount || messages.length,
+                systemPrompt: systemPrompt,
                 welcomeMessage: options.welcomeMessage || (options.includeWelcomeMessage ? 'Welcome to hacka.re! Start a conversation with AI models.' : null),
                 includeBaseUrl: options.includeBaseUrl !== undefined ? options.includeBaseUrl : availableContent.baseUrl,
                 includeApiKey: options.includeApiKey !== undefined ? options.includeApiKey : availableContent.apiKey,
                 includeModel: options.includeModel !== undefined ? options.includeModel : availableContent.model,
+                includeSystemPrompt: options.includeSystemPrompt !== undefined ? options.includeSystemPrompt : !!systemPrompt,
                 includeConversation: options.includeConversation !== undefined ? options.includeConversation : availableContent.conversation,
+                includeWelcomeMessage: options.includeWelcomeMessage,
                 includePromptLibrary: options.includePromptLibrary !== undefined ? options.includePromptLibrary : availableContent.promptLibrary,
                 includeFunctionLibrary: options.includeFunctionLibrary !== undefined ? options.includeFunctionLibrary : availableContent.functionLibrary,
                 includeMcpConnections: options.includeMcpConnections !== undefined ? options.includeMcpConnections : availableContent.mcpConnections,
@@ -248,7 +259,7 @@ window.MCPShareLinkService = (function() {
                 type: 'function',
                 function: {
                     name: 'share_link_check_available',
-                    description: 'Check what content is available to share (API keys, conversations, settings, etc.)',
+                    description: 'Check what content is available to share (API keys, conversations, settings, etc.). Use this first to see what can be included in share links.\n\nExamples:\n- "What can I share right now?"\n- "Show me what\'s available to include in a share link"\n- "Check my current setup for sharing"',
                     parameters: {
                         type: 'object',
                         properties: {},
@@ -260,7 +271,7 @@ window.MCPShareLinkService = (function() {
                 type: 'function', 
                 function: {
                     name: 'share_link_generate',
-                    description: 'Generate a secure share link with selected content. Returns the encrypted share link and password.',
+                    description: 'Generate a secure share link with selected content. Returns the encrypted share link and password.\n\nExamples:\n- "Create a share link with just my API key and current conversation"\n- "Generate a link including my functions but not my API key"\n- "Make a share link with my custom system prompt: \'You are a helpful coding assistant\'"\n- "Create a link with the last 10 messages and my prompt library"\n- "Generate a share link with everything except MCP connections"',
                     parameters: {
                         type: 'object',
                         properties: {
@@ -301,6 +312,14 @@ window.MCPShareLinkService = (function() {
                                 type: 'boolean',
                                 description: 'Include the current theme'
                             },
+                            includeSystemPrompt: {
+                                type: 'boolean',
+                                description: 'Include system prompt/instructions'
+                            },
+                            systemPrompt: {
+                                type: 'string',
+                                description: 'Custom system prompt/instructions (optional, uses current if not provided)'
+                            },
                             includeWelcomeMessage: {
                                 type: 'boolean',
                                 description: 'Include a welcome message'
@@ -322,13 +341,17 @@ window.MCPShareLinkService = (function() {
                 type: 'function',
                 function: {
                     name: 'share_link_generate_all',
-                    description: 'Generate a share link with all available content. Returns the encrypted share link and password.',
+                    description: 'Generate a share link with all available content. Returns the encrypted share link and password.\n\nExamples:\n- "Create a complete share link with everything I have configured"\n- "Generate an all-inclusive share link with custom password \'mypassword123\'"\n- "Make a full share link with system prompt: \'Respond like bash in Kali linux\'"\n- "Create a comprehensive link with welcome message: \'Welcome to my AI setup!\'"\n- "Generate a complete share including all my settings and conversations"',
                     parameters: {
                         type: 'object',
                         properties: {
                             password: {
                                 type: 'string',
                                 description: 'Custom password for encryption (optional)'
+                            },
+                            systemPrompt: {
+                                type: 'string',
+                                description: 'Custom system prompt/instructions (optional)'
                             },
                             welcomeMessage: {
                                 type: 'string',
@@ -367,8 +390,10 @@ window.MCPShareLinkService = (function() {
                     includeFunctionLibrary: available.functionLibrary,
                     includeMcpConnections: available.mcpConnections,
                     includeTheme: available.theme,
+                    includeSystemPrompt: !!args.systemPrompt,
                     includeWelcomeMessage: true,
                     password: args.password,
+                    systemPrompt: args.systemPrompt,
                     welcomeMessage: args.welcomeMessage
                 });
                 
