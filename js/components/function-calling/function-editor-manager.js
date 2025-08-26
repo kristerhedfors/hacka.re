@@ -43,6 +43,10 @@ window.FunctionEditorManager = (function() {
                 elements.functionClearBtn.addEventListener('click', clearFunctionEditor);
             }
             
+            if (elements.functionExecuteBtn) {
+                elements.functionExecuteBtn.addEventListener('click', handleExecuteFunction);
+            }
+            
             // Extract function name from default code after a short delay
             setTimeout(() => {
                 if (window.FunctionParser && window.FunctionCodeEditor) {
@@ -420,6 +424,69 @@ function get_weather(location, units = "metric") {
             }
         }
         
+        
+        /**
+         * Handle function execution
+         */
+        function handleExecuteFunction() {
+            const code = elements.functionCode.value.trim();
+            
+            if (!code) {
+                if (addSystemMessage) {
+                    addSystemMessage('Please enter function code first.');
+                }
+                return;
+            }
+            
+            // Validate the function first
+            const validation = validateFunction();
+            
+            if (!validation.success) {
+                if (addSystemMessage) {
+                    addSystemMessage('Please fix validation errors before executing.');
+                }
+                return;
+            }
+            
+            // Get callable functions from validation
+            const callableFunctions = validation.callableFunctions || [];
+            
+            if (callableFunctions.length === 0) {
+                if (addSystemMessage) {
+                    addSystemMessage('No callable functions found to execute.');
+                }
+                return;
+            }
+            
+            // If editing a specific function, prioritize that one
+            let functionToExecute = null;
+            let functionCode = code;
+            
+            if (editingFunctionName) {
+                const targetFunction = callableFunctions.find(f => f.name === editingFunctionName);
+                if (targetFunction) {
+                    functionToExecute = editingFunctionName;
+                    functionCode = targetFunction.code;
+                }
+            }
+            
+            // If no specific function found or not editing, use the first callable function
+            if (!functionToExecute && callableFunctions.length > 0) {
+                functionToExecute = callableFunctions[0].name;
+                functionCode = callableFunctions[0].code;
+            }
+            
+            // Show execute modal
+            if (window.functionExecuteModal) {
+                console.log(`[Editor] Showing execute modal for function: ${functionToExecute}`);
+                window.functionExecuteModal.showExecuteModal(functionToExecute, functionCode);
+            } else {
+                console.error('[Editor] Function execution modal not available');
+                if (addSystemMessage) {
+                    addSystemMessage('Function execution modal not available.');
+                }
+            }
+        }
         
         /**
          * Extract function name from code (delegated to parser)
