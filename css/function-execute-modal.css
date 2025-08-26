@@ -313,6 +313,11 @@
     animation: spin 1s linear infinite;
 }
 
+/* Center the play icon vertically with the text */
+#function-execute-run-icon {
+    vertical-align: -0.1em; /* Slightly lower than baseline to center with text */
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
     .function-execute-container {
