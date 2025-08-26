@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the comprehensive integration of GitHub, Gmail, and Google Docs services within hacka.re using the Model Context Protocol (MCP). The implementation provides seamless authentication and tool access while maintaining hacka.re's privacy-focused, serverless architecture.
+This document describes the comprehensive integration of GitHub, Gmail, and Shodan services within hacka.re using custom-built MCP servers and the Model Context Protocol (MCP). The implementation provides seamless authentication and tool access while maintaining hacka.re's privacy-focused, serverless architecture.
 
 ## Implementation Summary
 
@@ -10,7 +10,7 @@ This document describes the comprehensive integration of GitHub, Gmail, and Goog
 
 ✅ **GitHub Integration**: Personal Access Token (PAT) flow with comprehensive API access  
 ✅ **Gmail Integration**: OAuth 2.0 device flow with full email management  
-✅ **Google Docs Integration**: Shared OAuth with document creation/editing  
+✅ **Shodan Integration**: API key authentication with internet-connected device search and cybersecurity intelligence  
 ✅ **Unified UI**: Integrated into existing MCP Quick Connectors  
 ✅ **Security**: Encrypted token storage and secure authentication flows  
 ✅ **Error Handling**: Comprehensive CORS handling and fallback mechanisms  
@@ -31,14 +31,14 @@ This document describes the comprehensive integration of GitHub, Gmail, and Goog
 #### 2. **Enhanced Quick Connectors** (`js/components/mcp/mcp-quick-connectors.js`)
 - **Purpose**: Updated UI component integrating service connectors
 - **Features**:
-  - Unified interface for all three services
+  - Unified interface for GitHub, Gmail, and Shodan services
   - Service-specific setup instructions
   - Real-time connection status monitoring
   - Seamless integration with existing MCP infrastructure
 
 #### 3. **Service Configurations**
 Each service has a dedicated configuration with:
-- Authentication type (PAT, OAuth device, shared OAuth)
+- Authentication type (PAT, OAuth device, API key)
 - API endpoints and required scopes
 - Setup instructions and documentation links
 - Tool definitions and parameter schemas
@@ -106,32 +106,31 @@ const result = await MCPServiceConnectors.executeServiceTool('gmail', 'send_mess
 });
 ```
 
-### 📄 Google Docs Integration
+### 🔍 Shodan Integration
 
-**Authentication Method**: Shared OAuth (reuses Gmail authentication)
-- **Why Shared**: Same Google account, additional scopes for Docs and Drive
-- **Dependencies**: Requires Gmail to be connected first
-- **Scopes**: `documents`, `drive.readonly`
+**Authentication Method**: API Key Authentication
+- **Why API Key**: Simple, secure authentication for cybersecurity intelligence APIs
+- **Setup**: User provides Shodan API key from account dashboard
+- **Security**: API key encrypted and stored locally with custom-built MCP server
 
 **Available Tools**:
-- `gdocs_list_documents`: List Google Docs from Drive
-- `gdocs_read_document`: Read document content
-- `gdocs_create_document`: Create new documents
-- `gdocs_update_document`: Batch update operations
-- `gdocs_append_text`: Append text to documents
+- `shodan_search_hosts`: Search for internet-connected devices
+- `shodan_host_info`: Get detailed information about a specific host
+- `shodan_search_facets`: Get summary statistics for search results
+- `shodan_host_ports`: List open ports for a specific host
+- `shodan_domain_info`: Get information about a domain
 
 **Example Usage**:
 ```javascript
-// Create a new document
-const doc = await MCPServiceConnectors.executeServiceTool('gdocs', 'create_document', {
-    title: 'Meeting Notes',
-    content: 'Notes from today\'s meeting...'
+// Search for Apache servers
+const hosts = await MCPServiceConnectors.executeServiceTool('shodan', 'search_hosts', {
+    query: 'apache',
+    limit: 10
 });
 
-// Append text to existing document
-await MCPServiceConnectors.executeServiceTool('gdocs', 'append_text', {
-    documentId: 'document-id-here',
-    text: '\n\nAdditional notes added by AI assistant.'
+// Get detailed information about a specific host
+await MCPServiceConnectors.executeServiceTool('shodan', 'host_info', {
+    ip: '8.8.8.8'
 });
 ```
 
@@ -154,12 +153,13 @@ await MCPServiceConnectors.executeServiceTool('gdocs', 'append_text', {
 6. Tokens encrypted and stored locally
 7. Gmail tools automatically registered
 
-### Google Docs Shared OAuth
-1. Check if Gmail is already connected
-2. If not, redirect to Gmail setup first
-3. Verify additional scopes are available
-4. Reuse Gmail's OAuth tokens
-5. Google Docs tools automatically registered
+### Shodan API Key Flow
+1. User clicks "Connect Shodan"
+2. Instructions modal shows API key creation steps
+3. User enters API key in secure input field
+4. Key validated against Shodan API
+5. Key encrypted and stored locally
+6. Shodan tools automatically registered
 
 ## Security Features
 
@@ -207,7 +207,7 @@ A comprehensive test page is available at `test_integrations.html` which allows:
 ### Test Coverage
 - ✅ GitHub PAT authentication and API calls
 - ✅ Gmail OAuth device flow and email operations
-- ✅ Google Docs shared authentication and document operations
+- ✅ Shodan API key authentication and search operations
 - ✅ Error handling and fallback mechanisms
 - ✅ Token storage and retrieval
 - ✅ UI integration and status updates
@@ -227,8 +227,8 @@ async function gmail_send_message(to, subject, body) {
     // Automatically sends email via Gmail API
 }
 
-async function gdocs_create_document(title, content) {
-    // Automatically creates Google Doc
+async function shodan_search_hosts(query, limit) {
+    // Automatically searches Shodan for internet-connected devices
 }
 ```
 
@@ -277,22 +277,19 @@ await gmail_send_message(
 );
 ```
 
-### Example 3: Document Creation and Management
+### Example 3: Cybersecurity Intelligence and Device Search
 ```javascript
-// List recent documents
-const docs = await gdocs_list_documents({
-    maxResults: 20,
-    orderBy: 'modifiedTime'
+// Search for exposed databases
+const databases = await shodan_search_hosts('product:"MongoDB"');
+
+// Get detailed information about a specific host
+const hostInfo = await shodan_host_info('8.8.8.8');
+
+// Search with facets for summary statistics
+const facets = await shodan_search_facets({
+    query: 'apache',
+    facets: 'country,port'
 });
-
-// Create a new document
-const newDoc = await gdocs_create_document(
-    'Project Plan',
-    'This document outlines the project plan...'
-);
-
-// Add content to the document
-await gdocs_append_text(newDoc.documentId, '\n\n## Next Steps\n- Review timeline\n- Assign tasks');
 ```
 
 ## Troubleshooting
@@ -309,10 +306,10 @@ await gdocs_append_text(newDoc.documentId, '\n\n## Next Steps\n- Review timeline
 - **Solution**: Complete authorization within 15 minutes
 - **Alternative**: Generate new device code and try again
 
-#### Google Docs Permission Denied
-- **Issue**: Insufficient permissions for Docs API
-- **Solution**: Ensure Gmail connection includes Docs scopes
-- **Alternative**: Reconnect Gmail with additional permissions
+#### Shodan API Rate Limit
+- **Issue**: API key has reached rate limit
+- **Solution**: Wait for rate limit reset or upgrade API plan
+- **Alternative**: Use query filters to reduce result count
 
 ### Debug Mode
 Enable debug logging by setting:
@@ -364,7 +361,7 @@ This will provide detailed logs of:
 
 ## Conclusion
 
-The Service Connector Integration provides hacka.re with powerful, secure, and user-friendly access to GitHub, Gmail, and Google Docs. The implementation maintains hacka.re's core principles of privacy, security, and client-side operation while providing seamless integration with popular external services.
+The Service Connector Integration provides hacka.re with powerful, secure, and user-friendly access to GitHub, Gmail, and Shodan through custom-built MCP servers. The implementation maintains hacka.re's core principles of privacy, security, and client-side operation while providing seamless integration with popular external services.
 
 The modular architecture allows for easy extension to additional services, and the comprehensive error handling ensures a smooth user experience even when dealing with complex authentication flows and API integrations.
 

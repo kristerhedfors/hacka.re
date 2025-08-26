@@ -273,7 +273,7 @@
                 <br />
                 
                 <p>
-                    <strong>MCP Integration:</strong> For extended functionality, hacka.re includes a local MCP (Model Context Protocol) stdio proxy that enables AI models to access external tools like filesystem operations, databases, and custom integrations. The proxy runs locally and maintains hacka.re's privacy-first approach by avoiding external data transmission.
+                    <strong>MCP Integration:</strong> For extended functionality, hacka.re includes a local MCP (Model Context Protocol) stdio proxy that enables AI models to access external MCP servers for filesystem operations, databases, and custom integrations. The proxy runs locally and maintains hacka.re's privacy-first approach by avoiding external data transmission.
                 </p>
                 <br />
 
@@ -423,7 +423,7 @@
                     <li><strong>MCPClientService:</strong> Zero-dependency MCP client implementation with JSON-RPC 2.0 protocol support</li>
                     <li><strong>MCPManager:</strong> UI component for managing MCP server connections and configurations</li>
                     <li><strong>MCP Stdio Proxy:</strong> Bridge between browser-based client and stdio-based MCP servers</li>
-                    <li><strong>MCP Service Connectors:</strong> Specialized integration for GitHub, Gmail, and Google Docs with custom authentication flows</li>
+                    <li><strong>MCP Service Connectors:</strong> Demo integration for GitHub, Gmail, and Shodan with custom-built MCP servers and authentication flows</li>
                     <li><strong>Function Integration Layer:</strong> Automatic tool registration with hacka.re's existing function calling system</li>
                 </ol>
                 
@@ -433,7 +433,7 @@
                 <ul>
                     <li><strong>Stdio Transport:</strong> Local process communication via mcp-stdio-proxy for servers like filesystem, database, and custom tools</li>
                     <li><strong>SSE Transport:</strong> HTTP-based MCP servers with Server-Sent Events for web-based integrations</li>
-                    <li><strong>Service Connectors:</strong> Direct API integration for GitHub (Personal Access Token), Gmail (OAuth 2.0 Device Flow), and Google Docs (Shared OAuth)</li>
+                    <li><strong>Service Connectors:</strong> Direct API integration for GitHub (Personal Access Token), Gmail (OAuth 2.0 Device Flow), and Shodan (API key authentication) with integrated custom-built MCP servers</li>
                     <li><strong>Real-time Communication:</strong> Progress callbacks and live status updates during tool execution</li>
                 </ul>
                 
@@ -443,7 +443,7 @@
                 <ul>
                     <li><strong>GitHub Integration:</strong> Uses Personal Access Token (PAT) flow instead of OAuth due to CORS restrictions on GitHub's device flow endpoints</li>
                     <li><strong>Gmail Integration:</strong> OAuth 2.0 Device Flow works in browsers as Google's endpoints support cross-origin requests</li>
-                    <li><strong>Custom MCP Servers:</strong> hacka.re implements its own MCP servers for GitHub and Gmail to provide consistent integration patterns</li>
+                    <li><strong>Custom MCP Servers:</strong> hacka.re implements its own custom-built MCP servers for GitHub, Gmail, and Shodan to provide consistent integration patterns</li>
                 </ul>
                 
                 <p>
@@ -475,10 +475,9 @@
                     <strong>Service Integrations:</strong>
                 </p>
                 <ul>
-                    <li><strong>GitHub:</strong> Repository management, issue tracking, file operations via Personal Access Token authentication</li>
-                    <li><strong>Gmail:</strong> Email management, sending, searching via OAuth 2.0 Device Flow</li>
-                    <li><strong>Google Docs:</strong> Document creation, editing, management via shared OAuth (requires Gmail setup)</li>
-                    <li><strong>Filesystem:</strong> Local file operations through MCP filesystem server</li>
+                    <li><strong>GitHub:</strong> Repository management, issue tracking, file operations via custom-built MCP server with Personal Access Token authentication</li>
+                    <li><strong>Gmail:</strong> Email management, sending, searching via custom-built MCP server with OAuth 2.0 Device Flow</li>
+                    <li><strong>Shodan:</strong> Internet-connected device search, and other OSINT via custom-built MCP server with API key authentication</li>
                 </ul>
                 
                 <p>
