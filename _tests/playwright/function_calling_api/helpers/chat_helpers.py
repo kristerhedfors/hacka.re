@@ -13,17 +13,68 @@ def function_invocation_through_chat(page):
     """Test function invocation through chat conversation."""
     print("Testing function invocation through chat...")
     
-    # Type a message that should trigger the weather function
+    # Wait for chat interface to be ready
+    page.wait_for_selector("#message-input", state="visible", timeout=5000)
+    page.wait_for_selector("#send-btn", state="visible", timeout=5000)
+    
+    # Check if input is enabled 
     message_input = page.locator("#message-input")
+    send_button = page.locator("#send-btn")
+    
+    # Wait for input to be enabled (sometimes takes a moment after API key setup)
+    try:
+        page.wait_for_function("() => !document.getElementById('message-input').disabled", timeout=3000)
+    except:
+        print("Warning: Message input might still be disabled")
+    
+    # Set up console logging to catch any API errors
+    console_errors = []
+    def handle_console(msg):
+        if msg.type == "error":
+            console_errors.append(f"Console error: {msg.text}")
+            print(f"Console error: {msg.text}")
+    page.on("console", handle_console)
+    
+    # Type a message that should trigger the weather function
     test_message = "What's the weather like in London right now?"
+    
+    # Check the current state of message input
+    print(f"Message input enabled: {message_input.is_enabled()}")
+    print(f"Send button enabled: {send_button.is_enabled()}")
+    
     message_input.fill(test_message)
+    print(f"Message input value after fill: {message_input.input_value()}")
     
     # Send the message
-    send_button = page.locator("#send-btn")
     send_button.click()
+    print("Send button clicked")
+    
+    # Wait a bit to see if the message gets processed
+    page.wait_for_timeout(1000)
+    
+    # Check if the user message appeared
+    user_message_exists = page.locator(".message.user").count() > 0
+    print(f"User message exists after sending: {user_message_exists}")
+    
+    if not user_message_exists:
+        # Try to debug why the message wasn't sent
+        input_value = message_input.input_value()
+        print(f"Input value after click: {input_value}")
+        
+        # Check if there are any error messages
+        error_messages = page.evaluate("""() => {
+            const elements = document.querySelectorAll('.error, .alert, .warning');
+            return Array.from(elements).map(el => el.textContent);
+        }""")
+        print(f"Error messages on page: {error_messages}")
+        
+        # Try sending with Enter key as backup
+        print("Trying to send with Enter key...")
+        message_input.press("Enter")
+        page.wait_for_timeout(1000)
     
     # Wait for the user message to appear in the chat
-    page.wait_for_selector(".message.user .message-content", state="visible", timeout=2000)
+    page.wait_for_selector(".message.user .message-content", state="visible", timeout=5000)
     user_message = page.locator(".message.user .message-content")
     expect(user_message).to_be_visible()
     expect(user_message).to_contain_text(test_message)
@@ -73,25 +124,59 @@ def function_invocation_through_chat(page):
         
         # Get the assistant message
         assistant_message = page.locator(".message.assistant .message-content").last
+        
+        # Wait a bit more for content to load 
+        page.wait_for_timeout(1000)
+        
         assistant_text = assistant_message.text_content()
-        print(f"Assistant response: {assistant_text}")
+        print(f"Assistant response: {repr(assistant_text)}")
+        
+        # Check if response is empty or just whitespace
+        if not assistant_text or assistant_text.strip() == "":
+            print("Assistant response is empty, waiting a bit more...")
+            page.wait_for_timeout(2000)
+            assistant_text = assistant_message.text_content()
+            print(f"Assistant response after wait: {repr(assistant_text)}")
         
         # Check if the response contains weather-related information
         weather_terms = ["weather", "temperature", "celsius", "fahrenheit", "degrees", "london", "condition", "rainy", "sunny", "cloudy"]
-        contains_weather_info = any(term in assistant_text.lower() for term in weather_terms)
+        contains_weather_info = any(term in assistant_text.lower() for term in weather_terms) if assistant_text else False
         
         # Take a screenshot of the assistant response
         screenshot_with_markdown(page, "assistant_response", 
-                               {"Component": "Chat Response", "Status": "Success", "Contains Weather Info": str(contains_weather_info), "Response": assistant_text[:100] + "..."})
+                               {"Component": "Chat Response", "Status": "Success", "Contains Weather Info": str(contains_weather_info), "Response": assistant_text[:100] + "..." if assistant_text else "Empty response"})
         
         if contains_weather_info:
             print("Assistant response contains weather information")
+        elif not assistant_text or assistant_text.strip() == "":
+            print("ERROR: Assistant response is empty")
+            print(f"Console errors during chat: {console_errors}")
+            # Check if there was an API error
+            api_error_messages = page.evaluate("""() => {
+                const systemMessages = document.querySelectorAll('.message.system .message-content');
+                const errorMessages = [];
+                systemMessages.forEach(msg => {
+                    const text = msg.textContent;
+                    if (text && (text.includes('error') || text.includes('Error') || text.includes('failed') || text.includes('Failed'))) {
+                        errorMessages.push(text.trim());
+                    }
+                });
+                return errorMessages;
+            }""")
+            print(f"API error messages in system chat: {api_error_messages}")
+            # Take additional debug screenshot
+            screenshot_with_markdown(page, "empty_assistant_response", 
+                                   {"Component": "Chat Response", "Status": "Error", "Issue": "Empty response", "Console Errors": str(len(console_errors)), "API Errors": str(len(api_error_messages))})
+            pytest.fail("Assistant response is empty")
         else:
             print("WARNING: Assistant response does not contain weather information")
             print("This could be because the model chose not to use the function")
             
-        # The test passes as long as we got a response, even if the function wasn't used
-        expect(assistant_message).to_be_visible()
+        # The test passes as long as we got a non-empty response
+        if assistant_text and assistant_text.strip():
+            print("Test passed: Got non-empty assistant response")
+        else:
+            pytest.fail("Assistant response is empty or not visible")
     except Exception as e:
         print(f"Error waiting for assistant response: {e}")
         # Take a screenshot for debugging

@@ -179,6 +179,31 @@ window.SettingsCoordinator = (function() {
         // Save the provider selection and base URL
         componentManagers.baseUrl.saveBaseUrl(newBaseUrl, selectedProvider);
         
+        // Save the API key if provided
+        if (newApiKey && apiKeyChanged) {
+            // Create update provider callback that handles model selection too
+            var updateProvider = componentManagers.baseUrl && componentManagers.baseUrl.updateProviderFromDetection
+                ? function(detection) { 
+                    var defaultModel = componentManagers.baseUrl.updateProviderFromDetection(detection);
+                    // Auto-select default model if available, but only if no model is currently stored
+                    if (defaultModel && componentManagers.model && componentManagers.model.selectModel) {
+                        // Check if there's already a stored model to avoid overriding user's choice
+                        const currentStoredModel = DataService && DataService.getModel ? DataService.getModel() : null;
+                        if (!currentStoredModel || currentStoredModel === '') {
+                            console.log('🔄 Auto-selecting model (no stored model):', defaultModel);
+                            componentManagers.model.selectModel(defaultModel);
+                        } else {
+                            console.log('🔄 Skipping auto-selection, model already stored:', currentStoredModel);
+                        }
+                    }
+                    return defaultModel;
+                }
+                : null;
+            
+            // Save API key using the API key manager
+            componentManagers.apiKey.saveApiKey(newApiKey, null, addSystemMessage, updateProvider);
+        }
+        
         // We'll use these values to fetch models with updateStorage=true
         // This ensures the values are saved and used for future API calls
         const apiKeyToUse = newApiKey || componentManagers.apiKey.getApiKey();
