@@ -8,7 +8,7 @@ import time
 import os
 from dotenv import load_dotenv
 from playwright.sync_api import Page, expect, BrowserContext
-from test_utils import dismiss_welcome_modal, scree, dismiss_settings_modalnshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown, dismiss_settings_modal
 
 # Load environment variables
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))

@@ -368,7 +368,8 @@ if __name__ == "__main__":
     server = subprocess.Popen(['python', '-m', 'http.server', '8000'], 
                             cwd='/Users/user/dev/hacka.re',
                             stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)    try:
+                            stderr=subprocess.PIPE)
+    try:
         # Run the test with detailed output
         pytest.main([__file__, '-v', '-s', '--tb=short'])
     finally:
