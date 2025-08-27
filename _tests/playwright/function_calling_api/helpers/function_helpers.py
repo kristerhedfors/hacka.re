@@ -74,10 +74,10 @@ function get_weather(location, unit = "celsius") {
     
     # Check if the function was added to the list
     function_list = page.locator("#function-list")
-    expect(function_list.locator(".function-item-name:has-text('get_weather')")).to_be_visible()
+    expect(function_list.locator(".function-item-name:has-text('get_weather')").first).to_be_visible()
     
     # Check if the function is enabled by default
-    function_checkbox = function_list.locator("input[type='checkbox']").first
+    function_checkbox = function_list.locator(".function-item-checkbox").first
     expect(function_checkbox).to_be_checked()
     
     # Close the function modal
@@ -126,10 +126,10 @@ function multiply(a, b) {
     
     # Check if the function was added to the list
     function_list = page.locator("#function-list")
-    expect(function_list.locator(".function-item-name:has-text('multiply')")).to_be_visible()
+    expect(function_list.locator(".function-item-name:has-text('multiply')").first).to_be_visible()
     
     # Check if the function is enabled by default
-    function_checkbox = function_list.locator("input[type='checkbox']").first
+    function_checkbox = function_list.locator(".function-item-checkbox").first
     expect(function_checkbox).to_be_checked()
     
     # Close the function modal
@@ -161,7 +161,7 @@ def add_function(page, code):
     
     # Check if the function was added to the list
     function_list = page.locator("#function-list")
-    expect(function_list.locator(f".function-item-name:has-text('{function_name_match}')")).to_be_visible()
+    expect(function_list.locator(f".function-item-name:has-text('{function_name_match}')").first).to_be_visible()
 
 def cleanup_functions(page):
     """Clean up by deleting the test function."""
@@ -181,9 +181,9 @@ def cleanup_functions(page):
     # Handle the confirmation dialog for deletion
     page.on("dialog", lambda dialog: dialog.accept())
     
-    # Delete all functions
-    while function_list.locator(".function-item-delete").count() > 0:
-        function_list.locator(".function-item-delete").first.click()
+    # Delete all function collections (which deletes all functions)
+    while function_list.locator(".function-collection-delete:not([disabled])").count() > 0:
+        function_list.locator(".function-collection-delete:not([disabled])").first.click()
         # Small wait to allow the UI to update
         page.wait_for_timeout(100)
     

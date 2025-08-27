@@ -272,7 +272,7 @@ function test_function(param1, param2) {
     # Check for validation success
     try:
         expect(validation_result).to_have_class("function-validation-result success")
-        expect(validation_result).to_contain_text(["Library validated successfully", "Function validated successfully"])
+        expect(validation_result).to_contain_text("Library validated successfully")
         print("Valid function validation success displayed correctly")
     except Exception as e:
         print(f"Error checking validation result for valid function: {e}")
