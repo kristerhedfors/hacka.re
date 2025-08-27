@@ -4661,17 +4661,17 @@ html.dark-mode:not(.theme-modern) .heart-modal-header .info-icon {
 }
 
 .microphone-btn.recording {
-    background: #e74c3c;
-    color: white;
+    background: var(--accent-color, var(--primary-color, #e74c3c));
+    color: var(--background-color);
 }
 
 .microphone-btn.recording:hover {
-    background: #c0392b;
+    background: var(--primary-color-dark, var(--primary-color, #c0392b));
 }
 
 .microphone-btn.processing {
-    background: #f39c12;
-    color: white;
+    background: var(--warning-color, var(--secondary-color, #f39c12));
+    color: var(--background-color);
     cursor: not-allowed;
 }
 
