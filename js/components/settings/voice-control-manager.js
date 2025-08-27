@@ -10,6 +10,7 @@ window.VoiceControlManager = (function() {
         let mediaRecorder = null;
         let audioChunks = [];
         let currentStream = null;
+        let recordingStartTime = null; // Track when recording starts
         
         function init() {
             console.log('🎤 VoiceControlManager: Starting fresh implementation');
@@ -131,6 +132,7 @@ window.VoiceControlManager = (function() {
             try {
                 console.log('🎤 MINIMAL: Starting basic recording test...');
                 microphoneState = 'recording';
+                recordingStartTime = Date.now(); // Track when recording starts
                 
                 // Clean up any existing stream first
                 if (currentStream) {
@@ -401,6 +403,34 @@ window.VoiceControlManager = (function() {
                 
                 if (result.text) {
                     console.log('🎤 MINIMAL: Transcribed text:', `"${result.text}"`);
+                    
+                    // Calculate recording metrics
+                    const recordingEndTime = Date.now();
+                    const recordingDuration = (recordingEndTime - recordingStartTime) / 1000; // Duration in seconds
+                    const words = result.text.trim().split(/\s+/).filter(word => word.length > 0);
+                    const wordCount = words.length;
+                    const tokenCount = Math.round(result.text.length / 4); // Rough estimate: ~4 chars per token
+                    const wordsPerSecond = recordingDuration > 0 ? (wordCount / recordingDuration).toFixed(2) : 0;
+                    
+                    // Display system message with metrics
+                    const metricsMessage = `🎤 Recording complete: ${recordingDuration.toFixed(1)}s, ~${tokenCount} tokens, ${wordsPerSecond} words/sec`;
+                    console.log('🎤 MINIMAL: Recording metrics:', metricsMessage);
+                    
+                    // Try to add system message using the global aiHackare object
+                    if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
+                        console.log('🎤 MINIMAL: Adding system message via aiHackare.chatManager');
+                        window.aiHackare.chatManager.addSystemMessage(metricsMessage);
+                    } else if (window.ChatManager && window.ChatManager.addSystemMessage) {
+                        console.log('🎤 MINIMAL: Adding system message via window.ChatManager');
+                        window.ChatManager.addSystemMessage(metricsMessage);
+                    } else {
+                        console.log('🎤 MINIMAL: ChatManager not found, cannot display system message');
+                        console.log('🎤 MINIMAL: Available:', {
+                            'window.ChatManager': !!window.ChatManager,
+                            'window.aiHackare': !!window.aiHackare,
+                            'window.aiHackare.chatManager': !!(window.aiHackare && window.aiHackare.chatManager)
+                        });
+                    }
                     
                     // Insert into message input
                     const messageInput = document.getElementById('message-input');
