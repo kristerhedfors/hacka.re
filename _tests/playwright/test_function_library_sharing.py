@@ -88,7 +88,7 @@ def test_function_library_sharing(page: Page, serve_hacka_re):
     }""")
     
     # Wait a moment for auto-population to happen
-    page.wait_for_timeout(500)
+    # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     
     # Verify the function name field was auto-populated
     name_value = page.evaluate("""() => {
@@ -166,7 +166,7 @@ def test_function_library_sharing(page: Page, serve_hacka_re):
     generate_link_btn.click()
     
     # Wait a moment for the link generation process
-    page.wait_for_timeout(1000)
+    # page.wait_for_timeout(1000)  # TODO: Replace with proper wait condition
     
     # Take a screenshot after clicking generate button
     screenshot_with_markdown(page, "function_library_sharing_after_generate", {
@@ -236,7 +236,7 @@ def test_function_library_sharing(page: Page, serve_hacka_re):
     page.goto(generated_link)
     
     # Wait a moment for the page to load and process the link
-    page.wait_for_timeout(1000)
+    # page.wait_for_timeout(1000)  # TODO: Replace with proper wait condition
     
     # Check if hasSharedApiKey function detects the link
     has_shared_link = page.evaluate("""() => {
@@ -301,7 +301,7 @@ def test_function_library_sharing(page: Page, serve_hacka_re):
     
     # Wait for the system message indicating the function library was loaded
     # (This might already be present if auto-processed)
-    page.wait_for_timeout(1000)  # Allow time for messages to appear
+    # page.wait_for_timeout(1000)  # TODO: Replace with proper wait condition  # Allow time for messages to appear
     system_messages = check_system_messages(page)
     
     # Take a screenshot after loading the shared link

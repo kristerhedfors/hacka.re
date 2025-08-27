@@ -129,7 +129,7 @@ function multiply_numbers(a, b) {
     while function_list.locator(".function-item-delete").count() > 0:
         function_list.locator(".function-item-delete").first.click()
         # Small wait to allow the UI to update
-        page.wait_for_timeout(100)
+        # page.wait_for_timeout(100)  # TODO: Replace with proper wait condition
     
     # Close the function modal
     page.locator("#close-function-modal").click()
@@ -254,7 +254,7 @@ function multiply_numbers(a, b) {
     while function_list.locator(".function-item-delete").count() > 0:
         function_list.locator(".function-item-delete").first.click()
         # Small wait to allow the UI to update
-        page.wait_for_timeout(100)
+        # page.wait_for_timeout(100)  # TODO: Replace with proper wait condition
     
     # Close the function modal
     page.locator("#close-function-modal").click()
@@ -379,7 +379,7 @@ function multiply_numbers(a, b) {
     while function_list.locator(".function-item-delete").count() > 0:
         function_list.locator(".function-item-delete").first.click()
         # Small wait to allow the UI to update
-        page.wait_for_timeout(100)
+        # page.wait_for_timeout(100)  # TODO: Replace with proper wait condition
     
     # Close the function modal
     page.locator("#close-function-modal").click()
@@ -505,7 +505,7 @@ function multiply_numbers(a, b) {
     while function_list.locator(".function-item-delete").count() > 0:
         function_list.locator(".function-item-delete").first.click()
         # Small wait to allow the UI to update
-        page.wait_for_timeout(100)
+        # page.wait_for_timeout(100)  # TODO: Replace with proper wait condition
     
     # Close the function modal
     page.locator("#close-function-modal").click()
@@ -631,7 +631,7 @@ function multiply_numbers(a, b) {
     while function_list.locator(".function-item-delete").count() > 0:
         function_list.locator(".function-item-delete").first.click()
         # Small wait to allow the UI to update
-        page.wait_for_timeout(100)
+        # page.wait_for_timeout(100)  # TODO: Replace with proper wait condition
     
     # Close the function modal
     page.locator("#close-function-modal").click()
