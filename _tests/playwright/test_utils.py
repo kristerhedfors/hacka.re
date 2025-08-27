@@ -4,11 +4,72 @@ import os
 import inspect
 from playwright.sync_api import Page, expect
 
+# Import API key persistence fixes
+try:
+    from test_helpers.api_key_fix import (
+        ensure_api_key_persisted,
+        configure_api_key_with_retry,
+        wait_for_api_ready
+    )
+except ImportError:
+    # Fallback if helper not available
+    ensure_api_key_persisted = None
+    configure_api_key_with_retry = None
+    wait_for_api_ready = None
+
 def setup_test_environment(page):
     """Set up test environment after page navigation to prevent welcome modal."""
     # Set hackare_visited to false to prevent welcome modal in tests
     page.evaluate("localStorage.setItem('hackare_visited', 'false')")
     print("Test environment configured: hackare_visited=false")
+
+def setup_api_key_properly(page, api_key):
+    """
+    Properly configure API key with retry logic to handle persistence issues.
+    
+    Args:
+        page: Playwright page object
+        api_key: API key to configure
+        
+    Returns:
+        bool: True if API key was successfully configured
+    """
+    # Wait for API system to be ready
+    if wait_for_api_ready:
+        if not wait_for_api_ready(page):
+            print("Warning: API system may not be fully initialized")
+    
+    # Try to configure with retry logic
+    if configure_api_key_with_retry:
+        success = configure_api_key_with_retry(page, api_key, use_modal=False)
+        if success:
+            print("API key configured successfully with persistence fix")
+            return True
+    
+    # Fallback to standard method
+    try:
+        page.evaluate(f"""
+            () => {{
+                // Try multiple storage methods
+                localStorage.setItem('openai_api_key', '{api_key}');
+                
+                // Also try with namespace
+                const namespace = localStorage.getItem('namespace') || 'default';
+                localStorage.setItem(namespace + '_openai_api_key', '{api_key}');
+                
+                // Force a storage event
+                window.dispatchEvent(new StorageEvent('storage', {{
+                    key: 'openai_api_key',
+                    newValue: '{api_key}',
+                    storageArea: localStorage
+                }}));
+            }}
+        """)
+        print("API key configured using fallback method")
+        return True
+    except Exception as e:
+        print(f"Failed to configure API key: {e}")
+        return False
 
 # Maximum allowed time for any operation (in seconds)
 MAX_OPERATION_TIME = 1.5
