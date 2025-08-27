@@ -52,9 +52,7 @@ class SimpleMCPProxy:
             )
             
             # Wait for startup with timeout
-            for i in range(10):
-                time.sleep(0.5)
-                try:
+            for i in range(10):                try:
                     response = requests.get("http://localhost:3001/health", timeout=2)
                     if response.status_code == 200:
                         print("MCP proxy started successfully")
@@ -176,10 +174,7 @@ def test_mcp_server_form_with_proxy(page: Page, serve_hacka_re, mcp_proxy):
     # Submit the form (it may fail, but should not crash)
     submit_btn.click()
     
-    # Wait a moment for any response
-    time.sleep(0.5)
-    
-    screenshot_with_markdown(page, "mcp_server_form", {
+    # Wait a moment for any response    screenshot_with_markdown(page, "mcp_server_form", {
         "Status": "Server form tested with proxy running",
         "Component": "MCP Integration", 
         "Test Phase": "Server Form Submission",
@@ -224,10 +219,7 @@ def test_mcp_filesystem_server_attempt(page: Page, serve_hacka_re, mcp_proxy):
     submit_btn = page.locator("#mcp-server-form button[type='submit']")
     submit_btn.click()
     
-    # Wait for server to potentially start
-    time.sleep(0.5)
-    
-    # Check if server appears in list (may or may not work)
+    # Wait for server to potentially start    # Check if server appears in list (may or may not work)
     server_list = page.locator("#mcp-quick-connectors-placeholder")
     expect(quick_connectors).to_be_visible()
     
@@ -262,10 +254,7 @@ def test_mcp_modal_ui_with_proxy(page: Page, serve_hacka_re, mcp_proxy):
     expect(page.locator("#mcp-server-command")).to_be_visible()  # stdio default
     
     # Test proxy connection button
-    page.locator("#test-proxy-btn").click()
-    time.sleep(0.5)
-    
-    # Check status updated
+    page.locator("#test-proxy-btn").click()    # Check status updated
     status = page.locator("#proxy-status")
     expect(status).to_be_visible()
     
@@ -308,10 +297,7 @@ def test_mcp_proxy_health_endpoint(page: Page, serve_hacka_re, mcp_proxy):
     
     if proxy_working:
         # Test the UI connection
-        page.locator("#test-proxy-btn").click()
-        time.sleep(0.5)
-        
-        # Should show connected
+        page.locator("#test-proxy-btn").click()        # Should show connected
         status = page.locator("#proxy-status")
         expect(status).to_contain_text("Connected", timeout=2000)
     

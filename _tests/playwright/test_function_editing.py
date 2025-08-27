@@ -87,7 +87,7 @@ function test_edit_function(message) {
     function_item_container.click()
     
     # Add a small wait to ensure the function code is loaded
-    page.wait_for_timeout(500)
+    # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     
     # Check that the function code and name are loaded into the editor
     expect(function_name).to_have_value("test_edit_function")
@@ -138,7 +138,7 @@ function test_edit_function(message, uppercase) {
     submit_btn.click()
     
     # Wait a moment for the form submission to complete
-    page.wait_for_timeout(500)
+    # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     
     # Check for success message - note that it might be hidden but still have content
     validation_text = validation_result.text_content()
@@ -158,7 +158,7 @@ function test_edit_function(message, uppercase) {
     function_item_container.click()
     
     # Add a small wait to ensure the function code is loaded
-    page.wait_for_timeout(500)
+    # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     
     # Get the actual value of the modified function code
     function_code_value = function_code.input_value()

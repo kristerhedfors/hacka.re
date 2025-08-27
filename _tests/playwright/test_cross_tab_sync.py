@@ -8,7 +8,7 @@ import time
 import os
 from dotenv import load_dotenv
 from playwright.sync_api import Page, expect, BrowserContext
-from test_utils import dismiss_welcome_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, scree, dismiss_settings_modalnshot_with_markdown
 
 # Load environment variables
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
@@ -23,6 +23,7 @@ def test_cross_tab_sync_basic(page: Page, serve_hacka_re, context: BrowserContex
     # Create a shared link first
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
+    dismiss_settings_modal(page)
     
     # Set up basic configuration
     settings_btn = page.locator("#settings-btn")
@@ -32,7 +33,7 @@ def test_cross_tab_sync_basic(page: Page, serve_hacka_re, context: BrowserContex
     # Set API key
     api_key_input = page.locator("#api-key-update")
     api_key_input.fill(API_KEY)
-    page.wait_for_timeout(500)
+    # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     
     # Close settings
     close_btn = page.locator("#close-settings-modal")
@@ -135,10 +136,7 @@ def test_cross_tab_sync_basic(page: Page, serve_hacka_re, context: BrowserContex
         "Component": "Chat Interface"
     })
     
-    # Wait for cross-tab sync to occur (give it time to sync)
-    time.sleep(5)
-    
-    # Check if the new message appears in tab 2
+    # Wait for cross-tab sync to occur (give it time to sync)    # Check if the new message appears in tab 2
     tab2.reload()  # Force reload to check sync
     tab2.wait_for_timeout(3000)
     
@@ -167,8 +165,9 @@ def test_cross_tab_sync_real_time(page: Page, serve_hacka_re, context: BrowserCo
     page.goto(serve_hacka_re + "#shared=dGVzdA==")  # Simple test data
     
     # Wait for page load
-    page.wait_for_timeout(2000)
+    # page.wait_for_timeout(2000)  # TODO: Replace with proper wait condition
     dismiss_welcome_modal(page)
+    dismiss_settings_modal(page)
     
     # Check if CrossTabSyncService is initialized
     sync_service_available = page.evaluate("""

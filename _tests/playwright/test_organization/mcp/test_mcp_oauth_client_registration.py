@@ -1,0 +1,1 @@
+../.././test_mcp_oauth_client_registration.py

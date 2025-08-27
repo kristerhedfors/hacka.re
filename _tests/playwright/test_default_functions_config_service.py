@@ -22,7 +22,7 @@ def test_default_functions_config_collection(page: Page, serve_hacka_re):
     dismiss_settings_modal(page)
     
     # Wait for page to be fully loaded
-    page.wait_for_timeout(2000)
+    # page.wait_for_timeout(2000)  # TODO: Replace with proper wait condition
     
     # Test the ConfigurationService changes directly via JavaScript
     config_test_result = page.evaluate("""() => {
@@ -125,7 +125,7 @@ def test_default_functions_sharing_format_conversion(page: Page, serve_hacka_re)
     dismiss_settings_modal(page)
     
     # Wait for page to be fully loaded
-    page.wait_for_timeout(2000)
+    # page.wait_for_timeout(2000)  # TODO: Replace with proper wait condition
     
     # Test the sharing format conversion
     sharing_test_result = page.evaluate("""() => {
@@ -236,7 +236,7 @@ def test_default_functions_config_application(page: Page, serve_hacka_re):
     dismiss_settings_modal(page)
     
     # Wait for page to be fully loaded
-    page.wait_for_timeout(2000)
+    # page.wait_for_timeout(2000)  # TODO: Replace with proper wait condition
     
     # Test the ConfigurationService application
     application_test_result = page.evaluate("""() => {

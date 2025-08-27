@@ -1,0 +1,1 @@
+../.././debug_tests/test_info_modal_click.py

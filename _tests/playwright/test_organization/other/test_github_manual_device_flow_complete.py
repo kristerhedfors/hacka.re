@@ -1,0 +1,1 @@
+../.././test_github_manual_device_flow_complete.py

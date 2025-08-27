@@ -188,7 +188,7 @@ function rc4_encrypt(plaintext, key) {
     validation_result = page.locator("#function-validation-result")
     try:
         expect(validation_result).to_be_visible(timeout=2000)
-        expect(validation_result).to_contain_text("Function validated successfully")
+        expect(validation_result).to_contain_text("Library validated successfully")
         print("Encrypt function validated successfully")
     except Exception as e:
         print(f"Error checking validation result for encrypt function: {e}")
@@ -261,7 +261,7 @@ function rc4_decrypt(ciphertext, key) {
     
     # Check for validation result
     try:
-        expect(validation_result).to_contain_text("Function validated successfully")
+        expect(validation_result).to_contain_text("Library validated successfully")
         print("Decrypt function validated successfully")
     except Exception as e:
         print(f"Error checking validation result for decrypt function: {e}")
@@ -324,8 +324,8 @@ function rc4_decrypt(ciphertext, key) {
     
     # Try to verify functions are visible (with more robust error handling)
     try:
-        expect(function_list.locator(".function-item-name:has-text('rc4_encrypt')")).to_be_visible(timeout=2000)
-        expect(function_list.locator(".function-item-name:has-text('rc4_decrypt')")).to_be_visible(timeout=2000)
+        expect(function_list.locator(".function-item-name:has-text('rc4_encrypt')").first).to_be_visible(timeout=2000)
+        expect(function_list.locator(".function-item-name:has-text('rc4_decrypt')").first).to_be_visible(timeout=2000)
         print("Both functions were added to the list and are visible")
     except Exception as e:
         print(f"Error checking if functions are visible: {e}")

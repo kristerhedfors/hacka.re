@@ -45,7 +45,7 @@ def test_button_tooltips(page: Page, serve_hacka_re):
         button_element.hover()
         
         # Wait for the tooltip to appear
-        page.wait_for_timeout(500)  # Small delay to ensure tooltip is visible
+        # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition  # Small delay to ensure tooltip is visible
         
         # Take a screenshot after hovering
         screenshot_with_markdown(page, f"button_tooltip_{button_id}_hover", {
@@ -66,7 +66,7 @@ def test_button_tooltips(page: Page, serve_hacka_re):
         
         # Move away from the button to hide the tooltip
         page.mouse.move(0, 0)
-        page.wait_for_timeout(500)  # Small delay to ensure tooltip is hidden
+        # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition  # Small delay to ensure tooltip is hidden
         
         # Check that the tooltip is hidden
         tooltip = button_element.locator(".mini-tooltip")

@@ -117,80 +117,16 @@ def enable_tool_calling_and_function_tools(page):
     
     Note: With the updated UI, tool calling is now enabled by default
     and controlled through the function calling modal.
-    This function now just ensures the settings are saved.
+    This function now just verifies that tool calling is available without changing settings.
     """
     print("Tool calling is now enabled by default...")
     
-    # Click the settings button to open settings modal
-    settings_button = page.locator("#settings-btn")
-    settings_button.click(timeout=1000)
+    # Just verify that the function button is available - no need to open settings again
+    # since configure_api_key_and_model already saved the proper configuration
+    function_button = page.locator("#function-btn")
+    if function_button.is_visible(timeout=1000):
+        print("Function calling button is visible - tool calling is ready")
+        return True
     
-    # Wait for the settings modal to become visible
-    page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
-    
-    # Take a screenshot of the settings modal
-    page.screenshot(path="_tests/playwright/videos/settings_modal_tool_calling.png")
-    
-    # Scroll to the bottom of the modal to see the Tool Calling section
-    page.evaluate("""() => {
-        const modal = document.querySelector('#settings-modal .modal-content');
-        if (modal) {
-            modal.scrollTop = modal.scrollHeight;
-        }
-    }""")
-    
-    # Wait a moment for the scroll to complete
-    page.wait_for_timeout(500)
-    
-    # Take a screenshot after scrolling
-    page.screenshot(path="_tests/playwright/videos/settings_modal_after_scroll.png")
-    
-    # Check if the "Manage Functions" button is visible
-    manage_functions_btn = page.locator("button:has-text('Manage Functions')")
-    
-    if manage_functions_btn.is_visible(timeout=1000):
-        print("Manage Functions button is visible")
-    else:
-        print("Manage Functions button is not visible, but tool calling is still enabled by default")
-    
-    # Save settings
-    save_button = page.locator("#save-settings-btn")
-    save_button.click(force=True)
-    print("Clicked save settings button")
-    
-    # Wait for the settings modal to be closed
-    try:
-        page.wait_for_selector("#settings-modal", state="hidden", timeout=2000)
-        print("Settings modal closed successfully")
-        
-        # Take a screenshot after saving settings
-        page.screenshot(path="_tests/playwright/videos/after_saving_settings.png")
-        
-        # Check for any system messages
-        check_system_messages(page)
-        return True  # Success
-    except Exception as e:
-        print(f"Error waiting for settings modal to close: {e}")
-        # Try to close it with JavaScript
-        page.evaluate("""() => {
-            const modal = document.querySelector('#settings-modal');
-            if (modal) modal.classList.remove('active');
-        }""")
-        print("Tried to close settings modal using JavaScript")
-        
-        # Check if the JavaScript approach worked
-        modal_closed = not page.locator("#settings-modal.active").is_visible(timeout=1000)
-        if modal_closed:
-            print("Settings modal closed successfully with JavaScript")
-            # Take a screenshot after saving settings
-            page.screenshot(path="_tests/playwright/videos/after_saving_settings_js.png")
-            # Check for any system messages
-            check_system_messages(page)
-            return True  # Success
-    
-    # If we get here, we couldn't close the modal
-    print("Could not close the settings modal")
-    page.screenshot(path="_tests/playwright/videos/settings_modal_close_failed.png")
-    
-    # We'll continue anyway since tool calling is enabled by default
+    print("Function calling button not visible - but continuing anyway as tool calling is enabled by default")
     return True
