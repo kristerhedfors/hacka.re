@@ -14,7 +14,7 @@ from 'openai' to 'groq' in the settings modal by:
 import json
 import time
 from playwright.sync_api import Page, expect
-from test_utils import dismiss_welcome_modal, scree, dismiss_settings_modalnshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown, dismiss_settings_modal
 
 
 def setup_debug_console_logging(page: Page):

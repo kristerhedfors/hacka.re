@@ -52,7 +52,8 @@ class SimpleMCPProxy:
             )
             
             # Wait for startup with timeout
-            for i in range(10):                try:
+            for i in range(10):
+                try:
                     response = requests.get("http://localhost:3001/health", timeout=2)
                     if response.status_code == 200:
                         print("MCP proxy started successfully")
@@ -174,7 +175,8 @@ def test_mcp_server_form_with_proxy(page: Page, serve_hacka_re, mcp_proxy):
     # Submit the form (it may fail, but should not crash)
     submit_btn.click()
     
-    # Wait a moment for any response    screenshot_with_markdown(page, "mcp_server_form", {
+    # Wait a moment for any response
+    screenshot_with_markdown(page, "mcp_server_form", {
         "Status": "Server form tested with proxy running",
         "Component": "MCP Integration", 
         "Test Phase": "Server Form Submission",
