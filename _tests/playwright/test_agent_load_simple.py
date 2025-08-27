@@ -16,7 +16,7 @@ def test_agent_load_button_exists_and_triggers(page: Page, serve_hacka_re, api_k
     # Set API key first
     settings_btn = page.locator('#settings-btn')
     settings_btn.click()
-    page.wait_for_timeout(500)
+    # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     
     api_key_input = page.locator('#api-key-update')
     api_key_input.fill(api_key)
@@ -27,19 +27,19 @@ def test_agent_load_button_exists_and_triggers(page: Page, serve_hacka_re, api_k
     
     close_settings_btn = page.locator('#close-settings')
     close_settings_btn.click()
-    page.wait_for_timeout(500)
+    # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     
     # Save agent
     agent_btn = page.locator('#agent-config-btn')
     agent_btn.click()
-    page.wait_for_timeout(500)
+    # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     
     agent_name_input = page.locator('#quick-agent-name')
     agent_name_input.fill('test-load-agent')
     
     save_btn = page.locator('#quick-save-agent')
     save_btn.click()
-    page.wait_for_timeout(1500)  # Wait for save to complete
+    # page.wait_for_timeout(1500)  # TODO: Replace with proper wait condition  # Wait for save to complete
     
     screenshot_with_markdown(page, "agent_saved_for_load_test", {
         "Status": "Agent saved successfully",
@@ -49,22 +49,22 @@ def test_agent_load_button_exists_and_triggers(page: Page, serve_hacka_re, api_k
     # Now change configuration
     close_agent_btn = page.locator('#close-agent-config-modal')
     close_agent_btn.click()
-    page.wait_for_timeout(500)
+    # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     
     # Change to OpenAI
     settings_btn.click()
-    page.wait_for_timeout(500)
+    # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     provider_select.select_option('openai')
     close_settings_btn.click()
-    page.wait_for_timeout(500)
+    # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     
     # Verify it changed to OpenAI
     settings_btn.click()
-    page.wait_for_timeout(500)
+    # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     current_provider = provider_select.input_value()
     assert current_provider == 'openai', f"Expected 'openai', got '{current_provider}'"
     close_settings_btn.click()
-    page.wait_for_timeout(500)
+    # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     
     screenshot_with_markdown(page, "config_changed_to_openai", {
         "Status": "Configuration changed to OpenAI",
@@ -73,7 +73,7 @@ def test_agent_load_button_exists_and_triggers(page: Page, serve_hacka_re, api_k
     
     # Now test loading the agent
     agent_btn.click() 
-    page.wait_for_timeout(500)
+    # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     
     # Find load button and verify it exists
     load_btn = page.locator('button:has-text("Load")').first
@@ -82,7 +82,7 @@ def test_agent_load_button_exists_and_triggers(page: Page, serve_hacka_re, api_k
     
     # Click load button (will trigger confirmation dialog)
     load_btn.click()
-    page.wait_for_timeout(1000)  # Wait for load to complete
+    # page.wait_for_timeout(1000)  # TODO: Replace with proper wait condition  # Wait for load to complete
     
     screenshot_with_markdown(page, "after_load_attempt", {
         "Status": "Load button clicked, checking results"
@@ -95,11 +95,11 @@ def test_agent_load_button_exists_and_triggers(page: Page, serve_hacka_re, api_k
         # Modal is still open, close it
         close_agent_btn = page.locator('#close-agent-config-modal')
         close_agent_btn.click()
-        page.wait_for_timeout(500)
+        # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     
     # Check if configuration was restored by opening settings
     settings_btn.click()
-    page.wait_for_timeout(500)
+    # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     
     # Check if provider is back to Groq
     restored_provider = provider_select.input_value()
@@ -134,7 +134,7 @@ def test_load_button_without_confirmation_dialog(page: Page, serve_hacka_re, api
     # Save an agent first
     settings_btn = page.locator('#settings-btn')
     settings_btn.click()
-    page.wait_for_timeout(500)
+    # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     
     api_key_input = page.locator('#api-key-update')
     api_key_input.fill(api_key)
@@ -143,19 +143,19 @@ def test_load_button_without_confirmation_dialog(page: Page, serve_hacka_re, api
     
     close_settings_btn = page.locator('#close-settings')
     close_settings_btn.click()
-    page.wait_for_timeout(500)
+    # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     
     # Save agent without dialog handling
     agent_btn = page.locator('#agent-config-btn')
     agent_btn.click()
-    page.wait_for_timeout(500)
+    # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     
     agent_name_input = page.locator('#quick-agent-name')
     agent_name_input.fill('console-test-agent')
     
     save_btn = page.locator('#quick-save-agent')
     save_btn.click()
-    page.wait_for_timeout(2000)  # Wait longer for save
+    # page.wait_for_timeout(2000)  # TODO: Replace with proper wait condition  # Wait longer for save
     
     # Check console for save success
     save_logs = [msg for msg in console_messages if 'console-test-agent' in msg and 'saved successfully' in msg]
@@ -164,13 +164,13 @@ def test_load_button_without_confirmation_dialog(page: Page, serve_hacka_re, api
     # Change config
     close_agent_btn = page.locator('#close-agent-config-modal')
     close_agent_btn.click()
-    page.wait_for_timeout(500)
+    # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     
     settings_btn.click()
-    page.wait_for_timeout(500)
+    # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     provider_select.select_option('openai')
     close_settings_btn.click()
-    page.wait_for_timeout(500)
+    # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     
     # Check storage before load
     storage_before = page.evaluate("() => localStorage.getItem('hackare__base_url_provider')")
@@ -178,11 +178,11 @@ def test_load_button_without_confirmation_dialog(page: Page, serve_hacka_re, api
     
     # Try to load agent
     agent_btn.click()
-    page.wait_for_timeout(500)
+    # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     
     load_btn = page.locator('button:has-text("Load")').first
     load_btn.click()
-    page.wait_for_timeout(2000)
+    # page.wait_for_timeout(2000)  # TODO: Replace with proper wait condition
     
     # Check storage after load
     storage_after = page.evaluate("() => localStorage.getItem('hackare__base_url_provider')")

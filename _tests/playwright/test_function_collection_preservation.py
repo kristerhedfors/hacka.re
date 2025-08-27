@@ -85,7 +85,7 @@ function add_test(a, b) {
     submit_btn.click()
     
     # Wait for the functions to be added
-    page.wait_for_timeout(1000)
+    # page.wait_for_timeout(1000)  # TODO: Replace with proper wait condition
     
     # Check if both functions were added to the list
     function_list = page.locator("#function-list")
@@ -116,7 +116,7 @@ function add_test(a, b) {
     multiply_item_container.click()
     
     # Add a small wait to ensure the function code is loaded
-    page.wait_for_timeout(500)
+    # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     
     # Check that the function code and name are loaded into the editor
     expect(function_name).to_have_value("multiply_test")
@@ -179,7 +179,7 @@ function add_test(a, b) {
     submit_btn.click()
     
     # Wait a moment for the form submission to complete
-    page.wait_for_timeout(1000)
+    # page.wait_for_timeout(1000)  # TODO: Replace with proper wait condition
     
     # Check for success message
     validation_text = validation_result.text_content()
@@ -217,7 +217,7 @@ function add_test(a, b) {
     multiply_item_container.click()
     
     # Add a small wait to ensure the function code is loaded
-    page.wait_for_timeout(500)
+    # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     
     # Get the actual value of the modified function code
     function_code_value = function_code.input_value()
