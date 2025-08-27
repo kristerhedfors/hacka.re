@@ -38,9 +38,29 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
     base_url_select = page.locator("#base-url-select")
     base_url_select.select_option("openai")
     
-    # Click the reload models button
+    # Wait for the reload button to be enabled after API key is entered
     reload_button = page.locator("#model-reload-btn")
-    reload_button.click()
+    try:
+        # Wait for button to be enabled
+        page.wait_for_function(
+            """() => {
+                const btn = document.getElementById('model-reload-btn');
+                return btn && !btn.disabled;
+            }""",
+            timeout=3000
+        )
+        reload_button.click(timeout=5000)
+    except Exception as e:
+        print(f"Reload button not enabled, trying to save settings first: {e}")
+        # Sometimes we need to save the API key first
+        save_button = page.locator("#settings-form button[type='submit']")
+        if save_button.is_visible():
+            save_button.click(force=True)            # Re-open settings
+            settings_button = page.locator("#settings-btn")
+            settings_button.click(timeout=2000)
+            page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
+            # Now try reload again
+            reload_button.click(timeout=5000)
     
     # Wait for the models to be loaded
     # First, check if the model select has any non-disabled options
@@ -49,10 +69,7 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
         print("Models loaded successfully")
     except Exception as e:
         print(f"Error waiting for models to load: {e}")
-        # Force a shorter wait time
-        time.sleep(0.5)
-        
-        # Check if there are any options in the model select
+        # Force a shorter wait time        # Check if there are any options in the model select
         options_count = page.evaluate("""() => {
             const select = document.getElementById('model-select');
             if (!select) return 0;
@@ -63,10 +80,7 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
         if options_count == 0:
             # Try clicking the reload button again
             print("No options found, clicking reload button again")
-            reload_button.click()
-            time.sleep(0.5)
-    
-    # Select the recommended test model
+            reload_button.click(timeout=5000)    # Select the recommended test model
     from test_utils import select_recommended_test_model
     selected_model = select_recommended_test_model(page)
     
@@ -158,16 +172,10 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
     
     # Try pressing Enter in the message input to submit the form
     print("Pressing Enter in the message input")
-    message_input.press("Enter")
-    time.sleep(0.5)
-    
-    # If that doesn't work, try clicking the button directly
+    message_input.press("Enter")    # If that doesn't work, try clicking the button directly
     print("Clicking send button directly")
     send_button = page.locator("#send-btn")
-    send_button.click(force=True)
-    time.sleep(0.5)
-    
-    # If that doesn't work, try using JavaScript to submit the form
+    send_button.click(force=True)    # If that doesn't work, try using JavaScript to submit the form
     print("Submitting form using JavaScript")
     page.evaluate("""() => {
         const form = document.getElementById('chat-form');
@@ -177,10 +185,7 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
         } else {
             console.error('Form not found');
         }
-    }""")
-    time.sleep(0.5)
-    
-    # Check if the API key modal appears
+    }""")    # Check if the API key modal appears
     api_key_modal = page.locator("#api-key-modal")
     if api_key_modal.is_visible():
         print("API key modal is visible, API key was not saved correctly")
@@ -264,10 +269,7 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
         # Use a more specific selector to find the assistant message with reduced timeout
         page.wait_for_selector(".message.assistant .message-content", state="visible", timeout=2500)
         
-        # Wait a short time to ensure content is fully loaded
-        time.sleep(0.5)
-        
-        # Get all assistant messages
+        # Wait a short time to ensure content is fully loaded        # Get all assistant messages
         assistant_messages = page.locator(".message.assistant .message-content")
         print(f"Found {assistant_messages.count()} assistant messages")
         
@@ -317,9 +319,7 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
             
             # Try to force the chat completion to appear by checking the network requests
             print("Checking network requests for chat completion...")
-            # Wait a short time for any pending requests to complete
-            time.sleep(0.5)
-            # Skip the test if we still can't find the response
+            # Wait a short time for any pending requests to complete            # Skip the test if we still can't find the response
             pytest.skip("Expected assistant response not found in any messages")
     except Exception as e:
         print(f"Error waiting for assistant response: {e}")

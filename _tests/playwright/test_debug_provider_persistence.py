@@ -14,7 +14,7 @@ from 'openai' to 'groq' in the settings modal by:
 import json
 import time
 from playwright.sync_api import Page, expect
-from test_utils import dismiss_welcome_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, scree, dismiss_settings_modalnshot_with_markdown
 
 
 def setup_debug_console_logging(page: Page):
@@ -132,6 +132,7 @@ def test_debug_provider_persistence(page: Page, serve_hacka_re):
     print("\n--- Step 1: Initial Navigation ---")
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
+    dismiss_settings_modal(page)
     
     # Get initial state
     initial_storage = get_storage_debug_info(page)
@@ -160,7 +161,7 @@ def test_debug_provider_persistence(page: Page, serve_hacka_re):
     # Wait for modal to be fully visible
     settings_modal = page.locator("#settings-modal")
     expect(settings_modal).to_be_visible()
-    page.wait_for_timeout(500)  # Brief wait for modal animations
+    # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition  # Brief wait for modal animations
     
     modal_open_provider = get_provider_debug_info(page)
     screenshot_with_markdown(page, "modal_opened", {
@@ -262,7 +263,7 @@ def test_debug_provider_persistence(page: Page, serve_hacka_re):
     provider_select.select_option("groq")
     
     # Wait a moment for events to process
-    page.wait_for_timeout(1000)
+    # page.wait_for_timeout(1000)  # TODO: Replace with proper wait condition
     
     # Step 7: Check immediate state after change
     print("\n--- Step 7: State Immediately After Change ---")
@@ -287,7 +288,7 @@ def test_debug_provider_persistence(page: Page, serve_hacka_re):
     
     # Wait for modal to close
     expect(settings_modal).not_to_be_visible()
-    page.wait_for_timeout(500)
+    # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     
     # Check state after modal close
     after_close_provider = get_provider_debug_info(page)
@@ -300,7 +301,7 @@ def test_debug_provider_persistence(page: Page, serve_hacka_re):
     print("\n--- Step 9: Reopening Modal to Check Persistence ---")
     settings_button.click()
     expect(settings_modal).to_be_visible()
-    page.wait_for_timeout(500)
+    # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     
     # Check final state
     final_provider = get_provider_debug_info(page)

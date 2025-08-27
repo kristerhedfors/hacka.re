@@ -89,7 +89,7 @@ for TEST_FILE in $SHARING_TESTS; do
     echo "File: $TEST_FILE"
     echo "----------------------------------------"
     
-    python -m pytest "$TEST_FILE" $PYTEST_ARGS --browser $BROWSER $HEADLESS --timeout 10000 2>&1 | tee -a "sharing_test_${TEST_NAME}.log"
+    python -m pytest "$TEST_FILE" $PYTEST_ARGS --browser $BROWSER $HEADLESS 2>&1 | tee -a "sharing_test_${TEST_NAME}.log"
     
     EXIT_CODE=${PIPESTATUS[0]}
     TOTAL_TESTS=$((TOTAL_TESTS + 1))

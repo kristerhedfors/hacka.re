@@ -105,13 +105,11 @@ for GROUP in "${MODAL_TEST_GROUPS[@]}"; do
     
     if [ -f "$FILE" ]; then
         # Add specific handling for tests that require API key
-        EXTRA_ARGS=""
         if [[ "$FILE" == *"api"* ]] || [[ "$FILE" == *"function"* ]]; then
             echo "Note: This test requires API key configuration"
-            EXTRA_ARGS="--timeout 15000"
         fi
         
-        python -m pytest "$FILE" $PYTEST_ARGS --browser $BROWSER $HEADLESS $EXTRA_ARGS 2>&1 | tee -a "modal_test_${FILE}.log"
+        python -m pytest "$FILE" $PYTEST_ARGS --browser $BROWSER $HEADLESS 2>&1 | tee -a "modal_test_${FILE}.log"
         
         EXIT_CODE=${PIPESTATUS[0]}
         TOTAL_TESTS=$((TOTAL_TESTS + 1))

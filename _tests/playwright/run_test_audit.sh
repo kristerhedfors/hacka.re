@@ -54,8 +54,8 @@ echo "# Test Audit Report - $(date)" > "$REPORT_FILE"
 echo "" >> "$REPORT_FILE"
 echo "## Summary" >> "$REPORT_FILE"
 
-# Find all test files
-TEST_FILES=$(find . -name "test_*.py" -type f | grep -v __pycache__ | sort)
+# Find all test files (only in current directory, exclude venv and utils)
+TEST_FILES=$(find . -maxdepth 1 -name "test_*.py" -type f | grep -v test_utils.py | sort)
 
 echo -e "${YELLOW}Starting test audit...${NC}"
 echo "This will run each test file individually to identify failures."
@@ -68,8 +68,8 @@ for TEST_FILE in $TEST_FILES; do
     
     echo -n "Testing $TEST_NAME... "
     
-    # Run test with timeout (30 seconds per test file)
-    timeout 30 python -m pytest "$TEST_FILE" --browser chromium --headed --tb=short > "test_status/${TEST_NAME}_output.log" 2>&1
+    # Run test (without timeout for macOS compatibility)
+    python -m pytest "$TEST_FILE" --browser chromium --headed --tb=short > "test_status/${TEST_NAME}_output.log" 2>&1
     EXIT_CODE=$?
     
     if [ $EXIT_CODE -eq 0 ]; then
@@ -77,11 +77,7 @@ for TEST_FILE in $TEST_FILES; do
         PASSING=$((PASSING + 1))
         echo "$TEST_FILE" > "test_status/passing/${TEST_NAME}.txt"
         echo "- ✅ **$TEST_NAME**: PASSING" >> "$REPORT_FILE"
-    elif [ $EXIT_CODE -eq 124 ]; then
-        echo -e "${YELLOW}TIMEOUT${NC}"
-        TIMEOUT=$((TIMEOUT + 1))
-        echo "$TEST_FILE" > "test_status/timeout/${TEST_NAME}.txt"
-        echo "- ⏱️ **$TEST_NAME**: TIMEOUT (>30s)" >> "$REPORT_FILE"
+    # Note: timeout detection removed for macOS compatibility
     else
         echo -e "${RED}FAIL${NC}"
         FAILING=$((FAILING + 1))

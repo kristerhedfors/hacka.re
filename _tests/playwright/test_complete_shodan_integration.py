@@ -90,7 +90,7 @@ def test_complete_shodan_integration(page: Page, serve_hacka_re, openai_api_key,
     dismiss_settings_modal(page)
     
     # Wait for initialization
-    page.wait_for_timeout(2000)
+    # page.wait_for_timeout(2000)  # TODO: Replace with proper wait condition
     
     print("✅ API key configured via storage")
     
@@ -189,7 +189,7 @@ def test_complete_shodan_integration(page: Page, serve_hacka_re, openai_api_key,
                 # Fill with API key and continue
                 page.locator('#api-key-input').fill(openai_api_key)
                 page.locator('#api-key-submit').click()
-                page.wait_for_timeout(1000)
+                # page.wait_for_timeout(1000)  # TODO: Replace with proper wait condition
         except:
             pass
     
@@ -205,14 +205,14 @@ def test_complete_shodan_integration(page: Page, serve_hacka_re, openai_api_key,
     page.click("#send-btn")
     
     # Handle API key modal that might appear after sending
-    page.wait_for_timeout(2000)
+    # page.wait_for_timeout(2000)  # TODO: Replace with proper wait condition
     handle_api_key_modal()
     
     # Wait for response with function call
     page.wait_for_selector('.function-call-icon', timeout=30000)
     
     # Wait for completion
-    page.wait_for_timeout(5000)
+    # page.wait_for_timeout(5000)  # TODO: Replace with proper wait condition
     
     # Check for function call results
     function_calls = page.locator('.function-call-icon').count()
@@ -253,7 +253,7 @@ def test_complete_shodan_integration(page: Page, serve_hacka_re, openai_api_key,
     
     # Wait for response
     page.wait_for_selector('.function-call-icon', timeout=30000)
-    page.wait_for_timeout(5000)
+    # page.wait_for_timeout(5000)  # TODO: Replace with proper wait condition
     
     # Count total function calls after both tests
     total_function_calls = page.locator('.function-call-icon').count()
@@ -368,10 +368,7 @@ if __name__ == "__main__":
     server = subprocess.Popen(['python', '-m', 'http.server', '8000'], 
                             cwd='/Users/user/dev/hacka.re',
                             stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
-    time.sleep(2)
-    
-    try:
+                            stderr=subprocess.PIPE)    try:
         # Run the test with detailed output
         pytest.main([__file__, '-v', '-s', '--tb=short'])
     finally:

@@ -1,0 +1,1 @@
+../.././debug_tests/test_info_popup_click.py
