@@ -42,6 +42,13 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Show tooltip on mouseenter
         buttonElement.addEventListener('mouseenter', function() {
+            // Special handling for heart button - don't show tooltip if menu is active
+            if (button.id === 'heart-btn') {
+                const heartMenu = document.querySelector('.heart-logo .tooltip');
+                if (heartMenu && heartMenu.classList.contains('active')) {
+                    return; // Don't show tooltip when menu is open
+                }
+            }
             tooltip.classList.add('active');
         });
         
@@ -49,5 +56,26 @@ document.addEventListener('DOMContentLoaded', function() {
         buttonElement.addEventListener('mouseleave', function() {
             tooltip.classList.remove('active');
         });
+        
+        // Special handling for heart button - hide tooltip when menu opens
+        if (button.id === 'heart-btn') {
+            // Watch for menu opening
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                        const heartMenu = document.querySelector('.heart-logo .tooltip');
+                        if (heartMenu && heartMenu.classList.contains('active')) {
+                            tooltip.classList.remove('active'); // Hide tooltip when menu opens
+                        }
+                    }
+                });
+            });
+            
+            // Observe the heart menu for class changes
+            const heartMenu = document.querySelector('.heart-logo .tooltip');
+            if (heartMenu) {
+                observer.observe(heartMenu, { attributes: true });
+            }
+        }
     });
 });
