@@ -177,11 +177,9 @@ window.SettingsCoordinator = (function() {
             var updateProvider = componentManagers.baseUrl && componentManagers.baseUrl.updateProviderFromDetection
                 ? function(detection) { 
                     var defaultModel = componentManagers.baseUrl.updateProviderFromDetection(detection);
-                    // Always auto-select default model when API key changes - no conditional logic
-                    if (defaultModel && componentManagers.model && componentManagers.model.selectModel) {
-                        console.log('🔄 Auto-selecting model after API key change:', defaultModel);
-                        componentManagers.model.selectModel(defaultModel);
-                    }
+                    // DON'T auto-select model in saveSettings - the user already selected one
+                    // This callback is only for provider detection, not model selection
+                    console.log('🔄 Provider detected, but keeping user-selected model');
                     return defaultModel;
                 }
                 : null;
