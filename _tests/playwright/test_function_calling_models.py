@@ -14,23 +14,32 @@ import json
 from playwright.sync_api import Page, expect
 from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
 
-# List of Groq models to test
+# List of Groq models to test (only chat models that might support function calling)
 GROQ_MODELS = [
-    "llama-3.3-70b-versatile",    # Llama model - should work
-    "llama-3.1-8b-instant",        # Llama model - should work
-    "moonshotai/kimi-k2-instruct", # Kimi - should work
-    "compound-beta",               # Groq compound model
-    "compound-beta-mini",          # Groq compound mini model
-    "gemma2-9b-it",                # Gemma model
-    "qwen-qwq-32b",                # Qwen model
+    "llama-3.3-70b-versatile",     # Llama model - likely supports functions
+    "llama-3.1-8b-instant",         # Llama model - likely supports functions
+    "moonshotai/kimi-k2-instruct",  # Kimi - reported to work
+    "compound-beta",                # GPT-OSS equivalent - might support
+    "compound-beta-mini",           # Smaller compound model
+    "deepseek-r1-distill-llama-70b", # DeepSeek model
+    "qwen-qwq-32b",                 # Qwen model
+    "mixtral-8x7b-32768",           # Mixtral - likely supports
 ]
 
-# List of OpenAI models to test
+# List of OpenAI models to test (only chat models, excluding non-chat models)
 OPENAI_MODELS = [
-    "gpt-4o-mini",      # Primary test model
-    "gpt-4o",           # Full GPT-4o
+    "gpt-4o-mini",      # Primary test model - supports functions
+    "gpt-4o",           # Full GPT-4o - supports functions
     "gpt-4.1-mini",     # Latest mini model
-    "o4-mini",          # O4 mini
+    "gpt-4-turbo",      # GPT-4 Turbo - supports functions
+    "gpt-3.5-turbo",    # GPT-3.5 - supports functions
+    # Excluding: dall-e-*, tts-*, whisper-*, text-embedding-*, etc. as they're not chat models
+]
+
+# Berget models to test
+BERGET_MODELS = [
+    "mistralai/Magistral-Small-2506",  # Default Berget model
+    # Add more Berget chat models as discovered
 ]
 
 # Simple function for quick testing
@@ -492,6 +501,53 @@ def test_groq_complex_function(page: Page, serve_hacka_re, groq_api_key):
     screenshot_with_markdown(page, f"groq_shodan_result", test_results)
     
     assert result, f"Complex function calling failed for Groq model {best_model}"
+
+
+@pytest.mark.parametrize("model", BERGET_MODELS)
+def test_berget_function_calling(page: Page, serve_hacka_re, berget_api_key, model):
+    """Test function calling with various Berget models."""
+    if not berget_api_key:
+        pytest.skip("BERGET_API_KEY not configured")
+    
+    # Setup
+    console_messages = setup_console_logging(page)
+    page.goto(serve_hacka_re)
+    dismiss_welcome_modal(page)
+    dismiss_settings_modal(page)
+    
+    # Configure Berget with specific model
+    selected_model = configure_provider_and_model(page, "berget", model, berget_api_key)
+    
+    if not selected_model:
+        pytest.skip(f"Model {model} not available on Berget")
+    
+    # Test simple function
+    print(f"\n--- Testing simple function with {model} ---")
+    add_function(page, SIMPLE_FUNCTION_CODE, "getCurrentTime")
+    
+    result = test_function_invocation(
+        page,
+        "What time is it? Please call the getCurrentTime function",
+        "getCurrentTime"
+    )
+    
+    # Log result
+    test_results = {
+        "provider": "berget",
+        "model": model,
+        "function": "getCurrentTime",
+        "success": result
+    }
+    
+    print(f"Result: {'✓ PASS' if result else '✗ FAIL'}")
+    
+    # Cleanup
+    cleanup_functions(page)
+    
+    # Take final screenshot
+    screenshot_with_markdown(page, f"berget_{model.replace('/', '_')}_result", test_results)
+    
+    assert result, f"Function calling failed for Berget model {model}"
 
 
 def test_openai_complex_function(page: Page, serve_hacka_re, api_key):

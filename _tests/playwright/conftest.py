@@ -10,6 +10,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_API_MODEL = os.getenv("OPENAI_API_MODEL", "o4-mini")
 OPENAI_API_BASE = os.getenv("OPENAI_API_BASE", "https://api.openai.com/v1")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+BERGET_API_KEY = os.getenv("BERGET_API_KEY")
 
 @pytest.fixture(scope="function")
 def page(browser):
@@ -71,6 +72,11 @@ def api_key():
 def groq_api_key():
     """Fixture to provide the Groq API key."""
     return GROQ_API_KEY
+
+@pytest.fixture(scope="function")
+def berget_api_key():
+    """Fixture to provide the Berget API key."""
+    return BERGET_API_KEY
 
 @pytest.fixture(scope="function", autouse=True)
 def setup_test_environment(page):

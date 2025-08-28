@@ -15,14 +15,19 @@ from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot
 # Priority models to test (known to have different behaviors)
 PRIORITY_MODELS = {
     "groq": [
-        "llama-3.3-70b-versatile",    # Llama - typically works
+        "llama-3.3-70b-versatile",     # Llama - typically works
         "moonshotai/kimi-k2-instruct", # Kimi - reported to work
-        "compound-beta",               # GPT-OSS equivalent
-        "gemma2-9b-it",                # May have issues
+        "compound-beta",                # GPT-OSS equivalent
+        "mixtral-8x7b-32768",           # Mixtral model
+        "deepseek-r1-distill-llama-70b", # DeepSeek model
     ],
     "openai": [
-        "gpt-4o-mini",                 # Standard OpenAI format
-        "o4-mini",                     # New model
+        "gpt-4o-mini",                  # Standard OpenAI format
+        "gpt-4o",                       # Full model
+        "gpt-3.5-turbo",                # Classic model
+    ],
+    "berget": [
+        "mistralai/Magistral-Small-2506", # Default Berget model
     ]
 }
 
@@ -316,13 +321,17 @@ def test_function_invocation_format(page, prompt):
     for provider, models in PRIORITY_MODELS.items() 
     for model in models
 ])
-def test_model_function_format(page: Page, serve_hacka_re, api_key, groq_api_key, provider, model):
+def test_model_function_format(page: Page, serve_hacka_re, api_key, groq_api_key, berget_api_key, provider, model):
     """Test function calling format for each model."""
     # Select appropriate API key
     if provider == "groq":
         if not groq_api_key:
             pytest.skip("GROQ_API_KEY not configured")
         current_api_key = groq_api_key
+    elif provider == "berget":
+        if not berget_api_key:
+            pytest.skip("BERGET_API_KEY not configured")
+        current_api_key = berget_api_key
     else:
         if not api_key:
             pytest.skip("OPENAI_API_KEY not configured")
@@ -373,7 +382,7 @@ def test_model_function_format(page: Page, serve_hacka_re, api_key, groq_api_key
     return result
 
 
-def test_format_summary(page: Page, serve_hacka_re, api_key, groq_api_key):
+def test_format_summary(page: Page, serve_hacka_re, api_key, groq_api_key, berget_api_key):
     """Run all tests and generate a summary report."""
     results = {}
     
@@ -385,6 +394,8 @@ def test_format_summary(page: Page, serve_hacka_re, api_key, groq_api_key):
                 continue
             if provider == "openai" and not api_key:
                 continue
+            if provider == "berget" and not berget_api_key:
+                continue
             
             try:
                 # Run test for this model
@@ -392,7 +403,13 @@ def test_format_summary(page: Page, serve_hacka_re, api_key, groq_api_key):
                 dismiss_welcome_modal(page)
                 dismiss_settings_modal(page)  # Ensure settings modal is closed
                 
-                current_api_key = groq_api_key if provider == "groq" else api_key
+                # Select appropriate API key
+                if provider == "groq":
+                    current_api_key = groq_api_key
+                elif provider == "berget":
+                    current_api_key = berget_api_key
+                else:
+                    current_api_key = api_key
                 selected = setup_test_environment(page, provider, model, current_api_key)
                 
                 if selected:
