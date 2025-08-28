@@ -368,7 +368,7 @@ function cleanupGeneration(updateContextUsage, currentModel) {
          * This method is specifically for when returning to an existing namespace
          * and we want to display the full conversation history
          */
-        function reloadConversationHistory() {
+        async function reloadConversationHistory() {
             console.log('[ChatManager] Reloading conversation history for namespace continuity');
             
             // DON'T clear the UI - we want to preserve any welcome message
@@ -490,7 +490,7 @@ function cleanupGeneration(updateContextUsage, currentModel) {
                             const sessionKey = window.aiHackare.shareManager.getSessionKey();
                             console.log('[ChatManager] FALLBACK DEBUG session key:', sessionKey ? sessionKey.length + ' chars' : 'null');
                             if (sessionKey) {
-                                sharedData = window.LinkSharingService.extractSharedApiKey(sessionKey);
+                                sharedData = await window.LinkSharingService.extractSharedApiKey(sessionKey);
                                 console.log('[ChatManager] FALLBACK DEBUG extracted shared data:', sharedData);
                             }
                         } catch (error) {
@@ -538,7 +538,7 @@ function cleanupGeneration(updateContextUsage, currentModel) {
                     try {
                         const sessionKey = window.aiHackare.shareManager.getSessionKey();
                         if (sessionKey) {
-                            sharedData = window.LinkSharingService.extractSharedApiKey(sessionKey);
+                            sharedData = await window.LinkSharingService.extractSharedApiKey(sessionKey);
                         }
                     } catch (error) {
                         console.log('[ChatManager] Could not extract shared data:', error.message);
@@ -687,8 +687,12 @@ function cleanupGeneration(updateContextUsage, currentModel) {
             // Update messages array
             messages = newMessages;
             
-            // Display messages using UI handler
-            uiHandler.displayMessages(messages);
+            // Display messages using UI handler if available
+            if (uiHandler && uiHandler.displayMessages) {
+                uiHandler.displayMessages(messages);
+            } else {
+                console.log('[ChatManager] UI handler not available yet, messages stored but not displayed');
+            }
             
             // Save to local storage
             StorageService.saveChatHistory(messages);
