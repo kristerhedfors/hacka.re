@@ -66,25 +66,54 @@ deactivate
 4. Scripts handle all error cases: port conflicts, zombie processes, cleanup
 5. Scripts provide clear success/failure feedback and detailed logging
 
-### Testing
+### Testing - ESSENTIAL INFORMATION
+
+**CRITICAL TESTING RULES:**
+1. **ALWAYS RUN TESTS FROM PROJECT ROOT** - `/Users/user/dev/hacka.re/`
+2. **NEVER cd INTO _tests/playwright** - All test scripts are designed to run from project root
+3. **TEST SCRIPTS ARE IN**: `_tests/playwright/` but RUN FROM PROJECT ROOT
+4. **PYTHON ENVIRONMENT**: Virtual environment is at `_venv/` in project root
+
+**Running Tests FROM PROJECT ROOT:**
 ```bash
-# Navigate to test directory
+# CORRECT - From project root (/Users/user/dev/hacka.re/):
+_tests/playwright/run_core_tests.sh      # Core functionality tests (quick)
+_tests/playwright/run_feature_tests.sh   # Advanced feature tests
+_tests/playwright/run_tests.sh          # All tests (comprehensive)
+_tests/playwright/run_modal_tests.sh    # Modal-specific tests
+_tests/playwright/run_function_tests.sh # Function calling tests
+
+# With options (FROM PROJECT ROOT):
+_tests/playwright/run_tests.sh --headless --verbose
+_tests/playwright/run_tests.sh -k "function_calling or api"
+
+# WRONG - Do NOT do this:
 cd _tests/playwright
+./run_core_tests.sh  # WRONG - scripts expect to be run from project root
+```
 
-# Core functionality tests (quick validation)
-./run_core_tests.sh
+**Test Categories:**
+- **Core Tests** (`run_core_tests.sh`): Basic UI, page loading, API config, chat
+- **Feature Tests** (`run_feature_tests.sh`): Function calling, MCP, sharing, themes
+- **Modal Tests** (`run_modal_tests.sh`): All modal UI tests including prompts modal
+- **Function Tests** (`run_function_tests.sh`): Function calling system tests
+- **All Tests** (`run_tests.sh`): Complete test suite (377+ tests)
 
-# Advanced feature tests 
-./run_feature_tests.sh
+**Direct pytest Execution (FROM PROJECT ROOT):**
+```bash
+# Run specific test file
+_venv/bin/python -m pytest _tests/playwright/test_modals.py -v -s
 
-# All tests (comprehensive)
-./run_tests.sh
+# Run specific test
+_venv/bin/python -m pytest _tests/playwright/test_modals.py::test_prompts_modal -v -s
 
-# Test with specific options
-./run_tests.sh --headless --verbose
-./run_tests.sh -k "function_calling or api"
+# With filtering
+_venv/bin/python -m pytest _tests/playwright/ -k "prompts" -v
+```
 
-# Project metrics
+**Project Metrics:**
+```bash
+# From project root
 ./scripts/project_metrics.sh
 ```
 
