@@ -94,31 +94,28 @@ function createSharedLinkDataProcessor() {
         
         // If there's a provider, save it and set the appropriate base URL
         if (sharedData.provider) {
+            // Save the provider
             if (DataService && typeof DataService.saveBaseUrlProvider === 'function') {
                 DataService.saveBaseUrlProvider(sharedData.provider);
             } else if (StorageService && typeof StorageService.saveBaseUrlProvider === 'function') {
                 StorageService.saveBaseUrlProvider(sharedData.provider);
             }
             
-            // Also set the appropriate base URL for the provider if not explicitly provided
-            if (!sharedData.baseUrl) {
-                let defaultBaseUrl = null;
-                if (DataService && typeof DataService.getDefaultBaseUrlForProvider === 'function') {
-                    defaultBaseUrl = DataService.getDefaultBaseUrlForProvider(sharedData.provider);
-                }
-                if (defaultBaseUrl) {
-                    if (DataService && typeof DataService.saveBaseUrl === 'function') {
-                        DataService.saveBaseUrl(defaultBaseUrl);
-                    } else {
-                        StorageService.saveBaseUrl(defaultBaseUrl);
-                    }
-                    if (addSystemMessage) {
-                        addSystemMessage(`Shared provider (${sharedData.provider}) with default base URL has been applied.`);
-                    }
+            // Always set the base URL for known providers, not just when baseUrl is missing
+            let defaultBaseUrl = null;
+            if (DataService && typeof DataService.getDefaultBaseUrlForProvider === 'function') {
+                defaultBaseUrl = DataService.getDefaultBaseUrlForProvider(sharedData.provider);
+            }
+            
+            if (defaultBaseUrl) {
+                // Save the base URL
+                if (DataService && typeof DataService.saveBaseUrl === 'function') {
+                    DataService.saveBaseUrl(defaultBaseUrl);
                 } else {
-                    if (addSystemMessage) {
-                        addSystemMessage(`Shared provider (${sharedData.provider}) has been applied.`);
-                    }
+                    StorageService.saveBaseUrl(defaultBaseUrl);
+                }
+                if (addSystemMessage) {
+                    addSystemMessage(`Shared provider (${sharedData.provider}) with base URL ${defaultBaseUrl} has been applied.`);
                 }
             } else {
                 if (addSystemMessage) {

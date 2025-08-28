@@ -15,9 +15,10 @@ window.ApiKeyManager = (function() {
          * @param {Function} hideApiKeyModal - Function to hide API key modal
          * @param {Function} addSystemMessage - Function to add system message
          * @param {Function} updateProvider - Function to update provider if auto-detected
+         * @param {Function} fetchModelsCallback - Function to fetch models with the new API key
          * @returns {boolean} True if API key was saved successfully
          */
-        function saveApiKey(apiKey, hideApiKeyModal, addSystemMessage, updateProvider) {
+        function saveApiKey(apiKey, hideApiKeyModal, addSystemMessage, updateProvider, fetchModelsCallback) {
             if (apiKey) {
                 // Auto-detect provider and update if detected
                 var detection = window.ApiKeyDetector ? window.ApiKeyDetector.detectProvider(apiKey) : null;
@@ -27,6 +28,12 @@ window.ApiKeyManager = (function() {
                 
                 // Save API key to local storage
                 StorageService.saveApiKey(apiKey);
+                
+                // Always fetch models when API key is set/changed
+                if (fetchModelsCallback && typeof fetchModelsCallback === 'function') {
+                    console.log('🔄 API key changed, fetching models automatically');
+                    fetchModelsCallback(apiKey);
+                }
                 
                 // Hide modal
                 if (hideApiKeyModal) {
