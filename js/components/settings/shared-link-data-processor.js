@@ -259,46 +259,67 @@ function createSharedLinkDataProcessor() {
                                     window.NamespaceService.isReturningToExistingNamespace();
         
         if (isReturningToExisting) {
-            console.log('[SharedLinkDataProcessor] Returning to existing namespace - loading localStorage conversation');
+            console.log('[SharedLinkDataProcessor] Returning to existing namespace');
             
-            // For existing namespaces, always prioritize localStorage conversation
-            // Only use shared conversation if localStorage has no real conversation
-            
-            if (addSystemMessage) {
-                addSystemMessage('Returning to existing namespace - loading your conversation history...');
+            // Check if there's actual conversation history in localStorage
+            let hasLocalConversation = false;
+            try {
+                const history = window.StorageService.loadChatHistory();
+                hasLocalConversation = history && history.length > 0 && 
+                    history.some(msg => msg.role === 'user' || msg.role === 'assistant');
+            } catch (error) {
+                console.log('[SharedLinkDataProcessor] Could not check localStorage history:', error);
             }
             
-            // DON'T overwrite conversation history with just system messages!
-            // The chat manager will handle loading the correct conversation history
-            // and will add system messages if needed
-            
-            // Trigger conversation history reload via chat manager immediately
-            if (window.aiHackare && window.aiHackare.chatManager && 
-                window.aiHackare.chatManager.reloadConversationHistory) {
-                console.log('[SharedLinkDataProcessor] Triggering conversation reload without overwriting history');
-                // Call reload immediately to preserve existing conversation
-                setTimeout(() => {
-                    console.log('[SharedLinkDataProcessor] Triggering conversation reload');
-                    window.aiHackare.chatManager.reloadConversationHistory();
-                }, 100);
+            if (hasLocalConversation) {
+                console.log('[SharedLinkDataProcessor] Found existing localStorage conversation - using that');
+                
+                if (addSystemMessage) {
+                    addSystemMessage('Returning to existing namespace - loading your conversation history...');
+                }
+                
+                // Trigger conversation history reload via chat manager
+                if (window.aiHackare && window.aiHackare.chatManager && 
+                    window.aiHackare.chatManager.reloadConversationHistory) {
+                    console.log('[SharedLinkDataProcessor] Triggering conversation reload from localStorage');
+                    setTimeout(() => {
+                        console.log('[SharedLinkDataProcessor] Triggering conversation reload');
+                        window.aiHackare.chatManager.reloadConversationHistory();
+                    }, 100);
+                }
+                
+                return;
+            } else {
+                console.log('[SharedLinkDataProcessor] No localStorage conversation found - using shared data');
+                // Fall through to load shared data below
             }
-            
-            return;
         }
         
-        // For new namespaces or first-time shared links, use shared messages as before
+        // For new namespaces, first-time shared links, or existing namespaces without localStorage conversation
+        console.log('[SharedLinkDataProcessor] Checking shared data messages:', {
+            hasMessages: !!(sharedData.messages),
+            messageCount: sharedData.messages ? sharedData.messages.length : 0,
+            hasSetMessages: !!setMessages,
+            firstMessage: sharedData.messages && sharedData.messages[0] ? sharedData.messages[0] : null
+        });
+        
         if (sharedData.messages && sharedData.messages.length > 0 && setMessages) {
             // Add system message about conversation loading
             if (addSystemMessage) {
                 addSystemMessage(`Shared conversation history with ${sharedData.messages.length} messages has been loaded.`);
             }
             
+            console.log('[SharedLinkDataProcessor] Loading shared conversation with', sharedData.messages.length, 'messages');
+            
             // Combine system messages with shared conversation history
             const allMessages = [...systemMessages, ...sharedData.messages];
             setMessages(allMessages);
         } else if (systemMessages.length > 0 && setMessages) {
+            console.log('[SharedLinkDataProcessor] No shared messages, only system messages:', systemMessages.length);
             // Even if no conversation history, show system messages
             setMessages(systemMessages);
+        } else {
+            console.log('[SharedLinkDataProcessor] No messages to set at all');
         }
     }
     
