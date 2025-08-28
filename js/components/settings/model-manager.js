@@ -32,6 +32,11 @@ window.ModelManager = (function() {
                 elements.modelSelect.addEventListener('change', function() {
                     const selectedModel = this.value;
                     
+                    // Update the currentModel in memory immediately when user changes selection
+                    // This ensures the selection is respected even if models are refetched
+                    currentModel = selectedModel;
+                    console.log(`User selected model: ${selectedModel}`);
+                    
                     // Update context usage with the new model if possible
                     if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.uiManager) {
                         // Get the context size for the selected model
@@ -353,11 +358,25 @@ window.ModelManager = (function() {
                     }
                 }
                 
+                // Check what's currently selected in the dropdown
+                const dropdownValue = elements.modelSelect ? elements.modelSelect.value : null;
+                
+                // Check if the dropdown has a valid selection that's different from memory
+                const hasValidDropdownSelection = dropdownValue && 
+                                                  dropdownValue !== '' && 
+                                                  fetchedModelIds.includes(dropdownValue);
+                
                 // Only auto-select a model if no valid model is currently selected
                 // or if the current model is not available in the fetched models
                 let shouldSelectNewModel = false;
                 
-                if (!currentModel || currentModel === '') {
+                // If dropdown has a valid selection, always respect it
+                if (hasValidDropdownSelection) {
+                    console.log(`Using dropdown selection: ${dropdownValue}`);
+                    currentModel = dropdownValue;
+                    // Don't save yet - let the save button handler do that
+                    elements.modelSelect.value = dropdownValue;
+                } else if (!currentModel || currentModel === '') {
                     // No model selected, need to select one
                     shouldSelectNewModel = true;
                     console.log('No model currently selected, will auto-select default');

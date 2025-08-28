@@ -39,6 +39,15 @@ window.BaseUrlManager = (function() {
                 elements.baseUrlSelect.addEventListener('change', function() {
                     const selectedProvider = this.value;
                     
+                    // Reset model manager state when switching providers to avoid model confusion
+                    // Access through global window object if available
+                    if (window.aiHackare && window.aiHackare.settingsManager && 
+                        window.aiHackare.settingsManager.modelManager && 
+                        window.aiHackare.settingsManager.modelManager.resetMemoryState) {
+                        window.aiHackare.settingsManager.modelManager.resetMemoryState();
+                        console.log('Provider changed - resetting model manager state');
+                    }
+                    
                     // Save the provider selection immediately
                     const newBaseUrl = selectedProvider === 'custom' 
                         ? (elements.baseUrl ? elements.baseUrl.value : '') 
