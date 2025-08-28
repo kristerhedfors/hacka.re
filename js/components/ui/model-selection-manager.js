@@ -606,6 +606,19 @@ window.ModelSelectionManager = (function() {
                 window.aiHackare.uiManager.updateModelInfoDisplay(selectedModel.id);
             }
             
+            // Update context usage display with the new model's context size
+            if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.uiManager) {
+                // Get the context size for the selected model
+                const contextSize = window.ModelInfoService ? window.ModelInfoService.getContextSize(selectedModel.id) : null;
+                console.log(`Model changed to ${selectedModel.id}, context size: ${contextSize}`);
+                
+                // Trigger context usage update with the new model
+                window.aiHackare.chatManager.estimateContextUsage(
+                    window.aiHackare.uiManager.updateContextUsage.bind(window.aiHackare.uiManager),
+                    selectedModel.id
+                );
+            }
+            
             // Add system message
             if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
                 const displayName = window.ModelInfoService?.getDisplayName?.(selectedModel.id) || selectedModel.name;

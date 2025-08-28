@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Context Window Update Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #0f0;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #333;
+            background: #222;
+        }
+        .pass { color: #0f0; }
+        .fail { color: #f00; }
+        .info { color: #ff0; }
+        button {
+            background: #333;
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #444;
+        }
+    </style>
+</head>
+<body>
+    <h1>Context Window Update Test</h1>
+    <div id="results"></div>
+    
+    <div style="margin-top: 20px;">
+        <button onclick="testContextWindowUpdate()">Run Test</button>
+        <button onclick="location.href='/'">Go to App</button>
+    </div>
+
+    <script>
+        const results = document.getElementById('results');
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.textContent = message;
+            results.appendChild(div);
+        }
+        
+        async function testContextWindowUpdate() {
+            results.innerHTML = '';
+            log('Starting context window update test...', 'info');
+            
+            try {
+                // Test 1: Check if ModelInfoService is available
+                if (window.parent.ModelInfoService) {
+                    log('✓ ModelInfoService is available', 'pass');
+                    
+                    // Test 2: Get context size for a known model
+                    const testModel = 'gpt-4o-mini';
+                    const contextSize = window.parent.ModelInfoService.getContextSize(testModel);
+                    
+                    if (contextSize) {
+                        log(`✓ Context size for ${testModel}: ${contextSize.toLocaleString()} tokens`, 'pass');
+                    } else {
+                        log(`✗ Failed to get context size for ${testModel}`, 'fail');
+                    }
+                    
+                    // Test 3: Check model info display element
+                    const modelContextElement = window.parent.document.querySelector('.model-context');
+                    if (modelContextElement) {
+                        log(`✓ Model context element found: "${modelContextElement.textContent}"`, 'pass');
+                        
+                        // Test 4: Check if it shows the expected format
+                        const text = modelContextElement.textContent;
+                        if (text.includes('/')) {
+                            log('✓ Context display shows correct format (n / m tokens)', 'pass');
+                        } else if (text.includes('tokens')) {
+                            log('⚠ Context display shows tokens but not in n/m format', 'info');
+                        } else {
+                            log('✗ Context display format is incorrect', 'fail');
+                        }
+                    } else {
+                        log('✗ Model context element not found', 'fail');
+                    }
+                    
+                    // Test 5: Try updating model info display
+                    if (window.parent.aiHackare && window.parent.aiHackare.uiManager) {
+                        log('✓ UI Manager is available', 'pass');
+                        
+                        // Update display for a test model
+                        window.parent.aiHackare.uiManager.updateModelInfoDisplay(testModel);
+                        
+                        setTimeout(() => {
+                            const updatedText = modelContextElement ? modelContextElement.textContent : '';
+                            if (updatedText.includes('/')) {
+                                log(`✓ After updateModelInfoDisplay: "${updatedText}"`, 'pass');
+                            } else {
+                                log(`⚠ After updateModelInfoDisplay: "${updatedText}"`, 'info');
+                            }
+                        }, 100);
+                    } else {
+                        log('✗ UI Manager not available', 'fail');
+                    }
+                    
+                } else {
+                    log('✗ ModelInfoService not available - open this test from the main app', 'fail');
+                }
+                
+            } catch (error) {
+                log(`✗ Error: ${error.message}`, 'fail');
+            }
+        }
+        
+        // Auto-run test if opened in iframe
+        if (window.parent !== window) {
+            setTimeout(testContextWindowUpdate, 1000);
+        }
+    </script>
+</body>
+</html>

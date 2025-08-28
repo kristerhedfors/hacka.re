@@ -148,9 +148,18 @@ window.ModelInfoDisplay = (function() {
             const provider = determineProvider(currentModel);
             updateProviderDisplay(provider);
             
+            // Update context window display with model's context size
             if (elements.modelContextElement) {
-                // Set initial content to make the element visible
-                elements.modelContextElement.textContent = '0 tokens';
+                // Get the context size for this model
+                const contextSize = window.ModelInfoService ? window.ModelInfoService.getContextSize(currentModel) : null;
+                
+                if (contextSize) {
+                    // Show "0 / contextSize tokens" format
+                    elements.modelContextElement.textContent = `0 / ${contextSize.toLocaleString()} tokens`;
+                } else {
+                    // Fallback if no context size available
+                    elements.modelContextElement.textContent = '0 tokens';
+                }
             }
         }
         
