@@ -3110,9 +3110,10 @@ footer a:hover {
 /* ===== Mini Tooltips ===== */
 .mini-tooltip {
     position: absolute;
-    top: -30px;
-    left: -10px;
-    transform: translateX(0);
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 5px;
     background-color: var(--primary-color);
     color: white !important; /* Force white text color */
     padding: 4px 8px;
@@ -3160,13 +3161,19 @@ footer a:hover {
 #settings-btn .mini-tooltip {
     left: auto;
     right: 0;
-    transform: translateX(0);
+    transform: translateX(25%);
 }
 
 /* Position the tooltip for the theme-toggle button to avoid it going off-screen */
 #theme-toggle-btn .mini-tooltip {
     right: 0;
     left: auto;
+    transform: translateX(25%);
+}
+
+/* Position the tooltip for the heart button to avoid going off-screen */
+#heart-btn .mini-tooltip {
+    left: 0;
     transform: translateX(0);
 }
 

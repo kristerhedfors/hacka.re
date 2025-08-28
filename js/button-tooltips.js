@@ -6,11 +6,13 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Define the buttons and their tooltip texts
     const buttons = [
+        { id: 'heart-btn', text: 'Explore hacka.re', isSpecial: true },
         { id: 'agent-config-btn', text: 'Agents' },
         { id: 'copy-chat-btn', text: 'Copy Chat Content' },
         { id: 'mcp-servers-btn', text: 'Model Context Protocol' },
         { id: 'function-btn', text: 'Function Calling' },
-        { id: 'prompts-btn', text: 'System Prompt Menu' },
+        { id: 'rag-btn', text: 'Knowledge Base' },
+        { id: 'prompts-btn', text: 'System Prompts' },
         { id: 'share-btn', text: 'Share' },
         { id: 'theme-toggle-btn', text: 'Cycle Theme' },
         { id: 'settings-btn', text: 'Settings' }
@@ -27,7 +29,13 @@ document.addEventListener('DOMContentLoaded', function() {
         // Create tooltip element
         const tooltip = document.createElement('div');
         tooltip.className = 'mini-tooltip';
-        tooltip.textContent = button.text;
+        
+        // Special formatting for heart button
+        if (button.isSpecial) {
+            tooltip.innerHTML = 'Explore <span style="font-family: \'Courier New\', Monaco, monospace;">hacka.re</span>';
+        } else {
+            tooltip.textContent = button.text;
+        }
         
         // Add tooltip to button
         buttonElement.appendChild(tooltip);
