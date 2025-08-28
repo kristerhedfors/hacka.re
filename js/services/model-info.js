@@ -52,8 +52,70 @@ window.ModelInfoService = (function() {
         'playai-tts-arabic': 10 * 1024,
         'qwen-qwq-32b': 128 * 1024,
         
+        // Qwen3 models
+        'Qwen/Qwen3-32B': 131072,                         // 131K tokens
+        'qwen/qwen3-32b': 131072,                         // 131K tokens (lowercase)
+        'Qwen/Qwen3-8B': 40960,                           // 40K tokens
+        'qwen/qwen3-8b': 40960,                           // 40K tokens
+        'Qwen/Qwen3-14B': 40960,                          // 40K tokens
+        'qwen/qwen3-14b': 40960,                          // 40K tokens
+        'Qwen/Qwen3-30B-A3B': 40960,                      // 40K tokens
+        'qwen/qwen3-30b-a3b': 40960,                      // 40K tokens
+        'Qwen/Qwen3-30B-A3B-Instruct-2507': 262144,       // 262K tokens
+        'Qwen/Qwen3-235B-A22B': 131072,                   // 131K tokens  
+        'qwen/qwen3-235b-a22b': 131072,                   // 131K tokens
+        'Qwen/Qwen3-235B-A22B-Instruct-2507': 262144,     // 262K tokens
+        'Qwen/Qwen3-235B-A22B-Thinking-2507': 262144,     // 262K tokens
+        'qwen/qwen3-235b-a22b-thinking-2507': 262144,     // 262K tokens
+        
+        // Qwen3 Coder models
+        'qwen/qwen3-coder': 262144,                       // 262K tokens
+        'qwen3-coder-plus': 1048576,                      // 1M tokens
+        'Qwen/Qwen3-Coder-30B': 262144,                   // 262K tokens
+        'qwen/qwen3-coder-30b': 262144,                   // 262K tokens
+        'Qwen/Qwen3-Coder-30B-A3B-Instruct': 262144,      // 262K tokens
+        'Qwen/Qwen3-Coder-480B-A35B-Instruct': 262144,    // 262K tokens
+        'Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8': 262144,// 262K tokens
+        'Qwen/Qwen3-Coder-480B-A35B-Instruct-Turbo': 262144, // 262K tokens
+        
+        // DeepSeek-Qwen hybrid
+        'deepseek-ai/DeepSeek-R1-0528-Qwen3-8B': 131072,  // 131K tokens
+        'deepseek/deepseek-r1-0528-qwen3-8b': 131072,     // 131K tokens
+        
+        // Venice AI variants (smaller context)
+        'qwen3-235b': 131072,                             // 131K tokens (Venice Large)
+        'qwen3-4b': 32768,                                // 32K tokens (Venice Small)
+        
+        // Free tier variants (limited context)
+        'qwen/qwen3-32b:free': 40960,                     // 40K tokens
+        'qwen/qwen3-8b:free': 40960,                      // 40K tokens
+        'qwen/qwen3-14b:free': 40960,                     // 40K tokens
+        'qwen/qwen3-30b-a3b:free': 40960,                 // 40K tokens
+        'qwen/qwen3-235b-a22b:free': 131072,              // 131K tokens
+        'qwen/qwen3-coder:free': 262144,                  // 262K tokens
+        'deepseek/deepseek-r1-0528-qwen3-8b:free': 131072,// 131K tokens
+        
         // Moonshot models
         'moonshotai/kimi-k2-instruct': 200 * 1024,
+        
+        // Mistral Magistral models
+        'mistralai/Magistral-Small-2506': 128 * 1024,
+        'mistralai/Magistral-Medium-2506': 128 * 1024,
+        'magistral-small': 128 * 1024,
+        'magistral-medium': 128 * 1024,
+        
+        // Mistral Devstral models
+        'mistralai/Devstral-Small-2505': 128 * 1024,  // 128K tokens
+        'mistralai/Devstral-Small-2507': 131072,      // 131K tokens  
+        'mistralai/Devstral-Medium-2507': 131072,     // 131K tokens
+        'mistralai/devstral-small-2505': 128 * 1024,  // 128K tokens (lowercase variant)
+        'mistralai/devstral-small-2507': 131072,      // 131K tokens (lowercase variant)
+        'mistralai/devstral-medium-2507': 131072,     // 131K tokens (lowercase variant)
+        'devstral-small-2505': 128 * 1024,            // 128K tokens (without prefix)
+        'devstral-small-2507': 128 * 1024,            // 128K tokens (without prefix)
+        'devstral-medium-2507': 128 * 1024,           // 128K tokens (without prefix)
+        'chutesai/Devstral-Small-2505': 32768,        // 32K tokens (Chutes provider)
+        'mistralai/devstral-small-2505:free': 32768,  // 32K tokens (free tier)
         
         // Groq models
         'compound-beta': 128 * 1024,
@@ -110,6 +172,13 @@ window.ModelInfoService = (function() {
         if (modelInfo[modelIdStr] && modelInfo[modelIdStr].context_window) {
             console.log(`Found context window size from API: ${modelInfo[modelIdStr].context_window}`);
             return modelInfo[modelIdStr].context_window;
+        }
+        
+        // Check if we have a hardcoded context window size for this model FIRST
+        // This should take precedence over any models.dev searches
+        if (contextWindowSizes[modelIdStr]) {
+            console.log(`Using hardcoded context window size for ${modelIdStr}: ${contextWindowSizes[modelIdStr]}`);
+            return contextWindowSizes[modelIdStr];
         }
         
         // Try to get context window from models.dev data
@@ -194,12 +263,6 @@ window.ModelInfoService = (function() {
             modelIdStr.toLowerCase().includes('mai_ds')) {
             console.log(`Detected MAI DS model (DeepSeek R1 variant), using 128K context window`);
             return 128 * 1024;
-        }
-        
-        // Check if we have a hardcoded context window size for this model
-        if (contextWindowSizes[modelIdStr]) {
-            console.log(`Using hardcoded context window size for ${modelIdStr}: ${contextWindowSizes[modelIdStr]}`);
-            return contextWindowSizes[modelIdStr];
         }
         
         // Try to extract context window from model ID
