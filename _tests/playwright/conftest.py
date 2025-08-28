@@ -9,6 +9,7 @@ load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_API_MODEL = os.getenv("OPENAI_API_MODEL", "o4-mini")
 OPENAI_API_BASE = os.getenv("OPENAI_API_BASE", "https://api.openai.com/v1")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 @pytest.fixture(scope="function")
 def page(browser):
@@ -65,6 +66,11 @@ def api_key():
     if not OPENAI_API_KEY:
         pytest.skip("API key is required for function calling tests")
     return OPENAI_API_KEY
+
+@pytest.fixture(scope="function")
+def groq_api_key():
+    """Fixture to provide the Groq API key."""
+    return GROQ_API_KEY
 
 @pytest.fixture(scope="function", autouse=True)
 def setup_test_environment(page):
