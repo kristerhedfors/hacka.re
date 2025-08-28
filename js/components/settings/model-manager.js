@@ -488,6 +488,11 @@ window.ModelManager = (function() {
             
             // Save the model
             saveModel(modelId);
+            
+            // Update the UI display
+            if (window.aiHackare && window.aiHackare.uiManager && window.aiHackare.uiManager.updateModelInfoDisplay) {
+                window.aiHackare.uiManager.updateModelInfoDisplay(modelId);
+            }
         }
         
         // Public API

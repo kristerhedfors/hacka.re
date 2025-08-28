@@ -19,7 +19,7 @@ window.ContextUsageDisplay = (function() {
         function updateContextUsage(percentage, estimatedTokens, contextSize) {
             // Store the original model name before any updates to detect if it gets overwritten
             let originalModelName = null;
-            if (elements.modelNameDisplay) {
+            if (elements.modelNameDisplay && elements.modelNameDisplay.textContent) {
                 originalModelName = elements.modelNameDisplay.textContent;
             }
             
@@ -38,11 +38,11 @@ window.ContextUsageDisplay = (function() {
             }
             
             // Fix for model name display bug: ensure model name hasn't been overwritten by context updates
-            if (elements.modelNameDisplay && originalModelName) {
+            if (elements.modelNameDisplay && originalModelName && originalModelName.trim()) {
                 const currentText = elements.modelNameDisplay.textContent;
                 
                 // If the model name was overwritten with a number (like percentage), restore it
-                if (/^\d+$/.test(currentText) || currentText !== originalModelName) {
+                if (/^\d+$/.test(currentText) || (currentText !== originalModelName && currentText.trim() === '')) {
                     // Preserve the provider span if it exists
                     const providerSpan = elements.modelNameDisplay.querySelector('.model-provider-inline');
                     
