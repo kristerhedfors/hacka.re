@@ -20,9 +20,16 @@ source _venv/bin/activate
 deactivate
 ```
 
+**CRITICAL: Virtual Environment Usage:**
+- **ALWAYS USE**: `_venv/bin/python` (project root virtual environment)
+- **NEVER USE**: System python, homebrew python, or any other python
+- **Virtual environment path**: `/Users/user/dev/hacka.re/_venv/bin/python`
+- **From _tests/playwright/ directory**: `../../_venv/bin/python`
+- **Direct pytest usage**: `../../_venv/bin/python -m pytest test_file.py -v -s`
+
 **Important Environment Notes:**
 - The setup script creates a virtual environment at `_venv/` in the project root
-- Always activate the environment before running tests: `source _venv/bin/activate`
+- Always use `_venv/bin/python` for ALL Python commands in this project
 - The environment includes Playwright, pytest, and all required dependencies
 - API keys should be configured in `_tests/playwright/.env` (copy from `.env.example`)
 - Playwright browsers are automatically installed during setup
