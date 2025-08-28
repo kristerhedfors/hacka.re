@@ -117,6 +117,8 @@ test_results.md
 # MCP client plugin example (detached reference)
 mcp-client-plugin/
 
-# Server PID files
+# Server PID and log files
 server_pid.txt
 **/server_pid.txt
+**/.server.pid
+**/.server.log
