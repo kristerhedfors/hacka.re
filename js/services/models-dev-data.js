@@ -37,7 +37,9 @@ window.ModelsDevData = (function() {
                 "gpt-3.5-turbo-1106": { "limit": { "context": 16385 } },
                 "o1-2024-12-17": { "limit": { "context": 200000 } },
                 "o1-mini-2024-09-12": { "limit": { "context": 128000 } },
-                "o1-preview-2024-09-12": { "limit": { "context": 128000 } }
+                "o1-preview-2024-09-12": { "limit": { "context": 128000 } },
+                "gpt-oss-120b": { "limit": { "context": 131072 } },
+                "gpt-oss-20b": { "limit": { "context": 131072 } }
             }
         },
         "anthropic": {
@@ -89,14 +91,32 @@ window.ModelsDevData = (function() {
                 "mistral-large": { "limit": { "context": 128000 } },
                 "mistral-small": { "limit": { "context": 32000 } },
                 "mistral-medium": { "limit": { "context": 32000 } },
-                "mistral-tiny": { "limit": { "context": 32000 } }
+                "mistral-tiny": { "limit": { "context": 32000 } },
+                "magistral-small": { "limit": { "context": 128000 } },
+                "magistral-medium": { "limit": { "context": 128000 } },
+                "magistral-medium-latest": { "limit": { "context": 128000 } },
+                "devstral-small-2505": { "limit": { "context": 128000 } },
+                "devstral-small-2507": { "limit": { "context": 128000 } },
+                "devstral-medium-2507": { "limit": { "context": 128000 } },
+                "devstral-small": { "limit": { "context": 128000 } },
+                "devstral-medium": { "limit": { "context": 128000 } }
             }
         },
         "deepseek": {
             "models": {
                 "deepseek-chat": { "limit": { "context": 128000 } },
                 "deepseek-coder": { "limit": { "context": 128000 } },
-                "deepseek-reasoner": { "limit": { "context": 65536 } }
+                "deepseek-reasoner": { "limit": { "context": 65536 } },
+                "deepseek-r1": { "limit": { "context": 65536 } },
+                "deepseek-r1-0528": { "limit": { "context": 65536 } },
+                "deepseek-r1-distill-llama-70b": { "limit": { "context": 131072 } },
+                "deepseek-r1-distill-qwen-14b": { "limit": { "context": 64000 } }
+            }
+        },
+        "microsoft": {
+            "models": {
+                "mai-ds-r1": { "limit": { "context": 65536 } },
+                "mai-ds-r1-gguf": { "limit": { "context": 65536 } }
             }
         },
         "deepinfra": {
@@ -162,6 +182,87 @@ window.ModelsDevData = (function() {
             "models": {
                 "meta-llama/Meta-Llama-3.1-405B-Instruct": { "limit": { "context": 8192 } },
                 "meta-llama/Meta-Llama-3.1-70B-Instruct": { "limit": { "context": 8192 } }
+            }
+        },
+        "meta": {
+            "models": {
+                // Llama 4 models
+                "llama-4-maverick": { "limit": { "context": 128000 } },
+                "llama-4-maverick-17b-128e-instruct": { "limit": { "context": 131072 } },
+                "llama-4-maverick-17b-128e-instruct-fp8": { "limit": { "context": 128000 } },
+                "llama-4-scout": { "limit": { "context": 128000 } },
+                "llama-4-scout-17b-16e-instruct": { "limit": { "context": 128000 } },
+                "llama-4-scout-17b-16e-instruct-fp8": { "limit": { "context": 128000 } },
+                
+                // Llama 3.3 models
+                "llama-3.3-70b": { "limit": { "context": 65536 } },
+                "llama-3.3-70b-instruct": { "limit": { "context": 128000 } },
+                "llama-3.3-70b-versatile": { "limit": { "context": 131072 } },
+                "llama-3.3-8b-instruct": { "limit": { "context": 128000 } },
+                
+                // Llama 3.2 models
+                "llama-3.2-90b-vision-instruct": { "limit": { "context": 128000 } },
+                "llama-3.2-11b-vision-instruct": { "limit": { "context": 128000 } },
+                "llama-3.2-3b": { "limit": { "context": 131072 } },
+                "llama-3.2-3b-instruct": { "limit": { "context": 16000 } },
+                "llama-3.2-1b-instruct": { "limit": { "context": 16000 } },
+                
+                // Llama 3.1 models
+                "llama-3.1-405b": { "limit": { "context": 65536 } },
+                "llama-3.1-405b-instruct": { "limit": { "context": 128000 } },
+                "llama-3.1-70b-instruct": { "limit": { "context": 128000 } },
+                "llama-3.1-8b-instruct": { "limit": { "context": 128000 } },
+                "llama-3.1-8b-instant": { "limit": { "context": 131072 } },
+                
+                // Llama 3 models
+                "llama3-70b-8192": { "limit": { "context": 8192 } },
+                "llama3-8b-8192": { "limit": { "context": 8192 } },
+                "meta-llama-3-70b-instruct": { "limit": { "context": 8192 } },
+                "meta-llama-3-8b-instruct": { "limit": { "context": 8192 } },
+                
+                // Llama Guard models
+                "llama-guard-3-8b": { "limit": { "context": 8192 } },
+                "llama-guard-4-12b": { "limit": { "context": 131072 } },
+                
+                // DeepSeek Llama variants
+                "deepseek-r1-distill-llama-70b": { "limit": { "context": 131072 } }
+            }
+        },
+        "qwen": {
+            "models": {
+                // Qwen 3 models
+                "qwen3-235b": { "limit": { "context": 131072 } },
+                "qwen3-235b-a22b": { "limit": { "context": 128000 } },
+                "qwen3-235b-a22b-instruct-2507": { "limit": { "context": 262144 } },
+                "qwen3-235b-a22b-thinking-2507": { "limit": { "context": 262144 } },
+                "qwen3-30b-a3b": { "limit": { "context": 40960 } },
+                "qwen3-30b-a3b-instruct-2507": { "limit": { "context": 262144 } },
+                "qwen3-30b-a3b-thinking-2507": { "limit": { "context": 262144 } },
+                
+                // Qwen 3 Coder models
+                "qwen3-coder-30b-a3b-instruct": { "limit": { "context": 262144 } },
+                "qwen3-coder-480b-a35b-instruct": { "limit": { "context": 262144 } },
+                "qwen3-coder-480b-a35b-instruct-fp8": { "limit": { "context": 262144 } },
+                "qwen3-coder-480b-a35b-instruct-turbo": { "limit": { "context": 262144 } },
+                "qwen-3-coder-480b": { "limit": { "context": 131000 } },
+                
+                // Qwen 2.5 models
+                "qwen-2.5-7b-vision-instruct": { "limit": { "context": 125000 } },
+                "qwen-2.5-coder-32b": { "limit": { "context": 32768 } },
+                "qwen-2.5-coder-32b-instruct": { "limit": { "context": 32768 } },
+                "qwen-2.5-qwq-32b": { "limit": { "context": 32768 } },
+                "qwen-2.5-vl": { "limit": { "context": 32768 } },
+                "qwen2.5-vl-32b-instruct": { "limit": { "context": 8192 } },
+                "qwen2.5-vl-72b-instruct": { "limit": { "context": 32768 } },
+                "qwen2.5-72b-instruct": { "limit": { "context": 128000 } },
+                
+                // QwQ models
+                "qwen-qwq-32b": { "limit": { "context": 131072 } },
+                "qwq-32b-preview": { "limit": { "context": 32768 } },
+                
+                // DeepSeek Qwen variants
+                "deepseek-r1-0528-qwen3-8b": { "limit": { "context": 131072 } },
+                "deepseek-r1-distill-qwen-14b": { "limit": { "context": 64000 } }
             }
         }
     };
