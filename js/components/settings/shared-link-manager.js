@@ -219,7 +219,7 @@ window.SharedLinkManager = (function() {
                 
                 const processedModel = window.SharedLinkDataProcessor ? 
                     window.SharedLinkDataProcessor.processSharedData(
-                        sharedData, sessionKey, { addSystemMessage, setMessages, elements, displayWelcomeMessage: true }
+                        sharedData, { addSystemMessage, setMessages, elements, displayWelcomeMessage: true }
                     ) : null;
                 
                 if (processedModel) {

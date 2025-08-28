@@ -340,6 +340,7 @@ window.LinkSharingService = (function() {
                 // Create the result object with required fields
                 const result = {
                     baseUrl: data.baseUrl || null,
+                    provider: data.provider || null,  // Include provider if present
                     apiKey: data.apiKey,
                     systemPrompt: data.systemPrompt || null,
                     model: data.model || null,
