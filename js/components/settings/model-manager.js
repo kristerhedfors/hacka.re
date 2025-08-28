@@ -353,10 +353,27 @@ window.ModelManager = (function() {
                     }
                 }
                 
-                // If no model is currently selected, select a default model based on the provider
+                // Only auto-select a model if no valid model is currently selected
+                // or if the current model is not available in the fetched models
+                let shouldSelectNewModel = false;
+                
                 if (!currentModel || currentModel === '') {
-                 // Determine the provider from the base URL
-                 let provider = 'openai'; // Default provider
+                    // No model selected, need to select one
+                    shouldSelectNewModel = true;
+                    console.log('No model currently selected, will auto-select default');
+                } else if (!fetchedModelIds.includes(currentModel)) {
+                    // Current model is not available in fetched models, need to select a new one
+                    shouldSelectNewModel = true;
+                    console.log(`Current model ${currentModel} not available, will auto-select default`);
+                } else {
+                    // Current model is valid and available, keep it
+                    console.log(`Keeping existing valid model: ${currentModel}`);
+                    elements.modelSelect.value = currentModel;
+                }
+                
+                if (shouldSelectNewModel) {
+                    // Determine the provider from the base URL
+                    let provider = 'openai'; // Default provider
                     if (baseUrl) {
                         if (baseUrl.includes('openai.com')) {
                             provider = 'openai';

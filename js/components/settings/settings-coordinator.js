@@ -100,42 +100,34 @@ window.SettingsCoordinator = (function() {
         const newApiKey = elements.apiKeyInput && elements.apiKeyInput.value.trim();
         
         if (newApiKey) {
-            // Create update provider callback that handles model selection too
+            // Create update provider callback that handles model selection
             var updateProvider = componentManagers.baseUrl && componentManagers.baseUrl.updateProviderFromDetection
                 ? function(detection) { 
                     var defaultModel = componentManagers.baseUrl.updateProviderFromDetection(detection);
-                    // Auto-select default model if available, but only if no model is currently stored
+                    // Always auto-select default model when API key changes - no conditional logic
                     if (defaultModel && componentManagers.model && componentManagers.model.selectModel) {
-                        // Check if there's already a stored model to avoid overriding user's choice
-                        const currentStoredModel = DataService && DataService.getModel ? DataService.getModel() : null;
-                        if (!currentStoredModel || currentStoredModel === '') {
-                            console.log('🔄 Auto-selecting model (no stored model):', defaultModel);
-                            componentManagers.model.selectModel(defaultModel);
-                        } else {
-                            console.log('🔄 Skipping auto-selection, model already stored:', currentStoredModel);
-                        }
+                        console.log('🔄 Auto-selecting model after API key change:', defaultModel);
+                        componentManagers.model.selectModel(defaultModel);
                     }
                     return defaultModel;
                 }
                 : null;
             
-            // Save API key using the API key manager
-            componentManagers.apiKey.saveApiKey(newApiKey, hideApiKeyModal, addSystemMessage, updateProvider);
+            // Create fetch models callback for the API key manager
+            var fetchModelsCallback = function(apiKey) {
+                const baseUrl = componentManagers.baseUrl.getBaseUrl();
+                componentManagers.model.fetchAvailableModels(
+                    apiKey, 
+                    baseUrl, 
+                    true, 
+                    createContextUsageCallback(state, componentManagers)
+                ).then(() => {
+                    state.lastModelsFetchTime = Date.now();
+                });
+            };
             
-            // Make sure base URL is loaded AFTER provider update
-            // Need to get fresh base URL in case it was just updated by auto-detection
-            const baseUrl = componentManagers.baseUrl.getBaseUrl();
-            
-            // Fetch available models with the new API key and update storage
-            componentManagers.model.fetchAvailableModels(
-                newApiKey, 
-                baseUrl, 
-                true, 
-                createContextUsageCallback(state, componentManagers)
-            ).then(() => {
-                // Update last fetch time
-                state.lastModelsFetchTime = Date.now();
-            });
+            // Save API key using the API key manager with fetch callback
+            componentManagers.apiKey.saveApiKey(newApiKey, hideApiKeyModal, addSystemMessage, updateProvider, fetchModelsCallback);
             
             return true;
         }
@@ -181,27 +173,33 @@ window.SettingsCoordinator = (function() {
         
         // Save the API key if provided
         if (newApiKey && apiKeyChanged) {
-            // Create update provider callback that handles model selection too
+            // Create update provider callback that handles model selection
             var updateProvider = componentManagers.baseUrl && componentManagers.baseUrl.updateProviderFromDetection
                 ? function(detection) { 
                     var defaultModel = componentManagers.baseUrl.updateProviderFromDetection(detection);
-                    // Auto-select default model if available, but only if no model is currently stored
+                    // Always auto-select default model when API key changes - no conditional logic
                     if (defaultModel && componentManagers.model && componentManagers.model.selectModel) {
-                        // Check if there's already a stored model to avoid overriding user's choice
-                        const currentStoredModel = DataService && DataService.getModel ? DataService.getModel() : null;
-                        if (!currentStoredModel || currentStoredModel === '') {
-                            console.log('🔄 Auto-selecting model (no stored model):', defaultModel);
-                            componentManagers.model.selectModel(defaultModel);
-                        } else {
-                            console.log('🔄 Skipping auto-selection, model already stored:', currentStoredModel);
-                        }
+                        console.log('🔄 Auto-selecting model after API key change:', defaultModel);
+                        componentManagers.model.selectModel(defaultModel);
                     }
                     return defaultModel;
                 }
                 : null;
             
-            // Save API key using the API key manager
-            componentManagers.apiKey.saveApiKey(newApiKey, null, addSystemMessage, updateProvider);
+            // Create fetch models callback for the API key manager
+            var fetchModelsCallback = function(apiKey) {
+                componentManagers.model.fetchAvailableModels(
+                    apiKey, 
+                    newBaseUrl, 
+                    true, 
+                    createContextUsageCallback(state, componentManagers)
+                ).then(() => {
+                    state.lastModelsFetchTime = Date.now();
+                });
+            };
+            
+            // Save API key using the API key manager with fetch callback
+            componentManagers.apiKey.saveApiKey(newApiKey, null, addSystemMessage, updateProvider, fetchModelsCallback);
         }
         
         // We'll use these values to fetch models with updateStorage=true
