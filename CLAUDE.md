@@ -20,12 +20,51 @@ source _venv/bin/activate
 deactivate
 ```
 
+**CRITICAL: Python Usage Rules:**
+- **ALWAYS USE**: `python3` for any direct python commands (NEVER `python`)
+- **ALWAYS USE**: `_venv/bin/python` (project root virtual environment) for testing
+- **NEVER USE**: System python, homebrew python, or any other python
+- **Virtual environment path**: `/Users/user/dev/hacka.re/_venv/bin/python`
+- **From _tests/playwright/ directory**: `../../_venv/bin/python`
+- **Direct pytest usage**: `../../_venv/bin/python -m pytest test_file.py -v -s`
+- **CRITICAL**: Any subprocess calls, fixtures, or scripts must use `python3`, never `python`
+
 **Important Environment Notes:**
 - The setup script creates a virtual environment at `_venv/` in the project root
-- Always activate the environment before running tests: `source _venv/bin/activate`
+- Always use `_venv/bin/python` for ALL Python commands in this project
 - The environment includes Playwright, pytest, and all required dependencies
 - API keys should be configured in `_tests/playwright/.env` (copy from `.env.example`)
 - Playwright browsers are automatically installed during setup
+
+### HTTP Server Management
+
+**CRITICAL: Use ONLY these methods for server management. Do NOT use ad-hoc python commands.**
+
+```bash
+# Start the HTTP server (port 8000)
+./scripts/start_server.sh
+
+# Stop the HTTP server
+./scripts/stop_server.sh
+
+# Check server status
+./scripts/server_status.sh
+```
+
+**Server Management Details:**
+- **Start**: `./scripts/start_server.sh` - Starts server on port 8000, kills any existing processes, tracks PID
+- **Stop**: `./scripts/stop_server.sh` - Gracefully stops server, cleans up PID file, force kills if needed
+- **Status**: `./scripts/server_status.sh` - Shows detailed status, connection test, recent logs
+- **PID file**: `.server.pid` - Contains server process ID for reliable management
+- **Log file**: `.server.log` - Contains server output and error logs
+- **URL**: `http://localhost:8000` - Access the application after starting server
+
+**Server Management Rules:**
+1. **ALWAYS** use the scripts - never start server manually with `python3 -m http.server`
+2. **ALWAYS** check status before starting: `./scripts/server_status.sh`
+3. **ALWAYS** stop cleanly: `./scripts/stop_server.sh` 
+4. Scripts handle all error cases: port conflicts, zombie processes, cleanup
+5. Scripts provide clear success/failure feedback and detailed logging
 
 ### Testing
 ```bash
