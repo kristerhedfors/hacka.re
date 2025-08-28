@@ -109,13 +109,8 @@ window.ModelInfoDisplay = (function() {
          */
         function updateModelInfoDisplay(currentModel) {
             if (!currentModel) {
-                // Clear all fields if no model is selected
-                if (elements.modelNameDisplay) {
-                    elements.modelNameDisplay.textContent = '';
-                }
-                if (elements.modelContextElement) {
-                    elements.modelContextElement.textContent = '';
-                }
+                // Don't clear existing model display unless explicitly requested
+                // This prevents other code from accidentally clearing a valid model
                 return;
             }
             
@@ -204,6 +199,7 @@ window.ModelInfoDisplay = (function() {
                             elements.modelNameDisplay.appendChild(document.createTextNode(' '));
                             elements.modelNameDisplay.appendChild(providerSpan);
                         }
+                        
                     }
                 }
                 
