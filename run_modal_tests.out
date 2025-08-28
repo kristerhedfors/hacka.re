@@ -1,0 +1,106 @@
+Starting HTTP server...
+===== Starting HTTP Server for hacka.re Tests =====
+Port: 8000
+Project Root: /Users/user/dev/hacka.re
+==================================================
+Checking for existing HTTP server processes on port 8000...
+Found existing processes: 6098
+Killing existing processes...
+Processes killed.
+Changing to project root directory: /Users/user/dev/hacka.re
+Starting Python HTTP server on port 8000...
+Server started successfully with PID: 7495
+Server is now running at http://localhost:8000
+Server PID saved to: /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt
+==================================================
+Server is ready. You can now run your tests.
+To stop the server, run: kill -9 $(cat /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt)
+==================================================
+==========================================
+Running Modal-Related Tests
+==========================================
+
+----------------------------------------
+Testing: Welcome Modal
+Description: Basic welcome modal functionality
+File: test_welcome_modal.py
+----------------------------------------
+⚠️  Test file not found: test_welcome_modal.py
+
+----------------------------------------
+Testing: Settings Modal
+Description: Settings modal interactions and persistence
+File: test_modals.py
+----------------------------------------
+============================= test session starts ==============================
+platform darwin -- Python 3.13.3, pytest-8.3.5, pluggy-1.5.0
+rootdir: /Users/user/dev/hacka.re/_tests/playwright
+configfile: pytest.ini
+plugins: playwright-0.7.0, base-url-2.1.0
+collected 6 items
+
+test_modals.py::test_settings_modal[chromium0] PASSED                    [ 16%]
+test_modals.py::test_prompts_modal[chromium0] PASSED                     [ 33%]
+test_modals.py::test_share_modal[chromium0] PASSED                       [ 50%]
+test_modals.py::test_settings_modal[chromium1] PASSED                    [ 66%]
+test_modals.py::test_prompts_modal[chromium1] PASSED                     [ 83%]
+test_modals.py::test_share_modal[chromium1] PASSED                       [100%]
+
+============================== 6 passed in 40.86s ==============================
+✅ Settings Modal: PASSED
+
+----------------------------------------
+Testing: API Key Modal
+Description: API key configuration modal
+File: test_api_key_modal.py
+----------------------------------------
+⚠️  Test file not found: test_api_key_modal.py
+
+----------------------------------------
+Testing: Function Modal
+Description: Function calling modal UI
+File: test_function_modal.py
+----------------------------------------
+Note: This test requires API key configuration
+============================= test session starts ==============================
+platform darwin -- Python 3.13.3, pytest-8.3.5, pluggy-1.5.0
+rootdir: /Users/user/dev/hacka.re/_tests/playwright
+configfile: pytest.ini
+plugins: playwright-0.7.0, base-url-2.1.0
+collected 4 items
+
+test_function_modal.py::test_function_modal_basic[chromium0] PASSED      [ 25%]
+test_function_modal.py::test_function_modal_elements[chromium0] PASSED   [ 50%]
+test_function_modal.py::test_function_modal_basic[chromium1] PASSED      [ 75%]
+test_function_modal.py::test_function_modal_elements[chromium1] PASSED   [100%]
+
+============================== 4 passed in 26.70s ==============================
+✅ Function Modal: PASSED
+
+----------------------------------------
+Testing: Share Modal
+Description: Share functionality modal
+File: test_share_modal.py
+----------------------------------------
+⚠️  Test file not found: test_share_modal.py
+
+----------------------------------------
+Testing: RAG Modal
+Description: RAG knowledge base modal
+File: test_rag_modal.py
+----------------------------------------
+============================= test session starts ==============================
+platform darwin -- Python 3.13.3, pytest-8.3.5, pluggy-1.5.0
+rootdir: /Users/user/dev/hacka.re/_tests/playwright
+configfile: pytest.ini
+plugins: playwright-0.7.0, base-url-2.1.0
+collected 18 items
+
+test_rag_modal.py::test_rag_button_visibility[chromium0] FAILED          [  5%]
+test_rag_modal.py::test_rag_modal_open_close[chromium0] PASSED           [ 11%]
+test_rag_modal.py::test_rag_modal_structure[chromium0] PASSED            [ 16%]
+test_rag_modal.py::test_rag_modal_default_prompts_section[chromium0] PASSED [ 22%]
+test_rag_modal.py::test_rag_modal_search_section[chromium0] PASSED       [ 27%]
+test_rag_modal.py::test_rag_modal_user_bundles_section[chromium0] PASSED [ 33%]
+test_rag_modal.py::test_rag_modal_keyboard_interaction[chromium0] PASSED [ 38%]
+test_rag_modal.py::test_rag_enable_disable_functionality[chromium0] 
