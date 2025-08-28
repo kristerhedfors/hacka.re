@@ -36,7 +36,7 @@ def serve_hacka_re(page):
     # Start a local HTTP server in the background from the project root directory
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
     process = subprocess.Popen(
-        ["python", "-m", "http.server", "8000"],
+        ["python3", "-m", "http.server", "8000"],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         preexec_fn=os.setsid,
