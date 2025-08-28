@@ -39,12 +39,13 @@ window.ModelInfoService = (function() {
         'allam-2-7b': 4096,
         'deepseek-r1-distill-llama-70b': 128 * 1024,
         
-        // MAI DS models (DeepSeek R1 variants)
-        'mai-ds-r1-gguf': 128 * 1024,
-        'mai ds r1 gguf': 128 * 1024,
-        'MAI DS R1 GGUF': 128 * 1024,
-        'mai-ds-r1': 128 * 1024,
-        'mai ds r1': 128 * 1024,
+        // MAI DS models (DeepSeek R1 variants) - Using 64K based on DeepSeek R1 base model
+        'mai-ds-r1-gguf': 64 * 1024,
+        'mai ds r1 gguf': 64 * 1024,
+        'MAI DS R1 GGUF': 64 * 1024,
+        'mai-ds-r1': 64 * 1024,
+        'mai ds r1': 64 * 1024,
+        'unsloth/mai-ds-r1-gguf': 64 * 1024,
         
         'mistral-saba-24b': 32 * 1024,
         'playai-tts': 10 * 1024,
@@ -117,12 +118,57 @@ window.ModelInfoService = (function() {
             const baseUrl = window.StorageService ? window.StorageService.getBaseUrl() : null;
             const provider = window.ModelsDevData.getProviderFromUrl(baseUrl);
             
+            // Function to normalize model names by removing version suffixes
+            const normalizeModelName = (name) => {
+                // Remove provider prefix if present (e.g., "mistralai/" or "meta-llama/")
+                let normalized = name.replace(/^[^\/]+\//, '');
+                
+                // Remove common version patterns:
+                // - 4-digit years or dates (2024, 2506, etc.)
+                // - Version numbers (v1, v2.1, etc.)
+                // - Date stamps (20240101, 2024-01-01, etc.)
+                // - Build numbers or hashes
+                normalized = normalized
+                    .replace(/-\d{4}$/, '')           // Remove -YYYY at end
+                    .replace(/-\d{6,8}$/, '')         // Remove -YYYYMMDD at end
+                    .replace(/-\d{4}-\d{2}-\d{2}$/, '') // Remove -YYYY-MM-DD at end
+                    .replace(/-v\d+(\.\d+)*$/, '')    // Remove -v1.2.3 at end
+                    .replace(/@\d+$/, '')             // Remove @timestamp at end
+                    .replace(/-[a-f0-9]{6,}$/i, '');  // Remove hex hashes at end
+                
+                // Convert to lowercase for case-insensitive matching
+                return normalized.toLowerCase();
+            };
+            
             if (provider) {
                 // Try exact match first
-                const contextWindow = window.ModelsDevData.getContextWindow(provider, modelIdStr);
+                let contextWindow = window.ModelsDevData.getContextWindow(provider, modelIdStr);
                 if (contextWindow) {
                     console.log(`Found context window from models.dev (${provider}): ${contextWindow}`);
                     return contextWindow;
+                }
+                
+                // Try normalized model name
+                const normalizedName = normalizeModelName(modelIdStr);
+                contextWindow = window.ModelsDevData.getContextWindow(provider, normalizedName);
+                if (contextWindow) {
+                    console.log(`Found context window from models.dev with normalized name '${normalizedName}' (${provider}): ${contextWindow}`);
+                    return contextWindow;
+                }
+                
+                // Try searching for partial matches in the provider's models
+                const providerModels = window.ModelsDevData.getProviderModels(provider);
+                if (providerModels) {
+                    for (const [modelKey, modelData] of Object.entries(providerModels)) {
+                        if (normalizeModelName(modelKey) === normalizedName || 
+                            modelKey.toLowerCase().includes(normalizedName) ||
+                            normalizedName.includes(normalizeModelName(modelKey))) {
+                            if (modelData && modelData.limit && modelData.limit.context) {
+                                console.log(`Found context window from models.dev partial match '${modelKey}' (${provider}): ${modelData.limit.context}`);
+                                return modelData.limit.context;
+                            }
+                        }
+                    }
                 }
             }
             
@@ -131,6 +177,14 @@ window.ModelInfoService = (function() {
             if (searchResult && searchResult.model && searchResult.model.limit && searchResult.model.limit.context) {
                 console.log(`Found context window from models.dev search (${searchResult.provider}): ${searchResult.model.limit.context}`);
                 return searchResult.model.limit.context;
+            }
+            
+            // Try normalized search across all providers
+            const normalizedName = normalizeModelName(modelIdStr);
+            const normalizedSearchResult = window.ModelsDevData.searchModel(normalizedName);
+            if (normalizedSearchResult && normalizedSearchResult.model && normalizedSearchResult.model.limit && normalizedSearchResult.model.limit.context) {
+                console.log(`Found context window from models.dev normalized search '${normalizedName}' (${normalizedSearchResult.provider}): ${normalizedSearchResult.model.limit.context}`);
+                return normalizedSearchResult.model.limit.context;
             }
         }
         
@@ -150,12 +204,17 @@ window.ModelInfoService = (function() {
         
         // Try to extract context window from model ID
         // Many models include context size in their name, e.g., "mixtral-8x7b-32768", "llama-2-70b-4096"
-        // Look for a number at the end that's 4 digits or more (likely context window)
-        const contextMatch = modelIdStr.match(/[-_](\d{4,})$/);
+        // Look for a number at the end - either specific 4-digit values or any 5+ digit number
+        const contextMatch = modelIdStr.match(/[-_](\d+)$/);
         if (contextMatch) {
             const extractedContext = parseInt(contextMatch[1], 10);
-            // Sanity check: context windows are typically between 1k and 2M tokens
-            if (extractedContext >= 1000 && extractedContext <= 2000000) {
+            const validFourDigitContexts = [1024, 2048, 3072, 4096, 8192];
+            
+            // Check if it's a valid 4-digit context window or any 5+ digit number
+            const isValidFourDigit = contextMatch[1].length === 4 && validFourDigitContexts.includes(extractedContext);
+            const isFiveOrMoreDigits = contextMatch[1].length >= 5;
+            
+            if ((isValidFourDigit || isFiveOrMoreDigits) && extractedContext >= 1000 && extractedContext <= 2000000) {
                 console.log(`Extracted context window from model ID ${modelIdStr}: ${extractedContext}`);
                 return extractedContext;
             }
