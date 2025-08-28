@@ -4,21 +4,70 @@
  */
 
 /* RAG Button Icon Styling */
-#rag-btn .rag-icon {
+#rag-btn .rag-icon,
+header #rag-btn .rag-icon,
+.settings #rag-btn .rag-icon,
+header .settings #rag-btn .rag-icon {
     font-family: 'Courier New', Monaco, monospace !important;
     font-weight: bold !important;
     font-size: 0.75em !important;
     color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    text-fill-color: #ffffff !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
     letter-spacing: 0.5px !important;
     display: inline-block !important;
     visibility: visible !important;
     opacity: 1 !important;
+    background: none !important;
+    -webkit-background-clip: initial !important;
+    background-clip: initial !important;
 }
 
 #rag-btn:hover .rag-icon {
     color: var(--accent-color) !important;
+    -webkit-text-fill-color: var(--accent-color) !important;
+    text-fill-color: var(--accent-color) !important;
     text-shadow: 0 0 8px var(--accent-color);
+}
+
+/* Ensure RAG icon is visible in all themes - Override any gradient effects */
+html .rag-icon,
+html.dark-mode .rag-icon,
+html.theme-modern .rag-icon,
+html.theme-modern.dark-mode .rag-icon,
+html.theme-sunset .rag-icon,
+html.theme-ocean .rag-icon,
+html.theme-forest .rag-icon,
+html.theme-midnight .rag-icon,
+header .rag-icon,
+.settings .rag-icon,
+#rag-btn span.rag-icon {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    text-fill-color: #ffffff !important;
+    opacity: 1 !important;
+    animation: none !important;
+    background: none !important;
+    background-image: none !important;
+    -webkit-background-clip: initial !important;
+    background-clip: initial !important;
+}
+
+/* Ultimate override for RAG icon visibility - Maximum specificity */
+body header .settings #rag-btn span.rag-icon {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    text-fill-color: #ffffff !important;
+    opacity: 1 !important;
+    animation: none !important;
+    background: none !important;
+    background-image: none !important;
+    -webkit-background-clip: initial !important;
+    background-clip: initial !important;
+    font-family: 'Courier New', Monaco, monospace !important;
+    font-weight: bold !important;
+    font-size: 0.75em !important;
 }
 
 /* RAG Modal Sections */
