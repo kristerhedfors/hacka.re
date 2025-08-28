@@ -80,8 +80,30 @@ window.ShareService = (function() {
         
         // Process each potential inclusion
         if (options.includeBaseUrl && options.baseUrl) {
-            payload.baseUrl = options.baseUrl;
-            itemsIncluded.push(`✅ BASE URL (${options.baseUrl.length} chars)`);
+            // Detect if this is a known provider or custom URL
+            const knownProviders = {
+                'https://api.openai.com/v1': 'openai',
+                'https://api.groq.com/openai/v1': 'groq',
+                'https://api.anthropic.com/v1': 'anthropic',
+                'http://localhost:11434/v1': 'ollama',
+                'http://localhost:8080/v1': 'llamafile',
+                'http://localhost:4891/v1': 'gpt4all',
+                'http://localhost:1234/v1': 'lmstudio',
+                'https://api.openrouter.ai/api/v1': 'openrouter',
+                'https://api.berget.ai/v1': 'berget',
+                'https://openrouter.ai/api/v1': 'openrouter'
+            };
+            
+            const provider = knownProviders[options.baseUrl];
+            if (provider) {
+                // For known providers, just share the provider name
+                payload.provider = provider;
+                itemsIncluded.push(`✅ PROVIDER (${provider})`);
+            } else {
+                // For custom URLs, share the actual URL
+                payload.baseUrl = options.baseUrl;
+                itemsIncluded.push(`✅ CUSTOM BASE URL (${options.baseUrl.length} chars)`);
+            }
         }
         
         if (options.includeApiKey && options.apiKey) {
