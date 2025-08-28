@@ -992,14 +992,20 @@ body.firefox-focus .heart-logo {
     gap: 0.125rem;
 }
 
+/* Ensure all header icon buttons are perfect circles */
+header .settings .icon-btn {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 50%;
+    flex-shrink: 0;
+    flex-grow: 0;
+}
+
 /* Desktop-specific icon spacing */
 @media (min-width: 769px) {
     .settings {
         gap: 0.25rem;  /* Tighter spacing between icons on desktop */
-    }
-    
-    .icon-btn {
-        padding: 0.4rem;  /* Slightly reduced padding for desktop */
     }
     
     /* Even tighter spacing around the function icon */
@@ -1063,7 +1069,9 @@ body.firefox-focus .heart-logo {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0.375rem;
+    width: 36px;
+    height: 36px;
+    padding: 0;
     border-radius: 50%;
     transition: var(--transition);
 }
@@ -3110,9 +3118,10 @@ footer a:hover {
 /* ===== Mini Tooltips ===== */
 .mini-tooltip {
     position: absolute;
-    top: -30px;
-    left: -10px;
-    transform: translateX(0);
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 5px;
     background-color: var(--primary-color);
     color: white !important; /* Force white text color */
     padding: 4px 8px;
@@ -3160,13 +3169,19 @@ footer a:hover {
 #settings-btn .mini-tooltip {
     left: auto;
     right: 0;
-    transform: translateX(0);
+    transform: translateX(25%);
 }
 
 /* Position the tooltip for the theme-toggle button to avoid it going off-screen */
 #theme-toggle-btn .mini-tooltip {
     right: 0;
     left: auto;
+    transform: translateX(25%);
+}
+
+/* Position the tooltip for the heart button to avoid going off-screen */
+#heart-btn .mini-tooltip {
+    left: 0;
     transform: translateX(0);
 }
 
