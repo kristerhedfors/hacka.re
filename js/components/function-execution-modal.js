@@ -306,23 +306,28 @@ window.FunctionExecutionModal = (function() {
         // Create tabs
         const tabContainer = document.createElement('div');
         tabContainer.className = 'tab-container';
+        tabContainer.style.marginTop = '20px'; // Add spacing from header
         
         const tabButtons = document.createElement('div');
         tabButtons.className = 'tab-buttons';
+        tabButtons.style.borderBottom = '2px solid var(--border-color)'; // Add visual separator
+        tabButtons.style.marginBottom = '20px'; // Space before content
         
         const requestTab = document.createElement('button');
         requestTab.type = 'button';
         requestTab.className = 'tab-btn active';
         requestTab.id = 'exec-request-tab';
-        requestTab.textContent = 'Request';
+        requestTab.innerHTML = '<i class="fas fa-phone-alt" style="margin-right: 6px;"></i><span>Function Call Details</span>';
+        requestTab.style.cssText = 'min-width: 200px !important; padding: 12px 20px !important; font-size: 14px !important; font-weight: 600 !important;';
         requestTab.addEventListener('click', () => switchTab('request'));
         
         const resultTab = document.createElement('button');
         resultTab.type = 'button';
         resultTab.className = 'tab-btn';
         resultTab.id = 'exec-result-tab';
-        resultTab.textContent = 'Result';
-        resultTab.style.display = 'none'; // Hidden until we have a result
+        resultTab.innerHTML = '<i class="fas fa-check-circle" style="margin-right: 6px; color: var(--success-color, #4CAF50);"></i><span>Function Result Details</span>';
+        resultTab.style.cssText = 'min-width: 200px !important; padding: 12px 20px !important; font-size: 14px !important; font-weight: 600 !important;';
+        resultTab.style.display = 'none'; // Set display separately so it can be toggled
         resultTab.addEventListener('click', () => switchTab('result'));
         
         tabButtons.appendChild(requestTab);
@@ -497,7 +502,7 @@ window.FunctionExecutionModal = (function() {
         section.appendChild(content);
         container.appendChild(section);
         
-        // Remember choice checkbox
+        // Remember choice checkbox with memory link
         const checkboxDiv = document.createElement('div');
         checkboxDiv.style.padding = '12px 0';
         checkboxDiv.style.borderTop = '1px solid var(--border-color)';
@@ -518,14 +523,29 @@ window.FunctionExecutionModal = (function() {
         checkboxLabel.appendChild(document.createTextNode('Remember my choice for this function during this session'));
         checkboxDiv.appendChild(checkboxLabel);
         
-        // Add link to manage approval memory (styled like the settings modal link)
+        // Add link to manage approval memory on a new line
         const memoryLink = document.createElement('a');
         memoryLink.href = '#';
         memoryLink.className = 'function-library-link';
-        memoryLink.textContent = 'Manage approval memory';
+        memoryLink.textContent = 'Manage function approval memory';
         memoryLink.style.fontSize = '0.85em';
         memoryLink.style.marginTop = '8px';
-        memoryLink.style.display = 'inline-block';
+        memoryLink.style.marginLeft = '26px'; // Align with checkbox text
+        memoryLink.style.display = 'block';
+        memoryLink.style.color = 'var(--accent-color)';
+        memoryLink.style.textDecoration = 'none';
+        memoryLink.style.transition = 'opacity 0.2s';
+        
+        // Add hover effect
+        memoryLink.addEventListener('mouseenter', () => {
+            memoryLink.style.opacity = '0.8';
+            memoryLink.style.textDecoration = 'underline';
+        });
+        memoryLink.addEventListener('mouseleave', () => {
+            memoryLink.style.opacity = '1';
+            memoryLink.style.textDecoration = 'none';
+        });
+        
         memoryLink.addEventListener('click', (e) => {
             e.preventDefault();
             if (window.FunctionApprovalMemoryModal) {
@@ -1303,6 +1323,7 @@ window.FunctionExecutionModal = (function() {
         isSessionAllowed,
         isSessionBlocked,
         addSessionAllowed,
+        viewFunctionSource,  // Expose for use by other modals
         addSessionBlocked,
         removeFromSessionLists,
         clearSessionAllowed,
