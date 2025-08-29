@@ -462,9 +462,18 @@ window.FunctionDetailsTabbedModal = (function() {
         const resultValueArea = document.getElementById('details-result-value');
         if (resultValueArea) {
             if (resultValue !== undefined) {
-                const displayValue = typeof resultValue === 'string' 
-                    ? resultValue 
-                    : JSON.stringify(resultValue, null, 2);
+                let displayValue;
+                if (typeof resultValue === 'string') {
+                    // Clean any remaining HTML tags that might have slipped through
+                    displayValue = resultValue
+                        .replace(/<br\s*\/?>/gi, '\n')
+                        .replace(/&lt;/g, '<')
+                        .replace(/&gt;/g, '>')
+                        .replace(/&quot;/g, '"')
+                        .replace(/&amp;/g, '&');
+                } else {
+                    displayValue = JSON.stringify(resultValue, null, 2);
+                }
                 resultValueArea.textContent = displayValue;
             } else {
                 resultValueArea.textContent = 'No result available';

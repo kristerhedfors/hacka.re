@@ -405,17 +405,20 @@ window.SmartTooltipPositioner = (function() {
                             }
                             
                             if (valueMatch) {
+                                // Always clean the HTML entities and tags first
+                                const valueText = valueMatch[1]
+                                    .replace(/<br\s*\/?>/gi, '\n')
+                                    .replace(/&lt;/g, '<')
+                                    .replace(/&gt;/g, '>')
+                                    .replace(/&quot;/g, '"')
+                                    .replace(/&amp;/g, '&')
+                                    .trim();
+                                    
                                 try {
-                                    const valueText = valueMatch[1]
-                                        .replace(/<br>/g, '\n')
-                                        .replace(/&lt;/g, '<')
-                                        .replace(/&gt;/g, '>')
-                                        .replace(/&quot;/g, '"')
-                                        .replace(/&amp;/g, '&')
-                                        .trim();
                                     modalData.resultValue = JSON.parse(valueText);
                                 } catch (e) {
-                                    modalData.resultValue = valueMatch[1];
+                                    // If JSON parsing fails, use the cleaned text (not raw HTML)
+                                    modalData.resultValue = valueText;
                                 }
                             }
                         }
