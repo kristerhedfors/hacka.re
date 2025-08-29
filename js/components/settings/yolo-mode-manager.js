@@ -81,198 +81,32 @@ window.YoloModeManager = (function() {
         }
         
         /**
-         * Create the session lists management section
+         * Create the function approval memory link
          */
         function createSessionListsSection() {
             const container = document.createElement('div');
             container.id = 'session-lists-container';
-            container.style.marginTop = '20px';
-            container.style.padding = '15px';
-            container.style.backgroundColor = 'var(--bg-color-secondary)';
-            container.style.borderRadius = '8px';
-            container.style.border = '1px solid var(--border-color)';
+            container.style.marginTop = '10px';
+            container.style.marginLeft = '28px'; // Align with checkbox content
             
-            // Title
-            const title = document.createElement('h4');
-            title.textContent = 'Function Approval Memory';
-            title.style.marginTop = '0';
-            title.style.marginBottom = '15px';
-            title.style.fontSize = '0.95em';
-            title.style.color = 'var(--text-color)';
-            container.appendChild(title);
-            
-            // Description
-            const desc = document.createElement('p');
-            desc.textContent = 'Functions remembered during this session:';
-            desc.style.fontSize = '0.85em';
-            desc.style.color = 'var(--text-color-secondary)';
-            desc.style.marginBottom = '15px';
-            container.appendChild(desc);
-            
-            // Auto-allowed functions section
-            const allowedSection = document.createElement('div');
-            allowedSection.style.marginBottom = '15px';
-            
-            const allowedLabel = document.createElement('strong');
-            allowedLabel.textContent = '✅ Auto-Approved:';
-            allowedLabel.style.display = 'block';
-            allowedLabel.style.marginBottom = '8px';
-            allowedLabel.style.fontSize = '0.9em';
-            allowedLabel.style.color = '#4caf50';
-            allowedSection.appendChild(allowedLabel);
-            
-            const allowedList = document.createElement('div');
-            allowedList.id = 'session-allowed-list';
-            allowedList.style.minHeight = '30px';
-            allowedSection.appendChild(allowedList);
-            
-            container.appendChild(allowedSection);
-            
-            // Auto-blocked functions section
-            const blockedSection = document.createElement('div');
-            blockedSection.style.marginBottom = '15px';
-            
-            const blockedLabel = document.createElement('strong');
-            blockedLabel.textContent = '🚫 Auto-Blocked:';
-            blockedLabel.style.display = 'block';
-            blockedLabel.style.marginBottom = '8px';
-            blockedLabel.style.fontSize = '0.9em';
-            blockedLabel.style.color = '#ff6b6b';
-            blockedSection.appendChild(blockedLabel);
-            
-            const blockedList = document.createElement('div');
-            blockedList.id = 'session-blocked-list';
-            blockedList.style.minHeight = '30px';
-            blockedSection.appendChild(blockedList);
-            
-            container.appendChild(blockedSection);
-            
-            // Clear all button
-            const clearButton = document.createElement('button');
-            clearButton.type = 'button';
-            clearButton.className = 'btn secondary-btn';
-            clearButton.textContent = 'Clear All Memory';
-            clearButton.style.fontSize = '0.85em';
-            clearButton.style.marginTop = '10px';
-            clearButton.addEventListener('click', () => {
-                if (confirm('Clear all function approval memory for this session?')) {
-                    if (window.FunctionExecutionModal) {
-                        FunctionExecutionModal.clearSessionAllowed();
-                        FunctionExecutionModal.clearSessionBlocked();
-                        updateSessionLists();
-                    }
+            // Link to open the modal (styled like "Delete current namespace and settings")
+            const link = document.createElement('a');
+            link.href = '#';
+            link.className = 'function-library-link';
+            link.textContent = 'Manage function approval memory';
+            link.style.fontSize = '0.9em';
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (window.FunctionApprovalMemoryModal) {
+                    FunctionApprovalMemoryModal.open();
                 }
             });
-            container.appendChild(clearButton);
-            
-            // Update lists initially and set up periodic updates
-            updateSessionLists();
-            setInterval(updateSessionLists, 2000); // Update every 2 seconds
+            container.appendChild(link);
             
             return container;
         }
         
-        /**
-         * Update the session lists display
-         */
-        function updateSessionLists() {
-            if (!window.FunctionExecutionModal) return;
-            
-            const lists = FunctionExecutionModal.getSessionLists();
-            
-            // Update allowed list
-            const allowedContainer = document.getElementById('session-allowed-list');
-            if (allowedContainer) {
-                allowedContainer.innerHTML = '';
-                
-                if (lists.allowed.length === 0) {
-                    const emptyMsg = document.createElement('span');
-                    emptyMsg.textContent = 'None';
-                    emptyMsg.style.fontSize = '0.85em';
-                    emptyMsg.style.color = 'var(--text-color-secondary)';
-                    emptyMsg.style.fontStyle = 'italic';
-                    allowedContainer.appendChild(emptyMsg);
-                } else {
-                    lists.allowed.forEach(funcName => {
-                        const item = createSessionListItem(funcName, 'allowed');
-                        allowedContainer.appendChild(item);
-                    });
-                }
-            }
-            
-            // Update blocked list
-            const blockedContainer = document.getElementById('session-blocked-list');
-            if (blockedContainer) {
-                blockedContainer.innerHTML = '';
-                
-                if (lists.blocked.length === 0) {
-                    const emptyMsg = document.createElement('span');
-                    emptyMsg.textContent = 'None';
-                    emptyMsg.style.fontSize = '0.85em';
-                    emptyMsg.style.color = 'var(--text-color-secondary)';
-                    emptyMsg.style.fontStyle = 'italic';
-                    blockedContainer.appendChild(emptyMsg);
-                } else {
-                    lists.blocked.forEach(funcName => {
-                        const item = createSessionListItem(funcName, 'blocked');
-                        blockedContainer.appendChild(item);
-                    });
-                }
-            }
-        }
-        
-        /**
-         * Create a session list item with remove button
-         */
-        function createSessionListItem(funcName, type) {
-            const item = document.createElement('div');
-            item.style.display = 'inline-flex';
-            item.style.alignItems = 'center';
-            item.style.backgroundColor = 'var(--bg-color)';
-            item.style.border = '1px solid var(--border-color)';
-            item.style.borderRadius = '4px';
-            item.style.padding = '4px 8px';
-            item.style.marginRight = '8px';
-            item.style.marginBottom = '8px';
-            item.style.fontSize = '0.85em';
-            
-            const nameSpan = document.createElement('span');
-            nameSpan.textContent = funcName;
-            nameSpan.style.fontFamily = 'monospace';
-            nameSpan.style.marginRight = '8px';
-            item.appendChild(nameSpan);
-            
-            const removeBtn = document.createElement('button');
-            removeBtn.textContent = '×';
-            removeBtn.style.background = 'none';
-            removeBtn.style.border = 'none';
-            removeBtn.style.color = 'var(--text-color-secondary)';
-            removeBtn.style.fontSize = '1.2em';
-            removeBtn.style.cursor = 'pointer';
-            removeBtn.style.padding = '0';
-            removeBtn.style.marginLeft = '4px';
-            removeBtn.style.lineHeight = '1';
-            removeBtn.title = `Remove ${funcName} from ${type} list`;
-            
-            removeBtn.addEventListener('click', () => {
-                if (window.FunctionExecutionModal) {
-                    FunctionExecutionModal.removeFromSessionLists(funcName);
-                    updateSessionLists();
-                }
-            });
-            
-            removeBtn.addEventListener('mouseenter', () => {
-                removeBtn.style.color = '#ff6b6b';
-            });
-            
-            removeBtn.addEventListener('mouseleave', () => {
-                removeBtn.style.color = 'var(--text-color-secondary)';
-            });
-            
-            item.appendChild(removeBtn);
-            
-            return item;
-        }
+        // Removed updateSessionLists and createSessionListItem functions as they're now handled by the modal
         
         /**
          * Add YOLO mode controls to the settings form

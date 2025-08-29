@@ -214,6 +214,23 @@ window.FunctionExecutionModal = (function() {
         checkboxLabel.appendChild(checkbox);
         checkboxLabel.appendChild(document.createTextNode('Remember my choice for this function during this session'));
         checkboxDiv.appendChild(checkboxLabel);
+        
+        // Add link to manage approval memory (styled like the settings modal link)
+        const memoryLink = document.createElement('a');
+        memoryLink.href = '#';
+        memoryLink.className = 'function-library-link';
+        memoryLink.textContent = 'Manage approval memory';
+        memoryLink.style.fontSize = '0.85em';
+        memoryLink.style.marginTop = '8px';
+        memoryLink.style.display = 'inline-block';
+        memoryLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (window.FunctionApprovalMemoryModal) {
+                FunctionApprovalMemoryModal.open();
+            }
+        });
+        checkboxDiv.appendChild(memoryLink);
+        
         container.appendChild(checkboxDiv);
         
         // Actions
