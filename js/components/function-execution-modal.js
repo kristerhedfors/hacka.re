@@ -494,7 +494,10 @@ window.FunctionExecutionModal = (function() {
                 // Execute the function
                 try {
                     if (window.FunctionToolsExecutor) {
+                        const startTime = performance.now();
                         const result = await FunctionToolsExecutor.execute(currentFunctionName, editedArgs);
+                        const endTime = performance.now();
+                        const executionTime = ((endTime - startTime) / 1000).toFixed(2);
                         
                         // Update the result in our state
                         currentFunctionResult = result?.result;
@@ -508,7 +511,7 @@ window.FunctionExecutionModal = (function() {
                             }
                         }
                         
-                        updateExecutionStatus('success');
+                        updateExecutionStatus('success', executionTime);
                         isExecuting = false;
                         
                         // Focus on result textarea
@@ -594,7 +597,7 @@ window.FunctionExecutionModal = (function() {
     /**
      * Update execution status display
      */
-    function updateExecutionStatus(status) {
+    function updateExecutionStatus(status, executionTime) {
         const statusDiv = document.getElementById('exec-status');
         if (!statusDiv) return;
         
@@ -609,7 +612,8 @@ window.FunctionExecutionModal = (function() {
             statusDiv.style.backgroundColor = 'var(--success-bg, #d4edda)';
             statusDiv.style.color = 'var(--success-text, #155724)';
             statusDiv.style.border = '1px solid var(--success-border, #c3e6cb)';
-            statusDiv.innerHTML = '<i class="fas fa-check-circle" style="margin-right: 8px;"></i>Function executed successfully';
+            const timeText = executionTime ? ` (${executionTime}s)` : '';
+            statusDiv.innerHTML = `<i class="fas fa-check-circle" style="margin-right: 8px;"></i>Function executed successfully${timeText}`;
         } else if (status === 'error') {
             statusDiv.style.display = 'block';
             statusDiv.style.backgroundColor = 'var(--error-bg, #f8d7da)';
@@ -781,9 +785,10 @@ window.FunctionExecutionModal = (function() {
      * Show modal for intercepting and editing function results
      * @param {string} functionName - Name of the function that was executed
      * @param {*} result - The result returned from the function
+     * @param {string} executionTime - The execution time in seconds with 2 decimal places
      * @returns {Promise<{blocked: boolean, result: *}>} Promise resolving to object with blocked flag and result
      */
-    function showResultInterceptor(functionName, result) {
+    function showResultInterceptor(functionName, result, executionTime) {
         return new Promise((resolve) => {
             // Initialize if not already done
             if (!modalElement) {
@@ -831,7 +836,7 @@ window.FunctionExecutionModal = (function() {
             
             // Switch to result tab
             switchTab('result');
-            updateExecutionStatus('success');
+            updateExecutionStatus('success', executionTime);
             
             // Show modal if not already visible
             if (!modalElement.classList.contains('active')) {

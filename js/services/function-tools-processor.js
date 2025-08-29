@@ -85,7 +85,10 @@ window.FunctionToolsProcessor = (function() {
                 
                 this._logFunctionExecution(name, JSON.stringify(args), addSystemMessage);
                 
+                const startTime = performance.now();
                 const executionResult = await Executor.execute(name, args);
+                const endTime = performance.now();
+                const executionTime = ((endTime - startTime) / 1000).toFixed(2);
                 
                 // Ensure we have a valid result
                 let finalResult = executionResult?.result;
@@ -95,7 +98,7 @@ window.FunctionToolsProcessor = (function() {
                 
                 // If user wants to intercept the result, show the interceptor modal
                 if (interceptResult && window.FunctionExecutionModal) {
-                    const interceptResponse = await FunctionExecutionModal.showResultInterceptor(name, finalResult);
+                    const interceptResponse = await FunctionExecutionModal.showResultInterceptor(name, finalResult, executionTime);
                     
                     if (interceptResponse && interceptResponse.blocked) {
                         // User blocked the result
