@@ -11,8 +11,6 @@ window.FunctionExecutionModal = (function() {
     let currentFunctionName = null;
     let currentFunctionResult = null;
     let isExecuting = false;
-    let currentTab = 'request'; // 'request' or 'result'
-    let needsFreshExecution = false; // Track if we need to re-execute when returning
     
     /**
      * View function source in a nice modal view (like debug messages)
@@ -59,13 +57,24 @@ window.FunctionExecutionModal = (function() {
         // Update the modal header
         const fileElement = sourceModal.querySelector('.function-source-file');
         const locationElement = sourceModal.querySelector('.function-source-location');
+        const lines = code.split('\n').length;
+        
         if (fileElement) {
             fileElement.textContent = `Function: ${functionName}`;
         }
         if (locationElement) {
-            const lines = code.split('\n').length;
             locationElement.textContent = `(${lines} lines)`;
         }
+        
+        // Adjust modal height based on content
+        // Header is roughly 50px, add padding and margin (~40px), each line ~24px
+        const contentHeight = (lines * 24) + 90; // line height + header + padding
+        const minHeight = 200; // Minimum height for very short functions
+        const maxHeight = 600; // Maximum height from original
+        const adaptiveHeight = Math.min(maxHeight, Math.max(minHeight, contentHeight));
+        
+        sourceModal.style.height = adaptiveHeight + 'px';
+        sourceModal.style.minHeight = minHeight + 'px';
         
         // Format and display the code with syntax highlighting
         const contentElement = sourceModal.querySelector('.function-source-content');
@@ -121,9 +130,9 @@ window.FunctionExecutionModal = (function() {
         modal.style.transform = 'translate(-50%, -50%)';
         modal.style.width = '80%';
         modal.style.maxWidth = '900px';
-        modal.style.height = '70%';
+        modal.style.height = 'auto'; // Will be set dynamically
         modal.style.maxHeight = '600px';
-        modal.style.minHeight = '400px';
+        modal.style.minHeight = '200px'; // Reduced minimum for short functions
         modal.style.zIndex = '10002'; // Higher than execution modal
         modal.style.backgroundColor = 'var(--bg-color, #1a1a1a)';
         modal.style.border = '1px solid var(--border-color, #333)';
