@@ -319,6 +319,17 @@ window.MCPServerManager = (function() {
             // First disconnect from MCP client if connected
             if (MCPClient.getConnectionInfo(serverName)) {
                 await MCPClient.disconnect(serverName);
+                
+                // Clean up MCP tools/functions
+                if (window.MCPToolsManager) {
+                    window.MCPToolsManager.unregisterServerTools(serverName);
+                }
+                
+                // Clean up MCP prompts - remove any server-specific prompts
+                // Note: Currently MCP server prompts are not registered as default prompts,
+                // but if they were, we'd need to unregister them here
+                
+                console.log(`[MCPServerManager] Cleaned up tools and prompts for ${serverName}`);
             }
             
             await proxyManager.stopServer(serverName);

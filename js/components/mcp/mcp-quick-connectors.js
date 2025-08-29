@@ -812,8 +812,14 @@ window.MCPQuickConnectors = (function() {
      */
     async function disconnectService(serviceKey) {
         const config = QUICK_CONNECTORS[serviceKey];
+        const serverName = `mcp-${serviceKey}`;
         
         try {
+            // Clean up MCP tools/functions BEFORE disconnecting
+            if (window.MCPToolsManager) {
+                window.MCPToolsManager.unregisterServerTools(serverName);
+                console.log(`[MCPQuickConnectors] Cleaned up tools for ${serverName}`);
+            }
             
             if (config.transport === 'service-connector') {
                 if (window.mcpServiceManager) {
@@ -821,7 +827,6 @@ window.MCPQuickConnectors = (function() {
                     await window.mcpServiceManager.disconnectService(serviceKey);
                 }
             } else if (mcpClient) {
-                const serverName = `mcp-${serviceKey}`;
                 const connectionInfo = mcpClient.getConnectionInfo(serverName);
                 if (connectionInfo && connectionInfo.connected) {
                     await mcpClient.disconnect(serverName);

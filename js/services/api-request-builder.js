@@ -173,12 +173,19 @@ window.ApiRequestBuilder = (function() {
             }
         }
         
-        // Build request body
+        // Build request body - include tools if they were in the original request
         const requestBody = {
             messages: updatedMessages,
             stream: true,
             model: model
         };
+        
+        // Check if we should include tools from the original request
+        // The follow-up request should have the same tools available
+        if (params.originalTools) {
+            requestBody.tools = params.originalTools;
+            requestBody.tool_choice = 'auto'; // Allow the model to call more tools if needed
+        }
         
         // Build headers
         const headers = {

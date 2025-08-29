@@ -224,6 +224,11 @@ async function ${functionName}(params = {}) {
         const functionCallingManager = window.functionCallingManager || 
                                      (window.aiHackare && window.aiHackare.functionCallingManager);
         if (functionCallingManager && functionCallingManager.addFunction) {
+            // Ensure function calling is enabled when adding MCP tools
+            if (window.FunctionToolsService && !window.FunctionToolsService.isFunctionToolsEnabled()) {
+                window.FunctionToolsService.setFunctionToolsEnabled(true);
+                console.log(`[MCPToolsManager] Enabled function calling system for MCP server ${serverName}`);
+            }
             for (const toolInfo of tools) {
                 try {
                     // Check if function already exists and remove it if it's from the same MCP server
