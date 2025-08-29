@@ -38,49 +38,25 @@ window.FunctionDetailsTabbedModal = (function() {
         const modalContent = document.createElement('div');
         modalContent.className = 'modal-content';
         modalContent.style.maxWidth = '700px';
-        modalContent.style.maxHeight = '80vh';
+        modalContent.style.height = '80vh'; // Fixed height instead of maxHeight
+        modalContent.style.maxHeight = '600px'; // Maximum height cap
+        modalContent.style.minHeight = '400px'; // Minimum height
         modalContent.style.display = 'flex';
         modalContent.style.flexDirection = 'column';
+        modalContent.style.overflow = 'hidden'; // Prevent content overflow
         
         // Create header
         const header = document.createElement('div');
         header.className = 'settings-header';
         header.style.padding = '20px';
         header.style.borderBottom = '1px solid var(--border-color)';
-        
-        const titleContainer = document.createElement('div');
-        titleContainer.style.display = 'flex';
-        titleContainer.style.alignItems = 'center';
-        titleContainer.style.justifyContent = 'space-between';
+        header.style.flexShrink = '0'; // Prevent header from shrinking
         
         const title = document.createElement('h2');
         title.id = 'function-details-tabbed-title';
         title.style.margin = '0';
         title.style.fontSize = '1.5em';
-        titleContainer.appendChild(title);
-        
-        // Close button
-        const closeBtn = document.createElement('button');
-        closeBtn.type = 'button';
-        closeBtn.className = 'icon-btn';
-        closeBtn.innerHTML = '&times;';
-        closeBtn.style.fontSize = '28px';
-        closeBtn.style.background = 'none';
-        closeBtn.style.border = 'none';
-        closeBtn.style.color = 'var(--text-color)';
-        closeBtn.style.cursor = 'pointer';
-        closeBtn.style.padding = '0';
-        closeBtn.style.width = '30px';
-        closeBtn.style.height = '30px';
-        closeBtn.addEventListener('click', hideModal);
-        
-        titleContainer.appendChild(closeBtn);
-        header.appendChild(titleContainer);
-        
-        // Add a line break/spacing
-        const spacer = document.createElement('div');
-        spacer.style.height = '8px';
-        header.appendChild(spacer);
+        header.appendChild(title);
         
         // Function name with eye icon
         const functionNameContainer = document.createElement('div');
@@ -132,11 +108,14 @@ window.FunctionDetailsTabbedModal = (function() {
         tabContainer.style.display = 'flex';
         tabContainer.style.flexDirection = 'column';
         tabContainer.style.minHeight = '0';
+        tabContainer.style.overflow = 'hidden'; // Contain the content
         
         const tabButtons = document.createElement('div');
         tabButtons.className = 'tab-buttons';
         tabButtons.style.borderBottom = '2px solid var(--border-color)';
         tabButtons.style.padding = '0 20px';
+        tabButtons.style.flexShrink = '0'; // Prevent tab buttons from shrinking
+        tabButtons.style.height = 'auto'; // Let it size based on content
         
         const callTab = document.createElement('button');
         callTab.type = 'button';
@@ -212,13 +191,56 @@ window.FunctionDetailsTabbedModal = (function() {
         // Parameters section
         const parametersSection = document.createElement('div');
         parametersSection.className = 'form-group';
+        parametersSection.style.position = 'relative';
+        
+        // Header with label and copy icon
+        const headerDiv = document.createElement('div');
+        headerDiv.style.display = 'flex';
+        headerDiv.style.justifyContent = 'space-between';
+        headerDiv.style.alignItems = 'center';
+        headerDiv.style.marginBottom = '8px';
         
         const parametersLabel = document.createElement('label');
         parametersLabel.textContent = 'Parameters:';
         parametersLabel.style.fontWeight = 'bold';
-        parametersLabel.style.marginBottom = '8px';
-        parametersLabel.style.display = 'block';
-        parametersSection.appendChild(parametersLabel);
+        parametersLabel.style.margin = '0';
+        headerDiv.appendChild(parametersLabel);
+        
+        // Copy icon button
+        const copyBtn = document.createElement('button');
+        copyBtn.type = 'button';
+        copyBtn.className = 'icon-copy-btn';
+        copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
+        copyBtn.title = 'Copy parameters';
+        copyBtn.style.background = 'none';
+        copyBtn.style.border = 'none';
+        copyBtn.style.color = 'var(--text-color-secondary)';
+        copyBtn.style.cursor = 'pointer';
+        copyBtn.style.fontSize = '14px';
+        copyBtn.style.padding = '4px 8px';
+        copyBtn.style.borderRadius = '4px';
+        copyBtn.style.transition = 'all 0.2s';
+        
+        copyBtn.addEventListener('mouseenter', () => {
+            copyBtn.style.backgroundColor = 'var(--hover-bg, rgba(0, 0, 0, 0.05))';
+            copyBtn.style.color = 'var(--accent-color)';
+        });
+        copyBtn.addEventListener('mouseleave', () => {
+            copyBtn.style.backgroundColor = 'transparent';
+            copyBtn.style.color = 'var(--text-color-secondary)';
+        });
+        copyBtn.addEventListener('click', () => {
+            if (currentData && currentData.parameters) {
+                copyToClipboard(JSON.stringify(currentData.parameters, null, 2));
+                // Brief visual feedback
+                copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+                setTimeout(() => {
+                    copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
+                }, 1000);
+            }
+        });
+        headerDiv.appendChild(copyBtn);
+        parametersSection.appendChild(headerDiv);
         
         const parametersArea = document.createElement('pre');
         parametersArea.id = 'details-call-parameters';
@@ -234,19 +256,6 @@ window.FunctionDetailsTabbedModal = (function() {
         parametersArea.style.maxHeight = '400px';
         parametersArea.style.overflow = 'auto';
         parametersSection.appendChild(parametersArea);
-        
-        // Copy button
-        const copyBtn = document.createElement('button');
-        copyBtn.type = 'button';
-        copyBtn.className = 'btn secondary-btn';
-        copyBtn.innerHTML = '<i class="fas fa-copy" style="margin-right: 6px;"></i>Copy Parameters';
-        copyBtn.style.marginTop = '12px';
-        copyBtn.addEventListener('click', () => {
-            if (currentData && currentData.parameters) {
-                copyToClipboard(JSON.stringify(currentData.parameters, null, 2));
-            }
-        });
-        parametersSection.appendChild(copyBtn);
         
         container.appendChild(parametersSection);
         return container;
@@ -298,13 +307,59 @@ window.FunctionDetailsTabbedModal = (function() {
         // Result value section
         const resultSection = document.createElement('div');
         resultSection.className = 'form-group';
+        resultSection.style.position = 'relative';
+        
+        // Header with label and copy icon
+        const headerDiv = document.createElement('div');
+        headerDiv.style.display = 'flex';
+        headerDiv.style.justifyContent = 'space-between';
+        headerDiv.style.alignItems = 'center';
+        headerDiv.style.marginBottom = '8px';
         
         const resultLabel = document.createElement('label');
         resultLabel.textContent = 'Result Value:';
         resultLabel.style.fontWeight = 'bold';
-        resultLabel.style.marginBottom = '8px';
-        resultLabel.style.display = 'block';
-        resultSection.appendChild(resultLabel);
+        resultLabel.style.margin = '0';
+        headerDiv.appendChild(resultLabel);
+        
+        // Copy icon button
+        const copyBtn = document.createElement('button');
+        copyBtn.type = 'button';
+        copyBtn.className = 'icon-copy-btn';
+        copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
+        copyBtn.title = 'Copy result';
+        copyBtn.style.background = 'none';
+        copyBtn.style.border = 'none';
+        copyBtn.style.color = 'var(--text-color-secondary)';
+        copyBtn.style.cursor = 'pointer';
+        copyBtn.style.fontSize = '14px';
+        copyBtn.style.padding = '4px 8px';
+        copyBtn.style.borderRadius = '4px';
+        copyBtn.style.transition = 'all 0.2s';
+        
+        copyBtn.addEventListener('mouseenter', () => {
+            copyBtn.style.backgroundColor = 'var(--hover-bg, rgba(0, 0, 0, 0.05))';
+            copyBtn.style.color = 'var(--accent-color)';
+        });
+        copyBtn.addEventListener('mouseleave', () => {
+            copyBtn.style.backgroundColor = 'transparent';
+            copyBtn.style.color = 'var(--text-color-secondary)';
+        });
+        copyBtn.addEventListener('click', () => {
+            if (currentData && currentData.resultValue !== undefined) {
+                const value = typeof currentData.resultValue === 'string' 
+                    ? currentData.resultValue 
+                    : JSON.stringify(currentData.resultValue, null, 2);
+                copyToClipboard(value);
+                // Brief visual feedback
+                copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+                setTimeout(() => {
+                    copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
+                }, 1000);
+            }
+        });
+        headerDiv.appendChild(copyBtn);
+        resultSection.appendChild(headerDiv);
         
         const resultArea = document.createElement('pre');
         resultArea.id = 'details-result-value';
@@ -320,22 +375,6 @@ window.FunctionDetailsTabbedModal = (function() {
         resultArea.style.maxHeight = '400px';
         resultArea.style.overflow = 'auto';
         resultSection.appendChild(resultArea);
-        
-        // Copy button
-        const copyBtn = document.createElement('button');
-        copyBtn.type = 'button';
-        copyBtn.className = 'btn secondary-btn';
-        copyBtn.innerHTML = '<i class="fas fa-copy" style="margin-right: 6px;"></i>Copy Result';
-        copyBtn.style.marginTop = '12px';
-        copyBtn.addEventListener('click', () => {
-            if (currentData && currentData.resultValue !== undefined) {
-                const value = typeof currentData.resultValue === 'string' 
-                    ? currentData.resultValue 
-                    : JSON.stringify(currentData.resultValue, null, 2);
-                copyToClipboard(value);
-            }
-        });
-        resultSection.appendChild(copyBtn);
         
         container.appendChild(resultSection);
         return container;
