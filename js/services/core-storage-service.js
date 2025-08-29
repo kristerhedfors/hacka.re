@@ -467,6 +467,29 @@ window.CoreStorageService = (function() {
                 console.log(`Cleared namespace key: ${key}`);
             });
             
+            // Clear any additional keys that might have been missed
+            // This handles any keys that were created with the namespace pattern
+            const keysToRemove = [];
+            const namespacePrefix = `hackare_${currentNamespace}_`;
+            
+            // Iterate through all storage keys
+            for (let i = 0; i < storage.length; i++) {
+                const key = storage.key(i);
+                // Check if the key belongs to the current namespace
+                if (key && key.startsWith(namespacePrefix)) {
+                    keysToRemove.push(key);
+                }
+            }
+            
+            // Remove all found keys
+            keysToRemove.forEach(key => {
+                storage.removeItem(key);
+                if (!clearedKeys.includes(key)) {
+                    clearedKeys.push(key);
+                    console.log(`Cleared additional ${storage === sessionStorage ? 'sessionStorage' : 'localStorage'} key: ${key}`);
+                }
+            });
+            
             // Theme settings are now encrypted and namespaced, so they're cleared with other namespace keys
             
             // Clear MCP servers (stored globally) - always use localStorage for this
@@ -478,6 +501,23 @@ window.CoreStorageService = (function() {
             storage.removeItem('voice_control_enabled');
             clearedKeys.push('voice_control_enabled (legacy)');
             console.log('Cleared legacy non-namespaced key: voice_control_enabled');
+            
+            // Clear system keys for the current namespace
+            // These are critical session management keys that should be cleared when user requests full reset
+            const sessionKeyStorageKey = `__hacka_re_session_key_${currentNamespace}`;
+            if (storage.getItem(sessionKeyStorageKey)) {
+                storage.removeItem(sessionKeyStorageKey);
+                clearedKeys.push(sessionKeyStorageKey);
+                console.log(`Cleared session key: ${sessionKeyStorageKey}`);
+            }
+            
+            // Clear the storage type indicator
+            const storageTypeKey = '__hacka_re_storage_type__';
+            if (storage.getItem(storageTypeKey)) {
+                storage.removeItem(storageTypeKey);
+                clearedKeys.push(storageTypeKey);
+                console.log(`Cleared storage type key: ${storageTypeKey}`);
+            }
             
             // Reset the session key if ShareManager is available
             if (window.aiHackare && window.aiHackare.shareManager) {
