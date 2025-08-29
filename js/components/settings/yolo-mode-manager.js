@@ -80,6 +80,8 @@ window.YoloModeManager = (function() {
             addYoloModeControls();
         }
         
+        // Removed session list functions as they're now handled by the modal and link is inline
+        
         /**
          * Add YOLO mode controls to the settings form
          */
@@ -127,6 +129,21 @@ window.YoloModeManager = (function() {
             statusSpan.style.fontSize = '0.85em';
             updateYoloStatusText(statusSpan, yoloModeCheckbox.checked);
             yoloModeLabel.appendChild(statusSpan);
+            
+            // Add function approval memory link inline
+            const memoryLink = document.createElement('a');
+            memoryLink.href = '#';
+            memoryLink.className = 'function-library-link';
+            memoryLink.textContent = ' - Manage function approval memory';
+            memoryLink.style.fontSize = '0.85em';
+            memoryLink.style.marginLeft = '8px';
+            memoryLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (window.FunctionApprovalMemoryModal) {
+                    FunctionApprovalMemoryModal.open();
+                }
+            });
+            yoloModeLabel.appendChild(memoryLink);
             
             // Add event listener to the checkbox
             yoloModeCheckbox.addEventListener('change', async function() {
