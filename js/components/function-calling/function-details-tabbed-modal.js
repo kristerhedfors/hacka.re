@@ -49,7 +49,7 @@ window.FunctionDetailsTabbedModal = (function() {
         const header = document.createElement('div');
         header.className = 'settings-header';
         header.style.padding = '20px';
-        header.style.borderBottom = '1px solid var(--border-color)';
+        header.style.paddingBottom = '0'; // No bottom padding as we'll have the function section below
         header.style.flexShrink = '0'; // Prevent header from shrinking
         
         const title = document.createElement('h2');
@@ -58,17 +58,25 @@ window.FunctionDetailsTabbedModal = (function() {
         title.style.fontSize = '1.5em';
         header.appendChild(title);
         
-        // Function name with eye icon
+        // Create section for function name (like in execution modal)
+        const functionSection = document.createElement('div');
+        functionSection.className = 'function-details-section';
+        functionSection.style.padding = '16px 20px';
+        functionSection.style.borderBottom = '1px solid var(--border-color)';
+        functionSection.style.flexShrink = '0';
+        
+        // Function name with eye icon container
         const functionNameContainer = document.createElement('div');
         functionNameContainer.style.display = 'flex';
         functionNameContainer.style.alignItems = 'center';
-        functionNameContainer.style.marginTop = '4px';
+        functionNameContainer.style.marginBottom = '0';
         
         const functionNameH3 = document.createElement('h3');
         functionNameH3.id = 'function-details-name';
         functionNameH3.style.color = 'var(--accent-color)';
         functionNameH3.style.margin = '0';
         functionNameH3.style.marginRight = '10px';
+        functionNameH3.style.fontSize = '1.2em';
         functionNameContainer.appendChild(functionNameH3);
         
         // Add eye icon to view source
@@ -99,7 +107,7 @@ window.FunctionDetailsTabbedModal = (function() {
         });
         
         functionNameContainer.appendChild(viewSourceBtn);
-        header.appendChild(functionNameContainer);
+        functionSection.appendChild(functionNameContainer);
         
         // Create tabs
         const tabContainer = document.createElement('div');
@@ -163,6 +171,7 @@ window.FunctionDetailsTabbedModal = (function() {
         
         // Assemble modal
         modalContent.appendChild(header);
+        modalContent.appendChild(functionSection);
         modalContent.appendChild(tabContainer);
         modalElement.appendChild(modalContent);
         document.body.appendChild(modalElement);
