@@ -239,6 +239,10 @@ window.FunctionExecutionModal = (function() {
         
         // Split into lines and add line numbers
         const lines = highlightedCode.split('\n');
+        // Calculate the width needed for the line number column
+        const maxLineNumber = lines.length;
+        const lineNumberWidth = Math.max(50, (maxLineNumber.toString().length * 10) + 20);
+        
         let html = '<pre style="margin: 0; background: transparent; white-space: pre; overflow-x: auto;"><code class="language-javascript" style="display: block;">';
         
         lines.forEach((line, index) => {
@@ -251,13 +255,15 @@ window.FunctionExecutionModal = (function() {
             ">`;
             html += `<span style="
                 display: inline-block;
-                width: 50px;
+                min-width: ${lineNumberWidth}px;
+                width: ${lineNumberWidth}px;
                 padding-right: 16px;
                 text-align: right;
                 color: var(--text-color-secondary, #666);
                 user-select: none;
+                flex-shrink: 0;
             ">${lineNum}</span>`;
-            html += `<span style="flex: 1;">${line || ' '}</span>`;
+            html += `<span style="flex: 1; min-width: 0;">${line || ' '}</span>`;
             html += '</div>';
         });
         
