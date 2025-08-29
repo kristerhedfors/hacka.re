@@ -181,7 +181,9 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
                     toolResults,
                     completeResponse,
                     onChunk,
-                    signal
+                    signal,
+                    apiToolsManager,
+                    addSystemMessage
                 );
                 
                 completeResponse = followUpResult;
@@ -196,16 +198,18 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
      * Make follow-up request after tool calls
      * @private
      */
-    async function makeFollowUpRequest(initialRequestConfig, toolCalls, toolResults, currentContent, onChunk, originalSignal) {
+    async function makeFollowUpRequest(initialRequestConfig, toolCalls, toolResults, currentContent, onChunk, originalSignal, apiToolsManager, addSystemMessage) {
         // Build messages array with tool calls and results
         const messages = JSON.parse(initialRequestConfig.body).messages;
+        const originalRequestBody = JSON.parse(initialRequestConfig.body);
         
         const followUpRequestConfig = ApiRequestBuilder.buildFollowUpRequest({
             apiKey: extractApiKeyFromHeaders(initialRequestConfig.headers),
-            model: JSON.parse(initialRequestConfig.body).model,
+            model: originalRequestBody.model,
             messages: messages,
             toolCalls: toolCalls,
-            toolResults: toolResults
+            toolResults: toolResults,
+            originalTools: originalRequestBody.tools // Pass the original tools to the follow-up request
         });
         
         ApiDebugger.logRequest('Follow-up request', followUpRequestConfig);
@@ -240,7 +244,9 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
         const { reader } = await ApiStreamProcessor.createReadableStream(response, followUpController.signal);
         
         let followUpContent = '';
-        await ApiStreamProcessor.processStream(
+        let followUpToolCalls = [];
+        
+        const streamResult = await ApiStreamProcessor.processStream(
             reader,
             (content) => {
                 followUpContent = content;
@@ -249,9 +255,56 @@ async function generateChatCompletion(apiKey, model, messages, signal, onChunk, 
                     onChunk(currentContent + content.trimStart());
                 }
             },
-            null, // No tool calls expected in follow-up
+            (toolCalls) => {
+                // Handle additional tool calls in the follow-up response
+                followUpToolCalls = toolCalls;
+                ApiDebugger.logToolCall('Follow-up tool calls received', { count: toolCalls.length });
+            },
             followUpController.signal
         );
+        
+        followUpContent = streamResult.content;
+        followUpToolCalls = streamResult.toolCalls;
+        
+        // If there are more tool calls in the follow-up, we need to handle them recursively
+        // This allows for multi-step tool calling chains
+        if (followUpToolCalls.length > 0 && apiToolsManager) {
+            ApiDebugger.logToolCall('Processing additional tool calls in follow-up', { count: followUpToolCalls.length });
+            
+            const toolResult = await ApiToolCallHandler.processToolCalls(
+                followUpToolCalls,
+                apiToolsManager,
+                addSystemMessage,
+                onChunk,
+                currentContent + followUpContent.trimStart()
+            );
+            
+            const additionalContent = toolResult.content;
+            const additionalToolResults = toolResult.toolResults;
+            
+            // If we have additional tool results, make another follow-up request recursively
+            if (additionalToolResults && additionalToolResults.length > 0) {
+                ApiDebugger.logToolCall('Making recursive follow-up request', { resultsCount: additionalToolResults.length });
+                
+                // Update the messages with the new tool calls and results for the next request
+                const updatedMessages = JSON.parse(followUpRequestConfig.body).messages;
+                
+                const recursiveResult = await makeFollowUpRequest(
+                    initialRequestConfig,
+                    followUpToolCalls,
+                    additionalToolResults,
+                    additionalContent,
+                    onChunk,
+                    originalSignal,
+                    apiToolsManager,
+                    addSystemMessage
+                );
+                
+                return recursiveResult;
+            }
+            
+            return additionalContent;
+        }
         
         return currentContent + followUpContent.trimStart();
     }
