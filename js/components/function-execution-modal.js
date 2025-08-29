@@ -15,6 +15,271 @@ window.FunctionExecutionModal = (function() {
     let needsFreshExecution = false; // Track if we need to re-execute when returning
     
     /**
+     * View function source in a nice modal view (like debug messages)
+     * @param {string} functionName - Name of the function to view
+     */
+    function viewFunctionSource(functionName) {
+        if (!functionName) return;
+        
+        // Get the function details - check both user-defined and default functions
+        let functionSpec = null;
+        let functions = window.FunctionToolsService?.getJsFunctions();
+        
+        if (functions && functions[functionName]) {
+            functionSpec = functions[functionName];
+        } else if (window.DefaultFunctionsService) {
+            // Check default functions
+            const enabledDefaultFunctions = window.DefaultFunctionsService.getEnabledDefaultFunctions();
+            if (enabledDefaultFunctions && enabledDefaultFunctions[functionName]) {
+                functionSpec = enabledDefaultFunctions[functionName];
+            }
+        }
+        
+        if (!functionSpec || !functionSpec.code) {
+            console.warn(`Function ${functionName} not found or has no code`);
+            return;
+        }
+        
+        // Show the function source in a nice modal view
+        showFunctionSourceModal(functionName, functionSpec.code);
+    }
+    
+    /**
+     * Show function source in a modal similar to debug code tooltip
+     * @param {string} functionName - Name of the function
+     * @param {string} code - Function source code
+     */
+    function showFunctionSourceModal(functionName, code) {
+        // Create or get the source view modal
+        let sourceModal = document.getElementById('function-source-modal');
+        if (!sourceModal) {
+            sourceModal = createFunctionSourceModal();
+        }
+        
+        // Update the modal header
+        const fileElement = sourceModal.querySelector('.function-source-file');
+        const locationElement = sourceModal.querySelector('.function-source-location');
+        if (fileElement) {
+            fileElement.textContent = `Function: ${functionName}`;
+        }
+        if (locationElement) {
+            const lines = code.split('\n').length;
+            locationElement.textContent = `(${lines} lines)`;
+        }
+        
+        // Format and display the code with syntax highlighting
+        const contentElement = sourceModal.querySelector('.function-source-content');
+        if (contentElement) {
+            const formattedCode = formatFunctionCode(code, functionName);
+            contentElement.innerHTML = formattedCode;
+        }
+        
+        // Show the modal with flex display
+        sourceModal.style.display = 'flex';
+        sourceModal.classList.add('visible');
+        
+        // Focus on the modal for keyboard navigation
+        sourceModal.focus();
+    }
+    
+    /**
+     * Create the function source modal element
+     * @returns {HTMLElement} The modal element
+     */
+    function createFunctionSourceModal() {
+        // Add styles for scrollbar if not already present
+        if (!document.getElementById('function-source-modal-styles')) {
+            const style = document.createElement('style');
+            style.id = 'function-source-modal-styles';
+            style.textContent = `
+                #function-source-modal .function-source-content::-webkit-scrollbar {
+                    width: 12px;
+                    height: 12px;
+                }
+                #function-source-modal .function-source-content::-webkit-scrollbar-track {
+                    background: var(--bg-color-secondary, #2a2a2a);
+                    border-radius: 6px;
+                }
+                #function-source-modal .function-source-content::-webkit-scrollbar-thumb {
+                    background: var(--text-color-secondary, #666);
+                    border-radius: 6px;
+                }
+                #function-source-modal .function-source-content::-webkit-scrollbar-thumb:hover {
+                    background: var(--text-color, #888);
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        const modal = document.createElement('div');
+        modal.id = 'function-source-modal';
+        modal.className = 'function-source-modal';
+        modal.tabIndex = -1; // Make focusable
+        modal.style.position = 'fixed';
+        modal.style.top = '50%';
+        modal.style.left = '50%';
+        modal.style.transform = 'translate(-50%, -50%)';
+        modal.style.width = '80%';
+        modal.style.maxWidth = '900px';
+        modal.style.height = '70%';
+        modal.style.maxHeight = '600px';
+        modal.style.minHeight = '400px';
+        modal.style.zIndex = '10002'; // Higher than execution modal
+        modal.style.backgroundColor = 'var(--bg-color, #1a1a1a)';
+        modal.style.border = '1px solid var(--border-color, #333)';
+        modal.style.borderRadius = '8px';
+        modal.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.5)';
+        modal.style.display = 'none';
+        modal.style.flexDirection = 'column';
+        modal.style.overflow = 'hidden';
+        
+        modal.innerHTML = `
+            <div class="function-source-header" style="
+                padding: 12px 16px;
+                background: var(--bg-color-secondary, #2a2a2a);
+                border-bottom: 1px solid var(--border-color, #333);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                border-radius: 8px 8px 0 0;
+            ">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span class="function-source-file" style="
+                        font-weight: bold;
+                        color: var(--accent-color, #4CAF50);
+                    "></span>
+                    <span class="function-source-location" style="
+                        color: var(--text-color-secondary, #888);
+                        font-size: 0.9em;
+                    "></span>
+                </div>
+                <button class="function-source-close" style="
+                    background: none;
+                    border: none;
+                    color: var(--text-color-secondary, #888);
+                    font-size: 24px;
+                    cursor: pointer;
+                    padding: 0;
+                    width: 30px;
+                    height: 30px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 4px;
+                    transition: background-color 0.2s;
+                " onmouseover="this.style.backgroundColor='var(--hover-bg, rgba(255,255,255,0.1))'" 
+                   onmouseout="this.style.backgroundColor='transparent'">&times;</button>
+            </div>
+            <div class="function-source-content" style="
+                flex: 1;
+                overflow-y: auto;
+                overflow-x: auto;
+                padding: 16px;
+                font-family: 'Courier New', Courier, monospace;
+                font-size: 13px;
+                line-height: 1.5;
+                min-height: 0;
+                background: var(--bg-color, #1a1a1a);
+            "></div>
+        `;
+        
+        // Add event listeners
+        const closeBtn = modal.querySelector('.function-source-close');
+        closeBtn.addEventListener('click', () => {
+            modal.classList.remove('visible');
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 200);
+        });
+        
+        // Close on escape key
+        modal.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                modal.classList.remove('visible');
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                }, 200);
+            }
+        });
+        
+        // Close on click outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('visible');
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                }, 200);
+            }
+        });
+        
+        document.body.appendChild(modal);
+        return modal;
+    }
+    
+    /**
+     * Format function code with syntax highlighting
+     * @param {string} code - The function code
+     * @param {string} functionName - The function name
+     * @returns {string} Formatted HTML
+     */
+    function formatFunctionCode(code, functionName) {
+        // Apply syntax highlighting if highlight.js is available
+        let highlightedCode = code;
+        if (window.hljs) {
+            try {
+                const result = window.hljs.highlight(code, { language: 'javascript' });
+                highlightedCode = result.value;
+            } catch (e) {
+                console.warn('Failed to highlight code:', e);
+                highlightedCode = escapeHtml(code);
+            }
+        } else {
+            highlightedCode = escapeHtml(code);
+        }
+        
+        // Split into lines and add line numbers
+        const lines = highlightedCode.split('\n');
+        let html = '<pre style="margin: 0; background: transparent; white-space: pre; overflow-x: auto;"><code class="language-javascript" style="display: block;">';
+        
+        lines.forEach((line, index) => {
+            const lineNum = index + 1;
+            const isDefinitionLine = line.includes(`function ${functionName}`);
+            
+            html += `<div style="
+                display: flex;
+                ${isDefinitionLine ? 'background-color: var(--highlight-bg, rgba(255, 255, 0, 0.1));' : ''}
+            ">`;
+            html += `<span style="
+                display: inline-block;
+                width: 50px;
+                padding-right: 16px;
+                text-align: right;
+                color: var(--text-color-secondary, #666);
+                user-select: none;
+            ">${lineNum}</span>`;
+            html += `<span style="flex: 1;">${line || ' '}</span>`;
+            html += '</div>';
+        });
+        
+        html += '</code></pre>';
+        return html;
+    }
+    
+    /**
+     * Escape HTML characters
+     */
+    function escapeHtml(text) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, m => map[m]);
+    }
+    
+    /**
      * Initialize the modal by creating its DOM structure
      */
     function init() {
@@ -114,12 +379,50 @@ window.FunctionExecutionModal = (function() {
         const section = document.createElement('div');
         section.className = 'function-details-section';
         
-        // Function name
+        // Function name with view source icon
+        const functionNameContainer = document.createElement('div');
+        functionNameContainer.style.display = 'flex';
+        functionNameContainer.style.alignItems = 'center';
+        functionNameContainer.style.marginBottom = '0.5rem';
+        
         const functionNameH3 = document.createElement('h3');
         functionNameH3.id = 'exec-function-name';
-        functionNameH3.style.marginBottom = '0.5rem';
         functionNameH3.style.color = 'var(--accent-color)';
-        section.appendChild(functionNameH3);
+        functionNameH3.style.marginRight = '10px';
+        functionNameH3.style.marginBottom = '0';
+        functionNameContainer.appendChild(functionNameH3);
+        
+        // Add eye icon to view source
+        const viewSourceBtn = document.createElement('button');
+        viewSourceBtn.type = 'button';
+        viewSourceBtn.className = 'view-source-btn';
+        viewSourceBtn.id = 'exec-view-source-btn';
+        viewSourceBtn.innerHTML = '<i class="fas fa-eye"></i>';
+        viewSourceBtn.title = 'View function source code';
+        viewSourceBtn.style.background = 'none';
+        viewSourceBtn.style.border = 'none';
+        viewSourceBtn.style.color = 'var(--text-color-secondary)';
+        viewSourceBtn.style.cursor = 'pointer';
+        viewSourceBtn.style.fontSize = '16px';
+        viewSourceBtn.style.padding = '4px 8px';
+        viewSourceBtn.style.borderRadius = '4px';
+        viewSourceBtn.style.transition = 'background-color 0.2s';
+        
+        // Add hover effect
+        viewSourceBtn.addEventListener('mouseenter', () => {
+            viewSourceBtn.style.backgroundColor = 'var(--hover-bg, rgba(0, 0, 0, 0.05))';
+        });
+        viewSourceBtn.addEventListener('mouseleave', () => {
+            viewSourceBtn.style.backgroundColor = 'transparent';
+        });
+        
+        // Add click handler to view function source
+        viewSourceBtn.addEventListener('click', () => {
+            viewFunctionSource(currentFunctionName);
+        });
+        
+        functionNameContainer.appendChild(viewSourceBtn);
+        section.appendChild(functionNameContainer);
         
         // Function description
         const descriptionDiv = document.createElement('div');
@@ -742,6 +1045,12 @@ window.FunctionExecutionModal = (function() {
             const functionNameElement = document.getElementById('exec-function-name');
             if (functionNameElement) {
                 functionNameElement.textContent = functionName;
+            }
+            
+            // Update view source button visibility
+            const viewSourceBtn = document.getElementById('exec-view-source-btn');
+            if (viewSourceBtn) {
+                viewSourceBtn.style.display = functionName ? 'inline-block' : 'none';
             }
             
             // Update function description
