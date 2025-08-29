@@ -307,8 +307,30 @@ window.SmartTooltipPositioner = (function() {
                     // Parse function name from tooltip
                     const funcMatch = tooltipHtml.match(/<strong>(?:Function|Result):<\/strong>\s*([^<\n]+)/);
                     if (funcMatch) {
-                        const parsedFunctionName = funcMatch[1].trim().replace(' (Result)', '');
+                        let parsedFunctionName = funcMatch[1].trim().replace(' (Result)', '');
                         const parsedType = icon.classList.contains('function-call-icon') ? 'call' : 'result';
+                        
+                        // Handle "undefined" function name for results
+                        if (parsedFunctionName === 'undefined' && parsedType === 'result') {
+                            // Try to find the actual function name from a call icon in the same message
+                            const messageEl = icon.closest('.message, .assistant-message, .user-message');
+                            if (messageEl) {
+                                const callIcon = messageEl.querySelector('.function-call-icon');
+                                if (callIcon) {
+                                    const callTooltip = callIcon.querySelector('.function-icon-tooltip');
+                                    if (callTooltip) {
+                                        const callMatch = callTooltip.innerHTML.match(/<strong>Function:<\/strong>\s*([^<\n]+)/);
+                                        if (callMatch && callMatch[1]) {
+                                            parsedFunctionName = callMatch[1].trim();
+                                        }
+                                    }
+                                }
+                            }
+                            // If still undefined, use a placeholder
+                            if (parsedFunctionName === 'undefined') {
+                                parsedFunctionName = 'Function Result';
+                            }
+                        }
                         
                         console.log('[SmartTooltip] Parsed from tooltip:', { parsedFunctionName, parsedType });
                         
@@ -317,9 +339,28 @@ window.SmartTooltipPositioner = (function() {
                             type: parsedType
                         };
                         
+                        // For the tabbed modal, we need to gather BOTH call and result data
+                        // Find the message container to look for both icons
+                        const messageEl = icon.closest('.message, .assistant-message, .user-message');
+                        
+                        // Parse CALL data (either from current icon or sibling)
+                        let callTooltipHtml = null;
                         if (parsedType === 'call') {
-                            // Parse parameters from tooltip
-                            const paramMatch = tooltipHtml.match(/<strong>Parameters:<\/strong>\s*<br>([^<]*(?:<br>[^<]*)*)/);
+                            callTooltipHtml = tooltipHtml;
+                        } else if (messageEl) {
+                            // Look for call icon in same message
+                            const callIcon = messageEl.querySelector('.function-call-icon');
+                            if (callIcon) {
+                                const callTooltip = callIcon.querySelector('.function-icon-tooltip');
+                                if (callTooltip) {
+                                    callTooltipHtml = callTooltip.innerHTML;
+                                }
+                            }
+                        }
+                        
+                        if (callTooltipHtml) {
+                            // Parse parameters from call tooltip
+                            const paramMatch = callTooltipHtml.match(/<strong>Parameters:<\/strong>\s*<br>([^<]*(?:<br>[^<]*)*)/);
                             if (paramMatch) {
                                 try {
                                     const paramText = paramMatch[1].replace(/<br>/g, '\n').trim();
@@ -330,11 +371,28 @@ window.SmartTooltipPositioner = (function() {
                             } else {
                                 modalData.parameters = {};
                             }
-                        } else if (parsedType === 'result') {
-                            // Parse result data from tooltip
-                            const typeMatch = tooltipHtml.match(/<strong>Type:<\/strong>\s*([^<\n]+)/);
-                            const timeMatch = tooltipHtml.match(/<strong>Time:<\/strong>\s*([^<\n]+)/);
-                            const valueMatch = tooltipHtml.match(/<strong>Value:<\/strong>\s*<br>([^]*)/);
+                        }
+                        
+                        // Parse RESULT data (either from current icon or sibling)
+                        let resultTooltipHtml = null;
+                        if (parsedType === 'result') {
+                            resultTooltipHtml = tooltipHtml;
+                        } else if (messageEl) {
+                            // Look for result icon in same message
+                            const resultIcon = messageEl.querySelector('.function-result-icon');
+                            if (resultIcon) {
+                                const resultTooltip = resultIcon.querySelector('.function-icon-tooltip');
+                                if (resultTooltip) {
+                                    resultTooltipHtml = resultTooltip.innerHTML;
+                                }
+                            }
+                        }
+                        
+                        if (resultTooltipHtml) {
+                            // Parse result data from result tooltip
+                            const typeMatch = resultTooltipHtml.match(/<strong>Type:<\/strong>\s*([^<\n]+)/);
+                            const timeMatch = resultTooltipHtml.match(/<strong>Time:<\/strong>\s*([^<\n]+)/);
+                            const valueMatch = resultTooltipHtml.match(/<strong>Value:<\/strong>\s*<br>([^]*)/);
                             
                             modalData.resultType = typeMatch ? typeMatch[1].trim() : 'unknown';
                             
@@ -347,23 +405,30 @@ window.SmartTooltipPositioner = (function() {
                             }
                             
                             if (valueMatch) {
+                                // Always clean the HTML entities and tags first
+                                const valueText = valueMatch[1]
+                                    .replace(/<br\s*\/?>/gi, '\n')
+                                    .replace(/&lt;/g, '<')
+                                    .replace(/&gt;/g, '>')
+                                    .replace(/&quot;/g, '"')
+                                    .replace(/&amp;/g, '&')
+                                    .trim();
+                                    
                                 try {
-                                    const valueText = valueMatch[1]
-                                        .replace(/<br>/g, '\n')
-                                        .replace(/&lt;/g, '<')
-                                        .replace(/&gt;/g, '>')
-                                        .replace(/&quot;/g, '"')
-                                        .replace(/&amp;/g, '&')
-                                        .trim();
                                     modalData.resultValue = JSON.parse(valueText);
                                 } catch (e) {
-                                    modalData.resultValue = valueMatch[1];
+                                    // If JSON parsing fails, use the cleaned text (not raw HTML)
+                                    modalData.resultValue = valueText;
                                 }
                             }
                         }
                         
-                        // Show modal with parsed data
-                        if (window.FunctionDetailsModal) {
+                        // Show modal with parsed data - use new tabbed modal
+                        if (window.FunctionDetailsTabbedModal) {
+                            console.log('[SmartTooltip] Showing tabbed modal with parsed data:', modalData);
+                            window.FunctionDetailsTabbedModal.showModal(modalData);
+                        } else if (window.FunctionDetailsModal) {
+                            // Fallback to old modal if new one isn't loaded
                             console.log('[SmartTooltip] Showing modal with parsed data:', modalData);
                             window.FunctionDetailsModal.showModal(modalData);
                         }
@@ -380,21 +445,36 @@ window.SmartTooltipPositioner = (function() {
                 type
             };
             
-            if (type === 'call') {
-                // Parse parameters from data attribute
-                const parametersAttr = icon.getAttribute('data-parameters');
+            // For the tabbed modal, gather BOTH call and result data
+            const messageEl = icon.closest('.message, .assistant-message, .user-message');
+            
+            // Always try to get call data
+            let callIcon = type === 'call' ? icon : null;
+            if (!callIcon && messageEl) {
+                callIcon = messageEl.querySelector('.function-call-icon');
+            }
+            
+            if (callIcon) {
+                const parametersAttr = callIcon.getAttribute('data-parameters');
                 try {
                     modalData.parameters = JSON.parse(parametersAttr || '{}');
                 } catch (e) {
                     console.warn('[SmartTooltip] Failed to parse parameters:', e);
                     modalData.parameters = {};
                 }
-            } else if (type === 'result') {
-                // Parse result data from attributes
-                modalData.resultType = icon.getAttribute('data-result-type') || '';
-                modalData.executionTime = parseInt(icon.getAttribute('data-execution-time')) || 0;
+            }
+            
+            // Always try to get result data
+            let resultIcon = type === 'result' ? icon : null;
+            if (!resultIcon && messageEl) {
+                resultIcon = messageEl.querySelector('.function-result-icon');
+            }
+            
+            if (resultIcon) {
+                modalData.resultType = resultIcon.getAttribute('data-result-type') || '';
+                modalData.executionTime = parseInt(resultIcon.getAttribute('data-execution-time')) || 0;
                 
-                const resultValueAttr = icon.getAttribute('data-result-value');
+                const resultValueAttr = resultIcon.getAttribute('data-result-value');
                 try {
                     modalData.resultValue = JSON.parse(resultValueAttr || 'null');
                 } catch (e) {
@@ -403,8 +483,12 @@ window.SmartTooltipPositioner = (function() {
                 }
             }
             
-            // Show the function details modal
-            if (window.FunctionDetailsModal) {
+            // Show the function details modal - use new tabbed modal
+            if (window.FunctionDetailsTabbedModal) {
+                console.log('[SmartTooltip] Showing function details tabbed modal with data:', modalData);
+                window.FunctionDetailsTabbedModal.showModal(modalData);
+            } else if (window.FunctionDetailsModal) {
+                // Fallback to old modal if new one isn't loaded
                 console.log('[SmartTooltip] Showing function details modal with data:', modalData);
                 window.FunctionDetailsModal.showModal(modalData);
             } else {
