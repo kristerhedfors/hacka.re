@@ -15,7 +15,7 @@ window.FunctionApprovalMemoryModal = (function() {
         modalElement = document.createElement('div');
         modalElement.id = 'function-approval-memory-modal';
         modalElement.className = 'modal';
-        modalElement.style.zIndex = '10002'; // Higher than other modals
+        modalElement.style.zIndex = '10000001'; // Higher than Settings modal (999999)
         
         // Create modal content
         const modalContent = document.createElement('div');

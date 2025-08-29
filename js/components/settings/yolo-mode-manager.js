@@ -80,33 +80,7 @@ window.YoloModeManager = (function() {
             addYoloModeControls();
         }
         
-        /**
-         * Create the function approval memory link
-         */
-        function createSessionListsSection() {
-            const container = document.createElement('div');
-            container.id = 'session-lists-container';
-            container.style.marginTop = '10px';
-            container.style.marginLeft = '28px'; // Align with checkbox content
-            
-            // Link to open the modal (styled like "Delete current namespace and settings")
-            const link = document.createElement('a');
-            link.href = '#';
-            link.className = 'function-library-link';
-            link.textContent = 'Manage function approval memory';
-            link.style.fontSize = '0.9em';
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                if (window.FunctionApprovalMemoryModal) {
-                    FunctionApprovalMemoryModal.open();
-                }
-            });
-            container.appendChild(link);
-            
-            return container;
-        }
-        
-        // Removed updateSessionLists and createSessionListItem functions as they're now handled by the modal
+        // Removed session list functions as they're now handled by the modal and link is inline
         
         /**
          * Add YOLO mode controls to the settings form
@@ -156,6 +130,21 @@ window.YoloModeManager = (function() {
             updateYoloStatusText(statusSpan, yoloModeCheckbox.checked);
             yoloModeLabel.appendChild(statusSpan);
             
+            // Add function approval memory link inline
+            const memoryLink = document.createElement('a');
+            memoryLink.href = '#';
+            memoryLink.className = 'function-library-link';
+            memoryLink.textContent = ' - Manage function approval memory';
+            memoryLink.style.fontSize = '0.85em';
+            memoryLink.style.marginLeft = '8px';
+            memoryLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (window.FunctionApprovalMemoryModal) {
+                    FunctionApprovalMemoryModal.open();
+                }
+            });
+            yoloModeLabel.appendChild(memoryLink);
+            
             // Add event listener to the checkbox
             yoloModeCheckbox.addEventListener('change', async function() {
                 if (this.checked) {
@@ -183,10 +172,6 @@ window.YoloModeManager = (function() {
             checkboxGroup.appendChild(yoloModeCheckbox);
             checkboxGroup.appendChild(yoloModeLabel);
             yoloModeContainer.appendChild(checkboxGroup);
-            
-            // Add session lists management section
-            const sessionListsSection = createSessionListsSection();
-            yoloModeContainer.appendChild(sessionListsSection);
             
             // Find the system prompt section to insert after
             const systemPromptSection = elements.openPromptsConfigBtn?.closest('.form-group');
