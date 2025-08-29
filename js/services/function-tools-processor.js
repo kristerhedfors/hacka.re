@@ -64,7 +64,7 @@ window.FunctionToolsProcessor = (function() {
                 let interceptResult = false;
                 if (shouldConfirm) {
                     const response = await this._confirmExecution(name, args, addSystemMessage);
-                    if (!response.allowed) {
+                    if (!response || !response.allowed) {
                         // User blocked execution
                         const deniedError = new Error(`User blocked execution of function "${name}"`);
                         this._logExecutionError(deniedError, addSystemMessage);
@@ -72,7 +72,7 @@ window.FunctionToolsProcessor = (function() {
                     }
                     
                     // Check if user edited the arguments
-                    if (response.editedArguments) {
+                    if (response.editedArguments !== null && response.editedArguments !== undefined) {
                         args = response.editedArguments;
                         if (addSystemMessage && window.DebugService && DebugService.isCategoryEnabled('functions')) {
                             addSystemMessage(`User modified function arguments before execution`);
@@ -86,13 +86,18 @@ window.FunctionToolsProcessor = (function() {
                 this._logFunctionExecution(name, JSON.stringify(args), addSystemMessage);
                 
                 const executionResult = await Executor.execute(name, args);
-                let finalResult = executionResult.result;
+                
+                // Ensure we have a valid result
+                let finalResult = executionResult?.result;
+                if (finalResult === undefined) {
+                    finalResult = null;
+                }
                 
                 // If user wants to intercept the result, show the interceptor modal
                 if (interceptResult && window.FunctionExecutionModal) {
                     const interceptResponse = await FunctionExecutionModal.showResultInterceptor(name, finalResult);
                     
-                    if (interceptResponse.blocked) {
+                    if (interceptResponse && interceptResponse.blocked) {
                         // User blocked the result
                         const blockedError = new Error(`User blocked the result of function "${name}"`);
                         if (addSystemMessage && window.DebugService && DebugService.isCategoryEnabled('functions')) {
@@ -102,19 +107,22 @@ window.FunctionToolsProcessor = (function() {
                         return this._createErrorResult(toolCall, blockedError);
                     }
                     
-                    finalResult = interceptResponse.result;
-                    if (addSystemMessage && window.DebugService && DebugService.isCategoryEnabled('functions')) {
-                        if (interceptResponse.result !== executionResult.result) {
-                            addSystemMessage(`User modified function result before returning to AI`);
-                        } else {
-                            addSystemMessage(`User approved function result without modification`);
+                    // Use the intercepted result if available
+                    if (interceptResponse && interceptResponse.result !== undefined) {
+                        finalResult = interceptResponse.result;
+                        if (addSystemMessage && window.DebugService && DebugService.isCategoryEnabled('functions')) {
+                            if (interceptResponse.result !== executionResult?.result) {
+                                addSystemMessage(`User modified function result before returning to AI`);
+                            } else {
+                                addSystemMessage(`User approved function result without modification`);
+                            }
                         }
                     }
                 }
                 
                 this._logSuccessfulExecution(name, finalResult, addSystemMessage);
                 
-                return this._createSuccessResult(toolCall, name, finalResult, executionResult.executionTime);
+                return this._createSuccessResult(toolCall, name, finalResult, executionResult?.executionTime || 0);
                 
             } catch (error) {
                 Logger.error(`Error processing tool call ${index}:`, error);
@@ -292,10 +300,22 @@ window.FunctionToolsProcessor = (function() {
         },
         
         _createSuccessResult: function(toolCall, name, result, executionTime) {
+            // Ensure we always have a valid content string
+            let content;
+            if (result === null || result === undefined) {
+                content = JSON.stringify({ 
+                    result: null,
+                    status: 'success',
+                    message: 'Function executed successfully with no return value'
+                });
+            } else {
+                content = JSON.stringify(result);
+            }
+            
             const toolResult = {
                 tool_call_id: toolCall.id,
                 role: "tool",
-                content: JSON.stringify(result)
+                content: content
             };
             
             Logger.debug(`Created tool result for "${name}" (${executionTime}ms):`, toolResult);
@@ -303,12 +323,15 @@ window.FunctionToolsProcessor = (function() {
         },
         
         _createErrorResult: function(toolCall, error) {
+            // Ensure we always have a valid error message
+            const errorMessage = error?.message || String(error) || 'Unknown error occurred';
+            
             const errorResult = {
                 tool_call_id: toolCall.id,
                 role: "tool",
                 name: toolCall.function?.name || 'unknown',
                 content: JSON.stringify({ 
-                    error: error.message,
+                    error: errorMessage,
                     status: 'error',
                     timestamp: new Date().toISOString()
                 })
