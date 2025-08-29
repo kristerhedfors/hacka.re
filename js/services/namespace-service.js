@@ -79,9 +79,10 @@ window.NamespaceService = (function() {
         // Session key retrieval with multiple fallback mechanisms
         // Priority order:
         // 1. Direct sessionStorage lookup for shared links (works before ShareManager init)
-        // 2. CryptoUtils-based lookup using hash of encrypted data
-        // 3. ShareManager instance (aiHackare.shareManager)
-        // 4. Legacy ShareManager fallback
+        // 2. Direct sessionStorage lookup for direct visits (default_session namespace)
+        // 3. CryptoUtils-based lookup using hash of encrypted data
+        // 4. ShareManager instance (aiHackare.shareManager)
+        // 5. Legacy ShareManager fallback
         
         // First, check sessionStorage directly for shared link session keys
         // This ensures we get the session key even before ShareManager is initialized
@@ -116,6 +117,15 @@ window.NamespaceService = (function() {
                     console.log(`[NamespaceService] Found session key in sessionStorage (via CryptoUtils): ${storageKey}`);
                     return storedKey;
                 }
+            }
+        } else {
+            // For direct visits (no shared link), check for session key with default namespace
+            const defaultNamespace = 'default_session';
+            const sessionKeyStorageKey = `__hacka_re_session_key_${defaultNamespace}`;
+            const storedKey = sessionStorage.getItem(sessionKeyStorageKey);
+            if (storedKey) {
+                console.log(`[NamespaceService] Found session key for direct visit: ${sessionKeyStorageKey}`);
+                return storedKey;
             }
         }
         
@@ -481,6 +491,11 @@ window.NamespaceService = (function() {
             // Use default namespace for sessionStorage
             const defaultNamespace = StorageTypeService.getDefaultNamespace();
             
+            // Generate or restore session key for direct visits FIRST
+            // This ensures data can be decrypted after page reload
+            const sessionKeyStorageKey = `__hacka_re_session_key_${defaultNamespace}`;
+            let sessionKey = sessionStorage.getItem(sessionKeyStorageKey);
+            
             // Session cleanup for sessionStorage mode
             // When using sessionStorage, we need to ensure clean session boundaries.
             // This cleanup prevents encrypted data from previous sessions from causing
@@ -488,21 +503,37 @@ window.NamespaceService = (function() {
             // 
             // Note: This cleanup only happens once per page load and only affects
             // sessionStorage when in sessionStorage mode.
-            if (!hasAttemptedSessionCleanup && sessionStorage.length > 0) {
+            if (!hasAttemptedSessionCleanup && sessionStorage.length > 0 && !sessionKey) {
+                // Only clear if we don't have a session key (indicating a fresh session)
                 // Check if there's any encrypted data that would fail to decrypt
                 // We look for base64-encoded strings that are likely encrypted data
                 // rather than normal application state
                 const hasEncryptedData = Object.keys(sessionStorage).some(key => {
+                    // Skip the session key itself and storage type key
+                    if (key.startsWith('__hacka_re_session_key_') || key === '__hacka_re_storage_type__') {
+                        return false;
+                    }
                     const value = sessionStorage.getItem(key);
                     // Check if this looks like encrypted data (base64-like strings over certain length)
                     return value && value.length > 50 && /^[A-Za-z0-9+/=]+$/.test(value);
                 });
                 
                 if (hasEncryptedData) {
-                    // Clear all sessionStorage to start fresh
+                    // Clear all sessionStorage except session keys and storage type
                     // This ensures no data leakage between sessions when using sessionStorage
-                    addSystemMessage(`[CRYPTO] Detected encrypted data from previous session - clearing sessionStorage and starting fresh`);
+                    addSystemMessage(`[CRYPTO] Detected encrypted data from previous session - clearing old data`);
+                    const keysToPreserve = [];
+                    for (let i = 0; i < sessionStorage.length; i++) {
+                        const key = sessionStorage.key(i);
+                        if (key && (key.startsWith('__hacka_re_session_key_') || key === '__hacka_re_storage_type__')) {
+                            keysToPreserve.push({ key, value: sessionStorage.getItem(key) });
+                        }
+                    }
                     sessionStorage.clear();
+                    // Restore preserved keys
+                    keysToPreserve.forEach(item => {
+                        sessionStorage.setItem(item.key, item.value);
+                    });
                     hasAttemptedSessionCleanup = true;
                 } else {
                     hasAttemptedSessionCleanup = true;
@@ -515,23 +546,24 @@ window.NamespaceService = (function() {
             state.current.namespaceHash = defaultNamespace; // Use namespace ID as hash for simplicity
             state.isReturningToExistingNamespace = false;
             
-            // Master key generation for sessionStorage
-            // Even in sessionStorage mode, we support session keys for additional security
-            // If a session key is available, we derive the master key from it
-            // Otherwise, we generate a random master key
-            const sessionKey = getSessionKey();
-            if (sessionKey) {
-                try {
-                    state.current.namespaceKey = CryptoUtils.deriveMasterKeyFromSession(sessionKey, defaultNamespace);
-                    addSystemMessage(`[CRYPTO] Derived deterministic master key for session namespace ${defaultNamespace}`);
-                } catch (error) {
-                    addSystemMessage(`[CRYPTO] Failed to derive master key, using random: ${error.message}`);
-                    state.current.namespaceKey = CryptoUtils.generateSecretKey(); // Fallback to random
-                }
+            // Check if we need to generate a new session key
+            if (!sessionKey) {
+                // Generate a new session key for this browser session
+                sessionKey = CryptoUtils.generateSecretKey();
+                sessionStorage.setItem(sessionKeyStorageKey, sessionKey);
+                addSystemMessage(`[CRYPTO] Generated new session key for direct visit and stored in sessionStorage`);
             } else {
-                // No session key available - generate a random master key
-                // This is the typical case for direct visits without a session key
-                state.current.namespaceKey = CryptoUtils.generateSecretKey();
+                addSystemMessage(`[CRYPTO] Restored existing session key from sessionStorage for direct visit`);
+            }
+            
+            // Master key generation for sessionStorage
+            // Now we always have a session key for direct visits
+            try {
+                state.current.namespaceKey = CryptoUtils.deriveMasterKeyFromSession(sessionKey, defaultNamespace);
+                addSystemMessage(`[CRYPTO] Derived deterministic master key for session namespace ${defaultNamespace}`);
+            } catch (error) {
+                addSystemMessage(`[CRYPTO] Failed to derive master key, using random: ${error.message}`);
+                state.current.namespaceKey = CryptoUtils.generateSecretKey(); // Fallback to random
             }
             
             return {
