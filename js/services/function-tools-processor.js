@@ -90,9 +90,25 @@ window.FunctionToolsProcessor = (function() {
                 
                 // If user wants to intercept the result, show the interceptor modal
                 if (interceptResult && window.FunctionExecutionModal) {
-                    finalResult = await FunctionExecutionModal.showResultInterceptor(name, finalResult);
+                    const interceptResponse = await FunctionExecutionModal.showResultInterceptor(name, finalResult);
+                    
+                    if (interceptResponse.blocked) {
+                        // User blocked the result
+                        const blockedError = new Error(`User blocked the result of function "${name}"`);
+                        if (addSystemMessage && window.DebugService && DebugService.isCategoryEnabled('functions')) {
+                            addSystemMessage(`User blocked the result from being returned to AI`);
+                        }
+                        this._logExecutionError(blockedError, addSystemMessage);
+                        return this._createErrorResult(toolCall, blockedError);
+                    }
+                    
+                    finalResult = interceptResponse.result;
                     if (addSystemMessage && window.DebugService && DebugService.isCategoryEnabled('functions')) {
-                        addSystemMessage(`User modified function result before returning to AI`);
+                        if (interceptResponse.result !== executionResult.result) {
+                            addSystemMessage(`User modified function result before returning to AI`);
+                        } else {
+                            addSystemMessage(`User approved function result without modification`);
+                        }
                     }
                 }
                 
