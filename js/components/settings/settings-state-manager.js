@@ -35,7 +35,9 @@ window.SettingsStateManager = (function() {
             titleSubtitle: TitleSubtitleManager.createTitleSubtitleManager(),
             welcome: WelcomeManager.createWelcomeManager(elements),
             sharedLink: SharedLinkManager.createSharedLinkManager(elements),
-            toolCalling: ToolCallingManager.createToolCallingManager()
+            toolCalling: ToolCallingManager.createToolCallingManager(),
+            yoloMode: window.YoloModeManager ? YoloModeManager.createYoloModeManager(elements) : null,
+            debug: window.DebugManager ? DebugManager.createDebugManager(elements) : null
         };
     }
     
@@ -48,6 +50,16 @@ window.SettingsStateManager = (function() {
         componentManagers.model.init();
         componentManagers.systemPrompt.init();
         componentManagers.baseUrl.init();
+        
+        // Initialize YOLO mode manager (must be before debug manager)
+        if (componentManagers.yoloMode && typeof componentManagers.yoloMode.init === 'function') {
+            componentManagers.yoloMode.init();
+        }
+        
+        // Initialize debug manager
+        if (componentManagers.debug && typeof componentManagers.debug.init === 'function') {
+            componentManagers.debug.init();
+        }
         
         // Initialize API key input handlers for auto-detection
         if (window.ApiKeyInputHandler && elements) {
