@@ -7,7 +7,6 @@
 window.FunctionExecutionModal = (function() {
     let modalElement = null;
     let currentResolve = null;
-    let currentReject = null;
     let originalArguments = null;
     let currentFunctionName = null;
     
@@ -25,175 +24,186 @@ window.FunctionExecutionModal = (function() {
         // Create modal content
         const modalContent = document.createElement('div');
         modalContent.className = 'modal-content';
-        modalContent.style.maxWidth = '600px';
-        modalContent.style.maxHeight = '80vh';
-        modalContent.style.overflow = 'auto';
+        modalContent.style.maxWidth = '700px';
         
         // Create header
         const header = document.createElement('div');
         header.className = 'settings-header';
-        header.style.marginBottom = '20px';
         
         const title = document.createElement('h2');
+        title.id = 'function-execution-title';
         title.textContent = 'Function Execution Request';
-        title.style.display = 'inline-block';
-        
-        const warningIcon = document.createElement('span');
-        warningIcon.innerHTML = ' ⚠️';
-        warningIcon.style.color = '#ff6b6b';
-        warningIcon.style.fontSize = '1.2em';
-        title.appendChild(warningIcon);
-        
         header.appendChild(title);
         
-        // Create info section
-        const infoSection = document.createElement('div');
-        infoSection.className = 'function-execution-info';
-        infoSection.style.backgroundColor = 'var(--bg-color-secondary)';
-        infoSection.style.padding = '15px';
-        infoSection.style.borderRadius = '8px';
-        infoSection.style.marginBottom = '20px';
+        // Create container
+        const container = document.createElement('div');
+        container.className = 'function-details-container';
         
-        const infoText = document.createElement('p');
-        infoText.innerHTML = 'The AI model wants to execute a JavaScript function. Please review the function and arguments below.';
-        infoText.style.margin = '0 0 10px 0';
-        infoSection.appendChild(infoText);
+        // Create section
+        const section = document.createElement('div');
+        section.className = 'function-details-section';
         
-        // Function name section
-        const functionNameSection = document.createElement('div');
-        functionNameSection.style.marginBottom = '10px';
+        // Function name
+        const functionNameH3 = document.createElement('h3');
+        functionNameH3.id = 'exec-function-name';
+        functionNameH3.style.marginBottom = '0.5rem';
+        functionNameH3.style.color = 'var(--accent-color)';
+        section.appendChild(functionNameH3);
         
-        const functionNameLabel = document.createElement('strong');
-        functionNameLabel.textContent = 'Function: ';
-        functionNameSection.appendChild(functionNameLabel);
+        // Function description
+        const descriptionDiv = document.createElement('div');
+        descriptionDiv.id = 'exec-function-description';
+        descriptionDiv.style.fontSize = '0.95em';
+        descriptionDiv.style.color = 'var(--text-color-secondary)';
+        descriptionDiv.style.fontStyle = 'italic';
+        descriptionDiv.style.marginBottom = '1rem';
+        section.appendChild(descriptionDiv);
         
-        const functionNameSpan = document.createElement('span');
-        functionNameSpan.id = 'exec-function-name';
-        functionNameSpan.style.fontFamily = 'monospace';
-        functionNameSpan.style.fontSize = '1.1em';
-        functionNameSpan.style.color = 'var(--accent-color)';
-        functionNameSection.appendChild(functionNameSpan);
+        // Create content div
+        const content = document.createElement('div');
+        content.className = 'function-details-content';
         
-        infoSection.appendChild(functionNameSection);
+        // Parameters group
+        const parametersGroup = document.createElement('div');
+        parametersGroup.className = 'function-details-group';
+        parametersGroup.id = 'exec-parameters-group';
         
-        // Function description section
-        const descriptionSection = document.createElement('div');
-        descriptionSection.style.marginBottom = '15px';
+        const parametersHeader = document.createElement('h4');
+        parametersHeader.textContent = 'Parameters';
+        parametersGroup.appendChild(parametersHeader);
         
-        const descriptionLabel = document.createElement('strong');
-        descriptionLabel.textContent = 'Description: ';
-        descriptionSection.appendChild(descriptionLabel);
+        const parametersValue = document.createElement('div');
+        parametersValue.className = 'function-details-value';
+        parametersValue.style.position = 'relative';
         
-        const descriptionSpan = document.createElement('span');
-        descriptionSpan.id = 'exec-function-description';
-        descriptionSpan.style.fontSize = '0.95em';
-        descriptionSpan.style.color = 'var(--text-color-secondary)';
-        descriptionSpan.style.fontStyle = 'italic';
-        descriptionSection.appendChild(descriptionSpan);
-        
-        infoSection.appendChild(descriptionSection);
-        
-        // Arguments section
-        const argsSection = document.createElement('div');
-        
-        const argsLabel = document.createElement('strong');
-        argsLabel.textContent = 'Arguments:';
-        argsLabel.style.display = 'block';
-        argsLabel.style.marginBottom = '10px';
-        argsSection.appendChild(argsLabel);
-        
-        // Create editable textarea for arguments
         const argsTextarea = document.createElement('textarea');
         argsTextarea.id = 'exec-args-textarea';
+        argsTextarea.style.flex = '1';
+        argsTextarea.style.margin = '0';
+        argsTextarea.style.padding = '16px';
+        argsTextarea.style.fontFamily = "'Courier New', Courier, monospace";
+        argsTextarea.style.fontSize = '13px';
+        argsTextarea.style.lineHeight = '1.4';
         argsTextarea.style.backgroundColor = 'var(--bg-color)';
-        argsTextarea.style.border = '1px solid var(--border-color)';
-        argsTextarea.style.borderRadius = '4px';
-        argsTextarea.style.padding = '10px';
-        argsTextarea.style.fontFamily = 'monospace';
-        argsTextarea.style.fontSize = '0.9em';
-        argsTextarea.style.width = '100%';
-        argsTextarea.style.minHeight = '100px';
-        argsTextarea.style.maxHeight = '200px';
+        argsTextarea.style.color = 'var(--text-color)';
+        argsTextarea.style.border = 'none';
         argsTextarea.style.resize = 'vertical';
+        argsTextarea.style.minHeight = '100px';
+        argsTextarea.style.maxHeight = '300px';
+        argsTextarea.style.width = '100%';
         argsTextarea.style.boxSizing = 'border-box';
-        argsSection.appendChild(argsTextarea);
+        parametersValue.appendChild(argsTextarea);
         
-        // Restore original button
-        const restoreButton = document.createElement('button');
-        restoreButton.type = 'button';
-        restoreButton.className = 'btn secondary-btn';
-        restoreButton.textContent = 'Restore Original';
-        restoreButton.style.marginTop = '10px';
-        restoreButton.style.fontSize = '0.85em';
-        restoreButton.addEventListener('click', () => {
+        // Restore button (positioned like copy button)
+        const restoreBtn = document.createElement('button');
+        restoreBtn.type = 'button';
+        restoreBtn.className = 'copy-btn';
+        restoreBtn.title = 'Restore original parameters';
+        restoreBtn.style.position = 'absolute';
+        restoreBtn.style.top = '12px';
+        restoreBtn.style.right = '12px';
+        restoreBtn.innerHTML = '<i class="fas fa-undo"></i>';
+        restoreBtn.addEventListener('click', () => {
             if (originalArguments !== null) {
                 argsTextarea.value = JSON.stringify(originalArguments, null, 2);
             }
         });
-        argsSection.appendChild(restoreButton);
+        parametersValue.appendChild(restoreBtn);
         
-        infoSection.appendChild(argsSection);
+        parametersGroup.appendChild(parametersValue);
+        content.appendChild(parametersGroup);
         
-        // Checkbox for remembering choice
-        const checkboxSection = document.createElement('div');
-        checkboxSection.style.marginBottom = '20px';
+        // Warning message
+        const warningDiv = document.createElement('div');
+        warningDiv.style.padding = '12px 16px';
+        warningDiv.style.backgroundColor = 'var(--warning-bg, #fff3cd)';
+        warningDiv.style.color = 'var(--warning-text, #856404)';
+        warningDiv.style.borderRadius = '8px';
+        warningDiv.style.border = '1px solid var(--warning-border, #ffeaa7)';
+        warningDiv.style.fontSize = '0.9em';
+        warningDiv.innerHTML = '<i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>The AI model wants to execute this JavaScript function. Review the parameters before approving.';
+        content.appendChild(warningDiv);
         
-        const checkboxGroup = document.createElement('div');
-        checkboxGroup.className = 'checkbox-group';
+        section.appendChild(content);
+        container.appendChild(section);
+        
+        // Remember choice checkbox
+        const checkboxDiv = document.createElement('div');
+        checkboxDiv.style.padding = '12px 0';
+        checkboxDiv.style.borderTop = '1px solid var(--border-color)';
+        checkboxDiv.style.marginTop = '1rem';
+        
+        const checkboxLabel = document.createElement('label');
+        checkboxLabel.style.display = 'flex';
+        checkboxLabel.style.alignItems = 'center';
+        checkboxLabel.style.cursor = 'pointer';
+        checkboxLabel.style.fontSize = '0.9em';
         
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.id = 'exec-remember-choice';
+        checkbox.style.marginRight = '8px';
         
-        const checkboxLabel = document.createElement('label');
-        checkboxLabel.htmlFor = 'exec-remember-choice';
-        checkboxLabel.textContent = "Remember my choice for this function during this session";
-        checkboxLabel.style.fontWeight = 'normal';
+        checkboxLabel.appendChild(checkbox);
+        checkboxLabel.appendChild(document.createTextNode('Remember my choice for this function during this session'));
+        checkboxDiv.appendChild(checkboxLabel);
+        container.appendChild(checkboxDiv);
         
-        checkboxGroup.appendChild(checkbox);
-        checkboxGroup.appendChild(checkboxLabel);
-        checkboxSection.appendChild(checkboxGroup);
+        // Actions
+        const actions = document.createElement('div');
+        actions.className = 'form-actions';
+        actions.style.display = 'flex';
+        actions.style.justifyContent = 'space-between';
+        actions.style.alignItems = 'center';
+        actions.style.marginTop = '1.5rem';
         
-        // Buttons section
-        const buttonsSection = document.createElement('div');
-        buttonsSection.className = 'form-actions';
-        buttonsSection.style.marginTop = '20px';
-        buttonsSection.style.display = 'flex';
-        buttonsSection.style.justifyContent = 'flex-end';
-        buttonsSection.style.gap = '10px';
+        // Left side - Block button
+        const leftActions = document.createElement('div');
         
-        const blockButton = document.createElement('button');
-        blockButton.type = 'button';
-        blockButton.className = 'btn secondary-btn';
-        blockButton.textContent = 'Block';
-        blockButton.addEventListener('click', () => handleResponse('block'));
+        const blockBtn = document.createElement('button');
+        blockBtn.type = 'button';
+        blockBtn.className = 'btn secondary-btn';
+        blockBtn.innerHTML = '<i class="fas fa-ban" style="margin-right: 6px;"></i>Block';
+        blockBtn.addEventListener('click', () => handleResponse('block'));
+        leftActions.appendChild(blockBtn);
         
-        const approveEditButton = document.createElement('button');
-        approveEditButton.type = 'button';
-        approveEditButton.className = 'btn secondary-btn';
-        approveEditButton.textContent = 'Approve + Intercept Result';
-        approveEditButton.addEventListener('click', () => handleResponse('approve-intercept'));
+        // Right side - Approve buttons
+        const rightActions = document.createElement('div');
+        rightActions.style.display = 'flex';
+        rightActions.style.gap = '10px';
         
-        const approveButton = document.createElement('button');
-        approveButton.type = 'button';
-        approveButton.className = 'btn primary-btn';
-        approveButton.textContent = 'Approve';
-        approveButton.addEventListener('click', () => handleResponse('approve'));
+        const approveInterceptBtn = document.createElement('button');
+        approveInterceptBtn.type = 'button';
+        approveInterceptBtn.className = 'btn secondary-btn';
+        approveInterceptBtn.innerHTML = '<i class="fas fa-edit" style="margin-right: 6px;"></i>Approve + Intercept Result';
+        approveInterceptBtn.addEventListener('click', () => handleResponse('approve-intercept'));
         
-        buttonsSection.appendChild(blockButton);
-        buttonsSection.appendChild(approveEditButton);
-        buttonsSection.appendChild(approveButton);
+        const approveBtn = document.createElement('button');
+        approveBtn.type = 'button';
+        approveBtn.className = 'btn primary-btn';
+        approveBtn.innerHTML = '<i class="fas fa-check" style="margin-right: 6px;"></i>Approve';
+        approveBtn.addEventListener('click', () => handleResponse('approve'));
         
-        // Assemble modal content
+        rightActions.appendChild(approveInterceptBtn);
+        rightActions.appendChild(approveBtn);
+        
+        actions.appendChild(leftActions);
+        actions.appendChild(rightActions);
+        container.appendChild(actions);
+        
+        // Assemble modal
         modalContent.appendChild(header);
-        modalContent.appendChild(infoSection);
-        modalContent.appendChild(checkboxSection);
-        modalContent.appendChild(buttonsSection);
-        
+        modalContent.appendChild(container);
         modalElement.appendChild(modalContent);
         document.body.appendChild(modalElement);
         
-        // Add escape key handler
+        // Add event listeners
+        modalElement.addEventListener('click', (e) => {
+            if (e.target === modalElement) {
+                handleResponse('block'); // Clicking outside blocks
+            }
+        });
+        
         document.addEventListener('keydown', handleEscapeKey);
     }
     
@@ -266,7 +276,6 @@ window.FunctionExecutionModal = (function() {
             
             currentResolve(result);
             currentResolve = null;
-            currentReject = null;
             currentFunctionName = null;
         }
     }
@@ -278,27 +287,26 @@ window.FunctionExecutionModal = (function() {
      * @returns {Promise<Object>} Promise resolving to response object
      */
     function showConfirmation(functionName, args) {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             // Initialize if not already done
             if (!modalElement) {
                 init();
             }
             
-            // Store resolve/reject and function info for later
+            // Store resolve and function info for later
             currentResolve = resolve;
-            currentReject = reject;
             currentFunctionName = functionName;
             originalArguments = args;
             
             // Update function name
-            const functionNameSpan = document.getElementById('exec-function-name');
-            if (functionNameSpan) {
-                functionNameSpan.textContent = functionName;
+            const functionNameElement = document.getElementById('exec-function-name');
+            if (functionNameElement) {
+                functionNameElement.textContent = functionName;
             }
             
             // Update function description
-            const descriptionSpan = document.getElementById('exec-function-description');
-            if (descriptionSpan) {
+            const descriptionElement = document.getElementById('exec-function-description');
+            if (descriptionElement) {
                 let description = 'No description available';
                 
                 // Try to get description from function registry
@@ -323,7 +331,7 @@ window.FunctionExecutionModal = (function() {
                     }
                 }
                 
-                descriptionSpan.textContent = description;
+                descriptionElement.textContent = description;
             }
             
             // Update arguments in textarea
@@ -343,7 +351,7 @@ window.FunctionExecutionModal = (function() {
                 modalElement.style.display = 'block';
                 
                 // Focus on the block button for safety
-                const blockButton = modalElement.querySelector('.secondary-btn');
+                const blockButton = modalElement.querySelector('.btn.secondary-btn');
                 if (blockButton) {
                     blockButton.focus();
                 }
@@ -471,11 +479,11 @@ window.FunctionExecutionModal = (function() {
      * Show modal for intercepting and editing function results
      * @param {string} functionName - Name of the function that was executed
      * @param {*} result - The result returned from the function
-     * @returns {Promise<*>} Promise resolving to the edited result
+     * @returns {Promise<{blocked: boolean, result: *}>} Promise resolving to object with blocked flag and result
      */
     function showResultInterceptor(functionName, result) {
-        return new Promise((resolve, reject) => {
-            // Create a simple modal for result editing
+        return new Promise((resolve) => {
+            // Create modal
             const modal = document.createElement('div');
             modal.className = 'modal';
             modal.style.display = 'block';
@@ -483,68 +491,187 @@ window.FunctionExecutionModal = (function() {
             
             const modalContent = document.createElement('div');
             modalContent.className = 'modal-content';
-            modalContent.style.maxWidth = '600px';
+            modalContent.style.maxWidth = '700px';
             
-            const header = document.createElement('h2');
-            header.textContent = `Function Result: ${functionName}`;
-            header.style.marginBottom = '20px';
+            // Header
+            const header = document.createElement('div');
+            header.className = 'settings-header';
             
-            const info = document.createElement('p');
-            info.textContent = 'The function has been executed. You can edit the result below before it\'s returned to the AI:';
-            info.style.marginBottom = '15px';
+            const title = document.createElement('h2');
+            title.textContent = 'Function Result Interceptor';
+            header.appendChild(title);
+            
+            // Container
+            const container = document.createElement('div');
+            container.className = 'function-details-container';
+            
+            // Section
+            const section = document.createElement('div');
+            section.className = 'function-details-section';
+            
+            // Function name
+            const functionNameH3 = document.createElement('h3');
+            functionNameH3.textContent = `${functionName} (Result)`;
+            functionNameH3.style.marginBottom = '1rem';
+            functionNameH3.style.color = 'var(--accent-color)';
+            section.appendChild(functionNameH3);
+            
+            // Content
+            const content = document.createElement('div');
+            content.className = 'function-details-content';
+            
+            // Result group
+            const resultGroup = document.createElement('div');
+            resultGroup.className = 'function-details-group';
+            
+            const resultHeader = document.createElement('h4');
+            resultHeader.textContent = 'Result';
+            resultGroup.appendChild(resultHeader);
+            
+            const resultValue = document.createElement('div');
+            resultValue.className = 'function-details-value';
+            resultValue.style.position = 'relative';
             
             const textarea = document.createElement('textarea');
-            textarea.style.width = '100%';
-            textarea.style.minHeight = '200px';
-            textarea.style.fontFamily = 'monospace';
-            textarea.style.fontSize = '0.9em';
-            textarea.style.padding = '10px';
-            textarea.style.border = '1px solid var(--border-color)';
-            textarea.style.borderRadius = '4px';
+            textarea.style.flex = '1';
+            textarea.style.margin = '0';
+            textarea.style.padding = '16px';
+            textarea.style.fontFamily = "'Courier New', Courier, monospace";
+            textarea.style.fontSize = '13px';
+            textarea.style.lineHeight = '1.4';
             textarea.style.backgroundColor = 'var(--bg-color)';
+            textarea.style.color = 'var(--text-color)';
+            textarea.style.border = 'none';
+            textarea.style.resize = 'vertical';
+            textarea.style.minHeight = '200px';
+            textarea.style.maxHeight = '400px';
+            textarea.style.width = '100%';
+            textarea.style.boxSizing = 'border-box';
             
+            let originalResultString;
             try {
-                textarea.value = JSON.stringify(result, null, 2);
+                originalResultString = JSON.stringify(result, null, 2);
+                textarea.value = originalResultString;
             } catch (e) {
-                textarea.value = String(result);
+                originalResultString = String(result);
+                textarea.value = originalResultString;
             }
             
-            const buttonsDiv = document.createElement('div');
-            buttonsDiv.style.marginTop = '20px';
-            buttonsDiv.style.display = 'flex';
-            buttonsDiv.style.justifyContent = 'flex-end';
-            buttonsDiv.style.gap = '10px';
+            resultValue.appendChild(textarea);
             
-            const cancelBtn = document.createElement('button');
-            cancelBtn.className = 'btn secondary-btn';
-            cancelBtn.textContent = 'Use Original';
-            cancelBtn.addEventListener('click', () => {
-                document.body.removeChild(modal);
-                resolve(result);
+            // Restore button
+            const restoreBtn = document.createElement('button');
+            restoreBtn.type = 'button';
+            restoreBtn.className = 'copy-btn';
+            restoreBtn.title = 'Restore original result';
+            restoreBtn.innerHTML = '<i class="fas fa-undo"></i>';
+            restoreBtn.style.position = 'absolute';
+            restoreBtn.style.top = '12px';
+            restoreBtn.style.right = '12px';
+            restoreBtn.addEventListener('click', () => {
+                textarea.value = originalResultString;
             });
+            resultValue.appendChild(restoreBtn);
             
-            const saveBtn = document.createElement('button');
-            saveBtn.className = 'btn primary-btn';
-            saveBtn.textContent = 'Use Edited Result';
-            saveBtn.addEventListener('click', () => {
+            resultGroup.appendChild(resultValue);
+            content.appendChild(resultGroup);
+            
+            // Info message
+            const infoDiv = document.createElement('div');
+            infoDiv.style.padding = '12px 16px';
+            infoDiv.style.backgroundColor = 'var(--info-bg, #d1ecf1)';
+            infoDiv.style.color = 'var(--info-text, #0c5460)';
+            infoDiv.style.borderRadius = '8px';
+            infoDiv.style.border = '1px solid var(--info-border, #bee5eb)';
+            infoDiv.style.fontSize = '0.9em';
+            infoDiv.innerHTML = '<i class="fas fa-info-circle" style="margin-right: 8px;"></i>The function has been executed. You can edit the result before it\'s returned to the AI.';
+            content.appendChild(infoDiv);
+            
+            section.appendChild(content);
+            container.appendChild(section);
+            
+            // Actions
+            const actions = document.createElement('div');
+            actions.className = 'form-actions';
+            actions.style.display = 'flex';
+            actions.style.justifyContent = 'space-between';
+            actions.style.alignItems = 'center';
+            actions.style.marginTop = '1.5rem';
+            
+            // Left side - Block button
+            const leftActions = document.createElement('div');
+            
+            const blockBtn = document.createElement('button');
+            blockBtn.type = 'button';
+            blockBtn.className = 'btn secondary-btn';
+            blockBtn.innerHTML = '<i class="fas fa-ban" style="margin-right: 6px;"></i>Block Result';
+            blockBtn.addEventListener('click', () => {
+                document.body.removeChild(modal);
+                resolve({ blocked: true, result: null });
+            });
+            leftActions.appendChild(blockBtn);
+            
+            // Right side - Return button
+            const rightActions = document.createElement('div');
+            
+            const returnBtn = document.createElement('button');
+            returnBtn.type = 'button';
+            returnBtn.className = 'btn primary-btn';
+            returnBtn.innerHTML = '<i class="fas fa-check" style="margin-right: 6px;"></i>Return';
+            returnBtn.addEventListener('click', () => {
                 try {
                     const editedResult = JSON.parse(textarea.value);
                     document.body.removeChild(modal);
-                    resolve(editedResult);
+                    resolve({ blocked: false, result: editedResult });
                 } catch (e) {
                     alert('Invalid JSON. Please fix the syntax and try again.');
                 }
             });
             
-            buttonsDiv.appendChild(cancelBtn);
-            buttonsDiv.appendChild(saveBtn);
+            rightActions.appendChild(returnBtn);
             
+            actions.appendChild(leftActions);
+            actions.appendChild(rightActions);
+            container.appendChild(actions);
+            
+            // Assemble modal
             modalContent.appendChild(header);
-            modalContent.appendChild(info);
-            modalContent.appendChild(textarea);
-            modalContent.appendChild(buttonsDiv);
+            modalContent.appendChild(container);
             modal.appendChild(modalContent);
             document.body.appendChild(modal);
+            
+            // Event handlers
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    // Return current value (edited or not) on outside click
+                    try {
+                        const currentResult = JSON.parse(textarea.value);
+                        document.body.removeChild(modal);
+                        resolve({ blocked: false, result: currentResult });
+                    } catch (err) {
+                        // If invalid JSON, use original
+                        document.body.removeChild(modal);
+                        resolve({ blocked: false, result: result });
+                    }
+                }
+            });
+            
+            const handleEscape = (event) => {
+                if (event.key === 'Escape') {
+                    document.removeEventListener('keydown', handleEscape);
+                    // Return current value (edited or not) on escape
+                    try {
+                        const currentResult = JSON.parse(textarea.value);
+                        document.body.removeChild(modal);
+                        resolve({ blocked: false, result: currentResult });
+                    } catch (err) {
+                        // If invalid JSON, use original
+                        document.body.removeChild(modal);
+                        resolve({ blocked: false, result: result });
+                    }
+                }
+            };
+            document.addEventListener('keydown', handleEscape);
             
             // Focus on textarea
             textarea.focus();
