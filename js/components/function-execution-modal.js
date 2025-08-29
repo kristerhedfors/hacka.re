@@ -12,6 +12,7 @@ window.FunctionExecutionModal = (function() {
     let currentFunctionResult = null;
     let isExecuting = false;
     let currentTab = 'request'; // 'request' or 'result'
+    let needsFreshExecution = false; // Track if we need to re-execute when returning
     
     /**
      * Initialize the modal by creating its DOM structure
@@ -466,13 +467,32 @@ window.FunctionExecutionModal = (function() {
             updateExecutionStatus('executing');
             
             // Check if we're already in an intercept session (currentResolve exists and modal is active)
-            const isReExecution = currentResolve && modalElement && modalElement.classList.contains('active');
+            // We're in re-execution if we have a resolver and the modal is showing (regardless of tab)
+            const isReExecution = currentResolve && modalElement && modalElement.classList.contains('active') && currentFunctionResult !== null;
             
             if (isReExecution) {
                 // We're re-executing within an existing intercept session
-                // Execute the function directly here instead of closing the modal
+                // Mark that we need fresh execution and switch to result tab with loading state
+                needsFreshExecution = true;
+                originalArguments = editedArgs; // Update arguments for the new execution
+                
+                // Show result tab with executing status
+                const resultTab = document.getElementById('exec-result-tab');
+                if (resultTab) {
+                    resultTab.style.display = '';
+                }
+                
+                // Clear the result textarea and show executing status
+                const resultTextarea = document.getElementById('exec-result-textarea');
+                if (resultTextarea) {
+                    resultTextarea.value = 'Executing function...';
+                }
+                
+                switchTab('result');
+                updateExecutionStatus('executing');
+                
+                // Execute the function
                 try {
-                    // Get the function executor
                     if (window.FunctionToolsExecutor) {
                         const result = await FunctionToolsExecutor.execute(currentFunctionName, editedArgs);
                         
@@ -480,7 +500,6 @@ window.FunctionExecutionModal = (function() {
                         currentFunctionResult = result?.result;
                         
                         // Update the result textarea
-                        const resultTextarea = document.getElementById('exec-result-textarea');
                         if (resultTextarea) {
                             try {
                                 resultTextarea.value = JSON.stringify(currentFunctionResult, null, 2);
@@ -489,14 +508,6 @@ window.FunctionExecutionModal = (function() {
                             }
                         }
                         
-                        // Show result tab
-                        const resultTab = document.getElementById('exec-result-tab');
-                        if (resultTab) {
-                            resultTab.style.display = '';
-                        }
-                        
-                        // Switch to result tab
-                        switchTab('result');
                         updateExecutionStatus('success');
                         isExecuting = false;
                         
@@ -512,7 +523,24 @@ window.FunctionExecutionModal = (function() {
                     console.error('Error executing function:', error);
                     updateExecutionStatus('error');
                     isExecuting = false;
-                    alert(`Error executing function: ${error.message}`);
+                    
+                    // Show error in result textarea but mark it as an execution error
+                    // Don't show timeout errors as results - show user-friendly message
+                    if (resultTextarea) {
+                        if (error.message && error.message.includes('timed out')) {
+                            resultTextarea.value = '// Function execution timed out\n// Please try with simpler parameters or check the function code\n// You can still edit this result before returning';
+                            // Set a null result to avoid returning the error as a successful result
+                            currentFunctionResult = null;
+                        } else {
+                            resultTextarea.value = JSON.stringify({
+                                error: error.message,
+                                status: 'error',
+                                note: 'Execution failed - you can edit this before returning'
+                            }, null, 2);
+                            // Set the error as the result so user can decide what to do
+                            currentFunctionResult = { error: error.message, status: 'error' };
+                        }
+                    }
                 }
             } else {
                 // First time intercept - close modal and let parent handle
@@ -613,6 +641,7 @@ window.FunctionExecutionModal = (function() {
             currentFunctionResult = null;
             originalArguments = null;
             currentFunctionName = null;
+            needsFreshExecution = false;
             
             // Reset UI
             const rememberCheckbox = document.getElementById('exec-remember-choice');
@@ -765,6 +794,7 @@ window.FunctionExecutionModal = (function() {
             currentResolve = resolve;
             currentFunctionResult = result;
             isExecuting = false;
+            needsFreshExecution = false; // Reset this flag when showing interceptor
             
             // If we don't have the function name stored, use the provided one
             // This preserves the context when coming back from execution
