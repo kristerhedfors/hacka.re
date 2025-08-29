@@ -307,8 +307,30 @@ window.SmartTooltipPositioner = (function() {
                     // Parse function name from tooltip
                     const funcMatch = tooltipHtml.match(/<strong>(?:Function|Result):<\/strong>\s*([^<\n]+)/);
                     if (funcMatch) {
-                        const parsedFunctionName = funcMatch[1].trim().replace(' (Result)', '');
+                        let parsedFunctionName = funcMatch[1].trim().replace(' (Result)', '');
                         const parsedType = icon.classList.contains('function-call-icon') ? 'call' : 'result';
+                        
+                        // Handle "undefined" function name for results
+                        if (parsedFunctionName === 'undefined' && parsedType === 'result') {
+                            // Try to find the actual function name from a call icon in the same message
+                            const messageEl = icon.closest('.message, .assistant-message, .user-message');
+                            if (messageEl) {
+                                const callIcon = messageEl.querySelector('.function-call-icon');
+                                if (callIcon) {
+                                    const callTooltip = callIcon.querySelector('.function-icon-tooltip');
+                                    if (callTooltip) {
+                                        const callMatch = callTooltip.innerHTML.match(/<strong>Function:<\/strong>\s*([^<\n]+)/);
+                                        if (callMatch && callMatch[1]) {
+                                            parsedFunctionName = callMatch[1].trim();
+                                        }
+                                    }
+                                }
+                            }
+                            // If still undefined, use a placeholder
+                            if (parsedFunctionName === 'undefined') {
+                                parsedFunctionName = 'Function Result';
+                            }
+                        }
                         
                         console.log('[SmartTooltip] Parsed from tooltip:', { parsedFunctionName, parsedType });
                         
@@ -362,8 +384,12 @@ window.SmartTooltipPositioner = (function() {
                             }
                         }
                         
-                        // Show modal with parsed data
-                        if (window.FunctionDetailsModal) {
+                        // Show modal with parsed data - use new tabbed modal
+                        if (window.FunctionDetailsTabbedModal) {
+                            console.log('[SmartTooltip] Showing tabbed modal with parsed data:', modalData);
+                            window.FunctionDetailsTabbedModal.showModal(modalData);
+                        } else if (window.FunctionDetailsModal) {
+                            // Fallback to old modal if new one isn't loaded
                             console.log('[SmartTooltip] Showing modal with parsed data:', modalData);
                             window.FunctionDetailsModal.showModal(modalData);
                         }
@@ -403,8 +429,12 @@ window.SmartTooltipPositioner = (function() {
                 }
             }
             
-            // Show the function details modal
-            if (window.FunctionDetailsModal) {
+            // Show the function details modal - use new tabbed modal
+            if (window.FunctionDetailsTabbedModal) {
+                console.log('[SmartTooltip] Showing function details tabbed modal with data:', modalData);
+                window.FunctionDetailsTabbedModal.showModal(modalData);
+            } else if (window.FunctionDetailsModal) {
+                // Fallback to old modal if new one isn't loaded
                 console.log('[SmartTooltip] Showing function details modal with data:', modalData);
                 window.FunctionDetailsModal.showModal(modalData);
             } else {
