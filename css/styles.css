@@ -4124,6 +4124,22 @@ footer a:hover {
     color: rgba(255, 255, 255, 0.6);
 }
 
+/* Shodan Icon Theme Support */
+.shodan-icon {
+    /* Default for light theme - no filter needed, shows as dark */
+    filter: none;
+}
+
+/* Apply white filter for all dark themes */
+.dark-mode .shodan-icon,
+.theme-sunset .shodan-icon,
+.theme-ocean .shodan-icon,
+.theme-forest .shodan-icon,
+.theme-midnight .shodan-icon {
+    /* Turn icon white for dark themes */
+    filter: brightness(0) invert(1);
+}
+
 /* Manual OAuth Modal Styles */
 .manual-oauth-modal .modal-content {
     max-width: 700px;
