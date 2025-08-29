@@ -1,13 +1,15 @@
 /**
  * Function Execution Confirmation Modal
  * Displays a modal to confirm function execution with arguments
- * Similar to the existing function call modals but for execution confirmation
+ * Supports human-in-the-loop approval with editing capabilities
  */
 
 window.FunctionExecutionModal = (function() {
     let modalElement = null;
     let currentResolve = null;
     let currentReject = null;
+    let originalArguments = null;
+    let currentFunctionName = null;
     
     /**
      * Initialize the modal by creating its DOM structure
@@ -74,6 +76,23 @@ window.FunctionExecutionModal = (function() {
         
         infoSection.appendChild(functionNameSection);
         
+        // Function description section
+        const descriptionSection = document.createElement('div');
+        descriptionSection.style.marginBottom = '15px';
+        
+        const descriptionLabel = document.createElement('strong');
+        descriptionLabel.textContent = 'Description: ';
+        descriptionSection.appendChild(descriptionLabel);
+        
+        const descriptionSpan = document.createElement('span');
+        descriptionSpan.id = 'exec-function-description';
+        descriptionSpan.style.fontSize = '0.95em';
+        descriptionSpan.style.color = 'var(--text-color-secondary)';
+        descriptionSpan.style.fontStyle = 'italic';
+        descriptionSection.appendChild(descriptionSpan);
+        
+        infoSection.appendChild(descriptionSection);
+        
         // Arguments section
         const argsSection = document.createElement('div');
         
@@ -83,23 +102,39 @@ window.FunctionExecutionModal = (function() {
         argsLabel.style.marginBottom = '10px';
         argsSection.appendChild(argsLabel);
         
-        const argsContainer = document.createElement('div');
-        argsContainer.id = 'exec-args-container';
-        argsContainer.style.backgroundColor = 'var(--bg-color)';
-        argsContainer.style.border = '1px solid var(--border-color)';
-        argsContainer.style.borderRadius = '4px';
-        argsContainer.style.padding = '10px';
-        argsContainer.style.fontFamily = 'monospace';
-        argsContainer.style.fontSize = '0.9em';
-        argsContainer.style.whiteSpace = 'pre-wrap';
-        argsContainer.style.wordBreak = 'break-word';
-        argsContainer.style.maxHeight = '200px';
-        argsContainer.style.overflowY = 'auto';
-        argsSection.appendChild(argsContainer);
+        // Create editable textarea for arguments
+        const argsTextarea = document.createElement('textarea');
+        argsTextarea.id = 'exec-args-textarea';
+        argsTextarea.style.backgroundColor = 'var(--bg-color)';
+        argsTextarea.style.border = '1px solid var(--border-color)';
+        argsTextarea.style.borderRadius = '4px';
+        argsTextarea.style.padding = '10px';
+        argsTextarea.style.fontFamily = 'monospace';
+        argsTextarea.style.fontSize = '0.9em';
+        argsTextarea.style.width = '100%';
+        argsTextarea.style.minHeight = '100px';
+        argsTextarea.style.maxHeight = '200px';
+        argsTextarea.style.resize = 'vertical';
+        argsTextarea.style.boxSizing = 'border-box';
+        argsSection.appendChild(argsTextarea);
+        
+        // Restore original button
+        const restoreButton = document.createElement('button');
+        restoreButton.type = 'button';
+        restoreButton.className = 'btn secondary-btn';
+        restoreButton.textContent = 'Restore Original';
+        restoreButton.style.marginTop = '10px';
+        restoreButton.style.fontSize = '0.85em';
+        restoreButton.addEventListener('click', () => {
+            if (originalArguments !== null) {
+                argsTextarea.value = JSON.stringify(originalArguments, null, 2);
+            }
+        });
+        argsSection.appendChild(restoreButton);
         
         infoSection.appendChild(argsSection);
         
-        // Checkbox for "Don't ask again this session"
+        // Checkbox for remembering choice
         const checkboxSection = document.createElement('div');
         checkboxSection.style.marginBottom = '20px';
         
@@ -108,11 +143,11 @@ window.FunctionExecutionModal = (function() {
         
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
-        checkbox.id = 'exec-dont-ask-session';
+        checkbox.id = 'exec-remember-choice';
         
         const checkboxLabel = document.createElement('label');
-        checkboxLabel.htmlFor = 'exec-dont-ask-session';
-        checkboxLabel.textContent = "Don't ask again for this function during this session";
+        checkboxLabel.htmlFor = 'exec-remember-choice';
+        checkboxLabel.textContent = "Remember my choice for this function during this session";
         checkboxLabel.style.fontWeight = 'normal';
         
         checkboxGroup.appendChild(checkbox);
@@ -127,22 +162,27 @@ window.FunctionExecutionModal = (function() {
         buttonsSection.style.justifyContent = 'flex-end';
         buttonsSection.style.gap = '10px';
         
-        const denyButton = document.createElement('button');
-        denyButton.type = 'button';
-        denyButton.className = 'btn secondary-btn';
-        denyButton.textContent = 'Deny Execution';
-        denyButton.style.backgroundColor = '#ff6b6b';
-        denyButton.style.color = 'white';
-        denyButton.addEventListener('click', () => handleResponse(false));
+        const blockButton = document.createElement('button');
+        blockButton.type = 'button';
+        blockButton.className = 'btn secondary-btn';
+        blockButton.textContent = 'Block';
+        blockButton.addEventListener('click', () => handleResponse('block'));
         
-        const allowButton = document.createElement('button');
-        allowButton.type = 'button';
-        allowButton.className = 'btn primary-btn';
-        allowButton.textContent = 'Allow Execution';
-        allowButton.addEventListener('click', () => handleResponse(true));
+        const approveEditButton = document.createElement('button');
+        approveEditButton.type = 'button';
+        approveEditButton.className = 'btn secondary-btn';
+        approveEditButton.textContent = 'Approve + Intercept Result';
+        approveEditButton.addEventListener('click', () => handleResponse('approve-intercept'));
         
-        buttonsSection.appendChild(denyButton);
-        buttonsSection.appendChild(allowButton);
+        const approveButton = document.createElement('button');
+        approveButton.type = 'button';
+        approveButton.className = 'btn primary-btn';
+        approveButton.textContent = 'Approve';
+        approveButton.addEventListener('click', () => handleResponse('approve'));
+        
+        buttonsSection.appendChild(blockButton);
+        buttonsSection.appendChild(approveEditButton);
+        buttonsSection.appendChild(approveButton);
         
         // Assemble modal content
         modalContent.appendChild(header);
@@ -158,41 +198,76 @@ window.FunctionExecutionModal = (function() {
     }
     
     /**
-     * Handle escape key to close modal (deny execution)
+     * Handle escape key to close modal (block execution)
      */
     function handleEscapeKey(event) {
         if (event.key === 'Escape' && modalElement && modalElement.style.display === 'block') {
-            handleResponse(false);
+            handleResponse('block');
         }
     }
     
     /**
      * Handle user response
-     * @param {boolean} allowed - Whether execution is allowed
+     * @param {string} action - The action chosen: 'approve', 'approve-intercept', or 'block'
      */
-    function handleResponse(allowed) {
-        // Check if "don't ask again" is checked - but only apply it if user allowed execution
-        const dontAskCheckbox = document.getElementById('exec-dont-ask-session');
-        const dontAskAgain = allowed && dontAskCheckbox && dontAskCheckbox.checked;
+    function handleResponse(action) {
+        // Get the edited arguments
+        const argsTextarea = document.getElementById('exec-args-textarea');
+        let editedArgs = null;
+        
+        if (argsTextarea && action !== 'block') {
+            try {
+                editedArgs = JSON.parse(argsTextarea.value);
+            } catch (e) {
+                // If parsing fails, show error and don't close modal
+                alert('Invalid JSON in arguments. Please fix the syntax and try again.');
+                return;
+            }
+        }
+        
+        // Check if "remember choice" is checked
+        const rememberCheckbox = document.getElementById('exec-remember-choice');
+        const rememberChoice = rememberCheckbox && rememberCheckbox.checked;
         
         // Hide modal
         if (modalElement) {
             modalElement.style.display = 'none';
         }
         
-        // Reset checkbox for next time
-        if (dontAskCheckbox) {
-            dontAskCheckbox.checked = false;
+        // Reset checkbox and textarea for next time
+        if (rememberCheckbox) {
+            rememberCheckbox.checked = false;
         }
+        if (argsTextarea) {
+            argsTextarea.value = '';
+        }
+        originalArguments = null;
         
         // Resolve promise with result
         if (currentResolve) {
-            currentResolve({
-                allowed: allowed,
-                dontAskAgain: dontAskAgain
-            });
+            const result = {
+                action: action,
+                allowed: action !== 'block',
+                interceptResult: action === 'approve-intercept',
+                editedArguments: editedArgs,
+                rememberChoice: rememberChoice,
+                functionName: currentFunctionName
+            };
+            
+            // Add to session lists if remember is checked
+            if (rememberChoice && currentFunctionName) {
+                if (action === 'block') {
+                    addSessionBlocked(currentFunctionName);
+                } else if (action === 'approve') {
+                    addSessionAllowed(currentFunctionName);
+                }
+                // Note: approve-intercept doesn't auto-remember since it needs result editing
+            }
+            
+            currentResolve(result);
             currentResolve = null;
             currentReject = null;
+            currentFunctionName = null;
         }
     }
     
@@ -200,7 +275,7 @@ window.FunctionExecutionModal = (function() {
      * Show the confirmation modal
      * @param {string} functionName - Name of the function to execute
      * @param {Object} args - Arguments to pass to the function
-     * @returns {Promise<{allowed: boolean, dontAskAgain: boolean}>}
+     * @returns {Promise<Object>} Promise resolving to response object
      */
     function showConfirmation(functionName, args) {
         return new Promise((resolve, reject) => {
@@ -209,9 +284,11 @@ window.FunctionExecutionModal = (function() {
                 init();
             }
             
-            // Store resolve/reject for later
+            // Store resolve/reject and function info for later
             currentResolve = resolve;
             currentReject = reject;
+            currentFunctionName = functionName;
+            originalArguments = args;
             
             // Update function name
             const functionNameSpan = document.getElementById('exec-function-name');
@@ -219,15 +296,45 @@ window.FunctionExecutionModal = (function() {
                 functionNameSpan.textContent = functionName;
             }
             
-            // Update arguments display
-            const argsContainer = document.getElementById('exec-args-container');
-            if (argsContainer) {
+            // Update function description
+            const descriptionSpan = document.getElementById('exec-function-description');
+            if (descriptionSpan) {
+                let description = 'No description available';
+                
+                // Try to get description from function registry
+                if (window.FunctionToolsService && typeof FunctionToolsService.getJsFunctions === 'function') {
+                    const jsFunctions = FunctionToolsService.getJsFunctions();
+                    if (jsFunctions[functionName] && jsFunctions[functionName].toolDefinition) {
+                        const toolDef = jsFunctions[functionName].toolDefinition;
+                        if (toolDef.function && toolDef.function.description) {
+                            description = toolDef.function.description;
+                        }
+                    }
+                }
+                
+                // Check default functions if not found
+                if (description === 'No description available' && window.DefaultFunctionsService) {
+                    const enabledDefaultFunctions = DefaultFunctionsService.getEnabledDefaultFunctions();
+                    if (enabledDefaultFunctions[functionName]) {
+                        const defaultFunc = enabledDefaultFunctions[functionName];
+                        if (defaultFunc.toolDefinition && defaultFunc.toolDefinition.function && defaultFunc.toolDefinition.function.description) {
+                            description = defaultFunc.toolDefinition.function.description;
+                        }
+                    }
+                }
+                
+                descriptionSpan.textContent = description;
+            }
+            
+            // Update arguments in textarea
+            const argsTextarea = document.getElementById('exec-args-textarea');
+            if (argsTextarea) {
                 try {
                     // Pretty print the arguments
                     const formattedArgs = JSON.stringify(args, null, 2);
-                    argsContainer.textContent = formattedArgs;
+                    argsTextarea.value = formattedArgs;
                 } catch (e) {
-                    argsContainer.textContent = String(args);
+                    argsTextarea.value = String(args);
                 }
             }
             
@@ -235,17 +342,53 @@ window.FunctionExecutionModal = (function() {
             if (modalElement) {
                 modalElement.style.display = 'block';
                 
-                // Focus on the deny button for safety
-                const denyButton = modalElement.querySelector('.secondary-btn');
-                if (denyButton) {
-                    denyButton.focus();
+                // Focus on the block button for safety
+                const blockButton = modalElement.querySelector('.secondary-btn');
+                if (blockButton) {
+                    blockButton.focus();
                 }
             }
         });
     }
     
-    // Session storage for functions that user said "don't ask again"
-    const sessionAllowedFunctions = new Set();
+    // Storage keys for persistent session management
+    const SESSION_ALLOWED_KEY = 'function_session_allowed';
+    const SESSION_BLOCKED_KEY = 'function_session_blocked';
+    
+    // Session storage for functions - initialized from localStorage
+    let sessionAllowedFunctions = new Set();
+    let sessionBlockedFunctions = new Set();
+    
+    /**
+     * Initialize session lists from storage
+     */
+    function initSessionLists() {
+        try {
+            const allowed = CoreStorageService.getValue(SESSION_ALLOWED_KEY);
+            if (Array.isArray(allowed)) {
+                sessionAllowedFunctions = new Set(allowed);
+            }
+            
+            const blocked = CoreStorageService.getValue(SESSION_BLOCKED_KEY);
+            if (Array.isArray(blocked)) {
+                sessionBlockedFunctions = new Set(blocked);
+            }
+        } catch (e) {
+            console.error('Error loading session lists:', e);
+        }
+    }
+    
+    /**
+     * Save session lists to storage
+     */
+    function saveSessionLists() {
+        try {
+            CoreStorageService.setValue(SESSION_ALLOWED_KEY, Array.from(sessionAllowedFunctions));
+            CoreStorageService.setValue(SESSION_BLOCKED_KEY, Array.from(sessionBlockedFunctions));
+        } catch (e) {
+            console.error('Error saving session lists:', e);
+        }
+    }
     
     /**
      * Check if a function should be auto-allowed for this session
@@ -257,11 +400,44 @@ window.FunctionExecutionModal = (function() {
     }
     
     /**
+     * Check if a function should be auto-blocked for this session
+     * @param {string} functionName - Name of the function
+     * @returns {boolean}
+     */
+    function isSessionBlocked(functionName) {
+        return sessionBlockedFunctions.has(functionName);
+    }
+    
+    /**
      * Add a function to session auto-allow list
      * @param {string} functionName - Name of the function
      */
     function addSessionAllowed(functionName) {
         sessionAllowedFunctions.add(functionName);
+        // Remove from blocked if it was there
+        sessionBlockedFunctions.delete(functionName);
+        saveSessionLists();
+    }
+    
+    /**
+     * Add a function to session auto-block list
+     * @param {string} functionName - Name of the function
+     */
+    function addSessionBlocked(functionName) {
+        sessionBlockedFunctions.add(functionName);
+        // Remove from allowed if it was there
+        sessionAllowedFunctions.delete(functionName);
+        saveSessionLists();
+    }
+    
+    /**
+     * Remove a function from session lists
+     * @param {string} functionName - Name of the function
+     */
+    function removeFromSessionLists(functionName) {
+        sessionAllowedFunctions.delete(functionName);
+        sessionBlockedFunctions.delete(functionName);
+        saveSessionLists();
     }
     
     /**
@@ -269,13 +445,127 @@ window.FunctionExecutionModal = (function() {
      */
     function clearSessionAllowed() {
         sessionAllowedFunctions.clear();
+        saveSessionLists();
     }
+    
+    /**
+     * Clear all session auto-blocked functions
+     */
+    function clearSessionBlocked() {
+        sessionBlockedFunctions.clear();
+        saveSessionLists();
+    }
+    
+    /**
+     * Get all session lists for UI display
+     * @returns {Object} Object with allowed and blocked arrays
+     */
+    function getSessionLists() {
+        return {
+            allowed: Array.from(sessionAllowedFunctions),
+            blocked: Array.from(sessionBlockedFunctions)
+        };
+    }
+    
+    /**
+     * Show modal for intercepting and editing function results
+     * @param {string} functionName - Name of the function that was executed
+     * @param {*} result - The result returned from the function
+     * @returns {Promise<*>} Promise resolving to the edited result
+     */
+    function showResultInterceptor(functionName, result) {
+        return new Promise((resolve, reject) => {
+            // Create a simple modal for result editing
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.style.display = 'block';
+            modal.style.zIndex = '10002';
+            
+            const modalContent = document.createElement('div');
+            modalContent.className = 'modal-content';
+            modalContent.style.maxWidth = '600px';
+            
+            const header = document.createElement('h2');
+            header.textContent = `Function Result: ${functionName}`;
+            header.style.marginBottom = '20px';
+            
+            const info = document.createElement('p');
+            info.textContent = 'The function has been executed. You can edit the result below before it\'s returned to the AI:';
+            info.style.marginBottom = '15px';
+            
+            const textarea = document.createElement('textarea');
+            textarea.style.width = '100%';
+            textarea.style.minHeight = '200px';
+            textarea.style.fontFamily = 'monospace';
+            textarea.style.fontSize = '0.9em';
+            textarea.style.padding = '10px';
+            textarea.style.border = '1px solid var(--border-color)';
+            textarea.style.borderRadius = '4px';
+            textarea.style.backgroundColor = 'var(--bg-color)';
+            
+            try {
+                textarea.value = JSON.stringify(result, null, 2);
+            } catch (e) {
+                textarea.value = String(result);
+            }
+            
+            const buttonsDiv = document.createElement('div');
+            buttonsDiv.style.marginTop = '20px';
+            buttonsDiv.style.display = 'flex';
+            buttonsDiv.style.justifyContent = 'flex-end';
+            buttonsDiv.style.gap = '10px';
+            
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'btn secondary-btn';
+            cancelBtn.textContent = 'Use Original';
+            cancelBtn.addEventListener('click', () => {
+                document.body.removeChild(modal);
+                resolve(result);
+            });
+            
+            const saveBtn = document.createElement('button');
+            saveBtn.className = 'btn primary-btn';
+            saveBtn.textContent = 'Use Edited Result';
+            saveBtn.addEventListener('click', () => {
+                try {
+                    const editedResult = JSON.parse(textarea.value);
+                    document.body.removeChild(modal);
+                    resolve(editedResult);
+                } catch (e) {
+                    alert('Invalid JSON. Please fix the syntax and try again.');
+                }
+            });
+            
+            buttonsDiv.appendChild(cancelBtn);
+            buttonsDiv.appendChild(saveBtn);
+            
+            modalContent.appendChild(header);
+            modalContent.appendChild(info);
+            modalContent.appendChild(textarea);
+            modalContent.appendChild(buttonsDiv);
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
+            
+            // Focus on textarea
+            textarea.focus();
+            textarea.select();
+        });
+    }
+    
+    // Initialize on load
+    initSessionLists();
     
     // Public API
     return {
         showConfirmation,
+        showResultInterceptor,
         isSessionAllowed,
+        isSessionBlocked,
         addSessionAllowed,
-        clearSessionAllowed
+        addSessionBlocked,
+        removeFromSessionLists,
+        clearSessionAllowed,
+        clearSessionBlocked,
+        getSessionLists
     };
 })();

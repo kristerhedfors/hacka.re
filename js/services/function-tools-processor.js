@@ -48,28 +48,57 @@ window.FunctionToolsProcessor = (function() {
                 
                 this._validateFunctionAvailability(name, addSystemMessage);
                 
-                const args = ArgumentParser.parse(argsString, name);
+                let args = ArgumentParser.parse(argsString, name);
                 
                 // Check if we need to show confirmation modal
                 const shouldConfirm = await this._shouldConfirmExecution(name, args, addSystemMessage);
                 
+                // Handle auto-block case
+                if (shouldConfirm === 'auto-block') {
+                    const blockedError = new Error(`Function "${name}" is blocked for this session`);
+                    this._logExecutionError(blockedError, addSystemMessage);
+                    return this._createErrorResult(toolCall, blockedError);
+                }
+                
+                // Handle confirmation case
+                let interceptResult = false;
                 if (shouldConfirm) {
-                    const allowed = await this._confirmExecution(name, args, addSystemMessage);
-                    if (!allowed) {
-                        // User denied execution
-                        const deniedError = new Error(`User denied execution of function "${name}"`);
+                    const response = await this._confirmExecution(name, args, addSystemMessage);
+                    if (!response.allowed) {
+                        // User blocked execution
+                        const deniedError = new Error(`User blocked execution of function "${name}"`);
                         this._logExecutionError(deniedError, addSystemMessage);
                         return this._createErrorResult(toolCall, deniedError);
                     }
+                    
+                    // Check if user edited the arguments
+                    if (response.editedArguments) {
+                        args = response.editedArguments;
+                        if (addSystemMessage && window.DebugService && DebugService.isCategoryEnabled('functions')) {
+                            addSystemMessage(`User modified function arguments before execution`);
+                        }
+                    }
+                    
+                    // Check if user wants to intercept the result
+                    interceptResult = response.interceptResult;
                 }
                 
-                this._logFunctionExecution(name, argsString, addSystemMessage);
+                this._logFunctionExecution(name, JSON.stringify(args), addSystemMessage);
                 
                 const executionResult = await Executor.execute(name, args);
+                let finalResult = executionResult.result;
                 
-                this._logSuccessfulExecution(name, executionResult.result, addSystemMessage);
+                // If user wants to intercept the result, show the interceptor modal
+                if (interceptResult && window.FunctionExecutionModal) {
+                    finalResult = await FunctionExecutionModal.showResultInterceptor(name, finalResult);
+                    if (addSystemMessage && window.DebugService && DebugService.isCategoryEnabled('functions')) {
+                        addSystemMessage(`User modified function result before returning to AI`);
+                    }
+                }
                 
-                return this._createSuccessResult(toolCall, name, executionResult.result, executionResult.executionTime);
+                this._logSuccessfulExecution(name, finalResult, addSystemMessage);
+                
+                return this._createSuccessResult(toolCall, name, finalResult, executionResult.executionTime);
                 
             } catch (error) {
                 Logger.error(`Error processing tool call ${index}:`, error);
@@ -86,6 +115,15 @@ window.FunctionToolsProcessor = (function() {
                     addSystemMessage(`YOLO mode: Auto-executing function "${name}" without confirmation`);
                 }
                 return false;
+            }
+            
+            // Check if this function was already blocked for this session
+            if (window.FunctionExecutionModal && FunctionExecutionModal.isSessionBlocked(name)) {
+                Logger.debug(`Function ${name} is session-blocked - will auto-block`);
+                if (addSystemMessage && window.DebugService && DebugService.isCategoryEnabled('functions')) {
+                    addSystemMessage(`Session blocked: Auto-blocking function "${name}" (previously blocked)`);
+                }
+                return 'auto-block';
             }
             
             // Check if this function was already allowed for this session
@@ -105,35 +143,32 @@ window.FunctionToolsProcessor = (function() {
             if (!window.FunctionExecutionModal) {
                 // If modal is not available, log warning and allow execution (backward compatibility)
                 Logger.warn('FunctionExecutionModal not available - allowing execution for backward compatibility');
-                return true;
+                return { allowed: true, interceptResult: false, editedArguments: null };
             }
             
             try {
                 const response = await FunctionExecutionModal.showConfirmation(name, args);
                 
-                if (response.allowed) {
-                    if (response.dontAskAgain) {
-                        // Add to session allowed list
-                        FunctionExecutionModal.addSessionAllowed(name);
-                        if (addSystemMessage && window.DebugService && DebugService.isCategoryEnabled('functions')) {
-                            addSystemMessage(`User approved execution of "${name}" and marked it as allowed for this session`);
-                        }
-                    } else {
-                        if (addSystemMessage && window.DebugService && DebugService.isCategoryEnabled('functions')) {
+                // Log the user's action
+                if (addSystemMessage && window.DebugService && DebugService.isCategoryEnabled('functions')) {
+                    switch (response.action) {
+                        case 'approve':
                             addSystemMessage(`User approved execution of "${name}"`);
-                        }
-                    }
-                } else {
-                    if (addSystemMessage && window.DebugService && DebugService.isCategoryEnabled('functions')) {
-                        addSystemMessage(`User denied execution of "${name}"`);
+                            break;
+                        case 'approve-intercept':
+                            addSystemMessage(`User approved execution of "${name}" with result interception`);
+                            break;
+                        case 'block':
+                            addSystemMessage(`User blocked execution of "${name}"`);
+                            break;
                     }
                 }
                 
-                return response.allowed;
+                return response;
             } catch (error) {
                 Logger.error('Error showing confirmation modal:', error);
                 // On error, deny execution for safety
-                return false;
+                return { allowed: false, interceptResult: false, editedArguments: null };
             }
         },
         
