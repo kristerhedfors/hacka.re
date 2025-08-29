@@ -50,6 +50,19 @@ window.FunctionToolsProcessor = (function() {
                 
                 const args = ArgumentParser.parse(argsString, name);
                 
+                // Check if we need to show confirmation modal
+                const shouldConfirm = await this._shouldConfirmExecution(name, args, addSystemMessage);
+                
+                if (shouldConfirm) {
+                    const allowed = await this._confirmExecution(name, args, addSystemMessage);
+                    if (!allowed) {
+                        // User denied execution
+                        const deniedError = new Error(`User denied execution of function "${name}"`);
+                        this._logExecutionError(deniedError, addSystemMessage);
+                        return this._createErrorResult(toolCall, deniedError);
+                    }
+                }
+                
                 this._logFunctionExecution(name, argsString, addSystemMessage);
                 
                 const executionResult = await Executor.execute(name, args);
@@ -62,6 +75,65 @@ window.FunctionToolsProcessor = (function() {
                 Logger.error(`Error processing tool call ${index}:`, error);
                 this._logExecutionError(error, addSystemMessage);
                 return this._createErrorResult(toolCall, error);
+            }
+        },
+        
+        async _shouldConfirmExecution(name, args, addSystemMessage) {
+            // Check if YOLO mode is enabled
+            if (window.YoloModeManager && YoloModeManager.isYoloModeEnabled()) {
+                Logger.debug(`YOLO mode is enabled - skipping confirmation for ${name}`);
+                if (addSystemMessage && window.DebugService && DebugService.isCategoryEnabled('functions')) {
+                    addSystemMessage(`YOLO mode: Auto-executing function "${name}" without confirmation`);
+                }
+                return false;
+            }
+            
+            // Check if this function was already allowed for this session
+            if (window.FunctionExecutionModal && FunctionExecutionModal.isSessionAllowed(name)) {
+                Logger.debug(`Function ${name} is session-allowed - skipping confirmation`);
+                if (addSystemMessage && window.DebugService && DebugService.isCategoryEnabled('functions')) {
+                    addSystemMessage(`Session allowed: Auto-executing function "${name}" (previously approved)`);
+                }
+                return false;
+            }
+            
+            // Otherwise, we need confirmation
+            return true;
+        },
+        
+        async _confirmExecution(name, args, addSystemMessage) {
+            if (!window.FunctionExecutionModal) {
+                // If modal is not available, log warning and allow execution (backward compatibility)
+                Logger.warn('FunctionExecutionModal not available - allowing execution for backward compatibility');
+                return true;
+            }
+            
+            try {
+                const response = await FunctionExecutionModal.showConfirmation(name, args);
+                
+                if (response.allowed) {
+                    if (response.dontAskAgain) {
+                        // Add to session allowed list
+                        FunctionExecutionModal.addSessionAllowed(name);
+                        if (addSystemMessage && window.DebugService && DebugService.isCategoryEnabled('functions')) {
+                            addSystemMessage(`User approved execution of "${name}" and marked it as allowed for this session`);
+                        }
+                    } else {
+                        if (addSystemMessage && window.DebugService && DebugService.isCategoryEnabled('functions')) {
+                            addSystemMessage(`User approved execution of "${name}"`);
+                        }
+                    }
+                } else {
+                    if (addSystemMessage && window.DebugService && DebugService.isCategoryEnabled('functions')) {
+                        addSystemMessage(`User denied execution of "${name}"`);
+                    }
+                }
+                
+                return response.allowed;
+            } catch (error) {
+                Logger.error('Error showing confirmation modal:', error);
+                // On error, deny execution for safety
+                return false;
             }
         },
         
