@@ -216,6 +216,14 @@ function createSharedLinkDataProcessor() {
      * @returns {boolean} Whether the model is compatible
      */
     function validateModelProviderCompatibility(model, provider) {
+        // Models prefixed with "openai/" are OpenAI-compatible models
+        // These can be used with ANY OpenAI-compatible API provider
+        if (model.startsWith('openai/')) {
+            // OpenAI-compatible models work with any provider that supports OpenAI API format
+            // This includes: OpenAI, Groq, Berget.ai, and any custom OpenAI-compatible endpoints
+            return true;
+        }
+        
         // Simple compatibility checks based on model naming patterns
         if (provider === 'openai') {
             return model.startsWith('gpt-') || model.startsWith('o1-') || model.includes('davinci') || model.includes('turbo');
@@ -227,7 +235,7 @@ function createSharedLinkDataProcessor() {
             return !model.startsWith('gpt-') && !model.includes('claude');
         }
         
-        // For unknown providers, assume compatibility
+        // For unknown providers (including custom endpoints like Berget.ai), assume compatibility
         return true;
     }
     

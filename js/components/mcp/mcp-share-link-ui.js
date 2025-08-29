@@ -21,9 +21,6 @@ window.MCPShareLinkUI = (function() {
             return;
         }
         
-        // Load saved state
-        await loadState();
-        
         // Setup event listeners
         enableButton.addEventListener('click', handleToggle);
         
@@ -31,6 +28,9 @@ window.MCPShareLinkUI = (function() {
         if (window.MCPShareLinkService && !window.MCPShareLinkService.initialized) {
             window.MCPShareLinkService.init();
         }
+        
+        // Load saved state - this will re-enable if it was enabled
+        await loadState();
         
         console.log('[MCPShareLinkUI] Initialized');
     }
@@ -59,7 +59,8 @@ window.MCPShareLinkUI = (function() {
                 updateUI();
                 
                 if (isEnabled) {
-                    enableShareLinkMCP();
+                    console.log('[MCPShareLinkUI] Share Link MCP was enabled, re-enabling...');
+                    await enableShareLinkMCP();
                 }
             } else {
                 console.warn('[MCPShareLinkUI] CoreStorageService not available, using fallback');
@@ -69,7 +70,8 @@ window.MCPShareLinkUI = (function() {
                 updateUI();
                 
                 if (isEnabled) {
-                    enableShareLinkMCP();
+                    console.log('[MCPShareLinkUI] Share Link MCP was enabled (fallback), re-enabling...');
+                    await enableShareLinkMCP();
                 }
             }
         } catch (error) {
@@ -117,6 +119,12 @@ window.MCPShareLinkUI = (function() {
                 
                 // Register with function tools service for API integration
                 if (window.FunctionToolsService) {
+                    // Ensure function calling is enabled so the tools can be used
+                    if (!window.FunctionToolsService.isFunctionToolsEnabled()) {
+                        window.FunctionToolsService.setFunctionToolsEnabled(true);
+                        console.log('[MCPShareLinkUI] Enabled function calling system for Share Link MCP tools');
+                    }
+                    
                     const tools = window.MCPShareLinkService.getToolDefinitions();
                     
                     tools.forEach(tool => {
@@ -133,19 +141,6 @@ window.MCPShareLinkUI = (function() {
 async function ${toolName}(args = {}) {
     return await window.MCPShareLinkService.handleToolCall("${toolName}", args);
 }`;
-                        
-                        // Register as a function in the function tools service
-                        const functionSpec = {
-                            name: toolName,
-                            code: functionCode,
-                            enabled: true,
-                            metadata: {
-                                source: 'mcp-service',
-                                provider: 'share-link',
-                                description: toolDescription,
-                                inputSchema: tool.function.parameters
-                            }
-                        };
                         
                         // Add function with collection metadata
                         const collectionMetadata = {
@@ -174,15 +169,38 @@ async function ${toolName}(args = {}) {
                 // Auto-enable the Share Link MCP guide prompt
                 if (window.DefaultPromptsService) {
                     try {
+                        // First make sure the prompt is registered
+                        if (window.ShareLinkMCPGuide) {
+                            window.DefaultPromptsService.registerPrompt(window.ShareLinkMCPGuide);
+                            console.log('[MCPShareLinkUI] Registered Share Link MCP guide prompt');
+                        } else {
+                            console.warn('[MCPShareLinkUI] ShareLinkMCPGuide not found, will retry');
+                            // Try again after a short delay
+                            setTimeout(() => {
+                                if (window.ShareLinkMCPGuide && window.DefaultPromptsService) {
+                                    window.DefaultPromptsService.registerPrompt(window.ShareLinkMCPGuide);
+                                    console.log('[MCPShareLinkUI] Registered Share Link MCP guide prompt (delayed)');
+                                    
+                                    // Also select it
+                                    const promptId = 'share-link-mcp-guide';
+                                    const selectedIds = window.DefaultPromptsService.getSelectedDefaultPromptIds();
+                                    if (!selectedIds.includes(promptId)) {
+                                        selectedIds.push(promptId);
+                                        window.DefaultPromptsService.setSelectedDefaultPromptIds(selectedIds);
+                                        
+                                        if (window.SystemPromptCoordinator) {
+                                            window.SystemPromptCoordinator.updateSystemPrompt(true);
+                                        }
+                                        console.log('[MCPShareLinkUI] Auto-enabled Share Link MCP guide prompt (delayed)');
+                                    }
+                                }
+                            }, 1000);
+                        }
+                        
                         const promptId = 'share-link-mcp-guide';
                         const isSelected = window.DefaultPromptsService.isDefaultPromptSelected(promptId);
                         
                         if (!isSelected) {
-                            // First make sure the prompt is registered
-                            if (window.ShareLinkMCPGuide) {
-                                window.DefaultPromptsService.registerPrompt(window.ShareLinkMCPGuide);
-                            }
-                            
                             // Now enable it by ID (not by name)
                             const selectedIds = window.DefaultPromptsService.getSelectedDefaultPromptIds();
                             if (!selectedIds.includes(promptId)) {
@@ -195,6 +213,12 @@ async function ${toolName}(args = {}) {
                                 }
                                 
                                 console.log('[MCPShareLinkUI] Auto-enabled Share Link MCP guide prompt');
+                            }
+                        } else {
+                            console.log('[MCPShareLinkUI] Share Link MCP guide prompt already selected');
+                            // Still update system prompt to ensure it's included
+                            if (window.SystemPromptCoordinator) {
+                                window.SystemPromptCoordinator.updateSystemPrompt(true);
                             }
                         }
                     } catch (error) {
@@ -230,7 +254,7 @@ async function ${toolName}(args = {}) {
                 console.log('[MCPShareLinkUI] Removed tools from FunctionToolsService');
             }
             
-            // Auto-disable the Share Link MCP guide prompt
+            // Auto-disable and unregister the Share Link MCP guide prompt
             if (window.DefaultPromptsService) {
                 try {
                     const promptId = 'share-link-mcp-guide';
@@ -252,8 +276,12 @@ async function ${toolName}(args = {}) {
                             console.log('[MCPShareLinkUI] Auto-disabled Share Link MCP guide prompt');
                         }
                     }
+                    
+                    // Unregister the prompt entirely so it's not visible
+                    window.DefaultPromptsService.unregisterPrompt('🔗 Share Link MCP Guide');
+                    console.log('[MCPShareLinkUI] Unregistered Share Link MCP guide prompt');
                 } catch (error) {
-                    console.warn('[MCPShareLinkUI] Could not auto-disable guide prompt:', error);
+                    console.warn('[MCPShareLinkUI] Could not auto-disable/unregister guide prompt:', error);
                 }
             }
             
@@ -339,7 +367,7 @@ async function ${toolName}(args = {}) {
             }
         }
         
-        // Auto-disable the Share Link MCP guide prompt
+        // Auto-disable and unregister the Share Link MCP guide prompt
         if (window.DefaultPromptsService) {
             try {
                 const promptId = 'share-link-mcp-guide';
@@ -361,8 +389,12 @@ async function ${toolName}(args = {}) {
                         console.log('[MCPShareLinkUI] Auto-disabled Share Link MCP guide prompt during reset');
                     }
                 }
+                
+                // Unregister the prompt entirely so it's not visible
+                window.DefaultPromptsService.unregisterPrompt('🔗 Share Link MCP Guide');
+                console.log('[MCPShareLinkUI] Unregistered Share Link MCP guide prompt during reset');
             } catch (error) {
-                console.warn('[MCPShareLinkUI] Could not auto-disable guide prompt during reset:', error);
+                console.warn('[MCPShareLinkUI] Could not auto-disable/unregister guide prompt during reset:', error);
             }
         }
         

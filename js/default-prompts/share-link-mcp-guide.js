@@ -96,14 +96,6 @@ Be helpful in explaining what each option does and guide users toward the most a
     }
 };
 
-// Register the prompt when the module loads
-if (window.DefaultPromptsService) {
-    window.DefaultPromptsService.registerPrompt(window.ShareLinkMCPGuide);
-} else {
-    // Wait for the service to be available
-    document.addEventListener('DOMContentLoaded', () => {
-        if (window.DefaultPromptsService) {
-            window.DefaultPromptsService.registerPrompt(window.ShareLinkMCPGuide);
-        }
-    });
-}
+// DO NOT automatically register the prompt when the module loads
+// The prompt should only be registered when Share Link MCP is enabled
+// This is handled by MCPShareLinkUI.enableShareLinkMCP()
