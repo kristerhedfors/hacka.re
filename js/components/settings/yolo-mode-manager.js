@@ -43,11 +43,11 @@ window.YoloModeManager = (function() {
             if (!statusSpan) return;
             
             if (yoloEnabled) {
-                statusSpan.textContent = '(Current setting: User is NOT prompted for every function call!)';
+                statusSpan.textContent = '(Enabled: User is NOT prompted for every function call!)';
                 statusSpan.style.color = 'var(--text-color-secondary)'; // Normal color since we have warning icon
                 statusSpan.style.fontWeight = 'normal';
             } else {
-                statusSpan.textContent = '(Current setting: Prompt user for every function call)';
+                statusSpan.textContent = '(Disabled: Prompt user for every function call)';
                 statusSpan.style.color = 'var(--text-color-secondary)';
                 statusSpan.style.fontWeight = 'normal';
             }
