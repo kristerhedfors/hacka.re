@@ -53,6 +53,12 @@ window.DebugManager = (function() {
          * Add debug mode controls to the settings form
          */
         function addDebugModeControls() {
+            // Check if debug mode already exists (prevent duplicates)
+            if (document.getElementById('debug-mode')) {
+                console.log('Debug mode controls already exist, skipping addition');
+                return;
+            }
+            
             // Create the debug mode container
             const debugModeContainer = document.createElement('div');
             debugModeContainer.className = 'form-group';
