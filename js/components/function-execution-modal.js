@@ -9,6 +9,9 @@ window.FunctionExecutionModal = (function() {
     let currentResolve = null;
     let originalArguments = null;
     let currentFunctionName = null;
+    let currentFunctionResult = null;
+    let isExecuting = false;
+    let currentTab = 'request'; // 'request' or 'result'
     
     /**
      * Initialize the modal by creating its DOM structure
@@ -18,7 +21,6 @@ window.FunctionExecutionModal = (function() {
         modalElement = document.createElement('div');
         modalElement.id = 'function-execution-modal';
         modalElement.className = 'modal';
-        modalElement.style.display = 'none';
         modalElement.style.zIndex = '10001'; // Higher than other modals
         
         // Create modal content
@@ -32,10 +34,78 @@ window.FunctionExecutionModal = (function() {
         
         const title = document.createElement('h2');
         title.id = 'function-execution-title';
-        title.textContent = 'Function Execution Request';
+        title.textContent = 'Function Execution';
         header.appendChild(title);
         
-        // Create container
+        // Create tabs
+        const tabContainer = document.createElement('div');
+        tabContainer.className = 'tab-container';
+        
+        const tabButtons = document.createElement('div');
+        tabButtons.className = 'tab-buttons';
+        
+        const requestTab = document.createElement('button');
+        requestTab.type = 'button';
+        requestTab.className = 'tab-btn active';
+        requestTab.id = 'exec-request-tab';
+        requestTab.textContent = 'Request';
+        requestTab.addEventListener('click', () => switchTab('request'));
+        
+        const resultTab = document.createElement('button');
+        resultTab.type = 'button';
+        resultTab.className = 'tab-btn';
+        resultTab.id = 'exec-result-tab';
+        resultTab.textContent = 'Result';
+        resultTab.style.display = 'none'; // Hidden until we have a result
+        resultTab.addEventListener('click', () => switchTab('result'));
+        
+        tabButtons.appendChild(requestTab);
+        tabButtons.appendChild(resultTab);
+        tabContainer.appendChild(tabButtons);
+        
+        // Create tab content
+        const tabContent = document.createElement('div');
+        tabContent.className = 'tab-content';
+        
+        // Request tab pane
+        const requestPane = createRequestPane();
+        requestPane.id = 'exec-request-pane';
+        requestPane.className = 'tab-pane active';
+        requestPane.style.display = 'block';
+        
+        // Result tab pane
+        const resultPane = createResultPane();
+        resultPane.id = 'exec-result-pane';
+        resultPane.className = 'tab-pane';
+        resultPane.style.display = 'none';
+        
+        tabContent.appendChild(requestPane);
+        tabContent.appendChild(resultPane);
+        tabContainer.appendChild(tabContent);
+        
+        // Assemble modal
+        modalContent.appendChild(header);
+        modalContent.appendChild(tabContainer);
+        modalElement.appendChild(modalContent);
+        document.body.appendChild(modalElement);
+        
+        // Add event listeners
+        modalElement.addEventListener('click', (e) => {
+            if (e.target === modalElement) {
+                // Don't allow closing during execution
+                if (!isExecuting) {
+                    handleClose('cancel');
+                }
+            }
+        });
+        
+        document.addEventListener('keydown', handleEscapeKey);
+    }
+    
+    /**
+     * Create the request tab pane
+     */
+    function createRequestPane() {
         const container = document.createElement('div');
         container.className = 'function-details-container';
         
@@ -66,7 +136,6 @@ window.FunctionExecutionModal = (function() {
         // Parameters group
         const parametersGroup = document.createElement('div');
         parametersGroup.className = 'function-details-group';
-        parametersGroup.id = 'exec-parameters-group';
         
         const parametersHeader = document.createElement('h4');
         parametersHeader.textContent = 'Parameters';
@@ -99,9 +168,6 @@ window.FunctionExecutionModal = (function() {
         restoreBtn.type = 'button';
         restoreBtn.className = 'copy-btn';
         restoreBtn.title = 'Restore original parameters';
-        restoreBtn.style.position = 'absolute';
-        restoreBtn.style.top = '12px';
-        restoreBtn.style.right = '12px';
         restoreBtn.innerHTML = '<i class="fas fa-undo"></i>';
         restoreBtn.addEventListener('click', () => {
             if (originalArguments !== null) {
@@ -162,65 +228,207 @@ window.FunctionExecutionModal = (function() {
         
         const blockBtn = document.createElement('button');
         blockBtn.type = 'button';
+        blockBtn.id = 'exec-block-btn';
         blockBtn.className = 'btn secondary-btn';
         blockBtn.innerHTML = '<i class="fas fa-ban" style="margin-right: 6px;"></i>Block';
-        blockBtn.addEventListener('click', () => handleResponse('block'));
+        blockBtn.addEventListener('click', () => handleRequestAction('block'));
         leftActions.appendChild(blockBtn);
         
-        // Right side - Approve buttons
+        // Right side - Execute buttons
         const rightActions = document.createElement('div');
         rightActions.style.display = 'flex';
         rightActions.style.gap = '10px';
         
-        const approveInterceptBtn = document.createElement('button');
-        approveInterceptBtn.type = 'button';
-        approveInterceptBtn.className = 'btn secondary-btn';
-        approveInterceptBtn.innerHTML = '<i class="fas fa-edit" style="margin-right: 6px;"></i>Approve + Intercept Result';
-        approveInterceptBtn.addEventListener('click', () => handleResponse('approve-intercept'));
+        const executeInterceptBtn = document.createElement('button');
+        executeInterceptBtn.type = 'button';
+        executeInterceptBtn.id = 'exec-intercept-btn';
+        executeInterceptBtn.className = 'btn secondary-btn';
+        executeInterceptBtn.innerHTML = '<i class="fas fa-edit" style="margin-right: 6px;"></i>Execute + Edit Result';
+        executeInterceptBtn.addEventListener('click', () => handleRequestAction('execute-intercept'));
         
-        const approveBtn = document.createElement('button');
-        approveBtn.type = 'button';
-        approveBtn.className = 'btn primary-btn';
-        approveBtn.innerHTML = '<i class="fas fa-check" style="margin-right: 6px;"></i>Approve';
-        approveBtn.addEventListener('click', () => handleResponse('approve'));
+        const executeBtn = document.createElement('button');
+        executeBtn.type = 'button';
+        executeBtn.id = 'exec-execute-btn';
+        executeBtn.className = 'btn primary-btn';
+        executeBtn.innerHTML = '<i class="fas fa-play" style="margin-right: 6px;"></i>Execute';
+        executeBtn.addEventListener('click', () => handleRequestAction('execute'));
         
-        rightActions.appendChild(approveInterceptBtn);
-        rightActions.appendChild(approveBtn);
+        rightActions.appendChild(executeInterceptBtn);
+        rightActions.appendChild(executeBtn);
         
         actions.appendChild(leftActions);
         actions.appendChild(rightActions);
         container.appendChild(actions);
         
-        // Assemble modal
-        modalContent.appendChild(header);
-        modalContent.appendChild(container);
-        modalElement.appendChild(modalContent);
-        document.body.appendChild(modalElement);
-        
-        // Add event listeners
-        modalElement.addEventListener('click', (e) => {
-            if (e.target === modalElement) {
-                handleResponse('block'); // Clicking outside blocks
-            }
-        });
-        
-        document.addEventListener('keydown', handleEscapeKey);
+        return container;
     }
     
     /**
-     * Handle escape key to close modal (block execution)
+     * Create the result tab pane
      */
-    function handleEscapeKey(event) {
-        if (event.key === 'Escape' && modalElement && modalElement.style.display === 'block') {
-            handleResponse('block');
+    function createResultPane() {
+        const container = document.createElement('div');
+        container.className = 'function-details-container';
+        
+        // Section
+        const section = document.createElement('div');
+        section.className = 'function-details-section';
+        
+        // Execution status
+        const statusDiv = document.createElement('div');
+        statusDiv.id = 'exec-status';
+        statusDiv.style.marginBottom = '1rem';
+        statusDiv.style.padding = '12px 16px';
+        statusDiv.style.borderRadius = '8px';
+        statusDiv.style.fontSize = '0.9em';
+        statusDiv.style.display = 'none';
+        section.appendChild(statusDiv);
+        
+        // Content
+        const content = document.createElement('div');
+        content.className = 'function-details-content';
+        
+        // Result group
+        const resultGroup = document.createElement('div');
+        resultGroup.className = 'function-details-group';
+        
+        const resultHeader = document.createElement('h4');
+        resultHeader.textContent = 'Result';
+        resultGroup.appendChild(resultHeader);
+        
+        const resultValue = document.createElement('div');
+        resultValue.className = 'function-details-value';
+        resultValue.style.position = 'relative';
+        
+        const resultTextarea = document.createElement('textarea');
+        resultTextarea.id = 'exec-result-textarea';
+        resultTextarea.style.flex = '1';
+        resultTextarea.style.margin = '0';
+        resultTextarea.style.padding = '16px';
+        resultTextarea.style.fontFamily = "'Courier New', Courier, monospace";
+        resultTextarea.style.fontSize = '13px';
+        resultTextarea.style.lineHeight = '1.4';
+        resultTextarea.style.backgroundColor = 'var(--bg-color)';
+        resultTextarea.style.color = 'var(--text-color)';
+        resultTextarea.style.border = 'none';
+        resultTextarea.style.resize = 'vertical';
+        resultTextarea.style.minHeight = '200px';
+        resultTextarea.style.maxHeight = '400px';
+        resultTextarea.style.width = '100%';
+        resultTextarea.style.boxSizing = 'border-box';
+        resultValue.appendChild(resultTextarea);
+        
+        // Restore button
+        const restoreResultBtn = document.createElement('button');
+        restoreResultBtn.type = 'button';
+        restoreResultBtn.className = 'copy-btn';
+        restoreResultBtn.title = 'Restore original result';
+        restoreResultBtn.innerHTML = '<i class="fas fa-undo"></i>';
+        restoreResultBtn.addEventListener('click', () => {
+            if (currentFunctionResult !== null) {
+                try {
+                    resultTextarea.value = JSON.stringify(currentFunctionResult, null, 2);
+                } catch (e) {
+                    resultTextarea.value = String(currentFunctionResult);
+                }
+            }
+        });
+        resultValue.appendChild(restoreResultBtn);
+        
+        resultGroup.appendChild(resultValue);
+        content.appendChild(resultGroup);
+        
+        // Info message
+        const infoDiv = document.createElement('div');
+        infoDiv.style.padding = '12px 16px';
+        infoDiv.style.backgroundColor = 'var(--info-bg, #d1ecf1)';
+        infoDiv.style.color = 'var(--info-text, #0c5460)';
+        infoDiv.style.borderRadius = '8px';
+        infoDiv.style.border = '1px solid var(--info-border, #bee5eb)';
+        infoDiv.style.fontSize = '0.9em';
+        infoDiv.innerHTML = '<i class="fas fa-info-circle" style="margin-right: 8px;"></i>You can edit the result before returning it to the AI, or go back to the Request tab to re-execute with different parameters.';
+        content.appendChild(infoDiv);
+        
+        section.appendChild(content);
+        container.appendChild(section);
+        
+        // Actions
+        const actions = document.createElement('div');
+        actions.className = 'form-actions';
+        actions.style.display = 'flex';
+        actions.style.justifyContent = 'space-between';
+        actions.style.alignItems = 'center';
+        actions.style.marginTop = '1.5rem';
+        
+        // Left side - Block button
+        const leftActions = document.createElement('div');
+        
+        const blockResultBtn = document.createElement('button');
+        blockResultBtn.type = 'button';
+        blockResultBtn.id = 'exec-block-result-btn';
+        blockResultBtn.className = 'btn secondary-btn';
+        blockResultBtn.innerHTML = '<i class="fas fa-ban" style="margin-right: 6px;"></i>Block Result';
+        blockResultBtn.addEventListener('click', () => handleResultAction('block'));
+        leftActions.appendChild(blockResultBtn);
+        
+        // Right side - Return button
+        const rightActions = document.createElement('div');
+        
+        const returnBtn = document.createElement('button');
+        returnBtn.type = 'button';
+        returnBtn.id = 'exec-return-btn';
+        returnBtn.className = 'btn primary-btn';
+        returnBtn.innerHTML = '<i class="fas fa-check" style="margin-right: 6px;"></i>Return';
+        returnBtn.addEventListener('click', () => handleResultAction('return'));
+        
+        rightActions.appendChild(returnBtn);
+        
+        actions.appendChild(leftActions);
+        actions.appendChild(rightActions);
+        container.appendChild(actions);
+        
+        return container;
+    }
+    
+    /**
+     * Switch between tabs
+     */
+    function switchTab(tab) {
+        currentTab = tab;
+        
+        const requestTab = document.getElementById('exec-request-tab');
+        const resultTab = document.getElementById('exec-result-tab');
+        const requestPane = document.getElementById('exec-request-pane');
+        const resultPane = document.getElementById('exec-result-pane');
+        
+        if (tab === 'request') {
+            requestTab.classList.add('active');
+            resultTab.classList.remove('active');
+            requestPane.style.display = 'block';
+            resultPane.style.display = 'none';
+        } else {
+            requestTab.classList.remove('active');
+            resultTab.classList.add('active');
+            requestPane.style.display = 'none';
+            resultPane.style.display = 'block';
         }
     }
     
     /**
-     * Handle user response
-     * @param {string} action - The action chosen: 'approve', 'approve-intercept', or 'block'
+     * Handle escape key to close modal
      */
-    function handleResponse(action) {
+    function handleEscapeKey(event) {
+        if (event.key === 'Escape' && modalElement && modalElement.classList.contains('active')) {
+            if (!isExecuting) {
+                handleClose('cancel');
+            }
+        }
+    }
+    
+    /**
+     * Handle request tab actions
+     */
+    async function handleRequestAction(action) {
         // Get the edited arguments
         const argsTextarea = document.getElementById('exec-args-textarea');
         let editedArgs = null;
@@ -229,54 +437,228 @@ window.FunctionExecutionModal = (function() {
             try {
                 editedArgs = JSON.parse(argsTextarea.value);
             } catch (e) {
-                // If parsing fails, show error and don't close modal
                 alert('Invalid JSON in arguments. Please fix the syntax and try again.');
                 return;
             }
+            // Update the stored original arguments for re-execution
+            originalArguments = editedArgs;
         }
         
         // Check if "remember choice" is checked
         const rememberCheckbox = document.getElementById('exec-remember-choice');
         const rememberChoice = rememberCheckbox && rememberCheckbox.checked;
         
-        // Hide modal
-        if (modalElement) {
-            modalElement.style.display = 'none';
-        }
-        
-        // Reset checkbox and textarea for next time
-        if (rememberCheckbox) {
-            rememberCheckbox.checked = false;
-        }
-        if (argsTextarea) {
-            argsTextarea.value = '';
-        }
-        originalArguments = null;
-        
-        // Resolve promise with result
-        if (currentResolve) {
-            const result = {
-                action: action,
-                allowed: action !== 'block',
-                interceptResult: action === 'approve-intercept',
+        if (action === 'block') {
+            if (rememberChoice && currentFunctionName) {
+                addSessionBlocked(currentFunctionName);
+            }
+            handleClose({
+                action: 'block',
+                allowed: false,
+                interceptResult: false,
+                editedArguments: null,
+                rememberChoice: rememberChoice,
+                functionName: currentFunctionName
+            });
+        } else if (action === 'execute-intercept') {
+            // Execute with intercept
+            isExecuting = true;
+            updateExecutionStatus('executing');
+            
+            // Check if we're already in an intercept session (currentResolve exists and modal is active)
+            const isReExecution = currentResolve && modalElement && modalElement.classList.contains('active');
+            
+            if (isReExecution) {
+                // We're re-executing within an existing intercept session
+                // Execute the function directly here instead of closing the modal
+                try {
+                    // Get the function executor
+                    if (window.FunctionToolsExecutor) {
+                        const result = await FunctionToolsExecutor.execute(currentFunctionName, editedArgs);
+                        
+                        // Update the result in our state
+                        currentFunctionResult = result?.result;
+                        
+                        // Update the result textarea
+                        const resultTextarea = document.getElementById('exec-result-textarea');
+                        if (resultTextarea) {
+                            try {
+                                resultTextarea.value = JSON.stringify(currentFunctionResult, null, 2);
+                            } catch (e) {
+                                resultTextarea.value = String(currentFunctionResult);
+                            }
+                        }
+                        
+                        // Show result tab
+                        const resultTab = document.getElementById('exec-result-tab');
+                        if (resultTab) {
+                            resultTab.style.display = '';
+                        }
+                        
+                        // Switch to result tab
+                        switchTab('result');
+                        updateExecutionStatus('success');
+                        isExecuting = false;
+                        
+                        // Focus on result textarea
+                        if (resultTextarea) {
+                            resultTextarea.focus();
+                            resultTextarea.select();
+                        }
+                    } else {
+                        throw new Error('FunctionToolsExecutor not available');
+                    }
+                } catch (error) {
+                    console.error('Error executing function:', error);
+                    updateExecutionStatus('error');
+                    isExecuting = false;
+                    alert(`Error executing function: ${error.message}`);
+                }
+            } else {
+                // First time intercept - close modal and let parent handle
+                handleClose({
+                    action: 'approve-intercept',
+                    allowed: true,
+                    interceptResult: true,
+                    editedArguments: editedArgs,
+                    rememberChoice: false, // Don't remember for intercept
+                    functionName: currentFunctionName
+                });
+            }
+        } else {
+            // Direct execution without interception
+            isExecuting = true;
+            updateExecutionStatus('executing');
+            
+            if (rememberChoice && currentFunctionName) {
+                addSessionAllowed(currentFunctionName);
+            }
+            handleClose({
+                action: 'approve',
+                allowed: true,
+                interceptResult: false,
                 editedArguments: editedArgs,
                 rememberChoice: rememberChoice,
                 functionName: currentFunctionName
-            };
+            });
+        }
+    }
+    
+    /**
+     * Handle result tab actions
+     */
+    function handleResultAction(action) {
+        const resultTextarea = document.getElementById('exec-result-textarea');
+        
+        if (action === 'block') {
+            handleClose({ blocked: true, result: null });
+        } else {
+            // Return the edited result
+            try {
+                const editedResult = JSON.parse(resultTextarea.value);
+                handleClose({ blocked: false, result: editedResult });
+            } catch (e) {
+                alert('Invalid JSON in result. Please fix the syntax and try again.');
+            }
+        }
+    }
+    
+    /**
+     * Update execution status display
+     */
+    function updateExecutionStatus(status) {
+        const statusDiv = document.getElementById('exec-status');
+        if (!statusDiv) return;
+        
+        if (status === 'executing') {
+            statusDiv.style.display = 'block';
+            statusDiv.style.backgroundColor = 'var(--info-bg, #d1ecf1)';
+            statusDiv.style.color = 'var(--info-text, #0c5460)';
+            statusDiv.style.border = '1px solid var(--info-border, #bee5eb)';
+            statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>Executing function...';
+        } else if (status === 'success') {
+            statusDiv.style.display = 'block';
+            statusDiv.style.backgroundColor = 'var(--success-bg, #d4edda)';
+            statusDiv.style.color = 'var(--success-text, #155724)';
+            statusDiv.style.border = '1px solid var(--success-border, #c3e6cb)';
+            statusDiv.innerHTML = '<i class="fas fa-check-circle" style="margin-right: 8px;"></i>Function executed successfully';
+        } else if (status === 'error') {
+            statusDiv.style.display = 'block';
+            statusDiv.style.backgroundColor = 'var(--error-bg, #f8d7da)';
+            statusDiv.style.color = 'var(--error-text, #721c24)';
+            statusDiv.style.border = '1px solid var(--error-border, #f5c6cb)';
+            statusDiv.innerHTML = '<i class="fas fa-exclamation-circle" style="margin-right: 8px;"></i>Function execution failed';
+        } else {
+            statusDiv.style.display = 'none';
+        }
+    }
+    
+    /**
+     * Handle modal close
+     */
+    function handleClose(result) {
+        if (modalElement) {
+            modalElement.classList.remove('active');
+        }
+        
+        // Reset state
+        isExecuting = false;
+        
+        // Only reset these if we're truly done (not just closing for intercept)
+        const isInterceptClose = result && result.action === 'approve-intercept';
+        
+        if (!isInterceptClose) {
+            // Full reset - we're completely done
+            currentTab = 'request';
+            currentFunctionResult = null;
+            originalArguments = null;
+            currentFunctionName = null;
             
-            // Add to session lists if remember is checked
-            if (rememberChoice && currentFunctionName) {
-                if (action === 'block') {
-                    addSessionBlocked(currentFunctionName);
-                } else if (action === 'approve') {
-                    addSessionAllowed(currentFunctionName);
-                }
-                // Note: approve-intercept doesn't auto-remember since it needs result editing
+            // Reset UI
+            const rememberCheckbox = document.getElementById('exec-remember-choice');
+            if (rememberCheckbox) {
+                rememberCheckbox.checked = false;
             }
             
-            currentResolve(result);
+            const argsTextarea = document.getElementById('exec-args-textarea');
+            if (argsTextarea) {
+                argsTextarea.value = '';
+            }
+            
+            const resultTextarea = document.getElementById('exec-result-textarea');
+            if (resultTextarea) {
+                resultTextarea.value = '';
+            }
+            
+            const resultTab = document.getElementById('exec-result-tab');
+            if (resultTab) {
+                resultTab.style.display = 'none';
+            }
+            
+            switchTab('request');
+            updateExecutionStatus('none');
+        }
+        
+        // Resolve promise with result
+        if (currentResolve) {
+            if (result === 'cancel') {
+                // User cancelled via escape or outside click
+                currentResolve({
+                    action: 'block',
+                    allowed: false,
+                    interceptResult: false,
+                    editedArguments: null,
+                    rememberChoice: false,
+                    functionName: currentFunctionName
+                });
+            } else {
+                currentResolve(result);
+            }
             currentResolve = null;
-            currentFunctionName = null;
+            // Don't clear currentFunctionName if intercepting
+            if (!isInterceptClose) {
+                currentFunctionName = null;
+            }
         }
     }
     
@@ -297,6 +679,14 @@ window.FunctionExecutionModal = (function() {
             currentResolve = resolve;
             currentFunctionName = functionName;
             originalArguments = args;
+            currentFunctionResult = null;
+            
+            // Reset to request tab
+            switchTab('request');
+            const resultTab = document.getElementById('exec-result-tab');
+            if (resultTab) {
+                resultTab.style.display = 'none';
+            }
             
             // Update function name
             const functionNameElement = document.getElementById('exec-function-name');
@@ -338,7 +728,6 @@ window.FunctionExecutionModal = (function() {
             const argsTextarea = document.getElementById('exec-args-textarea');
             if (argsTextarea) {
                 try {
-                    // Pretty print the arguments
                     const formattedArgs = JSON.stringify(args, null, 2);
                     argsTextarea.value = formattedArgs;
                 } catch (e) {
@@ -348,13 +737,81 @@ window.FunctionExecutionModal = (function() {
             
             // Show modal
             if (modalElement) {
-                modalElement.style.display = 'block';
+                modalElement.classList.add('active');
                 
                 // Focus on the block button for safety
-                const blockButton = modalElement.querySelector('.btn.secondary-btn');
+                const blockButton = document.getElementById('exec-block-btn');
                 if (blockButton) {
                     blockButton.focus();
                 }
+            }
+        });
+    }
+    
+    /**
+     * Show modal for intercepting and editing function results
+     * @param {string} functionName - Name of the function that was executed
+     * @param {*} result - The result returned from the function
+     * @returns {Promise<{blocked: boolean, result: *}>} Promise resolving to object with blocked flag and result
+     */
+    function showResultInterceptor(functionName, result) {
+        return new Promise((resolve) => {
+            // Initialize if not already done
+            if (!modalElement) {
+                init();
+            }
+            
+            // Store resolve and result
+            currentResolve = resolve;
+            currentFunctionResult = result;
+            isExecuting = false;
+            
+            // If we don't have the function name stored, use the provided one
+            // This preserves the context when coming back from execution
+            if (!currentFunctionName) {
+                currentFunctionName = functionName;
+            }
+            
+            // Ensure parameters are still displayed in Request tab
+            // (they should already be there from the initial showConfirmation)
+            const argsTextarea = document.getElementById('exec-args-textarea');
+            if (argsTextarea && !argsTextarea.value && originalArguments) {
+                try {
+                    argsTextarea.value = JSON.stringify(originalArguments, null, 2);
+                } catch (e) {
+                    argsTextarea.value = String(originalArguments);
+                }
+            }
+            
+            // Update result textarea
+            const resultTextarea = document.getElementById('exec-result-textarea');
+            if (resultTextarea) {
+                try {
+                    resultTextarea.value = JSON.stringify(result, null, 2);
+                } catch (e) {
+                    resultTextarea.value = String(result);
+                }
+            }
+            
+            // Show result tab
+            const resultTab = document.getElementById('exec-result-tab');
+            if (resultTab) {
+                resultTab.style.display = '';
+            }
+            
+            // Switch to result tab
+            switchTab('result');
+            updateExecutionStatus('success');
+            
+            // Show modal if not already visible
+            if (!modalElement.classList.contains('active')) {
+                modalElement.classList.add('active');
+            }
+            
+            // Focus on result textarea
+            if (resultTextarea) {
+                resultTextarea.focus();
+                resultTextarea.select();
             }
         });
     }
@@ -473,210 +930,6 @@ window.FunctionExecutionModal = (function() {
             allowed: Array.from(sessionAllowedFunctions),
             blocked: Array.from(sessionBlockedFunctions)
         };
-    }
-    
-    /**
-     * Show modal for intercepting and editing function results
-     * @param {string} functionName - Name of the function that was executed
-     * @param {*} result - The result returned from the function
-     * @returns {Promise<{blocked: boolean, result: *}>} Promise resolving to object with blocked flag and result
-     */
-    function showResultInterceptor(functionName, result) {
-        return new Promise((resolve) => {
-            // Create modal
-            const modal = document.createElement('div');
-            modal.className = 'modal';
-            modal.style.display = 'block';
-            modal.style.zIndex = '10002';
-            
-            const modalContent = document.createElement('div');
-            modalContent.className = 'modal-content';
-            modalContent.style.maxWidth = '700px';
-            
-            // Header
-            const header = document.createElement('div');
-            header.className = 'settings-header';
-            
-            const title = document.createElement('h2');
-            title.textContent = 'Function Result Interceptor';
-            header.appendChild(title);
-            
-            // Container
-            const container = document.createElement('div');
-            container.className = 'function-details-container';
-            
-            // Section
-            const section = document.createElement('div');
-            section.className = 'function-details-section';
-            
-            // Function name
-            const functionNameH3 = document.createElement('h3');
-            functionNameH3.textContent = `${functionName} (Result)`;
-            functionNameH3.style.marginBottom = '1rem';
-            functionNameH3.style.color = 'var(--accent-color)';
-            section.appendChild(functionNameH3);
-            
-            // Content
-            const content = document.createElement('div');
-            content.className = 'function-details-content';
-            
-            // Result group
-            const resultGroup = document.createElement('div');
-            resultGroup.className = 'function-details-group';
-            
-            const resultHeader = document.createElement('h4');
-            resultHeader.textContent = 'Result';
-            resultGroup.appendChild(resultHeader);
-            
-            const resultValue = document.createElement('div');
-            resultValue.className = 'function-details-value';
-            resultValue.style.position = 'relative';
-            
-            const textarea = document.createElement('textarea');
-            textarea.style.flex = '1';
-            textarea.style.margin = '0';
-            textarea.style.padding = '16px';
-            textarea.style.fontFamily = "'Courier New', Courier, monospace";
-            textarea.style.fontSize = '13px';
-            textarea.style.lineHeight = '1.4';
-            textarea.style.backgroundColor = 'var(--bg-color)';
-            textarea.style.color = 'var(--text-color)';
-            textarea.style.border = 'none';
-            textarea.style.resize = 'vertical';
-            textarea.style.minHeight = '200px';
-            textarea.style.maxHeight = '400px';
-            textarea.style.width = '100%';
-            textarea.style.boxSizing = 'border-box';
-            
-            let originalResultString;
-            try {
-                originalResultString = JSON.stringify(result, null, 2);
-                textarea.value = originalResultString;
-            } catch (e) {
-                originalResultString = String(result);
-                textarea.value = originalResultString;
-            }
-            
-            resultValue.appendChild(textarea);
-            
-            // Restore button
-            const restoreBtn = document.createElement('button');
-            restoreBtn.type = 'button';
-            restoreBtn.className = 'copy-btn';
-            restoreBtn.title = 'Restore original result';
-            restoreBtn.innerHTML = '<i class="fas fa-undo"></i>';
-            restoreBtn.style.position = 'absolute';
-            restoreBtn.style.top = '12px';
-            restoreBtn.style.right = '12px';
-            restoreBtn.addEventListener('click', () => {
-                textarea.value = originalResultString;
-            });
-            resultValue.appendChild(restoreBtn);
-            
-            resultGroup.appendChild(resultValue);
-            content.appendChild(resultGroup);
-            
-            // Info message
-            const infoDiv = document.createElement('div');
-            infoDiv.style.padding = '12px 16px';
-            infoDiv.style.backgroundColor = 'var(--info-bg, #d1ecf1)';
-            infoDiv.style.color = 'var(--info-text, #0c5460)';
-            infoDiv.style.borderRadius = '8px';
-            infoDiv.style.border = '1px solid var(--info-border, #bee5eb)';
-            infoDiv.style.fontSize = '0.9em';
-            infoDiv.innerHTML = '<i class="fas fa-info-circle" style="margin-right: 8px;"></i>The function has been executed. You can edit the result before it\'s returned to the AI.';
-            content.appendChild(infoDiv);
-            
-            section.appendChild(content);
-            container.appendChild(section);
-            
-            // Actions
-            const actions = document.createElement('div');
-            actions.className = 'form-actions';
-            actions.style.display = 'flex';
-            actions.style.justifyContent = 'space-between';
-            actions.style.alignItems = 'center';
-            actions.style.marginTop = '1.5rem';
-            
-            // Left side - Block button
-            const leftActions = document.createElement('div');
-            
-            const blockBtn = document.createElement('button');
-            blockBtn.type = 'button';
-            blockBtn.className = 'btn secondary-btn';
-            blockBtn.innerHTML = '<i class="fas fa-ban" style="margin-right: 6px;"></i>Block Result';
-            blockBtn.addEventListener('click', () => {
-                document.body.removeChild(modal);
-                resolve({ blocked: true, result: null });
-            });
-            leftActions.appendChild(blockBtn);
-            
-            // Right side - Return button
-            const rightActions = document.createElement('div');
-            
-            const returnBtn = document.createElement('button');
-            returnBtn.type = 'button';
-            returnBtn.className = 'btn primary-btn';
-            returnBtn.innerHTML = '<i class="fas fa-check" style="margin-right: 6px;"></i>Return';
-            returnBtn.addEventListener('click', () => {
-                try {
-                    const editedResult = JSON.parse(textarea.value);
-                    document.body.removeChild(modal);
-                    resolve({ blocked: false, result: editedResult });
-                } catch (e) {
-                    alert('Invalid JSON. Please fix the syntax and try again.');
-                }
-            });
-            
-            rightActions.appendChild(returnBtn);
-            
-            actions.appendChild(leftActions);
-            actions.appendChild(rightActions);
-            container.appendChild(actions);
-            
-            // Assemble modal
-            modalContent.appendChild(header);
-            modalContent.appendChild(container);
-            modal.appendChild(modalContent);
-            document.body.appendChild(modal);
-            
-            // Event handlers
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    // Return current value (edited or not) on outside click
-                    try {
-                        const currentResult = JSON.parse(textarea.value);
-                        document.body.removeChild(modal);
-                        resolve({ blocked: false, result: currentResult });
-                    } catch (err) {
-                        // If invalid JSON, use original
-                        document.body.removeChild(modal);
-                        resolve({ blocked: false, result: result });
-                    }
-                }
-            });
-            
-            const handleEscape = (event) => {
-                if (event.key === 'Escape') {
-                    document.removeEventListener('keydown', handleEscape);
-                    // Return current value (edited or not) on escape
-                    try {
-                        const currentResult = JSON.parse(textarea.value);
-                        document.body.removeChild(modal);
-                        resolve({ blocked: false, result: currentResult });
-                    } catch (err) {
-                        // If invalid JSON, use original
-                        document.body.removeChild(modal);
-                        resolve({ blocked: false, result: result });
-                    }
-                }
-            };
-            document.addEventListener('keydown', handleEscape);
-            
-            // Focus on textarea
-            textarea.focus();
-            textarea.select();
-        });
     }
     
     // Initialize on load
