@@ -97,8 +97,15 @@ window.SettingsManager = (function() {
          * @param {Function} hideApiKeyModal - Function to hide API key modal
          * @param {Function} addSystemMessage - Function to add system message
          */
-        function saveApiKey(hideApiKeyModal, addSystemMessage) {
-            return SettingsCoordinator.saveApiKey(elements, componentManagers, state, hideApiKeyModal, addSystemMessage);
+        function saveApiKey(apiKey, hideApiKeyModal, addSystemMessage, updateProvider, fetchModelsCallback) {
+            // If apiKey is provided directly, save it using the API key manager
+            if (apiKey) {
+                // Use the API key manager directly
+                return componentManagers.apiKey.saveApiKey(apiKey, hideApiKeyModal, addSystemMessage, updateProvider, fetchModelsCallback);
+            } else {
+                // Fall back to the coordinator (which reads from elements.apiKeyInput)
+                return SettingsCoordinator.saveApiKey(elements, componentManagers, state, hideApiKeyModal, addSystemMessage);
+            }
         }
         
         /**
