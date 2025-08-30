@@ -43,8 +43,10 @@ body {
     color: var(--text-color);
     background-color: var(--light-color);
     height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile */
     display: flex;
     flex-direction: column;
+    overflow: hidden; /* Prevent body scroll */
 }
 
 a {
@@ -70,8 +72,10 @@ ul {
     display: flex;
     flex-direction: column;
     height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile */
     width: 100%;
     position: relative;
+    overflow: hidden; /* Prevent container scroll */
 }
 
 /* ===== Beta Tag ===== */
@@ -136,6 +140,9 @@ header {
     color: var(--light-text);
     min-height: auto; /* Allow header to grow with content */
     flex-wrap: nowrap; /* Keep main items in a row by default */
+    flex-shrink: 0; /* Prevent header from shrinking */
+    position: relative;
+    z-index: 10;
 }
 
 /* Apply sweeping effect to all text in header including hacka.re logo */
@@ -1111,6 +1118,7 @@ main {
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    min-height: 0; /* Important for flex child with overflow */
 }
 
 #chat-container {
@@ -1118,6 +1126,7 @@ main {
     flex-direction: column;
     height: 100%;
     padding: 1rem;
+    min-height: 0; /* Important for flex child with overflow */
 }
 
 #chat-header {
@@ -1841,14 +1850,28 @@ main {
 /* ===== Chat Input ===== */
 #chat-input-container {
     padding: 1rem;
-    background-color: var(--light-color);
+    background-color: var(--light-color) !important; /* Force consistent background */
     border-top: 1px solid rgba(0, 0, 0, 0.1);
+    flex-shrink: 0; /* Prevent input container from shrinking */
+    transition: none !important; /* Prevent unwanted background transitions */
+}
+
+/* Prevent any highlight or focus effects on the container */
+#chat-input-container:focus,
+#chat-input-container:focus-within,
+#chat-input-container:active,
+#chat-input-container.focused,
+#chat-input-container.active {
+    background-color: var(--light-color) !important;
+    transition: none !important;
 }
 
 .input-with-actions {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    background-color: transparent; /* Ensure no background */
+    transition: none; /* Prevent transitions */
 }
 
 #chat-form {
@@ -1908,13 +1931,15 @@ main {
     max-height: 150px;
     min-height: 38px;
     line-height: 1.5;
-    transition: var(--transition);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Only transition border and shadow */
+    background-color: var(--bg-color); /* Explicit background */
 }
 
 #message-input:focus {
     outline: none;
     border-color: var(--primary-color);
     box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+    background-color: var(--bg-color); /* Keep same background on focus */
 }
 
 /* Microphone button inside input field */

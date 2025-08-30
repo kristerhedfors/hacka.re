@@ -3,15 +3,44 @@
  * Optimizations for small screens and touch interfaces
  */
 
+/* Custom viewport height property for mobile */
+:root {
+    --vh: 1vh; /* Fallback, will be updated by JavaScript */
+}
+
 /* ===== Mobile Responsive Adjustments ===== */
 
 @media (max-width: 768px) {
+    /* Fix body and app container for mobile viewport */
+    body {
+        height: 100vh;
+        height: 100dvh; /* Dynamic viewport height */
+        height: calc(var(--vh, 1vh) * 100); /* Fallback using custom property */
+        position: fixed; /* Prevent mobile browser bounce */
+        width: 100%;
+        overflow: hidden;
+    }
+    
+    .app-container {
+        height: 100%;
+        height: calc(var(--vh, 1vh) * 100);
+        overflow: hidden;
+    }
+    
+    /* Ensure main takes remaining space */
+    main {
+        flex: 1;
+        min-height: 0; /* Critical for mobile flex layout */
+        overflow: hidden;
+    }
+    
     /* Header adjustments */
     header {
         padding: 0.75rem;
         flex-wrap: wrap;
         gap: 0.5rem;
         min-height: auto; /* Allow header to grow */
+        flex-shrink: 0; /* Prevent header from shrinking */
     }
     
     /* Tighten spacing between header buttons on mobile */
@@ -40,6 +69,9 @@
         width: 100%;
         margin: 0.5rem 0 0 0;
         padding: 0.5rem;
+        flex-shrink: 0; /* Prevent model info from shrinking */
+        max-height: 120px; /* Limit height to prevent overflow */
+        overflow-y: auto; /* Allow scrolling if needed */
     }
     
     .active-model {
@@ -111,10 +143,18 @@
     /* Improve chat container layout */
     #chat-container {
         padding: 0.5rem;
+        height: 100%;
+        min-height: 0; /* Critical for mobile flex layout */
+        display: flex;
+        flex-direction: column;
     }
     
     #chat-messages {
         padding: 0.5rem;
+        flex: 1;
+        min-height: 0; /* Allow proper scrolling */
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch; /* Smooth iOS scrolling */
     }
     
     /* Optimize message bubbles for mobile */
@@ -129,6 +169,10 @@
     /* Improve chat input area */
     #chat-input-container {
         padding: 0.75rem;
+        flex-shrink: 0; /* Keep input always visible */
+        position: relative;
+        z-index: 10;
+        background-color: var(--light-color);
     }
     
     #chat-form {
@@ -262,9 +306,19 @@
 
 /* Extra small devices */
 @media (max-width: 480px) {
+    /* Ensure full viewport utilization on small devices */
+    body, .app-container {
+        height: 100vh;
+        height: 100dvh;
+        height: -webkit-fill-available;
+    }
+    
     /* Further optimize header for very small screens */
     header {
         padding: 0.5rem;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 5;
     }
     
     
@@ -536,10 +590,24 @@
 
 /* Fix for iOS Safari viewport height issues */
 @supports (-webkit-touch-callout: none) {
-    .app-container, 
-    main, 
-    #chat-container {
+    body {
+        height: 100vh;
         height: -webkit-fill-available;
+    }
+    
+    .app-container {
+        height: 100%;
+        height: -webkit-fill-available;
+    }
+    
+    main {
+        flex: 1;
+        min-height: 0;
+    }
+    
+    #chat-container {
+        height: 100%;
+        min-height: 0;
     }
     
     .modal {
@@ -547,9 +615,10 @@
     }
     
     /* iOS momentum scrolling */
-    .ios-momentum-scroll {
+    .ios-momentum-scroll,
+    #chat-messages {
         -webkit-overflow-scrolling: touch;
-        overflow-y: scroll;
+        overflow-y: auto;
     }
 }
 
@@ -582,6 +651,14 @@ body.mobile-device.landscape .modal-content {
         bottom: 0;
         background-color: var(--light-color);
         z-index: 10;
+        flex-shrink: 0;
+    }
+    
+    /* Adjust chat messages when keyboard is open */
+    .keyboard-open #chat-messages {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
     }
     
     /* Adjust for iOS keyboard */
