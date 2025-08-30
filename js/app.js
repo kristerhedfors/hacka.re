@@ -45,7 +45,7 @@ async function handleEarlySharedLinkPassword() {
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
-            z-index: 10000 !important;
+            z-index: 9999 !important;
         `;
         modal.innerHTML = `
             <div class="modal-content" style="
@@ -114,6 +114,24 @@ async function handleEarlySharedLinkPassword() {
                     
                     // Remove modal and continue
                     modal.remove();
+                    
+                    // Ensure chat input is visible on mobile after modal removal
+                    const chatInputContainer = document.getElementById('chat-input-container');
+                    if (chatInputContainer) {
+                        chatInputContainer.style.display = '';
+                        chatInputContainer.style.visibility = 'visible';
+                        chatInputContainer.style.zIndex = '';
+                        console.log('[App] Ensured chat input visibility after password modal removal');
+                    }
+                    
+                    // Force reflow on mobile to ensure proper rendering
+                    if (window.innerWidth <= 768) {
+                        document.body.style.overflow = 'hidden';
+                        setTimeout(() => {
+                            document.body.style.overflow = '';
+                        }, 100);
+                    }
+                    
                     resolve();
                 } else {
                     errorDiv.textContent = 'Invalid password';
