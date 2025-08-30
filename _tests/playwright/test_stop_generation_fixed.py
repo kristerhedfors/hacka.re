@@ -60,8 +60,8 @@ def setup_api_and_model_robust(page: Page):
         pytest.skip("No valid model could be selected")
     
     # Save settings
-    save_button = page.locator("#settings-form button[type='submit']")
-    save_button.click(force=True)
+    close_button = page.locator("#close-settings")
+    page.wait_for_timeout(1000)  # Wait for auto-save    close_button.click(force=True)
     
     # Wait for modal to close
     page.wait_for_selector("#settings-modal", state="hidden", timeout=2000)

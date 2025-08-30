@@ -91,8 +91,8 @@ def test_api_key_persistence_scenario_1_basic(page: Page, serve_hacka_re):
     print(f"Filled API key (length: {len(API_KEY)})")
     
     # Save settings
-    save_button = page.locator("#save-settings-btn")
-    save_button.click()
+    close_button = page.locator("#close-settings")
+    page.wait_for_timeout(1000)  # Wait for auto-save    close_button.click()
     
     # Wait for modal to close
     page.wait_for_selector("#settings-modal", state="hidden", timeout=3000)
@@ -176,8 +176,9 @@ def test_api_key_persistence_scenario_3_multiple_attempts(page: Page, serve_hack
         # Fill and save
         api_key_input = page.locator("#api-key-update")
         api_key_input.fill(API_KEY)
-        save_button = page.locator("#save-settings-btn")
-        save_button.click()
+        close_button = page.locator("#close-settings")
+        page.wait_for_timeout(1000)  # Wait for auto-save
+        close_button.click()
         
         # Close modal
         page.wait_for_selector("#settings-modal", state="hidden", timeout=3000)
@@ -239,8 +240,8 @@ def test_api_key_persistence_scenario_4_timing_analysis(page: Page, serve_hacka_
         window.timingLog.push({type: 'before_save', timestamp: Date.now()});
     }""")
     
-    save_button = page.locator("#save-settings-btn")
-    save_button.click()
+    close_button = page.locator("#close-settings")
+    page.wait_for_timeout(1000)  # Wait for auto-save    close_button.click()
     
     # Add timing marker after save
     page.evaluate("""() => {

@@ -1,5 +1,5 @@
 """Test models.dev data integration"""
-
+import time
 import pytest
 from playwright.sync_api import Page, expect
 from test_utils import (
@@ -33,8 +33,8 @@ def test_models_dev_context_windows(page: Page, serve_hacka_re, api_key):
     provider_select.select_option(value="openai")
     
     # Save and close settings
-    save_button = page.locator("#save-settings-btn")
-    save_button.click()
+    close_button = page.locator("#close-settings")
+    page.wait_for_timeout(1000)  # Wait for auto-save    close_button.click()
     dismiss_settings_modal(page)
     
     # Test different models and their context windows
@@ -73,7 +73,9 @@ def test_models_dev_context_windows(page: Page, serve_hacka_re, api_key):
             model_select.select_option(label=matching_option)
             
             # Save settings
-            save_button.click()
+            close_button = page.locator("#close-settings")
+            page.wait_for_timeout(1000)  # Wait for auto-save
+            close_button.click()
             dismiss_settings_modal(page)
             
             # Check console logs for context window detection

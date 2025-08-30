@@ -47,9 +47,10 @@ def test_function_bundle_preservation_when_editing(page: Page, serve_hacka_re):
     except:
         print("Tool calling checkbox not found, continuing...")
     
-    # Save settings
-    save_button = page.locator("#settings-form button[type='submit']")
-    save_button.click()
+    # Settings auto-save, wait and close
+    page.wait_for_timeout(1000)
+    close_button = page.locator("#close-settings")
+    close_button.click()
     page.wait_for_selector("#settings-modal", state="hidden")
     
     # Wait a moment for UI to update

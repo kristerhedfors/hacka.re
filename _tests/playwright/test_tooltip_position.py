@@ -11,7 +11,7 @@ def test_tooltip_below_icons(page: Page, serve_hacka_re):
     
     # Test each button to ensure tooltip appears below
     buttons_to_test = [
-        'agent-config-btn',
+        # 'agent-config-btn',  # Agent button removed from UI
         'copy-chat-btn', 
         'mcp-servers-btn',
         'function-btn',

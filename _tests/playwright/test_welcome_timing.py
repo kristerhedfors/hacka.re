@@ -2,6 +2,7 @@
 """
 Test welcome message timing - ensure it appears last after password verification
 """
+import time
 
 import pytest
 import os
@@ -33,7 +34,7 @@ def test_welcome_message_timing(page, serve_hacka_re):
     page.click('#settings-btn')
     page.wait_for_selector('#api-key-update')
     page.fill('#api-key-update', api_key)
-    page.click('#save-settings-btn')
+    page.click('#close-settings')
     page.wait_for_timeout(1000)
     
     # Create share link with custom welcome message
