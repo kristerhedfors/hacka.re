@@ -247,7 +247,7 @@ function createSharedLinkDataProcessor() {
     function getCompatibleModelForProvider(provider) {
         const compatibleModels = {
             'openai': 'gpt-4o-mini',
-            'groq': 'llama-3.1-70b-versatile', // Updated to correct Groq model name
+            'groq': 'llama-3.3-70b-versatile', // Updated to Llama 3.3 - replacement for deprecated 3.1
             'ollama': 'llama3.2'
         };
         
