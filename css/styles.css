@@ -1791,17 +1791,18 @@ main {
 
 .user .message-content {
     background-color: var(--user-msg-bg);
-    border-radius: var(--border-radius) var(--border-radius) 0 var(--border-radius);
+    border-radius: 12px 12px 4px 12px;
 }
 
-.ai .message-content {
+.ai .message-content,
+.assistant .message-content {
     background-color: var(--ai-msg-bg);
-    border-radius: var(--border-radius) var(--border-radius) var(--border-radius) 0;
+    border-radius: 12px 12px 12px 4px;
 }
 
 .system .message-content {
     background-color: var(--system-msg-bg);
-    border-radius: var(--border-radius);
+    border-radius: 12px;
     text-align: left;
 }
 
