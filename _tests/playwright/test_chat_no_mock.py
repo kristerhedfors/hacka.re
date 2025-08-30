@@ -117,8 +117,8 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
     print(f"API key value before save: {api_key_before_save[:10] if api_key_before_save else None}...")
     
     # Save the settings
-    save_button = page.locator("#settings-form button[type='submit']")
-    save_button.click(force=True)  # Use force=True to click even if not fully visible
+    close_button = page.locator("#close-settings")
+    page.wait_for_timeout(1000)  # Wait for auto-save    close_button.click(force=True)  # Use force=True to click even if not fully visible
     
     # Check for any system messages
     check_system_messages(page)
@@ -194,8 +194,9 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
                     pytest.skip("No valid models available to select")
             
             # Save the settings
-            save_button = page.locator("#settings-form button[type='submit']")
-            save_button.click(force=True)
+            close_button = page.locator("#close-settings")
+            page.wait_for_timeout(1000)  # Wait for auto-save
+            close_button.click(force=True)
             
             # Wait for the settings modal to be closed
             page.wait_for_selector("#settings-modal", state="hidden", timeout=2000)

@@ -54,8 +54,8 @@ def test_stop_generation_debug(page: Page, serve_hacka_re):
     print(f"Selected model: {selected_model}")
     
     # Save the settings
-    save_button = page.locator("#settings-form button[type='submit']")
-    save_button.click(force=True)
+    close_button = page.locator("#close-settings")
+    page.wait_for_timeout(1000)  # Wait for auto-save    close_button.click(force=True)
     print("Clicked save settings")
     
     # Wait for the settings modal to be closed

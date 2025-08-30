@@ -1,5 +1,5 @@
 """Simple test for models context window display"""
-
+import time
 from playwright.sync_api import Page
 from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
 
@@ -35,8 +35,8 @@ def test_context_window_display(page: Page, serve_hacka_re, api_key):
     model_select.select_option(value="gpt-4o-mini")
     
     # Save settings
-    save_button = page.locator("#save-settings-btn")
-    save_button.click()
+    close_button = page.locator("#close-settings")
+    page.wait_for_timeout(1000)  # Wait for auto-save    close_button.click()
     dismiss_settings_modal(page)
     
     # Check if context window is displayed
@@ -71,7 +71,7 @@ def test_context_window_display(page: Page, serve_hacka_re, api_key):
     
     # Select gpt-4 model (should have 8192 context)
     model_select.select_option(value="gpt-4")
-    save_button.click()
+    page.wait_for_timeout(1000)  # Wait for auto-save    close_button.click()
     dismiss_settings_modal(page)
     
     # Check model info again
@@ -121,8 +121,9 @@ def test_groq_context_windows(page: Page, serve_hacka_re):
         page.wait_for_timeout(500)
         
         # Save settings
-        save_button = page.locator("#save-settings-btn")
-        save_button.click()
+        close_button = page.locator("#close-settings")
+        page.wait_for_timeout(1000)  # Wait for auto-save
+        close_button.click()
         dismiss_settings_modal(page)
         
         # Check model info

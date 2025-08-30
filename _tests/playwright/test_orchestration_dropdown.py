@@ -20,7 +20,7 @@ def test_multi_agent_system_prompt_isolation(page: Page, serve_hacka_re, api_key
         # Settings modal is already open from welcome flow
         api_key_input = page.locator("#api-key")
         api_key_input.fill(api_key)
-        save_settings_btn = page.locator("#save-settings-btn")
+        save_settings_btn = page.locator("#close-settings")
         save_settings_btn.click()
         dismiss_settings_modal(page)
     else:
@@ -30,7 +30,7 @@ def test_multi_agent_system_prompt_isolation(page: Page, serve_hacka_re, api_key
         expect(settings_modal).to_be_visible(timeout=5000)
         api_key_input = page.locator("#api-key")
         api_key_input.fill(api_key)
-        save_settings_btn = page.locator("#save-settings-btn")
+        save_settings_btn = page.locator("#close-settings")
         save_settings_btn.click()
         dismiss_settings_modal(page)
     
@@ -235,7 +235,7 @@ def test_agent_dropdown_selection(page: Page, serve_hacka_re, api_key):
         # Settings modal is already open from welcome flow
         api_key_input = page.locator("#api-key")
         api_key_input.fill(api_key)
-        save_settings_btn = page.locator("#save-settings-btn")
+        save_settings_btn = page.locator("#close-settings")
         save_settings_btn.click()
         dismiss_settings_modal(page)
     else:
@@ -245,7 +245,7 @@ def test_agent_dropdown_selection(page: Page, serve_hacka_re, api_key):
         expect(settings_modal).to_be_visible(timeout=5000)
         api_key_input = page.locator("#api-key")
         api_key_input.fill(api_key)
-        save_settings_btn = page.locator("#save-settings-btn")
+        save_settings_btn = page.locator("#close-settings")
         save_settings_btn.click()
         dismiss_settings_modal(page)
     
@@ -329,7 +329,7 @@ def test_orchestration_toggle_ui(page: Page, serve_hacka_re, api_key):
         # Settings modal is already open from welcome flow
         api_key_input = page.locator("#api-key")
         api_key_input.fill(api_key)
-        save_settings_btn = page.locator("#save-settings-btn")
+        save_settings_btn = page.locator("#close-settings")
         save_settings_btn.click()
         dismiss_settings_modal(page)
     else:
@@ -339,7 +339,7 @@ def test_orchestration_toggle_ui(page: Page, serve_hacka_re, api_key):
         expect(settings_modal).to_be_visible(timeout=5000)
         api_key_input = page.locator("#api-key")
         api_key_input.fill(api_key)
-        save_settings_btn = page.locator("#save-settings-btn")
+        save_settings_btn = page.locator("#close-settings")
         save_settings_btn.click()
         dismiss_settings_modal(page)
     

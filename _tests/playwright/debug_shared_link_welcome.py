@@ -133,8 +133,8 @@ def test_shared_link_creation_with_welcome(page: Page, serve_hacka_re: str, api_
     base_url_select.select_option("groq")
     
     # Save settings
-    save_button = page.locator("#save-settings-btn")
-    save_button.click()
+    close_button = page.locator("#close-settings")
+    page.wait_for_timeout(1000)  # Wait for auto-save    close_button.click()
     page.wait_for_selector("#settings-modal", state="hidden", timeout=2500)
     
     # Open share modal

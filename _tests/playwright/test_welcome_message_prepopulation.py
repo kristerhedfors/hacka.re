@@ -43,7 +43,7 @@ def test_welcome_message_prepopulation(page, serve_hacka_re):
         page.wait_for_selector('#settings-modal.active')
         page.wait_for_selector('#api-key-update')
         page.fill('#api-key-update', api_key)
-        page.click('#save-settings-btn')
+        page.click('#close-settings')
         page.wait_for_timeout(1000)  # Wait for save to complete
         
         # Open share modal

@@ -32,7 +32,7 @@ def test_debug_welcome_prepopulation(page, serve_hacka_re):
     page.click('#settings-btn')
     page.wait_for_selector('#api-key-update')
     page.fill('#api-key-update', api_key)
-    page.click('#save-settings-btn')
+    page.click('#close-settings')
     page.wait_for_timeout(1000)
     
     # Open share modal
