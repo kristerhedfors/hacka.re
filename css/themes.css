@@ -40,11 +40,11 @@
     --text-color: #f9fafb;         /* Very light gray 50 - inverse of dark text */
     --light-text: #ffffff;
     --accent-color: #d1d5db;       /* Light gray 300 - inverse of dark gray */
-    --border-radius: 8px;
+    --border-radius: 12px;          /* Rounded corners for messages */
     --box-shadow: none;
     --transition: all 0.3s ease;
     
-    /* Chat message colors - inverted grays */
+    /* Chat message colors - subtle dark grays */
     --user-msg-bg: #1f2937;        /* Dark gray 800 */
     --ai-msg-bg: #111827;          /* Very dark gray 900 */
     --system-msg-bg: #0f172a;      /* Near black */
@@ -55,9 +55,9 @@
     --function-icon-color-end: #e5e7eb;
     
     /* Additional dark mode specific variables */
-    --bg-color: #030712;           /* Near black - true inverse */
-    --bg-color-secondary: #111827; /* Very dark gray for cards/modals */
-    --border-color: #374151;       /* Gray 700 for subtle borders */
+    --bg-color: #0a0a0a;           /* Homogeneous dark background */
+    --bg-color-secondary: #111111; /* Slightly lighter for cards/modals */
+    --border-color: #2a2a2a;       /* Subtle dark border */
 }
 
 /* Dark mode button overrides for better contrast */
@@ -237,6 +237,10 @@ html {
 }
 
 /* Apply theme gradients to html element */
+html.theme-modern.dark-mode {
+    background: linear-gradient(180deg, #0a0a0a 0%, #0f0f0f 50%, #0a0a0a 100%);
+}
+
 html.theme-sunset {
     background: linear-gradient(to bottom, #c0392b, #8e44ad);
 }
@@ -254,13 +258,17 @@ html.theme-midnight {
 }
 
 /* Apply dark mode styles to body and other elements */
+.theme-modern.dark-mode {
+    background: linear-gradient(180deg, #0a0a0a 0%, #0f0f0f 50%, #0a0a0a 100%);
+}
+
 .theme-modern.dark-mode body {
-    background-color: var(--bg-color);
+    background: transparent;
     color: var(--text-color);
 }
 
 .theme-modern.dark-mode .app-container {
-    background-color: var(--bg-color);
+    background: transparent;
 }
 
 .theme-modern.dark-mode .modal-content {
@@ -327,21 +335,29 @@ html.theme-midnight {
     border-color: var(--border-color);
 }
 
-/* Message styles for dark mode */
+/* Message styles for dark mode - apply background to message-content for rounded corners */
 .theme-modern.dark-mode .message {
-    border-color: var(--border-color);
+    background-color: transparent;
+    border: none;
 }
 
-.theme-modern.dark-mode .message.user {
+.theme-modern.dark-mode .message.user .message-content {
     background-color: var(--user-msg-bg);
+    border-radius: 12px 12px 4px 12px;
+    border: none;
 }
 
-.theme-modern.dark-mode .message.ai {
+.theme-modern.dark-mode .message.ai .message-content,
+.theme-modern.dark-mode .message.assistant .message-content {
     background-color: var(--ai-msg-bg);
+    border-radius: 12px 12px 12px 4px;
+    border: none;
 }
 
-.theme-modern.dark-mode .message.system {
+.theme-modern.dark-mode .message.system .message-content {
     background-color: var(--system-msg-bg);
+    border-radius: 12px;
+    border: none;
 }
 
 /* Code blocks in dark mode */
