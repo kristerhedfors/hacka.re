@@ -131,46 +131,47 @@ function createSharedLinkDataProcessor() {
      * @param {Function} addSystemMessage - Function to add system messages
      * @returns {string|null} Pending shared model
      */
-    function applyModelConfiguration(sharedData, addSystemMessage) {
+    async function applyModelConfiguration(sharedData, addSystemMessage) {
         let pendingSharedModel = null;
         
-        // If there's a model, check if it's compatible with the provider
+        // If there's a model, just use it - let the API determine availability
         if (sharedData.model) {
             let modelToUse = sharedData.model;
             
-            // Check if we have provider information and validate compatibility
+            // Log the model being applied
+            console.log(`🔍 Applying shared model: "${sharedData.model}"`);
+            
+            // Only provide informational messages, don't override the model choice
             if (sharedData.provider) {
-                console.log(`🔍 Validating model compatibility: "${sharedData.model}" with provider "${sharedData.provider}"`);
-                const isCompatible = validateModelProviderCompatibility(sharedData.model, sharedData.provider);
-                console.log(`🔍 Compatibility result: ${isCompatible}`);
-                
-                if (!isCompatible) {
-                    // Get a compatible model for this provider
-                    const compatibleModel = getCompatibleModelForProvider(sharedData.provider);
-                    console.log(`🔍 Suggested compatible model: ${compatibleModel}`);
-                    
-                    if (compatibleModel) {
-                        modelToUse = compatibleModel;
-                        console.log(`🔧 Replacing incompatible model "${sharedData.model}" with "${compatibleModel}"`);
-                        if (addSystemMessage) {
-                            addSystemMessage(`Model "${sharedData.model}" is not compatible with ${sharedData.provider}. Using "${compatibleModel}" instead.`);
-                        }
-                    } else {
-                        if (addSystemMessage) {
-                            addSystemMessage(`Model "${sharedData.model}" is not compatible with ${sharedData.provider}. Model selection may fail.`);
-                        }
-                    }
-                } else {
-                    console.log(`✅ Model "${sharedData.model}" is compatible with provider "${sharedData.provider}"`);
-                    if (addSystemMessage) {
-                        addSystemMessage(`Shared model "${sharedData.model}" is compatible with ${sharedData.provider}.`);
-                    }
+                console.log(`🔍 Provider: ${sharedData.provider}, Model: ${sharedData.model}`);
+                if (addSystemMessage) {
+                    addSystemMessage(`Applying shared model "${sharedData.model}" with ${sharedData.provider} provider.`);
                 }
             } else {
-                // No provider info, use the model as-is
                 console.log(`🔍 No provider info, using model "${sharedData.model}" as-is`);
                 if (addSystemMessage) {
-                    addSystemMessage(`Shared model preference "${sharedData.model}" will be applied if available.`);
+                    addSystemMessage(`Applying shared model "${sharedData.model}".`);
+                }
+            }
+            
+            // Trigger model list refresh after API configuration is applied
+            // This ensures we have the actual available models from the API
+            if (window.aiHackare && window.aiHackare.settingsManager && 
+                window.aiHackare.settingsManager.componentManagers && 
+                window.aiHackare.settingsManager.componentManagers.model) {
+                
+                const modelManager = window.aiHackare.settingsManager.componentManagers.model;
+                const apiKey = StorageService.getApiKey() || (DataService && DataService.getApiKey && DataService.getApiKey());
+                const baseUrl = StorageService.getBaseUrl() || (DataService && DataService.getBaseUrl && DataService.getBaseUrl());
+                
+                if (apiKey && baseUrl && typeof modelManager.fetchAvailableModels === 'function') {
+                    console.log('🔄 Refreshing model list from API before applying shared model...');
+                    try {
+                        await modelManager.fetchAvailableModels(apiKey, baseUrl, false);
+                        console.log('✅ Model list refreshed from API');
+                    } catch (error) {
+                        console.warn('⚠️ Failed to refresh model list:', error);
+                    }
                 }
             }
             
@@ -211,31 +212,15 @@ function createSharedLinkDataProcessor() {
     
     /**
      * Validate if a model is compatible with a provider
+     * DEPRECATED: We now let the API determine model availability instead of hardcoded patterns
      * @param {string} model - Model ID
      * @param {string} provider - Provider name
-     * @returns {boolean} Whether the model is compatible
+     * @returns {boolean} Always returns true to allow API validation
      */
     function validateModelProviderCompatibility(model, provider) {
-        // Models prefixed with "openai/" are OpenAI-compatible models
-        // These can be used with ANY OpenAI-compatible API provider
-        if (model.startsWith('openai/')) {
-            // OpenAI-compatible models work with any provider that supports OpenAI API format
-            // This includes: OpenAI, Groq, Berget.ai, and any custom OpenAI-compatible endpoints
-            return true;
-        }
-        
-        // Simple compatibility checks based on model naming patterns
-        if (provider === 'openai') {
-            return model.startsWith('gpt-') || model.startsWith('o1-') || model.includes('davinci') || model.includes('turbo');
-        } else if (provider === 'groq') {
-            // Groq models: llama, mixtral, gemma, qwen variants
-            return model.includes('llama') || model.includes('mixtral') || model.includes('qwen') || model.includes('gemma');
-        } else if (provider === 'ollama') {
-            // Ollama can run various models, but they usually don't have provider prefixes
-            return !model.startsWith('gpt-') && !model.includes('claude');
-        }
-        
-        // For unknown providers (including custom endpoints like Berget.ai), assume compatibility
+        // Always return true - let the API determine if the model is actually available
+        // The API will provide the actual list of available models
+        console.log(`[Deprecated] Model validation bypassed for ${model} on ${provider} - will check with API`);
         return true;
     }
     
@@ -974,7 +959,7 @@ function createSharedLinkDataProcessor() {
             // IMPORTANT: Apply API configuration and model together to ensure compatibility
             console.log('🔧 processSharedData: Applying API and model configuration');
             applyApiConfiguration(sharedData, collectSystemMessage);
-            const pendingSharedModel = applyModelConfiguration(sharedData, collectSystemMessage);
+            const pendingSharedModel = await applyModelConfiguration(sharedData, collectSystemMessage);
             
             // Apply other configurations
             console.log('🔧 processSharedData: Applying prompts and functions');
