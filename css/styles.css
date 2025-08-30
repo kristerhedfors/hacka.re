@@ -101,6 +101,11 @@ ul {
     height: fit-content;
 }
 
+.beta-tag.header-beta {
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
 /* ===== Experimental Tag ===== */
 .experimental-tag {
     display: inline-block;
