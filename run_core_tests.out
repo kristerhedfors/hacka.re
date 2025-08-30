@@ -1,0 +1,33 @@
+Starting HTTP server for tests...
+===== Starting HTTP Server for hacka.re Tests =====
+Port: 8000
+Project Root: /Users/user/dev/hacka.re
+==================================================
+Checking for existing HTTP server processes on port 8000...
+Found existing processes: 15694
+Killing existing processes...
+Processes killed.
+Changing to project root directory: /Users/user/dev/hacka.re
+Starting Python HTTP server on port 8000...
+Server started successfully with PID: 93071
+Server is now running at http://localhost:8000
+Server PID saved to: /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt
+==================================================
+Server is ready. You can now run your tests.
+To stop the server, run: kill -9 $(cat /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt)
+==================================================
+Running Core Functionality tests with chromium browser...
+Test filter: test_page or test_api or test_chat or test_welcome_modal
+
+============================= test session starts ==============================
+platform darwin -- Python 3.13.3, pytest-8.3.5, pluggy-1.5.0
+rootdir: /Users/user/dev/hacka.re/_tests/playwright
+configfile: pytest.ini
+testpaths: .
+plugins: playwright-0.7.0, base-url-2.1.0
+collected 862 items / 828 deselected / 34 selected
+
+shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_info[chromium0] SKIPPED [  2%]
+shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_plan_details[chromium0] FAILED [  5%]
+test_api.py::test_api_key_configuration[chromium0] PASSED                [  8%]
+test_api.py::test_model_selection[chromium0] 

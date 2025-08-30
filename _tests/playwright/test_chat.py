@@ -51,11 +51,13 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
         )
         reload_button.click(timeout=5000)
     except Exception as e:
-        print(f"Reload button not enabled, trying to save settings first: {e}")
-        # Sometimes we need to save the API key first
-        save_button = page.locator("#settings-form button[type='submit']")
-        if save_button.is_visible():
-            save_button.click(force=True)            # Re-open settings
+        print(f"Reload button not enabled, trying to close and re-open settings: {e}")
+        # Settings auto-save, so just close and re-open
+        close_button = page.locator("#close-settings")
+        if close_button.is_visible():
+            close_button.click()
+            page.wait_for_timeout(500)
+            # Re-open settings
             settings_button = page.locator("#settings-btn")
             settings_button.click(timeout=2000)
             page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
@@ -88,12 +90,12 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
     if not selected_model:
         pytest.skip("No valid model could be selected")
     
-    # Scroll down to make sure the save button is visible
-    page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+    # Settings auto-save, wait for them to save
+    page.wait_for_timeout(1000)
     
-    # Save the settings
-    save_button = page.locator("#settings-form button[type='submit']")
-    save_button.click(force=True)  # Use force=True to click even if not fully visible
+    # Close the settings modal
+    close_button = page.locator("#close-settings")
+    close_button.click()
     
     # Check for any system messages
     check_system_messages(page)
@@ -158,9 +160,10 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
                     print("No valid models found to select")
                     pytest.skip("No valid models available to select")
             
-            # Save the settings
-            save_button = page.locator("#settings-form button[type='submit']")
-            save_button.click(force=True)
+            # Settings auto-save, wait briefly then close
+            page.wait_for_timeout(1000)
+            close_button = page.locator("#close-settings")
+            close_button.click()
             
             # Wait for the settings modal to be closed
             page.wait_for_selector("#settings-modal", state="hidden", timeout=2000)
