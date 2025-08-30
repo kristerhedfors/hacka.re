@@ -55,7 +55,7 @@ def test_function_calling():
         model_select.select_option("gpt-4o-mini")
         
         # Save
-        save_btn = page.locator("#save-settings-btn")
+        save_btn = page.locator("#close-settings")
         save_btn.click(force=True)
         page.wait_for_selector("#settings-modal", state="hidden")
         

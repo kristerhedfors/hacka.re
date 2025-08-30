@@ -144,7 +144,7 @@ def configure_provider_and_model(page, provider, model, api_key):
     except Exception as e:
         print(f"Reload button not enabled, trying to save settings first: {e}")
         # Sometimes we need to save the API key first
-        save_button = page.locator("#settings-form button[type='submit']")
+        close_button = page.locator("#close-settings")
         if save_button.is_visible():
             save_button.click(force=True)
             # Re-open settings
@@ -218,7 +218,7 @@ def configure_provider_and_model(page, provider, model, api_key):
             selected_model = first_model
     
     # Save settings
-    save_button = page.locator("#save-settings-btn")
+    close_button = page.locator("#close-settings")
     save_button.click(force=True)
     
     # Wait for modal to close

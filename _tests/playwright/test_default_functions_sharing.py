@@ -50,8 +50,8 @@ def test_default_functions_sharing(page: Page, serve_hacka_re):
     selected_model = select_recommended_test_model(page)
     
     # Save the settings
-    save_button = page.locator("#save-settings-btn")
-    save_button.click()
+    close_button = page.locator("#close-settings")
+    page.wait_for_timeout(1000)  # Wait for auto-save    close_button.click()
     
     # Wait for the settings modal to be closed
     page.wait_for_selector("#settings-modal", state="hidden")

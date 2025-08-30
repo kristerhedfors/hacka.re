@@ -109,8 +109,8 @@ def test_context_window_updates_on_model_selection(page: Page, serve_hacka_re):
     assert "tokens" in updated_context_text.lower(), "Context text should contain token information"
     
     # Save the settings
-    save_button = page.locator("#settings-form button[type='submit']")
-    save_button.click(force=True)
+    close_button = page.locator("#close-settings")
+    page.wait_for_timeout(1000)  # Wait for auto-save    close_button.click(force=True)
     
     # Wait for the settings modal to close
     page.wait_for_selector("#settings-modal.active", state="hidden", timeout=2000)

@@ -70,7 +70,7 @@ def discover_provider_models(page, provider, api_key):
     if close_btn.is_visible():
         close_btn.click()
     else:
-        save_btn = page.locator("#save-settings-btn")
+        save_btn = page.locator("#close-settings")
         save_btn.click(force=True)
     
     page.wait_for_selector("#settings-modal", state="hidden", timeout=2000)

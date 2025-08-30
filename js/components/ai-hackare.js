@@ -386,11 +386,55 @@ window.AIHackareComponent = (function() {
             });
         }
         
-        // Settings form submission
-        this.elements.settingsForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.saveSettings();
-        });
+        // Settings now save automatically on change - form submission no longer needed
+        // Auto-save settings when API key changes
+        if (this.elements.apiKeyUpdate) {
+            this.elements.apiKeyUpdate.addEventListener('input', () => {
+                const apiKey = this.elements.apiKeyUpdate.value;
+                if (apiKey && apiKey.trim()) {
+                    // Save API key immediately
+                    this.settingsManager.saveApiKey(
+                        apiKey,
+                        null, // Don't hide modal
+                        null, // Don't add system message for each keystroke
+                        (detection) => {
+                            // Update provider if detected
+                            if (detection && this.elements.baseUrlSelect) {
+                                const provider = detection.provider;
+                                if (provider && this.elements.baseUrlSelect.querySelector(`option[value="${provider}"]`)) {
+                                    this.elements.baseUrlSelect.value = provider;
+                                    this.elements.baseUrlSelect.dispatchEvent(new Event('change'));
+                                }
+                            }
+                            return detection ? detection.defaultModel : null;
+                        },
+                        // Pass fetchAvailableModels callback
+                        (apiKey) => {
+                            this.settingsManager.fetchAvailableModels(
+                                apiKey,
+                                this.settingsManager.getBaseUrl(),
+                                this.uiManager.updateModelInfoDisplay.bind(this.uiManager)
+                            );
+                        }
+                    );
+                }
+            });
+        }
+
+        // Auto-save when model selection changes
+        if (this.elements.modelSelect) {
+            this.elements.modelSelect.addEventListener('change', () => {
+                const model = this.elements.modelSelect.value;
+                if (model) {
+                    this.settingsManager.saveModel(model);
+                    // Update context usage display
+                    this.chatManager.estimateContextUsage(
+                        this.uiManager.updateContextUsage.bind(this.uiManager),
+                        model
+                    );
+                }
+            });
+        }
         
         // Close settings button
         this.elements.closeSettings.addEventListener('click', () => {

@@ -42,31 +42,26 @@ def test_api_key_configuration(page, serve_hacka_re):
     print("Current form state:")
     print(f"API Key input value length: {page.evaluate('document.getElementById(\"api-key-update\").value.length')}")
     
-    # Scroll to the bottom of the settings modal
-    page.evaluate("""() => {
-        const modal = document.querySelector('#settings-modal .modal-content');
-        if (modal) {
-            modal.scrollTop = modal.scrollHeight;
-        }
-    }""")
-    
-    # Wait a moment for the scroll to complete
-    time.sleep(0.5)
-    
-    # Try to click the save button directly by its ID
-    print("Clicking save button by ID")
-    page.evaluate("""() => {
-        const saveButton = document.getElementById('save-settings-btn');
-        if (saveButton) {
-            saveButton.click();
-            console.log('Save button clicked via JavaScript');
-        } else {
-            console.error('Save button not found');
-        }
-    }""")
+    # Settings now auto-save, so just wait a moment for the save to complete
+    print("Waiting for auto-save to complete")
+    time.sleep(1)
     
     # Check for any system messages
     check_system_messages(page)
+    
+    # Close the settings modal using the Close button
+    print("Closing settings modal")
+    close_button = page.locator("#close-settings")
+    if close_button.is_visible():
+        close_button.click()
+    else:
+        # Fallback: close modal via JavaScript
+        page.evaluate("""() => {
+            const modal = document.querySelector('#settings-modal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
+        }""")
     
     # Verify the settings modal is closed
     settings_modal = page.locator("#settings-modal")
@@ -198,12 +193,13 @@ def test_model_selection(page, serve_hacka_re):
     if not selected_model:
         pytest.skip("No valid model could be selected")
     
-    # Scroll down to make sure the save button is visible
-    page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+    # Settings auto-save, so just wait for the save to complete
+    print("Waiting for model selection to auto-save")
+    time.sleep(1)
     
-    # Save the settings
-    save_button = page.locator("#settings-form button[type='submit']")
-    save_button.click(force=True)  # Use force=True to click even if not fully visible
+    # Close the settings modal
+    close_button = page.locator("#close-settings")
+    close_button.click()
     
     # Check for any system messages
     check_system_messages(page)
