@@ -77,8 +77,8 @@ ul {
 /* ===== Beta Tag ===== */
 .beta-tag {
     display: inline-block;
-    background-color: #fef3c7; /* System message background color */
-    color: #333; /* Dark grey text for better contrast */
+    background-color: #fef3c7 !important; /* System message background color */
+    color: #333 !important; /* Dark grey text for better contrast */
     padding: 3px 8px;
     font-size: 0.7rem;
     font-weight: bold;
@@ -104,6 +104,10 @@ ul {
 .beta-tag.header-beta {
     margin-left: 8px;
     vertical-align: middle;
+    color: #333 !important;
+    background-color: #fef3c7 !important;
+    -webkit-text-fill-color: #333 !important;
+    text-fill-color: #333 !important;
 }
 
 /* ===== Experimental Tag ===== */

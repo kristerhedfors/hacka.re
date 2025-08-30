@@ -335,6 +335,13 @@ html.theme-midnight {
     border-color: var(--border-color);
 }
 
+/* Beta tag styling for dark mode */
+.theme-modern.dark-mode .beta-tag {
+    background-color: #fef3c7 !important;
+    color: #333 !important;
+    font-weight: bold !important;
+}
+
 /* Message styles for dark mode - apply background to message-content for rounded corners */
 .theme-modern.dark-mode .message {
     background-color: transparent;
@@ -1112,7 +1119,7 @@ header .settings .icon-btn i,
 .theme-forest .beta-tag,
 .theme-midnight .beta-tag {
     background-color: var(--primary-color);
-    color: rgba(0, 0, 0, 0.8);
+    color: rgba(0, 0, 0, 0.8) !important;
 }
 
 /* Usage bar styling for gradient themes */
