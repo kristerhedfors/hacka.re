@@ -413,12 +413,18 @@
     color: var(--accent-color);
     text-decoration: none;
     font-weight: normal;
+    font-size: 0.85em;
     transition: color 0.2s ease;
 }
 
 .function-library-link:hover {
     text-decoration: underline;
     color: var(--accent-color-hover, var(--accent-color));
+}
+
+/* When link is inside form-help text, inherit the parent font size */
+.form-help .function-library-link {
+    font-size: inherit;
 }
 
 /* Make prompt name clickable */

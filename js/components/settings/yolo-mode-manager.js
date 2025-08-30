@@ -135,7 +135,6 @@ window.YoloModeManager = (function() {
             memoryLink.href = '#';
             memoryLink.className = 'function-library-link';
             memoryLink.textContent = '   Manage function approval memory';
-            memoryLink.style.fontSize = '0.85em';
             memoryLink.style.marginLeft = '8px';
             memoryLink.addEventListener('click', (e) => {
                 e.preventDefault();
