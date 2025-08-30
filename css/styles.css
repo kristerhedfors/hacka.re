@@ -2181,13 +2181,16 @@ footer a:hover {
 
 .checkbox-group {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 0.5rem;
 }
 
 .checkbox-group input[type="checkbox"] {
     width: auto;
     margin: 0;
+    margin-top: 4px !important; /* Align checkbox center with first line of text */
+    position: relative;
+    top: 6px; /* Additional adjustment to move checkbox down */
 }
 
 .message-history-container {
