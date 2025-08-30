@@ -67,14 +67,16 @@
         padding: 0;
     }
     
-    /* Create MORE space between hat and robot icons */
+    /* Create MORE space between hat and MCP icons (agent button removed) */
     #heart-btn {
         margin-right: 0.3rem; /* Add positive margin to create space */
     }
     
+    /* Agent button removed from UI but styles preserved for future use
     #agent-config-btn {
-        margin-left: 0rem; /* Reset to normal */
+        margin-left: 0rem;
     }
+    */
     
     /* Tighten spacing between all other icons */
     #mcp-servers-btn {

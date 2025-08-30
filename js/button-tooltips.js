@@ -7,7 +7,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Define the buttons and their tooltip texts
     const buttons = [
         { id: 'heart-btn', text: 'Explore hacka.re', isSpecial: true },
-        { id: 'agent-config-btn', text: 'Agents' },
+        // Agent button removed from UI but functionality preserved for future use
+        // { id: 'agent-config-btn', text: 'Agents' },
         { id: 'copy-chat-btn', text: 'Copy Chat Content' },
         { id: 'mcp-servers-btn', text: 'Model Context Protocol' },
         { id: 'function-btn', text: 'Function Calling' },
