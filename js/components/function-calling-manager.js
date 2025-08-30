@@ -71,6 +71,11 @@ window.FunctionCallingManager = (function() {
                 console.log('Default functions loaded');
             }
             
+            // Initial render of function list to set up the UI
+            if (functionListRenderer) {
+                functionListRenderer.renderFunctionList();
+            }
+            
             // Note: Event delegation removed - delete buttons are handled directly in function-list-renderer.js
             
             console.log('Function Calling Manager initialized with all components');

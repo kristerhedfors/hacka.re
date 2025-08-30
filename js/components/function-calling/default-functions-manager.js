@@ -15,7 +15,12 @@ window.DefaultFunctionsManager = (function() {
          * Add the default functions section to the function list
          */
         function addDefaultFunctionsSection() {
-            console.log('addDefaultFunctionsSection called');
+            // Check if section already exists
+            const existingSection = elements.functionList.querySelector('.default-functions-section');
+            if (existingSection) {
+                return;
+            }
+            
             // Create default functions section
             const defaultFunctionsSection = document.createElement('div');
             defaultFunctionsSection.className = 'default-functions-section';
@@ -42,7 +47,6 @@ window.DefaultFunctionsManager = (function() {
             sectionCount.style.color = 'var(--text-color-secondary)';
             sectionCount.style.fontSize = '14px';
             sectionCount.style.display = 'none'; // Initially hidden
-            updateDefaultFunctionsSectionCount();
             sectionHeader.appendChild(sectionCount);
             
             // Add copy button for enabled functions
@@ -86,14 +90,15 @@ window.DefaultFunctionsManager = (function() {
             defaultFunctionCollections.forEach(collection => {
                 const collectionItem = createDefaultFunctionCollectionItem(collection, []);
                 defaultFunctionsList.appendChild(collectionItem);
+                // Update collection count immediately after creation
+                updateDefaultCollectionCount(collection);
             });
             
             defaultFunctionsSection.appendChild(defaultFunctionsList);
-            console.log('About to append default functions section to function list');
-            console.log('elements.functionList:', !!elements.functionList);
-            console.log('defaultFunctionsSection:', !!defaultFunctionsSection);
             elements.functionList.appendChild(defaultFunctionsSection);
-            console.log('Default functions section appended successfully');
+            
+            // Update the main section count after all collections are added
+            updateDefaultFunctionsSectionCount();
         }
         
         /**
@@ -415,7 +420,9 @@ window.DefaultFunctionsManager = (function() {
             // Count enabled functions in this collection
             let enabledCount = 0;
             collection.functions.forEach(func => {
-                const functionId = `${collection.id}:${func.name}`;
+                // func can be either a string (function name) or an object with a name property
+                const funcName = typeof func === 'string' ? func : func.name;
+                const functionId = `${collection.id}:${funcName}`;
                 if (DefaultFunctionsService.isIndividualFunctionSelected(functionId)) {
                     enabledCount++;
                 }
@@ -449,7 +456,9 @@ window.DefaultFunctionsManager = (function() {
                 if (collection.functions) {
                     totalFunctions += collection.functions.length;
                     collection.functions.forEach(func => {
-                        const functionId = `${collection.id}:${func.name}`;
+                        // func can be either a string (function name) or an object with a name property
+                        const funcName = typeof func === 'string' ? func : func.name;
+                        const functionId = `${collection.id}:${funcName}`;
                         if (DefaultFunctionsService.isIndividualFunctionSelected(functionId)) {
                             totalEnabled++;
                         }
@@ -573,6 +582,22 @@ window.DefaultFunctionsManager = (function() {
             document.body.appendChild(popup);
         }
         
+        /**
+         * Update all counts without rebuilding the UI
+         */
+        function updateAllCounts() {
+            // Update main section count
+            updateDefaultFunctionsSectionCount();
+            
+            // Update all collection counts
+            if (window.DefaultFunctionsService) {
+                const collections = window.DefaultFunctionsService.getDefaultFunctionCollections();
+                collections.forEach(collection => {
+                    updateDefaultCollectionCount(collection);
+                });
+            }
+        }
+        
         // Public API
         return {
             addDefaultFunctionsSection,
@@ -583,7 +608,8 @@ window.DefaultFunctionsManager = (function() {
             toggleAllFunctionsInCollectionBackend,
             updateDefaultCollectionCount,
             updateDefaultFunctionsSectionCount,
-            copyEnabledDefaultFunctions
+            copyEnabledDefaultFunctions,
+            updateAllCounts
         };
     }
 

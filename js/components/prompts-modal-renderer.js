@@ -346,6 +346,7 @@ window.PromptsModalRenderer = (function() {
         const noPromptsMessage = document.createElement('div');
         noPromptsMessage.className = 'no-prompts-message';
         noPromptsMessage.textContent = 'No saved prompts. Create one below.';
+        noPromptsMessage.style.marginBottom = '20px';
         return noPromptsMessage;
     }
     
