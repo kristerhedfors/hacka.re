@@ -43,8 +43,10 @@ body {
     color: var(--text-color);
     background-color: var(--light-color);
     height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile */
     display: flex;
     flex-direction: column;
+    overflow: hidden; /* Prevent body scroll */
 }
 
 a {
@@ -70,8 +72,10 @@ ul {
     display: flex;
     flex-direction: column;
     height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile */
     width: 100%;
     position: relative;
+    overflow: hidden; /* Prevent container scroll */
 }
 
 /* ===== Beta Tag ===== */
@@ -136,6 +140,9 @@ header {
     color: var(--light-text);
     min-height: auto; /* Allow header to grow with content */
     flex-wrap: nowrap; /* Keep main items in a row by default */
+    flex-shrink: 0; /* Prevent header from shrinking */
+    position: relative;
+    z-index: 10;
 }
 
 /* Apply sweeping effect to all text in header including hacka.re logo */
@@ -1111,6 +1118,7 @@ main {
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    min-height: 0; /* Important for flex child with overflow */
 }
 
 #chat-container {
@@ -1118,6 +1126,7 @@ main {
     flex-direction: column;
     height: 100%;
     padding: 1rem;
+    min-height: 0; /* Important for flex child with overflow */
 }
 
 #chat-header {
@@ -1843,6 +1852,7 @@ main {
     padding: 1rem;
     background-color: var(--light-color);
     border-top: 1px solid rgba(0, 0, 0, 0.1);
+    flex-shrink: 0; /* Prevent input container from shrinking */
 }
 
 .input-with-actions {
