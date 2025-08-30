@@ -499,11 +499,20 @@ header .settings .icon-btn i,
 }
 
 .theme-modern #chat-input-container {
-    background-color: var(--bg-color-secondary);
+    background-color: var(--bg-color-secondary) !important;
     border-color: var(--border-color);
     border-radius: 0;
     margin: 0;
     width: 100%;
+    transition: none !important; /* Prevent background transitions */
+}
+
+/* Prevent focus/active highlights on Modern theme */
+.theme-modern #chat-input-container:focus,
+.theme-modern #chat-input-container:focus-within,
+.theme-modern #chat-input-container:active {
+    background-color: var(--bg-color-secondary) !important;
+    transition: none !important;
 }
 
 .theme-modern #message-input {
@@ -899,11 +908,29 @@ header .settings .icon-btn i,
 .theme-ocean #chat-input-container,
 .theme-forest #chat-input-container,
 .theme-midnight #chat-input-container {
-    background-color: rgba(0, 0, 0, 0.2);
+    background-color: rgba(0, 0, 0, 0.2) !important;
     border-top: none;
     border-radius: 0;
+    transition: none !important; /* Prevent background transitions */
     margin: 0;
     width: 100%;
+}
+
+/* Prevent focus/active highlights on gradient themes */
+.theme-sunset #chat-input-container:focus,
+.theme-sunset #chat-input-container:focus-within,
+.theme-sunset #chat-input-container:active,
+.theme-ocean #chat-input-container:focus,
+.theme-ocean #chat-input-container:focus-within,
+.theme-ocean #chat-input-container:active,
+.theme-forest #chat-input-container:focus,
+.theme-forest #chat-input-container:focus-within,
+.theme-forest #chat-input-container:active,
+.theme-midnight #chat-input-container:focus,
+.theme-midnight #chat-input-container:focus-within,
+.theme-midnight #chat-input-container:active {
+    background-color: rgba(0, 0, 0, 0.2) !important;
+    transition: none !important;
 }
 
 .theme-sunset #message-input,
