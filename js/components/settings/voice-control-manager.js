@@ -77,26 +77,81 @@ window.VoiceControlManager = (function() {
             
             if (!chatForm || !messageInput || microphoneButton) return;
             
+            // Create a wrapper for the input and microphone button
+            let inputWrapper = document.getElementById('message-input-wrapper');
+            if (!inputWrapper) {
+                inputWrapper = document.createElement('div');
+                inputWrapper.id = 'message-input-wrapper';
+                inputWrapper.className = 'message-input-wrapper';
+                
+                // Move the message input into the wrapper
+                messageInput.parentNode.insertBefore(inputWrapper, messageInput);
+                inputWrapper.appendChild(messageInput);
+            }
+            
             microphoneButton = document.createElement('button');
             microphoneButton.type = 'button';
             microphoneButton.id = 'microphone-btn';
-            microphoneButton.className = 'microphone-btn';
+            microphoneButton.className = 'microphone-btn-inside';
             microphoneButton.title = 'Start voice recording';
             microphoneButton.innerHTML = '<i class="fas fa-microphone"></i>';
             
-            if (messageInput && messageInput.nextSibling) {
-                chatForm.insertBefore(microphoneButton, messageInput.nextSibling);
-            } else {
-                chatForm.appendChild(microphoneButton);
-            }
+            // Add microphone button inside the wrapper
+            inputWrapper.appendChild(microphoneButton);
             
             microphoneButton.addEventListener('click', toggleRecording);
+            
+            // Add input listener to hide/show microphone based on content
+            messageInput.addEventListener('input', handleInputChange);
+            messageInput.addEventListener('focus', handleInputChange);
+            messageInput.addEventListener('blur', handleInputChange);
+            
+            // Also listen for form submission to show microphone after sending
+            if (chatForm) {
+                chatForm.addEventListener('submit', function() {
+                    // Show microphone again after message is sent (with a small delay)
+                    setTimeout(handleInputChange, 100);
+                });
+            }
+            
+            // Initial check
+            handleInputChange();
+        }
+        
+        function handleInputChange() {
+            const messageInput = document.getElementById('message-input');
+            if (!messageInput || !microphoneButton) return;
+            
+            // Hide microphone if there's text, show if empty and not recording
+            if (messageInput.value.trim().length > 0) {
+                microphoneButton.style.display = 'none';
+            } else if (microphoneState !== 'recording' && microphoneState !== 'processing') {
+                microphoneButton.style.display = 'flex';
+            }
         }
         
         function removeMicrophoneButton() {
             if (microphoneButton) {
                 microphoneButton.remove();
                 microphoneButton = null;
+            }
+            
+            // Clean up wrapper and restore original structure
+            const inputWrapper = document.getElementById('message-input-wrapper');
+            const messageInput = document.getElementById('message-input');
+            
+            if (inputWrapper && messageInput) {
+                // Remove event listeners
+                messageInput.removeEventListener('input', handleInputChange);
+                messageInput.removeEventListener('focus', handleInputChange);
+                messageInput.removeEventListener('blur', handleInputChange);
+                
+                // Move message input back to its original position
+                const chatForm = document.getElementById('chat-form');
+                if (chatForm && inputWrapper.parentNode === chatForm) {
+                    chatForm.insertBefore(messageInput, inputWrapper);
+                    inputWrapper.remove();
+                }
             }
         }
         
@@ -482,6 +537,8 @@ window.VoiceControlManager = (function() {
                     microphoneButton.innerHTML = '<i class="fas fa-microphone"></i>';
                     microphoneButton.title = 'Start voice recording';
                     microphoneButton.style.cursor = 'pointer';
+                    // Check if we should show the button
+                    handleInputChange();
                     break;
                     
                 case 'recording':
@@ -495,6 +552,7 @@ window.VoiceControlManager = (function() {
                     `;
                     microphoneButton.title = 'Stop recording';
                     microphoneButton.style.cursor = 'pointer';
+                    microphoneButton.style.display = 'flex'; // Always show when recording
                     break;
                     
                 case 'processing':
@@ -502,6 +560,7 @@ window.VoiceControlManager = (function() {
                     microphoneButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
                     microphoneButton.title = 'Processing audio...';
                     microphoneButton.style.cursor = 'not-allowed';
+                    microphoneButton.style.display = 'flex'; // Always show when processing
                     break;
             }
             
