@@ -34,9 +34,9 @@ window.FunctionModalManager = (function() {
             if (elements.functionModal) {
                 elements.functionModal.classList.add('active');
                 
-                // Render function list when modal is opened
-                if (window.functionListRenderer) {
-                    window.functionListRenderer.renderFunctionList();
+                // Only update counts if the default functions section exists
+                if (window.DefaultFunctionsManager && window.DefaultFunctionsManager.updateAllCounts) {
+                    window.DefaultFunctionsManager.updateAllCounts();
                 }
                 
                 // Focus on the function name field
