@@ -106,7 +106,8 @@ class ASCIITreeMenu {
 
         // Map features to their corresponding icon buttons
         const featureToButtonId = {
-            'agents': 'agent-config-btn',
+            // Agent button removed from UI but functionality preserved for future use
+            // 'agents': 'agent-config-btn',
             'copy-chat': 'copy-chat-btn',
             'mcp-servers': 'mcp-servers-btn',
             'function-calling': 'function-btn',

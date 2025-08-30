@@ -158,6 +158,8 @@ window.AIHackareComponent = (function() {
         }
         
         // Agent configuration modal event listeners
+        // NOTE: Agent button hidden from UI but functionality preserved for future programmatic access
+        // Agent configurations can still be saved/loaded via AgentManager.saveAgent() and AgentManager.loadAgent()
         if (this.elements.agentConfigBtn) {
             this.elements.agentConfigBtn.addEventListener('click', () => {
                 this.showAgentConfigModal();
