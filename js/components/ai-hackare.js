@@ -389,7 +389,8 @@ window.AIHackareComponent = (function() {
         // Settings now save automatically on change - form submission no longer needed
         // Auto-save settings when API key changes
         if (this.elements.apiKeyUpdate) {
-            this.elements.apiKeyUpdate.addEventListener('input', () => {
+            // Helper function to save API key
+            const saveApiKey = () => {
                 const apiKey = this.elements.apiKeyUpdate.value;
                 if (apiKey && apiKey.trim()) {
                     // Save API key immediately
@@ -418,7 +419,19 @@ window.AIHackareComponent = (function() {
                         }
                     );
                 }
+            };
+            
+            // Save on input (typing)
+            this.elements.apiKeyUpdate.addEventListener('input', saveApiKey);
+            
+            // Save on paste
+            this.elements.apiKeyUpdate.addEventListener('paste', () => {
+                // Wait for paste to complete
+                setTimeout(saveApiKey, 10);
             });
+            
+            // Save on blur (when field loses focus)
+            this.elements.apiKeyUpdate.addEventListener('blur', saveApiKey);
         }
 
         // Auto-save when model selection changes
