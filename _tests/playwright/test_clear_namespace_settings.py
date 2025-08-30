@@ -65,8 +65,8 @@ def test_clear_namespace_settings(page: Page, serve_hacka_re):
     base_url_select.select_option("groq")
     
     # Save the settings
-    save_button = page.locator("#settings-form button[type='submit']")
-    save_button.click()
+    close_button = page.locator("#close-settings")
+    page.wait_for_timeout(1000)  # Wait for auto-save    close_button.click()
     
     # Wait for the settings modal to be closed
     page.wait_for_selector("#settings-modal", state="hidden")

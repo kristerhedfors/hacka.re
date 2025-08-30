@@ -49,9 +49,10 @@ def test_function_library_sharing(page: Page, serve_hacka_re):
     from test_utils import select_recommended_test_model
     selected_model = select_recommended_test_model(page)
     
-    # Save the settings
-    save_button = page.locator("#save-settings-btn")
-    save_button.click()
+    # Settings auto-save, wait and close
+    page.wait_for_timeout(1000)
+    close_button = page.locator("#close-settings")
+    close_button.click()
     
     # Wait for the settings modal to be closed
     page.wait_for_selector("#settings-modal", state="hidden")

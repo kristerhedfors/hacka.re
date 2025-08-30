@@ -141,9 +141,10 @@ def setup_test_environment(page, provider, model, api_key):
     except Exception as e:
         print(f"Reload button not enabled, trying to save settings first: {e}")
         # Sometimes we need to save the API key first
-        save_button = page.locator("#settings-form button[type='submit']")
-        if save_button.is_visible():
-            save_button.click(force=True)
+        close_button = page.locator("#close-settings")
+        if close_button.is_visible():
+            page.wait_for_timeout(1000)  # Wait for auto-save
+            close_button.click(force=True)
             # Re-open settings
             settings_button = page.locator("#settings-btn")
             settings_button.click(timeout=2000)
@@ -217,7 +218,7 @@ def setup_test_environment(page, provider, model, api_key):
             selected_model = None
     
     # Save settings
-    save_btn = page.locator("#save-settings-btn")
+    save_btn = page.locator("#close-settings")
     save_btn.click(force=True)
     
     # Wait for the settings modal to be closed

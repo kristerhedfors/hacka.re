@@ -9,7 +9,9 @@ def test_theme_toggle_button_exists(page):
     page.goto("file:///Users/user/dev/hacka.re/index.html")
     theme_toggle_btn = page.locator("#theme-toggle-btn")
     expect(theme_toggle_btn).to_be_visible()
-    expect(theme_toggle_btn).to_have_attribute("title", "Cycle Theme")
+    # Tooltip is added dynamically via JavaScript as a child div, not a title attribute
+    tooltip = theme_toggle_btn.locator(".mini-tooltip")
+    expect(tooltip).to_have_text("Cycle Theme")
 
 def test_theme_switching(page):
     """Test that themes can be switched programmatically."""

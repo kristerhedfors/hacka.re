@@ -270,9 +270,10 @@ def setup_api_and_model(page):
     model_select = page.locator("#model-select")
     model_select.select_option("llama-3.1-8b-instant")
     
-    # Save the settings
-    save_button = page.locator("#save-settings-btn")
-    save_button.click(force=True)
+    # Settings auto-save, wait and close
+    page.wait_for_timeout(1000)
+    close_button = page.locator("#close-settings")
+    close_button.click(force=True)
     
     # Wait for the settings modal to close
     page.wait_for_selector("#settings-modal", state="hidden", timeout=2500)
