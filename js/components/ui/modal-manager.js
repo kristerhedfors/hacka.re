@@ -53,6 +53,26 @@ window.ModalManager = (function() {
             // Set current model
             elements.modelSelect.value = currentModel;
             
+            // Set the provider dropdown - IMPORTANT: Must get current provider from DataService
+            const currentProvider = DataService.getBaseUrlProvider();
+            if (elements.baseUrlSelect) {
+                elements.baseUrlSelect.value = currentProvider;
+                
+                // Show/hide custom URL field based on selection
+                if (currentProvider === 'custom') {
+                    if (elements.customBaseUrlGroup) {
+                        elements.customBaseUrlGroup.style.display = 'block';
+                    }
+                    if (elements.baseUrl) {
+                        elements.baseUrl.value = DataService.getBaseUrl() || '';
+                    }
+                } else {
+                    if (elements.customBaseUrlGroup) {
+                        elements.customBaseUrlGroup.style.display = 'none';
+                    }
+                }
+            }
+            
             elements.settingsModal.classList.add('active');
         }
         
