@@ -1877,7 +1877,7 @@ main {
     display: flex !important; /* Force display */
     visibility: visible !important; /* Force visibility */
     opacity: 1 !important; /* Force opacity */
-    z-index: 100; /* Ensure it's above other elements */
+    z-index: 1; /* Lower z-index to prevent modal overlap */
 }
 
 /* Prevent any highlight or focus effects on the container */
@@ -2583,6 +2583,13 @@ footer a:hover {
 
 .modal.active {
     display: flex;
+}
+
+/* Ensure chat input stays behind modals */
+.modal.active ~ #chat-input-container,
+body:has(.modal.active) #chat-input-container {
+    z-index: 0 !important;
+    position: relative !important;
 }
 
 /* Position modals from header icons to start below header */
