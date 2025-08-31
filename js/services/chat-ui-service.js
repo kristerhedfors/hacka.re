@@ -43,7 +43,19 @@ window.ChatUIService = (function() {
             clearInput() {
                 elements.messageInput.value = '';
                 elements.messageInput.style.height = 'auto';
-                elements.messageInput.focus();
+                
+                // Only focus on desktop devices to avoid keyboard popup on mobile
+                // Check if device is mobile by viewport width or touch capability
+                const isMobile = window.innerWidth <= 768 || 
+                                'ontouchstart' in window || 
+                                navigator.maxTouchPoints > 0;
+                
+                if (!isMobile) {
+                    elements.messageInput.focus();
+                } else {
+                    // On mobile, blur the input to ensure keyboard closes
+                    elements.messageInput.blur();
+                }
             },
 
             /**
