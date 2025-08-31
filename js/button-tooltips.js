@@ -3,7 +3,7 @@
  * Adds mini-tooltips to buttons in the upper right bar
  */
 
-document.addEventListener('DOMContentLoaded', function() {
+function initButtonTooltips() {
     // Define the buttons and their tooltip texts
     const buttons = [
         { id: 'heart-btn', text: 'Explore hacka.re', isSpecial: true },
@@ -22,7 +22,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Create tooltips for each button
     buttons.forEach(button => {
         const buttonElement = document.getElementById(button.id);
-        if (!buttonElement) return;
+        if (!buttonElement) {
+            return;
+        }
+        
+        // Check if tooltip already exists and remove it (for re-initialization)
+        const existingTooltip = buttonElement.querySelector('.mini-tooltip');
+        if (existingTooltip) {
+            existingTooltip.remove();
+        }
         
         // Make sure the button has position relative for tooltip positioning
         buttonElement.style.position = 'relative';
@@ -79,4 +87,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+}
+
+// Initialize on DOM ready
+document.addEventListener('DOMContentLoaded', function() {
+    initButtonTooltips();
 });
+
+// Also make it available globally for re-initialization if needed
+window.ButtonTooltips = {
+    init: initButtonTooltips
+};

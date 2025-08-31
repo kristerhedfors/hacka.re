@@ -103,6 +103,8 @@ window.VoiceControlManager = (function() {
             
             // Add input listener to hide/show microphone based on content
             messageInput.addEventListener('input', handleInputChange);
+            messageInput.addEventListener('keyup', handleInputChange);
+            messageInput.addEventListener('change', handleInputChange);
             messageInput.addEventListener('focus', handleInputChange);
             messageInput.addEventListener('blur', handleInputChange);
             
@@ -120,13 +122,18 @@ window.VoiceControlManager = (function() {
         
         function handleInputChange() {
             const messageInput = document.getElementById('message-input');
-            if (!messageInput || !microphoneButton) return;
+            // Always query the DOM for the current button
+            const currentMicButton = document.querySelector('.microphone-btn-inside');
+            
+            if (!messageInput || !currentMicButton) return;
+            
+            const hasText = messageInput.value.trim().length > 0;
             
             // Hide microphone if there's text, show if empty and not recording
-            if (messageInput.value.trim().length > 0) {
-                microphoneButton.style.display = 'none';
+            if (hasText) {
+                currentMicButton.style.display = 'none';
             } else if (microphoneState !== 'recording' && microphoneState !== 'processing') {
-                microphoneButton.style.display = 'flex';
+                currentMicButton.style.display = 'flex';
             }
         }
         
@@ -552,7 +559,7 @@ window.VoiceControlManager = (function() {
                     `;
                     microphoneButton.title = 'Stop recording';
                     microphoneButton.style.cursor = 'pointer';
-                    microphoneButton.style.display = 'flex'; // Always show when recording
+                    // Don't force display - let handleInputChange manage visibility
                     break;
                     
                 case 'processing':
@@ -560,11 +567,15 @@ window.VoiceControlManager = (function() {
                     microphoneButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
                     microphoneButton.title = 'Processing audio...';
                     microphoneButton.style.cursor = 'not-allowed';
-                    microphoneButton.style.display = 'flex'; // Always show when processing
+                    // Don't force display - let handleInputChange manage visibility
                     break;
             }
             
             console.log('🎤 Button state updated to:', microphoneState);
+            
+            // After updating button state, check if it should be visible based on input content
+            // Force re-check to ensure proper visibility
+            setTimeout(handleInputChange, 0);
         }
         
         function getVoiceControlEnabled() {

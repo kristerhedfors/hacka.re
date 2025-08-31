@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Message Scrollbar Fix</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .test-container {
+            border: 2px solid #333;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+        }
+        .pass {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .fail {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>Message Scrollbar Fix Test</h1>
+    
+    <div class="test-container">
+        <h2>Test Instructions:</h2>
+        <ol>
+            <li>Open the main app at <a href="http://localhost:8000" target="_blank">http://localhost:8000</a></li>
+            <li>Send a message to trigger AI response</li>
+            <li>Check if individual messages have scrollbars (they should NOT)</li>
+            <li>Only the main chat container should be scrollable</li>
+        </ol>
+    </div>
+
+    <div class="test-container">
+        <h2>Expected Behavior:</h2>
+        <ul>
+            <li>✅ Chat messages container (#chat-messages) should be scrollable</li>
+            <li>✅ Individual messages should NOT have scrollbars</li>
+            <li>✅ Long content should wrap within messages</li>
+            <li>✅ Code blocks can scroll horizontally if needed</li>
+            <li>✅ Tables can scroll horizontally if needed</li>
+        </ul>
+    </div>
+
+    <div class="test-container">
+        <h2>Quick Check:</h2>
+        <button onclick="checkStyles()">Check Applied Styles</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function checkStyles() {
+            const result = document.getElementById('result');
+            
+            // Open the app in an iframe to check
+            const iframe = document.createElement('iframe');
+            iframe.src = 'http://localhost:8000';
+            iframe.style.width = '100%';
+            iframe.style.height = '400px';
+            iframe.style.border = '1px solid #ccc';
+            
+            iframe.onload = function() {
+                try {
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    
+                    // Check if our CSS file is loaded
+                    const cssLinks = Array.from(iframeDoc.querySelectorAll('link[rel="stylesheet"]'));
+                    const hasFixCSS = cssLinks.some(link => link.href.includes('message-scrollbar-fix.css'));
+                    
+                    // Check computed styles on messages
+                    const message = iframeDoc.querySelector('.message');
+                    const messageContent = iframeDoc.querySelector('.message-content');
+                    
+                    let status = '<div class="status pass">✅ CSS Fix Applied Successfully!</div>';
+                    let details = '<h3>Details:</h3><ul>';
+                    
+                    if (hasFixCSS) {
+                        details += '<li>✅ message-scrollbar-fix.css is loaded</li>';
+                    } else {
+                        status = '<div class="status fail">❌ CSS Fix Not Loaded</div>';
+                        details += '<li>❌ message-scrollbar-fix.css is NOT loaded</li>';
+                    }
+                    
+                    if (message) {
+                        const messageOverflow = window.getComputedStyle(message).overflow;
+                        details += `<li>Message overflow: ${messageOverflow} (should be visible)</li>`;
+                    }
+                    
+                    if (messageContent) {
+                        const contentOverflow = window.getComputedStyle(messageContent).overflow;
+                        details += `<li>Message content overflow: ${contentOverflow} (should be visible)</li>`;
+                    }
+                    
+                    details += '</ul>';
+                    
+                    result.innerHTML = status + details;
+                } catch (e) {
+                    result.innerHTML = '<div class="status fail">❌ Could not access iframe content (CORS)</div>';
+                }
+            };
+            
+            result.innerHTML = '<p>Loading app...</p>';
+            result.appendChild(iframe);
+        }
+    </script>
+</body>
+</html>

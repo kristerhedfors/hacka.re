@@ -41,7 +41,9 @@ window.LogoAnimation = (function() {
             
             // Get the heart logo element - support multiple hearts
             const heartLogos = document.querySelectorAll('.heart-logo');
-            if (heartLogos.length === 0) return;
+            if (heartLogos.length === 0) {
+                return;
+            }
             
             // Use the last heart logo (most recently added)
             heartLogo = heartLogos[heartLogos.length - 1];
@@ -113,10 +115,12 @@ window.LogoAnimation = (function() {
                 const logoText = document.querySelector('.logo-text');
                 const tagline = document.querySelector('.tagline');
                 const serverlessGPTs = document.querySelector('.serverless-gpts');
+                const heartButton = document.getElementById('heart-btn');
                 
                 // Function to toggle tooltip
                 function toggleTooltip(e) {
                     e.stopPropagation(); // Prevent document click from immediately closing it
+                    e.preventDefault(); // Prevent any default button behavior
                     
                     if (tooltip.classList.contains('active')) {
                         tooltip.classList.remove('active');
@@ -141,11 +145,23 @@ window.LogoAnimation = (function() {
                 // Add click event listeners to all related elements
                 heartLogo.addEventListener('click', toggleTooltip);
                 
+                // Also add to the parent button if it exists
+                if (heartButton) {
+                    heartButton.addEventListener('click', toggleTooltip);
+                }
+                
                 // Add touch support for mobile devices
                 heartLogo.addEventListener('touchend', function(e) {
                     e.preventDefault(); // Prevent double-tap zoom
                     toggleTooltip(e);
                 });
+                
+                if (heartButton) {
+                    heartButton.addEventListener('touchend', function(e) {
+                        e.preventDefault(); // Prevent double-tap zoom
+                        toggleTooltip(e);
+                    });
+                }
                 
                 // Add click event listeners to title, subtitle, and serverless agency text if they exist
                 if (logoText) {

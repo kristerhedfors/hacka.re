@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quick Tooltip Test</title>
+    <style>
+        body {
+            padding: 50px;
+            font-family: Arial, sans-serif;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #333;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tooltip and Heart Menu Test</h1>
+    
+    <iframe id="testFrame" src="http://localhost:8000"></iframe>
+    
+    <div id="results"></div>
+    
+    <script>
+        let results = document.getElementById('results');
+        
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                let iframe = document.getElementById('testFrame');
+                let iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                
+                // Check for tooltips
+                let tooltips = iframeDoc.querySelectorAll('.mini-tooltip');
+                let tooltipResult = document.createElement('div');
+                tooltipResult.className = tooltips.length > 0 ? 'test-result success' : 'test-result error';
+                tooltipResult.textContent = `Mini-tooltips found: ${tooltips.length}`;
+                results.appendChild(tooltipResult);
+                
+                // Check for heart menu
+                let heartMenu = iframeDoc.querySelector('.heart-logo .tooltip.tree-menu');
+                let menuResult = document.createElement('div');
+                menuResult.className = heartMenu ? 'test-result success' : 'test-result error';
+                menuResult.textContent = heartMenu ? 'Heart menu found' : 'Heart menu NOT found';
+                results.appendChild(menuResult);
+                
+                // Try to click heart button
+                let heartBtn = iframeDoc.getElementById('heart-btn');
+                if (heartBtn) {
+                    heartBtn.click();
+                    
+                    setTimeout(() => {
+                        let isActive = heartMenu && heartMenu.classList.contains('active');
+                        let activeResult = document.createElement('div');
+                        activeResult.className = isActive ? 'test-result success' : 'test-result error';
+                        activeResult.textContent = isActive ? 'Heart menu opens on click' : 'Heart menu does NOT open on click';
+                        results.appendChild(activeResult);
+                        
+                        // Check visibility
+                        if (heartMenu) {
+                            let computed = iframeDoc.defaultView.getComputedStyle(heartMenu);
+                            let visResult = document.createElement('div');
+                            visResult.className = 'test-result';
+                            visResult.innerHTML = `
+                                <strong>Heart Menu Computed Styles:</strong><br>
+                                Visibility: ${computed.visibility}<br>
+                                Opacity: ${computed.opacity}<br>
+                                Display: ${computed.display}<br>
+                                Z-index: ${computed.zIndex}<br>
+                                Position: ${computed.position}
+                            `;
+                            results.appendChild(visResult);
+                        }
+                    }, 500);
+                }
+            }, 2000); // Wait for iframe to load
+        });
+    </script>
+</body>
+</html>

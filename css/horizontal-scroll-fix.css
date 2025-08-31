@@ -1,0 +1,291 @@
+/* 
+ * Horizontal Scroll Prevention
+ * Ensures no horizontal scrolling on any platform, especially mobile
+ */
+
+/* ===== Global Overflow Prevention ===== */
+html {
+    overflow-x: hidden;
+    max-width: 100vw;
+}
+
+body {
+    overflow-x: hidden;
+    max-width: 100vw;
+    position: relative;
+}
+
+/* Prevent any element from causing horizontal overflow */
+* {
+    max-width: 100%;
+}
+
+/* ===== App Container Constraints ===== */
+.app-container {
+    overflow-x: hidden;
+    max-width: 100vw;
+}
+
+#chat-messages {
+    overflow-x: hidden;
+    max-width: 100%;
+}
+
+/* ===== Message Content Constraints ===== */
+.message {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+.message-content {
+    max-width: 100%;
+    overflow-x: hidden;
+    word-wrap: break-word;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+}
+
+/* ===== Markdown Content Constraints ===== */
+.markdown-content {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+/* ===== Images - Responsive Sizing ===== */
+.message-content img,
+.markdown-content img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0.5rem 0;
+}
+
+/* ===== Tables - Responsive Handling ===== */
+.message-content table,
+.markdown-content table {
+    max-width: 100%;
+    width: 100%;
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-collapse: collapse;
+}
+
+/* Wrapper for table scrolling */
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0.5rem 0;
+}
+
+.table-wrapper table {
+    min-width: 100%;
+}
+
+/* ===== Code Blocks - Contained Scrolling ===== */
+.message-content pre,
+.markdown-content pre {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    white-space: pre;
+    word-wrap: normal;
+    display: block;
+    padding: 0.5rem;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+}
+
+/* Inline code should wrap */
+.message-content code:not(pre code),
+.markdown-content code:not(pre code) {
+    word-break: break-word;
+    white-space: normal;
+}
+
+/* ===== Long Words and URLs ===== */
+.message-content p,
+.message-content li,
+.message-content td,
+.markdown-content p,
+.markdown-content li,
+.markdown-content td {
+    word-wrap: break-word;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+}
+
+/* Break long URLs */
+.message-content a,
+.markdown-content a {
+    word-wrap: break-word;
+    word-break: break-all;
+    overflow-wrap: break-word;
+}
+
+/* ===== Lists - Prevent Overflow ===== */
+.message-content ul,
+.message-content ol,
+.markdown-content ul,
+.markdown-content ol {
+    max-width: 100%;
+    padding-left: 1.5rem;
+}
+
+/* ===== Blockquotes - Contained Width ===== */
+.message-content blockquote,
+.markdown-content blockquote {
+    max-width: 100%;
+    overflow-x: hidden;
+    word-wrap: break-word;
+}
+
+/* ===== Modals - Prevent Overflow ===== */
+.modal-content {
+    max-width: 100vw;
+    overflow-x: hidden;
+}
+
+.modal-body {
+    overflow-x: hidden;
+    max-width: 100%;
+}
+
+/* ===== Input Fields - Prevent Overflow ===== */
+input[type="text"],
+input[type="email"],
+input[type="url"],
+input[type="search"],
+textarea,
+select {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+#message-input {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* ===== Buttons and Controls ===== */
+button,
+.button,
+.btn {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Allow wrapping for longer button text on mobile */
+@media (max-width: 480px) {
+    button,
+    .button,
+    .btn {
+        white-space: normal;
+        word-wrap: break-word;
+    }
+}
+
+/* ===== Settings and Form Elements ===== */
+.setting-item {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+.setting-label {
+    max-width: 100%;
+    word-wrap: break-word;
+}
+
+/* ===== Function Calling Elements ===== */
+.function-item,
+.function-code,
+.function-description {
+    max-width: 100%;
+    overflow-x: hidden;
+    word-wrap: break-word;
+}
+
+/* ===== Mobile-Specific Fixes ===== */
+@media (max-width: 768px) {
+    /* Extra constraints for mobile */
+    html, body {
+        overflow-x: hidden !important;
+        max-width: 100vw !important;
+        position: relative;
+    }
+    
+    .app-container {
+        overflow-x: hidden !important;
+        max-width: 100vw !important;
+    }
+    
+    /* Ensure messages don't overflow */
+    .message {
+        max-width: calc(100vw - 2rem);
+        margin: 0.5rem;
+    }
+    
+    .message-content {
+        max-width: 100%;
+        padding: 0.75rem;
+    }
+    
+    /* Tables become scrollable containers on mobile */
+    .message-content table,
+    .markdown-content table {
+        font-size: 0.875rem;
+    }
+    
+    /* Reduce padding on mobile for more content space */
+    .message-content pre,
+    .markdown-content pre {
+        padding: 0.25rem;
+        font-size: 0.875rem;
+    }
+    
+    /* Ensure modals fit screen */
+    .modal {
+        padding: 0 0.5rem;
+    }
+    
+    .modal-content {
+        max-width: calc(100vw - 1rem);
+        margin: 0.5rem auto;
+    }
+}
+
+/* ===== Small Mobile Devices ===== */
+@media (max-width: 380px) {
+    /* Even stricter constraints for very small screens */
+    .message {
+        max-width: calc(100vw - 1rem);
+        margin: 0.25rem 0.5rem;
+    }
+    
+    .message-content {
+        padding: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    /* Reduce list indentation on very small screens */
+    .message-content ul,
+    .message-content ol,
+    .markdown-content ul,
+    .markdown-content ol {
+        padding-left: 1rem;
+    }
+}
+
+/* ===== Debug Helper - Remove in Production ===== */
+/* Uncomment to visualize elements causing overflow */
+/*
+* {
+    outline: 1px solid red !important;
+}
+*/
