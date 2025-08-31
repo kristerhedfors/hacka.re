@@ -1,0 +1,73 @@
+/* Fix for unwanted scrollbars on individual chat messages */
+
+/* Ensure messages and their content don't have individual scrollbars */
+.message {
+    overflow: visible !important;
+    max-height: none !important;
+}
+
+.message-content {
+    overflow: visible !important;
+    max-height: none !important;
+    /* Keep word wrapping for long content */
+    word-wrap: break-word;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Markdown content should also not have scrollbars */
+.markdown-content {
+    overflow: visible !important;
+    max-height: none !important;
+}
+
+/* Only code blocks and tables should be scrollable when needed */
+.message-content pre,
+.markdown-content pre {
+    overflow-x: auto;
+    overflow-y: visible;
+    max-width: 100%;
+}
+
+.message-content table,
+.markdown-content table {
+    display: block;
+    overflow-x: auto;
+    max-width: 100%;
+}
+
+/* Ensure the chat messages container remains scrollable */
+#chat-messages {
+    overflow-y: auto !important;
+    /* This is the only element that should scroll */
+}
+
+/* Fix for any nested containers that might cause scrollbars */
+.message-content > *,
+.markdown-content > * {
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-y: visible;
+}
+
+/* Exception for code blocks - they can scroll horizontally */
+.message-content pre,
+.markdown-content pre,
+.message-content .hljs,
+.markdown-content .hljs {
+    overflow-x: auto;
+    overflow-y: visible;
+}
+
+/* Ensure long words break properly without causing overflow */
+.message-content p,
+.message-content li,
+.message-content div,
+.markdown-content p,
+.markdown-content li,
+.markdown-content div {
+    word-wrap: break-word;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+}
