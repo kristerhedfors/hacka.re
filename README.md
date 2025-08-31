@@ -79,6 +79,35 @@ To use hacka.re, you'll need an API key from a compatible provider.
 
 Your API key and conversations will be saved locally in your browser for future sessions.
 
+### Using with LM Studio
+
+To use hacka.re with LM Studio for local AI models:
+
+1. **Start LM Studio** and load your desired model
+2. **Enable the Local Server** in LM Studio (usually on port 1234)
+3. **⚠️ Required: Enable CORS in LM Studio**
+   - Go to **Developer → Settings → Enable CORS**
+   - Check the "Enable CORS" checkbox
+   
+   **Warning:** This allows ALL websites you visit to access your LM Studio server. Only enable when using hacka.re, then disable when done.
+
+4. **Configure hacka.re:**
+   - Open hacka.re settings
+   - Select "Custom" as the API provider
+   - Set the base URL to `http://localhost:1234/v1`
+   - Leave the API key field empty (or enter any text if required)
+   - Select your model from the list
+
+### Using with Ollama
+
+To use Ollama with hacka.re, you must start it with CORS enabled:
+
+```bash
+OLLAMA_ORIGINS=https://hacka.re ollama serve
+```
+
+Then select "Ollama" in hacka.re settings.
+
 ## Development
 
 hacka.re is designed to be easily extensible and modifiable. The codebase is structured to be maintainable and follows modern web development practices.
