@@ -1949,7 +1949,7 @@ main {
 /* Microphone button inside input field */
 .microphone-btn-inside {
     position: absolute;
-    right: 0.6rem; /* Adjusted to fit within rounded edge */
+    right: 0.43rem; /* Precisely aligned to join perfectly with rounded edge */
     background: transparent;
     color: var(--text-color);
     border: none;
