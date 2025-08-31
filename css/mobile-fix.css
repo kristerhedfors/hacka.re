@@ -122,6 +122,31 @@
             position: relative !important;
         }
     }
+    
+    /* iOS Chrome specific fixes */
+    @supports (-webkit-appearance: none) and (stroke-color: transparent) {
+        /* This targets Chrome on iOS */
+        .keyboard-open #chat-container {
+            /* Prevent container from scrolling when keyboard opens */
+            overflow: hidden;
+        }
+        
+        .keyboard-open #chat-messages {
+            /* Adjust messages area height when keyboard is open */
+            max-height: calc(100vh - 300px); /* Account for keyboard height */
+            max-height: calc(100dvh - 300px);
+        }
+        
+        .keyboard-open #chat-input-container {
+            /* Ensure input stays at bottom and visible */
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            transform: translateZ(0); /* Force hardware acceleration */
+            -webkit-transform: translateZ(0);
+        }
+    }
 }
 
 /* Landscape orientation adjustments */

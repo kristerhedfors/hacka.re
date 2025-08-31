@@ -14,6 +14,33 @@ window.MobileUtils = (function() {
         const messageInput = document.getElementById('message-input');
         const appContainer = document.querySelector('.app-container');
         
+        // Use Visual Viewport API if available for better keyboard handling
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', function() {
+                const hasKeyboard = window.visualViewport.height < window.innerHeight * 0.75;
+                
+                if (hasKeyboard) {
+                    document.body.classList.add('keyboard-open');
+                    isKeyboardOpen = true;
+                    
+                    // Adjust chat input container position based on visual viewport
+                    const inputContainer = document.getElementById('chat-input-container');
+                    if (inputContainer) {
+                        const keyboardHeight = window.innerHeight - window.visualViewport.height;
+                        inputContainer.style.paddingBottom = `${keyboardHeight}px`;
+                    }
+                } else {
+                    document.body.classList.remove('keyboard-open');
+                    isKeyboardOpen = false;
+                    
+                    const inputContainer = document.getElementById('chat-input-container');
+                    if (inputContainer) {
+                        inputContainer.style.paddingBottom = '';
+                    }
+                }
+            });
+        }
+        
         // Detect when the virtual keyboard is opened/closed
         if (messageInput) {
             messageInput.addEventListener('focus', function() {
@@ -22,9 +49,24 @@ window.MobileUtils = (function() {
                     document.body.classList.add('keyboard-open');
                     isKeyboardOpen = true;
                     
-                    // Scroll to the input field itself rather than the entire document height
-                    // This prevents scrolling past the footer
-                    messageInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // For iOS Chrome, use a different approach to prevent the input from being hidden
+                    const isIOSChrome = /CriOS/.test(navigator.userAgent);
+                    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+                    
+                    if (isIOSChrome || (isIOS && /Chrome/.test(navigator.userAgent))) {
+                        // For iOS Chrome, scroll the input container into view instead of centering
+                        // This prevents the view from scrolling too far down
+                        const inputContainer = document.getElementById('chat-input-container');
+                        if (inputContainer) {
+                            inputContainer.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                        }
+                    } else if (isIOS) {
+                        // For iOS Safari, use nearest to avoid over-scrolling
+                        messageInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    } else {
+                        // For other browsers, keep the original behavior
+                        messageInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
                 }, 300);
             });
             
