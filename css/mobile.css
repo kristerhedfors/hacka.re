@@ -21,6 +21,12 @@
         overflow: hidden;
     }
     
+    /* Override any modal-induced body styles */
+    body:not(.modal-open) {
+        overflow: hidden !important; /* Keep hidden for app structure */
+        position: fixed !important;
+    }
+    
     .app-container {
         height: 100%;
         height: calc(var(--vh, 1vh) * 100);
