@@ -240,17 +240,15 @@
             <div class="runtime-section">
                 <h2>Context</h2>
                 <p>
-                    The following five projects are among the most popular choises for running LLM inference on personal hardware without cloud dependencies:
+                    The following three projects are the most popular choices for running LLM inference on personal hardware without cloud dependencies:
                 </p>
                 <ul>
                     <li><strong>Llamafile</strong> (Mozilla) — Single-executable simplicity</li>
                     <li><strong>Ollama</strong> (Ollama Inc.) — The CLI-first approach</li>
-                    <li><strong>GPT4All</strong> (Nomic AI) — Desktop app + CLI</li>
-                    <li><strong>LM Studio</strong> (Element Labs) — GUI-first with SDK</li>
-                    <li><strong>LocalAI</strong> (Community) — Go-based OpenAI shim</li>
+                    <li><strong>LM Studio</strong> (Element Labs) — GUI application</li>
                 </ul>
                 <p>
-                    All five expose OpenAI-compatible HTTP interfaces and prioritize privacy through offline operation, making them perfect companions for hacka.re's privacy-focused architecture.
+                    All three expose OpenAI-compatible HTTP interfaces and prioritize privacy through offline operation, making them perfect companions for hacka.re's privacy-focused architecture.
                 </p>
             </div>
 
@@ -311,6 +309,18 @@ ollama pull llama3.3:7b
 ollama run llama3.3:7b</pre>
                     </div>
                     <p>Point hacka.re to <code>http://localhost:11434/v1/chat/completions</code> (no API key required)</p>
+                    
+                    <h4 style="color: var(--primary-color); margin-top: 20px;">📡 Required: CORS Configuration</h4>
+                    
+                    <p><strong>Start Ollama with hacka.re access:</strong></p>
+                    <div class="code-block">
+                        <button class="copy-button" onclick="copyToClipboard(this)" title="Copy to clipboard">Copy</button>
+                        <pre>OLLAMA_ORIGINS=https://hacka.re ollama serve</pre>
+                    </div>
+                    
+                    <p style="background-color: var(--ai-msg-bg); padding: 10px; border-radius: var(--border-radius); margin-top: 15px;">
+                        <strong>Note:</strong> This is required for hacka.re to access Ollama. Without setting <code>OLLAMA_ORIGINS</code>, the connection will be blocked by your browser.
+                    </p>
                 </div>
 
                 <div class="pros-cons">
@@ -337,47 +347,7 @@ ollama run llama3.3:7b</pre>
             </div>
 
             <div class="runtime-section">
-                <h2>3. GPT4All — Desktop App + CLI</h2>
-                
-                <div class="quick-start">
-                    <h3>Quick-start (identical on Win/macOS/Linux)</h3>
-                    <ol>
-                        <li>Download installer from <a href="https://gpt4all.io" target="_blank">gpt4all.io</a>
-                            <ul>
-                                <li>Windows: run the MSI</li>
-                                <li>macOS: drag to /Applications</li>
-                                <li>Linux: untar + chmod +x</li>
-                            </ul>
-                        </li>
-                        <li>Launch GUI once (creates <code>~/.gpt4all</code>, starts server on <code>localhost:4891</code>)</li>
-                        <li>Point hacka.re to <code>http://localhost:4891/v1/chat/completions</code> (no key expected)</li>
-                    </ol>
-                </div>
-
-                <div class="pros-cons">
-                    <div class="pros">
-                        <h4>Pros</h4>
-                        <ul>
-                            <li>One installer, cross-platform; no Python/Docker needed</li>
-                            <li>Ships dozens of GGUF builds; model picker built in</li>
-                            <li><strong>Offline-by-design</strong>: no telemetry; CPU-only hardware OK</li>
-                            <li>Integrated chat UI for non-technical users</li>
-                        </ul>
-                    </div>
-                    <div class="cons">
-                        <h4>Cons</h4>
-                        <ul>
-                            <li>GUI mandatory for first run; headless requires CLI flags</li>
-                            <li>Closed-source Electron shell (core libs MIT, GUI proprietary)</li>
-                            <li>Non-standard API port (4891) requires config in hacka.re</li>
-                            <li>Memory hungry with GUI running</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <div class="runtime-section">
-                <h2>4. LM Studio — GUI, CLI (lms), and SDK</h2>
+                <h2>3. LM Studio — GUI Application</h2>
                 
                 <div class="quick-start">
                     <h3>Quick-start</h3>
@@ -386,6 +356,17 @@ ollama run llama3.3:7b</pre>
                         <li>First launch opens model catalogue; pick a GGUF, click <strong>Run</strong></li>
                         <li>Enable "Local LLM Server" in settings → serves on <code>localhost:1234</code></li>
                     </ul>
+                    
+                    <h4 style="color: var(--danger-color); margin-top: 20px;">⚠️ Required: Enable CORS</h4>
+                    
+                    <ul>
+                        <li>Go to <strong>Developer → Settings → Enable CORS</strong></li>
+                        <li>Check the "Enable CORS" checkbox</li>
+                    </ul>
+                    
+                    <p style="background-color: rgba(255, 0, 0, 0.1); padding: 10px; border-radius: var(--border-radius); border: 1px solid var(--danger-color); margin-top: 15px;">
+                        <strong>⚠️ Warning:</strong> This allows ALL websites you visit to access your LM Studio server. Only enable when using hacka.re, then disable when done.
+                    </p>
                 </div>
 
                 <div class="pros-cons">
@@ -494,9 +475,7 @@ export const BACKENDS = {
   "ollama"    : { baseURL: "http://localhost:11434/v1" },
   "llamafile" : { baseURL: "http://localhost:8080/v1",
                   headers : { Authorization: "Bearer no-key" } },
-  "gpt4all"   : { baseURL: "http://localhost:4891/v1" },
-  "lmstudio"  : { baseURL: "http://localhost:1234/v1" },
-  "localai"   : { baseURL: "http://localhost:8080/v1" }
+  "lmstudio"  : { baseURL: "http://localhost:1234/v1" }
 };</pre></div>
 
                 <h3>Quick Configuration in hacka.re</h3>
