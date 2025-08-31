@@ -1951,7 +1951,7 @@ main {
     position: absolute;
     right: 0.43rem; /* Precisely aligned to join perfectly with rounded edge */
     background: transparent;
-    color: var(--text-color);
+    color: #9ca3af; /* Gray color for initial state */
     border: none;
     padding: 0.4rem;
     transition: all 0.3s ease;
@@ -1963,7 +1963,7 @@ main {
     width: 30px;
     height: 30px;
     border-radius: 50%;
-    opacity: 0.6;
+    opacity: 0.8;
 }
 
 .microphone-btn-inside:hover {
