@@ -122,10 +122,10 @@ window.VoiceControlManager = (function() {
             const messageInput = document.getElementById('message-input');
             if (!messageInput || !microphoneButton) return;
             
-            // Hide microphone if there's text, show if empty and not recording
-            if (messageInput.value.trim().length > 0) {
+            // Hide microphone if there's text, show if empty (unless recording/processing)
+            if (messageInput.value.trim().length > 0 && microphoneState !== 'recording' && microphoneState !== 'processing') {
                 microphoneButton.style.display = 'none';
-            } else if (microphoneState !== 'recording' && microphoneState !== 'processing') {
+            } else {
                 microphoneButton.style.display = 'flex';
             }
         }
