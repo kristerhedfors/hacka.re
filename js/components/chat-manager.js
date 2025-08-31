@@ -588,14 +588,22 @@ function cleanupGeneration(updateContextUsage, currentModel) {
          * @param {Function} updateContextUsage - Function to update context usage
          */
         function clearChatHistory(updateContextUsage) {
-            // Clear messages array
+            // Clear messages array completely - no system messages, no welcome messages
             messages = [];
             
-            // Clear UI
+            // Clear UI completely
             uiHandler.clearChat();
             
-            // Add welcome message
-            addSystemMessage('Chat history cleared.');
+            // Clear any stored welcome message that might have been added from shared link
+            if (window._welcomeMessageToPrepend) {
+                window._welcomeMessageToPrepend = null;
+            }
+            
+            // Also clear welcome message from ShareManager if it exists
+            if (window.aiHackare && window.aiHackare.shareManager && 
+                typeof window.aiHackare.shareManager.setSharedWelcomeMessage === 'function') {
+                window.aiHackare.shareManager.setSharedWelcomeMessage(null);
+            }
             
             // Clear local storage - this uses the current namespace
             StorageService.clearChatHistory();
@@ -603,8 +611,11 @@ function cleanupGeneration(updateContextUsage, currentModel) {
             // Also clear any legacy non-namespaced history that might exist
             localStorage.removeItem(StorageService.BASE_STORAGE_KEYS.HISTORY);
             
-            // Reset context usage
+            // Reset context usage to only include configured system prompts
             resetContextUsage(updateContextUsage);
+            
+            // Add a simple confirmation message
+            addSystemMessage('Chat cleared.');
         }
         
         /**
