@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Mobile Debug - Chat Input Visibility</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --vh: 1vh;
+            --keyboard-height: 0px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            width: 100%;
+            height: 100vh;
+            height: calc(var(--vh, 1vh) * 100);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .debug-info {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            z-index: 1000;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .debug-info div {
+            margin: 2px 0;
+        }
+
+        .container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            position: relative;
+        }
+
+        .header {
+            background: #4a5568;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f7fafc;
+            min-height: 0;
+        }
+
+        .message {
+            background: white;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* Different positioning strategies to test */
+        
+        /* Strategy 1: Fixed positioning */
+        .input-container-fixed {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 2px solid #e2e8f0;
+            padding: 10px;
+            z-index: 100;
+        }
+
+        /* Strategy 2: Sticky positioning */
+        .input-container-sticky {
+            position: sticky;
+            bottom: 0;
+            background: white;
+            border-top: 2px solid #e2e8f0;
+            padding: 10px;
+            z-index: 100;
+        }
+
+        /* Strategy 3: Flex with shrink */
+        .input-container-flex {
+            background: white;
+            border-top: 2px solid #e2e8f0;
+            padding: 10px;
+            flex-shrink: 0;
+        }
+
+        /* Strategy 4: Absolute positioning */
+        .input-container-absolute {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 2px solid #e2e8f0;
+            padding: 10px;
+            z-index: 100;
+        }
+
+        .input-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .text-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            font-size: 16px; /* Prevents zoom on iOS */
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background: #4299e1;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .btn-delete {
+            background: #f56565;
+        }
+
+        .strategy-selector {
+            position: fixed;
+            top: 170px;
+            left: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px;
+            border-radius: 8px;
+            z-index: 1000;
+        }
+
+        .strategy-selector select {
+            width: 100%;
+            padding: 8px;
+            font-size: 14px;
+        }
+
+        /* Safe area handling for iOS */
+        @supports (padding-bottom: env(safe-area-inset-bottom)) {
+            .input-container-fixed,
+            .input-container-sticky,
+            .input-container-flex,
+            .input-container-absolute {
+                padding-bottom: calc(10px + env(safe-area-inset-bottom));
+            }
+        }
+
+        /* Visual indicator for testing */
+        .visibility-indicator {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            background: #48bb78;
+            color: white;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 2000;
+        }
+
+        .visibility-indicator.hidden {
+            background: #f56565;
+        }
+
+        /* Test for transform issues */
+        .no-transform {
+            transform: none !important;
+        }
+
+        /* Test for viewport height issues */
+        @media (max-width: 768px) {
+            .container {
+                height: 100vh;
+                height: -webkit-fill-available;
+                height: calc(var(--vh, 1vh) * 100);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-info" id="debugInfo">
+        <div>Loading debug info...</div>
+    </div>
+
+    <div class="strategy-selector">
+        <label>Test Strategy: 
+            <select id="strategySelect" onchange="changeStrategy()">
+                <option value="fixed">Fixed Position</option>
+                <option value="sticky">Sticky Position</option>
+                <option value="flex" selected>Flex Layout</option>
+                <option value="absolute">Absolute Position</option>
+            </select>
+        </label>
+    </div>
+
+    <div class="container" id="container">
+        <div class="header">
+            <h1>Mobile Chat Debug</h1>
+        </div>
+        
+        <div class="messages" id="messages">
+            <div class="message">Welcome! This is a test environment for debugging mobile chat input visibility.</div>
+            <div class="message">Try different positioning strategies using the selector above.</div>
+            <div class="message">The debug info shows viewport and element dimensions.</div>
+            <div class="message">Test scrolling behavior...</div>
+            <div class="message">Message 5</div>
+            <div class="message">Message 6</div>
+            <div class="message">Message 7</div>
+            <div class="message">Message 8</div>
+            <div class="message">Message 9</div>
+            <div class="message">Message 10</div>
+            <div class="message">Message 11</div>
+            <div class="message">Message 12</div>
+            <div class="message">Message 13</div>
+            <div class="message">Message 14</div>
+            <div class="message">Message 15</div>
+        </div>
+        
+        <div class="input-container-flex" id="inputContainer">
+            <div class="input-controls">
+                <button class="btn btn-delete" onclick="clearMessages()">🗑️</button>
+                <input type="text" class="text-input" id="textInput" placeholder="Type a message...">
+                <button class="btn" onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="visibility-indicator" id="visIndicator">Input Visible</div>
+
+    <script>
+        // Set custom viewport height property
+        function setViewportHeight() {
+            const vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+        }
+        setViewportHeight();
+        window.addEventListener('resize', setViewportHeight);
+        window.addEventListener('orientationchange', setViewportHeight);
+
+        // Debug information
+        function updateDebugInfo() {
+            const container = document.getElementById('inputContainer');
+            const rect = container.getBoundingClientRect();
+            const debugInfo = document.getElementById('debugInfo');
+            
+            const info = {
+                'Window Height': window.innerHeight,
+                'Window Width': window.innerWidth,
+                'Document Height': document.documentElement.clientHeight,
+                'Screen Height': screen.height,
+                'Available Height': screen.availHeight,
+                'Input Container Top': Math.round(rect.top),
+                'Input Container Bottom': Math.round(rect.bottom),
+                'Input Container Height': Math.round(rect.height),
+                'Is Input Visible': rect.bottom <= window.innerHeight && rect.bottom > 0,
+                'Scroll Y': window.scrollY,
+                'User Agent': navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop',
+                'Safe Area Bottom': getComputedStyle(document.documentElement).getPropertyValue('--safe-area-inset-bottom') || '0',
+                'Current Strategy': document.getElementById('strategySelect').value
+            };
+            
+            debugInfo.innerHTML = Object.entries(info)
+                .map(([key, value]) => `<div><strong>${key}:</strong> ${value}</div>`)
+                .join('');
+            
+            // Update visibility indicator
+            const indicator = document.getElementById('visIndicator');
+            if (info['Is Input Visible']) {
+                indicator.textContent = 'Input Visible ✓';
+                indicator.classList.remove('hidden');
+            } else {
+                indicator.textContent = 'Input Hidden ✗';
+                indicator.classList.add('hidden');
+            }
+        }
+
+        // Update debug info regularly
+        setInterval(updateDebugInfo, 100);
+        updateDebugInfo();
+
+        // Handle input focus (important for mobile keyboards)
+        document.getElementById('textInput').addEventListener('focus', () => {
+            setTimeout(() => {
+                const container = document.getElementById('inputContainer');
+                container.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                updateDebugInfo();
+            }, 300);
+        });
+
+        // Strategy switcher
+        function changeStrategy() {
+            const strategy = document.getElementById('strategySelect').value;
+            const container = document.getElementById('inputContainer');
+            
+            // Remove all strategy classes
+            container.className = '';
+            
+            // Add the selected strategy class
+            container.classList.add(`input-container-${strategy}`);
+            
+            // Special handling for absolute positioning
+            if (strategy === 'absolute') {
+                document.getElementById('container').style.position = 'relative';
+                document.getElementById('messages').style.paddingBottom = '80px';
+            } else if (strategy === 'fixed') {
+                document.getElementById('container').style.position = '';
+                document.getElementById('messages').style.paddingBottom = '80px';
+            } else {
+                document.getElementById('container').style.position = '';
+                document.getElementById('messages').style.paddingBottom = '';
+            }
+            
+            updateDebugInfo();
+        }
+
+        // Message functions
+        function sendMessage() {
+            const input = document.getElementById('textInput');
+            const messages = document.getElementById('messages');
+            
+            if (input.value.trim()) {
+                const message = document.createElement('div');
+                message.className = 'message';
+                message.textContent = input.value;
+                messages.appendChild(message);
+                input.value = '';
+                
+                // Scroll to bottom
+                messages.scrollTop = messages.scrollHeight;
+            }
+        }
+
+        function clearMessages() {
+            const messages = document.getElementById('messages');
+            messages.innerHTML = '<div class="message">Messages cleared. Start fresh!</div>';
+        }
+
+        // Handle enter key
+        document.getElementById('textInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Prevent rubber band scrolling on iOS
+        document.body.addEventListener('touchmove', (e) => {
+            if (e.target === document.body) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Visual Viewport API (for better keyboard detection)
+        if ('visualViewport' in window) {
+            window.visualViewport.addEventListener('resize', () => {
+                const keyboardHeight = window.innerHeight - window.visualViewport.height;
+                document.documentElement.style.setProperty('--keyboard-height', `${keyboardHeight}px`);
+                updateDebugInfo();
+            });
+        }
+    </script>
+</body>
+</html>
