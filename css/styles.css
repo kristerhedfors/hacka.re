@@ -2580,6 +2580,31 @@ footer a:hover {
     display: flex;
 }
 
+/* Position modals from header icons to start below header */
+#settings-modal,
+#share-modal,
+#prompts-modal,
+#function-modal,
+#mcp-servers-modal,
+#agent-modal,
+#rag-modal {
+    align-items: flex-start;
+    padding-top: 80px; /* Position below typical header height */
+}
+
+/* Adjust for mobile where header might wrap */
+@media (max-width: 768px) {
+    #settings-modal,
+    #share-modal,
+    #prompts-modal,
+    #function-modal,
+    #mcp-servers-modal,
+    #agent-modal,
+    #rag-modal {
+        padding-top: 100px; /* Slightly more space for wrapped header on mobile */
+    }
+}
+
 .modal-content {
     background-color: var(--light-color);
     padding: 2rem;
@@ -3119,11 +3144,7 @@ footer a:hover {
         transform: translateX(-50%) !important;
     }
     
-    /* Improve modal positioning on mobile */
-    .modal {
-        align-items: flex-start;
-        padding-top: 2rem;
-    }
+    /* Note: Modal positioning for header-triggered modals is handled separately above */
     
     /* Make share buttons more mobile-friendly */
     .share-actions {
@@ -3152,10 +3173,7 @@ footer a:hover {
         padding: 1rem;
     }
     
-    /* Ensure modal starts higher on the screen to make buttons accessible */
-    .modal {
-        padding-top: 1rem;
-    }
+    /* Note: Modal positioning for header-triggered modals is handled specifically above */
     
     /* Reduce padding to maximize usable space */
     .form-group {
