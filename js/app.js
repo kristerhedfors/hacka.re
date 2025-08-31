@@ -126,11 +126,11 @@ async function handleEarlySharedLinkPassword() {
                     
                     // Fix mobile viewport after modal removal
                     if (window.innerWidth <= 768) {
-                        // The body should remain fixed for the app structure
-                        document.body.style.overflow = 'hidden';
-                        document.body.style.position = 'fixed';
-                        document.body.style.height = '100vh';
-                        document.body.style.width = '100%';
+                        // Reset body styles properly for mobile
+                        document.body.style.overflow = '';
+                        document.body.style.position = '';
+                        document.body.style.height = '';
+                        document.body.style.width = '';
                         
                         // Ensure the chat container is scrollable
                         const chatContainer = document.getElementById('chat-container');
@@ -163,12 +163,19 @@ async function handleEarlySharedLinkPassword() {
                         // Force a reflow to ensure proper rendering
                         document.body.offsetHeight;
                         
-                        // Focus on chat input to ensure keyboard doesn't block view
+                        // Don't auto-focus on mobile to prevent keyboard issues
                         setTimeout(() => {
                             const messageInput = document.getElementById('message-input');
                             if (messageInput) {
-                                messageInput.focus();
-                                messageInput.blur(); // Blur immediately to prevent keyboard from showing
+                                messageInput.blur(); // Ensure keyboard is closed
+                            }
+                            
+                            // Double-check chat input visibility
+                            const chatInputContainer = document.getElementById('chat-input-container');
+                            if (chatInputContainer) {
+                                chatInputContainer.style.display = '';
+                                chatInputContainer.style.visibility = 'visible';
+                                chatInputContainer.style.opacity = '1';
                             }
                         }, 200);
                     }
@@ -200,7 +207,7 @@ async function handleEarlySharedLinkPassword() {
 
 document.addEventListener('DOMContentLoaded', async function() {
     // Clean up any leftover password modals first (in case of reload)
-    const existingModals = document.querySelectorAll('.password-modal, #password-modal');
+    const existingModals = document.querySelectorAll('.password-modal, #password-modal, .modal.show');
     existingModals.forEach(modal => {
         console.log('[App] Removing leftover password modal');
         modal.remove();
@@ -211,6 +218,15 @@ document.addEventListener('DOMContentLoaded', async function() {
     document.body.style.position = '';
     document.body.style.height = '';
     document.body.style.width = '';
+    
+    // Ensure chat input is visible
+    const chatInputContainer = document.getElementById('chat-input-container');
+    if (chatInputContainer) {
+        chatInputContainer.style.display = '';
+        chatInputContainer.style.visibility = 'visible';
+        chatInputContainer.style.zIndex = '';
+        chatInputContainer.style.opacity = '1';
+    }
     
     // Handle shared link password BEFORE any initialization
     await handleEarlySharedLinkPassword();
@@ -228,6 +244,24 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Initialize the chat application
     const aiHackare = new AIHackareComponent.AIHackare();
     await aiHackare.init();
+    
+    // Ensure chat input is visible after initialization
+    setTimeout(() => {
+        const chatInputContainer = document.getElementById('chat-input-container');
+        if (chatInputContainer) {
+            chatInputContainer.style.display = '';
+            chatInputContainer.style.visibility = 'visible';
+            chatInputContainer.style.opacity = '1';
+            chatInputContainer.style.zIndex = '';
+            
+            // Also ensure the form and buttons are visible
+            const chatForm = document.getElementById('chat-form');
+            if (chatForm) {
+                chatForm.style.display = '';
+                chatForm.style.visibility = 'visible';
+            }
+        }
+    }, 100);
     
     // Initialize SystemPromptCoordinator if available
     if (window.SystemPromptCoordinator) {
@@ -447,8 +481,9 @@ window.updateTitleAndSubtitle = function(forceUpdate = false) {
                                         e.stopPropagation(); // Prevent event bubbling
                                         e.preventDefault(); // Prevent default behavior
                                         
-                                        // Show confirmation dialog
-                                        if (confirm(`Are you sure you want to delete this GPT (${title})? This will clear all data related to this specific GPT including its chat history and settings.`)) {
+                                        // Use native confirm for better cross-browser compatibility
+                                        const confirmMessage = 'Are you sure you want to delete this GPT (' + title + ')? This will clear all data related to this specific GPT including its chat history and settings.';
+                                        if (window.confirm(confirmMessage)) {
                                             // Get the current namespace ID before resetting
                                             const currentNamespaceId = NamespaceService.getNamespaceId();
                                             
