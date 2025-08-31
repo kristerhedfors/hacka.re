@@ -85,5 +85,5 @@ if (document.readyState === 'loading') {
     initMobileViewportFix();
 }
 
-// Export for use in other modules
-export { initMobileViewportFix };
+// Make available globally if needed
+window.initMobileViewportFix = initMobileViewportFix;

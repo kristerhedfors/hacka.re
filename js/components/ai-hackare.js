@@ -483,7 +483,13 @@ window.AIHackareComponent = (function() {
                 e.preventDefault();
                 e.stopPropagation(); // Prevent event bubbling
                 
-                if (confirm('Are you sure you want to clear the chat history?')) {
+                // Use custom confirm for Firefox Focus compatibility
+                if (window.customConfirm) {
+                    window.customConfirm(
+                        'Are you sure you want to clear the chat history?',
+                        () => this.clearChatHistory()
+                    );
+                } else if (confirm('Are you sure you want to clear the chat history?')) {
                     this.clearChatHistory();
                 }
             });
