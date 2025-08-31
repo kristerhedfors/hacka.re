@@ -753,7 +753,9 @@ window.AIHackareComponent = (function() {
      * Save the API key
      */
     AIHackare.prototype.saveApiKey = function() {
+        // Pass null as first parameter to use the value from elements.apiKeyInput
         this.settingsManager.saveApiKey(
+            null,
             this.uiManager.hideApiKeyModal.bind(this.uiManager),
             this.chatManager.addSystemMessage.bind(this.chatManager)
         );
