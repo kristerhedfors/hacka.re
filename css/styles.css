@@ -118,7 +118,7 @@ ul {
 @media (max-width: 768px) {
     .beta-tag.header-beta {
         position: relative;
-        top: 2px; /* Lower the BETA tag to align with icon centers */
+        top: -1px; /* Raise the BETA tag slightly to better align with icon centers */
         margin-left: 4px; /* Slightly reduce left margin on mobile */
     }
 }
