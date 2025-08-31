@@ -143,6 +143,7 @@ header {
     flex-shrink: 0; /* Prevent header from shrinking */
     position: relative;
     z-index: 10;
+    overflow: visible !important; /* Allow tooltips to overflow */
 }
 
 /* Apply sweeping effect to all text in header including hacka.re logo */
@@ -491,8 +492,10 @@ html.theme-modern.dark-mode .heart-logo .tooltip.tree-menu .tree-toggle {
 
 /* Remove hover-only behavior since we're handling it with JavaScript */
 .heart-logo .tooltip.active {
-    visibility: visible;
-    opacity: 1;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 10000 !important; /* Ensure it's above everything */
+    display: block !important;
 }
 
 /* Typing Dots Styling */
@@ -1006,6 +1009,7 @@ body.firefox-focus .heart-logo {
     display: flex;
     align-items: center;
     gap: 0.125rem;
+    overflow: visible !important; /* Allow tooltips to overflow */
 }
 
 /* Ensure all header icon buttons are perfect circles */
@@ -1087,6 +1091,8 @@ header .settings .icon-btn {
     justify-content: center;
     width: 36px;
     height: 36px;
+    overflow: visible !important; /* Allow tooltips to show */
+    position: relative;
     padding: 0;
     border-radius: 50%;
     transition: var(--transition);
@@ -3196,10 +3202,13 @@ footer a:hover {
     margin-top: 5px;
     background-color: var(--primary-color);
     color: white !important; /* Force white text color */
-    padding: 4px 8px;
+    padding: 6px 10px;
     border-radius: 4px;
     font-size: 0.75rem;
-    white-space: nowrap;
+    white-space: nowrap; /* Keep text on one line */
+    min-width: auto; /* Allow tooltip to size to content */
+    width: max-content; /* Use content width */
+    max-width: 200px; /* Prevent overly wide tooltips */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.2);
     opacity: 0;
@@ -3215,8 +3224,10 @@ footer a:hover {
 }
 
 .mini-tooltip.active {
-    opacity: 1;
-    visibility: visible;
+    opacity: 1 !important;
+    visibility: visible !important;
+    z-index: 10001 !important; /* Higher than other elements */
+    display: block !important;
 }
 
 /* Theme-specific tooltip styling */
@@ -3240,21 +3251,46 @@ footer a:hover {
 /* Position the tooltip for the settings button to avoid it going off-screen */
 #settings-btn .mini-tooltip {
     left: auto;
-    right: 0;
-    transform: translateX(25%);
+    right: -5px;
+    transform: none;
 }
 
 /* Position the tooltip for the theme-toggle button to avoid it going off-screen */
 #theme-toggle-btn .mini-tooltip {
-    right: 0;
     left: auto;
-    transform: translateX(25%);
+    right: -5px;
+    transform: none;
 }
 
 /* Position the tooltip for the heart button to avoid going off-screen */
 #heart-btn .mini-tooltip {
-    left: 0;
-    transform: translateX(0);
+    left: -5px;
+    transform: none;
+}
+
+/* Position the tooltip for share button */
+#share-btn .mini-tooltip {
+    left: auto;
+    right: -5px;
+    transform: none;
+}
+
+/* For longer text tooltips like MCP and Function Calling, center them better */
+#mcp-servers-btn .mini-tooltip,
+#function-btn .mini-tooltip,
+#prompts-btn .mini-tooltip {
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* Ensure heart button allows its menu to show */
+#heart-btn {
+    overflow: visible !important;
+}
+
+#heart-btn .heart-logo {
+    overflow: visible !important;
+    position: relative;
 }
 
 /* ===== Markdown Styling ===== */
