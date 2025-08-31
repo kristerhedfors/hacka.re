@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Verify Tooltip Fix</title>
+    <style>
+        body {
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        iframe {
+            width: 100%;
+            height: 700px;
+            border: 2px solid #ccc;
+        }
+        .instructions {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #333;
+        }
+        ul {
+            line-height: 1.8;
+        }
+        .check {
+            color: green;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tooltip and Heart Menu Verification</h1>
+    
+    <div class="instructions">
+        <h2>Please verify the following:</h2>
+        <ul>
+            <li><span class="check">✓</span> <strong>Heart Menu:</strong> Click the white hat icon (leftmost icon). The menu should toggle open/closed.</li>
+            <li><span class="check">✓</span> <strong>Mini-Tooltips:</strong> Hover over each icon button. Tooltips should appear on hover and disappear when you move away.</li>
+            <li><span class="check">✓</span> <strong>Tooltip Width:</strong> All tooltip text should be fully visible (not cut off).</li>
+            <li><span class="check">✓</span> <strong>Tooltip Position:</strong> 
+                <ul>
+                    <li>Leftmost buttons: Tooltip aligned to left edge</li>
+                    <li>Middle buttons: Tooltip centered below</li>
+                    <li>Rightmost buttons: Tooltip aligned to right edge</li>
+                </ul>
+            </li>
+            <li><span class="check">✓</span> <strong>No Overlap:</strong> Tooltips should not be blocked by other elements.</li>
+        </ul>
+        
+        <h3>Expected Tooltip Texts:</h3>
+        <ul>
+            <li>White Hat: "Explore hacka.re"</li>
+            <li>MCP: "Model Context Protocol"</li>
+            <li>𝑓: "Function Calling"</li>
+            <li>RAG: "Knowledge Base"</li>
+            <li>List icon: "System Prompts"</li>
+            <li>Share icon: "Share"</li>
+            <li>Brush icon: "Cycle Theme"</li>
+            <li>Gear icon: "Settings"</li>
+        </ul>
+    </div>
+    
+    <iframe src="http://localhost:8000"></iframe>
+</body>
+</html>
