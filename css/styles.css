@@ -114,6 +114,15 @@ ul {
     text-fill-color: #333 !important;
 }
 
+/* Mobile-specific alignment for BETA tag */
+@media (max-width: 768px) {
+    .beta-tag.header-beta {
+        position: relative;
+        top: 2px; /* Lower the BETA tag to align with icon centers */
+        margin-left: 4px; /* Slightly reduce left margin on mobile */
+    }
+}
+
 /* ===== Experimental Tag ===== */
 .experimental-tag {
     display: inline-block;
