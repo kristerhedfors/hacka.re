@@ -106,12 +106,21 @@ ul {
 }
 
 .beta-tag.header-beta {
-    margin-left: 8px;
+    margin-left: 16px; /* Increased space between settings icon and BETA tag */
     vertical-align: middle;
     color: #333 !important;
     background-color: #fef3c7 !important;
     -webkit-text-fill-color: #333 !important;
     text-fill-color: #333 !important;
+}
+
+/* Mobile-specific alignment for BETA tag */
+@media (max-width: 768px) {
+    .beta-tag.header-beta {
+        position: relative;
+        top: -1px; /* Raise the BETA tag slightly to better align with icon centers */
+        margin-left: 12px; /* Increased space on mobile too */
+    }
 }
 
 /* ===== Experimental Tag ===== */
@@ -942,8 +951,8 @@ body.firefox-focus .heart-logo {
     font-size: 0.85rem;
     opacity: 0.9;
     padding-left: 0;
-    position: relative;
-    left: -2px; /* Adjust to align with model name */
+    justify-content: center;
+    align-items: center;
 }
 
 .model-provider {
@@ -1032,6 +1041,11 @@ header .settings .icon-btn {
     #function-btn {
         margin-left: -0.125rem;
         margin-right: -0.125rem;
+    }
+    
+    /* Move settings button slightly left to add space before BETA tag */
+    #settings-btn {
+        margin-right: 0.25rem;
     }
 }
 
@@ -2571,6 +2585,31 @@ footer a:hover {
     display: flex;
 }
 
+/* Position modals from header icons to start below header */
+#settings-modal,
+#share-modal,
+#prompts-modal,
+#function-modal,
+#mcp-servers-modal,
+#agent-modal,
+#rag-modal {
+    align-items: flex-start;
+    padding-top: 80px; /* Position below typical header height */
+}
+
+/* Adjust for mobile where header might wrap */
+@media (max-width: 768px) {
+    #settings-modal,
+    #share-modal,
+    #prompts-modal,
+    #function-modal,
+    #mcp-servers-modal,
+    #agent-modal,
+    #rag-modal {
+        padding-top: 100px; /* Slightly more space for wrapped header on mobile */
+    }
+}
+
 .modal-content {
     background-color: var(--light-color);
     padding: 2rem;
@@ -3110,11 +3149,7 @@ footer a:hover {
         transform: translateX(-50%) !important;
     }
     
-    /* Improve modal positioning on mobile */
-    .modal {
-        align-items: flex-start;
-        padding-top: 2rem;
-    }
+    /* Note: Modal positioning for header-triggered modals is handled separately above */
     
     /* Make share buttons more mobile-friendly */
     .share-actions {
@@ -3143,10 +3178,7 @@ footer a:hover {
         padding: 1rem;
     }
     
-    /* Ensure modal starts higher on the screen to make buttons accessible */
-    .modal {
-        padding-top: 1rem;
-    }
+    /* Note: Modal positioning for header-triggered modals is handled specifically above */
     
     /* Reduce padding to maximize usable space */
     .form-group {
