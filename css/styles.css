@@ -1926,14 +1926,14 @@ main {
 #message-input {
     flex: 1;
     width: 100%;
-    padding: 0.75rem 2.5rem 0.75rem 1rem; /* Extra padding on right for microphone */
+    padding: 0.75rem 2.5rem 0.75rem 1.5rem; /* Extra padding on sides for rounded edges */
     border: 1px solid rgba(0, 0, 0, 0.2);
-    border-radius: var(--border-radius);
+    border-radius: 25px; /* Half-circle rounded edges */
     font-family: inherit;
     font-size: 1rem;
     resize: none;
     max-height: 150px;
-    min-height: 38px;
+    min-height: 44px; /* Slightly taller to accommodate rounded edges */
     line-height: 1.5;
     transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Only transition border and shadow */
     background-color: var(--bg-color); /* Explicit background */
@@ -1949,7 +1949,7 @@ main {
 /* Microphone button inside input field */
 .microphone-btn-inside {
     position: absolute;
-    right: 0.5rem;
+    right: 0.6rem; /* Adjusted to fit within rounded edge */
     background: transparent;
     color: var(--text-color);
     border: none;

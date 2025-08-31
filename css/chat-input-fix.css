@@ -31,11 +31,11 @@
     width: 100%;
     min-width: 0; /* Allow flexbox to shrink below intrinsic width */
     box-sizing: border-box;
-    padding: 0.75rem;
+    padding: 0.75rem 2.5rem 0.75rem 1.5rem; /* Extra padding on sides for rounded edges */
     font-size: 1rem;
     line-height: 1.5;
     border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
+    border-radius: 25px; /* Half-circle rounded edges */
     background-color: var(--bg-color);
     color: var(--text-color);
     resize: vertical;
@@ -78,6 +78,8 @@
     
     #user-input {
         font-size: 16px; /* Prevent zoom on iOS */
+        border-radius: 22px; /* Slightly smaller radius on mobile */
+        padding: 0.75rem 2.2rem 0.75rem 1.2rem; /* Adjusted padding for mobile */
     }
 }
 
