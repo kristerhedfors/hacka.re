@@ -124,12 +124,53 @@ async function handleEarlySharedLinkPassword() {
                         console.log('[App] Ensured chat input visibility after password modal removal');
                     }
                     
-                    // Force reflow on mobile to ensure proper rendering
+                    // Fix mobile viewport after modal removal
                     if (window.innerWidth <= 768) {
+                        // The body should remain fixed for the app structure
                         document.body.style.overflow = 'hidden';
+                        document.body.style.position = 'fixed';
+                        document.body.style.height = '100vh';
+                        document.body.style.width = '100%';
+                        
+                        // Ensure the chat container is scrollable
+                        const chatContainer = document.getElementById('chat-container');
+                        if (chatContainer) {
+                            chatContainer.style.overflow = 'hidden';
+                            chatContainer.style.display = 'flex';
+                            chatContainer.style.flexDirection = 'column';
+                            chatContainer.style.height = '100%';
+                        }
+                        
+                        // Ensure chat messages is scrollable
+                        const chatMessages = document.getElementById('chat-messages');
+                        if (chatMessages) {
+                            chatMessages.style.overflow = 'auto';
+                            chatMessages.style.overflowY = 'auto';
+                            chatMessages.style.flex = '1';
+                            chatMessages.style.minHeight = '0';
+                        }
+                        
+                        // Ensure main element is properly configured
+                        const mainElement = document.querySelector('main');
+                        if (mainElement) {
+                            mainElement.style.overflow = 'hidden';
+                            mainElement.style.flex = '1';
+                            mainElement.style.minHeight = '0';
+                            mainElement.style.display = 'flex';
+                            mainElement.style.flexDirection = 'column';
+                        }
+                        
+                        // Force a reflow to ensure proper rendering
+                        document.body.offsetHeight;
+                        
+                        // Focus on chat input to ensure keyboard doesn't block view
                         setTimeout(() => {
-                            document.body.style.overflow = '';
-                        }, 100);
+                            const messageInput = document.getElementById('message-input');
+                            if (messageInput) {
+                                messageInput.focus();
+                                messageInput.blur(); // Blur immediately to prevent keyboard from showing
+                            }
+                        }, 200);
                     }
                     
                     resolve();
@@ -158,6 +199,19 @@ async function handleEarlySharedLinkPassword() {
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
+    // Clean up any leftover password modals first (in case of reload)
+    const existingModals = document.querySelectorAll('.password-modal, #password-modal');
+    existingModals.forEach(modal => {
+        console.log('[App] Removing leftover password modal');
+        modal.remove();
+    });
+    
+    // Reset body styles in case they were left in a bad state
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.height = '';
+    document.body.style.width = '';
+    
     // Handle shared link password BEFORE any initialization
     await handleEarlySharedLinkPassword();
     // Initialize the debug service
