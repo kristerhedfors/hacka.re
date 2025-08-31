@@ -951,8 +951,8 @@ body.firefox-focus .heart-logo {
     font-size: 0.85rem;
     opacity: 0.9;
     padding-left: 0;
-    position: relative;
-    left: -2px; /* Adjust to align with model name */
+    justify-content: center;
+    align-items: center;
 }
 
 .model-provider {
