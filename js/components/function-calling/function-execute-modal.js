@@ -611,9 +611,31 @@ window.FunctionExecuteModal = (function() {
                             console.log(`[Execute] Function code length: ${functionSpec.code.length}`);
                             console.log(`[Execute] Parameters:`, parameters);
                             
+                            // Get all functions from the same collection to include auxiliary functions
+                            let allFunctionCode = functionSpec.code;
+                            if (window.FunctionToolsService && window.FunctionToolsService.getFunctionsInSameCollection) {
+                                const relatedFunctions = window.FunctionToolsService.getFunctionsInSameCollection(functionName);
+                                console.log(`[Execute] Found ${relatedFunctions.length} functions in the same collection:`, relatedFunctions);
+                                
+                                // Combine all function codes from the collection
+                                const functionCodes = [];
+                                relatedFunctions.forEach(funcName => {
+                                    const func = functions[funcName];
+                                    if (func && func.code && funcName !== functionName) {
+                                        // Add other functions from the collection (not the one being executed)
+                                        functionCodes.push(func.code);
+                                    }
+                                });
+                                
+                                // Add the main function code last
+                                functionCodes.push(functionSpec.code);
+                                allFunctionCode = functionCodes.join('\n\n');
+                                console.log(`[Execute] Combined code length: ${allFunctionCode.length} (from ${functionCodes.length} functions)`);
+                            }
+                            
                             // Execute the function code in a controlled scope to define all functions
                             const wrappedCode = `
-                                ${functionSpec.code}
+                                ${allFunctionCode}
                                 
                                 // Check if the function exists and return it
                                 if (typeof ${functionName} === 'function') {

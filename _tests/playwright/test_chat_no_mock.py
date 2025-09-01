@@ -118,7 +118,9 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
     
     # Save the settings
     close_button = page.locator("#close-settings")
-    page.wait_for_timeout(1000)  # Wait for auto-save    close_button.click(force=True)  # Use force=True to click even if not fully visible
+    page.wait_for_timeout(1000)  # Wait for auto-save
+
+    close_button.click(force=True)  # Use force=True to click even if not fully visible
     
     # Check for any system messages
     check_system_messages(page)
@@ -196,6 +198,7 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
             # Save the settings
             close_button = page.locator("#close-settings")
             page.wait_for_timeout(1000)  # Wait for auto-save
+
             close_button.click(force=True)
             
             # Wait for the settings modal to be closed

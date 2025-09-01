@@ -77,7 +77,9 @@ def test_model_context_window_display(page: Page, serve_hacka_re):
     
     # Save the settings
     close_button = page.locator("#close-settings")
-    page.wait_for_timeout(1000)  # Wait for auto-save    close_button.click(force=True)
+    page.wait_for_timeout(1000)  # Wait for auto-save
+
+    close_button.click(force=True)
     
     # Wait for the settings modal to close
     page.wait_for_selector("#settings-modal.active", state="hidden", timeout=2500)

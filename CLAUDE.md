@@ -68,11 +68,26 @@ deactivate
 
 ### Testing - ESSENTIAL INFORMATION
 
+**🚨 ABSOLUTELY CRITICAL: TEST DEBUGGING VISIBILITY 🚨**
+**BEFORE RUNNING ANY TESTS:** If you cannot see BOTH full console logs AND screenshots when tests fail, **STOP AND FIX THIS FIRST!** This is NON-NEGOTIABLE. You MUST have:
+1. **Complete console log capture** - Every console message, error, and warning from the browser
+2. **Screenshots on failure** - Visual evidence of what the UI looked like when the test failed
+3. **Page state information** - localStorage keys, selected values, DOM state
+4. **Error context** - Full stack traces and error messages
+
+**If you lack this visibility, DO NOT PROCEED with test analysis. First implement enhanced error tracking using tools like:**
+- Custom test runners with console log capture (`debug_test_runner.py`, `enhanced_test_runner.py`)
+- Screenshot utilities with metadata (`screenshot_with_markdown`)
+- Browser page state dumping
+- JSON error report generation
+
 **CRITICAL TESTING RULES:**
 1. **ALWAYS RUN TESTS FROM PROJECT ROOT** - `/Users/user/dev/hacka.re/`
 2. **NEVER cd INTO _tests/playwright** - All test scripts are designed to run from project root
 3. **TEST SCRIPTS ARE IN**: `_tests/playwright/` but RUN FROM PROJECT ROOT
 4. **PYTHON ENVIRONMENT**: Virtual environment is at `_venv/` in project root
+5. **ALWAYS CAPTURE CONSOLE LOGS** - Essential for debugging API calls and errors
+6. **ALWAYS TAKE SCREENSHOTS** - Visual confirmation of UI state at failure
 
 **Running Tests FROM PROJECT ROOT:**
 ```bash

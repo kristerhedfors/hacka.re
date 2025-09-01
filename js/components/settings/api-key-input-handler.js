@@ -61,7 +61,7 @@ window.ApiKeyInputHandler = (function() {
             }, debounceDelay);
             
             // For very short inputs, hide detection immediately
-            if (apiKey.length < 10) {
+            if (apiKey.length < 12) {
                 hideDetection(detectionElement);
             }
         });
@@ -84,7 +84,7 @@ window.ApiKeyInputHandler = (function() {
      * @param {Object} componentManagers - Component managers object
      */
     function handleApiKeyInput(apiKey, detectionElement, detectionTextElement, componentManagers) {
-        if (!apiKey || apiKey.length < 10) {
+        if (!apiKey || apiKey.length < 12) {
             hideDetection(detectionElement);
             return;
         }

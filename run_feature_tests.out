@@ -1,0 +1,55 @@
+Starting HTTP server for tests...
+===== Starting HTTP Server for hacka.re Tests =====
+Port: 8000
+Project Root: /Users/user/dev/hacka.re
+==================================================
+Checking for existing HTTP server processes on port 8000...
+No existing processes found on port 8000.
+Changing to project root directory: /Users/user/dev/hacka.re
+Starting Python HTTP server on port 8000...
+Server started successfully with PID: 22691
+Server is now running at http://localhost:8000
+Server PID saved to: /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt
+==================================================
+Server is ready. You can now run your tests.
+To stop the server, run: kill -9 $(cat /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt)
+==================================================
+Running Advanced Feature tests with chromium browser...
+Test filter: not (test_page or test_api or test_chat or test_welcome_modal) and (test_function_modal or test_function_icons or test_sharing or test_default_prompts or test_themes or test_clear_chat or test_model_selection or test_copy_chat or test_button_tooltips or test_function_library or test_context_window or test_function_copy or test_function_deletion or test_function_editing or test_function_group or test_function_parsing or test_function_tooltip or test_deterministic_crypto or test_clear_namespace or test_system_prompt or test_token_counter or test_input_field or test_logo_tooltip or test_modals or test_debug_mode or test_model_context_window or test_owasp_prompt_bug or test_prompt_order_and_function_library_prompt or test_rag_modal or test_rag_indexing or test_rag_search or test_rag_bundles or test_rag_integration)
+
+============================= test session starts ==============================
+platform darwin -- Python 3.13.3, pytest-8.3.5, pluggy-1.5.0
+rootdir: /Users/user/dev/hacka.re/_tests/playwright
+configfile: pytest.ini
+testpaths: .
+plugins: playwright-0.7.0, base-url-2.1.0
+collected 886 items / 692 deselected / 194 selected
+
+test_button_tooltips.py::test_button_tooltips[chromium0] PASSED          [  0%]
+test_clear_chat.py::test_clear_chat_button_exists[chromium0] PASSED      [  1%]
+test_clear_chat.py::test_clear_chat_confirmation_dialog[chromium0] PASSED [  1%]
+test_clear_namespace_settings.py::test_clear_namespace_settings[chromium0] PASSED [  2%]
+test_context_window_scaling.py::test_context_window_scaling[chromium0] PASSED [  2%]
+test_copy_chat.py::test_copy_chat_button_exists[chromium0] PASSED        [  3%]
+test_copy_chat.py::test_copy_chat_functionality[chromium0] PASSED        [  3%]
+test_copy_chat.py::test_copy_chat_button_tooltip[chromium0] PASSED       [  4%]
+test_debug_mode.py::test_debug_mode_checkbox_exists[chromium0] FAILED    [  4%]
+test_debug_mode.py::test_debug_mode_toggle[chromium0] PASSED             [  5%]
+test_default_prompts.py::test_default_prompts_section_exists[chromium0] PASSED [  5%]
+test_default_prompts.py::test_default_prompts_expand_collapse[chromium0] PASSED [  6%]
+test_default_prompts.py::test_default_prompts_content[chromium0] FAILED  [  6%]
+test_default_prompts.py::test_default_prompts_selection[chromium0] FAILED [  7%]
+test_default_prompts.py::test_default_prompts_info_button[chromium0] PASSED [  7%]
+test_default_prompts.py::test_default_prompts_name_click[chromium0] PASSED [  8%]
+test_function_copy_buttons.py::test_function_copy_buttons_exist[chromium0] PASSED [  8%]
+test_function_copy_buttons.py::test_function_copy_functionality[chromium0] FAILED [  9%]
+test_function_deletion.py::test_function_deletion_removes_entire_bundle[chromium0] PASSED [  9%]
+test_function_deletion.py::test_multiple_function_collections[chromium0] PASSED [ 10%]
+test_function_editing.py::test_function_editing[chromium0] FAILED        [ 10%]
+test_function_group_colors.py::test_function_collection_colors[chromium0] FAILED [ 11%]
+test_function_icons.py::test_function_calling_icons[chromium0] FAILED    [ 11%]
+test_function_icons.py::test_multiple_function_calls_colors[chromium0] FAILED [ 12%]
+test_function_library_copy.py::test_function_library_copy_button_exists[chromium0] FAILED [ 12%]
+test_function_library_copy.py::test_function_library_copy_functionality[chromium0] FAILED [ 13%]
+test_function_library_multi.py::test_function_library_multi[chromium0] FAILED [ 13%]
+test_function_library_sharing.py::test_function_library_sharing[chromium0] 
