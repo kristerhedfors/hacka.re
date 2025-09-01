@@ -53,7 +53,9 @@ def test_template_function(page: Page, serve_hacka_re):
     
     # Save the settings
     close_button = page.locator("#close-settings")
-    page.wait_for_timeout(1000)  # Wait for auto-save    close_button.click()
+    page.wait_for_timeout(1000)  # Wait for auto-save
+
+    close_button.click()
     
     # Wait for the settings modal to be closed
     page.wait_for_selector("#settings-modal", state="hidden")

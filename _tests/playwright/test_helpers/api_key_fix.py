@@ -26,8 +26,8 @@ def ensure_api_key_persisted(page: Page, api_key: str, max_retries: int = 3):
             page.evaluate("""
                 () => {
                     // Force namespace initialization if needed
-                    if (window.NamespaceService) {
-                        window.NamespaceService.initializeNamespace();
+                    if (window.NamespaceService && typeof window.NamespaceService.reinitializeNamespace === 'function') {
+                        window.NamespaceService.reinitializeNamespace();
                     }
                 }
             """)

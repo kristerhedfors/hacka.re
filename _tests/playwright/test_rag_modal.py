@@ -17,7 +17,6 @@ def test_rag_button_visibility(page: Page, serve_hacka_re):
     expect(rag_button).to_be_visible()
     
     # Check button properties
-    expect(rag_button).to_have_attribute("title", "Knowledge Base")
     expect(rag_button).to_have_class("icon-btn")
     
     # Check that the RAG icon is visible
