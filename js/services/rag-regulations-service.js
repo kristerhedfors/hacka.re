@@ -399,21 +399,46 @@ window.RagRegulationsService = class RagRegulationsService {
     getStatistics() {
         let totalContent = 0;
         let loadedCount = 0;
+        let categories = new Set();
 
         for (const [id, regulation] of this.regulations) {
             if (regulation.loaded) {
                 loadedCount++;
                 totalContent += regulation.content?.length || 0;
             }
+            if (regulation.category) {
+                categories.add(regulation.category);
+            }
         }
 
         return {
             totalRegulations: this.regulations.size,
+            regulationCount: this.regulations.size,
             loadedRegulations: loadedCount,
             totalContentLength: totalContent,
             averageContentLength: loadedCount > 0 ? Math.round(totalContent / loadedCount) : 0,
+            categories: Array.from(categories),
             initialized: this.initialized
         };
+    }
+
+    /**
+     * Get all regulations
+     * @returns {Array} Array of all regulations
+     */
+    getAllRegulations() {
+        const regulations = [];
+        for (const [id, regulation] of this.regulations) {
+            regulations.push({
+                id,
+                title: regulation.title || regulation.name || id,
+                description: regulation.description || '',
+                content: regulation.content || regulation.text || '',
+                category: regulation.category || 'General',
+                ...regulation
+            });
+        }
+        return regulations;
     }
 }
 
