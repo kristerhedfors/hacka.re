@@ -40,10 +40,10 @@
     margin: 0 !important;
 }
 
-/* System prompt modal - prevent unnecessary scrolling */
-#system-prompt-modal .modal-content {
-    max-width: 500px !important;
-    max-height: 95vh !important;
+/* System prompt modal (prompts-modal) - proper sizing and scrolling */
+#prompts-modal .modal-content {
+    max-width: 600px !important;
+    max-height: 85vh !important;
     overflow-y: auto !important;
 }
 
@@ -147,10 +147,12 @@
         max-width: 95% !important;
     }
     
-    /* System prompt modal on mobile - prevent scrolling */
-    #system-prompt-modal .modal-content {
-        overflow-y: hidden !important; /* Prevent scrolling on mobile */
+    /* Prompts modal on mobile - proper scrolling */
+    #prompts-modal .modal-content {
+        overflow-y: auto !important; /* Allow scrolling on mobile */
         max-height: calc(100vh - 2rem) !important;
+        max-width: 95% !important;
+        margin: 1rem auto !important;
     }
     
     /* Reduce spacing in welcome modal on mobile */
