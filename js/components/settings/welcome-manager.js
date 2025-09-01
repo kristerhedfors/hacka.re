@@ -27,7 +27,7 @@ window.WelcomeManager = (function() {
                 
                 const heading = document.createElement('h2');
                 heading.style.cssText = 'text-align: center; margin-bottom: 18px; font-size: 26px;';
-                heading.innerHTML = 'Welcome to <span style="font-family: \'Courier New\', Courier, monospace; text-decoration: underline;">hacka.re</span>';
+                heading.innerHTML = 'Welcome to <span style="font-family: \'Courier New\', Courier, monospace; text-decoration: underline;">hacka.re</span>!';
                 
                 // Create a more visually appealing welcome message
                 const welcomeContainer = document.createElement('div');
