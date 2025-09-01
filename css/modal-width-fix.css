@@ -34,6 +34,13 @@
     flex-direction: column !important;
 }
 
+/* System prompt modal - prevent unnecessary scrolling */
+#system-prompt-modal .modal-content {
+    max-width: 500px !important;
+    max-height: 95vh !important;
+    overflow-y: auto !important;
+}
+
 /* Model selection modal */
 #model-selection-modal .modal-content {
     max-width: 500px !important;
@@ -124,6 +131,13 @@
         max-height: calc(100vh - 2rem) !important;
         margin: 1rem auto !important;
         padding: 1.5rem !important;
+        overflow-y: hidden !important; /* Prevent scrolling on mobile */
+    }
+    
+    /* System prompt modal on mobile - prevent scrolling */
+    #system-prompt-modal .modal-content {
+        overflow-y: hidden !important; /* Prevent scrolling on mobile */
+        max-height: calc(100vh - 2rem) !important;
     }
     
     /* Reduce spacing in welcome modal on mobile */
