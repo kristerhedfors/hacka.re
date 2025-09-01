@@ -26,57 +26,174 @@ window.WelcomeManager = (function() {
                 modalContent.className = 'modal-content';
                 
                 const heading = document.createElement('h2');
-                heading.textContent = 'Welcome to hacka.re!';
+                heading.style.cssText = 'text-align: center; margin-bottom: 24px; font-size: 28px;';
+                heading.innerHTML = 'Welcome to hacka.re!';
                 
-                // Create a more concise welcome message focused on getting started
+                // Create a more visually appealing welcome message
                 const welcomeContainer = document.createElement('div');
+                welcomeContainer.style.cssText = 'padding: 0 10px;';
                 
-                // First notice - Getting Started
-                const firstNotice = document.createElement('div');
-                firstNotice.className = 'important-notice';
-                firstNotice.style.cssText = 'background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 10px; border-radius: 8px;';
-                firstNotice.innerHTML = `
-                    <p><strong>Get Started:</strong> Configure with a base URL (OpenAI-compatible) and API key to begin using hacka.re.</p>
+                // Hero message
+                const heroMessage = document.createElement('div');
+                heroMessage.style.cssText = 'text-align: center; margin-bottom: 20px; color: var(--text-color-secondary); font-size: 16px; line-height: 1.6;';
+                heroMessage.innerHTML = 'Your privacy-first AI chat interface';
+                
+                // Feature cards container
+                const featuresContainer = document.createElement('div');
+                featuresContainer.style.cssText = 'display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;';
+                
+                // Getting Started card
+                const startCard = document.createElement('div');
+                startCard.className = 'important-notice';
+                startCard.style.cssText = 'background: linear-gradient(135deg, var(--system-msg-bg) 0%, var(--bg-primary) 100%); border-left: 4px solid var(--accent-color); padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s;';
+                
+                // Create the start card content with clickable Settings link
+                const startContent = document.createElement('div');
+                startContent.style.cssText = 'display: flex; align-items: start; gap: 12px;';
+                startContent.innerHTML = `
+                    <span style="font-size: 24px; margin-top: -2px;">🚀</span>
+                    <div style="flex: 1;">
+                        <strong style="font-size: 15px; color: var(--accent-color);">Quick Start</strong>
+                        <p style="margin-top: 6px; margin-bottom: 0; font-size: 14px; line-height: 1.5;">
+                            Open <a href="#" class="settings-link-welcome" style="color: var(--accent-color); text-decoration: underline; cursor: pointer;">Settings</a> to configure your OpenAI-compatible API endpoint.
+                        </p>
+                    </div>
+                `;
+                startCard.appendChild(startContent);
+                
+                // Add click handler for Settings link
+                setTimeout(() => {
+                    const settingsLink = startCard.querySelector('.settings-link-welcome');
+                    if (settingsLink) {
+                        settingsLink.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            welcomeModal.remove();
+                            const settingsBtn = document.getElementById('settings-btn');
+                            if (settingsBtn) {
+                                settingsBtn.click();
+                            }
+                        });
+                    }
+                }, 0);
+                
+                // Privacy card
+                const privacyCard = document.createElement('div');
+                privacyCard.className = 'important-notice';
+                privacyCard.style.cssText = 'background: linear-gradient(135deg, var(--system-msg-bg) 0%, var(--bg-primary) 100%); border-left: 4px solid var(--accent-color); padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s;';
+                privacyCard.innerHTML = `
+                    <div style="display: flex; align-items: start; gap: 12px;">
+                        <span style="font-size: 24px; margin-top: -2px;">🔒</span>
+                        <div style="flex: 1;">
+                            <strong style="font-size: 15px; color: var(--accent-color);">Privacy Focused</strong>
+                            <p style="margin-top: 6px; margin-bottom: 0; font-size: 14px; line-height: 1.5;">
+                                Thin LLM client built in HTML, Javascript and CSS only.<br /> No accounts, no tracking, no server-side storage aside from API connections you configure. <br />See
+                                <a href="about/local-llm-toolbox.html" target="_blank" rel="noopener noreferrer" style="color: var(--accent-color); text-decoration: underline; cursor: pointer;">Local LLM Toolbox</a>.
+                            </p>
+                        </div>
+                    </div>
                 `;
                 
-                // Second notice - Privacy
-                const secondNotice = document.createElement('div');
-                secondNotice.className = 'important-notice';
-                secondNotice.style.cssText = 'background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 10px; border-radius: 8px;';
-                secondNotice.innerHTML = `
-                    <p><strong>Privacy-Focused:</strong> Your data stays in your browser. No accounts needed, no server-side storage.</p>
+                // Features card
+                const featuresCard = document.createElement('div');
+                featuresCard.className = 'important-notice';
+                featuresCard.style.cssText = 'background: linear-gradient(135deg, var(--system-msg-bg) 0%, var(--bg-primary) 100%); border-left: 4px solid var(--accent-color); padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s;';
+                
+                // Create the features card content with clickable links
+                const featuresContent = document.createElement('div');
+                featuresContent.style.cssText = 'display: flex; align-items: start; gap: 12px;';
+                featuresContent.innerHTML = `
+                    <span style="font-size: 24px; margin-top: -2px;">✨</span>
+                    <div style="flex: 1;">
+                        <strong style="font-size: 15px; color: var(--accent-color);">Powerful Features</strong>
+                        <p style="margin-top: 6px; margin-bottom: 0; font-size: 14px; line-height: 1.5;">
+                            <a href="#" class="feature-link-welcome" data-feature="prompts" style="color: var(--accent-color); text-decoration: underline; cursor: pointer;">Custom prompts</a>, 
+                            <a href="#" class="feature-link-welcome" data-feature="function" style="color: var(--accent-color); text-decoration: underline; cursor: pointer;">function calling</a>, 
+                            <a href="#" class="feature-link-welcome" data-feature="mcp" style="color: var(--accent-color); text-decoration: underline; cursor: pointer;">MCP servers</a>, 
+                            and more.
+                        </p>
+                    </div>
+                `;
+                featuresCard.appendChild(featuresContent);
+                
+                // Add click handlers for feature links
+                setTimeout(() => {
+                    const featureLinks = featuresCard.querySelectorAll('.feature-link-welcome');
+                    featureLinks.forEach(link => {
+                        link.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            const feature = e.target.dataset.feature;
+                            welcomeModal.remove();
+                            
+                            // Open the corresponding modal
+                            let buttonId = '';
+                            switch(feature) {
+                                case 'prompts':
+                                    buttonId = 'prompts-btn';
+                                    break;
+                                case 'function':
+                                    buttonId = 'function-btn';
+                                    break;
+                                case 'mcp':
+                                    buttonId = 'mcp-servers-btn';
+                                    break;
+                            }
+                            
+                            if (buttonId) {
+                                const button = document.getElementById(buttonId);
+                                if (button) {
+                                    button.click();
+                                }
+                            }
+                        });
+                    });
+                }, 0);
+                
+                // Add hover effects via inline event handlers
+                [startCard, privacyCard, featuresCard].forEach(card => {
+                    card.onmouseenter = function() { this.style.transform = 'translateY(-2px)'; };
+                    card.onmouseleave = function() { this.style.transform = 'translateY(0)'; };
+                });
+                
+                // Add all feature cards
+                featuresContainer.appendChild(startCard);
+                featuresContainer.appendChild(privacyCard);
+                featuresContainer.appendChild(featuresCard);
+                
+                // Footer links
+                const footerLinks = document.createElement('div');
+                footerLinks.style.cssText = 'text-align: center; padding-top: 20px; margin-top: 20px; border-top: 1px solid var(--border-color); font-size: 14px;';
+                footerLinks.innerHTML = `
+                    <a href="about/index.html" target="_blank" rel="noopener noreferrer" style="color: var(--text-color-secondary); text-decoration: none; transition: color 0.2s;" 
+                       onmouseover="this.style.color='var(--accent-color)'" 
+                       onmouseout="this.style.color='var(--text-color-secondary)'">About</a>
+                    <span style="color: var(--text-color-secondary); opacity: 0.5; margin: 0 8px;">|</span>
+                    <a href="about/philosophy.html" target="_blank" rel="noopener noreferrer" style="color: var(--text-color-secondary); text-decoration: none; transition: color 0.2s;"
+                       onmouseover="this.style.color='var(--accent-color)'" 
+                       onmouseout="this.style.color='var(--text-color-secondary)'">Philosophy</a>
+                    <span style="color: var(--text-color-secondary); opacity: 0.5; margin: 0 8px;">|</span>
+                    <a href="about/disclaimer.html" target="_blank" rel="noopener noreferrer" style="color: var(--text-color-secondary); text-decoration: none; transition: color 0.2s;"
+                       onmouseover="this.style.color='var(--accent-color)'" 
+                       onmouseout="this.style.color='var(--text-color-secondary)'">Disclaimer</a>
                 `;
                 
-                // Third notice - Documentation
-                const thirdNotice = document.createElement('div');
-                thirdNotice.className = 'important-notice';
-                thirdNotice.style.cssText = 'background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 0; border-radius: 8px;';
-                thirdNotice.innerHTML = `
-                    <p><a href="about/index.html" target="_blank" rel="noopener noreferrer">About</a> | <a href="about/development.html" target="_blank" rel="noopener noreferrer">Development</a> | <a href="about/disclaimer.html" target="_blank" rel="noopener noreferrer">Disclaimer</a></p>
-                `;
-                
-                // Add all notices to the container
-                welcomeContainer.appendChild(firstNotice);
-                welcomeContainer.appendChild(secondNotice);
-                welcomeContainer.appendChild(thirdNotice);
+                // Add all elements to the container
+                welcomeContainer.appendChild(heroMessage);
+                welcomeContainer.appendChild(featuresContainer);
+                welcomeContainer.appendChild(footerLinks);
                 
                 const buttonContainer = document.createElement('div');
                 buttonContainer.className = 'form-actions';
+                buttonContainer.style.cssText = 'margin-top: 24px; display: flex; justify-content: center;';
                 
-                const continueButton = document.createElement('button');
-                continueButton.type = 'button';
-                continueButton.className = 'btn primary-btn';
-                continueButton.textContent = 'Get Started';
-                
-                // Add a close button for testing purposes
+                // Only close button
                 const closeButton = document.createElement('button');
                 closeButton.type = 'button';
-                closeButton.className = 'btn secondary-btn';
+                closeButton.className = 'btn primary-btn';
                 closeButton.id = 'close-welcome-modal';
-                closeButton.textContent = 'Close';
+                closeButton.style.cssText = 'padding: 12px 32px; font-size: 16px; font-weight: 500; border-radius: 8px; min-width: 120px;';
+                closeButton.innerHTML = 'Close';
                 
                 // Assemble the modal
-                buttonContainer.appendChild(continueButton);
                 buttonContainer.appendChild(closeButton);
                 
                 modalContent.appendChild(heading);
@@ -88,15 +205,16 @@ window.WelcomeManager = (function() {
                 // Add to document
                 document.body.appendChild(welcomeModal);
                 
-                // Handle continue button click
-                continueButton.addEventListener('click', () => {
-                    welcomeModal.remove();
-                    // No callback - just close the modal
-                });
-                
                 // Handle close button click
                 closeButton.addEventListener('click', () => {
                     welcomeModal.remove();
+                });
+                
+                // Handle click outside modal to close
+                welcomeModal.addEventListener('click', (e) => {
+                    if (e.target === welcomeModal) {
+                        welcomeModal.remove();
+                    }
                 });
                 
                 return true; // Modal was shown
