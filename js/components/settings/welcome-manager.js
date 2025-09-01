@@ -12,14 +12,10 @@ window.WelcomeManager = (function() {
     function createWelcomeManager(elements) {
         /**
          * Show the welcome modal for first-time users
-         * @param {Function} onContinue - Function to call when the user clicks continue
          */
-        function showWelcomeModalIfFirstTime(onContinue) {
-            // Check if welcome modal should be shown (hackare_visited === 'true')
-            const shouldShowWelcome = localStorage.getItem('hackare_visited') === 'true';
-            
-            if (shouldShowWelcome) {
-                // No need to mark as visited - any localStorage operations will create hackare_ variables
+        function showWelcomeModalIfFirstTime() {
+            // Check if this is a first-time user (no hackare_ variables in localStorage)
+            if (!hasVisitedBefore() && !isWelcomeDisabled()) {
                 
                 // Create a welcome modal
                 const welcomeModal = document.createElement('div');
@@ -70,7 +66,7 @@ window.WelcomeManager = (function() {
                 const continueButton = document.createElement('button');
                 continueButton.type = 'button';
                 continueButton.className = 'btn primary-btn';
-                continueButton.textContent = 'Continue to Settings';
+                continueButton.textContent = 'Get Started';
                 
                 // Add a close button for testing purposes
                 const closeButton = document.createElement('button');
@@ -95,10 +91,7 @@ window.WelcomeManager = (function() {
                 // Handle continue button click
                 continueButton.addEventListener('click', () => {
                     welcomeModal.remove();
-                    // Call the onContinue callback
-                    if (onContinue) {
-                        onContinue();
-                    }
+                    // No callback - just close the modal
                 });
                 
                 // Handle close button click
@@ -145,7 +138,7 @@ window.WelcomeManager = (function() {
             let nonHackareVars = [];
             
             // Keys that are allowed to exist without "hackare_" prefix
-            const allowedKeys = ['hackare_visited'];
+            const allowedKeys = [];
             
             // Check all localStorage variables
             for (let i = 0; i < localStorage.length; i++) {
@@ -170,12 +163,10 @@ window.WelcomeManager = (function() {
         
         /**
          * Mark the user as having visited before
-         * Note: This is kept for API compatibility but is no longer needed
-         * as any localStorage operation will create hackare_ variables
+         * Deprecated - no longer used
          */
         function markAsVisited() {
-            // No longer needed - any localStorage operations will create hackare_ variables
-            // This function is kept for API compatibility
+            // Deprecated - no longer used
         }
         
         // Public API

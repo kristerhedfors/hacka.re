@@ -2,7 +2,7 @@ import pytest
 from playwright.sync_api import expect
 import time
 
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
 def test_theme_toggle_button_exists(page):
     """Test that the theme toggle button exists in the header."""
@@ -78,7 +78,6 @@ def test_light_mode_default(page, serve_hacka_re):
     settings_modal = page.locator("#settings-modal")
     if settings_modal.is_visible():
         print("Settings modal is already open, dismissing it first")
-        dismiss_settings_modal(page)
         # Wait a moment to ensure the modal is fully closed
         time.sleep(0.5)
     
@@ -108,7 +107,6 @@ def test_light_mode_default(page, serve_hacka_re):
     settings_modal = page.locator("#settings-modal")
     if settings_modal.is_visible():
         print("Settings modal is already open after reload, dismissing it")
-        dismiss_settings_modal(page)
         # Wait a moment to ensure the modal is fully closed
         time.sleep(0.5)
     

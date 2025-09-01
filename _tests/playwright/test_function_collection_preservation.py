@@ -1,7 +1,7 @@
 import pytest
 from playwright.sync_api import Page, expect
 import time
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
 def test_function_collection_preservation(page: Page, serve_hacka_re):
     """Test that editing a function preserves the original collection name and metadata."""
@@ -12,8 +12,6 @@ def test_function_collection_preservation(page: Page, serve_hacka_re):
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if already open
-    dismiss_settings_modal(page)
-    
     # Check if the function calling button exists
     function_btn = page.locator("#function-btn")
     expect(function_btn).to_be_visible()

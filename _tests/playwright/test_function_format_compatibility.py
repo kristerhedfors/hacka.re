@@ -10,7 +10,7 @@ import time
 import json
 import re
 from playwright.sync_api import Page, expect
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
 # Priority models to test (known to have different behaviors)
 PRIORITY_MODELS = {
@@ -342,8 +342,6 @@ def test_model_function_format(page: Page, serve_hacka_re, api_key, groq_api_key
     # Navigate and setup
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Configure provider and model
     selected = setup_test_environment(page, provider, model, current_api_key)
     if not selected:
@@ -403,7 +401,6 @@ def test_format_summary(page: Page, serve_hacka_re, api_key, groq_api_key, berge
                 # Run test for this model
                 page.goto(serve_hacka_re)
                 dismiss_welcome_modal(page)
-                dismiss_settings_modal(page)  # Ensure settings modal is closed
                 
                 # Select appropriate API key
                 if provider == "groq":

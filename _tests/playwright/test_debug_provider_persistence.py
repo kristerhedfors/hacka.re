@@ -14,7 +14,7 @@ from 'openai' to 'groq' in the settings modal by:
 import json
 import time
 from playwright.sync_api import Page, expect
-from test_utils import dismiss_welcome_modal, screenshot_with_markdown, dismiss_settings_modal
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
 
 def setup_debug_console_logging(page: Page):
@@ -132,8 +132,6 @@ def test_debug_provider_persistence(page: Page, serve_hacka_re):
     print("\n--- Step 1: Initial Navigation ---")
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Get initial state
     initial_storage = get_storage_debug_info(page)
     initial_provider = get_provider_debug_info(page)

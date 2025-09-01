@@ -5,15 +5,13 @@ Tests that Shodan MCP configuration is properly included in shared links.
 """
 import pytest
 from playwright.sync_api import Page, expect
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, select_recommended_test_model
+from test_utils import dismiss_welcome_modal, select_recommended_test_model
 
 
 def test_shodan_backend_mcp_integration_complete(page: Page, serve_hacka_re, shodan_api_key):
     """Test that Shodan MCP backend integration is complete"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Add Shodan API key using CoreStorageService
     page.evaluate(f"""() => {{
         if (window.CoreStorageService) {{
@@ -68,8 +66,6 @@ def test_shodan_mcp_size_estimation(page: Page, serve_hacka_re, shodan_api_key):
     """Test that Shodan is included in MCP size estimation"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Add Shodan API key
     page.evaluate(f"""() => {{
         localStorage.setItem('shodan_api_key', '{shodan_api_key}');
@@ -112,8 +108,6 @@ def test_shodan_mcp_data_collection(page: Page, serve_hacka_re, shodan_api_key):
     """Test that Shodan is included in MCP data collection"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Add Shodan API key
     page.evaluate(f"""() => {{
         localStorage.setItem('shodan_api_key', '{shodan_api_key}');
@@ -158,8 +152,6 @@ def test_shodan_configuration_service_integration(page: Page, serve_hacka_re, sh
     """Test that Shodan is integrated with the Configuration Service"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Add Shodan API key
     page.evaluate(f"""() => {{
         localStorage.setItem('shodan_api_key', '{shodan_api_key}');

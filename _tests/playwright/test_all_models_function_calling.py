@@ -13,7 +13,7 @@ import os
 import time
 import json
 from playwright.sync_api import Page, expect
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
 # Complete list of chat-capable models from discovery
 GROQ_CHAT_MODELS = [
@@ -411,8 +411,6 @@ def test_groq_models(page: Page, serve_hacka_re, groq_api_key, model):
     console_messages = setup_console_logging(page)
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     selected = configure_provider_and_model(page, "groq", model, groq_api_key)
     if not selected:
         pytest.skip(f"Model {model} not available on Groq")
@@ -440,8 +438,6 @@ def test_berget_models(page: Page, serve_hacka_re, berget_api_key, model):
     console_messages = setup_console_logging(page)
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     selected = configure_provider_and_model(page, "berget", model, berget_api_key)
     if not selected:
         pytest.skip(f"Model {model} not available on Berget")
@@ -468,8 +464,6 @@ def test_openai_models(page: Page, serve_hacka_re, api_key, model):
     console_messages = setup_console_logging(page)
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     selected = configure_provider_and_model(page, "openai", model, api_key)
     if not selected:
         pytest.skip(f"Model {model} not available on OpenAI")

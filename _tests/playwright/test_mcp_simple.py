@@ -1,15 +1,13 @@
 """Simple working MCP tests"""
 import pytest
 from playwright.sync_api import Page, expect
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal
+from test_utils import dismiss_welcome_modal
 
 
 def test_mcp_button_exists(page: Page, serve_hacka_re):
     """Test that MCP button exists and is clickable"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Check that MCP button is visible
     mcp_button = page.locator("#mcp-servers-btn")
     expect(mcp_button).to_be_visible()
@@ -23,8 +21,6 @@ def test_mcp_modal_opens(page: Page, serve_hacka_re):
     """Test that MCP modal opens when button is clicked"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open MCP modal
     mcp_button = page.locator("#mcp-servers-btn")
     mcp_button.click()
@@ -42,8 +38,6 @@ def test_mcp_proxy_status_initial(page: Page, serve_hacka_re):
     """Test initial proxy status display"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open MCP modal
     page.locator("#mcp-servers-btn").click()
     
@@ -60,8 +54,6 @@ def test_mcp_server_input_exists(page: Page, serve_hacka_re):
     """Test that server command input field exists"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open MCP modal
     page.locator("#mcp-servers-btn").click()
     
@@ -78,8 +70,6 @@ def test_mcp_form_submission(page: Page, serve_hacka_re):
     """Test MCP server form basic elements"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open MCP modal
     page.locator("#mcp-servers-btn").click()
     
@@ -96,8 +86,6 @@ def test_mcp_modal_close(page: Page, serve_hacka_re):
     """Test that MCP modal can be closed"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open MCP modal
     page.locator("#mcp-servers-btn").click()
     

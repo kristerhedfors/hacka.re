@@ -2,7 +2,7 @@ import pytest
 import json
 from playwright.sync_api import Page, expect
 
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
 def test_rag_search_ui_elements(page: Page, serve_hacka_re):
     """Test the RAG search UI elements and basic functionality."""
@@ -11,8 +11,6 @@ def test_rag_search_ui_elements(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open the RAG modal
     rag_button = page.locator("#rag-btn")
     rag_button.click()
@@ -52,8 +50,6 @@ def test_rag_search_without_index(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Clear any existing RAG index
     page.evaluate("localStorage.removeItem('rag_default_prompts_index')")
     page.evaluate("localStorage.removeItem('rag_user_bundles_index')")
@@ -94,8 +90,6 @@ def test_rag_cosine_similarity_algorithm(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Test cosine similarity through browser console
     similarity_test_result = page.evaluate("""() => {
         // Test vectors for cosine similarity
@@ -143,8 +137,6 @@ def test_rag_search_with_mock_data(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Create mock index data in localStorage
     mock_index = {
         "chunks": [
@@ -219,8 +211,6 @@ def test_rag_search_ranking_and_relevance(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Test ranking through browser console with mock embeddings
     ranking_test_result = page.evaluate("""() => {
         // Mock chunks with different relevance levels
@@ -291,8 +281,6 @@ def test_rag_search_enter_key_functionality(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Create minimal mock index for testing
     mock_index = {
         "chunks": [
@@ -342,8 +330,6 @@ def test_rag_search_empty_query_handling(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open the RAG modal
     rag_button = page.locator("#rag-btn")
     rag_button.click()
@@ -391,8 +377,6 @@ def test_rag_search_result_formatting(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Create detailed mock index for result formatting test
     mock_index = {
         "chunks": [

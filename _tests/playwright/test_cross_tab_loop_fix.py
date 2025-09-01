@@ -2,7 +2,7 @@
 
 import pytest
 from playwright.sync_api import Page, expect
-from test_utils import screenshot_with_markdown, dismiss_welcome_modal, dismiss_settings_modal
+from test_utils import screenshot_with_markdown, dismiss_welcome_modal
 
 
 @pytest.mark.feature_test
@@ -12,8 +12,6 @@ def test_cross_tab_sync_no_loop(page: Page, serve_hacka_re):
     # Create a shared link first (like the user scenario)
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Set up a GitHub token
     test_token = 'ghp_loop_test_1234567890abcdef'
     page.evaluate(f"""

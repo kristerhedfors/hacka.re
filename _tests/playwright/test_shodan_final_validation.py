@@ -14,7 +14,7 @@ import pytest
 import time
 import os
 from playwright.sync_api import Page, expect
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
 
 @pytest.fixture
@@ -43,8 +43,6 @@ def test_shodan_final_validation(page: Page, serve_hacka_re, shodan_api_key):
     
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     print("=== STEP 2: Connect to Shodan ===")
     
     # Open MCP modal

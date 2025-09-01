@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 from playwright.sync_api import Page, expect
 
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, check_system_messages, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, check_system_messages, screenshot_with_markdown
 
 # Load environment variables from .env file in the current directory
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
@@ -43,7 +43,6 @@ def test_clear_namespace_settings(page: Page, serve_hacka_re):
     settings_modal = page.locator("#settings-modal")
     if settings_modal.is_visible():
         print("Settings modal is already open, dismissing it first")
-        dismiss_settings_modal(page)
         # Wait a moment to ensure the modal is fully closed
         time.sleep(0.5)
     

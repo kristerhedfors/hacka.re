@@ -2,7 +2,7 @@ import pytest
 import json
 from playwright.sync_api import Page, expect
 
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
 def test_rag_chat_integration_setup(page: Page, serve_hacka_re, api_key):
     """Test that RAG integration is properly set up in chat manager."""
@@ -11,8 +11,6 @@ def test_rag_chat_integration_setup(page: Page, serve_hacka_re, api_key):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Configure API key and settings
     page.evaluate(f"localStorage.setItem('openai_api_key', '{api_key}')")
     page.evaluate("localStorage.setItem('base_url', 'https://api.openai.com/v1')")
@@ -98,8 +96,6 @@ def test_rag_enhanced_chat_response(page: Page, serve_hacka_re, api_key):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Configure API key and settings
     page.evaluate(f"localStorage.setItem('openai_api_key', '{api_key}')")
     page.evaluate("localStorage.setItem('base_url', 'https://api.openai.com/v1')")
@@ -238,8 +234,6 @@ def test_rag_context_injection_mechanism(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Create mock RAG index
     mock_index = {
         "chunks": [
@@ -317,8 +311,6 @@ def test_rag_search_query_extraction(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Test query extraction through browser console
     query_extraction_result = page.evaluate("""() => {
         // Test various types of user messages
@@ -375,8 +367,6 @@ def test_rag_end_to_end_workflow(page: Page, serve_hacka_re, api_key):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Configure API key and settings
     page.evaluate(f"localStorage.setItem('openai_api_key', '{api_key}')")
     page.evaluate("localStorage.setItem('base_url', 'https://api.openai.com/v1')")
@@ -487,8 +477,6 @@ def test_rag_no_relevant_context_handling(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Create mock index with content unrelated to test query
     unrelated_index = {
         "chunks": [
@@ -556,8 +544,6 @@ def test_rag_multiple_source_integration(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Create default prompts index
     default_prompts_index = {
         "chunks": [
@@ -649,8 +635,6 @@ def test_rag_enable_disable_state_integration(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Test RAG state through browser console
     rag_state_test_result = page.evaluate("""() => {
         // Test getting and setting RAG enabled state
@@ -704,8 +688,6 @@ def test_rag_debug_logging_functionality(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Create mock RAG index for testing
     debug_test_index = {
         "chunks": [

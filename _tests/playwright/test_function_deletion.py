@@ -1,7 +1,7 @@
 import pytest
 from playwright.sync_api import Page, expect
 import time
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
 from function_calling_api.helpers.setup_helpers import (
     setup_console_logging, 
@@ -16,8 +16,6 @@ def test_function_deletion_removes_entire_bundle(page: Page, serve_hacka_re, api
     """Test basic function deletion functionality"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open function modal
     function_btn = page.locator("#function-btn")
     function_btn.click()
@@ -38,8 +36,6 @@ def test_multiple_function_collections(page: Page, serve_hacka_re, api_key):
     """Test basic multiple function collections functionality"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open function modal
     function_btn = page.locator("#function-btn")
     function_btn.click()

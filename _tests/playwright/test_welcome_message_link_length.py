@@ -2,7 +2,7 @@
 
 import pytest
 from playwright.sync_api import Page, expect
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
 
 def test_welcome_message_link_length_updates(page: Page, serve_hacka_re):
@@ -13,8 +13,6 @@ def test_welcome_message_link_length_updates(page: Page, serve_hacka_re):
     
     # Dismiss modals
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Wait for full initialization
     page.wait_for_timeout(1000)
     
@@ -163,8 +161,6 @@ def test_welcome_message_unchecking_checkbox_reduces_link_length(page: Page, ser
     
     # Dismiss modals
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open share modal 
     page.click('#share-btn')
     page.wait_for_selector('#share-modal', state='visible', timeout=5000)

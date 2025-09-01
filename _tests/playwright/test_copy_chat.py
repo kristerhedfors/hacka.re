@@ -1,7 +1,7 @@
 import pytest
 from playwright.sync_api import Page, expect
 
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, check_system_messages, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, check_system_messages, screenshot_with_markdown
 
 def test_copy_chat_button_exists(page: Page, serve_hacka_re):
     """Test that the copy chat button exists and is visible."""
@@ -12,8 +12,6 @@ def test_copy_chat_button_exists(page: Page, serve_hacka_re):
     dismiss_welcome_modal(page)
     
     # Also dismiss settings modal if present (to prevent interference with button clicks)
-    dismiss_settings_modal(page)
-    
     # Check that the copy chat button is visible
     copy_chat_btn = page.locator("#copy-chat-btn")
     expect(copy_chat_btn).to_be_visible()
@@ -33,8 +31,6 @@ def test_copy_chat_functionality(page: Page, serve_hacka_re):
     dismiss_welcome_modal(page)
     
     # Also dismiss settings modal if present (to prevent interference with button clicks)
-    dismiss_settings_modal(page)
-    
     # The welcome message is already in the chat by default
     # We can test the copy functionality with just this message
     
@@ -70,8 +66,6 @@ def test_copy_chat_button_tooltip(page: Page, serve_hacka_re):
     dismiss_welcome_modal(page)
     
     # Also dismiss settings modal if present
-    dismiss_settings_modal(page)
-    
     # Get the copy chat button in the chat header
     copy_chat_btn = page.locator("#copy-chat-btn")
     expect(copy_chat_btn).to_be_visible()

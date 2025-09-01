@@ -6,7 +6,7 @@ These tests follow the exact core test pattern to ensure proper API setup.
 import pytest
 import time
 from playwright.sync_api import Page, expect
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, select_recommended_test_model, check_system_messages
+from test_utils import dismiss_welcome_modal, select_recommended_test_model, check_system_messages
 
 
 def test_shodan_full_setup_like_core_tests(page: Page, serve_hacka_re, api_key, shodan_api_key):
@@ -15,8 +15,6 @@ def test_shodan_full_setup_like_core_tests(page: Page, serve_hacka_re, api_key, 
     
     # Exact core test sequence
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Click settings button
     settings_button = page.locator("#settings-btn")
     settings_button.click(timeout=2000)
@@ -152,8 +150,6 @@ def test_shodan_query_with_proper_setup(page: Page, serve_hacka_re, api_key, sho
     """Test Shodan query with completely proper setup"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Complete API setup first (following core test pattern)
     settings_button = page.locator("#settings-btn")
     settings_button.click(timeout=2000)

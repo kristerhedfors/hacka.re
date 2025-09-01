@@ -2,7 +2,7 @@
 Test function execute modal functionality
 """
 import pytest
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 from playwright.sync_api import Page, expect
 import time
 
@@ -11,8 +11,6 @@ def test_function_execute_modal_basic(page: Page, serve_hacka_re):
     """Test basic function execute modal functionality"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open function calling modal
     function_btn = page.locator("#function-btn")
     function_btn.click()
@@ -41,8 +39,6 @@ def test_function_execute_modal_validation_errors(page: Page, serve_hacka_re):
     """Test function execute modal with validation errors"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open function modal and check basic elements exist
     function_btn = page.locator("#function-btn")
     function_btn.click()
@@ -65,8 +61,6 @@ def test_function_execute_modal_no_parameters(page: Page, serve_hacka_re):
     """Test function execute modal with function that has no parameters"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open function modal and check basic elements
     function_btn = page.locator("#function-btn")
     function_btn.click()

@@ -2,7 +2,7 @@ import pytest
 import time
 from playwright.sync_api import Page, expect
 
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, dismiss_api_key_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, dismiss_api_key_modal, screenshot_with_markdown
 from function_calling_api.helpers.setup_helpers import configure_api_key_and_model
 
 def test_clear_chat_button_exists(page: Page, serve_hacka_re):
@@ -14,8 +14,6 @@ def test_clear_chat_button_exists(page: Page, serve_hacka_re):
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if already open
-    dismiss_settings_modal(page)
-    
     # Check if the clear chat button exists
     clear_chat_btn = page.locator("#clear-chat-btn")
     expect(clear_chat_btn).to_be_visible(timeout=2000)
@@ -41,8 +39,6 @@ def test_clear_chat_confirmation_dialog(page: Page, serve_hacka_re, api_key):
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if already open
-    dismiss_settings_modal(page)
-    
     # Also dismiss API key modal if present
     dismiss_api_key_modal(page)
     

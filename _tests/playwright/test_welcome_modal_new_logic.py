@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test the new welcome modal logic with hackare_visited key
+Test the new welcome modal logic - shows only for first-time users
 """
 
 import pytest
@@ -8,15 +8,15 @@ import time
 from playwright.sync_api import Page, expect
 from test_utils import dismiss_welcome_modal
 
-def test_welcome_modal_shows_when_hackare_visited_true(page: Page, serve_hacka_re):
-    """Test that welcome modal appears when hackare_visited is true"""
-    # Navigate to the application
+def test_welcome_modal_shows_for_first_time_user(page: Page, serve_hacka_re):
+    """Test that welcome modal appears for first-time users (no hackare_ variables)"""
+    # Navigate to the application first
     page.goto(serve_hacka_re)
     
-    # Set hackare_visited to true to trigger welcome modal
-    page.evaluate("localStorage.setItem('hackare_visited', 'true')")
+    # Clear all localStorage to simulate first-time user
+    page.evaluate("localStorage.clear()")
     
-    # Refresh the page to trigger the welcome modal check
+    # Reload to trigger welcome modal check
     page.reload()
     
     # Wait for page to load
@@ -29,22 +29,29 @@ def test_welcome_modal_shows_when_hackare_visited_true(page: Page, serve_hacka_r
     # Check modal content
     expect(welcome_modal.locator("h2")).to_contain_text("Welcome to hacka.re!")
     
-    # Close the modal
-    close_button = welcome_modal.locator("#close-welcome-modal")
-    close_button.click()
+    # Check that button says "Get Started" instead of "Continue to Settings"
+    continue_button = welcome_modal.locator("button.primary-btn")
+    expect(continue_button).to_contain_text("Get Started")
+    
+    # Click Get Started button
+    continue_button.click()
     
     # Modal should be gone
     expect(welcome_modal).not_to_be_visible()
     
-    print("✅ Welcome modal correctly shown when hackare_visited=true")
+    # Settings modal should NOT automatically open
+    settings_modal = page.locator("#settings-modal")
+    expect(settings_modal).not_to_have_class("active")
+    
+    print("✅ Welcome modal correctly shown for first-time user, settings NOT auto-opened")
 
-def test_welcome_modal_hidden_when_hackare_visited_false(page: Page, serve_hacka_re):
-    """Test that welcome modal is hidden when hackare_visited is false"""
+def test_welcome_modal_hidden_for_returning_user(page: Page, serve_hacka_re):
+    """Test that welcome modal is hidden when user has hackare_ variables"""
     # Navigate to the application
     page.goto(serve_hacka_re)
     
-    # Set hackare_visited to false to prevent welcome modal
-    page.evaluate("localStorage.setItem('hackare_visited', 'false')")
+    # Set a hackare_ variable to indicate returning user
+    page.evaluate("localStorage.setItem('hackare_test_data', 'some_value')")
     
     # Refresh the page to trigger the welcome modal check
     page.reload()
@@ -52,28 +59,60 @@ def test_welcome_modal_hidden_when_hackare_visited_false(page: Page, serve_hacka
     # Wait for page to load
     page.wait_for_load_state("networkidle")
     
-    # Check if welcome modal is NOT visible
+    # Welcome modal should not be visible
     welcome_modal = page.locator("#welcome-modal")
     expect(welcome_modal).not_to_be_visible()
     
-    print("✅ Welcome modal correctly hidden when hackare_visited=false")
-
-def test_welcome_modal_hidden_when_hackare_visited_missing(page: Page, serve_hacka_re):
-    """Test that welcome modal is hidden when hackare_visited key is missing"""
-    # Navigate to the application
-    page.goto(serve_hacka_re)
+    # Settings modal should also not be visible
+    settings_modal = page.locator("#settings-modal")
+    expect(settings_modal).not_to_have_class("active")
     
-    # Clear localStorage to ensure hackare_visited is missing
+    print("✅ Welcome modal correctly hidden for returning user")
+
+def test_welcome_modal_disabled_with_url_param(page: Page, serve_hacka_re):
+    """Test that welcome modal can be disabled via URL parameter"""
+    # Navigate with welcome=false parameter first
+    page.goto(f"{serve_hacka_re}#welcome=false")
+    
+    # Clear localStorage to simulate first-time user
     page.evaluate("localStorage.clear()")
     
-    # Refresh the page to trigger the welcome modal check
+    # Reload to trigger welcome modal check
     page.reload()
     
     # Wait for page to load
     page.wait_for_load_state("networkidle")
     
-    # Check if welcome modal is NOT visible
+    # Welcome modal should not be visible even for first-time user
     welcome_modal = page.locator("#welcome-modal")
     expect(welcome_modal).not_to_be_visible()
     
-    print("✅ Welcome modal correctly hidden when hackare_visited key is missing")
+    print("✅ Welcome modal correctly disabled with URL parameter")
+
+def test_no_auto_settings_after_welcome(page: Page, serve_hacka_re):
+    """Test that Settings modal doesn't automatically open after Welcome modal"""
+    # Navigate to the application first
+    page.goto(serve_hacka_re)
+    
+    # Clear localStorage to simulate first-time user
+    page.evaluate("localStorage.clear()")
+    
+    # Reload to trigger welcome modal check
+    page.reload()
+    
+    # Wait for welcome modal
+    welcome_modal = page.locator("#welcome-modal")
+    expect(welcome_modal).to_be_visible(timeout=2000)
+    
+    # Click the close button (alternative to Get Started)
+    close_button = welcome_modal.locator("#close-welcome-modal")
+    close_button.click()
+    
+    # Welcome modal should be gone
+    expect(welcome_modal).not_to_be_visible()
+    
+    # Settings modal should NOT be visible
+    settings_modal = page.locator("#settings-modal")
+    expect(settings_modal).not_to_have_class("active")
+    
+    print("✅ Settings modal does not auto-open after closing Welcome modal")
