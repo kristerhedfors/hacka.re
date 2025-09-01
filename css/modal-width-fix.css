@@ -1,0 +1,117 @@
+/* Modal Width Fix - Keep modals compact on desktop like mobile */
+
+/* Base modal content - enforce max width on all screens */
+.modal-content {
+    max-width: 500px !important;  /* Mobile-like width even on desktop */
+    width: 90% !important;         /* Responsive but capped */
+    margin: 2rem auto !important;  /* Center with margin */
+}
+
+/* Specific modal overrides for those that need to be slightly larger */
+#function-calling-modal .modal-content,
+#prompts-modal .modal-content,
+#rag-modal .modal-content,
+#mcp-modal .modal-content {
+    max-width: 600px !important;  /* Slightly wider for complex interfaces */
+}
+
+/* Settings modal - keep compact */
+#settings-modal .modal-content {
+    max-width: 500px !important;
+}
+
+/* Share modal - keep compact */
+#share-modal .modal-content {
+    max-width: 450px !important;
+}
+
+/* Welcome modal - keep compact */
+#welcome-modal .modal-content {
+    max-width: 500px !important;
+}
+
+/* Model selection modal */
+#model-selection-modal .modal-content {
+    max-width: 500px !important;
+}
+
+/* System prompt viewer - can be wider but still limited */
+#system-prompt-viewer-modal .modal-content {
+    max-width: 700px !important;
+    resize: both;  /* Keep resize functionality */
+}
+
+/* Info modals */
+#settings-info-modal .modal-content,
+[id^="share-info-modal-"] .modal-content {
+    max-width: 500px !important;
+}
+
+/* OAuth and service modals */
+.oauth-callback-modal .modal-content,
+.oauth-instructions-modal .modal-content,
+.service-pat-modal .modal-content,
+.service-oauth-setup-modal .modal-content,
+.device-code-modal .modal-content,
+.manual-oauth-modal .modal-content {
+    max-width: 500px !important;
+}
+
+/* Function execute and details modals */
+#function-execute-modal .modal-content,
+#function-details-modal .modal-content {
+    max-width: 500px !important;
+}
+
+/* Desktop specific - ensure modals don't get too wide */
+@media (min-width: 769px) {
+    .modal-content {
+        max-width: 500px !important;
+        width: 90% !important;
+    }
+    
+    /* Slightly larger modals for complex interfaces */
+    #function-calling-modal .modal-content,
+    #prompts-modal .modal-content,
+    #rag-modal .modal-content,
+    #mcp-modal .modal-content {
+        max-width: 650px !important;
+        width: 90% !important;
+    }
+    
+    #system-prompt-viewer-modal .modal-content {
+        max-width: 750px !important;
+        width: 90% !important;
+    }
+}
+
+/* Very large screens - still keep modals contained */
+@media (min-width: 1440px) {
+    .modal-content {
+        max-width: 550px !important;
+        width: auto !important;
+        min-width: 450px !important;
+    }
+    
+    #function-calling-modal .modal-content,
+    #prompts-modal .modal-content,
+    #rag-modal .modal-content,
+    #mcp-modal .modal-content {
+        max-width: 700px !important;
+        min-width: 600px !important;
+    }
+    
+    #system-prompt-viewer-modal .modal-content {
+        max-width: 800px !important;
+        min-width: 700px !important;
+    }
+}
+
+/* Mobile - respect existing mobile styles */
+@media (max-width: 768px) {
+    .modal-content {
+        max-width: 95% !important;
+        width: 95% !important;
+        margin: 1rem auto !important;
+    }
+}
