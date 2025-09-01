@@ -900,24 +900,6 @@ async function getCurrentTimeInBerlin() {
                         <h3>⚙️ Advanced</h3>
                     </div>
                     <div class="rag-advanced-content" id="rag-advanced-content" style="display: none;">
-                        <!-- Prompts as Knowledge Section -->
-                        <div class="rag-subsection">
-                            <h4>Prompts as Knowledge</h4>
-                            <div class="rag-status" id="rag-default-status">
-                                <div class="rag-stats">
-                                    <span id="rag-default-chunks">0 chunks indexed</span>
-                                    <span id="rag-default-model">No embeddings model</span>
-                                </div>
-                                <button type="button" id="rag-index-defaults-btn" class="btn primary-btn" disabled>
-                                    Generate Embeddings
-                                </button>
-                            </div>
-                            
-                            <div id="rag-default-prompts-list" class="rag-prompts-list">
-                                <!-- Tree structure for prompts will be populated here -->
-                            </div>
-                        </div>
-                        
                         <!-- Files as Knowledge Section -->
                         <div class="rag-subsection">
                             <h4>Files as Knowledge</h4>
@@ -1473,9 +1455,7 @@ async function getCurrentTimeInBerlin() {
     <script src="js/components/rag/rag-search-manager.js"></script>
     <script src="js/components/rag/rag-index-stats-manager.js"></script>
     <script src="js/components/rag/rag-file-knowledge-manager.js"></script>
-    <script src="js/components/rag/rag-prompts-list-manager.js"></script>
     <script src="js/components/rag/rag-user-bundles-manager.js"></script>
-    <script src="js/components/rag/rag-embedding-generator.js"></script>
     <script src="js/components/rag/rag-coordinator.js"></script>
     <script src="js/components/ai-hackare.js"></script>
     <script src="js/app.js"></script>
