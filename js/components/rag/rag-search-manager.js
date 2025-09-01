@@ -45,6 +45,18 @@ window.RAGSearchManager = (function() {
             
             searchInput.addEventListener('input', updateSearchButtonState);
         }
+        
+        // Multi-query toggle
+        const multiQueryCheckbox = document.getElementById('rag-multi-query-enabled');
+        const expansionModelGroup = document.getElementById('rag-expansion-model-group');
+        if (multiQueryCheckbox && expansionModelGroup) {
+            multiQueryCheckbox.addEventListener('change', (e) => {
+                expansionModelGroup.style.display = e.target.checked ? 'block' : 'none';
+            });
+            
+            // Set initial state
+            expansionModelGroup.style.display = multiQueryCheckbox.checked ? 'block' : 'none';
+        }
     }
 
     /**
@@ -84,6 +96,17 @@ window.RAGSearchManager = (function() {
         }
 
         const maxResults = parseInt(searchLimitSelect?.value || '5');
+        const tokenLimitInput = document.getElementById('rag-token-limit');
+        const tokenLimit = parseInt(tokenLimitInput?.value || '5000');
+        const multiQueryEnabled = document.getElementById('rag-multi-query-enabled')?.checked ?? true;
+        const expansionModelSelect = document.getElementById('rag-expansion-model');
+        let expansionModel = expansionModelSelect?.value || 'gpt-4o-mini';
+        
+        // If "current" is selected, use the current chat model
+        if (expansionModel === 'current') {
+            expansionModel = StorageService.getSelectedModel() || 'gpt-4o-mini';
+        }
+        
         const apiKey = StorageService.getApiKey();
         const baseUrl = StorageService.getBaseUrl();
 
@@ -122,10 +145,13 @@ window.RAGSearchManager = (function() {
             
             const searchResults = await VectorRAGService.search(query, {
                 maxResults: maxResults,
+                tokenLimit: tokenLimit,
                 threshold: 0.3,
                 useTextFallback: false,  // Disable text fallback
                 apiKey: apiKey,
-                baseUrl: baseUrl
+                baseUrl: baseUrl,
+                useMultiQuery: multiQueryEnabled,
+                expansionModel: expansionModel
             });
 
             displaySearchResults(searchResults);
@@ -156,19 +182,22 @@ window.RAGSearchManager = (function() {
             return;
         }
 
+        const gapFilledCount = searchResults.metadata.gapFilledChunks || 0;
         const resultsHTML = `
             <div class="rag-search-header">
                 <div class="rag-search-summary">
-                    Found ${searchResults.results.length} relevant results for "${searchResults.query}"
-                    (Search type: ${searchResults.metadata.searchType})
+                    Found ${searchResults.results.length} relevant chunks for "${searchResults.query}"
+                    ${gapFilledCount > 0 ? `(includes ${gapFilledCount} gap-filler chunks for coherence)` : ''}
+                    <br><small>Token limit: ${searchResults.metadata.tokenLimit}, Search type: ${searchResults.metadata.searchType}</small>
                 </div>
             </div>
             <div class="rag-results-list">
                 ${searchResults.results.map((result, index) => `
-                    <div class="rag-result-item">
+                    <div class="rag-result-item${result.isGapFiller ? ' gap-filler' : ''}">
                         <div class="rag-result-header">
                             <span class="rag-result-source">
-                                ${result.promptName || result.fileName || result.bundleName || 'Unknown Source'}
+                                ${result.promptName || result.fileName || result.bundleName || result.documentName || 'Unknown Source'}
+                                ${result.isGapFiller ? ' [Gap-filler]' : ''}
                             </span>
                             <span class="rag-result-score">
                                 ${(result.similarity * 100).toFixed(1)}% match

@@ -771,13 +771,21 @@ function cleanupGeneration(updateContextUsage, currentModel) {
                     window.DebugService.debugLog('rag', `Using user message as search query: "${queryPreview}"`);
                 }
                 
-                // Perform RAG search
+                // Get multi-query settings from RAG modal
+                const multiQueryEnabled = document.getElementById('rag-multi-query-enabled')?.checked ?? false;
+                const expansionModel = document.getElementById('rag-expansion-model')?.value || 'gpt-4o-mini';
+                const tokenLimit = parseInt(document.getElementById('rag-token-limit')?.value) || 5000;
+                
+                // Perform RAG search with multi-query support
                 const searchResults = await VectorRAGService.search(query, {
                     maxResults: 3, // Limit to 3 results to avoid context bloat
                     threshold: 0.4, // Slightly higher threshold for relevance
                     useTextFallback: true,
                     apiKey: apiKey,
-                    baseUrl: StorageService.getBaseUrl()
+                    baseUrl: StorageService.getBaseUrl(),
+                    useMultiQuery: multiQueryEnabled,
+                    expansionModel: expansionModel,
+                    tokenLimit: tokenLimit
                 });
                 
                 if (window.DebugService) {
