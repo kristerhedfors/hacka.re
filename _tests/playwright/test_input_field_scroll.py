@@ -1,6 +1,6 @@
 import pytest
 from playwright.sync_api import Page, expect
-from test_utils import screenshot_with_markdown, dismiss_welcome_modal, dismiss_settings_modal
+from test_utils import screenshot_with_markdown, dismiss_welcome_modal
 
 def test_input_field_scroll_behavior(page: Page, serve_hacka_re):
     """Test that focusing the input field doesn't scroll past the footer."""
@@ -11,8 +11,6 @@ def test_input_field_scroll_behavior(page: Page, serve_hacka_re):
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if present
-    dismiss_settings_modal(page)
-    
     # Take a screenshot of the initial state
     screenshot_with_markdown(page, "input_field_scroll_initial.png", {
         "Status": "Initial page load",
@@ -95,8 +93,6 @@ def test_input_field_scroll_safari_emulation(page: Page, serve_hacka_re):
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if present
-    dismiss_settings_modal(page)
-    
     # Take a screenshot of the initial state with Safari emulation
     screenshot_with_markdown(page, "safari_input_field_scroll_initial.png", {
         "Status": "Initial page load with Safari emulation",

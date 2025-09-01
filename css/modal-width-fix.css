@@ -25,9 +25,20 @@
     max-width: 450px !important;
 }
 
-/* Welcome modal - keep compact */
+/* Welcome modal - keep compact and prevent scrolling */
 #welcome-modal .modal-content {
     max-width: 500px !important;
+    max-height: 95vh !important;
+    overflow-y: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* System prompt modal - prevent unnecessary scrolling */
+#system-prompt-modal .modal-content {
+    max-width: 500px !important;
+    max-height: 95vh !important;
+    overflow-y: auto !important;
 }
 
 /* Model selection modal */
@@ -113,5 +124,35 @@
         max-width: 95% !important;
         width: 95% !important;
         margin: 1rem auto !important;
+    }
+    
+    /* Welcome modal specific adjustments for mobile */
+    #welcome-modal .modal-content {
+        max-height: calc(100vh - 2rem) !important;
+        margin: 1rem auto !important;
+        padding: 1.5rem !important;
+        overflow-y: hidden !important; /* Prevent scrolling on mobile */
+    }
+    
+    /* System prompt modal on mobile - prevent scrolling */
+    #system-prompt-modal .modal-content {
+        overflow-y: hidden !important; /* Prevent scrolling on mobile */
+        max-height: calc(100vh - 2rem) !important;
+    }
+    
+    /* Reduce spacing in welcome modal on mobile */
+    #welcome-modal h2 {
+        margin-bottom: 16px !important;
+        font-size: 24px !important;
+    }
+    
+    #welcome-modal .important-notice {
+        padding: 12px !important;
+        margin-bottom: 12px !important;
+    }
+    
+    #welcome-modal .form-actions {
+        margin-top: 16px !important;
+        padding-bottom: 0 !important;
     }
 }

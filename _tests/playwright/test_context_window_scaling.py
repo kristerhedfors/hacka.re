@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 from playwright.sync_api import Page, expect
 
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, select_recommended_test_model
+from test_utils import dismiss_welcome_modal, select_recommended_test_model
 
 # Load environment variables from .env file in the current directory
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
@@ -20,8 +20,6 @@ def test_context_window_scaling(page: Page, serve_hacka_re):
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if already open
-    dismiss_settings_modal(page)
-    
     # Configure API key and model
     # Click the settings button
     settings_button = page.locator("#settings-btn")

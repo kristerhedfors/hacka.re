@@ -1,7 +1,7 @@
 """Test that Enter key works in API key modal to save and close it"""
 
 from playwright.sync_api import Page, expect
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 import os
 from dotenv import load_dotenv
 
@@ -30,8 +30,6 @@ def test_api_key_modal_enter_key(page: Page, serve_hacka_re):
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if it's open
-    dismiss_settings_modal(page)
-    
     # Type a test message
     message_input = page.locator("#message-input")
     message_input.fill("Test message")

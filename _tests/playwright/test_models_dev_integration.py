@@ -3,7 +3,7 @@ import time
 import pytest
 from playwright.sync_api import Page, expect
 from test_utils import (
-    dismiss_welcome_modal, dismiss_settings_modal, 
+    dismiss_welcome_modal, 
     screenshot_with_markdown
 )
 
@@ -37,8 +37,6 @@ def test_models_dev_context_windows(page: Page, serve_hacka_re, api_key):
     page.wait_for_timeout(1000)  # Wait for auto-save
 
     close_button.click()
-    dismiss_settings_modal(page)
-    
     # Test different models and their context windows
     test_cases = [
         ("gpt-4", 8192),  # Standard GPT-4 has 8k context
@@ -79,8 +77,6 @@ def test_models_dev_context_windows(page: Page, serve_hacka_re, api_key):
             page.wait_for_timeout(1000)  # Wait for auto-save
 
             close_button.click()
-            dismiss_settings_modal(page)
-            
             # Check console logs for context window detection
             page.wait_for_timeout(500)
             
@@ -158,10 +154,6 @@ def test_groq_models_context(page: Page, serve_hacka_re):
                 "Model": model_id,
                 "Options Available": len(options)
             })
-    
-    dismiss_settings_modal(page)
-
-
 def test_models_dev_data_loading(page: Page, serve_hacka_re):
     """Test that models.dev data is correctly loaded"""
     

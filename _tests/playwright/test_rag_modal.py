@@ -1,7 +1,7 @@
 import pytest
 from playwright.sync_api import Page, expect
 
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
 def test_rag_button_visibility(page: Page, serve_hacka_re):
     """Test that the RAG button is visible and properly positioned in the toolbar."""
@@ -10,8 +10,6 @@ def test_rag_button_visibility(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Check that the RAG button is visible
     rag_button = page.locator("#rag-btn")
     expect(rag_button).to_be_visible()
@@ -38,8 +36,6 @@ def test_rag_modal_open_close(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Click the RAG button
     rag_button = page.locator("#rag-btn")
     rag_button.click()
@@ -75,8 +71,6 @@ def test_rag_modal_structure(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open the RAG modal
     rag_button = page.locator("#rag-btn")
     rag_button.click()
@@ -124,8 +118,6 @@ def test_rag_modal_default_prompts_section(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open the RAG modal
     rag_button = page.locator("#rag-btn")
     rag_button.click()
@@ -157,8 +149,6 @@ def test_rag_modal_search_section(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open the RAG modal
     rag_button = page.locator("#rag-btn")
     rag_button.click()
@@ -202,8 +192,6 @@ def test_rag_modal_user_bundles_section(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open the RAG modal
     rag_button = page.locator("#rag-btn")
     rag_button.click()
@@ -231,8 +219,6 @@ def test_rag_modal_keyboard_interaction(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open the RAG modal
     rag_button = page.locator("#rag-btn")
     rag_button.click()
@@ -270,8 +256,6 @@ def test_rag_enable_disable_functionality(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open the RAG modal
     rag_button = page.locator("#rag-btn")
     rag_button.click()
@@ -306,8 +290,6 @@ def test_rag_default_prompts_indexing_status(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open the RAG modal
     rag_button = page.locator("#rag-btn")
     rag_button.click()

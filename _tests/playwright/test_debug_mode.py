@@ -7,12 +7,10 @@ def test_debug_mode_checkbox_exists(page, serve_hacka_re):
     page.goto(serve_hacka_re)
     
     # Dismiss welcome modal if present
-    from test_utils import dismiss_welcome_modal, dismiss_settings_modal
+    from test_utils import dismiss_welcome_modal
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if already open
-    dismiss_settings_modal(page)
-    
     # Open settings modal
     page.click("#settings-btn")
     
@@ -37,12 +35,10 @@ def test_debug_mode_toggle(page, serve_hacka_re):
     page.goto(serve_hacka_re)
     
     # Dismiss welcome modal if present
-    from test_utils import dismiss_welcome_modal, dismiss_settings_modal
+    from test_utils import dismiss_welcome_modal
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if already open
-    dismiss_settings_modal(page)
-    
     # Open settings modal
     page.click("#settings-btn")
     

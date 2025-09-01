@@ -111,6 +111,7 @@ class ASCIITreeMenu {
             'copy-chat': 'copy-chat-btn',
             'mcp-servers': 'mcp-servers-btn',
             'function-calling': 'function-btn',
+            'rag': 'rag-btn',
             'system-prompts': 'prompts-btn',
             'share': 'share-btn',
             'theme': 'theme-toggle-btn',

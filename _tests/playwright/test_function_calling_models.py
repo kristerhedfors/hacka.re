@@ -12,7 +12,7 @@ import os
 import time
 import json
 from playwright.sync_api import Page, expect
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
 # List of Groq models to test (only chat models that might support function calling)
 GROQ_MODELS = [
@@ -369,8 +369,6 @@ def test_groq_function_calling(page: Page, serve_hacka_re, groq_api_key, model):
     console_messages = setup_console_logging(page)
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Configure Groq with specific model
     selected_model = configure_provider_and_model(page, "groq", model, groq_api_key)
     
@@ -416,8 +414,6 @@ def test_openai_function_calling(page: Page, serve_hacka_re, api_key, model):
     console_messages = setup_console_logging(page)
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Configure OpenAI with specific model
     selected_model = configure_provider_and_model(page, "openai", model, api_key)
     
@@ -465,8 +461,6 @@ def test_groq_complex_function(page: Page, serve_hacka_re, groq_api_key):
     console_messages = setup_console_logging(page)
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Configure Groq with best model
     selected_model = configure_provider_and_model(page, "groq", best_model, groq_api_key)
     
@@ -513,8 +507,6 @@ def test_berget_function_calling(page: Page, serve_hacka_re, berget_api_key, mod
     console_messages = setup_console_logging(page)
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Configure Berget with specific model
     selected_model = configure_provider_and_model(page, "berget", model, berget_api_key)
     
@@ -562,8 +554,6 @@ def test_openai_complex_function(page: Page, serve_hacka_re, api_key):
     console_messages = setup_console_logging(page)
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Configure OpenAI
     selected_model = configure_provider_and_model(page, "openai", model, api_key)
     

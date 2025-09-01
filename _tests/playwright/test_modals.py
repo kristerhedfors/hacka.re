@@ -1,7 +1,7 @@
 import pytest
 from playwright.sync_api import Page, expect
 
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal
+from test_utils import dismiss_welcome_modal
 
 def test_settings_modal(page: Page, serve_hacka_re):
     """Test that the settings modal opens and contains expected elements."""
@@ -12,8 +12,6 @@ def test_settings_modal(page: Page, serve_hacka_re):
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if already open
-    dismiss_settings_modal(page)
-    
     # Click the settings button with strict timeout
     settings_button = page.locator("#settings-btn")
     settings_button.click(timeout=2000)
@@ -54,8 +52,6 @@ def test_prompts_modal(page: Page, serve_hacka_re):
     dismiss_welcome_modal(page)
     
     # Also dismiss settings modal if present (to prevent interference with button clicks)
-    dismiss_settings_modal(page)
-    
     # Click the prompts button
     prompts_button = page.locator("#prompts-btn")
     prompts_button.click()
@@ -84,8 +80,6 @@ def test_share_modal(page: Page, serve_hacka_re):
     dismiss_welcome_modal(page)
     
     # Also dismiss settings modal if present (to prevent interference with button clicks)
-    dismiss_settings_modal(page)
-    
     # Click the share button
     share_button = page.locator("#share-btn")
     share_button.click()

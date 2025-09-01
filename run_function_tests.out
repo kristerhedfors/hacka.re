@@ -1,0 +1,42 @@
+Starting HTTP server for tests...
+===== Starting HTTP Server for hacka.re Tests =====
+Port: 8000
+Project Root: /Users/user/dev/hacka.re
+==================================================
+Checking for existing HTTP server processes on port 8000...
+Found existing processes: 56362
+Killing existing processes...
+Processes killed.
+Changing to project root directory: /Users/user/dev/hacka.re
+Starting Python HTTP server on port 8000...
+Server started successfully with PID: 57824
+Server is now running at http://localhost:8000
+Server PID saved to: /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt
+==================================================
+Server is ready. You can now run your tests.
+To stop the server, run: kill -9 $(cat /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt)
+==================================================
+Running Function tests with chromium browser...
+Test filter: test_function_modal or test_function_group_colors or test_function_deletion or test_function_editing or test_function_icons or test_function_copy_buttons or test_function_library_copy or test_function_library_multi or test_function_library_sharing or test_function_parsing_logic or test_function_tooltip or test_function_bundle_preservation
+
+============================= test session starts ==============================
+platform darwin -- Python 3.13.3, pytest-8.3.5, pluggy-1.5.0
+rootdir: /Users/user/dev/hacka.re/_tests/playwright
+configfile: pytest.ini
+testpaths: .
+plugins: playwright-0.7.0, base-url-2.1.0
+collected 886 items / 846 deselected / 40 selected
+
+test_function_bundle_preservation.py::test_function_bundle_preservation_when_editing[chromium0] PASSED [  2%]
+test_function_copy_buttons.py::test_function_copy_buttons_exist[chromium0] PASSED [  5%]
+test_function_copy_buttons.py::test_function_copy_functionality[chromium0] PASSED [  7%]
+test_function_deletion.py::test_function_deletion_removes_entire_bundle[chromium0] PASSED [ 10%]
+test_function_deletion.py::test_multiple_function_collections[chromium0] PASSED [ 12%]
+test_function_editing.py::test_function_editing[chromium0] PASSED        [ 15%]
+test_function_group_colors.py::test_function_collection_colors[chromium0] FAILED [ 17%]
+test_function_icons.py::test_function_calling_icons[chromium0] FAILED    [ 20%]
+test_function_icons.py::test_multiple_function_calls_colors[chromium0] FAILED [ 22%]
+test_function_library_multi.py::test_function_library_multi[chromium0] FAILED [ 25%]
+test_function_library_sharing.py::test_function_library_sharing[chromium0] FAILED [ 27%]
+test_function_modal.py::test_function_modal_basic[chromium0] PASSED      [ 30%]
+test_function_modal.py::test_function_modal_elements[chromium0] 

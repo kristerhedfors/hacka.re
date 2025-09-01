@@ -5,15 +5,13 @@ This test investigates why shared links don't properly restore Shodan MCP connec
 """
 import pytest
 from playwright.sync_api import Page, expect
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, select_recommended_test_model
+from test_utils import dismiss_welcome_modal, select_recommended_test_model
 
 
 def test_shodan_share_link_debug_data_flow(page: Page, serve_hacka_re, shodan_api_key):
     """Debug the data flow for Shodan MCP sharing"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Add Shodan API key using CoreStorageService
     page.evaluate(f"""() => {{
         if (window.CoreStorageService) {{

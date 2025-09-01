@@ -3,15 +3,13 @@ Simple test to verify agent load functionality
 """
 import pytest
 from playwright.sync_api import Page, expect
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
 
 def test_agent_load_button_exists_and_triggers(page: Page, serve_hacka_re, api_key):
     """Test that agent load button exists and triggers expected behavior"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # First save an agent to have something to load
     # Set API key first
     settings_btn = page.locator('#settings-btn')
@@ -125,8 +123,6 @@ def test_load_button_without_confirmation_dialog(page: Page, serve_hacka_re, api
     """Test load button behavior by checking console logs and storage changes"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Monitor console logs
     console_messages = []
     page.on("console", lambda msg: console_messages.append(f"{msg.type}: {msg.text}"))

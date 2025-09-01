@@ -2,7 +2,7 @@
 
 import pytest
 from playwright.sync_api import Page, expect
-from test_utils import screenshot_with_markdown, dismiss_welcome_modal, dismiss_settings_modal
+from test_utils import screenshot_with_markdown, dismiss_welcome_modal
 
 
 @pytest.mark.feature_test
@@ -16,8 +16,6 @@ def test_complete_mcp_share_flow(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Store a GitHub token
     test_token = 'ghp_complete_flow_test_1234567890abcdef'
     page.evaluate(f"""

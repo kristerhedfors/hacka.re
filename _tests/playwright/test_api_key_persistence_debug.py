@@ -13,7 +13,7 @@ import os
 from dotenv import load_dotenv
 from playwright.sync_api import Page, expect
 
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, setup_test_environment
+from test_utils import dismiss_welcome_modal, setup_test_environment
 from test_helpers.api_key_fix import ensure_api_key_persisted, configure_api_key_with_retry, wait_for_api_ready
 
 # Load environment variables
@@ -71,8 +71,6 @@ def test_api_key_persistence_scenario_1_basic(page: Page, serve_hacka_re):
     page.goto(serve_hacka_re)
     setup_test_environment(page)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     print("Initial storage state:")
     initial_state = capture_storage_state(page)
     print(f"Services loaded: {initial_state['servicesLoaded']}")
@@ -125,8 +123,6 @@ def test_api_key_persistence_scenario_2_retry_helper(page: Page, serve_hacka_re)
     page.goto(serve_hacka_re)
     setup_test_environment(page)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Wait for API system to be ready
     api_ready = wait_for_api_ready(page, timeout=5000)
     print(f"API system ready: {api_ready}")
@@ -150,8 +146,6 @@ def test_api_key_persistence_scenario_3_multiple_attempts(page: Page, serve_hack
     page.goto(serve_hacka_re)
     setup_test_environment(page)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     results = []
     
     for attempt in range(3):
@@ -210,8 +204,6 @@ def test_api_key_persistence_scenario_4_timing_analysis(page: Page, serve_hacka_
     page.goto(serve_hacka_re)
     setup_test_environment(page)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Set up timing monitoring
     page.evaluate("""() => {
         window.timingLog = [];

@@ -1,7 +1,7 @@
 """Simple test for models context window display"""
 import time
 from playwright.sync_api import Page
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
 
 def test_context_window_display(page: Page, serve_hacka_re, api_key):
@@ -12,8 +12,6 @@ def test_context_window_display(page: Page, serve_hacka_re, api_key):
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if already open
-    dismiss_settings_modal(page)
-    
     # Open settings
     settings_btn = page.locator("#settings-btn")
     settings_btn.click()
@@ -39,8 +37,6 @@ def test_context_window_display(page: Page, serve_hacka_re, api_key):
     page.wait_for_timeout(1000)  # Wait for auto-save
 
     close_button.click()
-    dismiss_settings_modal(page)
-    
     # Check if context window is displayed
     # Look for model info display area
     model_info = page.locator(".model-info")
@@ -76,8 +72,6 @@ def test_context_window_display(page: Page, serve_hacka_re, api_key):
     page.wait_for_timeout(1000)  # Wait for auto-save
 
     close_button.click()
-    dismiss_settings_modal(page)
-    
     # Check model info again
     if model_info.is_visible():
         model_text = model_info.inner_text()
@@ -98,8 +92,6 @@ def test_groq_context_windows(page: Page, serve_hacka_re):
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if already open
-    dismiss_settings_modal(page)
-    
     # Open settings
     settings_btn = page.locator("#settings-btn")
     settings_btn.click()
@@ -129,8 +121,6 @@ def test_groq_context_windows(page: Page, serve_hacka_re):
         page.wait_for_timeout(1000)  # Wait for auto-save
 
         close_button.click()
-        dismiss_settings_modal(page)
-        
         # Check model info
         model_info = page.locator(".model-info")
         if model_info.is_visible():
@@ -143,4 +133,3 @@ def test_groq_context_windows(page: Page, serve_hacka_re):
             })
     else:
         print("No Groq models found in dropdown")
-        dismiss_settings_modal(page)

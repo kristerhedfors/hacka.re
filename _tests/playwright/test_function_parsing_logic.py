@@ -1,7 +1,7 @@
 import pytest
 from playwright.sync_api import Page, expect
 import time
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
 from function_calling_api.helpers.setup_helpers import (
     setup_console_logging, 
@@ -24,8 +24,6 @@ def test_all_functions_callable_by_default(page: Page, serve_hacka_re, api_key):
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if already open
-    dismiss_settings_modal(page)
-    
     # Configure API key and model
     configure_api_key_and_model(page, api_key)
     
@@ -147,8 +145,6 @@ def test_only_tagged_functions_callable(page: Page, serve_hacka_re, api_key):
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if already open
-    dismiss_settings_modal(page)
-    
     # Configure API key and model
     configure_api_key_and_model(page, api_key)
     
@@ -272,8 +268,6 @@ def test_tool_tag_works(page: Page, serve_hacka_re, api_key):
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if already open
-    dismiss_settings_modal(page)
-    
     # Configure API key and model
     configure_api_key_and_model(page, api_key)
     
@@ -397,8 +391,6 @@ def test_single_line_comment_tags(page: Page, serve_hacka_re, api_key):
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if already open
-    dismiss_settings_modal(page)
-    
     # Configure API key and model
     configure_api_key_and_model(page, api_key)
     
@@ -523,8 +515,6 @@ def test_mixed_tag_types(page: Page, serve_hacka_re, api_key):
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if already open
-    dismiss_settings_modal(page)
-    
     # Configure API key and model
     configure_api_key_and_model(page, api_key)
     

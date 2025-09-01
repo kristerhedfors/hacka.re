@@ -9,7 +9,7 @@ import time
 from urllib.parse import urljoin
 from playwright.sync_api import Page, expect
 
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal
+from test_utils import dismiss_welcome_modal
 
 from function_calling_api.helpers.setup_helpers import (
     setup_console_logging, 
@@ -112,8 +112,6 @@ def test_multiple_functions_with_api_key(page: Page, serve_hacka_re, api_key):
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if already open
-    dismiss_settings_modal(page)
-    
     # Configure API key and model
     try:
         configure_api_key_and_model(page, api_key)

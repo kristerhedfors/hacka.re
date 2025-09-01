@@ -7,7 +7,7 @@ import os
 import json
 import requests
 from pathlib import Path
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
 
 class SimpleMCPProxy:
@@ -107,8 +107,6 @@ def test_mcp_proxy_connection(page: Page, serve_hacka_re, mcp_proxy):
     
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open MCP modal
     page.locator("#mcp-servers-btn").click()
     expect(page.locator("#mcp-servers-modal")).to_be_visible()
@@ -142,8 +140,6 @@ def test_mcp_server_form_with_proxy(page: Page, serve_hacka_re, mcp_proxy):
     """Test MCP server form with running proxy"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open MCP modal
     page.locator("#mcp-servers-btn").click()
     expect(page.locator("#mcp-servers-modal")).to_be_visible()
@@ -194,8 +190,6 @@ def test_mcp_filesystem_server_attempt(page: Page, serve_hacka_re, mcp_proxy):
     
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open MCP modal
     page.locator("#mcp-servers-btn").click()
     expect(page.locator("#mcp-servers-modal")).to_be_visible()
@@ -237,8 +231,6 @@ def test_mcp_modal_ui_with_proxy(page: Page, serve_hacka_re, mcp_proxy):
     """Test MCP modal UI interactions with proxy running"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open MCP modal
     page.locator("#mcp-servers-btn").click()
     modal = page.locator("#mcp-servers-modal")
@@ -291,8 +283,6 @@ def test_mcp_proxy_health_endpoint(page: Page, serve_hacka_re, mcp_proxy):
     
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open MCP modal  
     page.locator("#mcp-servers-btn").click()
     expect(page.locator("#mcp-servers-modal")).to_be_visible()

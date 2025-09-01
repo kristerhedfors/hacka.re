@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 from playwright.sync_api import Page, expect
 
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, check_system_messages
+from test_utils import dismiss_welcome_modal, check_system_messages
 
 # Load environment variables from .env file in the current directory
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
@@ -21,8 +21,6 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if already open
-    dismiss_settings_modal(page)
-    
     # Click the settings button
     settings_button = page.locator("#settings-btn")
     settings_button.click(timeout=2000)

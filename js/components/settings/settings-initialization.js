@@ -22,28 +22,9 @@ window.SettingsInitialization = (function() {
         const apiKey = componentManagers.apiKey.getApiKey();
         
         if (!apiKey) {
-            // Create a welcome modal to show the first time
-            const wasWelcomeShown = componentManagers.welcome.showWelcomeModalIfFirstTime(() => {
-                // Show settings modal after welcome modal is closed
-                if (elements.settingsModal) {
-                    elements.settingsModal.classList.add('active');
-                    // Focus the API key field after modal is shown
-                    if (elements.apiKeyUpdate) {
-                        setTimeout(() => elements.apiKeyUpdate.focus(), 100);
-                    }
-                }
-            });
-            
-            // If welcome modal wasn't shown (not first time), show settings modal directly
-            if (!wasWelcomeShown) {
-                if (elements.settingsModal) {
-                    elements.settingsModal.classList.add('active');
-                    // Focus the API key field after modal is shown
-                    if (elements.apiKeyUpdate) {
-                        setTimeout(() => elements.apiKeyUpdate.focus(), 100);
-                    }
-                }
-            }
+            // Show welcome modal for first time users, but don't auto-open settings
+            componentManagers.welcome.showWelcomeModalIfFirstTime();
+            // No automatic opening of settings modal - user must click settings button
         } else {
             // Load saved base URL before fetching models
             const baseUrl = componentManagers.baseUrl.getBaseUrl();

@@ -5,15 +5,13 @@ Tests that mimic core test patterns for Shodan MCP integration.
 """
 import pytest
 from playwright.sync_api import Page, expect
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal
+from test_utils import dismiss_welcome_modal
 
 
 def test_shodan_infrastructure_exists(page: Page, serve_hacka_re):
     """Test that Shodan MCP infrastructure exists"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Check for MCP infrastructure like the core tests do
     mcp_button = page.locator("#mcp-servers-btn")
     expect(mcp_button).to_be_visible()
@@ -34,8 +32,6 @@ def test_shodan_api_key_setup(page: Page, serve_hacka_re, shodan_api_key):
     """Test setting up Shodan API key like core tests do"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Set up API key directly in storage (core test pattern)
     page.evaluate(f"""() => {{
         localStorage.setItem('shodan_api_key', '{shodan_api_key}');
@@ -52,8 +48,6 @@ def test_shodan_query_basic(page: Page, serve_hacka_re, api_key, shodan_api_key)
     """Test basic Shodan query using core test pattern"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Configure API properly like core tests do
     settings_button = page.locator("#settings-btn")
     settings_button.click(timeout=2000)
@@ -115,8 +109,6 @@ def test_shodan_domain_query(page: Page, serve_hacka_re, api_key, shodan_api_key
     """Test domain query like the working example"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Configure API properly like core tests do
     settings_button = page.locator("#settings-btn")
     settings_button.click(timeout=2000)
@@ -167,8 +159,6 @@ def test_shodan_tools_availability(page: Page, serve_hacka_re):
     """Test what Shodan tools would be available"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Expected Shodan tools from the console logs
     expected_tools = [
         'shodan_shodan_host_info',
@@ -188,8 +178,6 @@ def test_mcp_shodan_connection_flow(page: Page, serve_hacka_re):
     """Test the MCP connection flow for Shodan"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open MCP modal like core tests
     mcp_button = page.locator("#mcp-servers-btn")
     expect(mcp_button).to_be_visible()
