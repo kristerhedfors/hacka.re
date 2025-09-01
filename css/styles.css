@@ -2599,7 +2599,9 @@ body:has(.modal.active) #chat-input-container {
 #function-modal,
 #mcp-servers-modal,
 #agent-modal,
-#rag-modal {
+#rag-modal,
+#welcome-modal,
+#system-prompt-modal {
     align-items: flex-start;
     padding-top: 80px; /* Position below typical header height */
 }
@@ -2612,7 +2614,9 @@ body:has(.modal.active) #chat-input-container {
     #function-modal,
     #mcp-servers-modal,
     #agent-modal,
-    #rag-modal {
+    #rag-modal,
+    #welcome-modal,
+    #system-prompt-modal {
         padding-top: 100px; /* Slightly more space for wrapped header on mobile */
     }
 }
