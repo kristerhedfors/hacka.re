@@ -2,15 +2,13 @@
 import pytest
 from playwright.sync_api import Page, expect
 import time
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
 
 def test_mcp_manager_initialization(page: Page, serve_hacka_re):
     """Test that MCP manager initializes correctly"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Check that MCP button is visible
     mcp_button = page.locator("#mcp-servers-btn")
     expect(mcp_button).to_be_visible()
@@ -39,8 +37,6 @@ def test_mcp_proxy_connection_states_mocked(page: Page, serve_hacka_re):
     """Test different proxy connection states with mocked responses"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open MCP modal
     page.locator("#mcp-servers-btn").click()
     
@@ -70,8 +66,6 @@ def test_mcp_server_form_validation(page: Page, serve_hacka_re):
     """Test MCP server form input validation"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open MCP modal
     page.locator("#mcp-servers-btn").click()
     
@@ -105,8 +99,6 @@ def test_mcp_modal_ui_interactions(page: Page, serve_hacka_re):
     """Test MCP modal UI interactions"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open MCP modal
     page.locator("#mcp-servers-btn").click()
     modal = page.locator("#mcp-servers-modal")
@@ -139,8 +131,6 @@ def test_mcp_proxy_button_interaction(page: Page, serve_hacka_re):
     """Test MCP proxy test button functionality"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open MCP modal
     page.locator("#mcp-servers-btn").click()
     
@@ -172,8 +162,6 @@ def test_mcp_server_list_area(page: Page, serve_hacka_re):
     """Test MCP server list display area"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open MCP modal
     page.locator("#mcp-servers-btn").click()
     

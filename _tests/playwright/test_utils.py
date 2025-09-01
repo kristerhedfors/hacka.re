@@ -19,9 +19,9 @@ except ImportError:
 
 def setup_test_environment(page):
     """Set up test environment after page navigation to prevent welcome modal."""
-    # Set hackare_visited to false to prevent welcome modal in tests
-    page.evaluate("localStorage.setItem('hackare_visited', 'false')")
-    print("Test environment configured: hackare_visited=false")
+    # Create a hackare_ variable to indicate user has visited before
+    page.evaluate("localStorage.setItem('hackare_test_mode', 'true')")
+    print("Test environment configured: hackare_test_mode=true")
 
 def setup_api_key_properly(page, api_key):
     """

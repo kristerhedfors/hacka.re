@@ -7,7 +7,7 @@ Checking for existing HTTP server processes on port 8000...
 No existing processes found on port 8000.
 Changing to project root directory: /Users/user/dev/hacka.re
 Starting Python HTTP server on port 8000...
-Server started successfully with PID: 22691
+Server started successfully with PID: 49074
 Server is now running at http://localhost:8000
 Server PID saved to: /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt
 ==================================================
@@ -23,7 +23,7 @@ rootdir: /Users/user/dev/hacka.re/_tests/playwright
 configfile: pytest.ini
 testpaths: .
 plugins: playwright-0.7.0, base-url-2.1.0
-collected 886 items / 692 deselected / 194 selected
+collected 890 items / 696 deselected / 194 selected
 
 test_button_tooltips.py::test_button_tooltips[chromium0] PASSED          [  0%]
 test_clear_chat.py::test_clear_chat_button_exists[chromium0] PASSED      [  1%]
@@ -42,7 +42,7 @@ test_default_prompts.py::test_default_prompts_selection[chromium0] FAILED [  7%]
 test_default_prompts.py::test_default_prompts_info_button[chromium0] PASSED [  7%]
 test_default_prompts.py::test_default_prompts_name_click[chromium0] PASSED [  8%]
 test_function_copy_buttons.py::test_function_copy_buttons_exist[chromium0] PASSED [  8%]
-test_function_copy_buttons.py::test_function_copy_functionality[chromium0] FAILED [  9%]
+test_function_copy_buttons.py::test_function_copy_functionality[chromium0] PASSED [  9%]
 test_function_deletion.py::test_function_deletion_removes_entire_bundle[chromium0] PASSED [  9%]
 test_function_deletion.py::test_multiple_function_collections[chromium0] PASSED [ 10%]
 test_function_editing.py::test_function_editing[chromium0] FAILED        [ 10%]
@@ -52,4 +52,12 @@ test_function_icons.py::test_multiple_function_calls_colors[chromium0] FAILED [ 
 test_function_library_copy.py::test_function_library_copy_button_exists[chromium0] FAILED [ 12%]
 test_function_library_copy.py::test_function_library_copy_functionality[chromium0] FAILED [ 13%]
 test_function_library_multi.py::test_function_library_multi[chromium0] FAILED [ 13%]
-test_function_library_sharing.py::test_function_library_sharing[chromium0] 
+test_function_library_sharing.py::test_function_library_sharing[chromium0] FAILED [ 14%]
+test_function_modal.py::test_function_modal_basic[chromium0] PASSED      [ 14%]
+test_function_modal.py::test_function_modal_elements[chromium0] PASSED   [ 15%]
+test_function_parsing_logic.py::test_all_functions_callable_by_default[chromium0] FAILED [ 15%]
+test_function_parsing_logic.py::test_only_tagged_functions_callable[chromium0] FAILED [ 16%]
+test_function_parsing_logic.py::test_tool_tag_works[chromium0] FAILED    [ 17%]
+test_function_parsing_logic.py::test_single_line_comment_tags[chromium0] FAILED [ 17%]
+test_function_parsing_logic.py::test_mixed_tag_types[chromium0] FAILED   [ 18%]
+test_function_tooltip.py::test_function_modal_basic[chromium0] 

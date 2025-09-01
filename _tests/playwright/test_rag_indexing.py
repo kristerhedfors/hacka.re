@@ -2,7 +2,7 @@ import pytest
 import json
 from playwright.sync_api import Page, expect
 
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
 def test_rag_embedding_generation_ui(page: Page, serve_hacka_re, api_key):
     """Test the RAG embedding generation UI and progress indicators."""
@@ -11,8 +11,6 @@ def test_rag_embedding_generation_ui(page: Page, serve_hacka_re, api_key):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Configure API key first
     page.evaluate(f"localStorage.setItem('openai_api_key', '{api_key}')")
     page.evaluate("localStorage.setItem('base_url', 'https://api.openai.com/v1')")
@@ -51,8 +49,6 @@ def test_rag_embedding_generation_process(page: Page, serve_hacka_re, api_key):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Configure API key and settings
     page.evaluate(f"localStorage.setItem('openai_api_key', '{api_key}')")
     page.evaluate("localStorage.setItem('base_url', 'https://api.openai.com/v1')")
@@ -125,8 +121,6 @@ def test_rag_embedding_generation_without_api_key(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Ensure no API key is set
     page.evaluate("localStorage.removeItem('openai_api_key')")
     
@@ -163,8 +157,6 @@ def test_rag_chunking_algorithm(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Test chunking algorithm through browser console
     chunking_result = page.evaluate("""() => {
         // Test text for chunking
@@ -212,8 +204,6 @@ def test_rag_embedding_caching(page: Page, serve_hacka_re, api_key):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Configure API key
     page.evaluate(f"localStorage.setItem('openai_api_key', '{api_key}')")
     page.evaluate("localStorage.setItem('base_url', 'https://api.openai.com/v1')")
@@ -260,8 +250,6 @@ def test_rag_indexing_service_error_handling(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Test error handling through browser console
     error_handling_result = page.evaluate("""() => {
         const results = {};
@@ -322,8 +310,6 @@ def test_rag_progress_callback_functionality(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open the RAG modal to access the progress elements
     rag_button = page.locator("#rag-btn")
     rag_button.click()

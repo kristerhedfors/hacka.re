@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 from playwright.sync_api import Page, expect
 
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
 # Load environment variables from .env file in the current directory
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
@@ -19,8 +19,6 @@ def test_default_functions_config_collection(page: Page, serve_hacka_re):
     
     # Handle welcome modal
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Wait for page to be fully loaded
     # page.wait_for_timeout(2000)  # TODO: Replace with proper wait condition
     
@@ -122,8 +120,6 @@ def test_default_functions_sharing_format_conversion(page: Page, serve_hacka_re)
     
     # Handle welcome modal
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Wait for page to be fully loaded
     # page.wait_for_timeout(2000)  # TODO: Replace with proper wait condition
     
@@ -233,8 +229,6 @@ def test_default_functions_config_application(page: Page, serve_hacka_re):
     
     # Handle welcome modal
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Wait for page to be fully loaded
     # page.wait_for_timeout(2000)  # TODO: Replace with proper wait condition
     

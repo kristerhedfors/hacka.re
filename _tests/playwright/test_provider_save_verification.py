@@ -2,14 +2,12 @@
 Verify that the provider save fix is working correctly
 """
 from playwright.sync_api import Page
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
 def test_provider_save_fix_verification(page: Page, serve_hacka_re, api_key):
     """Verify that provider selections are saved immediately when changed"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     print("=== VERIFYING PROVIDER SAVE FIX ===")
     
     # Step 1: Open settings

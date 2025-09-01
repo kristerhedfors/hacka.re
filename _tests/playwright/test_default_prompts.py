@@ -1,7 +1,7 @@
 import pytest
 from playwright.sync_api import Page, expect
 
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal
+from test_utils import dismiss_welcome_modal
 
 def test_default_prompts_section_exists(page, serve_hacka_re):
     """Test that the default prompts section exists in the prompts modal."""
@@ -12,8 +12,6 @@ def test_default_prompts_section_exists(page, serve_hacka_re):
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if present
-    dismiss_settings_modal(page)
-    
     # Wait a moment for the page to fully load
     # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     
@@ -56,8 +54,6 @@ def test_default_prompts_expand_collapse(page, serve_hacka_re):
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if present
-    dismiss_settings_modal(page)
-    
     # Wait a moment for the page to fully load
     # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     
@@ -112,8 +108,6 @@ def test_default_prompts_content(page, serve_hacka_re):
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if present
-    dismiss_settings_modal(page)
-    
     # Wait a moment for the page to fully load
     # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     
@@ -171,8 +165,6 @@ def test_default_prompts_selection(page, serve_hacka_re):
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if present
-    dismiss_settings_modal(page)
-    
     # Wait a moment for the page to fully load
     # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     
@@ -242,8 +234,6 @@ def test_default_prompts_info_button(page, serve_hacka_re):
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if present
-    dismiss_settings_modal(page)
-    
     # Wait a moment for the page to fully load
     # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     
@@ -373,8 +363,6 @@ def test_default_prompts_name_click(page, serve_hacka_re):
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if present
-    dismiss_settings_modal(page)
-    
     # Wait a moment for the page to fully load
     # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     

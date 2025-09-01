@@ -5,15 +5,13 @@ Tests that Shodan MCP connection automatically registers and enables the Shodan 
 """
 import pytest
 from playwright.sync_api import Page, expect
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal
+from test_utils import dismiss_welcome_modal
 
 
 def test_shodan_prompt_registration_on_connection(page: Page, serve_hacka_re, shodan_api_key):
     """Test that Shodan prompt is registered and enabled when Shodan MCP connects"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Wait for system to initialize
     page.wait_for_timeout(2000)
     
@@ -129,8 +127,6 @@ def test_shodan_prompt_appears_in_system_prompts_ui(page: Page, serve_hacka_re, 
     """Test that Shodan prompt appears in the System Prompts UI after connection"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Connect to Shodan first
     page.evaluate(f"""async () => {{
         await window.CoreStorageService.setValue('shodan_api_key', '{shodan_api_key}');
@@ -171,8 +167,6 @@ def test_shodan_prompt_content_quality(page: Page, serve_hacka_re, shodan_api_ke
     """Test that Shodan prompt has appropriate cybersecurity content"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Connect to Shodan and get prompt content
     prompt_content = page.evaluate(f"""async () => {{
         await window.CoreStorageService.setValue('shodan_api_key', '{shodan_api_key}');

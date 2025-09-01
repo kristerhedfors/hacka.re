@@ -8,7 +8,7 @@ import time
 import os
 from dotenv import load_dotenv
 from playwright.sync_api import Page, expect, BrowserContext
-from test_utils import dismiss_welcome_modal, screenshot_with_markdown, dismiss_settings_modal
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
 # Load environment variables
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
@@ -23,8 +23,6 @@ def test_cross_tab_sync_basic(page: Page, serve_hacka_re, context: BrowserContex
     # Create a shared link first
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Set up basic configuration
     settings_btn = page.locator("#settings-btn")
     settings_btn.click()
@@ -167,8 +165,6 @@ def test_cross_tab_sync_real_time(page: Page, serve_hacka_re, context: BrowserCo
     # Wait for page load
     # page.wait_for_timeout(2000)  # TODO: Replace with proper wait condition
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Check if CrossTabSyncService is initialized
     sync_service_available = page.evaluate("""
         () => {

@@ -15,7 +15,7 @@ import pytest
 import time
 import os
 from playwright.sync_api import Page, expect
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
 
 @pytest.fixture
@@ -56,8 +56,6 @@ def test_complete_shodan_integration(page: Page, serve_hacka_re, openai_api_key,
     # Navigate and setup
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Configure OpenAI API - use a simpler approach
     # Set via console to avoid UI race conditions
     page.evaluate(f"""() => {{
@@ -87,8 +85,6 @@ def test_complete_shodan_integration(page: Page, serve_hacka_re, openai_api_key,
     page.reload()
     page.wait_for_load_state('networkidle')
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Wait for initialization
     # page.wait_for_timeout(2000)  # TODO: Replace with proper wait condition
     

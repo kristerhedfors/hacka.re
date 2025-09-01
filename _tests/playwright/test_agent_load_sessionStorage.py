@@ -1,14 +1,12 @@
 import pytest
 from playwright.sync_api import Page, expect
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal
+from test_utils import dismiss_welcome_modal
 
 
 def test_agent_modal_basic(page: Page, serve_hacka_re):
     """Test basic agent modal functionality"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open agent modal
     agent_button = page.locator("#agent-config-btn")
     expect(agent_button).to_be_visible()
@@ -33,8 +31,6 @@ def test_agent_button_exists(page: Page, serve_hacka_re):
     """Test that agent button exists"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Check that agent button is visible  
     agent_button = page.locator("#agent-config-btn")
     expect(agent_button).to_be_visible()

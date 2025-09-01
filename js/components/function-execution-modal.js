@@ -327,21 +327,23 @@ window.FunctionExecutionModal = (function() {
         tabButtons.className = 'tab-buttons';
         tabButtons.style.borderBottom = '2px solid var(--border-color)'; // Add visual separator
         tabButtons.style.marginBottom = '20px'; // Space before content
+        tabButtons.style.display = 'flex';
+        tabButtons.style.gap = '4px';
         
         const requestTab = document.createElement('button');
         requestTab.type = 'button';
         requestTab.className = 'tab-btn active';
         requestTab.id = 'exec-request-tab';
-        requestTab.innerHTML = '<i class="fas fa-phone-alt" style="margin-right: 6px;"></i><span>Function Call Details</span>';
-        requestTab.style.cssText = 'min-width: 200px !important; padding: 12px 20px !important; font-size: 14px !important; font-weight: 600 !important;';
+        requestTab.innerHTML = '<i class="fas fa-phone-alt" style="margin-right: 6px;"></i><span>Function Call<br />Details</span>';
+        requestTab.style.cssText = 'flex: 1 !important; min-width: 0 !important; padding: 12px 8px !important; font-size: 14px !important; font-weight: 600 !important;';
         requestTab.addEventListener('click', () => switchTab('request'));
         
         const resultTab = document.createElement('button');
         resultTab.type = 'button';
         resultTab.className = 'tab-btn';
         resultTab.id = 'exec-result-tab';
-        resultTab.innerHTML = '<i class="fas fa-check-circle" style="margin-right: 6px; color: var(--success-color, #4CAF50);"></i><span>Function Result Details</span>';
-        resultTab.style.cssText = 'min-width: 200px !important; padding: 12px 20px !important; font-size: 14px !important; font-weight: 600 !important;';
+        resultTab.innerHTML = '<i class="fas fa-check-circle" style="margin-right: 6px; color: var(--success-color, #4CAF50);"></i><span>Function Result<br />Details</span>';
+        resultTab.style.cssText = 'flex: 1 !important; min-width: 0 !important; padding: 12px 8px !important; font-size: 14px !important; font-weight: 600 !important;';
         resultTab.style.display = 'none'; // Set display separately so it can be toggled
         resultTab.addEventListener('click', () => switchTab('result'));
         
@@ -575,31 +577,33 @@ window.FunctionExecutionModal = (function() {
         const actions = document.createElement('div');
         actions.className = 'form-actions';
         actions.style.display = 'flex';
+        actions.style.flexWrap = 'wrap';
+        actions.style.gap = '10px';
         actions.style.justifyContent = 'space-between';
         actions.style.alignItems = 'center';
         actions.style.marginTop = '1.5rem';
         
-        // Left side - Block button
-        const leftActions = document.createElement('div');
-        
+        // First row - Block button alone
         const blockBtn = document.createElement('button');
         blockBtn.type = 'button';
         blockBtn.id = 'exec-block-btn';
         blockBtn.className = 'btn secondary-btn';
         blockBtn.innerHTML = '<i class="fas fa-ban" style="margin-right: 6px;"></i>Block';
+        blockBtn.style.marginRight = 'auto';
         blockBtn.addEventListener('click', () => handleRequestAction('block'));
-        leftActions.appendChild(blockBtn);
         
-        // Right side - Execute buttons
-        const rightActions = document.createElement('div');
-        rightActions.style.display = 'flex';
-        rightActions.style.gap = '10px';
+        // Second row container - Execute buttons
+        const executeActions = document.createElement('div');
+        executeActions.style.display = 'flex';
+        executeActions.style.gap = '10px';
+        executeActions.style.width = '100%';
+        executeActions.style.justifyContent = 'flex-end';
         
         const executeInterceptBtn = document.createElement('button');
         executeInterceptBtn.type = 'button';
         executeInterceptBtn.id = 'exec-intercept-btn';
         executeInterceptBtn.className = 'btn secondary-btn';
-        executeInterceptBtn.innerHTML = '<i class="fas fa-edit" style="margin-right: 6px;"></i>Execute + Edit Result';
+        executeInterceptBtn.innerHTML = '<i class="fas fa-play" style="margin-right: 6px;"></i>Execute and Intercept';
         executeInterceptBtn.addEventListener('click', () => handleRequestAction('execute-intercept'));
         
         const executeBtn = document.createElement('button');
@@ -609,11 +613,11 @@ window.FunctionExecutionModal = (function() {
         executeBtn.innerHTML = '<i class="fas fa-play" style="margin-right: 6px;"></i>Execute';
         executeBtn.addEventListener('click', () => handleRequestAction('execute'));
         
-        rightActions.appendChild(executeInterceptBtn);
-        rightActions.appendChild(executeBtn);
+        executeActions.appendChild(executeInterceptBtn);
+        executeActions.appendChild(executeBtn);
         
-        actions.appendChild(leftActions);
-        actions.appendChild(rightActions);
+        actions.appendChild(blockBtn);
+        actions.appendChild(executeActions);
         container.appendChild(actions);
         
         return container;
@@ -834,7 +838,7 @@ window.FunctionExecutionModal = (function() {
                 // Show result tab with executing status
                 const resultTab = document.getElementById('exec-result-tab');
                 if (resultTab) {
-                    resultTab.style.display = '';
+                    resultTab.style.display = 'flex';
                 }
                 
                 // Clear the result textarea and show executing status
@@ -1192,7 +1196,7 @@ window.FunctionExecutionModal = (function() {
             // Show result tab
             const resultTab = document.getElementById('exec-result-tab');
             if (resultTab) {
-                resultTab.style.display = '';
+                resultTab.style.display = 'flex';
             }
             
             // Switch to result tab

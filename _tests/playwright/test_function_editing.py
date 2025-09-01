@@ -1,7 +1,7 @@
 import pytest
 from playwright.sync_api import Page, expect
 import time
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
 def test_function_editing(page: Page, serve_hacka_re):
     """Test editing existing functions by clicking them in the list."""
@@ -12,8 +12,6 @@ def test_function_editing(page: Page, serve_hacka_re):
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if already open
-    dismiss_settings_modal(page)
-    
     # Check if the function calling button exists
     function_btn = page.locator("#function-btn")
     expect(function_btn).to_be_visible()
@@ -189,8 +187,13 @@ function test_edit_function(message, uppercase) {
         "Function Name": "test_edit_function"
     })
     
-    # Delete the test function
-    delete_button = function_list.locator(".function-item-delete").first
+    # Delete the test function - now done at collection level
+    # Find the collection containing our test function
+    collection_container = function_list.locator(".function-collection-container").first
+    expect(collection_container).to_be_visible()
+    
+    # Find and click the collection delete button
+    delete_button = collection_container.locator(".function-collection-delete")
     delete_button.scroll_into_view_if_needed()
     expect(delete_button).to_be_visible()
     

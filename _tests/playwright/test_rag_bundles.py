@@ -4,7 +4,7 @@ import tempfile
 import os
 from playwright.sync_api import Page, expect
 
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
 def test_rag_user_bundles_ui_elements(page: Page, serve_hacka_re):
     """Test the user bundles UI elements and basic functionality."""
@@ -13,8 +13,6 @@ def test_rag_user_bundles_ui_elements(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open the RAG modal
     rag_button = page.locator("#rag-btn")
     rag_button.click()
@@ -57,8 +55,6 @@ def test_rag_bundle_validation_algorithm(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Test bundle validation through browser console
     validation_test_result = page.evaluate("""() => {
         const results = {};
@@ -140,8 +136,6 @@ def test_rag_bundle_storage_operations(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Clear any existing bundles
     page.evaluate("localStorage.removeItem('rag_user_bundles_index')")
     
@@ -215,8 +209,6 @@ def test_rag_bundle_display_elements(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Add a test bundle through console
     page.evaluate("""() => {
         const testBundle = {
@@ -299,8 +291,6 @@ def test_rag_bundle_file_input_creation(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Test file input creation through browser console
     file_input_test_result = page.evaluate("""() => {
         let loadCallbackTriggered = false;
@@ -360,8 +350,6 @@ def test_rag_bundle_load_button_interaction(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open the RAG modal
     rag_button = page.locator("#rag-btn")
     rag_button.click()
@@ -395,8 +383,6 @@ def test_rag_bundle_removal_confirmation(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Add a test bundle
     page.evaluate("""() => {
         const testBundle = {
@@ -479,8 +465,6 @@ def test_rag_bundle_statistics_accuracy(page: Page, serve_hacka_re):
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Clear existing bundles and add test data
     page.evaluate("""() => {
         localStorage.removeItem('rag_user_bundles_index');

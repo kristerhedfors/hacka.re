@@ -42,7 +42,10 @@ def configure_api_key_and_model(page, api_key):
     # Get OPENAI_API_BASE and OPENAI_API_MODEL from conftest.py
     import sys
     import os
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+    # Add the parent directory (playwright) to path to import from main conftest
+    playwright_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+    if playwright_dir not in sys.path:
+        sys.path.insert(0, playwright_dir)
     from conftest import OPENAI_API_BASE, OPENAI_API_MODEL
     
     # Select OpenAI as the API provider

@@ -1,7 +1,7 @@
 """Test for function execute modal with auxiliary functions"""
 import time
 from playwright.sync_api import Page, expect
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
 def test_execute_modal_with_auxiliary_functions(page: Page, serve_hacka_re):
     """Test that auxiliary functions like formatNumber are available during execution"""
@@ -9,8 +9,6 @@ def test_execute_modal_with_auxiliary_functions(page: Page, serve_hacka_re):
     # Navigate to the app
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open function calling modal
     function_button = page.locator("#function-btn")
     function_button.click()
