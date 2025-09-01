@@ -197,6 +197,32 @@ window.VectorRAGService = (function() {
     }
 
     /**
+     * Get document content by ID
+     * @param {string} docId - Document ID ('aia', 'cra', 'dora')
+     * @returns {string|null} Document content or null if not found
+     */
+    function getDocumentContent(docId) {
+        // Try to get from rag-coordinator functions first
+        if (window.RAGCoordinator) {
+            if (docId === 'aia' && window.RAGCoordinator.getAIADocumentContent) {
+                return window.RAGCoordinator.getAIADocumentContent();
+            } else if (docId === 'cra' && window.RAGCoordinator.getCRADocumentContent) {
+                return window.RAGCoordinator.getCRADocumentContent();
+            } else if (docId === 'dora' && window.RAGCoordinator.getDORADocumentContent) {
+                return window.RAGCoordinator.getDORADocumentContent();
+            }
+        }
+        
+        // Fallback to regulations service
+        if (window.ragRegulationsService) {
+            const content = window.ragRegulationsService.getRegulationContent(docId);
+            if (content) return content;
+        }
+        
+        return null;
+    }
+
+    /**
      * Search EU documents index
      * @param {Array} queryEmbedding - Query embedding vector
      * @param {number} maxResults - Maximum number of results
@@ -206,10 +232,7 @@ window.VectorRAGService = (function() {
     function searchEUDocumentsIndex(queryEmbedding, maxResults = 5, threshold = 0.3) {
         let euDocuments = null;
         try {
-            const euDocsData = localStorage.getItem('ragEUDocuments');
-            if (euDocsData) {
-                euDocuments = JSON.parse(euDocsData);
-            }
+            euDocuments = CoreStorageService.getValue('rag_eu_documents_index');
         } catch (error) {
             console.warn('VectorRAGService: Error reading EU documents for search:', error);
             return [];
@@ -223,27 +246,52 @@ window.VectorRAGService = (function() {
         const results = [];
 
         for (const [docId, document] of Object.entries(euDocuments)) {
-            if (!document.chunks || !Array.isArray(document.chunks)) {
+            // Support both old format (chunks) and new format (vectors)
+            const hasVectors = document.vectors && Array.isArray(document.vectors);
+            const hasChunks = document.chunks && Array.isArray(document.chunks);
+            
+            if (!hasVectors && !hasChunks) {
+                console.log(`VectorRAGService: Document ${docId} has no vectors or chunks`);
                 continue;
             }
 
-            for (const chunk of document.chunks) {
-                if (!chunk.embedding || !Array.isArray(chunk.embedding)) {
+            // Use new vector format if available, otherwise fall back to chunks
+            const items = hasVectors ? document.vectors : document.chunks;
+            console.log(`VectorRAGService: Searching ${items.length} ${hasVectors ? 'vectors' : 'chunks'} in ${docId}`);
+            
+            for (const item of items) {
+                if (!item.embedding || !Array.isArray(item.embedding)) {
                     continue;
                 }
 
-                const similarity = cosineSimilarity(queryEmbedding, chunk.embedding);
+                const similarity = cosineSimilarity(queryEmbedding, item.embedding);
                 
                 if (similarity >= threshold) {
+                    // For vectors, retrieve content from source document using positions
+                    let content = '';
+                    if (hasVectors && item.position) {
+                        const documentContent = getDocumentContent(docId);
+                        if (documentContent) {
+                            content = documentContent.substring(item.position.start, item.position.end);
+                        } else {
+                            console.warn(`VectorRAGService: Could not retrieve content for ${docId}`);
+                            continue;
+                        }
+                    } else {
+                        // Old format with embedded content
+                        content = item.content || '';
+                    }
+                    
                     results.push({
-                        content: chunk.content,
+                        content: content,
                         similarity: similarity,
-                        metadata: chunk.metadata || {},
+                        metadata: item.metadata || {},
                         source: 'eu_documents',
                         type: 'regulation',
                         documentName: document.name || docId,
                         documentId: docId,
-                        chunkId: chunk.id
+                        vectorId: item.id,
+                        position: item.position  // Include position for debugging
                     });
                 }
             }
@@ -251,6 +299,7 @@ window.VectorRAGService = (function() {
 
         // Sort by similarity (highest first) and limit results
         results.sort((a, b) => b.similarity - a.similarity);
+        console.log(`VectorRAGService: EU docs search found ${results.length} results above threshold ${threshold}`);
         return results.slice(0, maxResults);
     }
 
@@ -331,13 +380,10 @@ window.VectorRAGService = (function() {
             }
         }
 
-        // Search EU documents
+        // Search EU documents from encrypted storage only
         let euDocuments = null;
         try {
-            const euDocsData = localStorage.getItem('ragEUDocuments');
-            if (euDocsData) {
-                euDocuments = JSON.parse(euDocsData);
-            }
+            euDocuments = CoreStorageService.getValue('rag_eu_documents_index');
         } catch (error) {
             console.warn('VectorRAGService: Error reading EU documents for text search:', error);
         }
@@ -574,18 +620,15 @@ window.VectorRAGService = (function() {
         let euDocumentsChunks = 0;
         let euDocumentsCount = 0;
         try {
-            const euDocsData = localStorage.getItem('ragEUDocuments');
-            if (euDocsData) {
-                euDocuments = JSON.parse(euDocsData);
-                if (euDocuments && typeof euDocuments === 'object') {
-                    euDocumentsCount = Object.keys(euDocuments).length;
-                    // Count total chunks in EU documents
-                    Object.values(euDocuments).forEach(doc => {
-                        if (doc && doc.chunks && Array.isArray(doc.chunks)) {
-                            euDocumentsChunks += doc.chunks.length;
-                        }
-                    });
-                }
+            euDocuments = CoreStorageService.getValue('rag_eu_documents_index');
+            if (euDocuments && typeof euDocuments === 'object') {
+                euDocumentsCount = Object.keys(euDocuments).length;
+                // Count total chunks in EU documents
+                Object.values(euDocuments).forEach(doc => {
+                    if (doc && doc.chunks && Array.isArray(doc.chunks)) {
+                        euDocumentsChunks += doc.chunks.length;
+                    }
+                });
             }
         } catch (error) {
             console.warn('VectorRAGService: Error reading EU documents:', error);
@@ -666,6 +709,14 @@ window.VectorRAGService = (function() {
     }
 
     // Public API
+    /**
+     * Get user bundles index
+     * @returns {Object|null} Current user bundles index
+     */
+    function getUserBundlesIndex() {
+        return userBundlesIndex;
+    }
+
     return {
         initialize,
         search,
@@ -674,6 +725,7 @@ window.VectorRAGService = (function() {
         reloadIndexes,
         setDefaultPromptsIndex,
         setUserBundlesIndex,
+        getUserBundlesIndex,
         updateSettings,
         
         // Utility functions
