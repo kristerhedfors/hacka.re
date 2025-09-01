@@ -80,27 +80,19 @@ window.FunctionLibraryManager = (function() {
         if (!collectionId) {
             collectionId = 'collection_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             
-            // Prompt for collection name when adding new functions
+            // Auto-generate collection name based on function names
             let collectionName = 'Untitled Collection'; // Default fallback
             
-            // Check if we're in a test environment by looking for playwright indicators
-            const isTestEnvironment = window.navigator.webdriver || 
-                                     window.__playwright || 
-                                     window.location.href.includes('localhost:8000');
-            
-            if (!isTestEnvironment) {
-                const userCollectionName = prompt('Enter a name for this function collection:', 'Untitled Collection');
-                if (userCollectionName === null) {
-                    // User cancelled
-                    return { success: false, cancelled: true };
-                }
-                collectionName = userCollectionName || 'Untitled Collection';
-            } else {
-                // In test environment, use a default name based on function names
-                const callableFunctionNames = callableFunctions ? 
-                    callableFunctions.map(f => f.name) : [];
-                if (callableFunctionNames.length > 0) {
-                    collectionName = `Test Functions (${callableFunctionNames[0]})`;
+            // Use function names to generate a meaningful collection name
+            const callableFunctionNames = callableFunctions ? 
+                callableFunctions.map(f => f.name) : [];
+            if (callableFunctionNames.length > 0) {
+                if (callableFunctionNames.length === 1) {
+                    collectionName = callableFunctionNames[0];
+                } else if (callableFunctionNames.length === 2) {
+                    collectionName = `${callableFunctionNames[0]} & ${callableFunctionNames[1]}`;
+                } else {
+                    collectionName = `${callableFunctionNames[0]} & ${callableFunctionNames.length - 1} more`;
                 }
             }
             
