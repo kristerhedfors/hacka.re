@@ -1,0 +1,2579 @@
+Starting HTTP server for tests...
+===== Starting HTTP Server for hacka.re Tests =====
+Port: 8000
+Project Root: /Users/user/dev/hacka.re
+==================================================
+Checking for existing HTTP server processes on port 8000...
+Found existing processes: 43361
+Killing existing processes...
+Processes killed.
+Changing to project root directory: /Users/user/dev/hacka.re
+Starting Python HTTP server on port 8000...
+Server started successfully with PID: 44724
+Server is now running at http://localhost:8000
+Server PID saved to: /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt
+==================================================
+Server is ready. You can now run your tests.
+To stop the server, run: kill -9 $(cat /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt)
+==================================================
+Running Function tests with chromium browser...
+Test filter: test_function_modal or test_function_group_colors or test_function_deletion or test_function_editing or test_function_icons or test_function_copy_buttons or test_function_library_copy or test_function_library_multi or test_function_library_sharing or test_function_parsing_logic or test_function_tooltip or test_function_bundle_preservation
+
+============================= test session starts ==============================
+platform darwin -- Python 3.13.3, pytest-8.3.5, pluggy-1.5.0
+rootdir: /Users/user/dev/hacka.re/_tests/playwright
+configfile: pytest.ini
+testpaths: .
+plugins: playwright-0.7.0, base-url-2.1.0
+collected 890 items / 846 deselected / 44 selected
+
+test_function_bundle_preservation.py::test_function_bundle_preservation_when_editing[chromium0] PASSED [  2%]
+test_function_copy_buttons.py::test_function_copy_buttons_exist[chromium0] PASSED [  4%]
+test_function_copy_buttons.py::test_function_copy_functionality[chromium0] PASSED [  6%]
+test_function_deletion.py::test_function_deletion_removes_entire_bundle[chromium0] PASSED [  9%]
+test_function_deletion.py::test_multiple_function_collections[chromium0] PASSED [ 11%]
+test_function_editing.py::test_function_editing[chromium0] FAILED        [ 13%]
+test_function_group_colors.py::test_function_collection_colors[chromium0] FAILED [ 15%]
+test_function_icons.py::test_function_calling_icons[chromium0] FAILED    [ 18%]
+test_function_icons.py::test_multiple_function_calls_colors[chromium0] FAILED [ 20%]
+test_function_library_copy.py::test_function_library_copy_button_exists[chromium0] FAILED [ 22%]
+test_function_library_copy.py::test_function_library_copy_functionality[chromium0] FAILED [ 25%]
+test_function_library_multi.py::test_function_library_multi[chromium0] FAILED [ 27%]
+test_function_library_sharing.py::test_function_library_sharing[chromium0] FAILED [ 29%]
+test_function_modal.py::test_function_modal_basic[chromium0] PASSED      [ 31%]
+test_function_modal.py::test_function_modal_elements[chromium0] PASSED   [ 34%]
+test_function_parsing_logic.py::test_all_functions_callable_by_default[chromium0] FAILED [ 36%]
+test_function_parsing_logic.py::test_only_tagged_functions_callable[chromium0] FAILED [ 38%]
+test_function_parsing_logic.py::test_tool_tag_works[chromium0] FAILED    [ 40%]
+test_function_parsing_logic.py::test_single_line_comment_tags[chromium0] FAILED [ 43%]
+test_function_parsing_logic.py::test_mixed_tag_types[chromium0] FAILED   [ 45%]
+test_function_tooltip.py::test_function_modal_basic[chromium0] PASSED    [ 47%]
+test_function_tooltip.py::test_function_modal_elements[chromium0] PASSED [ 50%]
+test_function_bundle_preservation.py::test_function_bundle_preservation_when_editing[chromium1] PASSED [ 52%]
+test_function_copy_buttons.py::test_function_copy_buttons_exist[chromium1] PASSED [ 54%]
+test_function_copy_buttons.py::test_function_copy_functionality[chromium1] PASSED [ 56%]
+test_function_deletion.py::test_function_deletion_removes_entire_bundle[chromium1] PASSED [ 59%]
+test_function_deletion.py::test_multiple_function_collections[chromium1] PASSED [ 61%]
+test_function_editing.py::test_function_editing[chromium1] FAILED        [ 63%]
+test_function_group_colors.py::test_function_collection_colors[chromium1] FAILED [ 65%]
+test_function_icons.py::test_function_calling_icons[chromium1] FAILED    [ 68%]
+test_function_icons.py::test_multiple_function_calls_colors[chromium1] FAILED [ 70%]
+test_function_library_copy.py::test_function_library_copy_button_exists[chromium1] FAILED [ 72%]
+test_function_library_copy.py::test_function_library_copy_functionality[chromium1] FAILED [ 75%]
+test_function_library_multi.py::test_function_library_multi[chromium1] FAILED [ 77%]
+test_function_library_sharing.py::test_function_library_sharing[chromium1] FAILED [ 79%]
+test_function_modal.py::test_function_modal_basic[chromium1] PASSED      [ 81%]
+test_function_modal.py::test_function_modal_elements[chromium1] PASSED   [ 84%]
+test_function_parsing_logic.py::test_all_functions_callable_by_default[chromium1] FAILED [ 86%]
+test_function_parsing_logic.py::test_only_tagged_functions_callable[chromium1] FAILED [ 88%]
+test_function_parsing_logic.py::test_tool_tag_works[chromium1] FAILED    [ 90%]
+test_function_parsing_logic.py::test_single_line_comment_tags[chromium1] FAILED [ 93%]
+test_function_parsing_logic.py::test_mixed_tag_types[chromium1] FAILED   [ 95%]
+test_function_tooltip.py::test_function_modal_basic[chromium1] PASSED    [ 97%]
+test_function_tooltip.py::test_function_modal_elements[chromium1] PASSED [100%]
+
+=================================== FAILURES ===================================
+_______________________ test_function_editing[chromium0] _______________________
+
+page = <Page url='http://localhost:8000/'>
+serve_hacka_re = 'http://localhost:8000'
+
+    def test_function_editing(page: Page, serve_hacka_re):
+        """Test editing existing functions by clicking them in the list."""
+        # Navigate to the page
+        page.goto(serve_hacka_re)
+    
+        # Dismiss welcome modal if present
+        dismiss_welcome_modal(page)
+    
+        # Dismiss settings modal if already open
+        # Check if the function calling button exists
+        function_btn = page.locator("#function-btn")
+        expect(function_btn).to_be_visible()
+    
+        # Click the function calling button
+        function_btn.click()
+    
+        # Check if the function modal is visible
+        function_modal = page.locator("#function-modal")
+        expect(function_modal).to_be_visible()
+    
+        # First, create a test function
+        function_code = page.locator("#function-code")
+        function_code.scroll_into_view_if_needed()
+        expect(function_code).to_be_visible()
+    
+        # Create a simple test function
+        test_function_code = """/**
+     * Test function for editing
+     * @description A simple test function that can be edited
+     * @param {string} message - The message to echo
+     * @returns {Object} Object containing the echoed message
+     */
+    function test_edit_function(message) {
+      return {
+        echo: message,
+        timestamp: new Date().toISOString()
+      };
+    }"""
+    
+        function_code.fill(test_function_code)
+    
+        # Check that the function name field was auto-populated
+        function_name = page.locator("#function-name")
+        # Note: function name field might be hidden but still have a value
+        expect(function_name).to_have_value("test_edit_function")
+    
+        # Validate the function
+        validate_btn = page.locator("#function-validate-btn")
+        validate_btn.scroll_into_view_if_needed()
+        expect(validate_btn).to_be_visible()
+        validate_btn.click()
+    
+        # Check for validation result
+        validation_result = page.locator("#function-validation-result")
+        page.wait_for_selector("#function-validation-result:not(:empty)", state="visible")
+        expect(validation_result).to_contain_text("validated successfully")
+    
+        # Submit the form to add the function
+        submit_btn = page.locator("#function-editor-form button[type='submit']")
+        submit_btn.scroll_into_view_if_needed()
+        expect(submit_btn).to_be_visible()
+        submit_btn.click()
+    
+        # Check if the function was added to the list
+        function_list = page.locator("#function-list")
+        function_item = function_list.locator(".function-item-name:has-text('test_edit_function')")
+        page.wait_for_selector(".function-item-name:has-text('test_edit_function')", state="visible")
+        expect(function_item).to_be_visible()
+    
+        # Take a screenshot of the function list with the new function
+        screenshot_with_markdown(page, "function_list_before_edit.png", {
+            "Status": "Function list with newly created function",
+            "Function Name": "test_edit_function"
+        })
+    
+        # Now click on the function item to edit it
+        function_item_container = function_list.locator(".function-item").filter(has_text="test_edit_function").locator("div").nth(1)
+        function_item_container.scroll_into_view_if_needed()
+        expect(function_item_container).to_be_visible()
+        function_item_container.click()
+    
+        # Add a small wait to ensure the function code is loaded
+        # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
+    
+        # Check that the function code and name are loaded into the editor
+        expect(function_name).to_have_value("test_edit_function")
+    
+        # Get the actual value of the function code
+        function_code_value = function_code.input_value()
+        print(f"Function code value: {function_code_value}")
+    
+        # Check that the function code contains the expected text
+        assert "function test_edit_function" in function_code_value, "Function code does not contain the expected function name"
+    
+        # Take a screenshot of the editor with the loaded function
+        screenshot_with_markdown(page, "function_editor_loaded.png", {
+            "Status": "Function loaded into editor for editing",
+            "Function Name": "test_edit_function"
+        })
+    
+        # Modify the function code
+        modified_function_code = """/**
+     * Test function for editing - MODIFIED
+     * @description A simple test function that has been edited
+     * @param {string} message - The message to echo
+     * @param {boolean} uppercase - Whether to convert the message to uppercase
+     * @returns {Object} Object containing the processed message
+     */
+    function test_edit_function(message, uppercase) {
+      if (uppercase) {
+        message = message.toUpperCase();
+      }
+    
+      return {
+        echo: message,
+        modified: true,
+        timestamp: new Date().toISOString()
+      };
+    }"""
+    
+        function_code.fill(modified_function_code)
+    
+        # Validate the modified function
+        validate_btn.click()
+    
+        # Check for validation result
+        page.wait_for_selector("#function-validation-result:not(:empty)", state="visible")
+        expect(validation_result).to_contain_text("validated successfully")
+    
+        # Submit the form to update the function
+        submit_btn.click()
+    
+        # Wait a moment for the form submission to complete
+        # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
+    
+        # Check for success message - note that it might be hidden but still have content
+        validation_text = validation_result.text_content()
+        print(f"Validation result text: {validation_text}")
+        assert "added successfully" in validation_text, "Success message not found after update"
+    
+        # Take a screenshot of the success message
+        screenshot_with_markdown(page, "function_update_success.png", {
+            "Status": "Function updated successfully",
+            "Function Name": "test_edit_function"
+        })
+    
+        # Check that the function is still in the list
+        expect(function_item).to_be_visible()
+    
+        # Click on the function again to verify the changes were saved
+        function_item_container.click()
+    
+        # Add a small wait to ensure the function code is loaded
+        # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
+    
+        # Get the actual value of the modified function code
+        function_code_value = function_code.input_value()
+        print(f"Modified function code value: {function_code_value}")
+    
+        # Check that the modified function code contains the expected text
+        assert "MODIFIED" in function_code_value, "Function code does not contain 'MODIFIED'"
+        assert "uppercase" in function_code_value, "Function code does not contain 'uppercase'"
+    
+        # Take a screenshot of the editor with the updated function
+        screenshot_with_markdown(page, "function_editor_updated.png", {
+            "Status": "Updated function loaded into editor",
+            "Function Name": "test_edit_function"
+        })
+    
+        # Verify that the function remains in the editor after saving
+        # This is the new behavior - the function should stay in the editor for further editing
+        function_code_value = function_code.input_value()
+        print(f"Function code after saving: {function_code_value}")
+    
+        # Check that the function code still contains the expected text
+        assert "MODIFIED" in function_code_value, "Function code does not remain in editor after saving"
+        assert "uppercase" in function_code_value, "Function code does not remain in editor after saving"
+    
+        # Take a screenshot showing the function remains in the editor
+        screenshot_with_markdown(page, "function_remains_in_editor.png", {
+            "Status": "Function remains in editor after saving",
+            "Function Name": "test_edit_function"
+        })
+    
+        # Delete the test function
+        delete_button = function_list.locator(".function-item-delete").first
+>       delete_button.scroll_into_view_if_needed()
+
+test_function_editing.py:192: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.13/site-packages/playwright/sync_api/_generated.py:17396: in scroll_into_view_if_needed
+    self._sync(self._impl_obj.scroll_into_view_if_needed(timeout=timeout))
+.venv/lib/python3.13/site-packages/playwright/_impl/_locator.py:556: in scroll_into_view_if_needed
+    return await self._with_element(
+.venv/lib/python3.13/site-packages/playwright/_impl/_locator.py:112: in _with_element
+    handle = await self.element_handle(timeout=timeout)
+.venv/lib/python3.13/site-packages/playwright/_impl/_locator.py:315: in element_handle
+    handle = await self._frame.wait_for_selector(
+.venv/lib/python3.13/site-packages/playwright/_impl/_frame.py:323: in wait_for_selector
+    await self._channel.send("waitForSelector", locals_to_params(locals()))
+.venv/lib/python3.13/site-packages/playwright/_impl/_connection.py:61: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x1057b6e40>
+cb = <function Channel.send.<locals>.<lambda> at 0x1060a9580>
+is_internal = False
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        st: List[inspect.FrameInfo] = getattr(task, "__pw_stack__", inspect.stack())
+        parsed_st = _extract_stack_trace_information_from_stack(st, is_internal)
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Locator.scroll_into_view_if_needed: Timeout 10000ms exceeded.
+E           Call log:
+E             - waiting for locator("#function-list").locator(".function-item-delete").first
+
+.venv/lib/python3.13/site-packages/playwright/_impl/_connection.py:528: TimeoutError
+----------------------------- Captured stdout call -----------------------------
+welcome-modal is visible, closing it
+Found close button with selector: #close-welcome-modal
+Clicked close button
+Modal closed successfully
+Function code value: /**
+ * Test function for editing
+ * @description A simple test function that can be edited
+ * @param {string} message - The message to echo
+ * @returns {Object} Object containing the echoed message
+ */
+function test_edit_function(message) {
+  return {
+    echo: message,
+    timestamp: new Date().toISOString()
+  };
+}
+Validation result text: Function "test_edit_function" added successfully.
+Modified function code value: /**
+ * Test function for editing - MODIFIED
+ * @description A simple test function that has been edited
+ * @param {string} message - The message to echo
+ * @param {boolean} uppercase - Whether to convert the message to uppercase
+ * @returns {Object} Object containing the processed message
+ */
+function test_edit_function(message, uppercase) {
+  if (uppercase) {
+    message = message.toUpperCase();
+  }
+  
+  return {
+    echo: message,
+    modified: true,
+    timestamp: new Date().toISOString()
+  };
+}
+Function code after saving: /**
+ * Test function for editing - MODIFIED
+ * @description A simple test function that has been edited
+ * @param {string} message - The message to echo
+ * @param {boolean} uppercase - Whether to convert the message to uppercase
+ * @returns {Object} Object containing the processed message
+ */
+function test_edit_function(message, uppercase) {
+  if (uppercase) {
+    message = message.toUpperCase();
+  }
+  
+  return {
+    echo: message,
+    modified: true,
+    timestamp: new Date().toISOString()
+  };
+}
+--------------------------- Captured stdout teardown ---------------------------
+HTTP server process already terminated
+__________________ test_function_collection_colors[chromium0] __________________
+
+page = <Page url='http://localhost:8000/'>
+serve_hacka_re = 'http://localhost:8000'
+api_key = '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'
+
+    def test_function_collection_colors(page: Page, serve_hacka_re, api_key):
+        """Test that functions from the same import are collected by color and deletion works for the entire collection."""
+        # Set up console error logging
+        setup_console_logging(page)
+    
+        # Navigate to the page
+        page.goto(serve_hacka_re)
+    
+        # Dismiss welcome modal if present
+        dismiss_welcome_modal(page)
+    
+        # Dismiss settings modal if already open
+        # Configure API key and model
+>       configure_api_key_and_model(page, api_key)
+
+test_function_group_colors.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+page = <Page url='http://localhost:8000/'>
+api_key = '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'
+
+    def configure_api_key_and_model(page, api_key):
+        """Configure API key and select a function calling model."""
+        print("Configuring API key and model...")
+    
+        # Click the settings button
+        settings_button = page.locator("#settings-btn")
+        settings_button.click(timeout=1000)
+    
+        # Wait for the settings modal to become visible
+        page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
+    
+        # Take a screenshot of the settings modal for debugging
+        page.screenshot(path="_tests/playwright/videos/settings_modal_initial.png")
+    
+        # Enter the API key from .env
+        api_key_input = page.locator("#api-key-update")
+        api_key_input.fill(api_key)
+    
+        # Get OPENAI_API_BASE and OPENAI_API_MODEL from conftest.py
+        import sys
+        import os
+        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+>       from conftest import OPENAI_API_BASE, OPENAI_API_MODEL
+E       ImportError: cannot import name 'OPENAI_API_BASE' from 'conftest' (/Users/user/dev/hacka.re/_tests/playwright/shodan/conftest.py)
+
+function_calling_api/helpers/setup_helpers.py:46: ImportError
+----------------------------- Captured stdout call -----------------------------
+welcome-modal is visible, closing it
+Found close button with selector: #close-welcome-modal
+Clicked close button
+Modal closed successfully
+Configuring API key and model...
+--------------------------- Captured stdout teardown ---------------------------
+HTTP server process already terminated
+____________________ test_function_calling_icons[chromium0] ____________________
+
+page = <Page url='http://localhost:8000/'>
+serve_hacka_re = 'http://localhost:8000'
+api_key = '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'
+
+    def test_function_calling_icons(page: Page, serve_hacka_re, api_key):
+        """Test that function calling icons appear inline with the token stream."""
+        # Set up console error logging
+        setup_console_logging(page)
+    
+        # Navigate to the page
+        page.goto(serve_hacka_re)
+    
+        # Dismiss welcome modal if present
+        dismiss_welcome_modal(page)
+    
+        # Dismiss settings modal if already open
+        # Configure API key and model
+>       configure_api_key_and_model(page, api_key)
+
+test_function_icons.py:31: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+page = <Page url='http://localhost:8000/'>
+api_key = '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'
+
+    def configure_api_key_and_model(page, api_key):
+        """Configure API key and select a function calling model."""
+        print("Configuring API key and model...")
+    
+        # Click the settings button
+        settings_button = page.locator("#settings-btn")
+        settings_button.click(timeout=1000)
+    
+        # Wait for the settings modal to become visible
+        page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
+    
+        # Take a screenshot of the settings modal for debugging
+        page.screenshot(path="_tests/playwright/videos/settings_modal_initial.png")
+    
+        # Enter the API key from .env
+        api_key_input = page.locator("#api-key-update")
+        api_key_input.fill(api_key)
+    
+        # Get OPENAI_API_BASE and OPENAI_API_MODEL from conftest.py
+        import sys
+        import os
+        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+>       from conftest import OPENAI_API_BASE, OPENAI_API_MODEL
+E       ImportError: cannot import name 'OPENAI_API_BASE' from 'conftest' (/Users/user/dev/hacka.re/_tests/playwright/shodan/conftest.py)
+
+function_calling_api/helpers/setup_helpers.py:46: ImportError
+----------------------------- Captured stdout call -----------------------------
+welcome-modal is visible, closing it
+Found close button with selector: #close-welcome-modal
+Clicked close button
+Modal closed successfully
+Configuring API key and model...
+--------------------------- Captured stdout teardown ---------------------------
+HTTP server process already terminated
+________________ test_multiple_function_calls_colors[chromium0] ________________
+
+page = <Page url='http://localhost:8000/'>
+serve_hacka_re = 'http://localhost:8000'
+api_key = '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'
+
+    def test_multiple_function_calls_colors(page: Page, serve_hacka_re, api_key):
+        """Test that multiple function calls use different colors."""
+        # Set up console error logging
+        setup_console_logging(page)
+    
+        # Navigate to the page
+        page.goto(serve_hacka_re)
+    
+        # Dismiss welcome modal if present
+        dismiss_welcome_modal(page)
+    
+        # Dismiss settings modal if already open
+        # Configure API key and model
+>       configure_api_key_and_model(page, api_key)
+
+test_function_icons.py:187: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+page = <Page url='http://localhost:8000/'>
+api_key = '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'
+
+    def configure_api_key_and_model(page, api_key):
+        """Configure API key and select a function calling model."""
+        print("Configuring API key and model...")
+    
+        # Click the settings button
+        settings_button = page.locator("#settings-btn")
+        settings_button.click(timeout=1000)
+    
+        # Wait for the settings modal to become visible
+        page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
+    
+        # Take a screenshot of the settings modal for debugging
+        page.screenshot(path="_tests/playwright/videos/settings_modal_initial.png")
+    
+        # Enter the API key from .env
+        api_key_input = page.locator("#api-key-update")
+        api_key_input.fill(api_key)
+    
+        # Get OPENAI_API_BASE and OPENAI_API_MODEL from conftest.py
+        import sys
+        import os
+        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+>       from conftest import OPENAI_API_BASE, OPENAI_API_MODEL
+E       ImportError: cannot import name 'OPENAI_API_BASE' from 'conftest' (/Users/user/dev/hacka.re/_tests/playwright/shodan/conftest.py)
+
+function_calling_api/helpers/setup_helpers.py:46: ImportError
+----------------------------- Captured stdout call -----------------------------
+welcome-modal is visible, closing it
+Found close button with selector: #close-welcome-modal
+Clicked close button
+Modal closed successfully
+Configuring API key and model...
+--------------------------- Captured stdout teardown ---------------------------
+HTTP server process already terminated
+_____________ test_function_library_copy_button_exists[chromium0] ______________
+
+page = <Page url='http://localhost:8000/'>
+serve_hacka_re = 'http://localhost:8000'
+
+    def test_function_library_copy_button_exists(page: Page, serve_hacka_re):
+        """Test that the copy function library button exists in the function calling modal."""
+        # Navigate to the application
+        page.goto(serve_hacka_re)
+    
+        # Dismiss welcome modal if present
+        dismiss_welcome_modal(page)
+    
+        # Dismiss settings modal if already open
+        # Open the function modal
+        function_btn = page.locator("#function-btn")
+        function_btn.click()
+    
+        # Check that the function modal is visible
+        function_modal = page.locator("#function-modal")
+        expect(function_modal).to_be_visible()
+    
+        # Check that the copy function library button is visible
+        copy_function_library_btn = page.locator("#copy-function-library-btn")
+>       expect(copy_function_library_btn).to_be_visible()
+E       AssertionError: Locator expected to be visible
+E       Actual value: <element(s) not found> 
+E       Call log:
+E         - LocatorAssertions.to_be_visible with timeout 5000ms
+E         - waiting for locator("#copy-function-library-btn")
+
+test_function_library_copy.py:25: AssertionError
+----------------------------- Captured stdout call -----------------------------
+welcome-modal is visible, closing it
+Found close button with selector: #close-welcome-modal
+Clicked close button
+Modal closed successfully
+--------------------------- Captured stdout teardown ---------------------------
+HTTP server process already terminated
+_____________ test_function_library_copy_functionality[chromium0] ______________
+
+page = <Page url='http://localhost:8000/'>
+serve_hacka_re = 'http://localhost:8000'
+
+    def test_function_library_copy_functionality(page: Page, serve_hacka_re):
+        """Test that the copy function library button works correctly."""
+        # Navigate to the application
+        page.goto(serve_hacka_re)
+    
+        # Dismiss welcome modal if present
+        dismiss_welcome_modal(page)
+    
+        # Dismiss settings modal if already open
+        # Open the function modal
+        function_btn = page.locator("#function-btn")
+        function_btn.click()
+    
+        # Check that the function modal is visible
+        function_modal = page.locator("#function-modal")
+        expect(function_modal).to_be_visible()
+    
+        # Add a function to ensure there's something in the library
+        # First validate the default function
+        validate_btn = page.locator("#function-validate-btn")
+        validate_btn.click()
+    
+        # Wait for the validation result to appear
+        validation_result = page.locator("#function-validation-result.success")
+        expect(validation_result).to_be_visible()
+    
+        # Save the function
+        save_btn = page.locator("#function-editor-form button[type='submit']")
+        save_btn.click()
+    
+        # Wait for the system message indicating the function was added
+        system_message = page.locator(".message.system .message-content").last
+        expect(system_message).to_contain_text("functions added and enabled")
+    
+        # Take a screenshot with debug info before copying
+        screenshot_with_markdown(page, "function_library_copy_before", {
+            "Status": "Before clicking copy function library button",
+            "Function": "Function added to library"
+        })
+    
+        # Click the copy function library button
+        copy_function_library_btn = page.locator("#copy-function-library-btn")
+>       copy_function_library_btn.click()
+
+test_function_library_copy.py:79: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.13/site-packages/playwright/sync_api/_generated.py:15512: in click
+    self._sync(
+.venv/lib/python3.13/site-packages/playwright/_impl/_locator.py:160: in click
+    return await self._frame.click(self._selector, strict=True, **params)
+.venv/lib/python3.13/site-packages/playwright/_impl/_frame.py:488: in click
+    await self._channel.send("click", locals_to_params(locals()))
+.venv/lib/python3.13/site-packages/playwright/_impl/_connection.py:61: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x1057b6e40>
+cb = <function Channel.send.<locals>.<lambda> at 0x106d8bc40>
+is_internal = False
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        st: List[inspect.FrameInfo] = getattr(task, "__pw_stack__", inspect.stack())
+        parsed_st = _extract_stack_trace_information_from_stack(st, is_internal)
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Locator.click: Timeout 10000ms exceeded.
+E           Call log:
+E             - waiting for locator("#copy-function-library-btn")
+
+.venv/lib/python3.13/site-packages/playwright/_impl/_connection.py:528: TimeoutError
+----------------------------- Captured stdout call -----------------------------
+welcome-modal is visible, closing it
+Found close button with selector: #close-welcome-modal
+Clicked close button
+Modal closed successfully
+--------------------------- Captured stdout teardown ---------------------------
+HTTP server process already terminated
+____________________ test_function_library_multi[chromium0] ____________________
+
+page = <Page url='http://localhost:8000/'>
+serve_hacka_re = 'http://localhost:8000'
+api_key = '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'
+
+    def test_function_library_multi(page: Page, serve_hacka_re, api_key):
+        """Test the multi-function library with @tool tag."""
+        # Set up console error logging
+        setup_console_logging(page)
+    
+        # Navigate to the page
+        page.goto(serve_hacka_re)
+    
+        # Dismiss welcome modal if present
+        dismiss_welcome_modal(page)
+    
+        # Dismiss settings modal if already open
+        # Configure API key and model
+>       configure_api_key_and_model(page, api_key)
+
+test_function_library_multi.py:28: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+page = <Page url='http://localhost:8000/'>
+api_key = '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'
+
+    def configure_api_key_and_model(page, api_key):
+        """Configure API key and select a function calling model."""
+        print("Configuring API key and model...")
+    
+        # Click the settings button
+        settings_button = page.locator("#settings-btn")
+        settings_button.click(timeout=1000)
+    
+        # Wait for the settings modal to become visible
+        page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
+    
+        # Take a screenshot of the settings modal for debugging
+        page.screenshot(path="_tests/playwright/videos/settings_modal_initial.png")
+    
+        # Enter the API key from .env
+        api_key_input = page.locator("#api-key-update")
+        api_key_input.fill(api_key)
+    
+        # Get OPENAI_API_BASE and OPENAI_API_MODEL from conftest.py
+        import sys
+        import os
+        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+>       from conftest import OPENAI_API_BASE, OPENAI_API_MODEL
+E       ImportError: cannot import name 'OPENAI_API_BASE' from 'conftest' (/Users/user/dev/hacka.re/_tests/playwright/shodan/conftest.py)
+
+function_calling_api/helpers/setup_helpers.py:46: ImportError
+----------------------------- Captured stdout call -----------------------------
+welcome-modal is visible, closing it
+Found close button with selector: #close-welcome-modal
+Clicked close button
+Modal closed successfully
+Configuring API key and model...
+--------------------------- Captured stdout teardown ---------------------------
+HTTP server process already terminated
+___________________ test_function_library_sharing[chromium0] ___________________
+
+page = <Page url='http://localhost:8000/'>
+serve_hacka_re = 'http://localhost:8000'
+
+    def test_function_library_sharing(page: Page, serve_hacka_re):
+        """
+        Test that function library can be shared and loaded from a shared link.
+    
+        This test:
+        1. Creates a test function
+        2. Shares it using the function library option
+        3. Deletes the function
+        4. Loads the shared link
+        5. Verifies the function is restored
+        """
+        # STEP 1: Navigate to the application
+        page.goto(serve_hacka_re)
+    
+        # STEP 2: Handle welcome and settings modals
+        dismiss_welcome_modal(page)
+        # STEP 3: Configure API key and model
+        # Click the settings button
+        settings_button = page.locator("#settings-btn")
+        settings_button.click()
+    
+        # Wait for the settings modal to become visible
+        page.wait_for_selector("#settings-modal.active", state="visible")
+    
+        # Enter the API key
+        api_key_input = page.locator("#api-key-update")
+        api_key_input.fill(API_KEY)
+    
+        # Select OpenAI as the API provider
+        base_url_select = page.locator("#base-url-select")
+        base_url_select.select_option("openai")
+    
+        # Select a model
+        from test_utils import select_recommended_test_model
+        selected_model = select_recommended_test_model(page)
+    
+        # Settings auto-save, wait and close
+        page.wait_for_timeout(1000)
+        close_button = page.locator("#close-settings")
+        close_button.click()
+    
+        # Wait for the settings modal to be closed
+        page.wait_for_selector("#settings-modal", state="hidden")
+    
+        # STEP 4: Create a test function
+        # Open the function modal
+        function_btn = page.locator("#function-btn")
+        function_btn.click()
+    
+        # Wait for the function modal to be visible
+        function_modal = page.locator("#function-modal")
+        expect(function_modal).to_be_visible()
+    
+        # First, set the function code - the name field will be auto-populated
+        function_name = "test_shared_function"
+        function_code = f"""function {function_name}(text) {{
+      return {{
+        message: "You said: " + text,
+        timestamp: new Date().toISOString()
+      }};
+    }}"""
+    
+        function_code_input = page.locator("#function-code")
+        function_code_input.scroll_into_view_if_needed()
+        expect(function_code_input).to_be_visible()
+        function_code_input.fill(function_code)
+    
+        # Trigger the auto-population by firing an input event
+        page.evaluate("""() => {
+            const codeTextarea = document.getElementById('function-code');
+            if (codeTextarea) {
+                codeTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        }""")
+    
+        # Wait a moment for auto-population to happen
+        # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
+    
+        # Verify the function name field was auto-populated
+        name_value = page.evaluate("""() => {
+            const nameField = document.getElementById('function-name');
+            return nameField ? nameField.value : null;
+        }""")
+    
+        if name_value:
+            assert name_value == function_name, f"Expected '{function_name}', got '{name_value}'"
+    
+        # Validate the function
+        validate_btn = page.locator("#function-validate-btn")
+        validate_btn.scroll_into_view_if_needed()
+        expect(validate_btn).to_be_visible()
+        validate_btn.click()
+    
+        # Wait for validation result
+        validation_result = page.locator("#function-validation-result")
+        page.wait_for_selector("#function-validation-result:not(:empty)", state="visible")
+        expect(validation_result).to_contain_text("Library validated successfully")
+    
+        # Save the function
+        save_btn = page.locator("#function-editor-form button[type='submit']")
+        save_btn.scroll_into_view_if_needed()
+        expect(save_btn).to_be_visible()
+        save_btn.click()
+    
+        # Verify the function was added to the list
+        function_list = page.locator("#function-list")
+        page.wait_for_selector(f".function-item-name:has-text('{function_name}')", state="visible")
+        expect(function_list.locator(f".function-item-name:has-text('{function_name}')")).to_be_visible()
+    
+        # Take a screenshot after adding the function
+        screenshot_with_markdown(page, "function_library_sharing_function_added", {
+            "step": "Added test function for sharing",
+            "function_name": function_name
+        })
+    
+        # Close the function modal
+        close_function_modal_btn = page.locator("#close-function-modal")
+        close_function_modal_btn.click()
+    
+        # STEP 5: Share the function library
+        # Open the share modal
+        share_btn = page.locator("#share-btn")
+        share_btn.click()
+    
+        # Wait for the share modal to be visible
+        share_modal = page.locator("#share-modal")
+        expect(share_modal).to_be_visible()
+    
+        # Set a test password
+        test_password = "TestPassword123"
+        password_input = page.locator("#share-password")
+        password_input.fill(test_password)
+    
+        # Check the function library checkbox
+        function_library_checkbox = page.locator("#share-function-library")
+        function_library_checkbox.check()
+    
+        # Also check API key checkbox to ensure we have something to share
+        api_key_checkbox = page.locator("#share-api-key")
+        api_key_checkbox.check()
+    
+        # Take a screenshot of the share modal
+        screenshot_with_markdown(page, "function_library_sharing_share_modal", {
+            "step": "Share modal with function library option checked",
+            "password": test_password,
+            "function_library_checked": function_library_checkbox.is_checked(),
+            "api_key_checked": api_key_checkbox.is_checked()
+        })
+    
+        # Generate the share link
+        generate_link_btn = page.locator("#generate-share-link-btn")
+        generate_link_btn.click()
+    
+        # Wait a moment for the link generation process
+        # page.wait_for_timeout(1000)  # TODO: Replace with proper wait condition
+    
+        # Take a screenshot after clicking generate button
+        screenshot_with_markdown(page, "function_library_sharing_after_generate", {
+            "step": "After clicking generate link button",
+            "container_visible": page.locator("#generated-link-container").is_visible()
+        })
+    
+        # Wait for the link to be generated
+        generated_link_container = page.locator("#generated-link-container")
+        expect(generated_link_container).to_be_visible()
+    
+        # Get the generated link
+        generated_link = page.locator("#generated-link").input_value()
+    
+        # Validate the link is not empty and has the expected format
+        assert generated_link, "Generated link is empty"
+        assert "#gpt=" in generated_link, f"Generated link doesn't contain #gpt= fragment: {generated_link}"
+    
+        # Take a screenshot of the generated link
+        screenshot_with_markdown(page, "function_library_sharing_generated_link", {
+            "step": "Generated share link",
+            "link_length": len(generated_link),
+            "link_preview": generated_link[:100] + "..." if len(generated_link) > 100 else generated_link,
+            "has_gpt_fragment": "#gpt=" in generated_link
+        })
+    
+        # Close the share modal
+        close_share_modal_btn = page.locator("#close-share-modal")
+        close_share_modal_btn.click()
+    
+        # STEP 6: Delete the function
+        # Open the function modal again
+        function_btn.click()
+        expect(function_modal).to_be_visible()
+    
+        # Delete the function
+        # Handle the confirmation dialog
+        page.on("dialog", lambda dialog: dialog.accept())
+    
+        # Find and click the delete button for the function
+        # The delete button is in the same function-item div as the function name
+        function_item = page.locator(f"#function-list .function-item").filter(has=page.locator(f".function-item-name:has-text('{function_name}')"))
+        delete_btn = function_item.locator(".function-item-delete")
+>       delete_btn.click()
+
+test_function_library_sharing.py:212: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.13/site-packages/playwright/sync_api/_generated.py:15512: in click
+    self._sync(
+.venv/lib/python3.13/site-packages/playwright/_impl/_locator.py:160: in click
+    return await self._frame.click(self._selector, strict=True, **params)
+.venv/lib/python3.13/site-packages/playwright/_impl/_frame.py:488: in click
+    await self._channel.send("click", locals_to_params(locals()))
+.venv/lib/python3.13/site-packages/playwright/_impl/_connection.py:61: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x1057b6e40>
+cb = <function Channel.send.<locals>.<lambda> at 0x105fa2b60>
+is_internal = False
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        st: List[inspect.FrameInfo] = getattr(task, "__pw_stack__", inspect.stack())
+        parsed_st = _extract_stack_trace_information_from_stack(st, is_internal)
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Locator.click: Timeout 10000ms exceeded.
+E           Call log:
+E             - waiting for locator("#function-list .function-item").filter(has=locator(".function-item-name:has-text('test_shared_function')")).locator(".function-item-delete")
+
+.venv/lib/python3.13/site-packages/playwright/_impl/_connection.py:528: TimeoutError
+----------------------------- Captured stdout call -----------------------------
+welcome-modal is visible, closing it
+Found close button with selector: #close-welcome-modal
+Clicked close button
+Modal closed successfully
+Available options in model select dropdown:
+  Option: -- Default models (API unavailable) -- (value: , disabled: True)
+  Option: 🇺🇸 Gpt 4o Mini (value: gpt-4o-mini, disabled: False)
+  Option: 🇺🇸 Gpt 4o (value: gpt-4o, disabled: False)
+  Option: 🇺🇸 Gpt 4 Turbo (value: gpt-4-turbo, disabled: False)
+  Option: 🇺🇸 Gpt 3.5 Turbo (value: gpt-3.5-turbo, disabled: False)
+Recommended model not available. Selecting first option: gpt-4o-mini
+--------------------------- Captured stdout teardown ---------------------------
+HTTP server process already terminated
+______________ test_all_functions_callable_by_default[chromium0] _______________
+
+page = <Page url='http://localhost:8000/'>
+serve_hacka_re = 'http://localhost:8000'
+api_key = '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'
+
+    def test_all_functions_callable_by_default(page: Page, serve_hacka_re, api_key):
+        """Test that all functions are callable by default when no tags are present."""
+        # Set up console error logging
+        setup_console_logging(page)
+    
+        # Navigate to the page
+        page.goto(serve_hacka_re)
+    
+        # Dismiss welcome modal if present
+        dismiss_welcome_modal(page)
+    
+        # Dismiss settings modal if already open
+        # Configure API key and model
+>       configure_api_key_and_model(page, api_key)
+
+test_function_parsing_logic.py:28: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+page = <Page url='http://localhost:8000/'>
+api_key = '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'
+
+    def configure_api_key_and_model(page, api_key):
+        """Configure API key and select a function calling model."""
+        print("Configuring API key and model...")
+    
+        # Click the settings button
+        settings_button = page.locator("#settings-btn")
+        settings_button.click(timeout=1000)
+    
+        # Wait for the settings modal to become visible
+        page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
+    
+        # Take a screenshot of the settings modal for debugging
+        page.screenshot(path="_tests/playwright/videos/settings_modal_initial.png")
+    
+        # Enter the API key from .env
+        api_key_input = page.locator("#api-key-update")
+        api_key_input.fill(api_key)
+    
+        # Get OPENAI_API_BASE and OPENAI_API_MODEL from conftest.py
+        import sys
+        import os
+        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+>       from conftest import OPENAI_API_BASE, OPENAI_API_MODEL
+E       ImportError: cannot import name 'OPENAI_API_BASE' from 'conftest' (/Users/user/dev/hacka.re/_tests/playwright/shodan/conftest.py)
+
+function_calling_api/helpers/setup_helpers.py:46: ImportError
+----------------------------- Captured stdout call -----------------------------
+welcome-modal is visible, closing it
+Found close button with selector: #close-welcome-modal
+Clicked close button
+Modal closed successfully
+Configuring API key and model...
+--------------------------- Captured stdout teardown ---------------------------
+HTTP server process already terminated
+________________ test_only_tagged_functions_callable[chromium0] ________________
+
+page = <Page url='http://localhost:8000/'>
+serve_hacka_re = 'http://localhost:8000'
+api_key = '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'
+
+    def test_only_tagged_functions_callable(page: Page, serve_hacka_re, api_key):
+        """Test that only tagged functions are callable when at least one tag is present."""
+        # Set up console error logging
+        setup_console_logging(page)
+    
+        # Navigate to the page
+        page.goto(serve_hacka_re)
+    
+        # Dismiss welcome modal if present
+        dismiss_welcome_modal(page)
+    
+        # Dismiss settings modal if already open
+        # Configure API key and model
+>       configure_api_key_and_model(page, api_key)
+
+test_function_parsing_logic.py:149: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+page = <Page url='http://localhost:8000/'>
+api_key = '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'
+
+    def configure_api_key_and_model(page, api_key):
+        """Configure API key and select a function calling model."""
+        print("Configuring API key and model...")
+    
+        # Click the settings button
+        settings_button = page.locator("#settings-btn")
+        settings_button.click(timeout=1000)
+    
+        # Wait for the settings modal to become visible
+        page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
+    
+        # Take a screenshot of the settings modal for debugging
+        page.screenshot(path="_tests/playwright/videos/settings_modal_initial.png")
+    
+        # Enter the API key from .env
+        api_key_input = page.locator("#api-key-update")
+        api_key_input.fill(api_key)
+    
+        # Get OPENAI_API_BASE and OPENAI_API_MODEL from conftest.py
+        import sys
+        import os
+        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+>       from conftest import OPENAI_API_BASE, OPENAI_API_MODEL
+E       ImportError: cannot import name 'OPENAI_API_BASE' from 'conftest' (/Users/user/dev/hacka.re/_tests/playwright/shodan/conftest.py)
+
+function_calling_api/helpers/setup_helpers.py:46: ImportError
+----------------------------- Captured stdout call -----------------------------
+welcome-modal is visible, closing it
+Found close button with selector: #close-welcome-modal
+Clicked close button
+Modal closed successfully
+Configuring API key and model...
+--------------------------- Captured stdout teardown ---------------------------
+HTTP server process already terminated
+________________________ test_tool_tag_works[chromium0] ________________________
+
+page = <Page url='http://localhost:8000/'>
+serve_hacka_re = 'http://localhost:8000'
+api_key = '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'
+
+    def test_tool_tag_works(page: Page, serve_hacka_re, api_key):
+        """Test that the @tool tag works the same as @callable."""
+        # Set up console error logging
+        setup_console_logging(page)
+    
+        # Navigate to the page
+        page.goto(serve_hacka_re)
+    
+        # Dismiss welcome modal if present
+        dismiss_welcome_modal(page)
+    
+        # Dismiss settings modal if already open
+        # Configure API key and model
+>       configure_api_key_and_model(page, api_key)
+
+test_function_parsing_logic.py:272: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+page = <Page url='http://localhost:8000/'>
+api_key = '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'
+
+    def configure_api_key_and_model(page, api_key):
+        """Configure API key and select a function calling model."""
+        print("Configuring API key and model...")
+    
+        # Click the settings button
+        settings_button = page.locator("#settings-btn")
+        settings_button.click(timeout=1000)
+    
+        # Wait for the settings modal to become visible
+        page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
+    
+        # Take a screenshot of the settings modal for debugging
+        page.screenshot(path="_tests/playwright/videos/settings_modal_initial.png")
+    
+        # Enter the API key from .env
+        api_key_input = page.locator("#api-key-update")
+        api_key_input.fill(api_key)
+    
+        # Get OPENAI_API_BASE and OPENAI_API_MODEL from conftest.py
+        import sys
+        import os
+        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+>       from conftest import OPENAI_API_BASE, OPENAI_API_MODEL
+E       ImportError: cannot import name 'OPENAI_API_BASE' from 'conftest' (/Users/user/dev/hacka.re/_tests/playwright/shodan/conftest.py)
+
+function_calling_api/helpers/setup_helpers.py:46: ImportError
+----------------------------- Captured stdout call -----------------------------
+welcome-modal is visible, closing it
+Found close button with selector: #close-welcome-modal
+Clicked close button
+Modal closed successfully
+Configuring API key and model...
+--------------------------- Captured stdout teardown ---------------------------
+HTTP server process already terminated
+___________________ test_single_line_comment_tags[chromium0] ___________________
+
+page = <Page url='http://localhost:8000/'>
+serve_hacka_re = 'http://localhost:8000'
+api_key = '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'
+
+    def test_single_line_comment_tags(page: Page, serve_hacka_re, api_key):
+        """Test that single-line comment tags work."""
+        # Set up console error logging
+        setup_console_logging(page)
+    
+        # Navigate to the page
+        page.goto(serve_hacka_re)
+    
+        # Dismiss welcome modal if present
+        dismiss_welcome_modal(page)
+    
+        # Dismiss settings modal if already open
+        # Configure API key and model
+>       configure_api_key_and_model(page, api_key)
+
+test_function_parsing_logic.py:395: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+page = <Page url='http://localhost:8000/'>
+api_key = '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'
+
+    def configure_api_key_and_model(page, api_key):
+        """Configure API key and select a function calling model."""
+        print("Configuring API key and model...")
+    
+        # Click the settings button
+        settings_button = page.locator("#settings-btn")
+        settings_button.click(timeout=1000)
+    
+        # Wait for the settings modal to become visible
+        page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
+    
+        # Take a screenshot of the settings modal for debugging
+        page.screenshot(path="_tests/playwright/videos/settings_modal_initial.png")
+    
+        # Enter the API key from .env
+        api_key_input = page.locator("#api-key-update")
+        api_key_input.fill(api_key)
+    
+        # Get OPENAI_API_BASE and OPENAI_API_MODEL from conftest.py
+        import sys
+        import os
+        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+>       from conftest import OPENAI_API_BASE, OPENAI_API_MODEL
+E       ImportError: cannot import name 'OPENAI_API_BASE' from 'conftest' (/Users/user/dev/hacka.re/_tests/playwright/shodan/conftest.py)
+
+function_calling_api/helpers/setup_helpers.py:46: ImportError
+----------------------------- Captured stdout call -----------------------------
+welcome-modal is visible, closing it
+Found close button with selector: #close-welcome-modal
+Clicked close button
+Modal closed successfully
+Configuring API key and model...
+--------------------------- Captured stdout teardown ---------------------------
+HTTP server process already terminated
+_______________________ test_mixed_tag_types[chromium0] ________________________
+
+page = <Page url='http://localhost:8000/'>
+serve_hacka_re = 'http://localhost:8000'
+api_key = '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'
+
+    def test_mixed_tag_types(page: Page, serve_hacka_re, api_key):
+        """Test that mixed tag types work together."""
+        # Set up console error logging
+        setup_console_logging(page)
+    
+        # Navigate to the page
+        page.goto(serve_hacka_re)
+    
+        # Dismiss welcome modal if present
+        dismiss_welcome_modal(page)
+    
+        # Dismiss settings modal if already open
+        # Configure API key and model
+>       configure_api_key_and_model(page, api_key)
+
+test_function_parsing_logic.py:519: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+page = <Page url='http://localhost:8000/'>
+api_key = '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'
+
+    def configure_api_key_and_model(page, api_key):
+        """Configure API key and select a function calling model."""
+        print("Configuring API key and model...")
+    
+        # Click the settings button
+        settings_button = page.locator("#settings-btn")
+        settings_button.click(timeout=1000)
+    
+        # Wait for the settings modal to become visible
+        page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
+    
+        # Take a screenshot of the settings modal for debugging
+        page.screenshot(path="_tests/playwright/videos/settings_modal_initial.png")
+    
+        # Enter the API key from .env
+        api_key_input = page.locator("#api-key-update")
+        api_key_input.fill(api_key)
+    
+        # Get OPENAI_API_BASE and OPENAI_API_MODEL from conftest.py
+        import sys
+        import os
+        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+>       from conftest import OPENAI_API_BASE, OPENAI_API_MODEL
+E       ImportError: cannot import name 'OPENAI_API_BASE' from 'conftest' (/Users/user/dev/hacka.re/_tests/playwright/shodan/conftest.py)
+
+function_calling_api/helpers/setup_helpers.py:46: ImportError
+----------------------------- Captured stdout call -----------------------------
+welcome-modal is visible, closing it
+Found close button with selector: #close-welcome-modal
+Clicked close button
+Modal closed successfully
+Configuring API key and model...
+--------------------------- Captured stdout teardown ---------------------------
+HTTP server process already terminated
+_______________________ test_function_editing[chromium1] _______________________
+
+page = <Page url='http://localhost:8000/'>
+serve_hacka_re = 'http://localhost:8000'
+
+    def test_function_editing(page: Page, serve_hacka_re):
+        """Test editing existing functions by clicking them in the list."""
+        # Navigate to the page
+        page.goto(serve_hacka_re)
+    
+        # Dismiss welcome modal if present
+        dismiss_welcome_modal(page)
+    
+        # Dismiss settings modal if already open
+        # Check if the function calling button exists
+        function_btn = page.locator("#function-btn")
+        expect(function_btn).to_be_visible()
+    
+        # Click the function calling button
+        function_btn.click()
+    
+        # Check if the function modal is visible
+        function_modal = page.locator("#function-modal")
+        expect(function_modal).to_be_visible()
+    
+        # First, create a test function
+        function_code = page.locator("#function-code")
+        function_code.scroll_into_view_if_needed()
+        expect(function_code).to_be_visible()
+    
+        # Create a simple test function
+        test_function_code = """/**
+     * Test function for editing
+     * @description A simple test function that can be edited
+     * @param {string} message - The message to echo
+     * @returns {Object} Object containing the echoed message
+     */
+    function test_edit_function(message) {
+      return {
+        echo: message,
+        timestamp: new Date().toISOString()
+      };
+    }"""
+    
+        function_code.fill(test_function_code)
+    
+        # Check that the function name field was auto-populated
+        function_name = page.locator("#function-name")
+        # Note: function name field might be hidden but still have a value
+        expect(function_name).to_have_value("test_edit_function")
+    
+        # Validate the function
+        validate_btn = page.locator("#function-validate-btn")
+        validate_btn.scroll_into_view_if_needed()
+        expect(validate_btn).to_be_visible()
+        validate_btn.click()
+    
+        # Check for validation result
+        validation_result = page.locator("#function-validation-result")
+        page.wait_for_selector("#function-validation-result:not(:empty)", state="visible")
+        expect(validation_result).to_contain_text("validated successfully")
+    
+        # Submit the form to add the function
+        submit_btn = page.locator("#function-editor-form button[type='submit']")
+        submit_btn.scroll_into_view_if_needed()
+        expect(submit_btn).to_be_visible()
+        submit_btn.click()
+    
+        # Check if the function was added to the list
+        function_list = page.locator("#function-list")
+        function_item = function_list.locator(".function-item-name:has-text('test_edit_function')")
+        page.wait_for_selector(".function-item-name:has-text('test_edit_function')", state="visible")
+        expect(function_item).to_be_visible()
+    
+        # Take a screenshot of the function list with the new function
+        screenshot_with_markdown(page, "function_list_before_edit.png", {
+            "Status": "Function list with newly created function",
+            "Function Name": "test_edit_function"
+        })
+    
+        # Now click on the function item to edit it
+        function_item_container = function_list.locator(".function-item").filter(has_text="test_edit_function").locator("div").nth(1)
+        function_item_container.scroll_into_view_if_needed()
+        expect(function_item_container).to_be_visible()
+        function_item_container.click()
+    
+        # Add a small wait to ensure the function code is loaded
+        # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
+    
+        # Check that the function code and name are loaded into the editor
+        expect(function_name).to_have_value("test_edit_function")
+    
+        # Get the actual value of the function code
+        function_code_value = function_code.input_value()
+        print(f"Function code value: {function_code_value}")
+    
+        # Check that the function code contains the expected text
+        assert "function test_edit_function" in function_code_value, "Function code does not contain the expected function name"
+    
+        # Take a screenshot of the editor with the loaded function
+        screenshot_with_markdown(page, "function_editor_loaded.png", {
+            "Status": "Function loaded into editor for editing",
+            "Function Name": "test_edit_function"
+        })
+    
+        # Modify the function code
+        modified_function_code = """/**
+     * Test function for editing - MODIFIED
+     * @description A simple test function that has been edited
+     * @param {string} message - The message to echo
+     * @param {boolean} uppercase - Whether to convert the message to uppercase
+     * @returns {Object} Object containing the processed message
+     */
+    function test_edit_function(message, uppercase) {
+      if (uppercase) {
+        message = message.toUpperCase();
+      }
+    
+      return {
+        echo: message,
+        modified: true,
+        timestamp: new Date().toISOString()
+      };
+    }"""
+    
+        function_code.fill(modified_function_code)
+    
+        # Validate the modified function
+        validate_btn.click()
+    
+        # Check for validation result
+        page.wait_for_selector("#function-validation-result:not(:empty)", state="visible")
+        expect(validation_result).to_contain_text("validated successfully")
+    
+        # Submit the form to update the function
+        submit_btn.click()
+    
+        # Wait a moment for the form submission to complete
+        # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
+    
+        # Check for success message - note that it might be hidden but still have content
+        validation_text = validation_result.text_content()
+        print(f"Validation result text: {validation_text}")
+        assert "added successfully" in validation_text, "Success message not found after update"
+    
+        # Take a screenshot of the success message
+        screenshot_with_markdown(page, "function_update_success.png", {
+            "Status": "Function updated successfully",
+            "Function Name": "test_edit_function"
+        })
+    
+        # Check that the function is still in the list
+        expect(function_item).to_be_visible()
+    
+        # Click on the function again to verify the changes were saved
+        function_item_container.click()
+    
+        # Add a small wait to ensure the function code is loaded
+        # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
+    
+        # Get the actual value of the modified function code
+        function_code_value = function_code.input_value()
+        print(f"Modified function code value: {function_code_value}")
+    
+        # Check that the modified function code contains the expected text
+        assert "MODIFIED" in function_code_value, "Function code does not contain 'MODIFIED'"
+        assert "uppercase" in function_code_value, "Function code does not contain 'uppercase'"
+    
+        # Take a screenshot of the editor with the updated function
+        screenshot_with_markdown(page, "function_editor_updated.png", {
+            "Status": "Updated function loaded into editor",
+            "Function Name": "test_edit_function"
+        })
+    
+        # Verify that the function remains in the editor after saving
+        # This is the new behavior - the function should stay in the editor for further editing
+        function_code_value = function_code.input_value()
+        print(f"Function code after saving: {function_code_value}")
+    
+        # Check that the function code still contains the expected text
+        assert "MODIFIED" in function_code_value, "Function code does not remain in editor after saving"
+        assert "uppercase" in function_code_value, "Function code does not remain in editor after saving"
+    
+        # Take a screenshot showing the function remains in the editor
+        screenshot_with_markdown(page, "function_remains_in_editor.png", {
+            "Status": "Function remains in editor after saving",
+            "Function Name": "test_edit_function"
+        })
+    
+        # Delete the test function
+        delete_button = function_list.locator(".function-item-delete").first
+>       delete_button.scroll_into_view_if_needed()
+
+test_function_editing.py:192: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.13/site-packages/playwright/sync_api/_generated.py:17396: in scroll_into_view_if_needed
+    self._sync(self._impl_obj.scroll_into_view_if_needed(timeout=timeout))
+.venv/lib/python3.13/site-packages/playwright/_impl/_locator.py:556: in scroll_into_view_if_needed
+    return await self._with_element(
+.venv/lib/python3.13/site-packages/playwright/_impl/_locator.py:112: in _with_element
+    handle = await self.element_handle(timeout=timeout)
+.venv/lib/python3.13/site-packages/playwright/_impl/_locator.py:315: in element_handle
+    handle = await self._frame.wait_for_selector(
+.venv/lib/python3.13/site-packages/playwright/_impl/_frame.py:323: in wait_for_selector
+    await self._channel.send("waitForSelector", locals_to_params(locals()))
+.venv/lib/python3.13/site-packages/playwright/_impl/_connection.py:61: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x1057b6e40>
+cb = <function Channel.send.<locals>.<lambda> at 0x106d11620>
+is_internal = False
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        st: List[inspect.FrameInfo] = getattr(task, "__pw_stack__", inspect.stack())
+        parsed_st = _extract_stack_trace_information_from_stack(st, is_internal)
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Locator.scroll_into_view_if_needed: Timeout 10000ms exceeded.
+E           Call log:
+E             - waiting for locator("#function-list").locator(".function-item-delete").first
+
+.venv/lib/python3.13/site-packages/playwright/_impl/_connection.py:528: TimeoutError
+----------------------------- Captured stdout call -----------------------------
+welcome-modal is visible, closing it
+Found close button with selector: #close-welcome-modal
+Clicked close button
+Modal closed successfully
+Function code value: /**
+ * Test function for editing
+ * @description A simple test function that can be edited
+ * @param {string} message - The message to echo
+ * @returns {Object} Object containing the echoed message
+ */
+function test_edit_function(message) {
+  return {
+    echo: message,
+    timestamp: new Date().toISOString()
+  };
+}
+Validation result text: Function "test_edit_function" added successfully.
+Modified function code value: /**
+ * Test function for editing - MODIFIED
+ * @description A simple test function that has been edited
+ * @param {string} message - The message to echo
+ * @param {boolean} uppercase - Whether to convert the message to uppercase
+ * @returns {Object} Object containing the processed message
+ */
+function test_edit_function(message, uppercase) {
+  if (uppercase) {
+    message = message.toUpperCase();
+  }
+  
+  return {
+    echo: message,
+    modified: true,
+    timestamp: new Date().toISOString()
+  };
+}
+Function code after saving: /**
+ * Test function for editing - MODIFIED
+ * @description A simple test function that has been edited
+ * @param {string} message - The message to echo
+ * @param {boolean} uppercase - Whether to convert the message to uppercase
+ * @returns {Object} Object containing the processed message
+ */
+function test_edit_function(message, uppercase) {
+  if (uppercase) {
+    message = message.toUpperCase();
+  }
+  
+  return {
+    echo: message,
+    modified: true,
+    timestamp: new Date().toISOString()
+  };
+}
+--------------------------- Captured stdout teardown ---------------------------
+HTTP server process already terminated
+__________________ test_function_collection_colors[chromium1] __________________
+
+page = <Page url='http://localhost:8000/'>
+serve_hacka_re = 'http://localhost:8000'
+api_key = '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'
+
+    def test_function_collection_colors(page: Page, serve_hacka_re, api_key):
+        """Test that functions from the same import are collected by color and deletion works for the entire collection."""
+        # Set up console error logging
+        setup_console_logging(page)
+    
+        # Navigate to the page
+        page.goto(serve_hacka_re)
+    
+        # Dismiss welcome modal if present
+        dismiss_welcome_modal(page)
+    
+        # Dismiss settings modal if already open
+        # Configure API key and model
+>       configure_api_key_and_model(page, api_key)
+
+test_function_group_colors.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+page = <Page url='http://localhost:8000/'>
+api_key = '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'
+
+    def configure_api_key_and_model(page, api_key):
+        """Configure API key and select a function calling model."""
+        print("Configuring API key and model...")
+    
+        # Click the settings button
+        settings_button = page.locator("#settings-btn")
+        settings_button.click(timeout=1000)
+    
+        # Wait for the settings modal to become visible
+        page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
+    
+        # Take a screenshot of the settings modal for debugging
+        page.screenshot(path="_tests/playwright/videos/settings_modal_initial.png")
+    
+        # Enter the API key from .env
+        api_key_input = page.locator("#api-key-update")
+        api_key_input.fill(api_key)
+    
+        # Get OPENAI_API_BASE and OPENAI_API_MODEL from conftest.py
+        import sys
+        import os
+        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+>       from conftest import OPENAI_API_BASE, OPENAI_API_MODEL
+E       ImportError: cannot import name 'OPENAI_API_BASE' from 'conftest' (/Users/user/dev/hacka.re/_tests/playwright/shodan/conftest.py)
+
+function_calling_api/helpers/setup_helpers.py:46: ImportError
+----------------------------- Captured stdout call -----------------------------
+welcome-modal is visible, closing it
+Found close button with selector: #close-welcome-modal
+Clicked close button
+Modal closed successfully
+Configuring API key and model...
+--------------------------- Captured stdout teardown ---------------------------
+HTTP server process already terminated
+____________________ test_function_calling_icons[chromium1] ____________________
+
+page = <Page url='http://localhost:8000/'>
+serve_hacka_re = 'http://localhost:8000'
+api_key = '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'
+
+    def test_function_calling_icons(page: Page, serve_hacka_re, api_key):
+        """Test that function calling icons appear inline with the token stream."""
+        # Set up console error logging
+        setup_console_logging(page)
+    
+        # Navigate to the page
+        page.goto(serve_hacka_re)
+    
+        # Dismiss welcome modal if present
+        dismiss_welcome_modal(page)
+    
+        # Dismiss settings modal if already open
+        # Configure API key and model
+>       configure_api_key_and_model(page, api_key)
+
+test_function_icons.py:31: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+page = <Page url='http://localhost:8000/'>
+api_key = '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'
+
+    def configure_api_key_and_model(page, api_key):
+        """Configure API key and select a function calling model."""
+        print("Configuring API key and model...")
+    
+        # Click the settings button
+        settings_button = page.locator("#settings-btn")
+        settings_button.click(timeout=1000)
+    
+        # Wait for the settings modal to become visible
+        page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
+    
+        # Take a screenshot of the settings modal for debugging
+        page.screenshot(path="_tests/playwright/videos/settings_modal_initial.png")
+    
+        # Enter the API key from .env
+        api_key_input = page.locator("#api-key-update")
+        api_key_input.fill(api_key)
+    
+        # Get OPENAI_API_BASE and OPENAI_API_MODEL from conftest.py
+        import sys
+        import os
+        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+>       from conftest import OPENAI_API_BASE, OPENAI_API_MODEL
+E       ImportError: cannot import name 'OPENAI_API_BASE' from 'conftest' (/Users/user/dev/hacka.re/_tests/playwright/shodan/conftest.py)
+
+function_calling_api/helpers/setup_helpers.py:46: ImportError
+----------------------------- Captured stdout call -----------------------------
+welcome-modal is visible, closing it
+Found close button with selector: #close-welcome-modal
+Clicked close button
+Modal closed successfully
+Configuring API key and model...
+--------------------------- Captured stdout teardown ---------------------------
+HTTP server process already terminated
+________________ test_multiple_function_calls_colors[chromium1] ________________
+
+page = <Page url='http://localhost:8000/'>
+serve_hacka_re = 'http://localhost:8000'
+api_key = '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'
+
+    def test_multiple_function_calls_colors(page: Page, serve_hacka_re, api_key):
+        """Test that multiple function calls use different colors."""
+        # Set up console error logging
+        setup_console_logging(page)
+    
+        # Navigate to the page
+        page.goto(serve_hacka_re)
+    
+        # Dismiss welcome modal if present
+        dismiss_welcome_modal(page)
+    
+        # Dismiss settings modal if already open
+        # Configure API key and model
+>       configure_api_key_and_model(page, api_key)
+
+test_function_icons.py:187: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+page = <Page url='http://localhost:8000/'>
+api_key = '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'
+
+    def configure_api_key_and_model(page, api_key):
+        """Configure API key and select a function calling model."""
+        print("Configuring API key and model...")
+    
+        # Click the settings button
+        settings_button = page.locator("#settings-btn")
+        settings_button.click(timeout=1000)
+    
+        # Wait for the settings modal to become visible
+        page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
+    
+        # Take a screenshot of the settings modal for debugging
+        page.screenshot(path="_tests/playwright/videos/settings_modal_initial.png")
+    
+        # Enter the API key from .env
+        api_key_input = page.locator("#api-key-update")
+        api_key_input.fill(api_key)
+    
+        # Get OPENAI_API_BASE and OPENAI_API_MODEL from conftest.py
+        import sys
+        import os
+        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+>       from conftest import OPENAI_API_BASE, OPENAI_API_MODEL
+E       ImportError: cannot import name 'OPENAI_API_BASE' from 'conftest' (/Users/user/dev/hacka.re/_tests/playwright/shodan/conftest.py)
+
+function_calling_api/helpers/setup_helpers.py:46: ImportError
+----------------------------- Captured stdout call -----------------------------
+welcome-modal is visible, closing it
+Found close button with selector: #close-welcome-modal
+Clicked close button
+Modal closed successfully
+Configuring API key and model...
+--------------------------- Captured stdout teardown ---------------------------
+HTTP server process already terminated
+_____________ test_function_library_copy_button_exists[chromium1] ______________
+
+page = <Page url='http://localhost:8000/'>
+serve_hacka_re = 'http://localhost:8000'
+
+    def test_function_library_copy_button_exists(page: Page, serve_hacka_re):
+        """Test that the copy function library button exists in the function calling modal."""
+        # Navigate to the application
+        page.goto(serve_hacka_re)
+    
+        # Dismiss welcome modal if present
+        dismiss_welcome_modal(page)
+    
+        # Dismiss settings modal if already open
+        # Open the function modal
+        function_btn = page.locator("#function-btn")
+        function_btn.click()
+    
+        # Check that the function modal is visible
+        function_modal = page.locator("#function-modal")
+        expect(function_modal).to_be_visible()
+    
+        # Check that the copy function library button is visible
+        copy_function_library_btn = page.locator("#copy-function-library-btn")
+>       expect(copy_function_library_btn).to_be_visible()
+E       AssertionError: Locator expected to be visible
+E       Actual value: <element(s) not found> 
+E       Call log:
+E         - LocatorAssertions.to_be_visible with timeout 5000ms
+E         - waiting for locator("#copy-function-library-btn")
+
+test_function_library_copy.py:25: AssertionError
+----------------------------- Captured stdout call -----------------------------
+welcome-modal is visible, closing it
+Found close button with selector: #close-welcome-modal
+Clicked close button
+Modal closed successfully
+--------------------------- Captured stdout teardown ---------------------------
+HTTP server process already terminated
+_____________ test_function_library_copy_functionality[chromium1] ______________
+
+page = <Page url='http://localhost:8000/'>
+serve_hacka_re = 'http://localhost:8000'
+
+    def test_function_library_copy_functionality(page: Page, serve_hacka_re):
+        """Test that the copy function library button works correctly."""
+        # Navigate to the application
+        page.goto(serve_hacka_re)
+    
+        # Dismiss welcome modal if present
+        dismiss_welcome_modal(page)
+    
+        # Dismiss settings modal if already open
+        # Open the function modal
+        function_btn = page.locator("#function-btn")
+        function_btn.click()
+    
+        # Check that the function modal is visible
+        function_modal = page.locator("#function-modal")
+        expect(function_modal).to_be_visible()
+    
+        # Add a function to ensure there's something in the library
+        # First validate the default function
+        validate_btn = page.locator("#function-validate-btn")
+        validate_btn.click()
+    
+        # Wait for the validation result to appear
+        validation_result = page.locator("#function-validation-result.success")
+        expect(validation_result).to_be_visible()
+    
+        # Save the function
+        save_btn = page.locator("#function-editor-form button[type='submit']")
+        save_btn.click()
+    
+        # Wait for the system message indicating the function was added
+        system_message = page.locator(".message.system .message-content").last
+        expect(system_message).to_contain_text("functions added and enabled")
+    
+        # Take a screenshot with debug info before copying
+        screenshot_with_markdown(page, "function_library_copy_before", {
+            "Status": "Before clicking copy function library button",
+            "Function": "Function added to library"
+        })
+    
+        # Click the copy function library button
+        copy_function_library_btn = page.locator("#copy-function-library-btn")
+>       copy_function_library_btn.click()
+
+test_function_library_copy.py:79: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.13/site-packages/playwright/sync_api/_generated.py:15512: in click
+    self._sync(
+.venv/lib/python3.13/site-packages/playwright/_impl/_locator.py:160: in click
+    return await self._frame.click(self._selector, strict=True, **params)
+.venv/lib/python3.13/site-packages/playwright/_impl/_frame.py:488: in click
+    await self._channel.send("click", locals_to_params(locals()))
+.venv/lib/python3.13/site-packages/playwright/_impl/_connection.py:61: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x1057b6e40>
+cb = <function Channel.send.<locals>.<lambda> at 0x1060a8fe0>
+is_internal = False
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        st: List[inspect.FrameInfo] = getattr(task, "__pw_stack__", inspect.stack())
+        parsed_st = _extract_stack_trace_information_from_stack(st, is_internal)
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Locator.click: Timeout 10000ms exceeded.
+E           Call log:
+E             - waiting for locator("#copy-function-library-btn")
+
+.venv/lib/python3.13/site-packages/playwright/_impl/_connection.py:528: TimeoutError
+----------------------------- Captured stdout call -----------------------------
+welcome-modal is visible, closing it
+Found close button with selector: #close-welcome-modal
+Clicked close button
+Modal closed successfully
+--------------------------- Captured stdout teardown ---------------------------
+HTTP server process already terminated
+____________________ test_function_library_multi[chromium1] ____________________
+
+page = <Page url='http://localhost:8000/'>
+serve_hacka_re = 'http://localhost:8000'
+api_key = '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'
+
+    def test_function_library_multi(page: Page, serve_hacka_re, api_key):
+        """Test the multi-function library with @tool tag."""
+        # Set up console error logging
+        setup_console_logging(page)
+    
+        # Navigate to the page
+        page.goto(serve_hacka_re)
+    
+        # Dismiss welcome modal if present
+        dismiss_welcome_modal(page)
+    
+        # Dismiss settings modal if already open
+        # Configure API key and model
+>       configure_api_key_and_model(page, api_key)
+
+test_function_library_multi.py:28: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+page = <Page url='http://localhost:8000/'>
+api_key = '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'
+
+    def configure_api_key_and_model(page, api_key):
+        """Configure API key and select a function calling model."""
+        print("Configuring API key and model...")
+    
+        # Click the settings button
+        settings_button = page.locator("#settings-btn")
+        settings_button.click(timeout=1000)
+    
+        # Wait for the settings modal to become visible
+        page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
+    
+        # Take a screenshot of the settings modal for debugging
+        page.screenshot(path="_tests/playwright/videos/settings_modal_initial.png")
+    
+        # Enter the API key from .env
+        api_key_input = page.locator("#api-key-update")
+        api_key_input.fill(api_key)
+    
+        # Get OPENAI_API_BASE and OPENAI_API_MODEL from conftest.py
+        import sys
+        import os
+        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+>       from conftest import OPENAI_API_BASE, OPENAI_API_MODEL
+E       ImportError: cannot import name 'OPENAI_API_BASE' from 'conftest' (/Users/user/dev/hacka.re/_tests/playwright/shodan/conftest.py)
+
+function_calling_api/helpers/setup_helpers.py:46: ImportError
+----------------------------- Captured stdout call -----------------------------
+welcome-modal is visible, closing it
+Found close button with selector: #close-welcome-modal
+Clicked close button
+Modal closed successfully
+Configuring API key and model...
+--------------------------- Captured stdout teardown ---------------------------
+HTTP server process already terminated
+___________________ test_function_library_sharing[chromium1] ___________________
+
+page = <Page url='http://localhost:8000/'>
+serve_hacka_re = 'http://localhost:8000'
+
+    def test_function_library_sharing(page: Page, serve_hacka_re):
+        """
+        Test that function library can be shared and loaded from a shared link.
+    
+        This test:
+        1. Creates a test function
+        2. Shares it using the function library option
+        3. Deletes the function
+        4. Loads the shared link
+        5. Verifies the function is restored
+        """
+        # STEP 1: Navigate to the application
+        page.goto(serve_hacka_re)
+    
+        # STEP 2: Handle welcome and settings modals
+        dismiss_welcome_modal(page)
+        # STEP 3: Configure API key and model
+        # Click the settings button
+        settings_button = page.locator("#settings-btn")
+        settings_button.click()
+    
+        # Wait for the settings modal to become visible
+        page.wait_for_selector("#settings-modal.active", state="visible")
+    
+        # Enter the API key
+        api_key_input = page.locator("#api-key-update")
+        api_key_input.fill(API_KEY)
+    
+        # Select OpenAI as the API provider
+        base_url_select = page.locator("#base-url-select")
+        base_url_select.select_option("openai")
+    
+        # Select a model
+        from test_utils import select_recommended_test_model
+        selected_model = select_recommended_test_model(page)
+    
+        # Settings auto-save, wait and close
+        page.wait_for_timeout(1000)
+        close_button = page.locator("#close-settings")
+        close_button.click()
+    
+        # Wait for the settings modal to be closed
+        page.wait_for_selector("#settings-modal", state="hidden")
+    
+        # STEP 4: Create a test function
+        # Open the function modal
+        function_btn = page.locator("#function-btn")
+        function_btn.click()
+    
+        # Wait for the function modal to be visible
+        function_modal = page.locator("#function-modal")
+        expect(function_modal).to_be_visible()
+    
+        # First, set the function code - the name field will be auto-populated
+        function_name = "test_shared_function"
+        function_code = f"""function {function_name}(text) {{
+      return {{
+        message: "You said: " + text,
+        timestamp: new Date().toISOString()
+      }};
+    }}"""
+    
+        function_code_input = page.locator("#function-code")
+        function_code_input.scroll_into_view_if_needed()
+        expect(function_code_input).to_be_visible()
+        function_code_input.fill(function_code)
+    
+        # Trigger the auto-population by firing an input event
+        page.evaluate("""() => {
+            const codeTextarea = document.getElementById('function-code');
+            if (codeTextarea) {
+                codeTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        }""")
+    
+        # Wait a moment for auto-population to happen
+        # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
+    
+        # Verify the function name field was auto-populated
+        name_value = page.evaluate("""() => {
+            const nameField = document.getElementById('function-name');
+            return nameField ? nameField.value : null;
+        }""")
+    
+        if name_value:
+            assert name_value == function_name, f"Expected '{function_name}', got '{name_value}'"
+    
+        # Validate the function
+        validate_btn = page.locator("#function-validate-btn")
+        validate_btn.scroll_into_view_if_needed()
+        expect(validate_btn).to_be_visible()
+        validate_btn.click()
+    
+        # Wait for validation result
+        validation_result = page.locator("#function-validation-result")
+        page.wait_for_selector("#function-validation-result:not(:empty)", state="visible")
+        expect(validation_result).to_contain_text("Library validated successfully")
+    
+        # Save the function
+        save_btn = page.locator("#function-editor-form button[type='submit']")
+        save_btn.scroll_into_view_if_needed()
+        expect(save_btn).to_be_visible()
+        save_btn.click()
+    
+        # Verify the function was added to the list
+        function_list = page.locator("#function-list")
+        page.wait_for_selector(f".function-item-name:has-text('{function_name}')", state="visible")
+        expect(function_list.locator(f".function-item-name:has-text('{function_name}')")).to_be_visible()
+    
+        # Take a screenshot after adding the function
+        screenshot_with_markdown(page, "function_library_sharing_function_added", {
+            "step": "Added test function for sharing",
+            "function_name": function_name
+        })
+    
+        # Close the function modal
+        close_function_modal_btn = page.locator("#close-function-modal")
+        close_function_modal_btn.click()
+    
+        # STEP 5: Share the function library
+        # Open the share modal
+        share_btn = page.locator("#share-btn")
+        share_btn.click()
+    
+        # Wait for the share modal to be visible
+        share_modal = page.locator("#share-modal")
+        expect(share_modal).to_be_visible()
+    
+        # Set a test password
+        test_password = "TestPassword123"
+        password_input = page.locator("#share-password")
+        password_input.fill(test_password)
+    
+        # Check the function library checkbox
+        function_library_checkbox = page.locator("#share-function-library")
+        function_library_checkbox.check()
+    
+        # Also check API key checkbox to ensure we have something to share
+        api_key_checkbox = page.locator("#share-api-key")
+        api_key_checkbox.check()
+    
+        # Take a screenshot of the share modal
+        screenshot_with_markdown(page, "function_library_sharing_share_modal", {
+            "step": "Share modal with function library option checked",
+            "password": test_password,
+            "function_library_checked": function_library_checkbox.is_checked(),
+            "api_key_checked": api_key_checkbox.is_checked()
+        })
+    
+        # Generate the share link
+        generate_link_btn = page.locator("#generate-share-link-btn")
+        generate_link_btn.click()
+    
+        # Wait a moment for the link generation process
+        # page.wait_for_timeout(1000)  # TODO: Replace with proper wait condition
+    
+        # Take a screenshot after clicking generate button
+        screenshot_with_markdown(page, "function_library_sharing_after_generate", {
+            "step": "After clicking generate link button",
+            "container_visible": page.locator("#generated-link-container").is_visible()
+        })
+    
+        # Wait for the link to be generated
+        generated_link_container = page.locator("#generated-link-container")
+        expect(generated_link_container).to_be_visible()
+    
+        # Get the generated link
+        generated_link = page.locator("#generated-link").input_value()
+    
+        # Validate the link is not empty and has the expected format
+        assert generated_link, "Generated link is empty"
+        assert "#gpt=" in generated_link, f"Generated link doesn't contain #gpt= fragment: {generated_link}"
+    
+        # Take a screenshot of the generated link
+        screenshot_with_markdown(page, "function_library_sharing_generated_link", {
+            "step": "Generated share link",
+            "link_length": len(generated_link),
+            "link_preview": generated_link[:100] + "..." if len(generated_link) > 100 else generated_link,
+            "has_gpt_fragment": "#gpt=" in generated_link
+        })
+    
+        # Close the share modal
+        close_share_modal_btn = page.locator("#close-share-modal")
+        close_share_modal_btn.click()
+    
+        # STEP 6: Delete the function
+        # Open the function modal again
+        function_btn.click()
+        expect(function_modal).to_be_visible()
+    
+        # Delete the function
+        # Handle the confirmation dialog
+        page.on("dialog", lambda dialog: dialog.accept())
+    
+        # Find and click the delete button for the function
+        # The delete button is in the same function-item div as the function name
+        function_item = page.locator(f"#function-list .function-item").filter(has=page.locator(f".function-item-name:has-text('{function_name}')"))
+        delete_btn = function_item.locator(".function-item-delete")
+>       delete_btn.click()
+
+test_function_library_sharing.py:212: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.13/site-packages/playwright/sync_api/_generated.py:15512: in click
+    self._sync(
+.venv/lib/python3.13/site-packages/playwright/_impl/_locator.py:160: in click
+    return await self._frame.click(self._selector, strict=True, **params)
+.venv/lib/python3.13/site-packages/playwright/_impl/_frame.py:488: in click
+    await self._channel.send("click", locals_to_params(locals()))
+.venv/lib/python3.13/site-packages/playwright/_impl/_connection.py:61: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x1057b6e40>
+cb = <function Channel.send.<locals>.<lambda> at 0x1060091c0>
+is_internal = False
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        st: List[inspect.FrameInfo] = getattr(task, "__pw_stack__", inspect.stack())
+        parsed_st = _extract_stack_trace_information_from_stack(st, is_internal)
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Locator.click: Timeout 10000ms exceeded.
+E           Call log:
+E             - waiting for locator("#function-list .function-item").filter(has=locator(".function-item-name:has-text('test_shared_function')")).locator(".function-item-delete")
+
+.venv/lib/python3.13/site-packages/playwright/_impl/_connection.py:528: TimeoutError
+----------------------------- Captured stdout call -----------------------------
+welcome-modal is visible, closing it
+Found close button with selector: #close-welcome-modal
+Clicked close button
+Modal closed successfully
+Available options in model select dropdown:
+  Option: -- Default models (API unavailable) -- (value: , disabled: True)
+  Option: 🇺🇸 Gpt 4o Mini (value: gpt-4o-mini, disabled: False)
+  Option: 🇺🇸 Gpt 4o (value: gpt-4o, disabled: False)
+  Option: 🇺🇸 Gpt 4 Turbo (value: gpt-4-turbo, disabled: False)
+  Option: 🇺🇸 Gpt 3.5 Turbo (value: gpt-3.5-turbo, disabled: False)
+Recommended model not available. Selecting first option: gpt-4o-mini
+--------------------------- Captured stdout teardown ---------------------------
+HTTP server process already terminated
+______________ test_all_functions_callable_by_default[chromium1] _______________
+
+page = <Page url='http://localhost:8000/'>
+serve_hacka_re = 'http://localhost:8000'
+api_key = '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'
+
+    def test_all_functions_callable_by_default(page: Page, serve_hacka_re, api_key):
+        """Test that all functions are callable by default when no tags are present."""
+        # Set up console error logging
+        setup_console_logging(page)
+    
+        # Navigate to the page
+        page.goto(serve_hacka_re)
+    
+        # Dismiss welcome modal if present
+        dismiss_welcome_modal(page)
+    
+        # Dismiss settings modal if already open
+        # Configure API key and model
+>       configure_api_key_and_model(page, api_key)
+
+test_function_parsing_logic.py:28: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+page = <Page url='http://localhost:8000/'>
+api_key = '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'
+
+    def configure_api_key_and_model(page, api_key):
+        """Configure API key and select a function calling model."""
+        print("Configuring API key and model...")
+    
+        # Click the settings button
+        settings_button = page.locator("#settings-btn")
+        settings_button.click(timeout=1000)
+    
+        # Wait for the settings modal to become visible
+        page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
+    
+        # Take a screenshot of the settings modal for debugging
+        page.screenshot(path="_tests/playwright/videos/settings_modal_initial.png")
+    
+        # Enter the API key from .env
+        api_key_input = page.locator("#api-key-update")
+        api_key_input.fill(api_key)
+    
+        # Get OPENAI_API_BASE and OPENAI_API_MODEL from conftest.py
+        import sys
+        import os
+        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+>       from conftest import OPENAI_API_BASE, OPENAI_API_MODEL
+E       ImportError: cannot import name 'OPENAI_API_BASE' from 'conftest' (/Users/user/dev/hacka.re/_tests/playwright/shodan/conftest.py)
+
+function_calling_api/helpers/setup_helpers.py:46: ImportError
+----------------------------- Captured stdout call -----------------------------
+welcome-modal is visible, closing it
+Found close button with selector: #close-welcome-modal
+Clicked close button
+Modal closed successfully
+Configuring API key and model...
+--------------------------- Captured stdout teardown ---------------------------
+HTTP server process already terminated
+________________ test_only_tagged_functions_callable[chromium1] ________________
+
+page = <Page url='http://localhost:8000/'>
+serve_hacka_re = 'http://localhost:8000'
+api_key = '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'
+
+    def test_only_tagged_functions_callable(page: Page, serve_hacka_re, api_key):
+        """Test that only tagged functions are callable when at least one tag is present."""
+        # Set up console error logging
+        setup_console_logging(page)
+    
+        # Navigate to the page
+        page.goto(serve_hacka_re)
+    
+        # Dismiss welcome modal if present
+        dismiss_welcome_modal(page)
+    
+        # Dismiss settings modal if already open
+        # Configure API key and model
+>       configure_api_key_and_model(page, api_key)
+
+test_function_parsing_logic.py:149: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+page = <Page url='http://localhost:8000/'>
+api_key = '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'
+
+    def configure_api_key_and_model(page, api_key):
+        """Configure API key and select a function calling model."""
+        print("Configuring API key and model...")
+    
+        # Click the settings button
+        settings_button = page.locator("#settings-btn")
+        settings_button.click(timeout=1000)
+    
+        # Wait for the settings modal to become visible
+        page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
+    
+        # Take a screenshot of the settings modal for debugging
+        page.screenshot(path="_tests/playwright/videos/settings_modal_initial.png")
+    
+        # Enter the API key from .env
+        api_key_input = page.locator("#api-key-update")
+        api_key_input.fill(api_key)
+    
+        # Get OPENAI_API_BASE and OPENAI_API_MODEL from conftest.py
+        import sys
+        import os
+        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+>       from conftest import OPENAI_API_BASE, OPENAI_API_MODEL
+E       ImportError: cannot import name 'OPENAI_API_BASE' from 'conftest' (/Users/user/dev/hacka.re/_tests/playwright/shodan/conftest.py)
+
+function_calling_api/helpers/setup_helpers.py:46: ImportError
+----------------------------- Captured stdout call -----------------------------
+welcome-modal is visible, closing it
+Found close button with selector: #close-welcome-modal
+Clicked close button
+Modal closed successfully
+Configuring API key and model...
+--------------------------- Captured stdout teardown ---------------------------
+HTTP server process already terminated
+________________________ test_tool_tag_works[chromium1] ________________________
+
+page = <Page url='http://localhost:8000/'>
+serve_hacka_re = 'http://localhost:8000'
+api_key = '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'
+
+    def test_tool_tag_works(page: Page, serve_hacka_re, api_key):
+        """Test that the @tool tag works the same as @callable."""
+        # Set up console error logging
+        setup_console_logging(page)
+    
+        # Navigate to the page
+        page.goto(serve_hacka_re)
+    
+        # Dismiss welcome modal if present
+        dismiss_welcome_modal(page)
+    
+        # Dismiss settings modal if already open
+        # Configure API key and model
+>       configure_api_key_and_model(page, api_key)
+
+test_function_parsing_logic.py:272: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+page = <Page url='http://localhost:8000/'>
+api_key = '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'
+
+    def configure_api_key_and_model(page, api_key):
+        """Configure API key and select a function calling model."""
+        print("Configuring API key and model...")
+    
+        # Click the settings button
+        settings_button = page.locator("#settings-btn")
+        settings_button.click(timeout=1000)
+    
+        # Wait for the settings modal to become visible
+        page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
+    
+        # Take a screenshot of the settings modal for debugging
+        page.screenshot(path="_tests/playwright/videos/settings_modal_initial.png")
+    
+        # Enter the API key from .env
+        api_key_input = page.locator("#api-key-update")
+        api_key_input.fill(api_key)
+    
+        # Get OPENAI_API_BASE and OPENAI_API_MODEL from conftest.py
+        import sys
+        import os
+        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+>       from conftest import OPENAI_API_BASE, OPENAI_API_MODEL
+E       ImportError: cannot import name 'OPENAI_API_BASE' from 'conftest' (/Users/user/dev/hacka.re/_tests/playwright/shodan/conftest.py)
+
+function_calling_api/helpers/setup_helpers.py:46: ImportError
+----------------------------- Captured stdout call -----------------------------
+welcome-modal is visible, closing it
+Found close button with selector: #close-welcome-modal
+Clicked close button
+Modal closed successfully
+Configuring API key and model...
+--------------------------- Captured stdout teardown ---------------------------
+HTTP server process already terminated
+___________________ test_single_line_comment_tags[chromium1] ___________________
+
+page = <Page url='http://localhost:8000/'>
+serve_hacka_re = 'http://localhost:8000'
+api_key = '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'
+
+    def test_single_line_comment_tags(page: Page, serve_hacka_re, api_key):
+        """Test that single-line comment tags work."""
+        # Set up console error logging
+        setup_console_logging(page)
+    
+        # Navigate to the page
+        page.goto(serve_hacka_re)
+    
+        # Dismiss welcome modal if present
+        dismiss_welcome_modal(page)
+    
+        # Dismiss settings modal if already open
+        # Configure API key and model
+>       configure_api_key_and_model(page, api_key)
+
+test_function_parsing_logic.py:395: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+page = <Page url='http://localhost:8000/'>
+api_key = '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'
+
+    def configure_api_key_and_model(page, api_key):
+        """Configure API key and select a function calling model."""
+        print("Configuring API key and model...")
+    
+        # Click the settings button
+        settings_button = page.locator("#settings-btn")
+        settings_button.click(timeout=1000)
+    
+        # Wait for the settings modal to become visible
+        page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
+    
+        # Take a screenshot of the settings modal for debugging
+        page.screenshot(path="_tests/playwright/videos/settings_modal_initial.png")
+    
+        # Enter the API key from .env
+        api_key_input = page.locator("#api-key-update")
+        api_key_input.fill(api_key)
+    
+        # Get OPENAI_API_BASE and OPENAI_API_MODEL from conftest.py
+        import sys
+        import os
+        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+>       from conftest import OPENAI_API_BASE, OPENAI_API_MODEL
+E       ImportError: cannot import name 'OPENAI_API_BASE' from 'conftest' (/Users/user/dev/hacka.re/_tests/playwright/shodan/conftest.py)
+
+function_calling_api/helpers/setup_helpers.py:46: ImportError
+----------------------------- Captured stdout call -----------------------------
+welcome-modal is visible, closing it
+Found close button with selector: #close-welcome-modal
+Clicked close button
+Modal closed successfully
+Configuring API key and model...
+--------------------------- Captured stdout teardown ---------------------------
+HTTP server process already terminated
+_______________________ test_mixed_tag_types[chromium1] ________________________
+
+page = <Page url='http://localhost:8000/'>
+serve_hacka_re = 'http://localhost:8000'
+api_key = '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'
+
+    def test_mixed_tag_types(page: Page, serve_hacka_re, api_key):
+        """Test that mixed tag types work together."""
+        # Set up console error logging
+        setup_console_logging(page)
+    
+        # Navigate to the page
+        page.goto(serve_hacka_re)
+    
+        # Dismiss welcome modal if present
+        dismiss_welcome_modal(page)
+    
+        # Dismiss settings modal if already open
+        # Configure API key and model
+>       configure_api_key_and_model(page, api_key)
+
+test_function_parsing_logic.py:519: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+page = <Page url='http://localhost:8000/'>
+api_key = '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'
+
+    def configure_api_key_and_model(page, api_key):
+        """Configure API key and select a function calling model."""
+        print("Configuring API key and model...")
+    
+        # Click the settings button
+        settings_button = page.locator("#settings-btn")
+        settings_button.click(timeout=1000)
+    
+        # Wait for the settings modal to become visible
+        page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
+    
+        # Take a screenshot of the settings modal for debugging
+        page.screenshot(path="_tests/playwright/videos/settings_modal_initial.png")
+    
+        # Enter the API key from .env
+        api_key_input = page.locator("#api-key-update")
+        api_key_input.fill(api_key)
+    
+        # Get OPENAI_API_BASE and OPENAI_API_MODEL from conftest.py
+        import sys
+        import os
+        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+>       from conftest import OPENAI_API_BASE, OPENAI_API_MODEL
+E       ImportError: cannot import name 'OPENAI_API_BASE' from 'conftest' (/Users/user/dev/hacka.re/_tests/playwright/shodan/conftest.py)
+
+function_calling_api/helpers/setup_helpers.py:46: ImportError
+----------------------------- Captured stdout call -----------------------------
+welcome-modal is visible, closing it
+Found close button with selector: #close-welcome-modal
+Clicked close button
+Modal closed successfully
+Configuring API key and model...
+--------------------------- Captured stdout teardown ---------------------------
+HTTP server process already terminated
+=============================== warnings summary ===============================
+test_complete_mcp_share_flow.py:8
+  /Users/user/dev/hacka.re/_tests/playwright/test_complete_mcp_share_flow.py:8: PytestUnknownMarkWarning: Unknown pytest.mark.feature_test - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.feature_test
+
+test_cross_tab_loop_fix.py:8
+  /Users/user/dev/hacka.re/_tests/playwright/test_cross_tab_loop_fix.py:8: PytestUnknownMarkWarning: Unknown pytest.mark.feature_test - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.feature_test
+
+test_cross_tab_sync_optimization.py:7
+  /Users/user/dev/hacka.re/_tests/playwright/test_cross_tab_sync_optimization.py:7: PytestUnknownMarkWarning: Unknown pytest.mark.feature_test - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.feature_test
+
+test_cross_tab_sync_optimization.py:59
+  /Users/user/dev/hacka.re/_tests/playwright/test_cross_tab_sync_optimization.py:59: PytestUnknownMarkWarning: Unknown pytest.mark.feature_test - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.feature_test
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test_function_editing.py::test_function_editing[chromium0] - playwrigh...
+FAILED test_function_group_colors.py::test_function_collection_colors[chromium0]
+FAILED test_function_icons.py::test_function_calling_icons[chromium0] - Impor...
+FAILED test_function_icons.py::test_multiple_function_calls_colors[chromium0]
+FAILED test_function_library_copy.py::test_function_library_copy_button_exists[chromium0]
+FAILED test_function_library_copy.py::test_function_library_copy_functionality[chromium0]
+FAILED test_function_library_multi.py::test_function_library_multi[chromium0]
+FAILED test_function_library_sharing.py::test_function_library_sharing[chromium0]
+FAILED test_function_parsing_logic.py::test_all_functions_callable_by_default[chromium0]
+FAILED test_function_parsing_logic.py::test_only_tagged_functions_callable[chromium0]
+FAILED test_function_parsing_logic.py::test_tool_tag_works[chromium0] - Impor...
+FAILED test_function_parsing_logic.py::test_single_line_comment_tags[chromium0]
+FAILED test_function_parsing_logic.py::test_mixed_tag_types[chromium0] - Impo...
+FAILED test_function_editing.py::test_function_editing[chromium1] - playwrigh...
+FAILED test_function_group_colors.py::test_function_collection_colors[chromium1]
+FAILED test_function_icons.py::test_function_calling_icons[chromium1] - Impor...
+FAILED test_function_icons.py::test_multiple_function_calls_colors[chromium1]
+FAILED test_function_library_copy.py::test_function_library_copy_button_exists[chromium1]
+FAILED test_function_library_copy.py::test_function_library_copy_functionality[chromium1]
+FAILED test_function_library_multi.py::test_function_library_multi[chromium1]
+FAILED test_function_library_sharing.py::test_function_library_sharing[chromium1]
+FAILED test_function_parsing_logic.py::test_all_functions_callable_by_default[chromium1]
+FAILED test_function_parsing_logic.py::test_only_tagged_functions_callable[chromium1]
+FAILED test_function_parsing_logic.py::test_tool_tag_works[chromium1] - Impor...
+FAILED test_function_parsing_logic.py::test_single_line_comment_tags[chromium1]
+FAILED test_function_parsing_logic.py::test_mixed_tag_types[chromium1] - Impo...
+==== 26 failed, 18 passed, 846 deselected, 4 warnings in 159.11s (0:02:39) =====
+Generating test results markdown files...
+No arguments provided. Using default files.
+Processing default files...
+Generating markdown report for 'test_output.log' -> 'test_results.md'...
+Markdown report generated: test_results.md
+You can view it with: glow -p test_results.md
+Warning: Output file 'run_tests.out_bundle.md' is newer than input file 'run_tests.out'.
+This suggests the bundle has already been generated for this test run.
+To regenerate, delete 'run_tests.out_bundle.md' first.
+
+All function test output, including any Ctrl+C interruptions, has been captured to run_function_tests.out
+A bundled markdown report has been generated at run_tests.out_bundle.md
+You can view the markdown report with: glow -p run_tests.out_bundle.md
+These files can be used by the coding assistant LLM to analyze test results
+Stopping HTTP server...
+===== Stopping HTTP Server for hacka.re Tests =====
+Found server process with PID: 44724
+Stopping server...
+Server stopped.
+Removed PID file: /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt
+==================================================
+Server stopped.
