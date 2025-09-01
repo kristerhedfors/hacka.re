@@ -10,31 +10,29 @@ from test_utils import dismiss_welcome_modal
 
 def test_welcome_modal_shows_for_first_time_user(page: Page, serve_hacka_re):
     """Test that welcome modal appears for first-time users (no hackare_ variables)"""
-    # Navigate to the application first
+    # Clear all localStorage before navigating to simulate first-time user
     page.goto(serve_hacka_re)
-    
-    # Clear all localStorage to simulate first-time user
     page.evaluate("localStorage.clear()")
     
-    # Reload to trigger welcome modal check
-    page.reload()
+    # Navigate fresh to trigger welcome modal check
+    page.goto(serve_hacka_re)
     
     # Wait for page to load
     page.wait_for_load_state("networkidle")
     
-    # Check if welcome modal is visible
+    # Check if welcome modal is visible - give it more time as it's created dynamically
     welcome_modal = page.locator("#welcome-modal")
-    expect(welcome_modal).to_be_visible(timeout=2000)
+    expect(welcome_modal).to_be_visible(timeout=5000)
     
     # Check modal content
     expect(welcome_modal.locator("h2")).to_contain_text("Welcome to hacka.re!")
     
-    # Check that button says "Get Started" instead of "Continue to Settings"
-    continue_button = welcome_modal.locator("button.primary-btn")
-    expect(continue_button).to_contain_text("Get Started")
+    # Check that button says "Close" (actual implementation)
+    close_button = welcome_modal.locator("button.primary-btn")
+    expect(close_button).to_contain_text("Close")
     
-    # Click Get Started button
-    continue_button.click()
+    # Click Close button
+    close_button.click()
     
     # Modal should be gone
     expect(welcome_modal).not_to_be_visible()

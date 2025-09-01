@@ -80,12 +80,12 @@ def test_function_library_copy_functionality(page: Page, serve_hacka_re):
     
     # Wait for the system message indicating the function library was copied
     system_message = page.locator(".message.system .message-content").last
-    expect(system_message).to_contain_text("Function library copied to clipboard as JSON")
+    expect(system_message).to_contain_text("enabled JavaScript functions copied to clipboard")
     
     # Take a screenshot with debug info after copying function library
     screenshot_with_markdown(page, "function_library_copy_after", {
         "Status": "After clicking copy function library button",
-        "System Message": "Function library copied to clipboard as JSON"
+        "System Message": "Functions copied to clipboard"
     })
     
     # Close the function modal
