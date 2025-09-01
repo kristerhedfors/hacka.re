@@ -36,7 +36,7 @@ window.WelcomeManager = (function() {
                 // Hero message
                 const heroMessage = document.createElement('div');
                 heroMessage.style.cssText = 'text-align: center; margin-bottom: 20px; color: var(--text-color-secondary); font-size: 16px; line-height: 1.6;';
-                heroMessage.innerHTML = 'Your privacy-first AI chat interface';
+                heroMessage.innerHTML = 'Your privacy-first AI chat interface.';
                 
                 // Feature cards container
                 const featuresContainer = document.createElement('div');
