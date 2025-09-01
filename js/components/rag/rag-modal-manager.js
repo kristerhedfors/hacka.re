@@ -240,7 +240,8 @@ window.RAGModalManager = (function() {
                 }
                 
                 updateDocumentStatus(docId, true);
-                showSuccess(`${documentNames[docId]} enabled for RAG search`);
+                // Silent update - no alert message
+                console.log(`${documentNames[docId]} enabled for RAG search`);
             } else {
                 // Not indexed yet, need to index first
                 console.log(`${documentNames[docId]} not indexed, indexing now...`);
@@ -300,7 +301,8 @@ window.RAGModalManager = (function() {
                 }
             }
             
-            showInfo(`${documentNames[docId]} disabled for search (index kept in memory)`);
+            // Silent update - no alert message
+            console.log(`${documentNames[docId]} disabled for search (index kept in memory)`);
             
             // Update stats if available
             if (window.RAGIndexStatsManager) {
