@@ -4,12 +4,12 @@ Port: 8000
 Project Root: /Users/user/dev/hacka.re
 ==================================================
 Checking for existing HTTP server processes on port 8000...
-Found existing processes: 6098
+Found existing processes: 16558
 Killing existing processes...
 Processes killed.
 Changing to project root directory: /Users/user/dev/hacka.re
 Starting Python HTTP server on port 8000...
-Server started successfully with PID: 7495
+Server started successfully with PID: 18799
 Server is now running at http://localhost:8000
 Server PID saved to: /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt
 ==================================================
@@ -46,7 +46,7 @@ test_modals.py::test_settings_modal[chromium1] PASSED                    [ 66%]
 test_modals.py::test_prompts_modal[chromium1] PASSED                     [ 83%]
 test_modals.py::test_share_modal[chromium1] PASSED                       [100%]
 
-============================== 6 passed in 40.86s ==============================
+============================== 6 passed in 9.51s ===============================
 ✅ Settings Modal: PASSED
 
 ----------------------------------------
@@ -74,7 +74,7 @@ test_function_modal.py::test_function_modal_elements[chromium0] PASSED   [ 50%]
 test_function_modal.py::test_function_modal_basic[chromium1] PASSED      [ 75%]
 test_function_modal.py::test_function_modal_elements[chromium1] PASSED   [100%]
 
-============================== 4 passed in 26.70s ==============================
+============================== 4 passed in 6.19s ===============================
 ✅ Function Modal: PASSED
 
 ----------------------------------------
@@ -103,4 +103,122 @@ test_rag_modal.py::test_rag_modal_default_prompts_section[chromium0] PASSED [ 22
 test_rag_modal.py::test_rag_modal_search_section[chromium0] PASSED       [ 27%]
 test_rag_modal.py::test_rag_modal_user_bundles_section[chromium0] PASSED [ 33%]
 test_rag_modal.py::test_rag_modal_keyboard_interaction[chromium0] PASSED [ 38%]
-test_rag_modal.py::test_rag_enable_disable_functionality[chromium0] 
+test_rag_modal.py::test_rag_enable_disable_functionality[chromium0] PASSED [ 44%]
+test_rag_modal.py::test_rag_default_prompts_indexing_status[chromium0] PASSED [ 50%]
+test_rag_modal.py::test_rag_button_visibility[chromium1] FAILED          [ 55%]
+test_rag_modal.py::test_rag_modal_open_close[chromium1] PASSED           [ 61%]
+test_rag_modal.py::test_rag_modal_structure[chromium1] PASSED            [ 66%]
+test_rag_modal.py::test_rag_modal_default_prompts_section[chromium1] PASSED [ 72%]
+test_rag_modal.py::test_rag_modal_search_section[chromium1] PASSED       [ 77%]
+test_rag_modal.py::test_rag_modal_user_bundles_section[chromium1] PASSED [ 83%]
+test_rag_modal.py::test_rag_modal_keyboard_interaction[chromium1] PASSED [ 88%]
+test_rag_modal.py::test_rag_enable_disable_functionality[chromium1] PASSED [ 94%]
+test_rag_modal.py::test_rag_default_prompts_indexing_status[chromium1] PASSED [100%]
+
+=================================== FAILURES ===================================
+____________________ test_rag_button_visibility[chromium0] _____________________
+
+page = <Page url='http://localhost:8000/'>
+serve_hacka_re = 'http://localhost:8000'
+
+    def test_rag_button_visibility(page: Page, serve_hacka_re):
+        """Test that the RAG button is visible and properly positioned in the toolbar."""
+        # Navigate to the application
+        page.goto(serve_hacka_re)
+    
+        # Dismiss welcome modal if present
+        dismiss_welcome_modal(page)
+        dismiss_settings_modal(page)
+    
+        # Check that the RAG button is visible
+        rag_button = page.locator("#rag-btn")
+        expect(rag_button).to_be_visible()
+    
+        # Check button properties
+>       expect(rag_button).to_have_attribute("title", "Knowledge Base")
+E       AssertionError: Locator expected to have attribute 'Knowledge Base'
+E       Actual value: None 
+E       Call log:
+E         - LocatorAssertions.to_have_attribute with timeout 5000ms
+E         - waiting for locator("#rag-btn")
+E           9 × locator resolved to <button id="rag-btn" class="icon-btn">…</button>
+E             - unexpected value "null"
+
+test_rag_modal.py:20: AssertionError
+----------------------------- Captured stdout call -----------------------------
+settings-modal is visible, closing it
+Clicked close-settings button
+Settings modal closed successfully
+--------------------------- Captured stdout teardown ---------------------------
+HTTP server process already terminated
+____________________ test_rag_button_visibility[chromium1] _____________________
+
+page = <Page url='http://localhost:8000/'>
+serve_hacka_re = 'http://localhost:8000'
+
+    def test_rag_button_visibility(page: Page, serve_hacka_re):
+        """Test that the RAG button is visible and properly positioned in the toolbar."""
+        # Navigate to the application
+        page.goto(serve_hacka_re)
+    
+        # Dismiss welcome modal if present
+        dismiss_welcome_modal(page)
+        dismiss_settings_modal(page)
+    
+        # Check that the RAG button is visible
+        rag_button = page.locator("#rag-btn")
+        expect(rag_button).to_be_visible()
+    
+        # Check button properties
+>       expect(rag_button).to_have_attribute("title", "Knowledge Base")
+E       AssertionError: Locator expected to have attribute 'Knowledge Base'
+E       Actual value: None 
+E       Call log:
+E         - LocatorAssertions.to_have_attribute with timeout 5000ms
+E         - waiting for locator("#rag-btn")
+E           9 × locator resolved to <button id="rag-btn" class="icon-btn">…</button>
+E             - unexpected value "null"
+
+test_rag_modal.py:20: AssertionError
+----------------------------- Captured stdout call -----------------------------
+settings-modal is visible, closing it
+Clicked close-settings button
+Settings modal closed successfully
+--------------------------- Captured stdout teardown ---------------------------
+HTTP server process already terminated
+=========================== short test summary info ============================
+FAILED test_rag_modal.py::test_rag_button_visibility[chromium0] - AssertionEr...
+FAILED test_rag_modal.py::test_rag_button_visibility[chromium1] - AssertionEr...
+======================== 2 failed, 16 passed in 36.35s =========================
+❌ RAG Modal: FAILED
+
+----------------------------------------
+Testing: Modal Coordination
+Description: Multiple modal interactions
+File: test_modal_coordination.py
+----------------------------------------
+⚠️  Test file not found: test_modal_coordination.py
+
+==========================================
+Modal Test Summary
+==========================================
+Total test groups: 3
+Passed: 2
+Failed: 1
+
+No arguments provided. Using default files.
+Processing default files...
+Generating markdown report for 'test_output.log' -> 'test_results.md'...
+Markdown report generated: test_results.md
+You can view it with: glow -p test_results.md
+Warning: Output file 'run_tests.out_bundle.md' is newer than input file 'run_tests.out'.
+This suggests the bundle has already been generated for this test run.
+To regenerate, delete 'run_tests.out_bundle.md' first.
+Output saved to: run_modal_tests.out
+Individual logs saved as: modal_test_*.log
+===== Stopping HTTP Server for hacka.re Tests =====
+Found server process with PID: 18799
+Stopping server...
+Server stopped.
+Removed PID file: /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt
+==================================================
