@@ -206,37 +206,53 @@ window.RAGModalManager = (function() {
         };
         
         if (isChecked) {
-            // Enable document indexing
-            if (docId === 'cra' && window.ragRegulationsService) {
-                // Special handling for CRA with actual implementation
-                console.log('RAGModalManager: Enabling CRA regulations...');
-                window.ragRegulationsService.initialize().then(() => {
-                    const stats = window.ragRegulationsService.getStatistics();
-                    if (stats && stats.regulationCount > 0) {
-                        updateDocumentStatus(docId, true);
-                        showSuccess(`CRA regulations indexed: ${stats.regulationCount} regulations loaded`);
-                        
-                        // Update stats if available
-                        if (window.RAGIndexStatsManager) {
-                            window.RAGIndexStatsManager.updateStats();
-                        }
-                    }
-                }).catch(error => {
-                    console.error('Failed to enable CRA regulations:', error);
-                    event.target.checked = false;
-                    updateDocumentStatus(docId, false);
-                    alert('Failed to enable CRA regulations. Check console for details.');
-                });
-            } else {
-                // For AIA and DORA, actually trigger indexing
-                console.log(`RAGModalManager: Enabling ${documentNames[docId]}...`);
+            // Enable document for RAG search
+            console.log(`RAGModalManager: Enabling ${documentNames[docId]} for RAG search...`);
+            
+            // Check if already indexed
+            const isIndexed = window.RAGCoordinator && window.RAGCoordinator.checkDocumentIndexed ?
+                window.RAGCoordinator.checkDocumentIndexed(docId) : false;
+            
+            if (isIndexed) {
+                // Already indexed, just enable it for search
+                console.log(`${documentNames[docId]} already indexed, enabling for search`);
                 
-                // Trigger actual indexing via RAGCoordinator
+                // Mark as enabled in localStorage
+                try {
+                    const euDocsKey = 'rag_eu_documents_index';
+                    let existingDocs = {};
+                    const existing = CoreStorageService.getValue(euDocsKey);
+                    if (existing && typeof existing === 'object') {
+                        existingDocs = existing;
+                    }
+                    
+                    if (!existingDocs[docId]) {
+                        existingDocs[docId] = {
+                            name: documentNames[docId],
+                            documentId: docId,
+                            enabled: true,
+                            hasVectors: true
+                        };
+                    } else {
+                        existingDocs[docId].enabled = true;
+                    }
+                    
+                    CoreStorageService.setValue(euDocsKey, existingDocs);
+                } catch (e) {
+                    console.log('Could not update EU docs index');
+                }
+                
+                updateDocumentStatus(docId, true);
+                showSuccess(`${documentNames[docId]} enabled for RAG search`);
+            } else {
+                // Not indexed yet, need to index first
+                console.log(`${documentNames[docId]} not indexed, indexing now...`);
+                
                 if (window.RAGCoordinator && window.RAGCoordinator.refreshDocument) {
                     // This will perform the actual indexing with embeddings
                     window.RAGCoordinator.refreshDocument(docId).then(() => {
-                        // Status will be updated by refreshDocument
                         console.log(`${documentNames[docId]} indexing completed`);
+                        updateDocumentStatus(docId, true);
                     }).catch(error => {
                         console.error(`Failed to index ${documentNames[docId]}:`, error);
                         event.target.checked = false;
@@ -244,46 +260,50 @@ window.RAGModalManager = (function() {
                         alert(`Failed to index ${documentNames[docId]}. Check console for details.`);
                     });
                 } else {
-                    // Fallback if RAGCoordinator not available
-                    updateDocumentStatus(docId, true);
-                    showSuccess(`${documentNames[docId]} enabled for indexing`);
+                    console.error('RAGCoordinator not available');
+                    event.target.checked = false;
+                    alert('RAG system not available');
                 }
-                
-                // Update stats if available
-                if (window.RAGIndexStatsManager) {
-                    window.RAGIndexStatsManager.updateStats();
-                }
+            }
+            
+            // Update stats if available
+            if (window.RAGIndexStatsManager) {
+                window.RAGIndexStatsManager.updateStats();
             }
         } else {
-            // Disable document indexing
-            if (docId === 'cra' && window.ragRegulationsService) {
-                console.log('RAGModalManager: Disabling CRA regulations...');
-                window.ragRegulationsService.clearEncryptedStorage();
-                updateDocumentStatus(docId, false);
-                showInfo('CRA regulations disabled and removed from index');
-            } else {
-                console.log(`RAGModalManager: Disabling ${documentNames[docId]}...`);
-                
-                // Clear vectors from memory
-                if (window.ragVectorStore) {
-                    window.ragVectorStore.clearDocument(docId);
+            // Disable document for RAG search (but keep index in memory)
+            console.log(`RAGModalManager: Disabling ${documentNames[docId]} from RAG search (keeping index)...`);
+            
+            // Just mark as disabled in localStorage, don't clear vectors
+            try {
+                const euDocsKey = 'rag_eu_documents_index';
+                const existingDocs = CoreStorageService.getValue(euDocsKey);
+                if (existingDocs && existingDocs[docId]) {
+                    existingDocs[docId].enabled = false;
+                    CoreStorageService.setValue(euDocsKey, existingDocs);
                 }
-                
-                // Update localStorage to reflect disabled state
-                try {
-                    const euDocsKey = 'rag_eu_documents_index';
-                    const existingDocs = CoreStorageService.getValue(euDocsKey);
-                    if (existingDocs && existingDocs[docId]) {
-                        delete existingDocs[docId];
-                        CoreStorageService.setValue(euDocsKey, existingDocs);
-                    }
-                } catch (e) {
-                    console.log('Could not update EU docs index');
-                }
-                
-                updateDocumentStatus(docId, false);
-                showInfo(`${documentNames[docId]} disabled and cleared from memory`);
+            } catch (e) {
+                console.log('Could not update EU docs index');
             }
+            
+            // Update UI to show it's disabled but still indexed
+            const statusElement = document.getElementById(`${docId}-status`);
+            if (statusElement) {
+                const isIndexed = window.RAGCoordinator && window.RAGCoordinator.checkDocumentIndexed ?
+                    window.RAGCoordinator.checkDocumentIndexed(docId) : false;
+                
+                if (isIndexed) {
+                    statusElement.textContent = 'Indexed (disabled)';
+                    statusElement.classList.add('indexed');
+                    statusElement.classList.add('disabled');
+                } else {
+                    statusElement.textContent = 'Not indexed';
+                    statusElement.classList.remove('indexed');
+                    statusElement.classList.remove('disabled');
+                }
+            }
+            
+            showInfo(`${documentNames[docId]} disabled for search (index kept in memory)`);
             
             // Update stats if available
             if (window.RAGIndexStatsManager) {

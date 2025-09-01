@@ -256,6 +256,12 @@ window.VectorRAGService = (function() {
         const results = [];
 
         for (const [docId, document] of Object.entries(euDocuments)) {
+            // Check if document is enabled for search
+            if (document.enabled === false) {
+                console.log(`VectorRAGService: Document ${docId} is disabled for search`);
+                continue;
+            }
+            
             // Get vectors from in-memory store
             let items = null;
             

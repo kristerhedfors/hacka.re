@@ -388,6 +388,12 @@ window.RAGCoordinator = (function() {
 
         console.log(`RAGCoordinator: Refreshing ${documentNames[docId]}...`);
         
+        // Clear existing vectors from memory before re-indexing
+        if (vectorStore.hasVectors(docId)) {
+            console.log(`Clearing existing vectors for ${docId} before refresh`);
+            vectorStore.clearDocument(docId);
+        }
+        
         // Show loading state
         const statusElement = document.getElementById(`${docId}-status`);
         if (statusElement) {
@@ -595,6 +601,7 @@ window.RAGCoordinator = (function() {
                         name: documentNames[docId],
                         documentId: docId,
                         hasVectors: true,  // Vectors are in memory
+                        enabled: true,     // Enable for search after indexing
                         vectorCount: vectorIndex.length,
                         indexedAt: new Date().toISOString()
                     };
