@@ -256,27 +256,19 @@ function get_weather(location, units = "metric") {
                 if (!collectionId) {
                     collectionId = 'collection_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
                     
-                    // Prompt for collection name when adding new functions
+                    // Auto-generate collection name based on function names
                     let collectionName = 'Untitled Collection'; // Default fallback
                     
-                    // Check if we're in a test environment by looking for playwright indicators
-                    const isTestEnvironment = window.navigator.webdriver || 
-                                             window.__playwright || 
-                                             window.location.href.includes('localhost:8000');
-                    
-                    if (!isTestEnvironment) {
-                        const userCollectionName = prompt('Enter a name for this function collection:', 'Untitled Collection');
-                        if (userCollectionName === null) {
-                            // User cancelled
-                            return;
-                        }
-                        collectionName = userCollectionName || 'Untitled Collection';
-                    } else {
-                        // In test environment, use a default name based on function names
-                        const callableFunctionNames = validation.callableFunctions ? 
-                            validation.callableFunctions.map(f => f.name) : [];
-                        if (callableFunctionNames.length > 0) {
-                            collectionName = `Test Functions (${callableFunctionNames[0]})`;
+                    // Use function names to generate a meaningful collection name
+                    const callableFunctionNames = validation.callableFunctions ? 
+                        validation.callableFunctions.map(f => f.name) : [];
+                    if (callableFunctionNames.length > 0) {
+                        if (callableFunctionNames.length === 1) {
+                            collectionName = callableFunctionNames[0];
+                        } else if (callableFunctionNames.length === 2) {
+                            collectionName = `${callableFunctionNames[0]} & ${callableFunctionNames[1]}`;
+                        } else {
+                            collectionName = `${callableFunctionNames[0]} & ${callableFunctionNames.length - 1} more`;
                         }
                     }
                     
@@ -372,50 +364,51 @@ function get_weather(location, units = "metric") {
         
         
         /**
-         * Reset the function editor to the currently active functions (coordinated workflow)
+         * Load an example function into the editor
          */
         function clearFunctionEditor() {
+            // Reset any editing state
+            editingFunctionName = null;
+            
+            // Hide any validation results
             if (window.FunctionValidator) {
                 window.FunctionValidator.hideValidationResult(elements);
                 window.FunctionValidator.hideToolDefinition(elements);
             }
             
-            if (editingFunctionName) {
-                // If we're editing a function, reload just that function and its related functions
-                if (window.FunctionLibraryManager) {
-                    const loaded = window.FunctionLibraryManager.loadRelatedFunctionsForEditing(editingFunctionName, elements);
-                    if (!loaded) {
-                        // Function no longer exists, clear and reset
-                        editingFunctionName = null;
-                        if (window.FunctionCodeEditor) {
-                            window.FunctionCodeEditor.clearEditor(elements);
-                        }
-                    }
-                }
-            } else {
-                // Try to load active functions or use default
-                if (window.FunctionLibraryManager) {
-                    const loaded = window.FunctionLibraryManager.loadActiveFunctionsIntoEditor(elements);
-                    if (!loaded) {
-                        // No active functions, use default
-                        if (window.FunctionCodeEditor) {
-                            window.FunctionCodeEditor.clearEditor(elements);
-                            
-                            // Extract function name from default code
-                            setTimeout(() => {
-                                if (window.FunctionParser && window.FunctionCodeEditor) {
-                                    const functionName = window.FunctionParser.extractFunctionName(
-                                        window.FunctionCodeEditor.getEditorContent(elements)
-                                    );
-                                    window.FunctionCodeEditor.updateFunctionNameField(elements, functionName);
-                                }
-                            }, 100);
-                        }
-                    }
-                }
+            // Load example function
+            const exampleCode = `/**
+ * Get current weather for a location
+ * @param {string} location - The city and state, e.g. San Francisco, CA
+ * @param {string} [unit=fahrenheit] - Temperature unit (celsius or fahrenheit)
+ * @returns {Object} Weather information
+ * @tool
+ */
+function getCurrentWeather(location, unit = 'fahrenheit') {
+    // Simulated weather data
+    const temp = unit === 'celsius' ? 
+        Math.round(Math.random() * 30) : 
+        Math.round(Math.random() * 86 + 32);
+    
+    return {
+        location: location,
+        temperature: temp,
+        unit: unit,
+        conditions: ['sunny', 'cloudy', 'rainy'][Math.floor(Math.random() * 3)]
+    };
+}`;
+            
+            // Set the example code in the editor
+            if (elements.functionCode) {
+                elements.functionCode.value = exampleCode;
                 
-                // Reset editing flag
-                editingFunctionName = null;
+                // Extract and update function name
+                setTimeout(() => {
+                    if (window.FunctionParser && window.FunctionCodeEditor) {
+                        const functionName = window.FunctionParser.extractFunctionName(exampleCode);
+                        window.FunctionCodeEditor.updateFunctionNameField(elements, functionName);
+                    }
+                }, 100);
             }
             
             // Focus back on the function code field

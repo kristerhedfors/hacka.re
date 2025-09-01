@@ -11,16 +11,39 @@
     /* Removed max-height and overflow-y to prevent double scrolling */
 }
 
+/* Function editor form actions - keep buttons on one line */
+#function-editor-form .form-actions {
+    display: flex;
+    flex-direction: row !important;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+}
+
 /* Function editor form buttons - make them 23% smaller (15% + 8%) */
 #function-editor-form .form-actions .btn {
     padding: 0.58rem 1.16rem; /* 23% smaller than default 0.75rem 1.5rem */
     border-radius: calc(var(--border-radius) * 0.77); /* 23% smaller border radius */
+    width: auto !important; /* Override mobile styles */
+    flex: 0 0 auto; /* Don't grow or shrink */
 }
 
 /* Specific styling for the execute button in function editor */
 #function-editor-form .form-actions .btn.execute-btn {
     padding: 0.58rem 1.16rem; /* 23% smaller than default */
     border-radius: calc(6px * 0.77); /* 23% smaller border radius (4.6px) */
+}
+
+/* Even on mobile, keep function modal buttons horizontal if possible */
+@media (max-width: 768px) {
+    #function-editor-form .form-actions {
+        flex-wrap: wrap; /* Allow wrapping only on very small screens */
+    }
+    
+    #function-editor-form .form-actions .btn {
+        min-width: 80px; /* Minimum width for readability */
+        flex: 0 1 auto; /* Allow shrinking if needed */
+    }
 }
 
 .function-list {
