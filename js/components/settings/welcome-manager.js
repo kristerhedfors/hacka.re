@@ -26,8 +26,8 @@ window.WelcomeManager = (function() {
                 modalContent.className = 'modal-content';
                 
                 const heading = document.createElement('h2');
-                heading.style.cssText = 'text-align: center; margin-bottom: 24px; font-size: 28px;';
-                heading.innerHTML = 'Welcome to hacka.re!';
+                heading.style.cssText = 'text-align: center; margin-bottom: 18px; font-size: 26px;';
+                heading.innerHTML = 'Welcome to <span style="font-family: \'Courier New\', Courier, monospace; text-decoration: underline;">hacka.re</span>';
                 
                 // Create a more visually appealing welcome message
                 const welcomeContainer = document.createElement('div');
@@ -35,26 +35,26 @@ window.WelcomeManager = (function() {
                 
                 // Hero message
                 const heroMessage = document.createElement('div');
-                heroMessage.style.cssText = 'text-align: center; margin-bottom: 20px; color: var(--text-color-secondary); font-size: 16px; line-height: 1.6;';
+                heroMessage.style.cssText = 'text-align: center; margin-bottom: 16px; color: var(--text-color-secondary); font-size: 15px; line-height: 1.4;';
                 heroMessage.innerHTML = 'Your privacy-first AI chat interface.';
                 
                 // Feature cards container
                 const featuresContainer = document.createElement('div');
-                featuresContainer.style.cssText = 'display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;';
+                featuresContainer.style.cssText = 'display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;';
                 
                 // Getting Started card
                 const startCard = document.createElement('div');
                 startCard.className = 'important-notice';
-                startCard.style.cssText = 'background: linear-gradient(135deg, var(--system-msg-bg) 0%, var(--bg-primary) 100%); border-left: 4px solid var(--accent-color); padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s;';
+                startCard.style.cssText = 'background: linear-gradient(135deg, var(--system-msg-bg) 0%, var(--bg-primary) 100%); border-left: 4px solid var(--accent-color); padding: 14px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); transition: transform 0.2s;';
                 
                 // Create the start card content with clickable Settings link
                 const startContent = document.createElement('div');
                 startContent.style.cssText = 'display: flex; align-items: start; gap: 12px;';
                 startContent.innerHTML = `
-                    <span style="font-size: 24px; margin-top: -2px;">🚀</span>
+                    <span style="font-size: 22px; margin-top: -2px;">🚀</span>
                     <div style="flex: 1;">
-                        <strong style="font-size: 15px; color: var(--accent-color);">Quick Start</strong>
-                        <p style="margin-top: 6px; margin-bottom: 0; font-size: 14px; line-height: 1.5;">
+                        <strong style="font-size: 14px; color: var(--accent-color);">Quick Start</strong>
+                        <p style="margin-top: 4px; margin-bottom: 0; font-size: 13px; line-height: 1.4;">
                             Open <a href="#" class="settings-link-welcome" style="color: var(--accent-color); text-decoration: underline; cursor: pointer;">Settings</a> to configure your OpenAI-compatible API endpoint.
                         </p>
                     </div>
@@ -79,14 +79,14 @@ window.WelcomeManager = (function() {
                 // Privacy card
                 const privacyCard = document.createElement('div');
                 privacyCard.className = 'important-notice';
-                privacyCard.style.cssText = 'background: linear-gradient(135deg, var(--system-msg-bg) 0%, var(--bg-primary) 100%); border-left: 4px solid var(--accent-color); padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s;';
+                privacyCard.style.cssText = 'background: linear-gradient(135deg, var(--system-msg-bg) 0%, var(--bg-primary) 100%); border-left: 4px solid var(--accent-color); padding: 14px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); transition: transform 0.2s;';
                 privacyCard.innerHTML = `
                     <div style="display: flex; align-items: start; gap: 12px;">
-                        <span style="font-size: 24px; margin-top: -2px;">🔒</span>
+                        <span style="font-size: 22px; margin-top: -2px;">🔒</span>
                         <div style="flex: 1;">
-                            <strong style="font-size: 15px; color: var(--accent-color);">Privacy Focused</strong>
-                            <p style="margin-top: 6px; margin-bottom: 0; font-size: 14px; line-height: 1.5;">
-                                Thin LLM client built in HTML, Javascript and CSS only.<br /> No accounts, no tracking, no server-side storage aside from API connections you configure. <br />See
+                            <strong style="font-size: 14px; color: var(--accent-color);">Privacy Focused</strong>
+                            <p style="margin-top: 4px; margin-bottom: 0; font-size: 13px; line-height: 1.4;">
+                                No accounts, no tracking, no server-side storage aside from API connections you configure. See
                                 <a href="about/local-llm-toolbox.html" target="_blank" rel="noopener noreferrer" style="color: var(--accent-color); text-decoration: underline; cursor: pointer;">Local LLM Toolbox</a>.
                             </p>
                         </div>
@@ -96,16 +96,16 @@ window.WelcomeManager = (function() {
                 // Features card
                 const featuresCard = document.createElement('div');
                 featuresCard.className = 'important-notice';
-                featuresCard.style.cssText = 'background: linear-gradient(135deg, var(--system-msg-bg) 0%, var(--bg-primary) 100%); border-left: 4px solid var(--accent-color); padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s;';
+                featuresCard.style.cssText = 'background: linear-gradient(135deg, var(--system-msg-bg) 0%, var(--bg-primary) 100%); border-left: 4px solid var(--accent-color); padding: 14px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); transition: transform 0.2s;';
                 
                 // Create the features card content with clickable links
                 const featuresContent = document.createElement('div');
                 featuresContent.style.cssText = 'display: flex; align-items: start; gap: 12px;';
                 featuresContent.innerHTML = `
-                    <span style="font-size: 24px; margin-top: -2px;">✨</span>
+                    <span style="font-size: 22px; margin-top: -2px;">✨</span>
                     <div style="flex: 1;">
-                        <strong style="font-size: 15px; color: var(--accent-color);">Powerful Features</strong>
-                        <p style="margin-top: 6px; margin-bottom: 0; font-size: 14px; line-height: 1.5;">
+                        <strong style="font-size: 14px; color: var(--accent-color);">Powerful Features</strong>
+                        <p style="margin-top: 4px; margin-bottom: 0; font-size: 13px; line-height: 1.4;">
                             <a href="#" class="feature-link-welcome" data-feature="prompts" style="color: var(--accent-color); text-decoration: underline; cursor: pointer;">Custom prompts</a>, 
                             <a href="#" class="feature-link-welcome" data-feature="function" style="color: var(--accent-color); text-decoration: underline; cursor: pointer;">function calling</a>, 
                             <a href="#" class="feature-link-welcome" data-feature="mcp" style="color: var(--accent-color); text-decoration: underline; cursor: pointer;">MCP servers</a>, 
@@ -161,17 +161,17 @@ window.WelcomeManager = (function() {
                 
                 // Footer links
                 const footerLinks = document.createElement('div');
-                footerLinks.style.cssText = 'text-align: center; padding-top: 20px; margin-top: 20px; border-top: 1px solid var(--border-color); font-size: 14px;';
+                footerLinks.style.cssText = 'display: flex; justify-content: space-evenly; align-items: center; padding-top: 14px; margin-top: 14px; border-top: 1px solid var(--border-color); font-size: 13px;';
                 footerLinks.innerHTML = `
-                    <a href="about/index.html" target="_blank" rel="noopener noreferrer" style="color: var(--text-color-secondary); text-decoration: none; transition: color 0.2s;" 
+                    <a href="about/index.html" target="_blank" rel="noopener noreferrer" style="color: var(--text-color-secondary); text-decoration: none; transition: color 0.2s; flex: 1; text-align: center;" 
                        onmouseover="this.style.color='var(--accent-color)'" 
                        onmouseout="this.style.color='var(--text-color-secondary)'">About</a>
-                    <span style="color: var(--text-color-secondary); opacity: 0.5; margin: 0 8px;">|</span>
-                    <a href="about/philosophy.html" target="_blank" rel="noopener noreferrer" style="color: var(--text-color-secondary); text-decoration: none; transition: color 0.2s;"
+                    <span style="color: var(--text-color-secondary); opacity: 0.3;">|</span>
+                    <a href="about/philosophy.html" target="_blank" rel="noopener noreferrer" style="color: var(--text-color-secondary); text-decoration: none; transition: color 0.2s; flex: 1; text-align: center;"
                        onmouseover="this.style.color='var(--accent-color)'" 
                        onmouseout="this.style.color='var(--text-color-secondary)'">Philosophy</a>
-                    <span style="color: var(--text-color-secondary); opacity: 0.5; margin: 0 8px;">|</span>
-                    <a href="about/disclaimer.html" target="_blank" rel="noopener noreferrer" style="color: var(--text-color-secondary); text-decoration: none; transition: color 0.2s;"
+                    <span style="color: var(--text-color-secondary); opacity: 0.3;">|</span>
+                    <a href="about/disclaimer.html" target="_blank" rel="noopener noreferrer" style="color: var(--text-color-secondary); text-decoration: none; transition: color 0.2s; flex: 1; text-align: center;"
                        onmouseover="this.style.color='var(--accent-color)'" 
                        onmouseout="this.style.color='var(--text-color-secondary)'">Disclaimer</a>
                 `;
@@ -183,14 +183,14 @@ window.WelcomeManager = (function() {
                 
                 const buttonContainer = document.createElement('div');
                 buttonContainer.className = 'form-actions';
-                buttonContainer.style.cssText = 'margin-top: 24px; display: flex; justify-content: center;';
+                buttonContainer.style.cssText = 'margin-top: 18px; display: flex; justify-content: center;';
                 
                 // Only close button
                 const closeButton = document.createElement('button');
                 closeButton.type = 'button';
                 closeButton.className = 'btn primary-btn';
                 closeButton.id = 'close-welcome-modal';
-                closeButton.style.cssText = 'padding: 12px 32px; font-size: 16px; font-weight: 500; border-radius: 8px; min-width: 120px;';
+                closeButton.style.cssText = 'padding: 10px 28px; font-size: 15px; font-weight: 500; border-radius: 8px; min-width: 100px;';
                 closeButton.innerHTML = 'Close';
                 
                 // Assemble the modal

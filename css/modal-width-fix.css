@@ -28,10 +28,16 @@
 /* Welcome modal - keep compact and prevent scrolling */
 #welcome-modal .modal-content {
     max-width: 500px !important;
-    max-height: 95vh !important;
+    max-height: calc(100vh - 30px) !important; /* Ensure space for close button */
     overflow-y: auto !important;
     display: flex !important;
     flex-direction: column !important;
+    /* Position to overlap 55% of header from bottom */
+    position: fixed !important;
+    top: calc(60px * 0.45) !important; /* 60px header * 45% visible = 27px from top */
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    margin: 0 !important;
 }
 
 /* System prompt modal - prevent unnecessary scrolling */
@@ -128,10 +134,17 @@
     
     /* Welcome modal specific adjustments for mobile */
     #welcome-modal .modal-content {
-        max-height: calc(100vh - 2rem) !important;
-        margin: 1rem auto !important;
+        max-height: calc(100vh - 30px) !important;
         padding: 1.5rem !important;
-        overflow-y: hidden !important; /* Prevent scrolling on mobile */
+        overflow-y: auto !important; /* Allow scrolling if needed on mobile */
+        /* Position to overlap 55% of header from bottom on mobile */
+        position: fixed !important;
+        top: calc(50px * 0.45) !important; /* 50px mobile header * 45% visible = 22.5px from top */
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        margin: 0 !important;
+        width: 95% !important;
+        max-width: 95% !important;
     }
     
     /* System prompt modal on mobile - prevent scrolling */
