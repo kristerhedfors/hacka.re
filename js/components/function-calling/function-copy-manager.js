@@ -24,10 +24,6 @@ window.FunctionCopyManager = (function() {
                 elements.copyToolDefinitionBtn.addEventListener('click', copyToolDefinition);
             }
             
-            // Add event listener for copying function library
-            if (elements.copyFunctionLibraryBtn) {
-                elements.copyFunctionLibraryBtn.addEventListener('click', copyFunctionLibrary);
-            }
             
             // Add event listener for copying tool definitions (new button)
             if (elements.copyToolDefinitionsBtn) {
