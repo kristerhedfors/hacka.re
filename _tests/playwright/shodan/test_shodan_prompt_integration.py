@@ -5,15 +5,13 @@ Tests that Shodan prompt appears in System Prompts UI after successful MCP conne
 """
 import pytest
 from playwright.sync_api import Page, expect
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal
+from test_utils import dismiss_welcome_modal
 
 
 def test_shodan_prompt_appears_in_ui_after_connection(page: Page, serve_hacka_re, shodan_api_key):
     """Test that Shodan prompt appears in System Prompts UI after manual connection simulation"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Wait for system to initialize
     page.wait_for_timeout(2000)
     
@@ -125,8 +123,6 @@ def test_shodan_prompt_system_integration(page: Page, serve_hacka_re, shodan_api
     """Test that Shodan prompt integrates with the system prompt when enabled"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Wait for system initialization
     page.wait_for_timeout(2000)
     

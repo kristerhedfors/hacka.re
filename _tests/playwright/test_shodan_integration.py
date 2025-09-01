@@ -16,16 +16,6 @@ from playwright.sync_api import Page, expect
 from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
 
-def dismiss_settings_modal(page: Page):
-    """Dismiss settings modal if it's open"""
-    try:
-        if page.locator('#settings-modal.modal.active').is_visible():
-            page.locator('#settings-modal .close-btn, #settings-modal .btn-secondary').first.click()
-            page.wait_for_selector('#settings-modal:not(.active)', timeout=2000)
-    except Exception:
-        # Modal might not be open, that's fine
-        pass
-
 
 class TestShodanIntegration:
     """Test Shodan MCP integration functionality"""
@@ -34,9 +24,6 @@ class TestShodanIntegration:
         """Test Shodan appears in MCP quick connectors"""
         page.goto(serve_hacka_re)
         dismiss_welcome_modal(page)
-        dismiss_settings_modal(page)
-        dismiss_settings_modal(page)
-
         # Open MCP modal
         mcp_button = page.locator('#mcp-servers-btn')
         expect(mcp_button).to_be_visible()
@@ -74,8 +61,6 @@ class TestShodanIntegration:
         """Test Shodan service connector configuration"""
         page.goto(serve_hacka_re)
         dismiss_welcome_modal(page)
-        dismiss_settings_modal(page)
-
         # Check if MCPServiceConnectors is available and configured
         shodan_config = page.evaluate("""
             () => {
@@ -102,8 +87,6 @@ class TestShodanIntegration:
         """Test Shodan API key input modal"""
         page.goto(serve_hacka_re)
         dismiss_welcome_modal(page)
-        dismiss_settings_modal(page)
-
         # Open MCP modal
         page.locator('#mcp-servers-btn').click()
         page.wait_for_selector('.modal.active', timeout=5000)
@@ -146,8 +129,6 @@ class TestShodanIntegration:
         """Test that Shodan function tools are properly registered"""
         page.goto(serve_hacka_re)
         dismiss_welcome_modal(page)
-        dismiss_settings_modal(page)
-
         # Check if Shodan functions would be registered (mock connection)
         shodan_tools = page.evaluate("""
             () => {
@@ -193,8 +174,6 @@ class TestShodanIntegration:
         """Test that all major Shodan API categories are covered"""
         page.goto(serve_hacka_re)
         dismiss_welcome_modal(page)
-        dismiss_settings_modal(page)
-
         # Get Shodan service configuration
         shodan_config = page.evaluate("""
             () => {
@@ -244,8 +223,6 @@ class TestShodanIntegration:
         """Test that Shodan SVG icon renders correctly"""
         page.goto(serve_hacka_re)
         dismiss_welcome_modal(page)
-        dismiss_settings_modal(page)
-
         # Open MCP modal
         page.locator('#mcp-servers-btn').click()
         page.wait_for_selector('.modal.active', timeout=5000)
@@ -295,8 +272,6 @@ class TestShodanIntegration:
         """Test Shodan error handling configuration"""
         page.goto(serve_hacka_re)
         dismiss_welcome_modal(page)
-        dismiss_settings_modal(page)
-
         # Check error handling in executeShodanTool method
         error_handling = page.evaluate("""
             () => {
@@ -337,8 +312,6 @@ class TestShodanIntegration:
         """Test overall Shodan integration completeness"""
         page.goto(serve_hacka_re)
         dismiss_welcome_modal(page)
-        dismiss_settings_modal(page)
-
         # Comprehensive integration check
         integration_status = page.evaluate("""
             () => {

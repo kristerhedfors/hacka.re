@@ -1,7 +1,7 @@
 import pytest
 from playwright.sync_api import Page, expect
 import time
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
 from function_calling_api.helpers.setup_helpers import (
     setup_console_logging, 
@@ -27,8 +27,6 @@ def test_function_calling_icons(page: Page, serve_hacka_re, api_key):
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if already open
-    dismiss_settings_modal(page)
-    
     # Configure API key and model
     configure_api_key_and_model(page, api_key)
     
@@ -185,8 +183,6 @@ def test_multiple_function_calls_colors(page: Page, serve_hacka_re, api_key):
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if already open
-    dismiss_settings_modal(page)
-    
     # Configure API key and model
     configure_api_key_and_model(page, api_key)
     

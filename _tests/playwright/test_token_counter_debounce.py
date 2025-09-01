@@ -2,7 +2,7 @@ import time
 import pytest
 from playwright.sync_api import Page, expect
 
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal
+from test_utils import dismiss_welcome_modal
 
 def test_token_counter_debounce(page: Page, serve_hacka_re):
     """Test that the token counter is debounced when typing and pasting text."""
@@ -13,8 +13,6 @@ def test_token_counter_debounce(page: Page, serve_hacka_re):
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if present
-    dismiss_settings_modal(page)
-    
     # Wait for the page to load
     page.wait_for_selector('#message-input', state='visible')
     

@@ -6,7 +6,7 @@ import json
 from dotenv import load_dotenv
 from playwright.sync_api import Page, expect
 
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, check_system_messages
+from test_utils import dismiss_welcome_modal, check_system_messages
 
 # Load environment variables from .env file in the current directory
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
@@ -23,8 +23,6 @@ def test_model_sharing_link_creation(page: Page, serve_hacka_re):
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if already open
-    dismiss_settings_modal(page)
-    
     # Set up API key and model
     setup_api_and_model(page)
     

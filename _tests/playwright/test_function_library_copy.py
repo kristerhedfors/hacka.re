@@ -1,7 +1,7 @@
 import pytest
 from playwright.sync_api import Page, expect
 
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
 def test_function_library_copy_button_exists(page: Page, serve_hacka_re):
     """Test that the copy function library button exists in the function calling modal."""
@@ -12,8 +12,6 @@ def test_function_library_copy_button_exists(page: Page, serve_hacka_re):
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if already open
-    dismiss_settings_modal(page)
-    
     # Open the function modal
     function_btn = page.locator("#function-btn")
     function_btn.click()
@@ -45,8 +43,6 @@ def test_function_library_copy_functionality(page: Page, serve_hacka_re):
     dismiss_welcome_modal(page)
     
     # Dismiss settings modal if already open
-    dismiss_settings_modal(page)
-    
     # Open the function modal
     function_btn = page.locator("#function-btn")
     function_btn.click()

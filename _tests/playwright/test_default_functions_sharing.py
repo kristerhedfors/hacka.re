@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 from playwright.sync_api import Page, expect
 
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, check_system_messages, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, check_system_messages, screenshot_with_markdown
 
 # Load environment variables from .env file in the current directory
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
@@ -27,8 +27,6 @@ def test_default_functions_sharing(page: Page, serve_hacka_re):
     
     # STEP 2: Handle welcome and settings modals
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # STEP 3: Configure API key and model for testing
     # Click the settings button
     settings_button = page.locator("#settings-btn")

@@ -5,15 +5,13 @@ Tests the prompt registration logic directly without modal interactions.
 """
 import pytest
 from playwright.sync_api import Page, expect
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal
+from test_utils import dismiss_welcome_modal
 
 
 def test_shodan_prompt_registration_direct(page: Page, serve_hacka_re, shodan_api_key):
     """Test Shodan prompt registration by directly calling the registration methods"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Wait for system to initialize
     page.wait_for_timeout(2000)
     
@@ -131,8 +129,6 @@ def test_shodan_prompt_content_verification(page: Page, serve_hacka_re):
     """Test that Shodan prompt content contains appropriate cybersecurity guidance"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Wait for system to initialize
     page.wait_for_timeout(1000)
     
@@ -190,8 +186,6 @@ def test_multiple_prompt_registration_handling(page: Page, serve_hacka_re):
     """Test that registering the same prompt multiple times is handled gracefully"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Wait for system to initialize
     page.wait_for_timeout(1000)
     

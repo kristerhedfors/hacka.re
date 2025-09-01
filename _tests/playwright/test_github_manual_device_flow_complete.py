@@ -1,14 +1,12 @@
 import pytest
 from playwright.sync_api import Page, expect
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal
+from test_utils import dismiss_welcome_modal
 
 
 def test_github_mcp_basic(page: Page, serve_hacka_re):
     """Test basic GitHub MCP functionality"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open MCP modal
     mcp_button = page.locator("#mcp-servers-btn")
     expect(mcp_button).to_be_visible()
@@ -33,8 +31,6 @@ def test_github_elements_exist(page: Page, serve_hacka_re):
     """Test that GitHub-related elements exist in the UI"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open MCP modal to check for GitHub-related elements
     mcp_button = page.locator("#mcp-servers-btn")
     mcp_button.click()

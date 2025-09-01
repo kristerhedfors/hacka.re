@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 from playwright.sync_api import Page, expect
 
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
 # Load environment variables from .env file in the current directory
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
@@ -21,8 +21,6 @@ def test_shared_link_data_processor_integration(page: Page, serve_hacka_re):
     
     # Handle welcome modal
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Wait for page to be fully loaded
     page.wait_for_timeout(2000)
     
@@ -159,8 +157,6 @@ def test_end_to_end_default_functions_via_configuration_service(page: Page, serv
     
     # Handle welcome modal
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Wait for page to be fully loaded
     page.wait_for_timeout(2000)
     

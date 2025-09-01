@@ -3,7 +3,7 @@ Test agent modal functionality
 """
 import pytest
 from playwright.sync_api import Page, expect
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
 
 def test_agent_button_exists(page: Page, serve_hacka_re):
@@ -29,8 +29,6 @@ def test_agent_modal_opens(page: Page, serve_hacka_re):
     """Test that clicking the agent button opens the agent modal"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Click the agent button
     agent_btn = page.locator('#agent-config-btn')
     agent_btn.click()
@@ -56,8 +54,6 @@ def test_agent_modal_sections(page: Page, serve_hacka_re):
     """Test that the agent modal has the expected sections"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open agent modal
     agent_btn = page.locator('#agent-config-btn')
     agent_btn.click()
@@ -93,8 +89,6 @@ def test_quick_save_controls(page: Page, serve_hacka_re):
     """Test that the quick save controls are visible in the Saved Agents tab"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open agent modal
     agent_btn = page.locator('#agent-config-btn')
     agent_btn.click()
@@ -125,8 +119,6 @@ def test_agent_modal_close(page: Page, serve_hacka_re):
     """Test that the agent modal can be closed"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open agent modal
     agent_btn = page.locator('#agent-config-btn')
     agent_btn.click()

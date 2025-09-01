@@ -1,14 +1,12 @@
 import pytest
 from playwright.sync_api import Page, expect
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal
+from test_utils import dismiss_welcome_modal
 
 
 def test_function_modal_basic(page: Page, serve_hacka_re):
     """Test basic function modal functionality"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open function modal
     function_btn = page.locator("#function-btn")
     expect(function_btn).to_be_visible()
@@ -31,8 +29,6 @@ def test_function_modal_elements(page: Page, serve_hacka_re):
     """Test that function modal has expected elements"""
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    dismiss_settings_modal(page)
-    
     # Open function modal
     function_btn = page.locator("#function-btn")
     function_btn.click()

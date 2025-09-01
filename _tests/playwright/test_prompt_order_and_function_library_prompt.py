@@ -2,7 +2,7 @@ import pytest
 import time
 from playwright.sync_api import Page, expect
 
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
 def test_user_prompts_before_default_prompts(page: Page, serve_hacka_re):
     """Test that user-defined prompts appear before Default Prompts in the prompt modal."""
@@ -16,7 +16,6 @@ def test_user_prompts_before_default_prompts(page: Page, serve_hacka_re):
     settings_modal = page.locator("#settings-modal")
     if settings_modal.is_visible():
         print("Settings modal is already open, dismissing it first")
-        dismiss_settings_modal(page)
         # Wait a moment to ensure the modal is fully closed
         time.sleep(0.5)
     
@@ -102,7 +101,6 @@ def test_function_library_default_prompt(page: Page, serve_hacka_re):
     settings_modal = page.locator("#settings-modal")
     if settings_modal.is_visible():
         print("Settings modal is already open, dismissing it first")
-        dismiss_settings_modal(page)
         # Wait a moment to ensure the modal is fully closed
         time.sleep(0.5)
     
@@ -164,7 +162,6 @@ function test_function(input) {
     settings_modal = page.locator("#settings-modal")
     if settings_modal.is_visible():
         print("Settings modal is already open after reload, dismissing it")
-        dismiss_settings_modal(page)
         # Wait a moment to ensure the modal is fully closed
         time.sleep(0.5)
     

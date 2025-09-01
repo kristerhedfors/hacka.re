@@ -1,7 +1,7 @@
 """Test multi-agent orchestration dropdown functionality and agent system prompt isolation"""
 
 import pytest
-from test_utils import dismiss_welcome_modal, dismiss_settings_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 from playwright.sync_api import Page, expect
 import time
 import re
@@ -22,7 +22,6 @@ def test_multi_agent_system_prompt_isolation(page: Page, serve_hacka_re, api_key
         api_key_input.fill(api_key)
         save_settings_btn = page.locator("#close-settings")
         save_settings_btn.click()
-        dismiss_settings_modal(page)
     else:
         # Open settings if not already open
         settings_btn = page.locator("#settings-btn")
@@ -32,8 +31,6 @@ def test_multi_agent_system_prompt_isolation(page: Page, serve_hacka_re, api_key
         api_key_input.fill(api_key)
         save_settings_btn = page.locator("#close-settings")
         save_settings_btn.click()
-        dismiss_settings_modal(page)
-    
     # Open Agent Configuration modal
     agent_config_btn = page.locator("#agent-config-btn")
     agent_config_btn.click()
@@ -237,7 +234,6 @@ def test_agent_dropdown_selection(page: Page, serve_hacka_re, api_key):
         api_key_input.fill(api_key)
         save_settings_btn = page.locator("#close-settings")
         save_settings_btn.click()
-        dismiss_settings_modal(page)
     else:
         # Open settings if not already open
         settings_btn = page.locator("#settings-btn")
@@ -247,8 +243,6 @@ def test_agent_dropdown_selection(page: Page, serve_hacka_re, api_key):
         api_key_input.fill(api_key)
         save_settings_btn = page.locator("#close-settings")
         save_settings_btn.click()
-        dismiss_settings_modal(page)
-    
     # Open Agent Configuration modal
     agent_config_btn = page.locator("#agent-config-btn")
     agent_config_btn.click()
@@ -331,7 +325,6 @@ def test_orchestration_toggle_ui(page: Page, serve_hacka_re, api_key):
         api_key_input.fill(api_key)
         save_settings_btn = page.locator("#close-settings")
         save_settings_btn.click()
-        dismiss_settings_modal(page)
     else:
         # Open settings if not already open
         settings_btn = page.locator("#settings-btn")
@@ -341,8 +334,6 @@ def test_orchestration_toggle_ui(page: Page, serve_hacka_re, api_key):
         api_key_input.fill(api_key)
         save_settings_btn = page.locator("#close-settings")
         save_settings_btn.click()
-        dismiss_settings_modal(page)
-    
     # Open Agent Configuration modal
     agent_config_btn = page.locator("#agent-config-btn")
     agent_config_btn.click()
