@@ -165,6 +165,16 @@ window.VectorRAGService = (function() {
         const results = [];
 
         for (const bundle of userBundlesIndex.bundles) {
+            // Handle new reference format for EU documents
+            if (bundle.indexReference && bundle.type === 'regulation') {
+                // This is a reference to EU documents index
+                // The actual vectors are stored in rag_eu_documents_index
+                // Skip here as they'll be searched via searchEUDocumentsIndex
+                console.log(`VectorRAGService: Bundle ${bundle.id} is a reference to EU documents, skipping in user bundles search`);
+                continue;
+            }
+            
+            // Handle traditional bundles with embedded chunks
             if (!bundle.chunks || !Array.isArray(bundle.chunks)) {
                 continue;
             }
@@ -246,18 +256,26 @@ window.VectorRAGService = (function() {
         const results = [];
 
         for (const [docId, document] of Object.entries(euDocuments)) {
-            // Support both old format (chunks) and new format (vectors)
-            const hasVectors = document.vectors && Array.isArray(document.vectors);
-            const hasChunks = document.chunks && Array.isArray(document.chunks);
+            // Get vectors from in-memory store
+            let items = null;
             
-            if (!hasVectors && !hasChunks) {
-                console.log(`VectorRAGService: Document ${docId} has no vectors or chunks`);
+            // Check if vectors are in memory (new approach)
+            if (window.ragVectorStore && window.ragVectorStore.hasVectors(docId)) {
+                items = window.ragVectorStore.getVectors(docId);
+                if (items && items.length > 0) {
+                    console.log(`VectorRAGService: Using ${items.length} vectors for ${docId} from memory`);
+                } else {
+                    console.log(`VectorRAGService: No vectors found for ${docId} in memory`);
+                    continue;
+                }
+            } else {
+                console.log(`VectorRAGService: Document ${docId} not indexed in memory`);
                 continue;
             }
-
-            // Use new vector format if available, otherwise fall back to chunks
-            const items = hasVectors ? document.vectors : document.chunks;
-            console.log(`VectorRAGService: Searching ${items.length} ${hasVectors ? 'vectors' : 'chunks'} in ${docId}`);
+            
+            if (!items || !Array.isArray(items)) {
+                continue;
+            }
             
             for (const item of items) {
                 if (!item.embedding || !Array.isArray(item.embedding)) {
@@ -267,9 +285,9 @@ window.VectorRAGService = (function() {
                 const similarity = cosineSimilarity(queryEmbedding, item.embedding);
                 
                 if (similarity >= threshold) {
-                    // For vectors, retrieve content from source document using positions
+                    // Always retrieve content from source document using positions
                     let content = '';
-                    if (hasVectors && item.position) {
+                    if (item.position) {
                         const documentContent = getDocumentContent(docId);
                         if (documentContent) {
                             content = documentContent.substring(item.position.start, item.position.end);
@@ -278,8 +296,8 @@ window.VectorRAGService = (function() {
                             continue;
                         }
                     } else {
-                        // Old format with embedded content
-                        content = item.content || '';
+                        console.warn(`VectorRAGService: Vector has no position data for ${docId}`);
+                        continue;
                     }
                     
                     results.push({
@@ -348,6 +366,11 @@ window.VectorRAGService = (function() {
         // Search user bundles
         if (userBundlesIndex && userBundlesIndex.bundles) {
             for (const bundle of userBundlesIndex.bundles) {
+                // Skip references to EU documents (they're searched separately)
+                if (bundle.indexReference && bundle.type === 'regulation') {
+                    continue;
+                }
+                
                 if (!bundle.chunks || !Array.isArray(bundle.chunks)) {
                     continue;
                 }
@@ -380,7 +403,7 @@ window.VectorRAGService = (function() {
             }
         }
 
-        // Search EU documents from encrypted storage only
+        // Text-based search for EU documents (only if they don't have embeddings)
         let euDocuments = null;
         try {
             euDocuments = CoreStorageService.getValue('rag_eu_documents_index');
@@ -390,34 +413,45 @@ window.VectorRAGService = (function() {
 
         if (euDocuments && typeof euDocuments === 'object') {
             for (const [docId, document] of Object.entries(euDocuments)) {
-                if (!document.chunks || !Array.isArray(document.chunks)) {
+                // Skip documents with vectors (they should use vector search)
+                if (document.vectorsKey) {
+                    console.log(`VectorRAGService: Skipping ${docId} in text search - has vectors`);
                     continue;
                 }
-
-                for (const chunk of document.chunks) {
-                    const content = chunk.content.toLowerCase();
-                    let matches = 0;
-                    
-                    for (const word of queryWords) {
-                        if (content.includes(word)) {
-                            matches++;
-                        }
+                
+                // For text-based search, get the document content directly
+                const documentContent = getDocumentContent(docId);
+                if (!documentContent) {
+                    continue;
+                }
+                
+                const content = documentContent.toLowerCase();
+                let matches = 0;
+                
+                for (const word of queryWords) {
+                    if (content.includes(word)) {
+                        matches++;
                     }
+                }
+                
+                if (matches > 0) {
+                    const similarity = matches / queryWords.length;
+                    // Return a snippet around the first match
+                    const firstMatch = queryWords.find(word => content.includes(word));
+                    const matchIndex = content.indexOf(firstMatch);
+                    const snippetStart = Math.max(0, matchIndex - 200);
+                    const snippetEnd = Math.min(documentContent.length, matchIndex + 200);
                     
-                    if (matches > 0) {
-                        const similarity = matches / queryWords.length;
-                        results.push({
-                            content: chunk.content,
-                            similarity: similarity,
-                            metadata: chunk.metadata || {},
-                            source: 'eu_documents',
-                            type: 'regulation',
-                            documentName: document.name || docId,
-                            documentId: docId,
-                            chunkId: chunk.id,
-                            searchType: 'text_based'
-                        });
-                    }
+                    results.push({
+                        content: documentContent.substring(snippetStart, snippetEnd),
+                        similarity: similarity,
+                        metadata: document.metadata || {},
+                        source: 'eu_documents',
+                        type: 'regulation',
+                        documentName: document.name || docId,
+                        documentId: docId,
+                        searchType: 'text_based'
+                    });
                 }
             }
         }

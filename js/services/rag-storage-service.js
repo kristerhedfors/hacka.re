@@ -32,9 +32,14 @@ window.RAGStorageService = (function() {
                 version: '1.0'
             };
 
-            CoreStorageService.setValue(STORAGE_KEYS.DEFAULT_PROMPTS_INDEX, dataToStore);
-            console.log('RAGStorageService: Default prompts index saved successfully');
-            return true;
+            const success = CoreStorageService.setValue(STORAGE_KEYS.DEFAULT_PROMPTS_INDEX, dataToStore);
+            if (success) {
+                console.log('RAGStorageService: Default prompts index saved successfully');
+                return true;
+            } else {
+                console.error('RAGStorageService: Failed to save default prompts index - storage quota may be exceeded');
+                return false;
+            }
         } catch (error) {
             console.error('RAGStorageService: Error saving default prompts index:', error);
             return false;
@@ -77,9 +82,14 @@ window.RAGStorageService = (function() {
                 version: '1.0'
             };
 
-            CoreStorageService.setValue(STORAGE_KEYS.USER_BUNDLES_INDEX, dataToStore);
-            console.log('RAGStorageService: User bundles index saved successfully');
-            return true;
+            const success = CoreStorageService.setValue(STORAGE_KEYS.USER_BUNDLES_INDEX, dataToStore);
+            if (success) {
+                console.log('RAGStorageService: User bundles index saved successfully');
+                return true;
+            } else {
+                console.error('RAGStorageService: Failed to save user bundles index - storage quota may be exceeded');
+                return false;
+            }
         } catch (error) {
             console.error('RAGStorageService: Error saving user bundles index:', error);
             return false;
