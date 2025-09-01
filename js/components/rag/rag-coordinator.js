@@ -8,6 +8,51 @@ window.RAGCoordinator = (function() {
     
     let isInitialized = false;
     let elements = {};
+    
+    // In-memory storage for vectors - avoids localStorage quota issues
+    const vectorStore = {
+        // Structure: { docId: { vectors: [...], metadata: {...} } }
+        documents: {},
+        
+        // Store vectors for a document
+        setVectors(docId, vectors, metadata) {
+            this.documents[docId] = {
+                vectors: vectors,
+                metadata: metadata,
+                timestamp: new Date().toISOString()
+            };
+            console.log(`VectorStore: Stored ${vectors.length} vectors for ${docId} in memory`);
+        },
+        
+        // Get vectors for a document
+        getVectors(docId) {
+            return this.documents[docId]?.vectors || null;
+        },
+        
+        // Check if document has vectors
+        hasVectors(docId) {
+            return !!(this.documents[docId]?.vectors?.length);
+        },
+        
+        // Get all document IDs with vectors
+        getDocumentIds() {
+            return Object.keys(this.documents);
+        },
+        
+        // Clear vectors for a document
+        clearDocument(docId) {
+            delete this.documents[docId];
+            console.log(`VectorStore: Cleared vectors for ${docId}`);
+        },
+        
+        // Get metadata for a document
+        getMetadata(docId) {
+            return this.documents[docId]?.metadata || null;
+        }
+    };
+    
+    // Make vectorStore accessible globally for debugging
+    window.ragVectorStore = vectorStore;
 
     /**
      * Initialize the RAG Coordinator and all sub-components
@@ -321,32 +366,8 @@ window.RAGCoordinator = (function() {
      * @returns {boolean} Whether the document is indexed with vectors
      */
     function checkDocumentIndexed(docId) {
-        // Check if document has actual vectors in the index
-        try {
-            const euDocsIndex = CoreStorageService.getValue('rag_eu_documents_index');
-            if (euDocsIndex && euDocsIndex[docId]) {
-                const doc = euDocsIndex[docId];
-                // Check if it has vectors with embeddings
-                if (doc.vectors && Array.isArray(doc.vectors) && doc.vectors.length > 0) {
-                    // Check if at least one vector has an embedding
-                    return doc.vectors.some(v => v.embedding && Array.isArray(v.embedding));
-                }
-                // Legacy: check chunks with embeddings
-                if (doc.chunks && Array.isArray(doc.chunks) && doc.chunks.length > 0) {
-                    return doc.chunks.some(c => c.embedding && Array.isArray(c.embedding));
-                }
-            }
-        } catch (e) {
-            console.log(`RAGCoordinator: Error checking index for ${docId}:`, e);
-        }
-        
-        // Fallback for CRA using regulations service
-        if (docId === 'cra' && window.ragRegulationsService) {
-            const stats = window.ragRegulationsService.getStatistics();
-            return stats && stats.regulationCount > 0;
-        }
-        
-        return false;
+        // Check if document has vectors in memory
+        return vectorStore.hasVectors(docId);
     }
 
     /**
@@ -541,8 +562,23 @@ window.RAGCoordinator = (function() {
                         }
                     };
                     
-                    // Store in EU documents index for vector search
-                    // This index is used as a whole for searching
+                    // Store vectors in memory instead of localStorage
+                    // This avoids all storage quota issues
+                    vectorStore.setVectors(docId, vectorIndex, {
+                        name: documentNames[docId],
+                        documentId: docId,
+                        title: documentNames[docId],
+                        chunkSize: settings.chunkSize,
+                        overlap: settings.overlap,
+                        embeddingModel: settings.embeddingModel,
+                        hasEmbeddings: apiKey ? true : false,
+                        indexedAt: new Date().toISOString(),
+                        totalVectors: vectorIndex.length
+                    });
+                    
+                    console.log(`Stored ${vectorIndex.length} vectors for ${docId} in memory`);
+                    
+                    // Store only minimal metadata in localStorage (just for persistence indicator)
                     const euDocsKey = 'rag_eu_documents_index';
                     let existingDocs = {};
                     try {
@@ -554,11 +590,17 @@ window.RAGCoordinator = (function() {
                         console.log('No existing EU docs index');
                     }
                     
-                    // Add or update this document in the index
-                    existingDocs[docId] = indexData;
+                    // Store only a minimal reference in localStorage
+                    existingDocs[docId] = {
+                        name: documentNames[docId],
+                        documentId: docId,
+                        hasVectors: true,  // Vectors are in memory
+                        vectorCount: vectorIndex.length,
+                        indexedAt: new Date().toISOString()
+                    };
                     CoreStorageService.setValue(euDocsKey, existingDocs);
                     
-                    // Also update user bundles for compatibility
+                    // Also update user bundles for compatibility (store reference only, not full data)
                     if (window.VectorRAGService) {
                         // Load existing bundles
                         let existingBundles = [];
@@ -568,12 +610,21 @@ window.RAGCoordinator = (function() {
                             existingBundles = currentBundles.bundles.filter(b => b.id !== docId);
                         }
                         
-                        // Add this document
+                        // Add this document with reference only (not full indexData to avoid quota issues)
                         existingBundles.push({
                             name: documentNames[docId],
                             id: docId,
                             type: 'regulation',
-                            indexData: indexData
+                            // Don't store the full indexData with vectors - just metadata
+                            hasIndex: true,
+                            indexReference: `rag_eu_documents_index.${docId}`, // Reference to where the actual data is
+                            metadata: {
+                                vectorCount: indexData.vectors ? indexData.vectors.length : 0,
+                                chunkCount: indexData.metadata?.totalVectors || 0,
+                                indexedAt: indexData.metadata?.indexedAt || new Date().toISOString(),
+                                hasEmbeddings: indexData.metadata?.hasEmbeddings || false,
+                                embeddingModel: indexData.metadata?.embeddingModel || 'text-embedding-3-small'
+                            }
                         });
                         
                         window.VectorRAGService.setUserBundlesIndex({

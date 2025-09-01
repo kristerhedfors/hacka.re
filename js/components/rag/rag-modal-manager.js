@@ -228,10 +228,26 @@ window.RAGModalManager = (function() {
                     alert('Failed to enable CRA regulations. Check console for details.');
                 });
             } else {
-                // Placeholder for other documents
+                // For AIA and DORA, actually trigger indexing
                 console.log(`RAGModalManager: Enabling ${documentNames[docId]}...`);
-                updateDocumentStatus(docId, true);
-                showSuccess(`${documentNames[docId]} enabled for indexing (simulated)`);
+                
+                // Trigger actual indexing via RAGCoordinator
+                if (window.RAGCoordinator && window.RAGCoordinator.refreshDocument) {
+                    // This will perform the actual indexing with embeddings
+                    window.RAGCoordinator.refreshDocument(docId).then(() => {
+                        // Status will be updated by refreshDocument
+                        console.log(`${documentNames[docId]} indexing completed`);
+                    }).catch(error => {
+                        console.error(`Failed to index ${documentNames[docId]}:`, error);
+                        event.target.checked = false;
+                        updateDocumentStatus(docId, false);
+                        alert(`Failed to index ${documentNames[docId]}. Check console for details.`);
+                    });
+                } else {
+                    // Fallback if RAGCoordinator not available
+                    updateDocumentStatus(docId, true);
+                    showSuccess(`${documentNames[docId]} enabled for indexing`);
+                }
                 
                 // Update stats if available
                 if (window.RAGIndexStatsManager) {
@@ -247,8 +263,26 @@ window.RAGModalManager = (function() {
                 showInfo('CRA regulations disabled and removed from index');
             } else {
                 console.log(`RAGModalManager: Disabling ${documentNames[docId]}...`);
+                
+                // Clear vectors from memory
+                if (window.ragVectorStore) {
+                    window.ragVectorStore.clearDocument(docId);
+                }
+                
+                // Update localStorage to reflect disabled state
+                try {
+                    const euDocsKey = 'rag_eu_documents_index';
+                    const existingDocs = CoreStorageService.getValue(euDocsKey);
+                    if (existingDocs && existingDocs[docId]) {
+                        delete existingDocs[docId];
+                        CoreStorageService.setValue(euDocsKey, existingDocs);
+                    }
+                } catch (e) {
+                    console.log('Could not update EU docs index');
+                }
+                
                 updateDocumentStatus(docId, false);
-                showInfo(`${documentNames[docId]} disabled (simulated)`);
+                showInfo(`${documentNames[docId]} disabled and cleared from memory`);
             }
             
             // Update stats if available
