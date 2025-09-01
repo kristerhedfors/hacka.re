@@ -17,12 +17,18 @@ def test_api_key_detection_simple(page: Page, serve_hacka_re):
     # Set up test environment to prevent welcome modal
     setup_test_environment(page)
     
-    # Wait for page to load
-    page.wait_for_load_state("networkidle")
+    # Reload the page to apply the test environment setting
+    page.reload()
     
-    # Try to close any modals that might be open
-    page.keyboard.press("Escape")
+    # Wait for page to load - use domcontentloaded instead of networkidle to avoid timeout
+    page.wait_for_load_state("domcontentloaded")
+    
+    # Small wait for JavaScript initialization
     time.sleep(0.5)
+    
+    # Dismiss welcome modal if it appears despite test environment setup
+    from test_utils import dismiss_welcome_modal
+    dismiss_welcome_modal(page)
     
     # Click settings button
     settings_btn = page.locator("#settings-btn")

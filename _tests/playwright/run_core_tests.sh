@@ -17,6 +17,24 @@ trap 'echo "Script interrupted with Ctrl+C at $(date)" | tee -a run_core_tests.o
 # Change to the script directory
 cd "$(dirname "$0")"
 
+# Print test artifact locations
+echo "======================================"
+echo "🧪 CORE TESTS STARTING"
+echo "======================================"
+echo ""
+echo "📁 TEST ARTIFACTS WILL BE STORED IN:"
+echo "  📸 Screenshots: $(pwd)/screenshots/"
+echo "  📝 Metadata: $(pwd)/screenshots_data/"
+echo "  🖥️ Console logs: $(pwd)/console_logs/"
+echo "  📊 Test output: $(pwd)/run_core_tests.out"
+echo ""
+echo "💡 TIP: Run ./show_test_artifacts.sh to see all artifacts"
+echo "======================================"
+echo ""
+
+# Ensure artifact directories exist
+mkdir -p screenshots screenshots_data console_logs
+
 # Check if virtual environment exists
 if [ ! -d ".venv" ]; then
     echo "Virtual environment not found. Creating one..."
