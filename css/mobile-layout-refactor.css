@@ -1,0 +1,436 @@
+/* 
+ * Mobile Layout Refactor - Complete UI Structure Fix
+ * Fixes z-index hierarchy, modal layering, and mobile chat interface
+ * Created: 2025-09-01
+ */
+
+/* ====================================
+   Z-INDEX HIERARCHY (DEFINITIVE)
+   ==================================== */
+:root {
+    /* Z-index layers - centralized management */
+    --z-base: 1;
+    --z-header: 100;
+    --z-chat-input: 100;
+    --z-tooltip: 500;
+    --z-modal-backdrop: 1000;
+    --z-modal-content: 1001;
+    --z-modal-overlay: 1002;
+    --z-critical: 9999;
+}
+
+/* ====================================
+   RESET CONFLICTING Z-INDEX VALUES
+   ==================================== */
+* {
+    /* Remove any stray z-index values that might interfere */
+    z-index: auto;
+}
+
+/* ====================================
+   APP STRUCTURE - FIXED HEADER/FOOTER
+   ==================================== */
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden; /* Prevent body scrolling */
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height */
+    position: relative;
+}
+
+.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+/* ====================================
+   HEADER - FIXED TOP
+   ==================================== */
+header {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: var(--z-header) !important;
+    background-color: var(--primary-color);
+    flex-shrink: 0;
+    min-height: 56px; /* Standard mobile header height */
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Ensure header content doesn't overflow */
+header * {
+    z-index: auto !important;
+    position: relative;
+}
+
+/* ====================================
+   MAIN CONTENT AREA - SCROLLABLE
+   ==================================== */
+main,
+.main-content,
+#chat-messages-container {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding-top: 72px; /* Account for fixed header */
+    padding-bottom: 80px; /* Account for fixed footer */
+    width: 100%;
+    position: relative;
+    z-index: var(--z-base);
+}
+
+#chat-messages {
+    padding: 1rem;
+    min-height: 100%;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+/* ====================================
+   CHAT INPUT - FIXED BOTTOM
+   ==================================== */
+#chat-input-container {
+    position: fixed !important;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: var(--z-chat-input) !important;
+    background-color: var(--light-color);
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 0.75rem;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+    flex-shrink: 0;
+    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Ensure chat input children don't break z-index */
+#chat-input-container * {
+    z-index: auto !important;
+    position: relative;
+}
+
+/* ====================================
+   MODAL SYSTEM - PROPER LAYERING
+   ==================================== */
+.modal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: var(--z-modal-backdrop) !important;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.modal.active {
+    display: flex !important;
+}
+
+/* Modal backdrop click area */
+.modal::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: var(--z-modal-backdrop);
+    cursor: pointer;
+}
+
+.modal-content {
+    position: relative !important;
+    z-index: var(--z-modal-content) !important;
+    background-color: var(--light-color);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin: auto;
+    max-width: min(500px, 90vw);
+    max-height: min(85vh, 600px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    pointer-events: auto;
+}
+
+/* Prevent modal content from being covered */
+.modal-content > * {
+    position: relative;
+    z-index: auto !important;
+}
+
+/* ====================================
+   HIDE ELEMENTS BEHIND MODAL
+   ==================================== */
+body:has(.modal.active) #chat-input-container {
+    z-index: calc(var(--z-modal-backdrop) - 100) !important;
+    pointer-events: none !important;
+}
+
+body:has(.modal.active) header {
+    z-index: calc(var(--z-modal-backdrop) - 100) !important;
+    pointer-events: none !important;
+}
+
+/* ====================================
+   MOBILE-SPECIFIC ADJUSTMENTS
+   ==================================== */
+@media (max-width: 768px) {
+    /* Header adjustments for mobile */
+    header {
+        min-height: 56px;
+        padding: 0.5rem 0.75rem;
+    }
+    
+    /* Adjust content padding */
+    #chat-messages-container {
+        padding-top: 64px;
+        padding-bottom: 72px;
+    }
+    
+    /* Chat input mobile optimization */
+    #chat-input-container {
+        padding: 0.5rem;
+        padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+    }
+    
+    /* Modal mobile optimization */
+    .modal {
+        padding: 0.5rem;
+    }
+    
+    .modal-content {
+        max-width: 95vw;
+        max-height: 90vh;
+        padding: 1.25rem;
+        margin: 1rem auto;
+    }
+}
+
+/* ====================================
+   KEYBOARD HANDLING (iOS)
+   ==================================== */
+@supports (-webkit-touch-callout: none) {
+    /* iOS-specific adjustments */
+    .keyboard-open #chat-input-container {
+        position: fixed !important;
+        bottom: 0 !important;
+        transform: translateZ(0); /* Force GPU acceleration */
+        -webkit-transform: translateZ(0);
+    }
+    
+    .keyboard-open #chat-messages-container {
+        padding-bottom: calc(72px + env(keyboard-inset-height, 0));
+    }
+}
+
+/* ====================================
+   LANDSCAPE MODE
+   ==================================== */
+@media (orientation: landscape) and (max-height: 500px) {
+    header {
+        min-height: 44px;
+        padding: 0.25rem 0.75rem;
+    }
+    
+    #chat-messages-container {
+        padding-top: 52px;
+        padding-bottom: 64px;
+    }
+    
+    #chat-input-container {
+        padding: 0.4rem;
+    }
+    
+    .modal-content {
+        max-height: 85vh;
+    }
+}
+
+/* ====================================
+   PREVENT HORIZONTAL SCROLL
+   ==================================== */
+html, body, .app-container {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+}
+
+* {
+    max-width: 100vw;
+}
+
+/* ====================================
+   DISABLE PROBLEMATIC STYLES
+   ==================================== */
+/* Override any conflicting mobile.css rules */
+body.mobile-device #chat-input-container {
+    position: fixed !important;
+    bottom: 0 !important;
+    z-index: var(--z-chat-input) !important;
+}
+
+/* Override any sticky positioning */
+#chat-input-container.sticky,
+#chat-input-container[style*="sticky"] {
+    position: fixed !important;
+}
+
+/* ====================================
+   SCROLLBAR STYLING
+   ==================================== */
+/* Hide scrollbars but keep functionality */
+.modal-content::-webkit-scrollbar,
+#chat-messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-content::-webkit-scrollbar-thumb,
+#chat-messages::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
+
+.modal-content::-webkit-scrollbar-track,
+#chat-messages::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* ====================================
+   TOUCH OPTIMIZATION
+   ==================================== */
+.modal,
+.modal-content,
+#chat-input-container,
+header {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+/* Ensure clickable elements are properly sized */
+button, .btn, .icon-btn {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ====================================
+   BETA TAG FIXES
+   ==================================== */
+.beta-tag.header-beta {
+    position: relative !important;
+    z-index: auto !important;
+}
+
+/* ====================================
+   DEBUG MODE (can be removed in production)
+   ==================================== */
+.debug-mobile-layout header {
+    border: 2px solid green !important;
+}
+
+.debug-mobile-layout #chat-messages-container {
+    border: 2px solid blue !important;
+}
+
+.debug-mobile-layout #chat-input-container {
+    border: 2px solid red !important;
+}
+
+.debug-mobile-layout .modal.active {
+    border: 4px solid purple !important;
+}
+
+.debug-mobile-layout .modal-content {
+    border: 2px solid orange !important;
+}
+
+/* ====================================
+   ANIMATION PERFORMANCE
+   ==================================== */
+.modal,
+.modal-content {
+    will-change: transform, opacity;
+}
+
+/* Smooth modal appearance */
+.modal {
+    animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content {
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* ====================================
+   CRITICAL OVERRIDES - HIGHEST PRIORITY
+   ==================================== */
+/* These rules must win over all other CSS */
+.modal.active {
+    z-index: var(--z-modal-backdrop) !important;
+}
+
+.modal.active .modal-content {
+    z-index: var(--z-modal-content) !important;
+}
+
+body:has(.modal.active) #chat-input-container,
+body:has(.modal.active) header {
+    pointer-events: none !important;
+    user-select: none !important;
+}
+
+/* Ensure modal backdrop receives clicks */
+.modal.active {
+    pointer-events: auto !important;
+}
