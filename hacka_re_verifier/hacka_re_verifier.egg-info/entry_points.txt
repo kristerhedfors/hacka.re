@@ -1,2 +1,0 @@
-[console_scripts]
-hacka-re-verifier = hacka_re_verifier.src:main
