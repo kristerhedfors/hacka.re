@@ -900,6 +900,35 @@ async function getCurrentTimeInBerlin() {
                         <h3>⚙️ Advanced</h3>
                     </div>
                     <div class="rag-advanced-content" id="rag-advanced-content" style="display: none;">
+                        <!-- Context Settings Section -->
+                        <div class="rag-subsection">
+                            <h4>Context Settings</h4>
+                            <div class="form-group">
+                                <label for="rag-token-limit">Maximum Context Tokens</label>
+                                <input type="number" id="rag-token-limit" min="500" max="50000" value="5000" step="500" class="form-control">
+                                <p class="form-help">Number of tokens to include in context. The system will select the best matching chunks up to this limit, automatically including gap-filling chunks for coherence.</p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="rag-multi-query-enabled">
+                                    <input type="checkbox" id="rag-multi-query-enabled" checked>
+                                    Enable Multi-Query Search
+                                </label>
+                                <p class="form-help">Automatically derive multiple search terms from your question for better results.</p>
+                            </div>
+                            
+                            <div class="form-group" id="rag-expansion-model-group">
+                                <label for="rag-expansion-model">Query Expansion Model</label>
+                                <select id="rag-expansion-model" class="form-control">
+                                    <option value="gpt-4o-mini" selected>GPT-4o Mini (Fast & Efficient)</option>
+                                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                    <option value="gpt-4o">GPT-4o (Most Accurate)</option>
+                                    <option value="current">Use Current Chat Model</option>
+                                </select>
+                                <p class="form-help">Model used to derive search terms from your question.</p>
+                            </div>
+                        </div>
+
                         <!-- Files as Knowledge Section -->
                         <div class="rag-subsection">
                             <h4>Files as Knowledge</h4>
@@ -1352,6 +1381,7 @@ async function getCurrentTimeInBerlin() {
     <script src="js/services/rag-storage-service.js"></script>
     <script src="js/services/rag-indexing-service.js"></script>
     <script src="js/services/vector-rag-service.js"></script>
+    <script src="js/services/rag-query-expansion-service.js"></script>
     <!-- UI Utilities (modular) -->
     <!-- <script src="js/utils/function-icon-fix.js"></script> -->
     <script src="js/utils/function-call-renderer.js"></script>
