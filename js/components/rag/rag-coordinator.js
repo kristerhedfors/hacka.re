@@ -112,19 +112,10 @@ window.RAGCoordinator = (function() {
             window.RAGFileKnowledgeManager.init();
         }
 
-        // Initialize prompts list manager
-        if (window.RAGPromptsListManager) {
-            window.RAGPromptsListManager.init();
-        }
 
         // Initialize user bundles manager
         if (window.RAGUserBundlesManager) {
             window.RAGUserBundlesManager.init();
-        }
-
-        // Initialize embedding generator
-        if (window.RAGEmbeddingGenerator) {
-            window.RAGEmbeddingGenerator.init();
         }
 
         console.log('RAGCoordinator: All sub-components initialized');
@@ -139,10 +130,6 @@ window.RAGCoordinator = (function() {
             window.RAGIndexStatsManager.updateStats();
         }
 
-        // Update prompts list
-        if (window.RAGPromptsListManager) {
-            window.RAGPromptsListManager.loadPromptsList();
-        }
 
         // Update file knowledge
         if (window.RAGFileKnowledgeManager) {
@@ -279,14 +266,6 @@ window.RAGCoordinator = (function() {
         updateAllComponents();
     }
 
-    /**
-     * Refresh prompts list (delegate to prompts list manager)
-     */
-    function refreshPromptsList() {
-        if (window.RAGPromptsListManager) {
-            window.RAGPromptsListManager.loadPromptsList();
-        }
-    }
 
     /**
      * View document content in markdown viewer modal
@@ -383,6 +362,27 @@ window.RAGCoordinator = (function() {
 
         if (!documentNames[docId]) {
             console.warn('RAGCoordinator: Unknown document:', docId);
+            return;
+        }
+
+        // Check if API key is available FIRST
+        const apiKey = StorageService.getApiKey();
+        if (!apiKey) {
+            // Show API key prompt
+            if (confirm(`Indexing ${documentNames[docId]} requires an API key to generate embeddings.\n\nWithout embeddings, RAG search will not work effectively.\n\nWould you like to configure your API key now?`)) {
+                // Open settings modal
+                const settingsModal = document.getElementById('settings-modal');
+                if (settingsModal) {
+                    settingsModal.classList.add('active');
+                    // Focus on API key field
+                    setTimeout(() => {
+                        const apiKeyField = document.getElementById('api-key-update');
+                        if (apiKeyField) {
+                            apiKeyField.focus();
+                        }
+                    }, 100);
+                }
+            }
             return;
         }
 
@@ -528,26 +528,9 @@ window.RAGCoordinator = (function() {
                             }
                         }
                     } else {
-                        // No API key - cannot create vector index
-                        console.log('No API key available - cannot create vector index');
-                        // Store just the positions for potential future indexing
-                        for (let i = 0; i < chunkPositions.length; i++) {
-                            const position = chunkPositions[i];
-                            vectorIndex.push({
-                                id: `${docId}_vec_${i}`,
-                                // No embedding without API key
-                                position: {
-                                    start: position.start,
-                                    end: position.end
-                                },
-                                metadata: {
-                                    documentId: docId,
-                                    documentName: documentNames[docId],
-                                    vectorIndex: i,
-                                    totalVectors: chunkPositions.length
-                                }
-                            });
-                        }
+                        // This should not happen since we check for API key at the beginning
+                        console.error('No API key available - cannot create vector index');
+                        throw new Error('API key is required for indexing');
                     }
                     
                     // Create index data structure with vectors only (no content)
@@ -1037,7 +1020,6 @@ window.RAGCoordinator = (function() {
         isRAGEnabled,
         getRAGEnabledState,
         setRAGEnabledState,
-        refreshPromptsList,
         refreshData,
         viewDocument,
         refreshDocument,

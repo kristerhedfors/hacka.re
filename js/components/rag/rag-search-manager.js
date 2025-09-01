@@ -87,13 +87,43 @@ window.RAGSearchManager = (function() {
         const apiKey = StorageService.getApiKey();
         const baseUrl = StorageService.getBaseUrl();
 
+        // Check if API key is available
+        if (!apiKey) {
+            // Show API key prompt
+            if (confirm('RAG search requires an API key to generate embeddings.\n\nWould you like to configure your API key now?')) {
+                // Open settings modal
+                const settingsModal = document.getElementById('settings-modal');
+                if (settingsModal) {
+                    settingsModal.classList.add('active');
+                    // Focus on API key field
+                    setTimeout(() => {
+                        const apiKeyField = document.getElementById('api-key-update');
+                        if (apiKeyField) {
+                            apiKeyField.focus();
+                        }
+                    }, 100);
+                }
+            }
+            return;
+        }
+
+        // Check if we have any embeddings indexed
+        const stats = VectorRAGService.getIndexStats();
+        const hasEmbeddings = (stats.defaultPrompts.available && stats.defaultPrompts.chunks > 0) || 
+                              (stats.userBundles.available && stats.userBundles.totalChunks > 0);
+        
+        if (!hasEmbeddings) {
+            showError('No embeddings found in the knowledge base.\n\nPlease index some documents first by checking them in the RAG modal and clicking the refresh button.\n\nNote: Embeddings are stored in memory only and need to be re-indexed after page reload.');
+            return;
+        }
+
         try {
             showProgress('Searching knowledge base...', 50);
             
             const searchResults = await VectorRAGService.search(query, {
                 maxResults: maxResults,
                 threshold: 0.3,
-                useTextFallback: true,
+                useTextFallback: false,  // Disable text fallback
                 apiKey: apiKey,
                 baseUrl: baseUrl
             });

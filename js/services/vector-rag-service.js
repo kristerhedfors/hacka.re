@@ -655,7 +655,21 @@ window.VectorRAGService = (function() {
     function getIndexStats() {
         initialize();
 
-        // Check for EU documents in localStorage
+        // Check for in-memory vectors first (from RAGCoordinator's vectorStore)
+        let inMemoryVectorCount = 0;
+        let inMemoryDocumentCount = 0;
+        if (window.ragVectorStore) {
+            const docIds = window.ragVectorStore.getDocumentIds();
+            inMemoryDocumentCount = docIds.length;
+            docIds.forEach(docId => {
+                const vectors = window.ragVectorStore.getVectors(docId);
+                if (vectors && vectors.length > 0) {
+                    inMemoryVectorCount += vectors.length;
+                }
+            });
+        }
+
+        // Check for EU documents in localStorage (metadata only)
         let euDocuments = null;
         let euDocumentsChunks = 0;
         let euDocumentsCount = 0;
@@ -682,21 +696,21 @@ window.VectorRAGService = (function() {
                 lastUpdated: defaultPromptsIndex?.metadata?.createdAt || null
             },
             userBundles: {
-                available: !!userBundlesIndex,
+                available: !!userBundlesIndex || inMemoryVectorCount > 0,
                 bundles: userBundlesIndex?.bundles?.length || 0,
-                totalChunks: 0,
+                totalChunks: inMemoryVectorCount,  // Use in-memory vector count
                 lastUpdated: userBundlesIndex?.savedAt || null
             },
             euDocuments: {
-                available: euDocumentsCount > 0,
-                documents: euDocumentsCount,
-                chunks: euDocumentsChunks,
+                available: euDocumentsCount > 0 || inMemoryDocumentCount > 0,
+                documents: Math.max(euDocumentsCount, inMemoryDocumentCount),
+                chunks: Math.max(euDocumentsChunks, inMemoryVectorCount),
                 lastUpdated: euDocuments ? Object.values(euDocuments).map(doc => doc.lastIndexed).filter(Boolean).sort().pop() : null
             },
             settings: ragSettings
         };
 
-        // Count total chunks in user bundles
+        // Add count from traditional user bundles if any
         if (userBundlesIndex && userBundlesIndex.bundles) {
             for (const bundle of userBundlesIndex.bundles) {
                 if (bundle.chunks && Array.isArray(bundle.chunks)) {

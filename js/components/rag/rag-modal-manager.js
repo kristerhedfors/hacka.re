@@ -106,9 +106,6 @@ window.RAGModalManager = (function() {
             if (window.RAGIndexStatsManager) {
                 window.RAGIndexStatsManager.updateStats();
             }
-            if (window.RAGPromptsListManager) {
-                window.RAGPromptsListManager.loadPromptsList();
-            }
             if (window.RAGFileKnowledgeManager) {
                 window.RAGFileKnowledgeManager.loadFiles();
             }
@@ -321,13 +318,15 @@ window.RAGModalManager = (function() {
         const statusElement = document.getElementById(`${docId}-status`);
         if (statusElement) {
             if (isIndexed) {
-                statusElement.textContent = 'Indexed';
+                statusElement.textContent = 'Indexed (in memory)';
                 statusElement.classList.add('indexed');
                 statusElement.classList.remove('not-indexed');
+                statusElement.title = 'Document is indexed with embeddings. Note: Embeddings are stored in memory only and will need to be re-indexed after page reload.';
             } else {
                 statusElement.textContent = 'Not indexed';
                 statusElement.classList.remove('indexed');
                 statusElement.classList.add('not-indexed');
+                statusElement.title = 'Document needs to be indexed. Check the checkbox or click refresh to generate embeddings.';
             }
         }
     }
