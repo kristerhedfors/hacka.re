@@ -144,6 +144,7 @@ def setup_test_environment(page, provider, model, api_key):
         close_button = page.locator("#close-settings")
         if close_button.is_visible():
             page.wait_for_timeout(1000)  # Wait for auto-save
+
             close_button.click(force=True)
             # Re-open settings
             settings_button = page.locator("#settings-btn")

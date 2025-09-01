@@ -454,23 +454,53 @@ window.ModelManager = (function() {
             // Clear existing options
             elements.modelSelect.innerHTML = '';
             
-            // Create a single option indicating that models couldn't be fetched
-            const option = document.createElement('option');
-            option.value = '';
-            option.textContent = 'Failed to fetch models - check API key and connection';
-            option.disabled = true;
-            option.selected = true;
+            // Get the current provider to determine default models
+            const currentProvider = elements.baseUrlSelect ? elements.baseUrlSelect.value : 'openai';
             
-            // Add the option to the select element
-            elements.modelSelect.appendChild(option);
+            // Define fallback models for each provider
+            const fallbackModels = {
+                openai: ['gpt-4o-mini', 'gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'],
+                groq: ['moonshotai/kimi-k2-instruct', 'llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'mixtral-8x7b-32768'],
+                berget: ['mistralai/Magistral-Small-2506', 'llama-3.3-70b', 'gpt-4o-mini', 'claude-3-opus-20240229'],
+                custom: []
+            };
             
-            // Add a hint option
-            const hintOption = document.createElement('option');
-            hintOption.value = '';
-            hintOption.textContent = 'Try reloading models after checking settings';
-            hintOption.disabled = true;
+            // Get models for current provider
+            const models = fallbackModels[currentProvider] || [];
             
-            elements.modelSelect.appendChild(hintOption);
+            if (models.length > 0) {
+                // Add a note that these are fallback models
+                const noteOption = document.createElement('option');
+                noteOption.value = '';
+                noteOption.textContent = '-- Default models (API unavailable) --';
+                noteOption.disabled = true;
+                elements.modelSelect.appendChild(noteOption);
+                
+                // Add the fallback models
+                models.forEach((modelId, index) => {
+                    const option = document.createElement('option');
+                    option.value = modelId;
+                    const displayName = ModelInfoService.getDisplayName(modelId);
+                    option.textContent = window.ModelCountryMapping ? 
+                        window.ModelCountryMapping.formatModelWithFlag(modelId, displayName) : 
+                        displayName;
+                    
+                    // Select the first model by default
+                    if (index === 0) {
+                        option.selected = true;
+                    }
+                    
+                    elements.modelSelect.appendChild(option);
+                });
+            } else {
+                // Only show error if no fallback models available
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'Failed to fetch models - check API key and connection';
+                option.disabled = true;
+                option.selected = true;
+                elements.modelSelect.appendChild(option);
+            }
         }
         
         /**

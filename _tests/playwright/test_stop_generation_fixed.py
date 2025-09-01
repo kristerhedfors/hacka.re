@@ -61,7 +61,9 @@ def setup_api_and_model_robust(page: Page):
     
     # Save settings
     close_button = page.locator("#close-settings")
-    page.wait_for_timeout(1000)  # Wait for auto-save    close_button.click(force=True)
+    page.wait_for_timeout(1000)  # Wait for auto-save
+
+    close_button.click(force=True)
     
     # Wait for modal to close
     page.wait_for_selector("#settings-modal", state="hidden", timeout=2000)
