@@ -14,6 +14,11 @@ window.RAGCoordinator = (function() {
         // Structure: { docId: { vectors: [...], metadata: {...} } }
         documents: {},
         
+        // Store vectors for a document (alias for compatibility)
+        storeVectors(docId, vectors, metadata) {
+            this.setVectors(docId, vectors, metadata);
+        },
+        
         // Store vectors for a document
         setVectors(docId, vectors, metadata) {
             this.documents[docId] = {
