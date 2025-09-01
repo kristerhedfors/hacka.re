@@ -732,6 +732,31 @@ window.VectorRAGService = (function() {
                 window.DebugService.debugLog('rag', `Average similarity score: ${(avgSimilarity * 100).toFixed(1)}%`);
                 window.DebugService.debugLog('rag', `Results: ${results.length} chunks (${gapFilledCount} gap-fillers) | ~${totalTokens} tokens total`);
                 
+                // Generate chunk hit pattern for EU documents
+                const euChunks = results.filter(r => r.source === 'eu_documents');
+                if (euChunks.length > 0) {
+                    // Group chunks by document
+                    const chunksByDoc = {};
+                    euChunks.forEach(chunk => {
+                        const docId = chunk.documentId || 'unknown';
+                        if (!chunksByDoc[docId]) {
+                            chunksByDoc[docId] = [];
+                        }
+                        // Extract chunk number from vectorId (e.g., "aia_chunk_5" -> 5)
+                        const match = chunk.vectorId?.match(/_chunk_(\d+)$/);
+                        if (match) {
+                            chunksByDoc[docId].push(parseInt(match[1]));
+                        }
+                    });
+                    
+                    // Format chunk patterns for each document
+                    Object.keys(chunksByDoc).forEach(docId => {
+                        const chunks = chunksByDoc[docId].sort((a, b) => a - b);
+                        const pattern = formatChunkPattern(chunks);
+                        window.DebugService.debugLog('rag', `EU Document ${docId.toUpperCase()} chunks: ${pattern}`);
+                    });
+                }
+                
                 // Show top overall matches across all sources
                 window.DebugService.debugLog('rag', `Top overall matches (all sources):`);
                 const topOverall = results.slice(0, 5);
@@ -744,6 +769,45 @@ window.VectorRAGService = (function() {
             } else {
                 window.DebugService.debugLog('rag', `No matches found above threshold ${threshold}. Try lowering threshold or using different search terms.`);
             }
+        }
+        
+        /**
+         * Format chunk numbers into pattern like "1, 4, 7-9, 12-15, 18"
+         * @param {Array<number>} chunks - Array of chunk numbers
+         * @returns {string} Formatted pattern
+         */
+        function formatChunkPattern(chunks) {
+            if (!chunks || chunks.length === 0) return 'none';
+            
+            const ranges = [];
+            let start = chunks[0];
+            let end = chunks[0];
+            
+            for (let i = 1; i <= chunks.length; i++) {
+                if (i < chunks.length && chunks[i] === end + 1) {
+                    // Continue the range
+                    end = chunks[i];
+                } else {
+                    // End of range
+                    if (start === end) {
+                        ranges.push(start.toString());
+                    } else if (end === start + 1) {
+                        // Two consecutive numbers - show both
+                        ranges.push(`${start}, ${end}`);
+                    } else {
+                        // Range of 3 or more
+                        ranges.push(`${start}-${end}`);
+                    }
+                    
+                    // Start new range
+                    if (i < chunks.length) {
+                        start = chunks[i];
+                        end = chunks[i];
+                    }
+                }
+            }
+            
+            return ranges.join(', ');
         }
 
         return {

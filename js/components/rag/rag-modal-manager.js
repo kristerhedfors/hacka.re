@@ -291,7 +291,24 @@ window.RAGModalManager = (function() {
                     window.RAGCoordinator.checkDocumentIndexed(docId) : false;
                 
                 if (isIndexed) {
-                    statusElement.textContent = 'Indexed (disabled)';
+                    // Get chunk count
+                    let chunkCount = 0;
+                    if (window.ragVectorStore && window.ragVectorStore.hasVectors(docId)) {
+                        const vectors = window.ragVectorStore.getVectors(docId);
+                        chunkCount = vectors ? vectors.length : 0;
+                    }
+                    
+                    // If no chunks from memory, check precached data
+                    if (chunkCount === 0 && window.precachedEmbeddings) {
+                        const doc = window.precachedEmbeddings.documents?.find(d => d.documentId === docId);
+                        chunkCount = doc ? doc.vectors.length : 0;
+                    }
+                    
+                    if (chunkCount > 0) {
+                        statusElement.textContent = `Indexed (disabled, ${chunkCount} chunks)`;
+                    } else {
+                        statusElement.textContent = 'Indexed (disabled)';
+                    }
                     statusElement.classList.add('indexed');
                     statusElement.classList.add('disabled');
                 } else {
@@ -320,10 +337,27 @@ window.RAGModalManager = (function() {
         const statusElement = document.getElementById(`${docId}-status`);
         if (statusElement) {
             if (isIndexed) {
-                statusElement.textContent = 'Indexed (in memory)';
+                // Get chunk count from the indexed documents
+                let chunkCount = 0;
+                if (window.ragVectorStore && window.ragVectorStore.hasVectors(docId)) {
+                    const vectors = window.ragVectorStore.getVectors(docId);
+                    chunkCount = vectors ? vectors.length : 0;
+                }
+                
+                // If no chunks from memory, check precached data
+                if (chunkCount === 0 && window.precachedEmbeddings) {
+                    const doc = window.precachedEmbeddings.documents?.find(d => d.documentId === docId);
+                    chunkCount = doc ? doc.vectors.length : 0;
+                }
+                
+                if (chunkCount > 0) {
+                    statusElement.textContent = `Indexed (${chunkCount} chunks @ ~200 tokens)`;
+                } else {
+                    statusElement.textContent = 'Indexed (in memory)';
+                }
                 statusElement.classList.add('indexed');
                 statusElement.classList.remove('not-indexed');
-                statusElement.title = 'Document is indexed with embeddings. Note: Embeddings are stored in memory only and will need to be re-indexed after page reload.';
+                statusElement.title = `Document is indexed with ${chunkCount > 0 ? chunkCount + ' chunks of ~200 tokens each' : 'embeddings'}. Note: Embeddings are stored in memory only and will need to be re-indexed after page reload.`;
             } else {
                 statusElement.textContent = 'Not indexed';
                 statusElement.classList.remove('indexed');

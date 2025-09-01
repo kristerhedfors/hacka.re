@@ -21,12 +21,13 @@ load_dotenv(env_path)
 
 # Configuration
 CONFIG = {
-    'chunk_size': 512,  # tokens (approximate)
-    'chunk_overlap': 50,  # tokens
+    'chunk_size': 200,  # tokens (approximate) - reduced from 512
+    'chunk_overlap': 20,  # tokens - reduced proportionally
     'char_per_token': 4,  # rough approximation
     'embedding_model': 'text-embedding-3-small',
     'batch_size': 10,  # embeddings per API call
-    'max_chunks_per_doc': 50,  # limit chunks to avoid memory issues
+    'max_chunks_per_doc': None,  # No artificial limit - let documents chunk naturally
+    'max_total_chunks': 2000,  # Safety limit raised to accommodate all chunks
     'output_file': Path(__file__).parent.parent / 'js' / 'data' / 'precached-embeddings.js'
 }
 
@@ -69,7 +70,7 @@ def load_regulation_content(file_path: Path) -> str:
     
     raise ValueError(f"Could not extract content from {file_path}")
 
-def chunk_text(text: str, chunk_size: int = 512, chunk_overlap: int = 50, max_chunks: int = 50) -> List[Dict]:
+def chunk_text(text: str, chunk_size: int = 512, chunk_overlap: int = 50, max_chunks: int = None) -> List[Dict]:
     """Chunk text into smaller pieces with overlap"""
     chunk_size_chars = chunk_size * CONFIG['char_per_token']
     chunk_overlap_chars = chunk_overlap * CONFIG['char_per_token']
@@ -77,7 +78,7 @@ def chunk_text(text: str, chunk_size: int = 512, chunk_overlap: int = 50, max_ch
     chunks = []
     start = 0
     
-    while start < len(text) and len(chunks) < max_chunks:
+    while start < len(text) and (max_chunks is None or len(chunks) < max_chunks):
         end = min(start + chunk_size_chars, len(text))
         chunk = text[start:end]
         
@@ -116,11 +117,15 @@ def generate_embeddings(text_chunks: List[str]) -> List[List[float]]:
     client = OpenAI(api_key=api_key)
     embeddings = []
     batch_size = CONFIG['batch_size']
+    total_batches = (len(text_chunks) + batch_size - 1) // batch_size
+    
+    print(f"  Will process {len(text_chunks)} chunks in {total_batches} batches")
     
     for i in range(0, len(text_chunks), batch_size):
         batch = text_chunks[i:i + batch_size]
+        batch_num = i//batch_size + 1
         progress = int((i / len(text_chunks)) * 100)
-        print(f"\r  {progress}% - Processing batch {i//batch_size + 1}...", end='')
+        print(f"  Batch {batch_num}/{total_batches} ({progress}%) - {len(batch)} chunks...", flush=True)
         
         try:
             response = client.embeddings.create(
@@ -133,10 +138,10 @@ def generate_embeddings(text_chunks: List[str]) -> List[List[float]]:
                 embeddings.append(item.embedding)
                 
         except Exception as e:
-            print(f"\n  ✗ Error generating embeddings: {e}")
+            print(f"\n  ✗ Error generating embeddings at batch {batch_num}: {e}")
             raise
     
-    print("\n  ✓ Embeddings generated successfully")
+    print(f"  ✓ Embeddings generated successfully ({len(embeddings)} total)")
     return embeddings
 
 def process_regulation(regulation: Dict) -> Dict:
@@ -290,7 +295,9 @@ def main():
     print("Pre-cached Embeddings Generator (Python)")
     print("=" * 50)
     print(f"Model: {CONFIG['embedding_model']}")
-    print(f"Max chunks per doc: {CONFIG['max_chunks_per_doc']}")
+    print(f"Chunk size: {CONFIG['chunk_size']} tokens (~{CONFIG['chunk_size'] * CONFIG['char_per_token']} chars)")
+    print(f"Chunk overlap: {CONFIG['chunk_overlap']} tokens")
+    print(f"Max chunks per doc: {'No limit' if CONFIG['max_chunks_per_doc'] is None else CONFIG['max_chunks_per_doc']}")
     print(f"Output: {CONFIG['output_file']}")
     
     embeddings_data = {
