@@ -36,7 +36,9 @@ def test_context_window_display(page: Page, serve_hacka_re, api_key):
     
     # Save settings
     close_button = page.locator("#close-settings")
-    page.wait_for_timeout(1000)  # Wait for auto-save    close_button.click()
+    page.wait_for_timeout(1000)  # Wait for auto-save
+
+    close_button.click()
     dismiss_settings_modal(page)
     
     # Check if context window is displayed
@@ -71,7 +73,9 @@ def test_context_window_display(page: Page, serve_hacka_re, api_key):
     
     # Select gpt-4 model (should have 8192 context)
     model_select.select_option(value="gpt-4")
-    page.wait_for_timeout(1000)  # Wait for auto-save    close_button.click()
+    page.wait_for_timeout(1000)  # Wait for auto-save
+
+    close_button.click()
     dismiss_settings_modal(page)
     
     # Check model info again
@@ -123,6 +127,7 @@ def test_groq_context_windows(page: Page, serve_hacka_re):
         # Save settings
         close_button = page.locator("#close-settings")
         page.wait_for_timeout(1000)  # Wait for auto-save
+
         close_button.click()
         dismiss_settings_modal(page)
         

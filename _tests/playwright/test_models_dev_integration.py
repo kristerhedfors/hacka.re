@@ -34,7 +34,9 @@ def test_models_dev_context_windows(page: Page, serve_hacka_re, api_key):
     
     # Save and close settings
     close_button = page.locator("#close-settings")
-    page.wait_for_timeout(1000)  # Wait for auto-save    close_button.click()
+    page.wait_for_timeout(1000)  # Wait for auto-save
+
+    close_button.click()
     dismiss_settings_modal(page)
     
     # Test different models and their context windows
@@ -75,6 +77,7 @@ def test_models_dev_context_windows(page: Page, serve_hacka_re, api_key):
             # Save settings
             close_button = page.locator("#close-settings")
             page.wait_for_timeout(1000)  # Wait for auto-save
+
             close_button.click()
             dismiss_settings_modal(page)
             
