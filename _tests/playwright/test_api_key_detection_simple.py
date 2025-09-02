@@ -84,7 +84,7 @@ def test_api_key_detection_simple(page: Page, serve_hacka_re):
     # Check detection message changed
     expect(detection_element).to_be_visible()
     expect(detection_text).to_contain_text("OpenAI")
-    expect(detection_text).to_contain_text("gpt-4o-mini")
+    expect(detection_text).to_contain_text("gpt-5-nano")
     print("✅ OpenAI API key detected with model info")
     
     # Check provider dropdown changed
@@ -92,8 +92,8 @@ def test_api_key_detection_simple(page: Page, serve_hacka_re):
     print("✅ Provider auto-selected to 'openai'")
     
     # Check model dropdown for default OpenAI model
-    expect(model_select).to_have_value('gpt-4o-mini')
-    print("✅ Default model auto-selected: gpt-4o-mini")
+    expect(model_select).to_have_value('gpt-5-nano')
+    print("✅ Default model auto-selected: gpt-5-nano")
 
 
 if __name__ == "__main__":

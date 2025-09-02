@@ -22,7 +22,7 @@ PRIORITY_MODELS = {
         "deepseek-r1-distill-llama-70b", # DeepSeek model
     ],
     "openai": [
-        "gpt-4o-mini",                  # Standard OpenAI format
+        "gpt-5-nano",                  # Standard OpenAI format
         "gpt-4o",                       # Full model
         "gpt-3.5-turbo",                # Classic model
     ],

@@ -457,13 +457,19 @@ window.ModelManager = (function() {
             // Get the current provider to determine default models
             const currentProvider = elements.baseUrlSelect ? elements.baseUrlSelect.value : 'openai';
             
-            // Define fallback models for each provider
-            const fallbackModels = {
-                openai: ['gpt-4o-mini', 'gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'],
-                groq: ['moonshotai/kimi-k2-instruct', 'llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'mixtral-8x7b-32768'],
-                berget: ['mistralai/Magistral-Small-2506', 'llama-3.3-70b', 'gpt-4o-mini', 'claude-3-opus-20240229'],
-                custom: []
-            };
+            // Get fallback models from configuration or use defaults
+            const fallbackModels = window.DefaultModelsConfig ? 
+                {
+                    openai: window.DefaultModelsConfig.getFallbackModels('openai'),
+                    groq: window.DefaultModelsConfig.getFallbackModels('groq'),
+                    berget: window.DefaultModelsConfig.getFallbackModels('berget'),
+                    custom: window.DefaultModelsConfig.getFallbackModels('custom')
+                } : {
+                    openai: ['gpt-5-nano', 'gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'],
+                    groq: ['moonshotai/kimi-k2-instruct', 'llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'mixtral-8x7b-32768'],
+                    berget: ['mistralai/Magistral-Small-2506', 'llama-3.3-70b', 'gpt-5-nano', 'claude-3-opus-20240229'],
+                    custom: []
+                };
             
             // Get models for current provider
             const models = fallbackModels[currentProvider] || [];

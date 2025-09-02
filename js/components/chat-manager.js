@@ -773,7 +773,7 @@ function cleanupGeneration(updateContextUsage, currentModel) {
                 
                 // Get multi-query settings from RAG modal
                 const multiQueryEnabled = document.getElementById('rag-multi-query-enabled')?.checked ?? false;
-                const expansionModel = document.getElementById('rag-expansion-model')?.value || 'gpt-4o-mini';
+                const expansionModel = document.getElementById('rag-expansion-model')?.value || 'gpt-5-nano';
                 const tokenLimit = parseInt(document.getElementById('rag-token-limit')?.value) || 5000;
                 
                 // Perform RAG search with multi-query support

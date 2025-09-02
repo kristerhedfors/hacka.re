@@ -540,7 +540,7 @@ window.VectorRAGService = (function() {
             baseUrl = null,
             embeddingModel = ragSettings?.embeddingModel || 'text-embedding-3-small',
             useMultiQuery = false,
-            expansionModel = 'gpt-4o-mini'
+            expansionModel = 'gpt-5-nano'
         } = options;
 
         if (!query || typeof query !== 'string') {

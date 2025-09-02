@@ -14,7 +14,7 @@ def test_rag_chat_integration_setup(page: Page, serve_hacka_re, api_key):
     # Configure API key and settings
     page.evaluate(f"localStorage.setItem('openai_api_key', '{api_key}')")
     page.evaluate("localStorage.setItem('base_url', 'https://api.openai.com/v1')")
-    page.evaluate("localStorage.setItem('selected_model', 'gpt-4o-mini')")
+    page.evaluate("localStorage.setItem('selected_model', 'gpt-5-nano')")
     
     # Create mock RAG index for testing
     mock_rag_index = {
@@ -99,7 +99,7 @@ def test_rag_enhanced_chat_response(page: Page, serve_hacka_re, api_key):
     # Configure API key and settings
     page.evaluate(f"localStorage.setItem('openai_api_key', '{api_key}')")
     page.evaluate("localStorage.setItem('base_url', 'https://api.openai.com/v1')")
-    page.evaluate("localStorage.setItem('selected_model', 'gpt-4o-mini')")
+    page.evaluate("localStorage.setItem('selected_model', 'gpt-5-nano')")
     
     # Enable debug mode and RAG category to capture debug logs
     page.evaluate("""
@@ -370,7 +370,7 @@ def test_rag_end_to_end_workflow(page: Page, serve_hacka_re, api_key):
     # Configure API key and settings
     page.evaluate(f"localStorage.setItem('openai_api_key', '{api_key}')")
     page.evaluate("localStorage.setItem('base_url', 'https://api.openai.com/v1')")
-    page.evaluate("localStorage.setItem('selected_model', 'gpt-4o-mini')")
+    page.evaluate("localStorage.setItem('selected_model', 'gpt-5-nano')")
     
     # Step 1: Create and store a knowledge base
     mock_knowledge_base = {

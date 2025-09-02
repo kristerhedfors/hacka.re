@@ -260,7 +260,7 @@ Refactored from monolithic ~800-line service into focused modules with clear dep
 
 ### Test Philosophy
 - **No mocking** - all tests use real API calls to validate actual functionality
-- Uses `gpt-4o-mini` model for cost efficiency
+- Uses `gpt-5-nano` model for cost efficiency
 - Playwright + pytest browser automation for comprehensive UI testing
 - **Screenshot-driven debugging** with contextual metadata capture
 - **Multi-level output capture** for development and CI/CD integration
@@ -300,7 +300,7 @@ _tests/playwright/
 
 **API Integration Tests:**
 - `function_calling_api/` - Real OpenAI API function calling tests
-- Uses `gpt-4o-mini` model for cost efficiency
+- Uses `gpt-5-nano` model for cost efficiency
 - No mocking - validates actual API responses
 
 **Specialized Test Suites:**
@@ -562,7 +562,7 @@ The multi-level output capture generates markdown-compatible reports that can be
 - **Function name fields are auto-populated** from code editor (read-only)
 - **Use proper waiting strategies**: `page.wait_for_selector()` not arbitrary `page.wait_for_timeout()`
 - **Dismiss welcome modal** in tests with `dismiss_welcome_modal()` after page navigation
-- **Test against real APIs** - no mocking, use `gpt-4o-mini` for cost efficiency
+- **Test against real APIs** - no mocking, use `gpt-5-nano` for cost efficiency
 - **Include comprehensive debug context** in screenshot metadata for LLM-assisted debugging
 - **Use multi-level output capture** - terminal output, test logs, and screenshot reports
 - **Handle modals proactively** with `page.on("dialog")` handlers before triggering actions
@@ -605,7 +605,7 @@ cd hacka_re_verifier && python -m black --check .
 4. **Include comprehensive debug information** with contextual screenshots and metadata
 5. **Choose appropriate test category** - core (quick validation), feature (advanced), or API integration
 6. **Use proper waiting strategies** - wait for specific conditions, avoid arbitrary timeouts
-7. **Test against real APIs** using `gpt-4o-mini` model for actual functionality validation
+7. **Test against real APIs** using `gpt-5-nano` model for actual functionality validation
 8. **Run tests with multiple execution options** - headless/headed, single/batch, filtered by keywords
 
 ### Modifying Services

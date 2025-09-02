@@ -17,12 +17,12 @@ Port: 8000
 Project Root: /Users/user/dev/hacka.re
 ==================================================
 Checking for existing HTTP server processes on port 8000...
-Found existing processes: 95302
+Found existing processes: 47347
 Killing existing processes...
 Processes killed.
 Changing to project root directory: /Users/user/dev/hacka.re
 Starting Python HTTP server on port 8000...
-Server started successfully with PID: 36404
+Server started successfully with PID: 7198
 Server is now running at http://localhost:8000
 Server PID saved to: /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt
 ==================================================
@@ -38,12 +38,12 @@ rootdir: /Users/user/dev/hacka.re/_tests/playwright
 configfile: pytest.ini
 testpaths: .
 plugins: playwright-0.7.0, base-url-2.1.0
-collected 928 items / 890 deselected / 38 selected
+collected 924 items / 886 deselected / 38 selected
 
 shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_info[chromium0] PASSED [  2%]
 shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_plan_details[chromium0] PASSED [  5%]
 test_api.py::test_api_key_configuration[chromium0] PASSED                [  7%]
-test_api.py::test_model_selection[chromium0] PASSED                      [ 10%]
+test_api.py::test_model_selection[chromium0] FAILED                      [ 10%]
 test_api_key_detection_simple.py::test_api_key_detection_simple[chromium0] PASSED [ 13%]
 test_api_key_enter.py::test_api_key_modal_enter_key[chromium0] PASSED    [ 15%]
 test_api_key_persistence_debug.py::test_api_key_persistence_scenario_1_basic[chromium0] PASSED [ 18%]
@@ -56,87 +56,4 @@ test_page.py::test_page_loads[chromium0] PASSED                          [ 34%]
 test_page.py::test_chat_interface_elements[chromium0] PASSED             [ 36%]
 test_stop_generation_simple.py::test_chat_manager_stop_logic[chromium0] PASSED [ 39%]
 test_welcome_modal_new_logic.py::test_welcome_modal_shows_for_first_time_user[chromium0] PASSED [ 42%]
-test_welcome_modal_new_logic.py::test_welcome_modal_hidden_for_returning_user[chromium0] PASSED [ 44%]
-test_welcome_modal_new_logic.py::test_welcome_modal_disabled_with_url_param[chromium0] PASSED [ 47%]
-test_welcome_modal_new_logic.py::test_no_auto_settings_after_welcome[chromium0] PASSED [ 50%]
-shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_info[chromium1] PASSED [ 52%]
-shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_plan_details[chromium1] PASSED [ 55%]
-test_api.py::test_api_key_configuration[chromium1] PASSED                [ 57%]
-test_api.py::test_model_selection[chromium1] PASSED                      [ 60%]
-test_api_key_detection_simple.py::test_api_key_detection_simple[chromium1] PASSED [ 63%]
-test_api_key_enter.py::test_api_key_modal_enter_key[chromium1] PASSED    [ 65%]
-test_api_key_persistence_debug.py::test_api_key_persistence_scenario_1_basic[chromium1] PASSED [ 68%]
-test_api_key_persistence_debug.py::test_api_key_persistence_scenario_2_retry_helper[chromium1] PASSED [ 71%]
-test_api_key_persistence_debug.py::test_api_key_persistence_scenario_3_multiple_attempts[chromium1] PASSED [ 73%]
-test_api_key_persistence_debug.py::test_api_key_persistence_scenario_4_timing_analysis[chromium1] PASSED [ 76%]
-test_chat.py::test_chat_message_send_receive[chromium1] SKIPPED (Ass...) [ 78%]
-test_chat_no_mock.py::test_chat_message_send_receive[chromium1] SKIPPED  [ 81%]
-test_page.py::test_page_loads[chromium1] PASSED                          [ 84%]
-test_page.py::test_chat_interface_elements[chromium1] PASSED             [ 86%]
-test_stop_generation_simple.py::test_chat_manager_stop_logic[chromium1] PASSED [ 89%]
-test_welcome_modal_new_logic.py::test_welcome_modal_shows_for_first_time_user[chromium1] PASSED [ 92%]
-test_welcome_modal_new_logic.py::test_welcome_modal_hidden_for_returning_user[chromium1] PASSED [ 94%]
-test_welcome_modal_new_logic.py::test_welcome_modal_disabled_with_url_param[chromium1] PASSED [ 97%]
-test_welcome_modal_new_logic.py::test_no_auto_settings_after_welcome[chromium1] PASSED [100%]
-
-=============================== warnings summary ===============================
-test_complete_mcp_share_flow.py:8
-  /Users/user/dev/hacka.re/_tests/playwright/test_complete_mcp_share_flow.py:8: PytestUnknownMarkWarning: Unknown pytest.mark.feature_test - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
-    @pytest.mark.feature_test
-
-test_cross_tab_loop_fix.py:8
-  /Users/user/dev/hacka.re/_tests/playwright/test_cross_tab_loop_fix.py:8: PytestUnknownMarkWarning: Unknown pytest.mark.feature_test - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
-    @pytest.mark.feature_test
-
-test_cross_tab_sync_optimization.py:7
-  /Users/user/dev/hacka.re/_tests/playwright/test_cross_tab_sync_optimization.py:7: PytestUnknownMarkWarning: Unknown pytest.mark.feature_test - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
-    @pytest.mark.feature_test
-
-test_cross_tab_sync_optimization.py:59
-  /Users/user/dev/hacka.re/_tests/playwright/test_cross_tab_sync_optimization.py:59: PytestUnknownMarkWarning: Unknown pytest.mark.feature_test - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
-    @pytest.mark.feature_test
-
-test_debug_utils.py:25
-  /Users/user/dev/hacka.re/_tests/playwright/test_debug_utils.py:25: PytestCollectionWarning: cannot collect test class 'TestDebugger' because it has a __init__ constructor (from: test_debug_utils.py)
-    class TestDebugger:
-
-test_debug_utils.py:25
-  /Users/user/dev/hacka.re/_tests/playwright/test_debug_utils.py:25: PytestCollectionWarning: cannot collect test class 'TestDebugger' because it has a __init__ constructor (from: test_example_with_debugging.py)
-    class TestDebugger:
-
-test_rag_multi_query.py:104
-  /Users/user/dev/hacka.re/_tests/playwright/test_rag_multi_query.py:104: PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
-    @pytest.mark.asyncio
-
-test_rag_multi_query.py:375
-  /Users/user/dev/hacka.re/_tests/playwright/test_rag_multi_query.py:375: PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
-    @pytest.mark.asyncio
-
-test_rag_similarity_scores.py:14
-  /Users/user/dev/hacka.re/_tests/playwright/test_rag_similarity_scores.py:14: PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
-    @pytest.mark.asyncio
-
--- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-==== 34 passed, 4 skipped, 890 deselected, 9 warnings in 231.60s (0:03:51) =====
-Generating test results markdown files...
-No arguments provided. Using default files.
-Processing default files...
-Generating markdown report for 'test_output.log' -> 'test_results.md'...
-Markdown report generated: test_results.md
-You can view it with: glow -p test_results.md
-Warning: Output file 'run_tests.out_bundle.md' is newer than input file 'run_tests.out'.
-This suggests the bundle has already been generated for this test run.
-To regenerate, delete 'run_tests.out_bundle.md' first.
-
-All core test output, including any Ctrl+C interruptions, has been captured to run_core_tests.out
-A bundled markdown report has been generated at run_tests.out_bundle.md
-You can view the markdown report with: glow -p run_tests.out_bundle.md
-These files can be used by the coding assistant LLM to analyze test results
-Stopping HTTP server...
-===== Stopping HTTP Server for hacka.re Tests =====
-Found server process with PID: 36404
-Stopping server...
-Server stopped.
-Removed PID file: /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt
-==================================================
-Server stopped.
+test_welcome_modal_new_logic.py::test_welcome_modal_hidden_for_returning_user[chromium0] 

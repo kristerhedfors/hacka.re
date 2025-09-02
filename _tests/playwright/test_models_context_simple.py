@@ -28,9 +28,9 @@ def test_context_window_display(page: Page, serve_hacka_re, api_key):
     # Wait for models to load
     page.wait_for_timeout(1000)
     
-    # Select gpt-4o-mini model
+    # Select gpt-5-nano model
     model_select = page.locator("#model-select")
-    model_select.select_option(value="gpt-4o-mini")
+    model_select.select_option(value="gpt-5-nano")
     
     # Save settings
     close_button = page.locator("#close-settings")
@@ -58,7 +58,7 @@ def test_context_window_display(page: Page, serve_hacka_re, api_key):
         print(f"Context-related console logs: {context_logs}")
         
         screenshot_with_markdown(page, "context_window_display", {
-            "Model": "gpt-4o-mini",
+            "Model": "gpt-5-nano",
             "Model Info": model_text,
             "Expected Context": "128000 tokens"
         })
