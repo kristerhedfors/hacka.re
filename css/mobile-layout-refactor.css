@@ -347,10 +347,7 @@ button, .btn, .icon-btn {
 /* ====================================
    BETA TAG FIXES
    ==================================== */
-.beta-tag.header-beta {
-    position: relative !important;
-    z-index: auto !important;
-}
+/* Removed - beta tag now uses fixed positioning from main styles.css */
 
 /* ====================================
    DEBUG MODE (can be removed in production)
