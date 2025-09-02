@@ -30,7 +30,7 @@ PROVIDER_CONFIGS = {
     },
     "groq": {
         "api_key": GROQ_API_KEY or OPENAI_API_KEY,  # Groq can use either key
-        "model": "llama-3.1-8b-instant",
+        "model": "openai/gpt-oss-20b",  # Using the open weights model on Groq (full model ID)
         "base_url": "https://api.groq.com/openai/v1",
         "provider_value": "groq"
     },
