@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear Model Conflict</title>
+    <style>
+        body {
+            font-family: monospace;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+        button {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .info {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .success {
+            color: #4caf50;
+            font-weight: bold;
+        }
+        .warning {
+            color: #ff9800;
+        }
+    </style>
+</head>
+<body>
+    <h1>Clear Model Selection Conflict</h1>
+    
+    <div class="info">
+        <h3>Current Status:</h3>
+        <div id="status"></div>
+    </div>
+    
+    <div>
+        <button onclick="clearModelConflict()">Clear Model Conflict & Set gpt-5-nano</button>
+        <button onclick="showStatus()">Refresh Status</button>
+        <button onclick="window.location.href='/'">Go to Main App</button>
+    </div>
+    
+    <div id="result"></div>
+    
+    <script>
+        function showStatus() {
+            const statusDiv = document.getElementById('status');
+            const storedModel = localStorage.getItem('selected_model');
+            const apiKey = localStorage.getItem('openai_api_key');
+            const baseUrl = localStorage.getItem('base_url');
+            
+            statusDiv.innerHTML = `
+                <p>Stored Model: <span class="${storedModel === 'gpt-5-nano' ? 'success' : 'warning'}">${storedModel || 'Not set'}</span></p>
+                <p>API Key: ${apiKey ? '✓ Set' : '✗ Not set'}</p>
+                <p>Base URL: ${baseUrl || 'Not set (will use default)'}</p>
+            `;
+        }
+        
+        function clearModelConflict() {
+            const resultDiv = document.getElementById('result');
+            
+            // Clear the conflicting model
+            localStorage.removeItem('selected_model');
+            localStorage.removeItem('model_last_updated');
+            
+            // Set gpt-5-nano as the selected model
+            localStorage.setItem('selected_model', 'gpt-5-nano');
+            localStorage.setItem('model_last_updated', Date.now().toString());
+            
+            // Clear any agent-related model settings
+            const keysToCheck = Object.keys(localStorage);
+            let clearedKeys = [];
+            
+            keysToCheck.forEach(key => {
+                if (key.includes('mistralai/Devstral') || key.includes('gpt-4-0613')) {
+                    localStorage.removeItem(key);
+                    clearedKeys.push(key);
+                }
+            });
+            
+            resultDiv.innerHTML = `
+                <div class="info">
+                    <p class="success">✓ Model conflict cleared!</p>
+                    <p class="success">✓ Default model set to: gpt-5-nano</p>
+                    ${clearedKeys.length > 0 ? `<p>Cleared ${clearedKeys.length} conflicting entries</p>` : ''}
+                    <p>You can now return to the main app and the correct model should be selected.</p>
+                </div>
+            `;
+            
+            showStatus();
+        }
+        
+        // Show initial status
+        window.addEventListener('load', showStatus);
+    </script>
+</body>
+</html>
