@@ -327,6 +327,19 @@ window.AIHackareComponent = (function() {
                 });
             }
             
+            // RAG settings checkbox listener
+            if (this.elements.shareRagSettingsCheckbox) {
+                this.elements.shareRagSettingsCheckbox.addEventListener('change', () => {
+                    this.updateLinkLengthBar();
+                    // Update RAG share status message
+                    this.shareManager.updateRAGShareStatus();
+                    // Update status indicators
+                    if (this.shareManager && this.shareManager.updateShareItemStatuses) {
+                        this.shareManager.updateShareItemStatuses();
+                    }
+                });
+            }
+            
             if (this.elements.messageHistoryCount) {
                 this.elements.messageHistoryCount.addEventListener('input', () => {
                     this.updateLinkLengthBar();
@@ -798,6 +811,9 @@ window.AIHackareComponent = (function() {
             this.shareManager.loadShareOptions.bind(this.shareManager),
             this.shareManager.getSharedLinkOptions()
         );
+        
+        // Update RAG share status message
+        this.shareManager.updateRAGShareStatus();
         
         // Add a warning message if no API key is configured
         if (!this.settingsManager.getApiKey()) {

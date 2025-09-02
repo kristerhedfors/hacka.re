@@ -253,6 +253,21 @@ window.ShareService = (function() {
             }
         }
         
+        // Handle RAG settings
+        if (options.includeRagSettings) {
+            // Include RAG enabled state if defined
+            if (options.ragEnabled !== undefined) {
+                payload.ragEnabled = options.ragEnabled;
+                itemsIncluded.push(`✅ RAG ENABLED: ${options.ragEnabled}`);
+            }
+            
+            // Include enabled EU documents if any
+            if (options.ragEUDocuments && options.ragEUDocuments.length > 0) {
+                payload.ragEUDocuments = options.ragEUDocuments;
+                itemsIncluded.push(`✅ RAG EU DOCUMENTS (${options.ragEUDocuments.length} documents: ${options.ragEUDocuments.join(', ')})`);
+            }
+        }
+        
         // Log summary
         console.log('📊 FINAL SUMMARY - ITEMS INCLUDED IN SHARE LINK:');
         console.log('═══════════════════════════════════════════════════');

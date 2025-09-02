@@ -129,6 +129,19 @@ window.LinkSharingService = (function() {
                 }
             }
             
+            // Add RAG settings if available
+            if (window.RAGStorageService) {
+                // Include RAG enabled state
+                const ragEnabled = window.RAGStorageService.isRAGEnabled();
+                finalPayload.ragEnabled = ragEnabled;
+                
+                // Include enabled EU document IDs
+                const enabledEUDocuments = window.RAGStorageService.getEnabledEUDocuments();
+                if (enabledEUDocuments && enabledEUDocuments.length > 0) {
+                    finalPayload.ragEUDocuments = enabledEUDocuments;
+                }
+            }
+            
             // Add function library if requested (legacy support)
             if (options.includeFunctionLibrary) {
                 const allFunctions = FunctionToolsService.getJsFunctions();
@@ -332,7 +345,7 @@ window.LinkSharingService = (function() {
                 // We no longer require apiKey to be present, allowing sharing of just conversation or model
                 if (!data.apiKey && !data.messages && !data.model && !data.systemPrompt && !data.prompts && 
                     !data.functions && !data.selectedDefaultFunctionIds && !data.selectedDefaultFunctionCollectionIds && 
-                    !data.mcpConnections && !data.welcomeMessage) {
+                    !data.mcpConnections && !data.welcomeMessage && !data.ragEnabled && !data.ragEUDocuments) {
                     console.error('Decrypted data does not contain any valid fields');
                     return null;
                 }
@@ -400,6 +413,17 @@ window.LinkSharingService = (function() {
                 if (data.theme) {
                     result.theme = data.theme;
                     console.log('Extracted theme from shared link:', data.theme);
+                }
+                
+                // Include RAG settings if present
+                if (data.ragEnabled !== undefined) {
+                    result.ragEnabled = data.ragEnabled;
+                    console.log('Extracted RAG enabled state from shared link:', data.ragEnabled);
+                }
+                
+                if (data.ragEUDocuments) {
+                    result.ragEUDocuments = data.ragEUDocuments;
+                    console.log('Extracted RAG EU documents from shared link:', data.ragEUDocuments);
                 }
                 
                 return result;

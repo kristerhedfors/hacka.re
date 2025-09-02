@@ -35,6 +35,93 @@ window.ShareManager = (function() {
         }
         
         /**
+         * Update the RAG share status message visibility and content
+         */
+        function updateRAGShareStatus() {
+            const checkbox = elements.shareRagSettingsCheckbox;
+            if (!checkbox) return;
+            
+            const label = checkbox.parentElement ? checkbox.parentElement.querySelector('label[for="share-rag-settings"]') : null;
+            if (!label) return;
+            
+            // Remove ALL existing status indicators
+            const allExistingStatus = label.querySelectorAll('.share-item-status');
+            allExistingStatus.forEach(status => status.remove());
+            
+            // Get current RAG state
+            let ragEnabled = false;
+            let euDocuments = [];
+            
+            if (window.RAGStorageService) {
+                ragEnabled = window.RAGStorageService.isRAGEnabled();
+                euDocuments = window.RAGStorageService.getEnabledEUDocuments();
+            }
+            
+            // Only consider we have RAG settings if RAG is enabled AND at least one document is checked
+            const hasRAGSettings = ragEnabled && euDocuments.length > 0;
+            
+            // Update checkbox state based on whether there's anything to share
+            if (!hasRAGSettings) {
+                // Nothing to share - disable checkbox
+                checkbox.disabled = true;
+                checkbox.checked = false;
+                label.style.opacity = '0.5';
+                label.style.cursor = 'not-allowed';
+                
+                // Add status text explaining why it's disabled
+                const statusSpan = document.createElement('span');
+                statusSpan.className = 'share-item-status';
+                statusSpan.style.marginLeft = '10px';
+                statusSpan.style.color = 'var(--text-color-secondary)';
+                statusSpan.style.fontSize = '0.85em';
+                statusSpan.style.fontWeight = 'normal';
+                
+                // Provide specific reason why it's disabled
+                if (!ragEnabled) {
+                    statusSpan.textContent = '(RAG is disabled)';
+                } else if (euDocuments.length === 0) {
+                    statusSpan.textContent = '(No documents selected)';
+                } else {
+                    statusSpan.textContent = '(RAG disabled, no documents)';
+                }
+                label.appendChild(statusSpan);
+            } else {
+                // Has settings to share - enable checkbox
+                checkbox.disabled = false;
+                label.style.opacity = '1';
+                label.style.cursor = 'pointer';
+                
+                // Build status text showing what will be shared
+                const statusParts = [];
+                
+                if (ragEnabled) {
+                    statusParts.push('RAG enabled');
+                }
+                
+                if (euDocuments.length > 0) {
+                    const docNames = {
+                        'cra': 'CRA',
+                        'aia': 'AIA',
+                        'dora': 'DORA'
+                    };
+                    const enabledDocs = euDocuments.map(id => docNames[id] || id).join(', ');
+                    statusParts.push(enabledDocs);
+                }
+                
+                const statusSpan = document.createElement('span');
+                statusSpan.className = 'share-item-status';
+                statusSpan.style.marginLeft = '10px';
+                statusSpan.style.color = 'var(--text-color-secondary)';
+                statusSpan.style.fontSize = '0.85em';
+                statusSpan.style.fontWeight = 'normal';
+                
+                const actionText = checkbox.checked ? 'will be shared' : 'available';
+                statusSpan.textContent = `(${statusParts.join(', ')} ${actionText})`;
+                label.appendChild(statusSpan);
+            }
+        }
+        
+        /**
          * Initialize the share manager
          */
         function init() {
@@ -68,7 +155,8 @@ window.ShareManager = (function() {
                     includeFunctionLibrary: elements.shareFunctionLibraryCheckbox ? elements.shareFunctionLibraryCheckbox.checked : false,
                     includeMcpConnections: elements.shareMcpConnectionsCheckbox ? elements.shareMcpConnectionsCheckbox.checked : false,
                     includeWelcomeMessage: elements.shareWelcomeMessageCheckbox ? elements.shareWelcomeMessageCheckbox.checked : false,
-                    includeTheme: elements.shareThemeCheckbox ? elements.shareThemeCheckbox.checked : false
+                    includeTheme: elements.shareThemeCheckbox ? elements.shareThemeCheckbox.checked : false,
+                    includeRagSettings: elements.shareRagSettingsCheckbox ? elements.shareRagSettingsCheckbox.checked : false
                 };
                 
                 StorageService.saveShareOptions(options);
@@ -116,6 +204,11 @@ window.ShareManager = (function() {
                     elements.shareThemeCheckbox.checked = options.includeTheme || false;
                 }
                 
+                // Set RAG settings checkbox if it exists
+                if (elements.shareRagSettingsCheckbox) {
+                    elements.shareRagSettingsCheckbox.checked = options.includeRagSettings || false;
+                }
+                
                 // Update message history input state
                 if (options.includeConversation) {
                     elements.messageHistoryCount.disabled = false;
@@ -160,6 +253,9 @@ window.ShareManager = (function() {
             
             // Update theme status
             updateThemeStatus();
+            
+            // Update RAG settings status
+            updateRAGShareStatus();
             
             // Update conversation status
             updateConversationStatus();
@@ -848,6 +944,7 @@ window.ShareManager = (function() {
             console.log('⚙️ Function Library checkbox:', !!elements.shareFunctionLibraryCheckbox, '- checked:', elements.shareFunctionLibraryCheckbox ? elements.shareFunctionLibraryCheckbox.checked : 'N/A');
             console.log('🔌 MCP Connections checkbox (elements):', !!elements.shareMcpConnectionsCheckbox, '- checked:', elements.shareMcpConnectionsCheckbox ? elements.shareMcpConnectionsCheckbox.checked : 'N/A');
             console.log('🎨 Theme checkbox:', !!elements.shareThemeCheckbox, '- checked:', elements.shareThemeCheckbox ? elements.shareThemeCheckbox.checked : 'N/A');
+            console.log('🔍 RAG Settings checkbox:', !!elements.shareRagSettingsCheckbox, '- checked:', elements.shareRagSettingsCheckbox ? elements.shareRagSettingsCheckbox.checked : 'N/A');
             
             // ALWAYS try fresh DOM query for MCP checkbox as fallback
             const mcpCheckboxFallback = document.getElementById('share-mcp-connections');
@@ -931,6 +1028,19 @@ window.ShareManager = (function() {
                 }
             }
             
+            // Collect RAG settings if checkbox is checked
+            let ragEnabled = undefined;
+            let ragEUDocuments = undefined;
+            if (elements.shareRagSettingsCheckbox && elements.shareRagSettingsCheckbox.checked) {
+                console.log('🔍 ShareManager: Collecting RAG settings...');
+                if (window.RAGStorageService) {
+                    ragEnabled = window.RAGStorageService.isRAGEnabled();
+                    ragEUDocuments = window.RAGStorageService.getEnabledEUDocuments();
+                    console.log('🔍 ShareManager: RAG enabled:', ragEnabled);
+                    console.log('🔍 ShareManager: EU documents enabled:', ragEUDocuments);
+                }
+            }
+            
             // Build options for the new unified API
             const options = {
                 password: password,
@@ -952,7 +1062,10 @@ window.ShareManager = (function() {
                 includeFunctionLibrary: elements.shareFunctionLibraryCheckbox ? elements.shareFunctionLibraryCheckbox.checked : false,
                 includeMcpConnections: mcpConnectionsChecked,
                 includeTheme: elements.shareThemeCheckbox ? elements.shareThemeCheckbox.checked : false,
-                theme: theme
+                theme: theme,
+                includeRagSettings: elements.shareRagSettingsCheckbox ? elements.shareRagSettingsCheckbox.checked : false,
+                ragEnabled: ragEnabled,
+                ragEUDocuments: ragEUDocuments
             };
             
             console.log('🎯 ShareManager: Final options object:', JSON.stringify(options, null, 2));
@@ -961,7 +1074,7 @@ window.ShareManager = (function() {
             const hasSelection = options.includeBaseUrl || options.includeApiKey || options.includeSystemPrompt || 
                                options.includeModel || options.includeConversation || options.includePromptLibrary || 
                                options.includeFunctionLibrary || options.includeMcpConnections || options.includeWelcomeMessage || 
-                               options.includeTheme;
+                               options.includeTheme || options.includeRagSettings;
             
             if (!hasSelection) {
                 if (addSystemMessage) {
@@ -1185,6 +1298,7 @@ window.ShareManager = (function() {
             setSharedLinkOptions,
             saveShareOptions,
             loadShareOptions,
+            updateRAGShareStatus,
             updateShareItemStatuses
         };
     }
