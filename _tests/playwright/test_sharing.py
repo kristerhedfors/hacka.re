@@ -103,7 +103,9 @@ def test_model_sharing_link_loading(page: Page, serve_hacka_re):
     # This is done by constructing a URL with the encrypted data
     
     # Create a mock model to share
-    mock_model = "llama-3.1-8b-instant"  # This matches the model from the console output
+    # Use centralized test model configuration
+    from conftest import ACTIVE_TEST_CONFIG
+    mock_model = ACTIVE_TEST_CONFIG["model"]
     
     # Create a payload with the model
     payload = {
@@ -234,7 +236,9 @@ def test_model_sharing_link_loading(page: Page, serve_hacka_re):
     print(f"Model info text: {model_text}")
     
     # Check if the model name appears in the model info
-    assert mock_model in model_text or "llama" in model_text.lower(), f"Model info does not contain the expected model: {mock_model}"
+    # Check if configured model is in the text (handle different model names)
+    model_found = mock_model in model_text or any(part in model_text.lower() for part in mock_model.lower().split('-')[:2])
+    assert model_found, f"Model info does not contain the expected model: {mock_model}"
     
     print("Model sharing link loading test passed")
 
@@ -251,11 +255,12 @@ def setup_api_and_model(page):
     api_key_input = page.locator("#api-key-update")
     api_key_input.fill(API_KEY)
     
-    # No mocking - use real API calls to Groq cloud
+    # No mocking - use real API calls configured by environment
+    from conftest import ACTIVE_TEST_CONFIG
     
-    # Select Groq Cloud as the API provider
+    # Select the configured provider
     base_url_select = page.locator("#base-url-select")
-    base_url_select.select_option("groq")
+    base_url_select.select_option(ACTIVE_TEST_CONFIG["provider_value"])
     
     # Click the reload models button
     reload_button = page.locator("#model-reload-btn")
@@ -264,9 +269,9 @@ def setup_api_and_model(page):
     # Wait for the models to be loaded
     time.sleep(0.5)
     
-    # Select the Llama model
+    # Select the configured test model
     model_select = page.locator("#model-select")
-    model_select.select_option("llama-3.1-8b-instant")
+    model_select.select_option(ACTIVE_TEST_CONFIG["model"])
     
     # Settings auto-save, wait and close
     page.wait_for_timeout(1000)

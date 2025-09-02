@@ -81,7 +81,9 @@ def test_rag_similarity_scores(page: Page, serve_hacka_re, api_key):
     
     # Set expansion model
     expansion_model_select = page.locator("#rag-expansion-model")
-    expansion_model_select.select_option("gpt-5-nano")
+    # Use centralized test model configuration
+    from conftest import ACTIVE_TEST_CONFIG
+    expansion_model_select.select_option(ACTIVE_TEST_CONFIG["model"])
     
     # Set token limit
     token_limit_input = page.locator("#rag-token-limit")

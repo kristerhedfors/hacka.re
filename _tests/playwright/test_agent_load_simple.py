@@ -4,6 +4,14 @@ Simple test to verify agent load functionality
 import pytest
 from playwright.sync_api import Page, expect
 from test_utils import dismiss_welcome_modal, screenshot_with_markdown
+import sys
+import os
+# Import from parent directory's conftest, not shodan's
+parent_dir = os.path.dirname(__file__)
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+import conftest as main_conftest
+ACTIVE_TEST_CONFIG = main_conftest.ACTIVE_TEST_CONFIG
 
 
 def test_agent_load_button_exists_and_triggers(page: Page, serve_hacka_re, api_key):
@@ -21,7 +29,7 @@ def test_agent_load_button_exists_and_triggers(page: Page, serve_hacka_re, api_k
     
     # Set to Groq provider  
     provider_select = page.locator('#base-url-select')
-    provider_select.select_option('groq')
+    provider_select.select_option(ACTIVE_TEST_CONFIG["provider_value"])
     
     close_settings_btn = page.locator('#close-settings')
     close_settings_btn.click()
@@ -99,24 +107,25 @@ def test_agent_load_button_exists_and_triggers(page: Page, serve_hacka_re, api_k
     settings_btn.click()
     # page.wait_for_timeout(500)  # TODO: Replace with proper wait condition
     
-    # Check if provider is back to Groq
+    # Check if provider is back to configured test provider
     restored_provider = provider_select.input_value()
     
     screenshot_with_markdown(page, "load_result_verification", {
         "Status": "Checking if configuration was restored",
-        "Expected": "groq",
+        "Expected": ACTIVE_TEST_CONFIG["provider_value"],
         "Actual": restored_provider,
-        "Load Success": str(restored_provider == 'groq')
+        "Load Success": str(restored_provider == ACTIVE_TEST_CONFIG["provider_value"])
     })
     
     # The main test - did the load work?
-    if restored_provider == 'groq':
-        print("✅ LOAD SUCCESS: Provider restored from 'openai' back to 'groq'")
-        assert restored_provider == 'groq'
+    expected_provider = ACTIVE_TEST_CONFIG["provider_value"]
+    if restored_provider == expected_provider:
+        print(f"✅ LOAD SUCCESS: Provider restored from 'openai' back to '{expected_provider}'")
+        assert restored_provider == expected_provider
     else:
-        print(f"❌ LOAD FAILED: Provider is '{restored_provider}', expected 'groq'")
+        print(f"❌ LOAD FAILED: Provider is '{restored_provider}', expected '{expected_provider}'")
         # This will help us debug what went wrong
-        assert restored_provider == 'groq', f"Expected 'groq', got '{restored_provider}'"
+        assert restored_provider == expected_provider, f"Expected '{expected_provider}', got '{restored_provider}'"
 
 
 def test_load_button_without_confirmation_dialog(page: Page, serve_hacka_re, api_key):
@@ -135,7 +144,7 @@ def test_load_button_without_confirmation_dialog(page: Page, serve_hacka_re, api
     api_key_input = page.locator('#api-key-update')
     api_key_input.fill(api_key)
     provider_select = page.locator('#base-url-select')
-    provider_select.select_option('groq')
+    provider_select.select_option(ACTIVE_TEST_CONFIG["provider_value"])
     
     close_settings_btn = page.locator('#close-settings')
     close_settings_btn.click()
