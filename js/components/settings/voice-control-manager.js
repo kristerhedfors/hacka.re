@@ -260,11 +260,7 @@ window.VoiceControlManager = (function() {
                         updateButtonState();
                     }
                     
-                    // Clean up
-                    if (currentStream) {
-                        currentStream.getTracks().forEach(track => track.stop());
-                        currentStream = null;
-                    }
+                    // Stream cleanup already done in stopRecording()
                 };
                 
                 mediaRecorder.onerror = (event) => {
@@ -303,6 +299,16 @@ window.VoiceControlManager = (function() {
             if (mediaRecorder && mediaRecorder.state === 'recording') {
                 mediaRecorder.stop();
                 // Note: microphoneState will be set to 'processing' in the onstop handler
+            }
+            
+            // IMPORTANT: Stop the media stream immediately to turn off microphone
+            if (currentStream) {
+                console.log('🎤 Stopping media stream tracks...');
+                currentStream.getTracks().forEach(track => {
+                    track.stop();
+                    console.log('🎤 Track stopped:', track.label);
+                });
+                currentStream = null;
             }
         }
         

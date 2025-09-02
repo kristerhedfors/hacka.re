@@ -1,0 +1,751 @@
+/* 
+ * Unified Mobile Stylesheet for hacka.re
+ * Consolidates all mobile-specific styles and fixes
+ * Created: 2025-09-02
+ */
+
+/* ====================================
+   ROOT VARIABLES & Z-INDEX HIERARCHY
+   ==================================== */
+:root {
+    /* Mobile viewport height - updated by JavaScript */
+    --vh: 1vh;
+    
+    /* Z-index layers - centralized management */
+    --z-base: 1;
+    --z-header: 100;
+    --z-chat-input: 100;
+    --z-tooltip: 500;
+    --z-modal-backdrop: 1000;
+    --z-modal-content: 1001;
+    --z-modal-overlay: 1002;
+    --z-critical: 9999;
+}
+
+/* ====================================
+   DESKTOP LAYOUT PRESERVATION
+   ==================================== */
+/* Ensure desktop layout is not affected by mobile styles */
+@media (min-width: 769px) {
+    /* Preserve desktop body layout */
+    body {
+        margin: 0 !important;
+        padding: 0 !important;
+        position: relative !important;
+        overflow: hidden !important;
+        height: 100vh !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    
+    /* Preserve desktop app container - MUST fill entire viewport */
+    .app-container {
+        position: relative !important;
+        overflow: hidden !important;
+        height: 100% !important;
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        margin: 0 auto !important;
+        max-width: 1200px !important;
+    }
+    
+    /* Preserve desktop main layout */
+    main {
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+    
+    /* Preserve desktop chat container */
+    #chat-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        padding: 1rem;
+        min-height: 0;
+    }
+    
+    /* Preserve desktop chat messages */
+    #chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        /* No padding-bottom that cuts off content */
+    }
+    
+    /* Preserve desktop chat input - ensure it's at the bottom */
+    #chat-input-container {
+        position: relative !important;
+        padding: 1rem;
+        background-color: var(--light-color) !important;
+        border-top: 1px solid rgba(0, 0, 0, 0.1);
+        flex-shrink: 0;
+        z-index: 1;
+        margin: 0 !important;
+        bottom: auto !important;
+    }
+}
+
+/* ====================================
+   MOBILE BASE STRUCTURE
+   ==================================== */
+@media (max-width: 768px) {
+    /* Fix viewport on mobile devices */
+    html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100vh;
+        height: 100dvh; /* Dynamic viewport height */
+        height: calc(var(--vh, 1vh) * 100);
+        overflow: hidden;
+    }
+    
+    body {
+        position: fixed;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* CRITICAL FIX: Handle modal-open state properly */
+    body.modal-open {
+        overflow: hidden !important;
+        position: fixed !important;
+        width: 100% !important;
+    }
+    
+    .app-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    /* ====================================
+       HEADER - Mobile Optimized
+       ==================================== */
+    header {
+        position: relative;
+        flex-shrink: 0;
+        z-index: var(--z-header);
+        background-color: var(--primary-color);
+        padding: 0.75rem;
+        min-height: 56px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+    }
+    
+    /* Logo and settings arrangement */
+    .logo {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+    
+    .settings {
+        display: flex;
+        gap: 0;
+        margin-left: 0;
+    }
+    
+    /* Icon buttons - touch-friendly */
+    .icon-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+        padding: 0;
+        min-width: 40px;
+        min-height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Icon spacing optimization */
+    #heart-btn {
+        margin-right: 0.3rem;
+    }
+    
+    #mcp-servers-btn {
+        margin-left: -0.15rem;
+        margin-right: -0.15rem;
+    }
+    
+    #function-btn {
+        margin-left: -0.2rem;
+        margin-right: -0.2rem;
+    }
+    
+    #rag-btn {
+        margin-left: -0.2rem;
+        margin-right: -0.15rem;
+    }
+    
+    #prompts-btn {
+        margin-left: -0.15rem;
+        margin-right: -0.15rem;
+    }
+    
+    #share-btn {
+        margin-left: -0.15rem;
+        margin-right: -0.15rem;
+    }
+    
+    #theme-toggle-btn {
+        margin-left: -0.15rem;
+    }
+    
+    /* Model info display */
+    .model-info {
+        order: 3;
+        width: 100%;
+        margin: 0.5rem 0 0 0;
+        padding: 0.5rem;
+        flex-shrink: 0;
+        max-height: 120px;
+        overflow-y: auto;
+    }
+    
+    /* ====================================
+       MAIN CONTENT AREA - Fixed Layout
+       ==================================== */
+    main {
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    #chat-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+        padding: 0.5rem;
+    }
+    
+    #chat-messages {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 0.5rem;
+        /* CRITICAL: Extra padding to prevent content hiding behind input */
+        padding-bottom: 80px !important;
+        /* Ensure scrolling works properly */
+        scroll-padding-bottom: 80px;
+        overscroll-behavior: contain;
+    }
+    
+    /* Message styling */
+    .message {
+        max-width: 95%;
+        margin-bottom: 1rem;
+    }
+    
+    .message-content {
+        padding: 0.75rem;
+    }
+    
+    /* Ensure last message is visible */
+    .message:last-child {
+        margin-bottom: 20px;
+    }
+    
+    /* ====================================
+       CHAT INPUT - Fixed Position
+       ==================================== */
+    #chat-input-container {
+        position: relative;
+        flex-shrink: 0;
+        z-index: var(--z-chat-input);
+        background-color: var(--light-color);
+        border-top: 1px solid var(--border-color);
+        padding: 0.75rem;
+        padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0));
+        width: 100%;
+        box-sizing: border-box;
+        /* Force visibility */
+        display: block !important;
+        visibility: visible !important;
+        /* Add shadow to make it more visible */
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Input form layout */
+    #chat-form {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        width: 100%;
+    }
+    
+    #message-input {
+        flex: 1;
+        padding: 0.75rem;
+        font-size: 16px; /* Prevent iOS zoom */
+        min-height: 44px;
+        border-radius: 25px;
+    }
+    
+    #send-btn {
+        width: 44px;
+        height: 44px;
+        flex-shrink: 0;
+    }
+    
+    /* ====================================
+       MODAL SYSTEM - Proper Layering
+       ==================================== */
+    .modal {
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        height: 100%;
+        z-index: var(--z-modal-backdrop) !important;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: none;
+        justify-content: center;
+        align-items: flex-start;
+        padding: 1rem;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .modal.active {
+        display: flex !important;
+    }
+    
+    .modal-content {
+        position: relative;
+        z-index: var(--z-modal-content);
+        background-color: var(--light-color);
+        border-radius: var(--border-radius);
+        width: 95%;
+        max-width: 500px;
+        max-height: 85vh;
+        margin: 1rem auto;
+        padding: 1.25rem;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* CRITICAL FIX: Reset body state after modal close */
+    body:not(.modal-open) {
+        overflow: hidden !important; /* Keep hidden for app structure */
+        position: fixed !important;
+    }
+    
+    /* CRITICAL FIX: Clear any layout artifacts after function modal */
+    body:not(.modal-open) #chat-container {
+        /* Force clean layout recalculation */
+        transform: translateZ(0);
+        -webkit-transform: translateZ(0);
+    }
+    
+    body:not(.modal-open) #chat-messages {
+        /* Ensure proper scrolling area with padding */
+        padding-bottom: 80px !important;
+    }
+    
+    /* Form elements in modals */
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        padding: 0.75rem;
+        font-size: 16px; /* Prevent iOS zoom */
+        min-height: 44px;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .form-actions button {
+        width: 100%;
+        min-height: 44px;
+    }
+    
+    /* Function modal specific buttons - keep horizontal */
+    #function-editor-form .form-actions {
+        flex-direction: row !important;
+        flex-wrap: wrap;
+    }
+    
+    #function-editor-form .form-actions .btn {
+        width: auto !important;
+        flex: 0 1 auto;
+        min-width: 80px;
+        padding: 0.58rem 1.16rem;
+    }
+    
+    /* ====================================
+       KEYBOARD HANDLING
+       ==================================== */
+    .keyboard-open #chat-messages {
+        padding-bottom: 80px !important;
+    }
+    
+    .keyboard-open #chat-input-container {
+        position: sticky;
+        bottom: 0;
+        z-index: var(--z-chat-input);
+    }
+    
+    /* ====================================
+       HEART TOOLTIP MODAL (Mobile)
+       ==================================== */
+    .heart-logo .tooltip.active {
+        position: fixed !important;
+        top: calc(var(--header-height, 80px) + 10px) !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: 90vw !important;
+        max-width: 400px !important;
+        max-height: 80vh !important;
+        z-index: 999 !important;
+        background-color: var(--bg-color) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 8px !important;
+        padding: 1.5rem !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        animation: slideInFromTop 0.3s ease-out !important;
+    }
+    
+    .heart-logo .tooltip.tree-menu.active {
+        background-color: var(--primary-color) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    }
+    
+    .heart-logo .tooltip.tree-menu.active * {
+        color: #ffffff !important;
+    }
+    
+    @keyframes slideInFromTop {
+        from {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    }
+    
+    /* ====================================
+       TOUCH OPTIMIZATION
+       ==================================== */
+    button, a, select, input[type="checkbox"], input[type="radio"] {
+        min-height: 44px;
+        min-width: 44px;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
+    
+    input[type="checkbox"], input[type="radio"] {
+        width: 20px;
+        height: 20px;
+        margin: 12px;
+    }
+    
+    /* Inline links don't need padding */
+    p a, li a, span a, .logo-line a {
+        display: inline;
+        padding: 0;
+        min-height: auto;
+        min-width: auto;
+    }
+    
+    /* ====================================
+       SCROLLBAR STYLING
+       ==================================== */
+    #chat-messages::-webkit-scrollbar,
+    .modal-content::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    #chat-messages::-webkit-scrollbar-thumb,
+    .modal-content::-webkit-scrollbar-thumb {
+        background-color: rgba(0, 0, 0, 0.2);
+        border-radius: 3px;
+    }
+}
+
+/* ====================================
+   TRANSITIONAL BREAKPOINT FIX
+   ==================================== */
+/* Fix for the specific breakpoint where footer jumps */
+@media (min-width: 600px) and (max-width: 768px) {
+    body {
+        margin: 0 !important;
+        padding: 0 !important;
+        position: relative !important;
+        overflow: hidden !important;
+        height: 100vh !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    
+    .app-container {
+        position: relative !important;
+        height: 100% !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    
+    main {
+        flex: 1;
+        overflow: hidden;
+        min-height: 0;
+    }
+    
+    #chat-container {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    #chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        /* Moderate padding for tablet-sized screens */
+        padding-bottom: 40px;
+    }
+    
+    #chat-input-container {
+        position: relative !important;
+        flex-shrink: 0;
+        padding: 1rem;
+        margin: 0 !important;
+        bottom: auto !important;
+    }
+}
+
+/* ====================================
+   EXTRA SMALL DEVICES (< 480px)
+   ==================================== */
+@media (max-width: 480px) {
+    header {
+        padding: 0.5rem;
+    }
+    
+    .model-name {
+        font-size: 1rem;
+    }
+    
+    .model-developer,
+    .model-stats,
+    .model-context,
+    .context-usage {
+        font-size: 0.8rem;
+    }
+    
+    .message {
+        max-width: 98%;
+    }
+    
+    .message-content {
+        padding: 0.6rem;
+    }
+    
+    #chat-container,
+    #chat-messages {
+        padding: 0.5rem;
+    }
+    
+    #chat-messages {
+        /* Extra padding for very small screens */
+        padding-bottom: 90px !important;
+    }
+    
+    #chat-input-container {
+        padding: 0.5rem;
+    }
+    
+    .modal-content {
+        padding: 1rem;
+        max-height: 80vh;
+    }
+    
+    /* Code blocks optimization */
+    .message-content pre {
+        max-width: 100%;
+        overflow-x: auto;
+        font-size: 0.8rem;
+    }
+    
+    .message-content code {
+        font-size: 0.8rem;
+    }
+}
+
+/* ====================================
+   LANDSCAPE MODE
+   ==================================== */
+@media (orientation: landscape) and (max-height: 500px) {
+    header {
+        min-height: 44px;
+        padding: 0.25rem 0.75rem;
+    }
+    
+    #chat-messages {
+        padding-bottom: 60px !important;
+    }
+    
+    #chat-input-container {
+        padding: 0.4rem;
+    }
+    
+    .modal-content {
+        max-height: 85vh;
+    }
+}
+
+/* ====================================
+   iOS SPECIFIC FIXES
+   ==================================== */
+@supports (-webkit-touch-callout: none) {
+    @media (max-width: 768px) {
+        body {
+            height: -webkit-fill-available;
+        }
+        
+        .app-container {
+            height: -webkit-fill-available;
+        }
+        
+        #chat-messages {
+            /* Extra padding for iOS to account for bouncy scrolling */
+            padding-bottom: 100px !important;
+        }
+        
+        .keyboard-open #chat-input-container {
+            padding-bottom: env(safe-area-inset-bottom);
+            transform: translateZ(0);
+            -webkit-transform: translateZ(0);
+        }
+        
+        /* iOS momentum scrolling */
+        #chat-messages,
+        .modal-content {
+            -webkit-overflow-scrolling: touch;
+        }
+    }
+}
+
+/* ====================================
+   SAFE AREA INSETS (Notched Devices)
+   ==================================== */
+@supports (padding: max(0px)) {
+    @media (max-width: 768px) {
+        header {
+            padding-left: max(0.75rem, env(safe-area-inset-left));
+            padding-right: max(0.75rem, env(safe-area-inset-right));
+            padding-top: max(0.75rem, env(safe-area-inset-top));
+        }
+        
+        #chat-input-container {
+            padding-left: max(0.75rem, env(safe-area-inset-left));
+            padding-right: max(0.75rem, env(safe-area-inset-right));
+            padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+        }
+        
+        .modal-content {
+            padding-left: max(1.25rem, env(safe-area-inset-left));
+            padding-right: max(1.25rem, env(safe-area-inset-right));
+        }
+    }
+}
+
+/* ====================================
+   MOBILE DEVICE CLASSES (from JS)
+   ==================================== */
+body.mobile-device {
+    touch-action: manipulation;
+}
+
+body.mobile-device.portrait .modal-content {
+    max-height: 80vh;
+    margin-top: 10vh;
+}
+
+body.mobile-device.landscape .modal-content {
+    max-height: 85vh;
+    margin-top: 5vh;
+}
+
+/* ====================================
+   PREVENT HORIZONTAL SCROLL
+   ==================================== */
+@media (max-width: 768px) {
+    html, body, .app-container {
+        max-width: 100vw !important;
+        overflow-x: hidden !important;
+    }
+    
+    * {
+        max-width: 100vw;
+    }
+}
+
+/* ====================================
+   CRITICAL OVERRIDES - HIGHEST PRIORITY
+   ==================================== */
+@media (max-width: 768px) {
+    /* Ensure modals always win */
+    .modal.active {
+        z-index: var(--z-modal-backdrop) !important;
+    }
+    
+    .modal.active .modal-content {
+        z-index: var(--z-modal-content) !important;
+    }
+    
+    /* Hide elements behind active modals */
+    body:has(.modal.active) #chat-input-container,
+    body:has(.modal.active) header {
+        pointer-events: none !important;
+        user-select: none !important;
+    }
+    
+    /* Ensure modal receives clicks */
+    .modal.active {
+        pointer-events: auto !important;
+    }
+    
+    /* Force chat messages padding on mobile */
+    #chat-messages {
+        padding-bottom: 80px !important;
+    }
+    
+    /* Ensure input container is always visible on mobile */
+    #chat-input-container {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+}
