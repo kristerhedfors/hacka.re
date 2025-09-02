@@ -18,7 +18,7 @@ def test_rag_token_limit_filling(page: Page, serve_hacka_re, api_key):
     # Configure API key and RAG settings
     page.evaluate(f"localStorage.setItem('openai_api_key', '{api_key}')")
     page.evaluate("localStorage.setItem('base_url', 'https://api.openai.com/v1')")
-    page.evaluate("localStorage.setItem('selected_model', 'gpt-4o-mini')")
+    page.evaluate("localStorage.setItem('selected_model', 'gpt-5-nano')")
     
     # Wait for initialization
     page.wait_for_timeout(2000)

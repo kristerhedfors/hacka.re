@@ -93,7 +93,7 @@ def shodan_ready_page(page, serve_hacka_re, shodan_api_key):
             if (window.CoreStorageService) {{
                 window.CoreStorageService.setValue('openai_api_key', '{openai_api_key}');
                 window.CoreStorageService.setValue('openai_base_url', 'https://api.openai.com/v1');
-                window.CoreStorageService.setValue('openai_model', 'gpt-4o-mini');
+                window.CoreStorageService.setValue('openai_model', 'gpt-5-nano');
             }}
         }}""")
     

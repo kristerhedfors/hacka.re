@@ -101,7 +101,7 @@ def test_markdown_content_no_overflow(page: Page, serve_hacka_re, api_key):
     
     # Configure API
     page.locator("#api-key").fill(api_key)
-    page.locator("#model-select").select_option("gpt-4o-mini")
+    page.locator("#model-select").select_option("gpt-5-nano")
     
     # Send a message that will generate wide content
     message_input = page.locator("#message-input")

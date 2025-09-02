@@ -43,7 +43,7 @@ def test_default_functions_sharing(page: Page, serve_hacka_re):
     base_url_select = page.locator("#base-url-select")
     base_url_select.select_option("openai")
     
-    # Select gpt-4o-mini model
+    # Select gpt-5-nano model
     from test_utils import select_recommended_test_model
     selected_model = select_recommended_test_model(page)
     

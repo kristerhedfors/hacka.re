@@ -230,8 +230,14 @@ function createSharedLinkDataProcessor() {
      * @returns {string|null} Compatible model ID or null
      */
     function getCompatibleModelForProvider(provider) {
+        // Use configuration if available
+        if (window.DefaultModelsConfig) {
+            return window.DefaultModelsConfig.getCompatibleModel(provider);
+        }
+        
+        // Fallback to hardcoded values
         const compatibleModels = {
-            'openai': 'gpt-4o-mini',
+            'openai': 'gpt-5-nano',
             'groq': 'llama-3.3-70b-versatile', // Updated to Llama 3.3 - replacement for deprecated 3.1
             'ollama': 'llama3.2'
         };

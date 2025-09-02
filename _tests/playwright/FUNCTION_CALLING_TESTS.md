@@ -34,7 +34,7 @@ Format compatibility tests to identify response format differences:
 - **qwen-qwq-32b** - Qwen model
 
 ### OpenAI Models
-- **gpt-4o-mini** - Primary test model (cost-efficient)
+- **gpt-5-nano** - Primary test model (cost-efficient)
 - **gpt-4o** - Full GPT-4o
 - **gpt-4.1-mini** - Latest mini model
 - **o4-mini** - O4 mini model
@@ -106,7 +106,7 @@ _venv/bin/python -m pytest _tests/playwright/test_function_calling_models.py::te
 
 ### Working Models
 ✅ **Consistently Working:**
-- OpenAI: gpt-4o, gpt-4o-mini, gpt-4.1-mini
+- OpenAI: gpt-4o, gpt-5-nano, gpt-4.1-mini
 - Groq: llama-3.3-70b-versatile, llama-3.1-8b-instant
 
 ✅ **Usually Working:**
@@ -213,7 +213,7 @@ To test additional models, edit the test files:
 
 ## Cost Considerations
 
-- OpenAI tests use `gpt-4o-mini` by default (cost-efficient)
+- OpenAI tests use `gpt-5-nano` by default (cost-efficient)
 - Groq Cloud is generally free or very low cost
 - Complex function tests have longer timeouts (45 seconds)
 - Consider using `--model` flag to test specific models only
