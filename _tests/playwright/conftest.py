@@ -30,13 +30,13 @@ PROVIDER_CONFIGS = {
     },
     "groq": {
         "api_key": GROQ_API_KEY or OPENAI_API_KEY,  # Groq can use either key
-        "model": "openai/gpt-oss-20b",  # Using the open weights model on Groq (full model ID)
+        "model": "openai/gpt-oss-120b",  # Using the 120B model on Groq (same as Berget test)
         "base_url": "https://api.groq.com/openai/v1",
         "provider_value": "groq"
     },
     "berget": {
         "api_key": BERGET_API_KEY,
-        "model": "mistralai/Devstral-Small-2505",  # Berget AI default model
+        "model": "openai/gpt-oss-120b",  # Using the 120B open weights model on Berget
         "base_url": "https://api.berget.ai/v1",
         "provider_value": "berget"  # Berget is a default provider in the dropdown
     },
