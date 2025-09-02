@@ -47,7 +47,7 @@
         display: flex !important;
         flex-direction: column !important;
         margin: 0 auto !important;
-        max-width: 1200px !important;
+        /* max-width removed to allow full width usage */
     }
     
     /* Preserve desktop main layout */
