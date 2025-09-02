@@ -5,11 +5,14 @@ import time
 from playwright.sync_api import sync_playwright, expect
 from test_utils import dismiss_welcome_modal, dismiss_settings_modal
 import os
+import sys
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+sys.path.append(os.path.dirname(__file__))
+from conftest import ACTIVE_TEST_CONFIG
+OPENAI_API_KEY = ACTIVE_TEST_CONFIG["api_key"]
 
 def test_function_calling():
     with sync_playwright() as p:
@@ -33,7 +36,7 @@ def test_function_calling():
         api_input.fill(OPENAI_API_KEY)
         
         provider_select = page.locator("#base-url-select")
-        provider_select.select_option("openai")
+        provider_select.select_option(ACTIVE_TEST_CONFIG["provider_value"])
         
         # Wait for reload button to be enabled
         page.wait_for_function(
@@ -50,9 +53,9 @@ def test_function_calling():
         # Wait for models
         time.sleep(2)
         
-        # Select gpt-5-nano
+        # Select configured test model
         model_select = page.locator("#model-select")
-        model_select.select_option("gpt-5-nano")
+        model_select.select_option(ACTIVE_TEST_CONFIG["model"])
         
         # Save
         save_btn = page.locator("#close-settings")

@@ -79,12 +79,18 @@ import os
 import sys
 sys.path.append(os.path.dirname(__file__))
 try:
-    from conftest import OPENAI_API_MODEL
-    # Recommended model for tests (from .env)
-    RECOMMENDED_TEST_MODEL = OPENAI_API_MODEL
+    from conftest import ACTIVE_TEST_CONFIG, TEST_PROVIDER
+    # Recommended model for tests (from centralized config)
+    RECOMMENDED_TEST_MODEL = ACTIVE_TEST_CONFIG["model"]
+    TEST_PROVIDER_NAME = TEST_PROVIDER
+    TEST_BASE_URL = ACTIVE_TEST_CONFIG["base_url"]
+    TEST_API_KEY = ACTIVE_TEST_CONFIG["api_key"]
 except ImportError:
     # Fallback to default model if import fails
-    RECOMMENDED_TEST_MODEL = "o4-mini"
+    RECOMMENDED_TEST_MODEL = "gpt-5-nano"
+    TEST_PROVIDER_NAME = "openai"
+    TEST_BASE_URL = "https://api.openai.com/v1"
+    TEST_API_KEY = None
 
 class OperationTimeoutError(Exception):
     """Exception raised when an operation takes too long."""
@@ -412,10 +418,67 @@ def handle_function_execution_modal(page, action="execute", timeout=5000):
         print(f"Function Execution Modal did not appear or error: {e}")
         return False
 
+def configure_test_provider_and_model(page, api_key=None):
+    """
+    Configure the provider, API key, and model based on centralized test configuration.
+    This replaces hardcoded provider/model selections throughout tests.
+    
+    Args:
+        page: The Playwright page object
+        api_key: Optional API key override (uses TEST_API_KEY by default)
+        
+    Returns:
+        dict: Configuration with provider, model, api_key, and base_url
+    """
+    from conftest import ACTIVE_TEST_CONFIG, TEST_PROVIDER
+    
+    config = ACTIVE_TEST_CONFIG.copy()
+    if api_key:
+        config["api_key"] = api_key
+    
+    # Open settings modal
+    settings_button = page.locator("#settings-btn")
+    settings_button.click(timeout=2000)
+    page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
+    
+    # Set API key
+    api_key_input = page.locator("#api-key-update")
+    api_key_input.fill(config["api_key"])
+    
+    # Select provider
+    base_url_select = page.locator("#base-url-select")
+    if config["provider_value"] == "custom":
+        base_url_select.select_option("custom")
+        custom_url_input = page.locator("#custom-base-url")
+        custom_url_input.fill(config["base_url"])
+    else:
+        base_url_select.select_option(config["provider_value"])
+    
+    # Wait for models to load
+    page.wait_for_timeout(500)  # Brief wait for models to populate
+    
+    # Select model
+    model_select = page.locator("#model-select")
+    try:
+        model_select.select_option(config["model"])
+        selected_model = config["model"]
+    except:
+        # If configured model not available, use select_recommended_test_model
+        selected_model = select_recommended_test_model(page)
+    
+    # Close settings
+    close_button = page.locator("#close-settings")
+    close_button.click()
+    page.wait_for_selector("#settings-modal", state="hidden", timeout=2000)
+    
+    config["selected_model"] = selected_model
+    return config
+
 # Helper function to select the recommended test model
 def select_recommended_test_model(page):
     """
-    Select the recommended test model (llama-3.1-8b-instant) from the model dropdown.
+    Select the recommended test model from the centralized configuration.
+    The model is determined by the TEST_PROVIDER environment variable.
     If the recommended model is not available, it will select the first available model.
     
     Args:
@@ -463,3 +526,55 @@ def select_recommended_test_model(page):
         
         print("No valid options found in model select dropdown")
         return None
+
+def set_test_model_in_storage(page):
+    """
+    Set the test model directly in localStorage based on centralized configuration.
+    This is for tests that bypass the UI and set the model directly.
+    
+    Args:
+        page: The Playwright page object
+        
+    Returns:
+        str: The model that was set
+    """
+    from conftest import ACTIVE_TEST_CONFIG
+    model = ACTIVE_TEST_CONFIG["model"]
+    page.evaluate(f"localStorage.setItem('selected_model', '{model}')")
+    print(f"Set test model in localStorage: {model}")
+    return model
+
+def set_test_provider_in_storage(page):
+    """
+    Set the test provider directly in localStorage based on centralized configuration.
+    
+    Args:
+        page: The Playwright page object
+        
+    Returns:
+        str: The provider that was set
+    """
+    from conftest import ACTIVE_TEST_CONFIG, TEST_PROVIDER
+    
+    # Map provider names to what the UI expects
+    provider_map = {
+        "openai": "openai",
+        "groq": "groq",
+        "custom": "custom"
+    }
+    
+    provider = provider_map.get(TEST_PROVIDER, "openai")
+    base_url = ACTIVE_TEST_CONFIG["base_url"]
+    api_key = ACTIVE_TEST_CONFIG["api_key"]
+    model = ACTIVE_TEST_CONFIG["model"]
+    
+    # Set all relevant localStorage items
+    page.evaluate(f"""
+        localStorage.setItem('selected_base_url', '{provider}');
+        localStorage.setItem('selected_model', '{model}');
+        localStorage.setItem('openai_api_key', '{api_key}');
+        {f"localStorage.setItem('custom_base_url', '{base_url}');" if provider == "custom" else ""}
+    """)
+    
+    print(f"Set test provider in localStorage: {provider} with model {model}")
+    return provider

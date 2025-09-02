@@ -167,7 +167,9 @@ def test_rag_multi_query_search(page: Page, serve_hacka_re, api_key):
     token_limit_input.fill("3000")
     
     # Select gpt-5-nano for cost efficiency
-    expansion_model_select.select_option("gpt-5-nano")
+    # Use centralized test model configuration
+    from conftest import ACTIVE_TEST_CONFIG
+    expansion_model_select.select_option(ACTIVE_TEST_CONFIG["model"])
     
     print(f"  ✓ Multi-query enabled: {multi_query_checkbox.is_checked()}")
     print(f"  ✓ Expansion model: {expansion_model_select.input_value()}")

@@ -30,7 +30,9 @@ def test_context_window_display(page: Page, serve_hacka_re, api_key):
     
     # Select gpt-5-nano model
     model_select = page.locator("#model-select")
-    model_select.select_option(value="gpt-5-nano")
+    # Use centralized test model configuration
+    from conftest import ACTIVE_TEST_CONFIG
+    model_select.select_option(value=ACTIVE_TEST_CONFIG["model"])
     
     # Save settings
     close_button = page.locator("#close-settings")
@@ -68,6 +70,8 @@ def test_context_window_display(page: Page, serve_hacka_re, api_key):
     page.wait_for_selector("#settings-modal", state="visible")
     
     # Select gpt-4 model (should have 8192 context)
+    # Select a different model for testing context change
+    # This could be made configurable too if needed
     model_select.select_option(value="gpt-4")
     page.wait_for_timeout(1000)  # Wait for auto-save
 

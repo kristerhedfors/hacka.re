@@ -5,11 +5,12 @@ from dotenv import load_dotenv
 from playwright.sync_api import Page, expect
 
 from test_utils import dismiss_welcome_modal, check_system_messages
+from conftest import ACTIVE_TEST_CONFIG
 
 # Load environment variables from .env file in the current directory
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
-# Get API key from environment variables
-API_KEY = os.getenv("OPENAI_API_KEY")
+# Get API key from centralized test configuration
+API_KEY = ACTIVE_TEST_CONFIG["api_key"]
 
 def test_chat_message_send_receive(page: Page, serve_hacka_re):
     """Test sending a message and receiving a response with real API."""
@@ -28,13 +29,13 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
     # Wait for the settings modal to become visible
     page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
     
-    # Enter the OpenAI API key from .env
+    # Enter the API key from centralized config
     api_key_input = page.locator("#api-key-update")
     api_key_input.fill(API_KEY)
     
-    # Select OpenAI as the API provider
+    # Select the configured test provider
     base_url_select = page.locator("#base-url-select")
-    base_url_select.select_option("openai")
+    base_url_select.select_option(ACTIVE_TEST_CONFIG["provider_value"])
     
     # Trigger input event to ensure button state updates
     page.evaluate("""() => {

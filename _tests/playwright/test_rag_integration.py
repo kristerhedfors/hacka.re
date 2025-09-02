@@ -2,7 +2,7 @@ import pytest
 import json
 from playwright.sync_api import Page, expect
 
-from test_utils import dismiss_welcome_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown, set_test_model_in_storage
 
 def test_rag_chat_integration_setup(page: Page, serve_hacka_re, api_key):
     """Test that RAG integration is properly set up in chat manager."""
@@ -14,7 +14,7 @@ def test_rag_chat_integration_setup(page: Page, serve_hacka_re, api_key):
     # Configure API key and settings
     page.evaluate(f"localStorage.setItem('openai_api_key', '{api_key}')")
     page.evaluate("localStorage.setItem('base_url', 'https://api.openai.com/v1')")
-    page.evaluate("localStorage.setItem('selected_model', 'gpt-5-nano')")
+    set_test_model_in_storage(page)
     
     # Create mock RAG index for testing
     mock_rag_index = {
@@ -99,7 +99,7 @@ def test_rag_enhanced_chat_response(page: Page, serve_hacka_re, api_key):
     # Configure API key and settings
     page.evaluate(f"localStorage.setItem('openai_api_key', '{api_key}')")
     page.evaluate("localStorage.setItem('base_url', 'https://api.openai.com/v1')")
-    page.evaluate("localStorage.setItem('selected_model', 'gpt-5-nano')")
+    set_test_model_in_storage(page)
     
     # Enable debug mode and RAG category to capture debug logs
     page.evaluate("""
@@ -370,7 +370,7 @@ def test_rag_end_to_end_workflow(page: Page, serve_hacka_re, api_key):
     # Configure API key and settings
     page.evaluate(f"localStorage.setItem('openai_api_key', '{api_key}')")
     page.evaluate("localStorage.setItem('base_url', 'https://api.openai.com/v1')")
-    page.evaluate("localStorage.setItem('selected_model', 'gpt-5-nano')")
+    set_test_model_in_storage(page)
     
     # Step 1: Create and store a knowledge base
     mock_knowledge_base = {

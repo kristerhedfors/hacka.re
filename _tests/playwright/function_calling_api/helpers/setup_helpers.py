@@ -39,25 +39,26 @@ def configure_api_key_and_model(page, api_key):
     api_key_input = page.locator("#api-key-update")
     api_key_input.fill(api_key)
     
-    # Get OPENAI_API_BASE and OPENAI_API_MODEL from environment
+    # Get test configuration from centralized config
+    import sys
     import os
-    # These should be available from the main conftest that loads .env
-    OPENAI_API_BASE = os.getenv("OPENAI_API_BASE", "https://api.openai.com/v1")
-    OPENAI_API_MODEL = os.getenv("OPENAI_API_MODEL", "gpt-5-nano")
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+    from conftest import ACTIVE_TEST_CONFIG, TEST_PROVIDER
     
-    # Select OpenAI as the API provider
+    # Select the configured provider
     base_url_select = page.locator("#base-url-select")
-    base_url_select.select_option("openai")
+    provider_value = ACTIVE_TEST_CONFIG["provider_value"]
+    base_url = ACTIVE_TEST_CONFIG["base_url"]
     
-    # Set custom base URL if needed
-    if OPENAI_API_BASE and OPENAI_API_BASE != "https://api.openai.com/v1":
-        # Click the custom option
+    if provider_value == "custom":
         base_url_select.select_option("custom")
-        
         # Wait for the custom base URL input to appear
         custom_base_url_input = page.locator("#custom-base-url")
-        custom_base_url_input.fill(OPENAI_API_BASE)
-        print(f"Set custom base URL to: {OPENAI_API_BASE}")
+        custom_base_url_input.fill(base_url)
+        print(f"Set custom base URL to: {base_url}")
+    else:
+        base_url_select.select_option(provider_value)
+        print(f"Selected provider: {provider_value}")
     
     # Models should load automatically from cache when API key is set
     # Wait for the models to be loaded from cache
@@ -89,8 +90,8 @@ def configure_api_key_and_model(page, api_key):
             }""")
             print(f"Found {options_count} non-disabled options in model select")
     
-    # Select a model that supports function calling
-    # First try to select llama-3.1-8b-instant which is known to support function calling
+    # Select the model from centralized configuration
+    # The select_recommended_test_model function now uses the centralized config
     selected_model = select_recommended_test_model(page)
     
     # Skip the test if no valid model could be selected

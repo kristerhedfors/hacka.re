@@ -6,7 +6,7 @@ Verifies that actual vector search works with the generated embeddings
 import pytest
 import time
 from playwright.sync_api import Page, expect
-from test_utils import dismiss_welcome_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown, set_test_model_in_storage
 
 def test_rag_search_with_real_embeddings(page: Page, serve_hacka_re, api_key):
     """Test that RAG search works with real pre-cached embeddings and API key for query."""
@@ -19,7 +19,7 @@ def test_rag_search_with_real_embeddings(page: Page, serve_hacka_re, api_key):
     # Configure API key for query embedding generation
     page.evaluate(f"localStorage.setItem('openai_api_key', '{api_key}')")
     page.evaluate("localStorage.setItem('base_url', 'https://api.openai.com/v1')")
-    page.evaluate("localStorage.setItem('selected_model', 'gpt-5-nano')")
+    set_test_model_in_storage(page)
     
     # Wait for initialization
     page.wait_for_timeout(2000)
@@ -144,7 +144,7 @@ def test_rag_context_injection_with_embeddings(page: Page, serve_hacka_re, api_k
     # Configure API key and enable RAG
     page.evaluate(f"localStorage.setItem('openai_api_key', '{api_key}')")
     page.evaluate("localStorage.setItem('base_url', 'https://api.openai.com/v1')")
-    page.evaluate("localStorage.setItem('selected_model', 'gpt-5-nano')")
+    set_test_model_in_storage(page)
     page.evaluate("localStorage.setItem('rag_enabled', 'true')")
     page.evaluate("localStorage.setItem('rag_similarity_threshold', '0.3')")
     page.evaluate("localStorage.setItem('rag_max_results', '5')")
