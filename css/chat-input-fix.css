@@ -21,8 +21,35 @@
     gap: 0.5rem;
     flex: 1;
     align-items: center;
-    width: 100%;
     box-sizing: border-box;
+}
+
+/* Prevent wrapper from shrinking the input */
+#chat-form .message-input-wrapper,
+#chat-form #message-input-wrapper {
+    flex: 1 1 auto !important;
+    min-width: 0;
+    width: auto !important;
+}
+
+/* Force input to maintain size inside wrapper */
+#message-input-wrapper > #message-input,
+.message-input-wrapper > #message-input {
+    flex: 1 1 auto !important;
+    width: 100%;
+}
+
+/* Ensure consistent layout whether wrapper exists or not */
+#chat-form > #message-input,
+#chat-form .message-input-wrapper,
+#chat-form #message-input-wrapper {
+    flex: 1 1 auto !important;
+}
+
+/* When wrapper exists from the start, ensure proper styling */
+#message-input-wrapper > #message-input {
+    flex: 1 !important;
+    width: 100% !important;
 }
 
 /* Fix the textarea to expand properly */
@@ -31,7 +58,7 @@
     width: 100%;
     min-width: 0; /* Allow flexbox to shrink below intrinsic width */
     box-sizing: border-box;
-    padding: 0.75rem 2.5rem 0.75rem 1.5rem; /* Extra padding on sides for rounded edges */
+    padding: 0.75rem 2.5rem 0.75rem 1.5rem; /* Normal padding - microphone overlays */
     font-size: 1rem;
     line-height: 1.5;
     border: 1px solid var(--border-color);
@@ -79,7 +106,7 @@
     #user-input {
         font-size: 16px; /* Prevent zoom on iOS */
         border-radius: 22px; /* Slightly smaller radius on mobile */
-        padding: 0.75rem 2.2rem 0.75rem 1.2rem; /* Adjusted padding for mobile */
+        padding: 0.75rem 2.5rem 0.75rem 1.2rem; /* Adjusted padding for mobile with microphone space */
     }
 }
 
