@@ -34,6 +34,12 @@ PROVIDER_CONFIGS = {
         "base_url": "https://api.groq.com/openai/v1",
         "provider_value": "groq"
     },
+    "berget": {
+        "api_key": BERGET_API_KEY,
+        "model": "mistralai/Devstral-Small-2505",  # Berget AI default model
+        "base_url": "https://api.berget.ai/v1",
+        "provider_value": "berget"  # Berget is a default provider in the dropdown
+    },
     "custom": {
         "api_key": TEST_API_KEY,
         "model": TEST_MODEL,
