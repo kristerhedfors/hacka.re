@@ -93,51 +93,42 @@
 }
 
 /* ====================================
-   MOBILE BASE STRUCTURE
+   MOBILE BASE STRUCTURE - UNIVERSAL FIX
    ==================================== */
 @media (max-width: 768px) {
-    /* Fix viewport on mobile devices */
-    html, body {
+    /* CRITICAL: Fix viewport on ALL mobile browsers */
+    html {
         margin: 0;
         padding: 0;
         width: 100%;
-        height: 100vh;
-        height: 100dvh; /* Dynamic viewport height */
-        height: calc(var(--vh, 1vh) * 100);
-        overflow: hidden;
-        /* Fix for Firefox Focus - prevent extra space */
-        overscroll-behavior: none;
+        height: 100%;
     }
     
     body {
-        position: fixed;
+        margin: 0;
+        padding: 0;
         width: 100%;
-        display: flex;
-        flex-direction: column;
-        /* Ensure body fills viewport completely */
+        height: 100%;
+        position: fixed; /* Prevent body from scrolling */
+        top: 0;
+        left: 0;
+        overflow: hidden; /* No scroll on body */
+    }
+    
+    /* App container must be exactly 100% height */
+    .app-container {
+        position: absolute;
         top: 0;
         left: 0;
         right: 0;
         bottom: 0;
-    }
-    
-    /* CRITICAL FIX: Handle modal-open state properly */
-    body.modal-open {
-        overflow: hidden !important;
-        position: fixed !important;
-        width: 100% !important;
-    }
-    
-    .app-container {
+        width: 100%;
+        height: 100%;
         display: flex;
         flex-direction: column;
-        height: 100%;
-        width: 100%;
         overflow: hidden;
-        position: relative;
-        /* Ensure container fills available space */
-        flex: 1;
-        min-height: 0;
+        margin: 0;
+        padding: 0;
     }
     
     /* ====================================
@@ -145,7 +136,7 @@
        ==================================== */
     header {
         position: relative;
-        flex-shrink: 0;
+        flex: 0 0 auto; /* Don't grow or shrink */
         z-index: var(--z-header);
         background-color: var(--primary-color);
         padding: 0.75rem;
@@ -227,14 +218,15 @@
     }
     
     /* ====================================
-       MAIN CONTENT AREA - Fixed Layout
+       MAIN CONTENT AREA - CRITICAL FIX
        ==================================== */
     main {
-        flex: 1;
-        min-height: 0;
+        flex: 1 1 auto; /* Take remaining space */
+        min-height: 0; /* Allow shrinking */
         overflow: hidden;
         display: flex;
         flex-direction: column;
+        position: relative;
     }
     
     #chat-container {
@@ -243,20 +235,20 @@
         flex-direction: column;
         min-height: 0;
         overflow: hidden;
-        padding: 0.5rem;
+        padding: 0;
+        position: relative;
+        height: 100%;
     }
     
     #chat-messages {
-        flex: 1;
-        min-height: 0;
+        flex: 1 1 auto; /* Take available space */
+        min-height: 0; /* Allow shrinking */
         overflow-y: auto;
+        overflow-x: hidden;
         -webkit-overflow-scrolling: touch;
         padding: 0.5rem;
-        /* CRITICAL: Extra padding to prevent content hiding behind input */
-        padding-bottom: 80px !important;
-        /* Ensure scrolling works properly */
-        scroll-padding-bottom: 80px;
-        overscroll-behavior: contain;
+        /* CRITICAL: Add bottom padding for last message visibility */
+        padding-bottom: 20px;
     }
     
     /* Message styling */
@@ -271,15 +263,16 @@
     
     /* Ensure last message is visible */
     .message:last-child {
-        margin-bottom: 20px;
+        margin-bottom: 10px;
     }
     
     /* ====================================
-       CHAT INPUT - Fixed Position
+       CHAT INPUT - CRITICAL UNIVERSAL FIX
        ==================================== */
     #chat-input-container {
+        /* Use flex positioning, not fixed/sticky */
+        flex: 0 0 auto; /* Don't grow or shrink */
         position: relative;
-        flex-shrink: 0;
         z-index: var(--z-chat-input);
         background-color: var(--light-color);
         border-top: 1px solid var(--border-color);
@@ -287,15 +280,12 @@
         padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0));
         width: 100%;
         box-sizing: border-box;
-        /* Force visibility */
+        /* Ensure visibility */
         display: block !important;
         visibility: visible !important;
-        /* Add shadow to make it more visible */
-        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-        /* Fix for Chrome iPhone - ensure footer stays at bottom */
-        margin-top: auto;
-        /* Prevent footer from being cut off */
         min-height: 60px;
+        /* Shadow for visual separation */
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
     }
     
     /* Input form layout */
@@ -361,22 +351,17 @@
         box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
     }
     
-    /* CRITICAL FIX: Reset body state after modal close */
-    body:not(.modal-open) {
-        overflow: hidden !important; /* Keep hidden for app structure */
+    /* Modal body state management */
+    body.modal-open {
+        overflow: hidden !important;
         position: fixed !important;
+        width: 100% !important;
     }
     
-    /* CRITICAL FIX: Clear any layout artifacts after function modal */
-    body:not(.modal-open) #chat-container {
-        /* Force clean layout recalculation */
-        transform: translateZ(0);
-        -webkit-transform: translateZ(0);
-    }
-    
-    body:not(.modal-open) #chat-messages {
-        /* Ensure proper scrolling area with padding */
-        padding-bottom: 80px !important;
+    /* Reset body state after modal close */
+    body:not(.modal-open) {
+        overflow: hidden !important;
+        position: fixed !important;
     }
     
     /* Form elements in modals */
@@ -419,13 +404,8 @@
        KEYBOARD HANDLING
        ==================================== */
     .keyboard-open #chat-messages {
-        padding-bottom: 80px !important;
-    }
-    
-    .keyboard-open #chat-input-container {
-        position: sticky;
-        bottom: 0;
-        z-index: var(--z-chat-input);
+        /* Reduce padding when keyboard is open */
+        padding-bottom: 10px;
     }
     
     /* ====================================
@@ -591,13 +571,9 @@
         padding: 0.5rem;
     }
     
-    #chat-messages {
-        /* Extra padding for very small screens */
-        padding-bottom: 90px !important;
-    }
-    
     #chat-input-container {
         padding: 0.5rem;
+        padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0));
     }
     
     .modal-content {
@@ -627,11 +603,12 @@
     }
     
     #chat-messages {
-        padding-bottom: 60px !important;
+        padding-bottom: 20px;
     }
     
     #chat-input-container {
         padding: 0.4rem;
+        min-height: 50px;
     }
     
     .modal-content {
@@ -640,57 +617,14 @@
 }
 
 /* ====================================
-   iOS SPECIFIC FIXES
+   iOS SPECIFIC VIEWPORT FIX
    ==================================== */
 @supports (-webkit-touch-callout: none) {
     @media (max-width: 768px) {
-        /* Fix viewport height for iOS */
-        html {
-            height: -webkit-fill-available;
-        }
-        
-        body {
-            min-height: -webkit-fill-available;
-            min-height: 100vh;
-            /* Ensure proper containment */
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-        }
-        
+        /* iOS needs special handling for viewport */
         .app-container {
-            height: 100%;
-            min-height: -webkit-fill-available;
-        }
-        
-        #chat-messages {
-            /* Extra padding for iOS to account for bouncy scrolling */
-            padding-bottom: 100px !important;
-        }
-        
-        /* Fix Chrome iPhone footer visibility */
-        #chat-input-container {
-            position: sticky;
-            bottom: 0;
-            bottom: env(safe-area-inset-bottom, 0);
-            /* Ensure minimum height */
-            min-height: 60px;
-            /* Proper z-index stacking */
-            z-index: var(--z-chat-input);
-        }
-        
-        .keyboard-open #chat-input-container {
-            padding-bottom: env(safe-area-inset-bottom);
-            transform: translateZ(0);
-            -webkit-transform: translateZ(0);
-        }
-        
-        /* iOS momentum scrolling */
-        #chat-messages,
-        .modal-content {
-            -webkit-overflow-scrolling: touch;
+            height: 100vh;
+            height: -webkit-fill-available;
         }
     }
 }
@@ -720,78 +654,6 @@
 }
 
 /* ====================================
-   MOBILE DEVICE CLASSES (from JS)
-   ==================================== */
-body.mobile-device {
-    touch-action: manipulation;
-}
-
-body.mobile-device.portrait .modal-content {
-    max-height: 80vh;
-    margin-top: 10vh;
-}
-
-body.mobile-device.landscape .modal-content {
-    max-height: 85vh;
-    margin-top: 5vh;
-}
-
-/* ====================================
-   BROWSER-SPECIFIC FIXES (from JS)
-   ==================================== */
-/* Firefox Focus specific styles */
-body.firefox-focus {
-    height: 100vh !important;
-    overflow: hidden !important;
-}
-
-body.firefox-focus .app-container {
-    height: 100vh !important;
-    max-height: 100vh !important;
-    overflow: hidden !important;
-}
-
-body.firefox-focus #chat-input-container {
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    width: 100% !important;
-    z-index: 100 !important;
-}
-
-body.firefox-focus #chat-messages {
-    padding-bottom: 80px !important;
-}
-
-/* Chrome iOS specific styles */
-body.chrome-ios #chat-input-container {
-    position: sticky !important;
-    bottom: 0 !important;
-    min-height: 60px !important;
-    z-index: 100 !important;
-    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0)) !important;
-}
-
-body.chrome-ios #chat-messages {
-    padding-bottom: 100px !important;
-}
-
-body.chrome-ios .app-container {
-    height: 100% !important;
-    min-height: 100vh !important;
-}
-
-/* Safari iOS specific styles */
-body.safari-ios {
-    height: -webkit-fill-available !important;
-}
-
-body.safari-ios .app-container {
-    height: -webkit-fill-available !important;
-}
-
-/* ====================================
    PREVENT HORIZONTAL SCROLL
    ==================================== */
 @media (max-width: 768px) {
@@ -802,49 +664,6 @@ body.safari-ios .app-container {
     
     * {
         max-width: 100vw;
-    }
-}
-
-/* ====================================
-   FIREFOX FOCUS SPECIFIC FIXES
-   ==================================== */
-@-moz-document url-prefix() {
-    @media (max-width: 768px) {
-        /* Firefox-specific viewport fixes */
-        html, body {
-            height: 100vh;
-            overflow: hidden;
-        }
-        
-        body {
-            position: fixed;
-            width: 100vw;
-            height: 100vh;
-            /* Prevent bounce and overscroll */
-            overscroll-behavior: none;
-        }
-        
-        .app-container {
-            height: 100vh;
-            max-height: 100vh;
-            overflow: hidden;
-        }
-        
-        /* Ensure footer stays at bottom without extra space */
-        #chat-input-container {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            width: 100%;
-            /* Account for safe area */
-            padding-bottom: env(safe-area-inset-bottom, 0.75rem);
-        }
-        
-        /* Adjust chat messages to not overlap with fixed footer */
-        #chat-messages {
-            padding-bottom: 90px !important;
-        }
     }
 }
 
@@ -871,11 +690,6 @@ body.safari-ios .app-container {
     /* Ensure modal receives clicks */
     .modal.active {
         pointer-events: auto !important;
-    }
-    
-    /* Force chat messages padding on mobile */
-    #chat-messages {
-        padding-bottom: 80px !important;
     }
     
     /* Ensure input container is always visible on mobile */
