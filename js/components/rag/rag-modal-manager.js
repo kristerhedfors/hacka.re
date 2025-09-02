@@ -144,6 +144,9 @@ window.RAGModalManager = (function() {
                 }
             }
             
+            // Populate the query expansion model selector
+            populateExpansionModelSelector();
+            
             // Update document checkboxes based on their enabled state (not indexed state)
             const documentIds = ['cra', 'aia', 'dora'];
             const enabledDocs = window.RAGStorageService ? window.RAGStorageService.getEnabledEUDocuments() : [];
@@ -384,6 +387,127 @@ window.RAGModalManager = (function() {
                 window.RAGIndexStatsManager.updateStats();
             }
         }
+    }
+
+    /**
+     * Populate the query expansion model selector with models from current provider
+     */
+    function populateExpansionModelSelector() {
+        const expansionModelSelect = document.getElementById('rag-expansion-model');
+        if (!expansionModelSelect) return;
+        
+        // Get the current provider
+        const provider = window.DataService?.getBaseUrlProvider?.() || 'openai';
+        
+        // Get the default expansion model for this provider
+        const defaultExpansionModel = window.DefaultModelsConfig?.getRagExpansionModel?.(provider) || 'gpt-4.1-mini';
+        
+        // Get the currently selected expansion model from storage or use default
+        const storedExpansionModel = window.RAGStorageService?.getExpansionModel?.() || defaultExpansionModel;
+        
+        // Get models from the main model selector dropdown
+        const modelSelect = document.getElementById('model-select');
+        const availableModels = [];
+        
+        if (modelSelect && modelSelect.options.length > 0) {
+            // Extract models from the main model selector
+            Array.from(modelSelect.options).forEach(option => {
+                if (!option.disabled && option.value) {
+                    availableModels.push({
+                        id: option.value,
+                        name: option.textContent
+                    });
+                }
+            });
+        }
+        
+        // Clear existing options
+        expansionModelSelect.innerHTML = '';
+        
+        // If we have models, populate the selector
+        if (availableModels.length > 0) {
+            // Add available models
+            availableModels.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model.id;
+                option.textContent = model.name;
+                
+                // Select the appropriate model
+                if (model.id === storedExpansionModel) {
+                    option.selected = true;
+                } else if (!storedExpansionModel && model.id === defaultExpansionModel) {
+                    option.selected = true;
+                }
+                
+                expansionModelSelect.appendChild(option);
+            });
+            
+            // Add "Use Current Chat Model" option at the end
+            const currentOption = document.createElement('option');
+            currentOption.value = 'current';
+            currentOption.textContent = 'Use Current Chat Model';
+            expansionModelSelect.appendChild(currentOption);
+            
+            // If nothing was selected yet, select the default model
+            if (!expansionModelSelect.value) {
+                // Try to select the default expansion model
+                for (let i = 0; i < expansionModelSelect.options.length; i++) {
+                    if (expansionModelSelect.options[i].value === defaultExpansionModel) {
+                        expansionModelSelect.value = defaultExpansionModel;
+                        break;
+                    }
+                }
+                
+                // If default model not found, select the first available model
+                if (!expansionModelSelect.value && expansionModelSelect.options.length > 0) {
+                    expansionModelSelect.value = expansionModelSelect.options[0].value;
+                }
+            }
+        } else {
+            // No models available, add default options
+            const defaultOptions = [
+                { value: 'gpt-4.1-mini', text: 'GPT-4.1 Mini (Recommended)' },
+                { value: 'gpt-5-nano', text: 'GPT-5 Nano (Fast & Efficient)' },
+                { value: 'gpt-3.5-turbo', text: 'GPT-3.5 Turbo' },
+                { value: 'gpt-4o', text: 'GPT-4o (Most Accurate)' },
+                { value: 'current', text: 'Use Current Chat Model' }
+            ];
+            
+            defaultOptions.forEach(opt => {
+                const option = document.createElement('option');
+                option.value = opt.value;
+                option.textContent = opt.text;
+                
+                // Select the default expansion model
+                if (opt.value === defaultExpansionModel) {
+                    option.selected = true;
+                }
+                
+                expansionModelSelect.appendChild(option);
+            });
+        }
+        
+        // Remove existing change listener to avoid duplicates
+        const oldListener = expansionModelSelect._ragChangeListener;
+        if (oldListener) {
+            expansionModelSelect.removeEventListener('change', oldListener);
+        }
+        
+        // Create and store new listener
+        const changeListener = (e) => {
+            const selectedModel = e.target.value;
+            if (window.RAGStorageService?.setExpansionModel) {
+                window.RAGStorageService.setExpansionModel(selectedModel);
+            }
+        };
+        
+        // Save reference to listener for later removal
+        expansionModelSelect._ragChangeListener = changeListener;
+        
+        // Add the change listener
+        expansionModelSelect.addEventListener('change', changeListener);
+        
+        console.log(`RAGModalManager: Populated expansion model selector with ${expansionModelSelect.options.length} models, selected: ${expansionModelSelect.value}`);
     }
 
     /**
