@@ -163,14 +163,15 @@ window.ModelManager = (function() {
          * @param {string} baseUrl - The base URL to use
          * @param {boolean} updateStorage - Whether to update storage with the provided values
          * @param {Function} [updateContextUsage] - Optional callback to update context usage display
+         * @param {boolean} forceRefresh - If true, bypass cache and fetch from API
          * @returns {Promise<Object>} Promise resolving to result object
          */
-        async function fetchAvailableModels(apiKey, baseUrl, updateStorage = false, updateContextUsage = null) {
+        async function fetchAvailableModels(apiKey, baseUrl, updateStorage = false, updateContextUsage = null, forceRefresh = false) {
             if (!apiKey) return { success: false, error: 'API key is required' };
             
             try {
                 // Use the provided values for this API call only
-                const models = await ApiService.fetchAvailableModels(apiKey, baseUrl);
+                const models = await ApiService.fetchAvailableModels(apiKey, baseUrl, forceRefresh);
                 
                 // Only update storage and internal variables if explicitly requested
                 // This ensures values from UI are not saved unless the user clicks "Save"

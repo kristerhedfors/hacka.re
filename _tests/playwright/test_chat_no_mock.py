@@ -45,18 +45,12 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
     base_url_select = page.locator("#base-url-select")
     base_url_select.select_option("openai")
     
-    # Click the reload models button
-    reload_button = page.locator("#model-reload-btn")
-    
-    # Wait for the button to be enabled before clicking
-    page.wait_for_selector("#model-reload-btn:not([disabled])", state="visible", timeout=2000)
-    reload_button.click()
-    
-    # Wait for the reload operation to complete by checking when the button is enabled again
-    print("Waiting for model reload to complete...")
+    # Models should load automatically from cache when API key is set
+    # No need to click reload button - cache handles it automatically
+    print("Waiting for models to load from cache...")
     try:
-        # Wait for the button to be re-enabled (indicating the operation completed)
-        page.wait_for_selector("#model-reload-btn:not([disabled])", state="visible", timeout=2000)
+        # Just wait a moment for the cache to populate the dropdown
+        page.wait_for_timeout(500)
         print("Model reload completed")
         
         # Then wait for models to be loaded

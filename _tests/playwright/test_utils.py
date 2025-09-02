@@ -344,6 +344,74 @@ def screenshot_with_markdown(page, name, debug_info=None):
     
     return screenshot_path, md_path
 
+def enable_yolo_mode(page):
+    """
+    Enable YOLO mode to bypass Function Execution Modal during tests.
+    
+    Args:
+        page: Playwright page object
+    """
+    # Open settings modal
+    settings_btn = page.locator("#settings-btn")
+    settings_btn.click()
+    page.wait_for_selector("#settings-modal.active", timeout=5000)
+    
+    # Check YOLO mode checkbox
+    yolo_checkbox = page.locator("#yolo-mode")
+    if not yolo_checkbox.is_checked():
+        # Set up dialog handler to accept the warning
+        page.once("dialog", lambda dialog: dialog.accept())
+        yolo_checkbox.click()
+        page.wait_for_timeout(500)  # Brief wait for dialog handling
+    
+    # Close settings
+    close_settings = page.locator("#close-settings")
+    close_settings.click()
+    page.wait_for_selector("#settings-modal.active", state="hidden", timeout=5000)
+    print("YOLO mode enabled - Function Execution Modal bypassed")
+
+def handle_function_execution_modal(page, action="execute", timeout=5000):
+    """
+    Handle the Function Execution Modal that appears for function calls.
+    
+    Args:
+        page: Playwright page object
+        action: Action to take - "execute", "execute-intercept", or "block"
+        timeout: Timeout in milliseconds to wait for modal
+        
+    Returns:
+        bool: True if modal was handled, False if no modal appeared
+    """
+    try:
+        # Check if Function Execution Modal appears
+        modal = page.locator("#function-execution-modal")
+        modal.wait_for(state="visible", timeout=timeout)
+        
+        # Perform the requested action
+        if action == "execute":
+            execute_btn = modal.locator("#exec-execute-btn")
+            execute_btn.click()
+            print("Function Execution Modal: Clicked Execute")
+        elif action == "execute-intercept":
+            intercept_btn = modal.locator("#exec-intercept-btn")
+            intercept_btn.click()
+            print("Function Execution Modal: Clicked Execute and Intercept")
+        elif action == "block":
+            block_btn = modal.locator("#exec-block-btn")
+            block_btn.click()
+            print("Function Execution Modal: Clicked Block")
+        else:
+            raise ValueError(f"Unknown action: {action}")
+        
+        # Wait for modal to close
+        modal.wait_for(state="hidden", timeout=5000)
+        return True
+        
+    except Exception as e:
+        # Modal didn't appear (might be in YOLO mode or function already approved)
+        print(f"Function Execution Modal did not appear or error: {e}")
+        return False
+
 # Helper function to select the recommended test model
 def select_recommended_test_model(page):
     """

@@ -1231,7 +1231,7 @@ window.AIHackareComponent = (function() {
             const baseUrl = StorageService.getBaseUrl();
             
             if (apiKey) {
-                this.settingsManager.componentManagers.model.fetchAvailableModels(apiKey, baseUrl, false)
+                this.settingsManager.componentManagers.model.fetchAvailableModels(apiKey, baseUrl, false, null, true)
                     .then((result) => {
                         if (result.success) {
                             console.log('🚀 AIHackare: Models reloaded successfully');

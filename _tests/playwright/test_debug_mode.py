@@ -24,10 +24,11 @@ def test_debug_mode_checkbox_exists(page, serve_hacka_re):
     debug_checkbox = page.locator("#debug-mode")
     debug_checkbox.wait_for(state="visible", timeout=2000)
     
-    # Check if the label text is correct
+    # Check if the label text is correct (now includes status)
     debug_label = page.locator("label[for='debug-mode']")
     expect(debug_label).to_be_visible()
-    expect(debug_label).to_have_text("Debug mode")
+    # Label now includes status like "Debug mode(Disabled)"
+    expect(debug_label).to_contain_text("Debug mode")
 
 def test_debug_mode_toggle(page, serve_hacka_re):
     """Test that the debug mode checkbox can be toggled."""

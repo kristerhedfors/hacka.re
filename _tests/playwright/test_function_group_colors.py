@@ -1,6 +1,6 @@
 import pytest
 from playwright.sync_api import Page, expect
-from test_utils import dismiss_welcome_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown, enable_yolo_mode
 
 from function_calling_api.helpers.setup_helpers import (
     setup_console_logging, 
@@ -25,6 +25,9 @@ def test_function_collection_colors(page: Page, serve_hacka_re, api_key):
     
     # Enable tool calling and function tools
     enable_tool_calling_and_function_tools(page)
+    
+    # Enable YOLO mode to bypass Function Execution Modal
+    enable_yolo_mode(page)
     
     # Open function modal
     page.locator("#function-btn").click()

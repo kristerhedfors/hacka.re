@@ -58,12 +58,13 @@ window.SettingsCoordinator = (function() {
             const currentBaseUrl = (elements.baseUrl && elements.baseUrl.value.trim()) || 
                                  componentManagers.baseUrl.getBaseUrl();
             
-            // Fetch models from API using the current UI values
+            // Fetch models from API using the current UI values (force refresh from API)
             componentManagers.model.fetchAvailableModels(
                 currentApiKey, 
                 currentBaseUrl, 
                 false, 
-                createContextUsageCallback({updateModelInfoDisplay}, componentManagers)
+                createContextUsageCallback({updateModelInfoDisplay}, componentManagers),
+                true // forceRefresh to bypass cache
             ).then(() => {
                 // Re-enable the button and restore icon
                 this.innerHTML = originalIcon;

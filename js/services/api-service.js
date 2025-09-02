@@ -10,12 +10,57 @@ window.ApiService = (function() {
      * Fetch available models from the API
      * @param {string} apiKey - The API key for authentication
      * @param {string} customBaseUrl - Optional custom base URL to use for this request
+     * @param {boolean} forceRefresh - If true, bypass cache and fetch from API
      * @returns {Promise<Array>} - Promise resolving to array of available models
      */
-    async function fetchAvailableModels(apiKey, customBaseUrl = null) {
+    async function fetchAvailableModels(apiKey, customBaseUrl = null, forceRefresh = false) {
         const timer = ApiDebugger.createTimer('fetchAvailableModels');
         
         try {
+            // Check if we should use cached models (unless forceRefresh is true)
+            if (!forceRefresh && window.ModelCache && window.ModelCache.providers) {
+                // Determine provider based on base URL
+                let provider = null;
+                const baseUrl = customBaseUrl || window.StorageService?.getBaseUrl() || '';
+                
+                if (baseUrl.includes('openai.com') || baseUrl === '' || baseUrl === 'https://api.openai.com/v1') {
+                    provider = 'openai';
+                } else if (baseUrl.includes('groq.com')) {
+                    provider = 'groq';
+                } else if (baseUrl.includes('berget.ai')) {
+                    provider = 'berget';
+                }
+                
+                // If we have cached data for this provider, use it
+                if (provider && window.ModelCache.providers[provider]) {
+                    const cachedResponse = window.ModelCache.providers[provider];
+                    
+                    ApiDebugger.log('Using cached models', {
+                        provider: provider,
+                        modelCount: cachedResponse.data?.length || 0,
+                        cacheTimestamp: window.ModelCache.timestamp
+                    });
+                    
+                    // Process cached models same as API response
+                    const models = ApiResponseParser.parseModelsResponse(cachedResponse);
+                    
+                    // Store model information in ModelInfoService
+                    if (window.ModelInfoService && models && Array.isArray(models)) {
+                        models.forEach(model => {
+                            if (model.id) {
+                                ModelInfoService.modelInfo[model.id] = model._original || model;
+                            }
+                        });
+                    }
+                    
+                    timer.stop({ modelCount: models.length, source: 'cache' });
+                    return models.map(m => m._original || m);
+                }
+            }
+            
+            // Fall back to actual API call if no cache or forceRefresh is true
+            ApiDebugger.log('Fetching models from API', { forceRefresh, customBaseUrl });
+            
             // Build request configuration
             const requestConfig = ApiRequestBuilder.buildModelsRequest({
                 apiKey: apiKey,
@@ -46,11 +91,11 @@ window.ApiService = (function() {
                 });
             }
             
-            timer.stop({ modelCount: models.length });
+            timer.stop({ modelCount: models.length, source: 'api' });
             return models.map(m => m._original || m); // Return original format for compatibility
             
         } catch (error) {
-            ApiDebugger.logError('fetchAvailableModels', error, { customBaseUrl });
+            ApiDebugger.logError('fetchAvailableModels', error, { customBaseUrl, forceRefresh });
             timer.stop();
             throw error;
         }
