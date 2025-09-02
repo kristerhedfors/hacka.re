@@ -29,15 +29,25 @@
 @media (min-width: 769px) {
     /* Preserve desktop body layout */
     body {
+        margin: 0 !important;
+        padding: 0 !important;
         position: relative !important;
         overflow: hidden !important;
         height: 100vh !important;
+        display: flex !important;
+        flex-direction: column !important;
     }
     
-    /* Preserve desktop app container */
+    /* Preserve desktop app container - MUST fill entire viewport */
     .app-container {
         position: relative !important;
         overflow: hidden !important;
+        height: 100% !important;
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        margin: 0 auto !important;
+        max-width: 1200px !important;
     }
     
     /* Preserve desktop main layout */
@@ -69,7 +79,7 @@
         /* No padding-bottom that cuts off content */
     }
     
-    /* Preserve desktop chat input */
+    /* Preserve desktop chat input - ensure it's at the bottom */
     #chat-input-container {
         position: relative !important;
         padding: 1rem;
@@ -77,6 +87,8 @@
         border-top: 1px solid rgba(0, 0, 0, 0.1);
         flex-shrink: 0;
         z-index: 1;
+        margin: 0 !important;
+        bottom: auto !important;
     }
 }
 
@@ -488,14 +500,21 @@
 /* Fix for the specific breakpoint where footer jumps */
 @media (min-width: 600px) and (max-width: 768px) {
     body {
+        margin: 0 !important;
+        padding: 0 !important;
         position: relative !important;
         overflow: hidden !important;
+        height: 100vh !important;
+        display: flex !important;
+        flex-direction: column !important;
     }
     
     .app-container {
         position: relative !important;
-        height: 100vh !important;
+        height: 100% !important;
         overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
     }
     
     main {
@@ -521,6 +540,8 @@
         position: relative !important;
         flex-shrink: 0;
         padding: 1rem;
+        margin: 0 !important;
+        bottom: auto !important;
     }
 }
 
