@@ -764,12 +764,15 @@ body header .settings #rag-btn span.rag-icon {
 }
 
 .rag-advanced-toggle {
-    margin-right: 8px;
-    font-size: 12px;
-    transition: transform 0.2s;
+    margin-right: 10px;
+    font-size: 14px;
+    transition: transform 0.2s ease;
+    color: var(--text-color-secondary);
+    min-width: 16px;
+    text-align: center;
 }
 
-.rag-advanced-toggle.expanded {
+.rag-advanced-toggle.fa-chevron-down {
     transform: rotate(90deg);
 }
 

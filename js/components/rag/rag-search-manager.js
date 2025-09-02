@@ -65,18 +65,16 @@ window.RAGSearchManager = (function() {
     function updateSearchButtonState() {
         const searchInput = document.getElementById('rag-search-input');
         const searchBtn = document.getElementById('rag-search-btn');
-        const stats = VectorRAGService.getIndexStats();
         
         if (searchBtn && searchInput) {
             const hasQuery = searchInput.value.trim().length > 0;
-            const hasIndex = stats.defaultPrompts.available || stats.userBundles.available;
             
-            searchBtn.disabled = !hasQuery || !hasIndex;
+            // Only disable if there's no query, allow searching even without index
+            // to show appropriate message
+            searchBtn.disabled = !hasQuery;
             searchBtn.title = !hasQuery 
                 ? 'Enter a search query'
-                : !hasIndex 
-                    ? 'No knowledge base available - index some prompts first'
-                    : 'Search the knowledge base';
+                : 'Search the knowledge base';
         }
     }
 
@@ -138,7 +136,23 @@ window.RAGSearchManager = (function() {
                               (stats.userBundles.available && stats.userBundles.totalChunks > 0);
         
         if (!hasEmbeddings) {
-            showError('No embeddings found in the knowledge base.\n\nPlease index some documents first by checking them in the RAG modal and clicking the refresh button.\n\nNote: Embeddings are stored in memory only and need to be re-indexed after page reload.');
+            // Show "No knowledge base" message in results instead of error
+            const resultsContainer = document.getElementById('rag-search-results');
+            if (resultsContainer) {
+                resultsContainer.innerHTML = `
+                    <div class="rag-search-header">
+                        <div class="rag-search-summary">No knowledge base available</div>
+                    </div>
+                    <div class="rag-results-list">
+                        <div class="rag-result-item">
+                            <div class="rag-result-content">
+                                No embeddings found in the knowledge base. Please index some documents first.
+                            </div>
+                        </div>
+                    </div>
+                `;
+                resultsContainer.style.display = 'block';
+            }
             return;
         }
 

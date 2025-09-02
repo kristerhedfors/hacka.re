@@ -669,13 +669,10 @@ async function getCurrentTimeInBerlin() {
                         <div class="tooltip">
                             <div class="tooltip-content">
                                 <div class="important-notice">
-                                    <p><strong>MCP Servers</strong>: Load tool bundles from Model Context Protocol (MCP) servers to extend function calling capabilities.</p>
+                                    <p><strong>What is MCP?</strong>: Model Context Protocol (MCP) is an open standard for connecting AI models to external tools and data sources. It enables AI assistants to interact with local services, APIs, and databases through a standardized protocol.</p>
                                 </div>
                                 <div class="important-notice">
-                                    <p><strong>Named Servers</strong>: Connect to MCP servers by name to access their available tools and functions.</p>
-                                </div>
-                                <div class="important-notice">
-                                    <p><strong>Tool Bundles</strong>: Import and manage collections of tools from external MCP server implementations.</p>
+                                    <p><strong>Built-in Servers</strong>: hacka.re includes MCP servers for GitHub, Gmail, and Shodan as proof-of-concept examples. These servers are not thoroughly tested but serve to demonstrate how hacka.re's architecture can be extended with external integrations.</p>
                                 </div>
                             </div>
                         </div>
@@ -779,7 +776,6 @@ async function getCurrentTimeInBerlin() {
         
         <div id="rag-modal" class="modal">
             <div class="modal-content">
-                <span class="experimental-tag">EXPERIMENTAL</span>
                 <div class="settings-header">
                     <h2>Knowledge Base</h2>
                     <span class="info-icon" id="rag-info-icon">
@@ -787,16 +783,10 @@ async function getCurrentTimeInBerlin() {
                         <div class="tooltip">
                             <div class="tooltip-content">
                                 <div class="important-notice">
-                                    <p><strong>Knowledge Base</strong>: Search and retrieve relevant information from indexed default prompts and user-defined documents to enhance AI responses.</p>
+                                    <p><strong>What is RAG?</strong>: Retrieval-Augmented Generation (RAG) enhances AI responses by searching through a knowledge base to find relevant context. It combines the power of semantic search with language models to provide more accurate and contextual answers.</p>
                                 </div>
                                 <div class="important-notice">
-                                    <p><strong>Default Prompts</strong>: Pre-indexed system prompts that can be searched for relevant context. Requires API key for embedding generation.</p>
-                                </div>
-                                <div class="important-notice">
-                                    <p><strong>User-Defined</strong>: Upload custom documents using the hackare tool to create your own searchable knowledge base.</p>
-                                </div>
-                                <div class="important-notice">
-                                    <p><strong>Privacy</strong>: All vector searches are performed locally in your browser. Embeddings are generated using your API key and stored encrypted.</p>
+                                    <p><strong>How it Works</strong>: hacka.re includes pre-generated embeddings for three example EU regulatory documents. To use this index, you need an OpenAI API key since the same embedding model must be used for queries as was used to generate the index. When enabled, RAG automatically searches these documents to include relevant regulatory context in AI responses.</p>
                                 </div>
                             </div>
                         </div>
@@ -897,8 +887,8 @@ async function getCurrentTimeInBerlin() {
                 <!-- Advanced Section (Collapsible) -->
                 <div class="rag-section">
                     <div class="rag-advanced-header" onclick="RAGManager.toggleAdvanced()">
-                        <span class="rag-advanced-toggle" id="rag-advanced-toggle">▶</span>
-                        <h3>⚙️ Advanced</h3>
+                        <i class="fas fa-chevron-right rag-advanced-toggle" id="rag-advanced-toggle"></i>
+                        <h3>Advanced</h3>
                     </div>
                     <div class="rag-advanced-content" id="rag-advanced-content" style="display: none;">
                         <!-- Context Settings Section -->
@@ -921,52 +911,9 @@ async function getCurrentTimeInBerlin() {
                             <div class="form-group" id="rag-expansion-model-group">
                                 <label for="rag-expansion-model">Query Expansion Model</label>
                                 <select id="rag-expansion-model" class="form-control">
-                                    <option value="gpt-5-nano" selected>GPT-5 Nano (Fast & Efficient)</option>
-                                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                                    <option value="gpt-4o">GPT-4o (Most Accurate)</option>
-                                    <option value="current">Use Current Chat Model</option>
+                                    <!-- Options will be populated dynamically based on current provider -->
                                 </select>
                                 <p class="form-help">Model used to derive search terms from your question.</p>
-                            </div>
-                        </div>
-
-                        <!-- Files as Knowledge Section -->
-                        <div class="rag-subsection">
-                            <h4>Files as Knowledge</h4>
-                            <p class="form-help">Upload documents to extract text content for indexing and semantic search.</p>
-                            
-                            <div class="rag-file-upload-section">
-                                <input type="file" id="rag-file-input" multiple accept=".txt,.md,.json,.csv,.xml,.html,.js,.py,.java,.cpp,.c,.h,.cs,.php,.rb,.go,.rs,.swift,.kt,.ts,.tsx,.jsx,.vue,.svelte,.astro,.env,.gitignore,.dockerfile,.makefile,.cmake,.sql" style="display: none;">
-                                <button type="button" id="rag-file-upload-btn" class="btn secondary-btn">
-                                    <i class="fas fa-file-upload"></i> Browse Files
-                                </button>
-                                <span class="file-upload-hint">Supported: TXT, MD, JSON, and most code files</span>
-                            </div>
-                            
-                            <div id="rag-files-list" class="rag-files-list">
-                                <!-- Files will be populated here -->
-                            </div>
-                        </div>
-                        
-                        <!-- User-Defined Knowledge Base Section -->
-                        <div class="rag-subsection">
-                            <h4>User-Defined Knowledge Base</h4>
-                            <p class="form-help">Documents indexed using the hackare tool.</p>
-                            
-                            <div class="rag-status" id="rag-user-status">
-                                <div class="rag-stats">
-                                    <span id="rag-user-chunks">0 chunks available</span>
-                                    <span id="rag-user-files">0 files</span>
-                                </div>
-                                <button type="button" id="rag-upload-bundle-btn" class="btn secondary-btn">
-                                    Load Bundle
-                                </button>
-                            </div>
-                            
-                            <div id="rag-user-bundles-list" class="rag-bundles-list">
-                                <div class="empty-bundles-state">
-                                    <p>No knowledge base bundles loaded.</p>
-                                </div>
                             </div>
                         </div>
                     </div>

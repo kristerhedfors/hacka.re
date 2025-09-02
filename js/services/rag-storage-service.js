@@ -502,6 +502,36 @@ window.RAGStorageService = (function() {
     }
 
     /**
+     * Get the configured query expansion model
+     * @returns {string|null} The expansion model ID or null if not set
+     */
+    function getExpansionModel() {
+        try {
+            const settings = loadRAGSettings();
+            return settings.expansionModel || null;
+        } catch (error) {
+            console.error('RAGStorageService: Error getting expansion model:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Set the query expansion model
+     * @param {string} modelId - The model ID to use for query expansion
+     * @returns {boolean} Success status
+     */
+    function setExpansionModel(modelId) {
+        try {
+            const settings = loadRAGSettings();
+            settings.expansionModel = modelId;
+            return saveRAGSettings(settings);
+        } catch (error) {
+            console.error('RAGStorageService: Error setting expansion model:', error);
+            return false;
+        }
+    }
+
+    /**
      * Validate storage integrity
      * @returns {Object} Validation results
      */
@@ -579,6 +609,10 @@ window.RAGStorageService = (function() {
         toggleRAGPromptSelection,
         isRAGPromptSelected,
         clearRAGPromptSelections,
+        
+        // Query expansion model
+        getExpansionModel,
+        setExpansionModel,
         
         // Management
         clearAllRAGStorage,
