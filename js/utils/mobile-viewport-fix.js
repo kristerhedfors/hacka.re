@@ -1,6 +1,6 @@
 /**
  * Mobile Viewport Height Fix
- * Handles dynamic viewport height issues on mobile devices
+ * Universal solution for all mobile browsers
  */
 
 function initMobileViewportFix() {
@@ -11,20 +11,25 @@ function initMobileViewportFix() {
         // Set the custom property for use in CSS
         document.documentElement.style.setProperty('--vh', `${vh}px`);
         
-        // Also handle dynamic viewport height for modern browsers
-        if (CSS.supports('height', '100dvh')) {
-            // Modern browsers support dvh units natively
-            return;
+        // Only apply fixes on mobile
+        if (window.innerWidth <= 768) {
+            const appContainer = document.querySelector('.app-container');
+            const chatInputContainer = document.getElementById('chat-input-container');
+            
+            // Set app container to exact viewport height
+            if (appContainer) {
+                // Use innerHeight which gives us the actual visible viewport
+                appContainer.style.height = `${window.innerHeight}px`;
+            }
+            
+            // Ensure chat input is visible
+            if (chatInputContainer) {
+                // Force reflow to ensure proper positioning
+                chatInputContainer.style.display = 'none';
+                chatInputContainer.offsetHeight; // Trigger reflow
+                chatInputContainer.style.display = 'block';
+            }
         }
-        
-        // Fallback for older browsers
-        const appContainer = document.querySelector('.app-container');
-        const body = document.body;
-        
-        if (appContainer) {
-            appContainer.style.height = `${window.innerHeight}px`;
-        }
-        body.style.height = `${window.innerHeight}px`;
     }
     
     // Set initial viewport height
@@ -40,41 +45,60 @@ function initMobileViewportFix() {
     
     // Handle orientation change explicitly
     window.addEventListener('orientationchange', () => {
-        setTimeout(setViewportHeight, 100);
+        setTimeout(setViewportHeight, 200);
     });
     
-    // Prevent body scroll on mobile
-    document.body.addEventListener('touchmove', function(e) {
-        // Allow scrolling within specific scrollable elements
-        let element = e.target;
-        while (element && element !== document.body) {
-            if (element.scrollHeight > element.clientHeight && 
-                (element.id === 'chat-messages' || 
-                 element.classList.contains('modal-content') ||
-                 element.classList.contains('model-info'))) {
-                return; // Allow scrolling within these elements
-            }
-            element = element.parentElement;
-        }
-        // Prevent default body scroll
-        if (e.target === document.body || e.target === document.documentElement) {
-            e.preventDefault();
-        }
-    }, { passive: false });
+    // Handle visual viewport changes (iOS specific)
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => {
+            setViewportHeight();
+        });
+    }
     
-    // Detect virtual keyboard
-    let initialHeight = window.innerHeight;
-    window.addEventListener('resize', () => {
-        const currentHeight = window.innerHeight;
-        const heightDifference = initialHeight - currentHeight;
-        
-        // If height decreased by more than 150px, keyboard is likely open
-        if (heightDifference > 150) {
-            document.body.classList.add('keyboard-open');
-        } else {
-            document.body.classList.remove('keyboard-open');
-            initialHeight = currentHeight; // Update baseline when keyboard closes
+    // Prevent body scroll on mobile
+    if (window.innerWidth <= 768) {
+        document.body.addEventListener('touchmove', function(e) {
+            // Allow scrolling within specific scrollable elements
+            let element = e.target;
+            while (element && element !== document.body) {
+                if (element.scrollHeight > element.clientHeight && 
+                    (element.id === 'chat-messages' || 
+                     element.classList.contains('modal-content') ||
+                     element.classList.contains('model-info'))) {
+                    return; // Allow scrolling within these elements
+                }
+                element = element.parentElement;
+            }
+            // Prevent default body scroll
+            if (e.target === document.body || e.target === document.documentElement) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    }
+    
+    // Simple keyboard detection
+    if (window.innerWidth <= 768) {
+        const messageInput = document.getElementById('message-input');
+        if (messageInput) {
+            messageInput.addEventListener('focus', () => {
+                document.body.classList.add('keyboard-open');
+                // Ensure input is visible when keyboard opens
+                setTimeout(() => {
+                    messageInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 300);
+            });
+            
+            messageInput.addEventListener('blur', () => {
+                document.body.classList.remove('keyboard-open');
+                // Reset viewport after keyboard closes
+                setTimeout(setViewportHeight, 300);
+            });
         }
+    }
+    
+    // Force a recalculation on page load
+    window.addEventListener('load', () => {
+        setTimeout(setViewportHeight, 100);
     });
 }
 
