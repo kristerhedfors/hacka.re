@@ -916,46 +916,6 @@ async function getCurrentTimeInBerlin() {
                                 <p class="form-help">Model used to derive search terms from your question.</p>
                             </div>
                         </div>
-
-                        <!-- Files as Knowledge Section -->
-                        <div class="rag-subsection">
-                            <h4>Files as Knowledge</h4>
-                            <p class="form-help">Upload documents to extract text content for indexing and semantic search.</p>
-                            
-                            <div class="rag-file-upload-section">
-                                <input type="file" id="rag-file-input" multiple accept=".txt,.md,.json,.csv,.xml,.html,.js,.py,.java,.cpp,.c,.h,.cs,.php,.rb,.go,.rs,.swift,.kt,.ts,.tsx,.jsx,.vue,.svelte,.astro,.env,.gitignore,.dockerfile,.makefile,.cmake,.sql" style="display: none;">
-                                <button type="button" id="rag-file-upload-btn" class="btn secondary-btn">
-                                    <i class="fas fa-file-upload"></i> Browse Files
-                                </button>
-                                <span class="file-upload-hint">Supported: TXT, MD, JSON, and most code files</span>
-                            </div>
-                            
-                            <div id="rag-files-list" class="rag-files-list">
-                                <!-- Files will be populated here -->
-                            </div>
-                        </div>
-                        
-                        <!-- User-Defined Knowledge Base Section -->
-                        <div class="rag-subsection">
-                            <h4>User-Defined Knowledge Base</h4>
-                            <p class="form-help">Documents indexed using the hackare tool.</p>
-                            
-                            <div class="rag-status" id="rag-user-status">
-                                <div class="rag-stats">
-                                    <span id="rag-user-chunks">0 chunks available</span>
-                                    <span id="rag-user-files">0 files</span>
-                                </div>
-                                <button type="button" id="rag-upload-bundle-btn" class="btn secondary-btn">
-                                    Load Bundle
-                                </button>
-                            </div>
-                            
-                            <div id="rag-user-bundles-list" class="rag-bundles-list">
-                                <div class="empty-bundles-state">
-                                    <p>No knowledge base bundles loaded.</p>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
                 
