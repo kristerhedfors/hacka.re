@@ -409,13 +409,13 @@ window.RAGModalManager = (function() {
                 }
                 
                 if (chunkCount > 0) {
-                    statusElement.textContent = `Indexed (${chunkCount} chunks @ ~200 tokens)`;
+                    statusElement.textContent = `Indexed (${chunkCount} chunks @ ~512 tokens)`;
                 } else {
                     statusElement.textContent = 'Indexed (in memory)';
                 }
                 statusElement.classList.add('indexed');
                 statusElement.classList.remove('not-indexed');
-                statusElement.title = `Document is indexed with ${chunkCount > 0 ? chunkCount + ' chunks of ~200 tokens each' : 'embeddings'}. Note: Embeddings are stored in memory only and will need to be re-indexed after page reload.`;
+                statusElement.title = `Document is indexed with ${chunkCount > 0 ? chunkCount + ' chunks of ~512 tokens each' : 'embeddings'}. Note: Embeddings are stored in memory only and will need to be re-indexed after page reload.`;
             } else {
                 statusElement.textContent = 'Not indexed';
                 statusElement.classList.remove('indexed');
