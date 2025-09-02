@@ -107,8 +107,8 @@ ul {
 
 .beta-tag.header-beta {
     position: absolute !important; /* Absolute positioning relative to header */
-    top: 50% !important; /* Center vertically */
-    transform: translateY(-50%) !important; /* Perfect vertical centering */
+    top: 18px !important; /* Fixed distance from top, matching icon positioning */
+    transform: none !important; /* Remove vertical centering transform */
     right: 20px !important; /* Position from right edge */
     z-index: 100 !important; /* Ensure it appears above other elements in header */
     margin-left: 0 !important; /* Remove any left margin */
@@ -124,8 +124,8 @@ ul {
     .beta-tag.header-beta {
         /* Keep absolute positioning on mobile */
         position: absolute !important;
-        top: 50% !important;
-        transform: translateY(-50%) !important;
+        top: 18px !important; /* Fixed distance from top */
+        transform: none !important; /* Remove transform */
         right: 10px !important; /* Closer to edge on mobile */
         margin-left: 0 !important;
     }
