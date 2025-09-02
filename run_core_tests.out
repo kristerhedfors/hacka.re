@@ -17,10 +17,12 @@ Port: 8000
 Project Root: /Users/user/dev/hacka.re
 ==================================================
 Checking for existing HTTP server processes on port 8000...
-No existing processes found on port 8000.
+Found existing processes: 4338
+Killing existing processes...
+Processes killed.
 Changing to project root directory: /Users/user/dev/hacka.re
 Starting Python HTTP server on port 8000...
-Server started successfully with PID: 70651
+Server started successfully with PID: 10051
 Server is now running at http://localhost:8000
 Server PID saved to: /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt
 ==================================================
@@ -36,17 +38,79 @@ rootdir: /Users/user/dev/hacka.re/_tests/playwright
 configfile: pytest.ini
 testpaths: .
 plugins: playwright-0.7.0, base-url-2.1.0
-collected 924 items / 2 errors / 886 deselected / 38 selected
+collected 926 items / 888 deselected / 38 selected
 
-==================================== ERRORS ====================================
-__________________ ERROR collecting test_agent_load_simple.py __________________
-test_agent_load_simple.py:14: in <module>
-    ACTIVE_TEST_CONFIG = main_conftest.ACTIVE_TEST_CONFIG
-E   AttributeError: module 'conftest' has no attribute 'ACTIVE_TEST_CONFIG'
-_____________ ERROR collecting test_complete_shodan_integration.py _____________
-test_complete_shodan_integration.py:25: in <module>
-    ACTIVE_TEST_CONFIG = main_conftest.ACTIVE_TEST_CONFIG
-E   AttributeError: module 'conftest' has no attribute 'ACTIVE_TEST_CONFIG'
+shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_info[chromium0] PASSED [  2%]
+shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_plan_details[chromium0] FAILED [  5%]
+test_api.py::test_api_key_configuration[chromium0] PASSED                [  7%]
+test_api.py::test_model_selection[chromium0] PASSED                      [ 10%]
+test_api_key_detection_simple.py::test_api_key_detection_simple[chromium0] PASSED [ 13%]
+test_api_key_enter.py::test_api_key_modal_enter_key[chromium0] PASSED    [ 15%]
+test_api_key_persistence_debug.py::test_api_key_persistence_scenario_1_basic[chromium0] PASSED [ 18%]
+test_api_key_persistence_debug.py::test_api_key_persistence_scenario_2_retry_helper[chromium0] PASSED [ 21%]
+test_api_key_persistence_debug.py::test_api_key_persistence_scenario_3_multiple_attempts[chromium0] PASSED [ 23%]
+test_api_key_persistence_debug.py::test_api_key_persistence_scenario_4_timing_analysis[chromium0] PASSED [ 26%]
+test_chat.py::test_chat_message_send_receive[chromium0] PASSED           [ 28%]
+test_chat_no_mock.py::test_chat_message_send_receive[chromium0] SKIPPED  [ 31%]
+test_page.py::test_page_loads[chromium0] PASSED                          [ 34%]
+test_page.py::test_chat_interface_elements[chromium0] PASSED             [ 36%]
+test_stop_generation_simple.py::test_chat_manager_stop_logic[chromium0] PASSED [ 39%]
+test_welcome_modal_new_logic.py::test_welcome_modal_shows_for_first_time_user[chromium0] PASSED [ 42%]
+test_welcome_modal_new_logic.py::test_welcome_modal_hidden_for_returning_user[chromium0] PASSED [ 44%]
+test_welcome_modal_new_logic.py::test_welcome_modal_disabled_with_url_param[chromium0] PASSED [ 47%]
+test_welcome_modal_new_logic.py::test_no_auto_settings_after_welcome[chromium0] PASSED [ 50%]
+shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_info[chromium1] PASSED [ 52%]
+shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_plan_details[chromium1] PASSED [ 55%]
+test_api.py::test_api_key_configuration[chromium1] PASSED                [ 57%]
+test_api.py::test_model_selection[chromium1] PASSED                      [ 60%]
+test_api_key_detection_simple.py::test_api_key_detection_simple[chromium1] PASSED [ 63%]
+test_api_key_enter.py::test_api_key_modal_enter_key[chromium1] PASSED    [ 65%]
+test_api_key_persistence_debug.py::test_api_key_persistence_scenario_1_basic[chromium1] PASSED [ 68%]
+test_api_key_persistence_debug.py::test_api_key_persistence_scenario_2_retry_helper[chromium1] PASSED [ 71%]
+test_api_key_persistence_debug.py::test_api_key_persistence_scenario_3_multiple_attempts[chromium1] PASSED [ 73%]
+test_api_key_persistence_debug.py::test_api_key_persistence_scenario_4_timing_analysis[chromium1] PASSED [ 76%]
+test_chat.py::test_chat_message_send_receive[chromium1] PASSED           [ 78%]
+test_chat_no_mock.py::test_chat_message_send_receive[chromium1] SKIPPED  [ 81%]
+test_page.py::test_page_loads[chromium1] PASSED                          [ 84%]
+test_page.py::test_chat_interface_elements[chromium1] PASSED             [ 86%]
+test_stop_generation_simple.py::test_chat_manager_stop_logic[chromium1] PASSED [ 89%]
+test_welcome_modal_new_logic.py::test_welcome_modal_shows_for_first_time_user[chromium1] PASSED [ 92%]
+test_welcome_modal_new_logic.py::test_welcome_modal_hidden_for_returning_user[chromium1] PASSED [ 94%]
+test_welcome_modal_new_logic.py::test_welcome_modal_disabled_with_url_param[chromium1] PASSED [ 97%]
+test_welcome_modal_new_logic.py::test_no_auto_settings_after_welcome[chromium1] PASSED [100%]
+
+=================================== FAILURES ===================================
+______________ TestShodanAPIInfo.test_api_plan_details[chromium0] ______________
+
+self = <test_shodan_account_apis.TestShodanAPIInfo object at 0x103f7a3f0>
+shodan_chat_interface = <Page url='http://localhost:8000/'>
+
+    def test_api_plan_details(self, shodan_chat_interface):
+        """Test understanding API plan features"""
+        page = shodan_chat_interface
+    
+        # Query about plan details
+        query = "What Shodan API features are available with my current plan?"
+        response = send_shodan_query(page, query)
+    
+        # Should list features - be more flexible with keywords
+        feature_keywords = ["search", "scan", "monitor", "filter", "export", "download", "api",
+                          "query", "data", "access", "information", "lookup", "check"]
+        features_found = sum(1 for keyword in feature_keywords if keyword in response.lower())
+    
+        # Lower threshold to 1 keyword as minimum, since responses can vary
+>       assert features_found >= 1, f"Response should list API features, found {features_found} features"
+E       AssertionError: Response should list API features, found 0 features
+E       assert 0 >= 1
+
+shodan/test_shodan_account_apis.py:101: AssertionError
+---------------------------- Captured stdout setup -----------------------------
+welcome-modal is visible, closing it
+Found close button with selector: #close-welcome-modal
+Clicked close button
+Modal closed successfully
+--------------------------- Captured stdout teardown ---------------------------
+HTTP server process already terminated
 =============================== warnings summary ===============================
 test_complete_mcp_share_flow.py:8
   /Users/user/dev/hacka.re/_tests/playwright/test_complete_mcp_share_flow.py:8: PytestUnknownMarkWarning: Unknown pytest.mark.feature_test - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
@@ -86,10 +150,8 @@ test_rag_similarity_scores.py:14
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
 =========================== short test summary info ============================
-ERROR test_agent_load_simple.py - AttributeError: module 'conftest' has no at...
-ERROR test_complete_shodan_integration.py - AttributeError: module 'conftest'...
-!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!
-================ 886 deselected, 9 warnings, 2 errors in 0.47s =================
+FAILED shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_plan_details[chromium0]
+= 1 failed, 35 passed, 2 skipped, 888 deselected, 9 warnings in 225.59s (0:03:45) =
 Generating test results markdown files...
 No arguments provided. Using default files.
 Processing default files...
@@ -106,7 +168,7 @@ You can view the markdown report with: glow -p run_tests.out_bundle.md
 These files can be used by the coding assistant LLM to analyze test results
 Stopping HTTP server...
 ===== Stopping HTTP Server for hacka.re Tests =====
-Found server process with PID: 70651
+Found server process with PID: 10051
 Stopping server...
 Server stopped.
 Removed PID file: /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt

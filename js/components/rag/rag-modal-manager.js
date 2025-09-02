@@ -48,6 +48,17 @@ window.RAGModalManager = (function() {
             });
         }
 
+        // Info icon click handler
+        const ragInfoIcon = document.getElementById('rag-info-icon');
+        if (ragInfoIcon) {
+            ragInfoIcon.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (window.SettingsInfoModalService) {
+                    window.SettingsInfoModalService.showRagInfoModal(ragInfoIcon);
+                }
+            });
+        }
+
         // RAG enable/disable checkbox
         const ragEnabledCheckbox = document.getElementById('rag-enabled-checkbox');
         const ragHelpText = document.getElementById('rag-help-text');
@@ -132,6 +143,9 @@ window.RAGModalManager = (function() {
                     if (ragDisabledMessage) ragDisabledMessage.style.display = 'none';
                 }
             }
+            
+            // Populate the query expansion model selector
+            populateExpansionModelSelector();
             
             // Update document checkboxes based on their enabled state (not indexed state)
             const documentIds = ['cra', 'aia', 'dora'];
@@ -376,6 +390,127 @@ window.RAGModalManager = (function() {
     }
 
     /**
+     * Populate the query expansion model selector with models from current provider
+     */
+    function populateExpansionModelSelector() {
+        const expansionModelSelect = document.getElementById('rag-expansion-model');
+        if (!expansionModelSelect) return;
+        
+        // Get the current provider
+        const provider = window.DataService?.getBaseUrlProvider?.() || 'openai';
+        
+        // Get the default expansion model for this provider
+        const defaultExpansionModel = window.DefaultModelsConfig?.getRagExpansionModel?.(provider) || 'gpt-4.1-mini';
+        
+        // Get the currently selected expansion model from storage or use default
+        const storedExpansionModel = window.RAGStorageService?.getExpansionModel?.() || defaultExpansionModel;
+        
+        // Get models from the main model selector dropdown
+        const modelSelect = document.getElementById('model-select');
+        const availableModels = [];
+        
+        if (modelSelect && modelSelect.options.length > 0) {
+            // Extract models from the main model selector
+            Array.from(modelSelect.options).forEach(option => {
+                if (!option.disabled && option.value) {
+                    availableModels.push({
+                        id: option.value,
+                        name: option.textContent
+                    });
+                }
+            });
+        }
+        
+        // Clear existing options
+        expansionModelSelect.innerHTML = '';
+        
+        // If we have models, populate the selector
+        if (availableModels.length > 0) {
+            // Add available models
+            availableModels.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model.id;
+                option.textContent = model.name;
+                
+                // Select the appropriate model
+                if (model.id === storedExpansionModel) {
+                    option.selected = true;
+                } else if (!storedExpansionModel && model.id === defaultExpansionModel) {
+                    option.selected = true;
+                }
+                
+                expansionModelSelect.appendChild(option);
+            });
+            
+            // Add "Use Current Chat Model" option at the end
+            const currentOption = document.createElement('option');
+            currentOption.value = 'current';
+            currentOption.textContent = 'Use Current Chat Model';
+            expansionModelSelect.appendChild(currentOption);
+            
+            // If nothing was selected yet, select the default model
+            if (!expansionModelSelect.value) {
+                // Try to select the default expansion model
+                for (let i = 0; i < expansionModelSelect.options.length; i++) {
+                    if (expansionModelSelect.options[i].value === defaultExpansionModel) {
+                        expansionModelSelect.value = defaultExpansionModel;
+                        break;
+                    }
+                }
+                
+                // If default model not found, select the first available model
+                if (!expansionModelSelect.value && expansionModelSelect.options.length > 0) {
+                    expansionModelSelect.value = expansionModelSelect.options[0].value;
+                }
+            }
+        } else {
+            // No models available, add default options
+            const defaultOptions = [
+                { value: 'gpt-4.1-mini', text: 'GPT-4.1 Mini (Recommended)' },
+                { value: 'gpt-5-nano', text: 'GPT-5 Nano (Fast & Efficient)' },
+                { value: 'gpt-3.5-turbo', text: 'GPT-3.5 Turbo' },
+                { value: 'gpt-4o', text: 'GPT-4o (Most Accurate)' },
+                { value: 'current', text: 'Use Current Chat Model' }
+            ];
+            
+            defaultOptions.forEach(opt => {
+                const option = document.createElement('option');
+                option.value = opt.value;
+                option.textContent = opt.text;
+                
+                // Select the default expansion model
+                if (opt.value === defaultExpansionModel) {
+                    option.selected = true;
+                }
+                
+                expansionModelSelect.appendChild(option);
+            });
+        }
+        
+        // Remove existing change listener to avoid duplicates
+        const oldListener = expansionModelSelect._ragChangeListener;
+        if (oldListener) {
+            expansionModelSelect.removeEventListener('change', oldListener);
+        }
+        
+        // Create and store new listener
+        const changeListener = (e) => {
+            const selectedModel = e.target.value;
+            if (window.RAGStorageService?.setExpansionModel) {
+                window.RAGStorageService.setExpansionModel(selectedModel);
+            }
+        };
+        
+        // Save reference to listener for later removal
+        expansionModelSelect._ragChangeListener = changeListener;
+        
+        // Add the change listener
+        expansionModelSelect.addEventListener('change', changeListener);
+        
+        console.log(`RAGModalManager: Populated expansion model selector with ${expansionModelSelect.options.length} models, selected: ${expansionModelSelect.value}`);
+    }
+
+    /**
      * Update document status indicator
      * @param {string} docId - Document ID
      * @param {boolean} isIndexed - Whether the document is indexed
@@ -398,13 +533,13 @@ window.RAGModalManager = (function() {
                 }
                 
                 if (chunkCount > 0) {
-                    statusElement.textContent = `Indexed (${chunkCount} chunks @ ~200 tokens)`;
+                    statusElement.textContent = `Indexed (${chunkCount} chunks @ ~512 tokens)`;
                 } else {
                     statusElement.textContent = 'Indexed (in memory)';
                 }
                 statusElement.classList.add('indexed');
                 statusElement.classList.remove('not-indexed');
-                statusElement.title = `Document is indexed with ${chunkCount > 0 ? chunkCount + ' chunks of ~200 tokens each' : 'embeddings'}. Note: Embeddings are stored in memory only and will need to be re-indexed after page reload.`;
+                statusElement.title = `Document is indexed with ${chunkCount > 0 ? chunkCount + ' chunks of ~512 tokens each' : 'embeddings'}. Note: Embeddings are stored in memory only and will need to be re-indexed after page reload.`;
             } else {
                 statusElement.textContent = 'Not indexed';
                 statusElement.classList.remove('indexed');
