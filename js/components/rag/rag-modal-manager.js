@@ -87,17 +87,22 @@ window.RAGModalManager = (function() {
         if (modal) {
             modal.classList.add('active');
             
-            // Update document statuses based on actual index state
+            // Update document checkboxes based on their enabled state (not indexed state)
             const documentIds = ['cra', 'aia', 'dora'];
+            const enabledDocs = window.RAGStorageService ? window.RAGStorageService.getEnabledEUDocuments() : [];
+            
             documentIds.forEach(docId => {
                 const checkbox = document.getElementById(`rag-doc-${docId}`);
                 if (checkbox) {
-                    // Check if document is actually indexed with vectors
+                    // Set checkbox based on whether it's enabled (user preference)
+                    const isEnabled = enabledDocs.includes(docId);
+                    checkbox.checked = isEnabled;
+                    
+                    // Check if document is actually indexed
                     const isIndexed = window.RAGCoordinator && window.RAGCoordinator.checkDocumentIndexed ? 
                         window.RAGCoordinator.checkDocumentIndexed(docId) : false;
                     
-                    // Update checkbox to match indexed state
-                    checkbox.checked = isIndexed;
+                    // Update status display based on indexed state
                     updateDocumentStatus(docId, isIndexed);
                 }
             });
@@ -135,11 +140,7 @@ window.RAGModalManager = (function() {
         
         console.log(`RAGModalManager: RAG ${isEnabled ? 'enabled' : 'disabled'}`);
         
-        if (isEnabled) {
-            showSuccess('RAG enabled - chat responses will be enhanced with relevant context');
-        } else {
-            showInfo('RAG disabled - chat responses will not include knowledge base context');
-        }
+        // No popup messages - just silently update the state
     }
 
     /**

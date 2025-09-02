@@ -365,6 +365,51 @@ function createSharedLinkDataProcessor() {
     }
     
     /**
+     * Apply RAG settings from shared data
+     * @param {Object} sharedData - Shared data object
+     * @param {Function} addSystemMessage - Function to add system messages
+     */
+    function applyRAGSettings(sharedData, addSystemMessage) {
+        // Apply RAG enabled state
+        if (sharedData.ragEnabled !== undefined && window.RAGStorageService) {
+            window.RAGStorageService.setRAGEnabled(sharedData.ragEnabled);
+            
+            // Update checkbox UI if available
+            const ragEnabledCheckbox = document.getElementById('rag-enabled-checkbox');
+            if (ragEnabledCheckbox) {
+                ragEnabledCheckbox.checked = sharedData.ragEnabled;
+            }
+            
+            if (addSystemMessage) {
+                addSystemMessage(`RAG ${sharedData.ragEnabled ? 'enabled' : 'disabled'} from shared link.`);
+            }
+        }
+        
+        // Apply enabled EU documents
+        if (sharedData.ragEUDocuments && Array.isArray(sharedData.ragEUDocuments) && window.RAGStorageService) {
+            window.RAGStorageService.setEnabledEUDocuments(sharedData.ragEUDocuments);
+            
+            // Update checkbox UI for each document
+            ['cra', 'aia', 'dora'].forEach(docId => {
+                const checkbox = document.getElementById(`rag-doc-${docId}`);
+                if (checkbox) {
+                    checkbox.checked = sharedData.ragEUDocuments.includes(docId);
+                }
+            });
+            
+            if (addSystemMessage && sharedData.ragEUDocuments.length > 0) {
+                const docNames = {
+                    'cra': 'CRA',
+                    'aia': 'AIA',
+                    'dora': 'DORA'
+                };
+                const enabledDocs = sharedData.ragEUDocuments.map(id => docNames[id] || id).join(', ');
+                addSystemMessage(`EU regulation documents enabled: ${enabledDocs}`);
+            }
+        }
+    }
+    
+    /**
      * Apply functions from shared data
      * @param {Object} sharedData - Shared data object
      * @param {Function} addSystemMessage - Function to add system messages
@@ -965,6 +1010,10 @@ function createSharedLinkDataProcessor() {
             console.log('🔧 processSharedData: Applying prompts and functions');
             applyPrompts(sharedData, collectSystemMessage);
             
+            // Apply RAG settings
+            console.log('🔧 processSharedData: Applying RAG settings');
+            applyRAGSettings(sharedData, collectSystemMessage);
+            
             // Use systematic activation for agent loading when cleanSlate is true
             applyFunctions(sharedData, collectSystemMessage, cleanSlate);
             
@@ -1068,6 +1117,7 @@ function createSharedLinkDataProcessor() {
         applyModelConfiguration,
         applyChatMessages,
         applyPrompts,
+        applyRAGSettings,
         applyFunctions,
         applyMcpConnections,
         applyTheme,
