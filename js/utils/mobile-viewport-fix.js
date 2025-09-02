@@ -11,12 +11,23 @@ function initMobileViewportFix() {
         // Set the custom property for use in CSS
         document.documentElement.style.setProperty('--vh', `${vh}px`);
         
-        // Only apply height fixes on mobile
+        // Only apply fixes on mobile
         if (window.innerWidth <= 768) {
             const appContainer = document.querySelector('.app-container');
+            const chatInputContainer = document.getElementById('chat-input-container');
+            
+            // Set app container to exact viewport height
             if (appContainer) {
-                // Set the app container to exactly fill the viewport
+                // Use innerHeight which gives us the actual visible viewport
                 appContainer.style.height = `${window.innerHeight}px`;
+            }
+            
+            // Ensure chat input is visible
+            if (chatInputContainer) {
+                // Force reflow to ensure proper positioning
+                chatInputContainer.style.display = 'none';
+                chatInputContainer.offsetHeight; // Trigger reflow
+                chatInputContainer.style.display = 'block';
             }
         }
     }
@@ -34,8 +45,15 @@ function initMobileViewportFix() {
     
     // Handle orientation change explicitly
     window.addEventListener('orientationchange', () => {
-        setTimeout(setViewportHeight, 100);
+        setTimeout(setViewportHeight, 200);
     });
+    
+    // Handle visual viewport changes (iOS specific)
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => {
+            setViewportHeight();
+        });
+    }
     
     // Prevent body scroll on mobile
     if (window.innerWidth <= 768) {
@@ -64,13 +82,24 @@ function initMobileViewportFix() {
         if (messageInput) {
             messageInput.addEventListener('focus', () => {
                 document.body.classList.add('keyboard-open');
+                // Ensure input is visible when keyboard opens
+                setTimeout(() => {
+                    messageInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 300);
             });
             
             messageInput.addEventListener('blur', () => {
                 document.body.classList.remove('keyboard-open');
+                // Reset viewport after keyboard closes
+                setTimeout(setViewportHeight, 300);
             });
         }
     }
+    
+    // Force a recalculation on page load
+    window.addEventListener('load', () => {
+        setTimeout(setViewportHeight, 100);
+    });
 }
 
 // Initialize on DOM ready
