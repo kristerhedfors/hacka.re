@@ -153,15 +153,11 @@ def test_model_selection(page, serve_hacka_re):
     base_url_select = page.locator("#base-url-select")
     base_url_select.select_option("openai")
     
-    # Click the reload models button
-    reload_button = page.locator("#model-reload-btn")
-    reload_button.click()
-    
-    # Wait for the models to be loaded
-    # First, check if the model select has any non-disabled options
+    # Models should load automatically from cache when API key is set
+    # Wait for the models to be loaded (they load from cache automatically)
     try:
         page.wait_for_selector("#model-select option:not([disabled])", state="visible", timeout=2000)
-        print("Models loaded successfully")
+        print("Models loaded successfully from cache")
     except Exception as e:
         print(f"Error waiting for models to load: {e}")
         # Force a longer wait time

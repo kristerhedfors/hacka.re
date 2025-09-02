@@ -39,14 +39,11 @@ def configure_api_key_and_model(page, api_key):
     api_key_input = page.locator("#api-key-update")
     api_key_input.fill(api_key)
     
-    # Get OPENAI_API_BASE and OPENAI_API_MODEL from conftest.py
-    import sys
+    # Get OPENAI_API_BASE and OPENAI_API_MODEL from environment
     import os
-    # Add the parent directory (playwright) to path to import from main conftest
-    playwright_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
-    if playwright_dir not in sys.path:
-        sys.path.insert(0, playwright_dir)
-    from conftest import OPENAI_API_BASE, OPENAI_API_MODEL
+    # These should be available from the main conftest that loads .env
+    OPENAI_API_BASE = os.getenv("OPENAI_API_BASE", "https://api.openai.com/v1")
+    OPENAI_API_MODEL = os.getenv("OPENAI_API_MODEL", "gpt-5-nano")
     
     # Select OpenAI as the API provider
     base_url_select = page.locator("#base-url-select")
@@ -62,34 +59,35 @@ def configure_api_key_and_model(page, api_key):
         custom_base_url_input.fill(OPENAI_API_BASE)
         print(f"Set custom base URL to: {OPENAI_API_BASE}")
     
-    # Click the reload models button
-    reload_button = page.locator("#model-reload-btn")
-    reload_button.click()
-    
-    # Wait for the models to be loaded
+    # Models should load automatically from cache when API key is set
+    # Wait for the models to be loaded from cache
     # Note: Options might not be "visible" in dropdown, just need to be attached to DOM
     try:
         page.wait_for_selector("#model-select option:not([disabled])", state="attached", timeout=5000)
         print("Models loaded successfully")
     except Exception as e:
-        print(f"Error waiting for models to load: {e}")
-        # Take a screenshot for debugging
-        page.screenshot(path="_tests/playwright/videos/models_loading_error.png")
-        time.sleep(1)
+        print(f"Models not loaded from cache, trying to reload: {e}")
+        # If models aren't loaded from cache, try to reload them
+        reload_button = page.locator("#model-reload-btn")
         
-        # Check if there are any options in the model select
-        options_count = page.evaluate("""() => {
-            const select = document.getElementById('model-select');
-            if (!select) return 0;
-            return Array.from(select.options).filter(opt => !opt.disabled).length;
-        }""")
-        print(f"Found {options_count} non-disabled options in model select")
-        
-        if options_count == 0:
-            # Try clicking the reload button again
-            print("No options found, clicking reload button again")
+        # Check if reload button is enabled
+        is_enabled = reload_button.is_enabled()
+        if is_enabled:
             reload_button.click()
-            time.sleep(2)
+            # Wait for models to load
+            page.wait_for_selector("#model-select option:not([disabled])", state="attached", timeout=5000)
+            print("Models loaded after reload")
+        else:
+            # Take a screenshot for debugging
+            page.screenshot(path="_tests/playwright/videos/models_loading_error.png")
+            
+            # Check if there are any options in the model select
+            options_count = page.evaluate("""() => {
+                const select = document.getElementById('model-select');
+                if (!select) return 0;
+                return Array.from(select.options).filter(opt => !opt.disabled).length;
+            }""")
+            print(f"Found {options_count} non-disabled options in model select")
     
     # Select a model that supports function calling
     # First try to select llama-3.1-8b-instant which is known to support function calling

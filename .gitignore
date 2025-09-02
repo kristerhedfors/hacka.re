@@ -101,6 +101,7 @@ _tests/playwright/*.log
 _tests/playwright/screenshots/
 _tests/playwright/screenshots_data/
 _tests/playwright/videos/
+_tests/playwright/test_runs/
 _tests/playwright/**/*.png
 # Keep documentation files tracked
 !_tests/playwright/*README*.md
