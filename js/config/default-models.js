@@ -43,8 +43,10 @@
 
     /**
      * Default model for RAG query expansion
+     * Using gpt-4.1-mini as it's more capable for generating diverse search terms
+     * gpt-5-nano appears to be too weak for this specific task
      */
-    const DEFAULT_RAG_EXPANSION_MODEL = 'gpt-5-nano';
+    const DEFAULT_RAG_EXPANSION_MODEL = 'gpt-4.1-mini';
 
     /**
      * Test model for development and testing

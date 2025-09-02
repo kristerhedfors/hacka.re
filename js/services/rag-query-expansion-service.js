@@ -12,12 +12,19 @@ window.RAGQueryExpansionService = (function() {
     /**
      * Expand a user query into multiple search terms
      * @param {string} userQuery - The original user question
-     * @param {string} model - Model to use for expansion
+     * @param {string} model - Model to use for expansion (will be overridden by RAG expansion model)
      * @param {string} apiKey - API key
      * @param {string} baseUrl - API base URL
      * @returns {Promise<Array>} Array of search terms/phrases
      */
     async function expandQuery(userQuery, model = 'gpt-5-nano', apiKey, baseUrl = 'https://api.openai.com/v1') {
+        // Override with dedicated RAG expansion model if available
+        // This ensures we use a model that's capable of generating good search terms
+        const ragExpansionModel = window.DefaultModelsConfig?.DEFAULT_RAG_EXPANSION_MODEL || model;
+        if (ragExpansionModel !== model) {
+            console.log(`RAGQueryExpansionService: Using dedicated expansion model '${ragExpansionModel}' instead of '${model}'`);
+            model = ragExpansionModel;
+        }
         if (!userQuery || !apiKey) {
             throw new Error('Query and API key are required');
         }
@@ -47,22 +54,62 @@ Be concise - each term should be 1-4 words.`;
 Generate search terms:`;
 
         try {
-            const response = await fetch(`${baseUrl}/chat/completions`, {
+            // Build request body with compatible parameters for the model
+            const baseBody = {
+                model: model,
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: userPrompt }
+                ]
+            };
+            
+            // Use ModelCompatibility utility to build request with compatible parameters
+            // This handles both max_tokens/max_completion_tokens and temperature restrictions
+            const requestBody = window.ModelCompatibility ? 
+                window.ModelCompatibility.buildCompatibleRequestBody(baseBody, model, 200, 0.3) :
+                { ...baseBody, max_tokens: 200, temperature: 0.3 }; // Fallback if utility not loaded
+            
+            console.log('RAGQueryExpansionService: Sending request with body:', JSON.stringify(requestBody, null, 2));
+            
+            let response = await fetch(`${baseUrl}/chat/completions`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${apiKey}`
                 },
-                body: JSON.stringify({
-                    model: model,
-                    messages: [
-                        { role: 'system', content: systemPrompt },
-                        { role: 'user', content: userPrompt }
-                    ],
-                    temperature: 0.3,
-                    max_tokens: 200
-                })
+                body: JSON.stringify(requestBody)
             });
+            
+            // Handle parameter errors with retry
+            if (!response.ok && response.status === 400) {
+                const errorData = await response.json();
+                let updatedBody = null;
+                
+                if (window.ModelCompatibility) {
+                    // Check for max_tokens error
+                    if (window.ModelCompatibility.isMaxTokensParameterError(errorData)) {
+                        console.warn('RAGQueryExpansionService: Retrying with max_completion_tokens');
+                        updatedBody = window.ModelCompatibility.handleMaxTokensError(errorData, requestBody);
+                    }
+                    // Check for temperature error
+                    else if (window.ModelCompatibility.isTemperatureError(errorData)) {
+                        console.warn('RAGQueryExpansionService: Retrying without temperature parameter');
+                        updatedBody = window.ModelCompatibility.handleTemperatureError(errorData, requestBody);
+                    }
+                    
+                    if (updatedBody) {
+                        // Retry with updated body
+                        response = await fetch(`${baseUrl}/chat/completions`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${apiKey}`
+                            },
+                            body: JSON.stringify(updatedBody)
+                        });
+                    }
+                }
+            }
             
             if (!response.ok) {
                 throw new Error(`API error: ${response.status}`);
@@ -71,12 +118,17 @@ Generate search terms:`;
             const data = await response.json();
             const content = data.choices[0]?.message?.content || '';
             
+            // Log the raw response for debugging
+            console.log('RAGQueryExpansionService: Raw API response content:', content);
+            
             // Parse bullet list
             const terms = content.split('\n')
                 .filter(line => line.trim().startsWith('-'))
                 .map(line => line.trim().substring(1).trim())
                 .filter(term => term.length > 0)
                 .slice(0, 10); // Max 10 terms
+            
+            console.log('RAGQueryExpansionService: Parsed terms:', terms);
             
             // Add the original query as the first term if not already included
             const normalizedTerms = terms.map(t => t.toLowerCase());
@@ -95,6 +147,12 @@ Generate search terms:`;
             
         } catch (error) {
             console.error('RAGQueryExpansionService: Expansion failed:', error);
+            console.error('RAGQueryExpansionService: Error details:', {
+                message: error.message,
+                stack: error.stack,
+                model: model,
+                baseUrl: baseUrl
+            });
             // Fallback to original query
             return [userQuery];
         }
