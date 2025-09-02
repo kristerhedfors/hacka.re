@@ -778,7 +778,7 @@ function cleanupGeneration(updateContextUsage, currentModel) {
                 
                 // Perform RAG search with multi-query support
                 const searchResults = await VectorRAGService.search(query, {
-                    maxResults: 3, // Limit to 3 results to avoid context bloat
+                    // No maxResults - select chunks based on token limit only
                     threshold: 0.4, // Slightly higher threshold for relevance
                     useTextFallback: true,
                     apiKey: apiKey,

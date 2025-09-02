@@ -112,11 +112,10 @@ window.VectorRAGService = (function() {
     /**
      * Search default prompts index
      * @param {Array} queryEmbedding - Query embedding vector
-     * @param {number} maxResults - Maximum number of results
      * @param {number} threshold - Similarity threshold
      * @returns {Array} Search results
      */
-    function searchDefaultPromptsIndex(queryEmbedding, maxResults = 5, threshold = 0.3) {
+    function searchDefaultPromptsIndex(queryEmbedding, threshold = 0.3) {
         if (!defaultPromptsIndex || !defaultPromptsIndex.chunks) {
             console.log('VectorRAGService: No default prompts index available');
             return [];
@@ -148,18 +147,17 @@ window.VectorRAGService = (function() {
 
         // Sort by similarity (highest first)
         results.sort((a, b) => b.similarity - a.similarity);
-        // Return more results for token-based selection
-        return results.slice(0, Math.max(maxResults * 3, 50));
+        // Return all results for token-based selection
+        return results;
     }
 
     /**
      * Search user bundles index
      * @param {Array} queryEmbedding - Query embedding vector
-     * @param {number} maxResults - Maximum number of results
      * @param {number} threshold - Similarity threshold
      * @returns {Array} Search results
      */
-    function searchUserBundlesIndex(queryEmbedding, maxResults = 5, threshold = 0.3) {
+    function searchUserBundlesIndex(queryEmbedding, threshold = 0.3) {
         if (!userBundlesIndex || !userBundlesIndex.bundles) {
             console.log('VectorRAGService: No user bundles index available');
             return [];
@@ -208,8 +206,8 @@ window.VectorRAGService = (function() {
 
         // Sort by similarity (highest first)
         results.sort((a, b) => b.similarity - a.similarity);
-        // Return more results for token-based selection
-        return results.slice(0, Math.max(maxResults * 3, 50));
+        // Return all results for token-based selection
+        return results;
     }
 
     /**
@@ -241,11 +239,10 @@ window.VectorRAGService = (function() {
     /**
      * Search EU documents index
      * @param {Array} queryEmbedding - Query embedding vector
-     * @param {number} maxResults - Maximum number of results
      * @param {number} threshold - Similarity threshold
      * @returns {Array} Search results
      */
-    function searchEUDocumentsIndex(queryEmbedding, maxResults = 5, threshold = 0.3) {
+    function searchEUDocumentsIndex(queryEmbedding, threshold = 0.3) {
         let euDocuments = null;
         try {
             euDocuments = CoreStorageService.getValue('rag_eu_documents_index');
@@ -383,18 +380,16 @@ window.VectorRAGService = (function() {
             }
         }
         
-        // Return more results than maxResults to give selectChunksWithGapFilling more options
-        // It will handle the final selection based on token limits
-        return results.slice(0, Math.max(maxResults * 3, 50));
+        // Return all results - selectChunksWithGapFilling will handle selection based on token limits
+        return results;
     }
 
     /**
      * Text-based fallback search when no embeddings are available
      * @param {string} query - Search query
-     * @param {number} maxResults - Maximum number of results
      * @returns {Array} Search results
      */
-    function textBasedSearch(query, maxResults = 5) {
+    function textBasedSearch(query) {
         const results = [];
         const queryWords = query.toLowerCase().split(/\s+/).filter(word => word.length > 2);
         
@@ -523,9 +518,9 @@ window.VectorRAGService = (function() {
             }
         }
 
-        // Sort by similarity and limit results
+        // Sort by similarity - return all for token-based selection
         results.sort((a, b) => b.similarity - a.similarity);
-        return results.slice(0, maxResults);
+        return results;
     }
 
     /**
@@ -538,8 +533,7 @@ window.VectorRAGService = (function() {
         initialize();
 
         const {
-            maxResults = ragSettings?.maxResults || 50,  // Increased to get more candidates for token-based selection
-            tokenLimit = 5000,  // Token limit for context
+            tokenLimit = 5000,  // Token limit for context - the ONLY limit that matters
             threshold = ragSettings?.similarityThreshold || 0.3,
             useTextFallback = true,
             apiKey = null,
@@ -556,7 +550,7 @@ window.VectorRAGService = (function() {
         // Debug logging
         if (window.DebugService) {
             window.DebugService.debugLog('rag', `Starting search for query: "${query.substring(0, 50)}${query.length > 50 ? '...' : ''}"`);
-            window.DebugService.debugLog('rag', `Search parameters: maxResults=${maxResults}, threshold=${threshold}, tokenLimit=${tokenLimit}, embeddingModel=${embeddingModel}`);
+            window.DebugService.debugLog('rag', `Search parameters: threshold=${threshold}, tokenLimit=${tokenLimit}, embeddingModel=${embeddingModel}`);
         }
 
         console.log(`VectorRAGService: Searching for: "${query}"`);
@@ -599,11 +593,10 @@ window.VectorRAGService = (function() {
                             // Search with the first (primary) embedding to get candidates
                             const primaryEmbedding = queryEmbeddings[0].embedding;
                             
-                            // Get more results for multi-query ranking
-                            const expandedMaxResults = maxResults * 2;
-                            const defaultResults = searchDefaultPromptsIndex(primaryEmbedding, expandedMaxResults, threshold * 0.8);
-                            const userResults = searchUserBundlesIndex(primaryEmbedding, expandedMaxResults, threshold * 0.8);
-                            const euResults = searchEUDocumentsIndex(primaryEmbedding, expandedMaxResults, threshold * 0.8);
+                            // Get all results above lowered threshold for multi-query ranking
+                            const defaultResults = searchDefaultPromptsIndex(primaryEmbedding, threshold * 0.8);
+                            const userResults = searchUserBundlesIndex(primaryEmbedding, threshold * 0.8);
+                            const euResults = searchEUDocumentsIndex(primaryEmbedding, threshold * 0.8);
                             
                             // Combine all results
                             allResults = [...defaultResults, ...userResults, ...euResults];
@@ -632,9 +625,9 @@ window.VectorRAGService = (function() {
                             // Fallback to single query if expansion failed
                             console.warn('VectorRAGService: Multi-query expansion failed, using single query');
                             const queryEmbedding = await generateQueryEmbedding(query, apiKey, baseUrl, embeddingModel);
-                            const defaultResults = searchDefaultPromptsIndex(queryEmbedding, maxResults, threshold);
-                            const userResults = searchUserBundlesIndex(queryEmbedding, maxResults, threshold);
-                            const euResults = searchEUDocumentsIndex(queryEmbedding, maxResults, threshold);
+                            const defaultResults = searchDefaultPromptsIndex(queryEmbedding, threshold);
+                            const userResults = searchUserBundlesIndex(queryEmbedding, threshold);
+                            const euResults = searchEUDocumentsIndex(queryEmbedding, threshold);
                             allResults = [...defaultResults, ...userResults, ...euResults];
                         }
                         
@@ -651,9 +644,9 @@ window.VectorRAGService = (function() {
                         }
                         
                         // Search all indexes
-                        const defaultResults = searchDefaultPromptsIndex(queryEmbedding, maxResults, threshold);
-                        const userResults = searchUserBundlesIndex(queryEmbedding, maxResults, threshold);
-                        const euResults = searchEUDocumentsIndex(queryEmbedding, maxResults, threshold);
+                        const defaultResults = searchDefaultPromptsIndex(queryEmbedding, threshold);
+                        const userResults = searchUserBundlesIndex(queryEmbedding, threshold);
+                        const euResults = searchEUDocumentsIndex(queryEmbedding, threshold);
                         allResults = [...defaultResults, ...userResults, ...euResults];
                     }
                     
@@ -685,7 +678,7 @@ window.VectorRAGService = (function() {
                     }
                     
                     if (useTextFallback) {
-                        results = textBasedSearch(query, maxResults);
+                        results = textBasedSearch(query);
                         searchType = 'text_fallback';
                         
                         if (window.DebugService) {
@@ -700,7 +693,7 @@ window.VectorRAGService = (function() {
                         window.DebugService.debugLog('rag', 'No API key available - using text-based search only');
                     }
                     
-                    results = textBasedSearch(query, maxResults);
+                    results = textBasedSearch(query);
                     searchType = 'text_only';
                     
                     if (window.DebugService) {
@@ -827,9 +820,10 @@ window.VectorRAGService = (function() {
 
     /**
      * Smart chunk selection with gap-filling for coherence
+     * Selects chunks purely based on token limit, filling gaps for continuity
      * @param {Array} results - All search results sorted by similarity
-     * @param {number} maxTokens - Maximum number of tokens to include
-     * @param {number} threshold - Similarity threshold (optional, for logging)
+     * @param {number} maxTokens - Maximum number of tokens to include (the ONLY limit)
+     * @param {number} threshold - Similarity threshold (only for logging/debugging)
      * @returns {Array} Selected and gap-filled results
      */
     function selectChunksWithGapFilling(results, maxTokens = 5000, threshold = 0.3) {
@@ -844,8 +838,8 @@ window.VectorRAGService = (function() {
         const selectedIndices = new Set();
         let currentTokens = 0;
         
-        // First pass: select chunks by similarity until token limit
-        // Fill up to the token limit regardless of threshold
+        // Select chunks by similarity until token limit is reached
+        // This is the ONLY constraint - no arbitrary result count limits
         for (let i = 0; i < results.length; i++) {
             const result = results[i];
             const tokens = estimateTokens(result.content || '');
@@ -874,7 +868,7 @@ window.VectorRAGService = (function() {
                 }
                 break;
             } else {
-                // Can't fit more chunks
+                // Token limit reached
                 break;
             }
         }
@@ -959,15 +953,18 @@ window.VectorRAGService = (function() {
             return aIdx - bIdx;
         });
         
-        // Add debug info about threshold distribution
+        // Log selection statistics
         const aboveThreshold = finalResults.filter(r => r.similarity >= threshold).length;
         const belowThreshold = finalResults.length - aboveThreshold;
         
-        console.log(`VectorRAGService: Selected ${selected.length} chunks + ${gapFillers.length} gap-fillers = ${finalResults.length} total chunks (≈${currentTokens} tokens)`);
+        console.log(`VectorRAGService: Token-based selection: ${selected.length} chunks + ${gapFillers.length} gap-fillers = ${finalResults.length} total (≈${currentTokens}/${maxTokens} tokens)`);
         
         if (window.DebugService) {
             window.DebugService.debugLog('rag', `Token usage: ${currentTokens}/${maxTokens} (${Math.round(currentTokens/maxTokens*100)}% of limit)`);
-            window.DebugService.debugLog('rag', `Chunks: ${aboveThreshold} above threshold (${threshold}), ${belowThreshold} below threshold`);
+            window.DebugService.debugLog('rag', `Selected purely by token budget: ${finalResults.length} chunks total`);
+            if (aboveThreshold > 0 || belowThreshold > 0) {
+                window.DebugService.debugLog('rag', `Similarity distribution: ${aboveThreshold} above ${threshold}, ${belowThreshold} below (informational only)`);
+            }
         }
         
         return finalResults;
