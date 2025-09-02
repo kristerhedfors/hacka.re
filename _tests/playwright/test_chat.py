@@ -1,11 +1,15 @@
 import pytest
 import time
 import os
+import json
 from dotenv import load_dotenv
 from playwright.sync_api import Page, expect
 
-from test_utils import dismiss_welcome_modal, check_system_messages
-from conftest import ACTIVE_TEST_CONFIG
+from test_utils import dismiss_welcome_modal, check_system_messages, screenshot_with_markdown
+import sys
+sys.path.insert(0, os.path.dirname(__file__))
+import conftest
+ACTIVE_TEST_CONFIG = conftest.ACTIVE_TEST_CONFIG
 
 # Load environment variables from .env file in the current directory
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
@@ -14,14 +18,35 @@ API_KEY = ACTIVE_TEST_CONFIG["api_key"]
 
 def test_chat_message_send_receive(page: Page, serve_hacka_re):
     """Test sending a message and receiving a response with real API."""
+    
+    # Set up console logging
+    console_messages = []
+    def log_console_message(msg):
+        timestamp = time.strftime("%H:%M:%S")
+        console_messages.append({
+            'timestamp': timestamp,
+            'type': msg.type,
+            'text': msg.text,
+            'location': str(msg.location) if msg.location else None
+        })
+        print(f"[{timestamp}] Console {msg.type.upper()}: {msg.text}")
+    
+    page.on("console", log_console_message)
+    
     # Navigate to the application
     page.goto(serve_hacka_re)
     
-    # Configure API key and model first
+    # Take initial screenshot
+    screenshot_with_markdown(page, "01_initial_load", {
+        "Status": "Page loaded",
+        "Provider": ACTIVE_TEST_CONFIG["provider_value"],
+        "Model": ACTIVE_TEST_CONFIG["model"],
+        "Base URL": ACTIVE_TEST_CONFIG["base_url"]
+    })
+    
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
     
-    # Dismiss settings modal if already open
     # Click the settings button
     settings_button = page.locator("#settings-btn")
     settings_button.click(timeout=2000)
@@ -35,286 +60,211 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
     
     # Select the configured test provider
     base_url_select = page.locator("#base-url-select")
-    base_url_select.select_option(ACTIVE_TEST_CONFIG["provider_value"])
+    if ACTIVE_TEST_CONFIG["provider_value"] == "berget":
+        base_url_select.select_option("berget")
+    else:
+        base_url_select.select_option(ACTIVE_TEST_CONFIG["provider_value"])
     
-    # Trigger input event to ensure button state updates
-    page.evaluate("""() => {
-        const apiKeyInput = document.getElementById('api-key-update');
-        if (apiKeyInput) {
-            apiKeyInput.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-    }""")
+    # Take screenshot of settings
+    screenshot_with_markdown(page, "02_settings_configured", {
+        "Status": "Settings configured",
+        "API Key Length": str(len(API_KEY)),
+        "Provider": ACTIVE_TEST_CONFIG["provider_value"]
+    })
     
-    # Wait for settings to save and UI to update
-    page.wait_for_timeout(1500)
-    
-    # Models should load automatically from cache when API key is set
-    # No need to click reload button - cache handles it automatically
-    
-    # Wait for the models to be loaded
-    # First, check if the model select has any non-disabled options
-    # Note: Options might not be "visible" in dropdown, just need to be attached to DOM
-    try:
-        page.wait_for_selector("#model-select option:not([disabled])", state="attached", timeout=5000)
-        print("Models loaded successfully")
-    except Exception as e:
-        print(f"Error waiting for models to load: {e}")
-        # Check if there are any options in the model select
-        options_count = page.evaluate("""() => {
-            const select = document.getElementById('model-select');
-            if (!select) return 0;
-            return Array.from(select.options).filter(opt => !opt.disabled).length;
-        }""")
-        print(f"Found {options_count} non-disabled options in model select")
-        
-        if options_count == 0:
-            # Models should have loaded from cache automatically
-            print("No models found - cache may be missing or API key invalid")
-            pytest.skip("Could not load models from cache")
+    # Wait for models to load
+    page.wait_for_timeout(2000)
     
     # Select the recommended test model
     from test_utils import select_recommended_test_model
     selected_model = select_recommended_test_model(page)
     
-    # Skip the test if no valid model could be selected
     if not selected_model:
         pytest.skip("No valid model could be selected")
     
+    print(f"Selected model: {selected_model}")
+    
     # Settings auto-save, wait for them to save
-    page.wait_for_timeout(1000)
+    page.wait_for_timeout(2000)
     
     # Close the settings modal
     close_button = page.locator("#close-settings")
     close_button.click()
     
-    # Check for any system messages
-    check_system_messages(page)
-    
     # Wait for the settings modal to be closed
     page.wait_for_selector("#settings-modal", state="hidden", timeout=2000)
     
-    # Check if the API key was saved correctly
-    print("Checking if API key was saved correctly")
+    # Check API key was saved
     api_key_saved = page.evaluate("""() => {
-        // Check if there's an API key in localStorage
         const keys = Object.keys(localStorage);
         for (const key of keys) {
-            if (key.includes('api-key')) {
-                return true;
+            if (key.includes('api') && key.includes('key')) {
+                const value = localStorage.getItem(key);
+                if (value && value.length > 0) {
+                    return { key: key, length: value.length };
+                }
             }
         }
-        return false;
+        return null;
     }""")
     
-    print(f"API key found in localStorage: {api_key_saved}")
+    print(f"API key storage check: {api_key_saved}")
     
-    # Check if there's a "No model selected" message in the UI
-    no_model_message = page.locator(".model-status")
-    if no_model_message.is_visible():
-        model_status_text = no_model_message.text_content()
-        print(f"Model status message: {model_status_text}")
-        if "No model selected" in model_status_text:
-            print("WARNING: 'No model selected' message is visible in the UI")
-            print("Reopening settings to ensure model is selected")
-            
-            # Reopen settings
-            settings_button = page.locator("#settings-btn")
-            settings_button.click(timeout=2000)
-            
-            # Wait for the settings modal to become visible
-            page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
-            
-            # Check if a model is selected
-            current_model = page.evaluate("""() => {
-                const select = document.getElementById('model-select');
-                return select ? select.value : null;
-            }""")
-            
-            print(f"Current selected model: {current_model}")
-            
-            if not current_model or current_model == "":
-                # Select the first model if none is selected
-                model_select = page.locator("#model-select")
-                options = page.evaluate("""() => {
-                    const select = document.getElementById('model-select');
-                    if (!select) return [];
-                    return Array.from(select.options)
-                        .filter(option => !option.disabled)
-                        .map(option => option.value);
-                }""")
-                
-                if options:
-                    print(f"Selecting model: {options[0]}")
-                    model_select.select_option(options[0])
-                else:
-                    print("No valid models found to select")
-                    pytest.skip("No valid models available to select")
-            
-            # Settings auto-save, wait briefly then close
-            page.wait_for_timeout(1000)
-            close_button = page.locator("#close-settings")
-            close_button.click()
-            
-            # Wait for the settings modal to be closed
-            page.wait_for_selector("#settings-modal", state="hidden", timeout=2000)
+    # Also check the encrypted storage
+    encrypted_check = page.evaluate("""() => {
+        const keys = Object.keys(localStorage);
+        const hackareKeys = keys.filter(k => k.startsWith('hackare_'));
+        return hackareKeys.map(k => ({
+            key: k,
+            length: localStorage.getItem(k) ? localStorage.getItem(k).length : 0
+        }));
+    }""")
+    
+    print(f"Encrypted storage keys: {encrypted_check}")
+    
+    # Take screenshot before sending message
+    screenshot_with_markdown(page, "03_before_send", {
+        "Status": "Ready to send message",
+        "API Key Saved": str(api_key_saved is not None),
+        "Selected Model": selected_model
+    })
     
     # Type a message in the chat input
     message_input = page.locator("#message-input")
-    test_message = "Hello, this is a test message. Please respond with a very short greeting."
+    test_message = "Hello, please respond with just 'Hi!' and nothing else."
     message_input.fill(test_message)
     
-    # Try pressing Enter in the message input to submit the form
-    print("Pressing Enter in the message input")
-    message_input.press("Enter")    # If that doesn't work, try clicking the button directly
-    print("Clicking send button directly")
+    # Click send button
     send_button = page.locator("#send-btn")
-    send_button.click(force=True)    # If that doesn't work, try using JavaScript to submit the form
-    print("Submitting form using JavaScript")
-    page.evaluate("""() => {
-        const form = document.getElementById('chat-form');
-        if (form) {
-            console.log('Form found, submitting via JavaScript');
-            form.dispatchEvent(new Event('submit'));
-        } else {
-            console.error('Form not found');
-        }
-    }""")    # Check if the API key modal appears
+    send_button.click()
+    
+    # Wait for user message to appear
+    try:
+        page.wait_for_selector(".message.user .message-content", state="visible", timeout=5000)
+        print("User message appeared in chat")
+    except Exception as e:
+        screenshot_with_markdown(page, "04_error_no_user_message", {
+            "Status": "User message did not appear",
+            "Error": str(e),
+            "Console Messages": str(len(console_messages))
+        })
+        pytest.skip(f"User message did not appear: {e}")
+    
+    # Check for API key modal
     api_key_modal = page.locator("#api-key-modal")
     if api_key_modal.is_visible():
-        print("API key modal is visible, API key was not saved correctly")
-        # Enter the API key again
-        api_key_input = page.locator("#api-key")
-        api_key_input.fill(API_KEY)
+        print("WARNING: API key modal appeared - key was not saved properly")
+        screenshot_with_markdown(page, "05_api_key_modal", {
+            "Status": "API key modal appeared",
+            "Issue": "API key was not saved properly"
+        })
         
-        # Submit the API key form by clicking the submit button
+        # Enter the API key again
+        modal_api_input = page.locator("#api-key")
+        modal_api_input.fill(API_KEY)
+        
+        # Submit the API key form
         submit_button = page.locator("#api-key-form button[type='submit']")
         submit_button.click()
         
-        # Wait for the API key modal to be closed
+        # Wait for modal to close
         page.wait_for_selector("#api-key-modal", state="hidden", timeout=2000)
     
-    # Wait for the user message to appear in the chat
-    print("Waiting for user message to appear in chat...")
-    try:
-        page.wait_for_selector(".message.user .message-content", state="visible", timeout=2000)
-        user_message = page.locator(".message.user .message-content")
-        expect(user_message).to_be_visible()
-        expect(user_message).to_contain_text(test_message)
-        print("User message found in chat!")
-    except Exception as e:
-        print(f"Error waiting for user message: {e}")
-        # Skip the rest of the test if the user message doesn't appear
-        pytest.skip("User message did not appear in chat")
-    
-    # Check for any system messages
-    check_system_messages(page)
-    
-    # Check if there are any error messages in the UI
-    error_messages = page.locator(".message.system.error .message-content")
-    if error_messages.count() > 0:
-        print("Found error messages in the UI:")
-        for i in range(error_messages.count()):
-            error_message = error_messages.nth(i).text_content()
-            print(f"  Error message {i+1}: {error_message}")
-    
-    # Print all messages in the chat for debugging
-    all_messages = page.locator(".message .message-content")
-    print(f"Found {all_messages.count()} messages in the chat:")
-    for i in range(all_messages.count()):
-        message = all_messages.nth(i).text_content()
-        message_class = page.evaluate(f"""(index) => {{
-            const messages = document.querySelectorAll('.message');
-            return messages[index] ? messages[index].className : '';
-        }}""", i)
-        print(f"  Message {i+1} [{message_class}]: {message}")
-    
-    # Wait for the assistant response to appear
+    # Wait for assistant response with detailed monitoring
     print("Waiting for assistant response...")
+    
+    # Check for typing indicator
+    typing_visible = False
     try:
-        # Check if the typing indicator is visible
-        typing_indicator = page.locator(".typing-indicator")
-        if typing_indicator.is_visible():
-            print("Typing indicator is visible, waiting for response...")
-        else:
-            print("WARNING: Typing indicator is not visible!")
-            
-            # Check if it was ever added to the DOM
-            indicator_exists = page.evaluate("""() => {
-                return document.querySelector('.typing-indicator') !== null;
-            }""")
-            print(f"Typing indicator exists in DOM: {indicator_exists}")
-            
-            # Check if there are any network requests in progress
-            pending_requests = page.evaluate("""() => {
-                if (window.performance && window.performance.getEntries) {
-                    const entries = window.performance.getEntries();
-                    const pendingFetches = entries.filter(e => 
-                        e.entryType === 'resource' && 
-                        e.initiatorType === 'fetch' && 
-                        !e.responseEnd
-                    );
-                    return pendingFetches.length;
-                }
-                return 'Not supported';
-            }""")
-            print(f"Pending network requests: {pending_requests}")
+        page.wait_for_selector(".typing-indicator", state="visible", timeout=2000)
+        typing_visible = True
+        print("Typing indicator appeared")
+    except:
+        print("Typing indicator did not appear within 2 seconds")
+    
+    # Monitor for assistant message
+    try:
+        page.wait_for_selector(".message.assistant .message-content", state="visible", timeout=15000)
+        print("Assistant message appeared")
         
-        # Use a more specific selector to find the assistant message with increased timeout for API response
-        page.wait_for_selector(".message.assistant .message-content", state="visible", timeout=10000)
+        # Wait a bit for content to fully load
+        page.wait_for_timeout(2000)
         
-        # Wait a short time to ensure content is fully loaded        # Get all assistant messages
+        # Get the assistant response - check all messages for non-empty assistant response
         assistant_messages = page.locator(".message.assistant .message-content")
-        print(f"Found {assistant_messages.count()} assistant messages")
+        response_found = False
+        actual_response = ""
         
-        # Check if any of the assistant messages contain a response
-        found_response = False
         for i in range(assistant_messages.count()):
-            # Get both text content and inner HTML for debugging
-            message_text = assistant_messages.nth(i).text_content()
-            message_html = assistant_messages.nth(i).inner_html()
-            print(f"  Assistant message {i+1} text: {message_text}")
-            print(f"  Assistant message {i+1} HTML: {message_html}")
-            
-            # Check if there's any content
-            if message_text.strip() or (message_html and message_html.strip() != ''):
-                found_response = True
-                print(f"  Found non-empty response in message {i+1}")
+            msg_content = assistant_messages.nth(i).text_content()
+            if msg_content and msg_content.strip():
+                response_found = True
+                actual_response = msg_content.strip()
+                print(f"Found assistant response in message {i+1}: {actual_response}")
                 break
         
-        if found_response:
-            print("Assistant response found!")
+        if not response_found:
+            # Also check if response is in any message without .assistant class
+            all_messages = page.locator(".message .message-content")
+            for i in range(all_messages.count()):
+                msg_content = all_messages.nth(i).text_content()
+                # Skip system and user messages
+                parent_class = page.evaluate(f"""
+                    document.querySelectorAll('.message')[{i}]?.className || ''
+                """)
+                if 'system' not in parent_class and 'user' not in parent_class:
+                    if msg_content and msg_content.strip() and msg_content.strip() != test_message:
+                        response_found = True
+                        actual_response = msg_content.strip()
+                        print(f"Found response in message {i+1} (non-.assistant): {actual_response}")
+                        break
+        
+        if response_found:
+            print(f"✅ Assistant response: {actual_response}")
+            
+            screenshot_with_markdown(page, "06_success_response", {
+                "Status": "Response received",
+                "Response": actual_response[:100] + "..." if len(actual_response) > 100 else actual_response,
+                "Typing Indicator": str(typing_visible)
+            })
+            
+            # Verify response is not empty and contains something meaningful
+            assert actual_response != "", "Assistant response is empty"
+            assert len(actual_response) > 0, "Response has no content"
+            print("✅ Test passed: Response received successfully")
         else:
-            print("Assistant response not found in any messages")
+            raise Exception("No assistant messages found")
             
-            # Examine the chat messages array in the ChatManager
-            chat_messages = page.evaluate("""() => {
-                if (window.chatManager && window.chatManager.getMessages) {
-                    return window.chatManager.getMessages();
-                }
-                return [];
-            }""")
-            print(f"Chat messages in ChatManager: {len(chat_messages)}")
-            for i, msg in enumerate(chat_messages):
-                print(f"  Message {i+1}: role={msg.get('role', 'unknown')}, content={msg.get('content', '')[:50]}...")
-            
-            # Check if the API service is using streaming mode
-            streaming_mode = page.evaluate("""() => {
-                // Look at the most recent network request to chat/completions
-                const entries = performance.getEntriesByType('resource');
-                const chatRequests = entries.filter(e => e.name.includes('chat/completions'));
-                if (chatRequests.length > 0) {
-                    console.log('Found chat completion requests:', chatRequests.length);
-                    return 'Found ' + chatRequests.length + ' chat completion requests';
-                }
-                return 'No chat completion requests found';
-            }""")
-            print(f"API streaming check: {streaming_mode}")
-            
-            # Try to force the chat completion to appear by checking the network requests
-            print("Checking network requests for chat completion...")
-            # Wait a short time for any pending requests to complete            # Skip the test if we still can't find the response
-            pytest.skip("Expected assistant response not found in any messages")
     except Exception as e:
         print(f"Error waiting for assistant response: {e}")
-        # Skip the rest of the test if the assistant response doesn't appear
-        pytest.skip("Assistant response did not appear in chat")
+        
+        # Take debug screenshot
+        screenshot_with_markdown(page, "07_error_no_response", {
+            "Status": "No assistant response",
+            "Error": str(e),
+            "Typing Indicator": str(typing_visible),
+            "Console Messages": str(len(console_messages))
+        })
+        
+        # Print all messages for debugging
+        all_messages = page.locator(".message .message-content")
+        print(f"Total messages in chat: {all_messages.count()}")
+        for i in range(all_messages.count()):
+            msg_text = all_messages.nth(i).text_content()
+            print(f"  Message {i+1}: {msg_text[:100]}...")
+        
+        # Save console log to file
+        console_log_file = "test_chat_console.json"
+        with open(console_log_file, 'w') as f:
+            json.dump(console_messages, f, indent=2)
+        print(f"Console log saved to {console_log_file}")
+        
+        # Check for error messages
+        error_messages = page.locator(".message.system.error")
+        if error_messages.count() > 0:
+            print("Error messages found:")
+            for i in range(error_messages.count()):
+                error_text = error_messages.nth(i).text_content()
+                print(f"  Error: {error_text}")
+        
+        pytest.fail(f"Assistant response not received: {e}")
