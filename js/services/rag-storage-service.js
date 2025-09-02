@@ -151,7 +151,7 @@ window.RAGStorageService = (function() {
                 maxResults: 5,
                 similarityThreshold: 0.3,
                 enableAutoSearch: false,
-                enabled: true,  // RAG enabled by default
+                enabled: false,  // RAG disabled by default
                 ...settings
             };
         } catch (error) {
@@ -164,7 +164,7 @@ window.RAGStorageService = (function() {
                 maxResults: 5,
                 similarityThreshold: 0.3,
                 enableAutoSearch: false,
-                enabled: true
+                enabled: false
             };
         }
     }
@@ -179,7 +179,7 @@ window.RAGStorageService = (function() {
             return settings.enabled;
         } catch (error) {
             console.error('RAGStorageService: Error getting RAG enabled state:', error);
-            return true; // Default to enabled
+            return false; // Default to disabled
         }
     }
 
@@ -195,6 +195,73 @@ window.RAGStorageService = (function() {
             return saveRAGSettings(settings);
         } catch (error) {
             console.error('RAGStorageService: Error setting RAG enabled state:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Get the list of enabled EU regulation documents
+     * @returns {Array<string>} Array of enabled document IDs ('cra', 'aia', 'dora')
+     */
+    function getEnabledEUDocuments() {
+        try {
+            const euDocsKey = 'rag_eu_documents_index';
+            const existingDocs = CoreStorageService.getValue(euDocsKey);
+            
+            if (!existingDocs || typeof existingDocs !== 'object') {
+                return [];
+            }
+            
+            // Return IDs of enabled documents
+            return Object.keys(existingDocs).filter(docId => 
+                existingDocs[docId] && existingDocs[docId].enabled === true
+            );
+        } catch (error) {
+            console.error('RAGStorageService: Error getting enabled EU documents:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Set the enabled EU regulation documents
+     * @param {Array<string>} documentIds - Array of document IDs to enable ('cra', 'aia', 'dora')
+     * @returns {boolean} Success status
+     */
+    function setEnabledEUDocuments(documentIds) {
+        try {
+            const euDocsKey = 'rag_eu_documents_index';
+            const documentNames = {
+                'cra': 'CRA (Cyber Resilience Act)',
+                'aia': 'AIA (AI Act)',
+                'dora': 'DORA (Digital Operational Resilience Act)'
+            };
+            
+            // Get existing data or create new
+            let existingDocs = {};
+            const existing = CoreStorageService.getValue(euDocsKey);
+            if (existing && typeof existing === 'object') {
+                existingDocs = existing;
+            }
+            
+            // Update all document states
+            ['cra', 'aia', 'dora'].forEach(docId => {
+                const shouldBeEnabled = documentIds.includes(docId);
+                
+                if (!existingDocs[docId]) {
+                    existingDocs[docId] = {
+                        name: documentNames[docId],
+                        documentId: docId,
+                        enabled: shouldBeEnabled,
+                        hasVectors: false  // Will be updated when actually indexed
+                    };
+                } else {
+                    existingDocs[docId].enabled = shouldBeEnabled;
+                }
+            });
+            
+            return CoreStorageService.setValue(euDocsKey, existingDocs);
+        } catch (error) {
+            console.error('RAGStorageService: Error setting enabled EU documents:', error);
             return false;
         }
     }
@@ -499,6 +566,8 @@ window.RAGStorageService = (function() {
         loadRAGSettings,
         isRAGEnabled,
         setRAGEnabled,
+        getEnabledEUDocuments,
+        setEnabledEUDocuments,
         
         // Embeddings cache
         cacheEmbeddings,
