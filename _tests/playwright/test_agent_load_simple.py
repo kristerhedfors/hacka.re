@@ -4,7 +4,14 @@ Simple test to verify agent load functionality
 import pytest
 from playwright.sync_api import Page, expect
 from test_utils import dismiss_welcome_modal, screenshot_with_markdown
-from conftest import ACTIVE_TEST_CONFIG
+import sys
+import os
+# Import from parent directory's conftest, not shodan's
+parent_dir = os.path.dirname(__file__)
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+import conftest as main_conftest
+ACTIVE_TEST_CONFIG = main_conftest.ACTIVE_TEST_CONFIG
 
 
 def test_agent_load_button_exists_and_triggers(page: Page, serve_hacka_re, api_key):

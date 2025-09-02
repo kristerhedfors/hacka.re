@@ -17,12 +17,10 @@ Port: 8000
 Project Root: /Users/user/dev/hacka.re
 ==================================================
 Checking for existing HTTP server processes on port 8000...
-Found existing processes: 47347
-Killing existing processes...
-Processes killed.
+No existing processes found on port 8000.
 Changing to project root directory: /Users/user/dev/hacka.re
 Starting Python HTTP server on port 8000...
-Server started successfully with PID: 7198
+Server started successfully with PID: 70651
 Server is now running at http://localhost:8000
 Server PID saved to: /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt
 ==================================================
@@ -38,22 +36,79 @@ rootdir: /Users/user/dev/hacka.re/_tests/playwright
 configfile: pytest.ini
 testpaths: .
 plugins: playwright-0.7.0, base-url-2.1.0
-collected 924 items / 886 deselected / 38 selected
+collected 924 items / 2 errors / 886 deselected / 38 selected
 
-shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_info[chromium0] PASSED [  2%]
-shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_plan_details[chromium0] PASSED [  5%]
-test_api.py::test_api_key_configuration[chromium0] PASSED                [  7%]
-test_api.py::test_model_selection[chromium0] FAILED                      [ 10%]
-test_api_key_detection_simple.py::test_api_key_detection_simple[chromium0] PASSED [ 13%]
-test_api_key_enter.py::test_api_key_modal_enter_key[chromium0] PASSED    [ 15%]
-test_api_key_persistence_debug.py::test_api_key_persistence_scenario_1_basic[chromium0] PASSED [ 18%]
-test_api_key_persistence_debug.py::test_api_key_persistence_scenario_2_retry_helper[chromium0] PASSED [ 21%]
-test_api_key_persistence_debug.py::test_api_key_persistence_scenario_3_multiple_attempts[chromium0] PASSED [ 23%]
-test_api_key_persistence_debug.py::test_api_key_persistence_scenario_4_timing_analysis[chromium0] PASSED [ 26%]
-test_chat.py::test_chat_message_send_receive[chromium0] SKIPPED (Ass...) [ 28%]
-test_chat_no_mock.py::test_chat_message_send_receive[chromium0] SKIPPED  [ 31%]
-test_page.py::test_page_loads[chromium0] PASSED                          [ 34%]
-test_page.py::test_chat_interface_elements[chromium0] PASSED             [ 36%]
-test_stop_generation_simple.py::test_chat_manager_stop_logic[chromium0] PASSED [ 39%]
-test_welcome_modal_new_logic.py::test_welcome_modal_shows_for_first_time_user[chromium0] PASSED [ 42%]
-test_welcome_modal_new_logic.py::test_welcome_modal_hidden_for_returning_user[chromium0] 
+==================================== ERRORS ====================================
+__________________ ERROR collecting test_agent_load_simple.py __________________
+test_agent_load_simple.py:14: in <module>
+    ACTIVE_TEST_CONFIG = main_conftest.ACTIVE_TEST_CONFIG
+E   AttributeError: module 'conftest' has no attribute 'ACTIVE_TEST_CONFIG'
+_____________ ERROR collecting test_complete_shodan_integration.py _____________
+test_complete_shodan_integration.py:25: in <module>
+    ACTIVE_TEST_CONFIG = main_conftest.ACTIVE_TEST_CONFIG
+E   AttributeError: module 'conftest' has no attribute 'ACTIVE_TEST_CONFIG'
+=============================== warnings summary ===============================
+test_complete_mcp_share_flow.py:8
+  /Users/user/dev/hacka.re/_tests/playwright/test_complete_mcp_share_flow.py:8: PytestUnknownMarkWarning: Unknown pytest.mark.feature_test - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.feature_test
+
+test_cross_tab_loop_fix.py:8
+  /Users/user/dev/hacka.re/_tests/playwright/test_cross_tab_loop_fix.py:8: PytestUnknownMarkWarning: Unknown pytest.mark.feature_test - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.feature_test
+
+test_cross_tab_sync_optimization.py:7
+  /Users/user/dev/hacka.re/_tests/playwright/test_cross_tab_sync_optimization.py:7: PytestUnknownMarkWarning: Unknown pytest.mark.feature_test - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.feature_test
+
+test_cross_tab_sync_optimization.py:59
+  /Users/user/dev/hacka.re/_tests/playwright/test_cross_tab_sync_optimization.py:59: PytestUnknownMarkWarning: Unknown pytest.mark.feature_test - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.feature_test
+
+test_debug_utils.py:25
+  /Users/user/dev/hacka.re/_tests/playwright/test_debug_utils.py:25: PytestCollectionWarning: cannot collect test class 'TestDebugger' because it has a __init__ constructor (from: test_debug_utils.py)
+    class TestDebugger:
+
+test_debug_utils.py:25
+  /Users/user/dev/hacka.re/_tests/playwright/test_debug_utils.py:25: PytestCollectionWarning: cannot collect test class 'TestDebugger' because it has a __init__ constructor (from: test_example_with_debugging.py)
+    class TestDebugger:
+
+test_rag_multi_query.py:104
+  /Users/user/dev/hacka.re/_tests/playwright/test_rag_multi_query.py:104: PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.asyncio
+
+test_rag_multi_query.py:377
+  /Users/user/dev/hacka.re/_tests/playwright/test_rag_multi_query.py:377: PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.asyncio
+
+test_rag_similarity_scores.py:14
+  /Users/user/dev/hacka.re/_tests/playwright/test_rag_similarity_scores.py:14: PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.asyncio
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR test_agent_load_simple.py - AttributeError: module 'conftest' has no at...
+ERROR test_complete_shodan_integration.py - AttributeError: module 'conftest'...
+!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!
+================ 886 deselected, 9 warnings, 2 errors in 0.47s =================
+Generating test results markdown files...
+No arguments provided. Using default files.
+Processing default files...
+Generating markdown report for 'test_output.log' -> 'test_results.md'...
+Markdown report generated: test_results.md
+You can view it with: glow -p test_results.md
+Warning: Output file 'run_tests.out_bundle.md' is newer than input file 'run_tests.out'.
+This suggests the bundle has already been generated for this test run.
+To regenerate, delete 'run_tests.out_bundle.md' first.
+
+All core test output, including any Ctrl+C interruptions, has been captured to run_core_tests.out
+A bundled markdown report has been generated at run_tests.out_bundle.md
+You can view the markdown report with: glow -p run_tests.out_bundle.md
+These files can be used by the coding assistant LLM to analyze test results
+Stopping HTTP server...
+===== Stopping HTTP Server for hacka.re Tests =====
+Found server process with PID: 70651
+Stopping server...
+Server stopped.
+Removed PID file: /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt
+==================================================
+Server stopped.
