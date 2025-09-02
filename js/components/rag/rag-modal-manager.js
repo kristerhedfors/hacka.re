@@ -50,12 +50,35 @@ window.RAGModalManager = (function() {
 
         // RAG enable/disable checkbox
         const ragEnabledCheckbox = document.getElementById('rag-enabled-checkbox');
+        const ragHelpText = document.getElementById('rag-help-text');
+        const ragDisabledMessage = document.getElementById('rag-disabled-message');
+        
         if (ragEnabledCheckbox) {
             ragEnabledCheckbox.addEventListener('change', handleRAGEnabledChange);
             
-            // Load initial state
-            const isRAGEnabled = getRAGEnabledState();
-            ragEnabledCheckbox.checked = isRAGEnabled;
+            // Check provider and disable RAG if not OpenAI
+            const provider = window.DataService?.getBaseUrlProvider?.() || 'openai';
+            if (provider !== 'openai') {
+                ragEnabledCheckbox.disabled = true;
+                ragEnabledCheckbox.checked = false;
+                ragEnabledCheckbox.title = 'RAG is only available with OpenAI provider';
+                // Show disabled message, hide normal help
+                if (ragHelpText) ragHelpText.style.display = 'none';
+                if (ragDisabledMessage) ragDisabledMessage.style.display = 'block';
+                // Save disabled state
+                if (window.RAGStorageService) {
+                    window.RAGStorageService.setRAGEnabled(false);
+                }
+            } else {
+                ragEnabledCheckbox.disabled = false;
+                ragEnabledCheckbox.title = '';
+                // Show normal help, hide disabled message
+                if (ragHelpText) ragHelpText.style.display = 'block';
+                if (ragDisabledMessage) ragDisabledMessage.style.display = 'none';
+                // Load initial state only for OpenAI
+                const isRAGEnabled = getRAGEnabledState();
+                ragEnabledCheckbox.checked = isRAGEnabled;
+            }
         }
 
         // Document checkboxes for regulatory documents
@@ -86,6 +109,29 @@ window.RAGModalManager = (function() {
         const modal = document.getElementById('rag-modal');
         if (modal) {
             modal.classList.add('active');
+            
+            // Check provider and update RAG checkbox state
+            const ragEnabledCheckbox = document.getElementById('rag-enabled-checkbox');
+            const ragHelpText = document.getElementById('rag-help-text');
+            const ragDisabledMessage = document.getElementById('rag-disabled-message');
+            
+            if (ragEnabledCheckbox) {
+                const provider = window.DataService?.getBaseUrlProvider?.() || 'openai';
+                if (provider !== 'openai') {
+                    ragEnabledCheckbox.disabled = true;
+                    ragEnabledCheckbox.checked = false;
+                    ragEnabledCheckbox.title = 'RAG is only available with OpenAI provider';
+                    // Show disabled message, hide normal help
+                    if (ragHelpText) ragHelpText.style.display = 'none';
+                    if (ragDisabledMessage) ragDisabledMessage.style.display = 'block';
+                } else {
+                    ragEnabledCheckbox.disabled = false;
+                    ragEnabledCheckbox.title = '';
+                    // Show normal help, hide disabled message
+                    if (ragHelpText) ragHelpText.style.display = 'block';
+                    if (ragDisabledMessage) ragDisabledMessage.style.display = 'none';
+                }
+            }
             
             // Update document checkboxes based on their enabled state (not indexed state)
             const documentIds = ['cra', 'aia', 'dora'];

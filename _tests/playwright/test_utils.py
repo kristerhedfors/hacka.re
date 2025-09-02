@@ -23,6 +23,51 @@ def setup_test_environment(page):
     page.evaluate("localStorage.setItem('hackare_test_mode', 'true')")
     print("Test environment configured: hackare_test_mode=true")
 
+def enable_rag_for_openai(page):
+    """
+    Enable RAG for OpenAI provider tests.
+    RAG is only available with OpenAI provider due to embeddings API requirement.
+    
+    Args:
+        page: Playwright page object
+        
+    Returns:
+        bool: True if RAG was enabled, False otherwise
+    """
+    # Check if we're using OpenAI provider
+    provider = page.evaluate("() => localStorage.getItem('base_url_provider') || 'openai'")
+    
+    if provider != 'openai':
+        print(f"RAG cannot be enabled for provider: {provider} (only OpenAI supported)")
+        return False
+    
+    # Open RAG modal if not already open
+    rag_modal = page.locator("#rag-modal")
+    if not rag_modal.is_visible():
+        rag_button = page.locator("#rag-btn")
+        if rag_button.is_visible():
+            rag_button.click()
+            page.wait_for_selector("#rag-modal", state="visible", timeout=3000)
+    
+    # Enable RAG checkbox
+    rag_checkbox = page.locator("#rag-enabled-checkbox")
+    if rag_checkbox.is_visible():
+        if not rag_checkbox.is_checked():
+            rag_checkbox.click()
+            print("RAG enabled for OpenAI provider")
+        else:
+            print("RAG already enabled")
+        
+        # Close modal
+        close_button = page.locator("#close-rag-modal")
+        if close_button.is_visible():
+            close_button.click()
+            page.wait_for_selector("#rag-modal", state="hidden", timeout=3000)
+        
+        return True
+    
+    return False
+
 def setup_api_key_properly(page, api_key):
     """
     Properly configure API key with retry logic to handle persistence issues.
