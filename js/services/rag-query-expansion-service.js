@@ -47,22 +47,55 @@ Be concise - each term should be 1-4 words.`;
 Generate search terms:`;
 
         try {
-            const response = await fetch(`${baseUrl}/chat/completions`, {
+            // Build request body with correct max tokens parameter for the model
+            const baseBody = {
+                model: model,
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: userPrompt }
+                ],
+                temperature: 0.3
+            };
+            
+            // Use ModelCompatibility utility to set correct parameter
+            const requestBody = window.ModelCompatibility ? 
+                window.ModelCompatibility.buildRequestBodyWithMaxTokens(baseBody, model, 200) :
+                { ...baseBody, max_tokens: 200 }; // Fallback if utility not loaded
+            
+            let response = await fetch(`${baseUrl}/chat/completions`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${apiKey}`
                 },
-                body: JSON.stringify({
-                    model: model,
-                    messages: [
-                        { role: 'system', content: systemPrompt },
-                        { role: 'user', content: userPrompt }
-                    ],
-                    temperature: 0.3,
-                    max_tokens: 200
-                })
+                body: JSON.stringify(requestBody)
             });
+            
+            // Handle max_tokens parameter error with retry
+            if (!response.ok && response.status === 400) {
+                const errorData = await response.json();
+                
+                if (window.ModelCompatibility && 
+                    window.ModelCompatibility.isMaxTokensParameterError(errorData)) {
+                    
+                    console.warn('RAGQueryExpansionService: Retrying with max_completion_tokens');
+                    
+                    // Rebuild request with max_completion_tokens
+                    const updatedBody = window.ModelCompatibility.handleMaxTokensError(errorData, requestBody);
+                    
+                    if (updatedBody) {
+                        // Retry with updated body
+                        response = await fetch(`${baseUrl}/chat/completions`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${apiKey}`
+                            },
+                            body: JSON.stringify(updatedBody)
+                        });
+                    }
+                }
+            }
             
             if (!response.ok) {
                 throw new Error(`API error: ${response.status}`);
