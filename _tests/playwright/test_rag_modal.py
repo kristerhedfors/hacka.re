@@ -132,8 +132,8 @@ def test_rag_modal_structure(page: Page, serve_hacka_re, api_key, test_config):
         "Search": "Search input and button visible"
     })
 
-def test_rag_modal_default_prompts_section(page: Page, serve_hacka_re):
-    """Test the default prompts section functionality."""
+def test_rag_modal_sections_exist(page: Page, serve_hacka_re):
+    """Test that RAG modal has expected sections."""
     # Navigate to the application
     page.goto(serve_hacka_re)
     
@@ -146,19 +146,16 @@ def test_rag_modal_default_prompts_section(page: Page, serve_hacka_re):
     # Wait for modal to become visible
     page.wait_for_selector("#rag-modal", state="visible", timeout=3000)
     
-    # Check that at least one section exists
+    # Check that at least one section exists (should have enable and search sections)
     sections = page.locator("#rag-modal .rag-section")
-    assert sections.count() > 0, "Expected at least one rag-section"
+    assert sections.count() >= 2, "Expected at least enable and search sections"
     
     # Check that there's a section with a title
     section_titles = page.locator("#rag-modal .rag-section h3")
     assert section_titles.count() > 0, "Expected at least one section with a title"
     
-    # Check that some kind of status display exists (IDs may have changed)
-    # Just verify the modal has the expected structure without assuming specific IDs
-    
     # Take screenshot of modal state
-    screenshot_with_markdown(page, "rag_default_prompts_section", {
+    screenshot_with_markdown(page, "rag_modal_sections", {
         "Status": "RAG modal open and sections visible",
         "Sections": str(sections.count())
     })
@@ -177,12 +174,17 @@ def test_rag_modal_search_section(page: Page, serve_hacka_re):
     # Wait for modal to become visible
     page.wait_for_selector("#rag-modal", state="visible", timeout=3000)
     
-    # Check search section elements - it's the fourth rag-section
-    search_section = page.locator("#rag-modal .rag-section").nth(3)
+    # Find the search section by looking for the one with "Search Knowledge Base" title
+    search_sections = page.locator("#rag-modal .rag-section")
+    search_section = None
+    for i in range(search_sections.count()):
+        section = search_sections.nth(i)
+        title = section.locator("h3")
+        if title.is_visible() and "Search Knowledge Base" in title.text_content():
+            search_section = section
+            break
     
-    # Check section title
-    section_title = search_section.locator("h3")
-    expect(section_title).to_contain_text("Search Knowledge Base")
+    assert search_section is not None, "Could not find Search Knowledge Base section"
     
     # Check search input functionality
     search_input = page.locator("#rag-search-input")
@@ -206,32 +208,6 @@ def test_rag_modal_search_section(page: Page, serve_hacka_re):
         "Results Container": "Visible and empty"
     })
 
-def test_rag_modal_user_bundles_section(page: Page, serve_hacka_re):
-    """Test the user bundles section functionality."""
-    # Navigate to the application
-    page.goto(serve_hacka_re)
-    
-    # Dismiss welcome modal if present
-    dismiss_welcome_modal(page)
-    # Open the RAG modal
-    rag_button = page.locator("#rag-btn")
-    rag_button.click()
-    
-    # Wait for modal to become visible
-    page.wait_for_selector("#rag-modal", state="visible", timeout=3000)
-    
-    # Just verify modal has sections, don't assume specific titles or order
-    sections = page.locator("#rag-modal .rag-section")
-    assert sections.count() > 0, "Expected at least one rag-section"
-    
-    # Basic validation - modal is open and has structure
-    # Don't check for specific elements that may have changed
-    
-    # Take screenshot of modal
-    screenshot_with_markdown(page, "rag_user_bundles_section", {
-        "Status": "RAG modal open",
-        "Sections": str(sections.count())
-    })
 
 def test_rag_modal_keyboard_interaction(page: Page, serve_hacka_re):
     """Test keyboard interactions with the RAG modal."""
@@ -330,28 +306,3 @@ def test_rag_enable_disable_functionality(page: Page, serve_hacka_re, api_key, t
         "Functionality": "Working as expected"
     })
 
-def test_rag_default_prompts_indexing_status(page: Page, serve_hacka_re):
-    """Test that default prompts show their indexing status."""
-    # Navigate to the application
-    page.goto(serve_hacka_re)
-    
-    # Dismiss welcome modal if present
-    dismiss_welcome_modal(page)
-    # Open the RAG modal
-    rag_button = page.locator("#rag-btn")
-    rag_button.click()
-    
-    # Wait for modal to become visible
-    page.wait_for_selector("#rag-modal", state="visible", timeout=3000)
-    
-    # Just verify modal is open - don't check for specific elements that may have changed
-    rag_modal = page.locator("#rag-modal")
-    expect(rag_modal).to_be_visible()
-    
-    # Basic test - just ensure modal opened successfully
-    # UI may have changed, so don't check for specific elements
-    
-    # Take screenshot of modal
-    screenshot_with_markdown(page, "rag_prompts_indexing_status", {
-        "Status": "RAG modal opened successfully"
-    })
