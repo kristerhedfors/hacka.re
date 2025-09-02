@@ -106,8 +106,13 @@ ul {
 }
 
 .beta-tag.header-beta {
-    margin-left: 16px; /* Increased space between settings icon and BETA tag */
-    vertical-align: middle;
+    position: absolute !important; /* Absolute positioning relative to header */
+    top: 50% !important; /* Center vertically */
+    transform: translateY(-50%) !important; /* Perfect vertical centering */
+    right: 20px !important; /* Position from right edge */
+    z-index: 100 !important; /* Ensure it appears above other elements in header */
+    margin-left: 0 !important; /* Remove any left margin */
+    vertical-align: initial !important; /* Reset vertical alignment */
     color: #333 !important;
     background-color: #fef3c7 !important;
     -webkit-text-fill-color: #333 !important;
@@ -117,9 +122,12 @@ ul {
 /* Mobile-specific alignment for BETA tag */
 @media (max-width: 768px) {
     .beta-tag.header-beta {
-        position: relative;
-        top: -1px; /* Raise the BETA tag slightly to better align with icon centers */
-        margin-left: 12px; /* Increased space on mobile too */
+        /* Keep absolute positioning on mobile */
+        position: absolute !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        right: 10px !important; /* Closer to edge on mobile */
+        margin-left: 0 !important;
     }
 }
 
@@ -133,9 +141,10 @@ ul {
     font-weight: bold;
     border-radius: 4px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    position: absolute; /* Position relative to modal content */
-    right: 10px; /* Position in the right corner */
-    top: 10px; /* Position at the top */
+    position: absolute !important; /* Position relative to modal content */
+    right: 10px !important; /* Position in the right corner */
+    top: 8px !important; /* Moved up slightly for better alignment */
+    left: auto !important; /* Explicitly unset left to ensure right positioning works */
     z-index: 100; /* Ensure it appears above other elements */
 }
 
@@ -2632,6 +2641,7 @@ body:has(.modal.active) #chat-input-container {
     max-height: 85vh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch; /* For smooth scrolling on iOS */
+    position: relative; /* Enable absolute positioning for child elements like tags */
 }
 
 .modal-content h2 {
