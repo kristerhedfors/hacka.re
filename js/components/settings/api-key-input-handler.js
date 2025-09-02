@@ -102,16 +102,19 @@ window.ApiKeyInputHandler = (function() {
                 defaultModel = componentManagers.baseUrl.updateProviderFromDetection(detection);
             }
             
-            // Auto-select default model if available, but only if no model is currently stored
+            // Auto-select default model if available
             if (defaultModel && componentManagers && componentManagers.model && componentManagers.model.selectModel) {
-                // Check if there's already a stored model to avoid overriding user's choice
+                // Check if there's already a stored model
                 const currentStoredModel = DataService && DataService.getModel ? DataService.getModel() : null;
-                if (!currentStoredModel || currentStoredModel === '') {
-                    console.log('🔄 Auto-selecting model (no stored model):', defaultModel);
-                    componentManagers.model.selectModel(defaultModel);
-                } else {
-                    console.log('🔄 Skipping auto-selection, model already stored:', currentStoredModel);
+                
+                // Always select the default model for the detected provider
+                // This ensures when switching providers (e.g., from Berget to OpenAI),
+                // we get the correct default model for the new provider
+                console.log('🔄 Auto-selecting default model for provider:', defaultModel);
+                if (currentStoredModel && currentStoredModel !== defaultModel) {
+                    console.log(`🔄 Replacing stored model '${currentStoredModel}' with provider default '${defaultModel}'`);
                 }
+                componentManagers.model.selectModel(defaultModel);
             }
         } else {
             hideDetection(detectionElement);
