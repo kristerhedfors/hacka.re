@@ -54,6 +54,28 @@ window.BaseUrlManager = (function() {
                         : DataService.getDefaultBaseUrlForProvider(selectedProvider);
                     saveBaseUrl(newBaseUrl, selectedProvider);
                     
+                    // Disable RAG for non-OpenAI providers (only OpenAI has embeddings API)
+                    if (selectedProvider !== 'openai') {
+                        const ragEnabledCheckbox = document.getElementById('rag-enabled-checkbox');
+                        if (ragEnabledCheckbox && ragEnabledCheckbox.checked) {
+                            ragEnabledCheckbox.checked = false;
+                            ragEnabledCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
+                            console.log('RAG disabled - only available with OpenAI provider');
+                        }
+                        // Disable the checkbox to prevent enabling
+                        if (ragEnabledCheckbox) {
+                            ragEnabledCheckbox.disabled = true;
+                            ragEnabledCheckbox.title = 'RAG is only available with OpenAI provider';
+                        }
+                    } else {
+                        // Re-enable the checkbox for OpenAI
+                        const ragEnabledCheckbox = document.getElementById('rag-enabled-checkbox');
+                        if (ragEnabledCheckbox) {
+                            ragEnabledCheckbox.disabled = false;
+                            ragEnabledCheckbox.title = '';
+                        }
+                    }
+                    
                     // Handle custom URL field visibility
                     if (selectedProvider === 'custom') {
                         // Show custom URL field
@@ -154,6 +176,28 @@ window.BaseUrlManager = (function() {
             // Always save the base URL and provider when detected
             var newBaseUrl = DataService.getDefaultBaseUrlForProvider(mappedProvider);
             saveBaseUrl(newBaseUrl, mappedProvider);
+            
+            // Disable RAG for non-OpenAI providers (only OpenAI has embeddings API)
+            if (mappedProvider !== 'openai') {
+                const ragEnabledCheckbox = document.getElementById('rag-enabled-checkbox');
+                if (ragEnabledCheckbox && ragEnabledCheckbox.checked) {
+                    ragEnabledCheckbox.checked = false;
+                    ragEnabledCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
+                    console.log('RAG disabled - only available with OpenAI provider');
+                }
+                // Disable the checkbox to prevent enabling
+                if (ragEnabledCheckbox) {
+                    ragEnabledCheckbox.disabled = true;
+                    ragEnabledCheckbox.title = 'RAG is only available with OpenAI provider';
+                }
+            } else {
+                // Re-enable the checkbox for OpenAI
+                const ragEnabledCheckbox = document.getElementById('rag-enabled-checkbox');
+                if (ragEnabledCheckbox) {
+                    ragEnabledCheckbox.disabled = false;
+                    ragEnabledCheckbox.title = '';
+                }
+            }
             
             // Update the UI if the dropdown exists (in settings modal)
             if (elements.baseUrlSelect && elements.baseUrlSelect.value !== mappedProvider) {

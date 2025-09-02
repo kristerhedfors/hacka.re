@@ -64,13 +64,23 @@ def test_rag_modal_open_close(page: Page, serve_hacka_re):
     expect(rag_modal).not_to_be_visible()
     expect(rag_modal).not_to_have_class("modal active")
 
-def test_rag_modal_structure(page: Page, serve_hacka_re):
+def test_rag_modal_structure(page: Page, serve_hacka_re, api_key, test_config):
     """Test that the RAG modal contains all expected sections and elements."""
     # Navigate to the application
     page.goto(serve_hacka_re)
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
+    
+    # Set up OpenAI provider and API key if testing with OpenAI
+    if test_config.get("provider_value") == "openai":
+        # Configure OpenAI provider
+        page.evaluate(f"""
+            localStorage.setItem('openai_api_key', '{api_key}');
+            localStorage.setItem('base_url_provider', 'openai');
+            localStorage.setItem('base_url', 'https://api.openai.com/v1');
+        """)
+    
     # Open the RAG modal
     rag_button = page.locator("#rag-btn")
     rag_button.click()
@@ -94,7 +104,18 @@ def test_rag_modal_structure(page: Page, serve_hacka_re):
     # Check RAG enable checkbox
     rag_enabled_checkbox = page.locator("#rag-enabled-checkbox")
     expect(rag_enabled_checkbox).to_be_visible()
-    expect(rag_enabled_checkbox).to_be_checked()  # Should be enabled by default
+    
+    # RAG should only be enabled for OpenAI provider
+    if test_config.get("provider_value") == "openai":
+        expect(rag_enabled_checkbox).not_to_be_disabled()
+        # Enable RAG for OpenAI tests
+        if not rag_enabled_checkbox.is_checked():
+            rag_enabled_checkbox.click()
+        expect(rag_enabled_checkbox).to_be_checked()
+    else:
+        # For non-OpenAI providers, RAG should be disabled
+        expect(rag_enabled_checkbox).to_be_disabled()
+        expect(rag_enabled_checkbox).not_to_be_checked()
     
     # Check that search section exists
     search_input = page.locator("#rag-search-input")
@@ -249,13 +270,21 @@ def test_rag_modal_keyboard_interaction(page: Page, serve_hacka_re):
         "Search Input": "Responded to Enter key press"
     })
 
-def test_rag_enable_disable_functionality(page: Page, serve_hacka_re):
+def test_rag_enable_disable_functionality(page: Page, serve_hacka_re, api_key, test_config):
     """Test the RAG enable/disable checkbox functionality."""
     # Navigate to the application
     page.goto(serve_hacka_re)
     
     # Dismiss welcome modal if present
     dismiss_welcome_modal(page)
+    
+    # Set up OpenAI provider if testing with OpenAI (RAG only works with OpenAI)
+    if test_config.get("provider_value") == "openai":
+        page.evaluate(f"""
+            localStorage.setItem('openai_api_key', '{api_key}');
+            localStorage.setItem('base_url_provider', 'openai');
+            localStorage.setItem('base_url', 'https://api.openai.com/v1');
+        """)
     # Open the RAG modal
     rag_button = page.locator("#rag-btn")
     rag_button.click()
@@ -263,17 +292,35 @@ def test_rag_enable_disable_functionality(page: Page, serve_hacka_re):
     # Wait for modal to become visible
     page.wait_for_selector("#rag-modal", state="visible", timeout=3000)
     
-    # Check RAG enable checkbox initial state (should be checked)
+    # Check RAG enable checkbox
     rag_enabled_checkbox = page.locator("#rag-enabled-checkbox")
-    expect(rag_enabled_checkbox).to_be_checked()
     
-    # Test disabling RAG
-    rag_enabled_checkbox.uncheck()
-    expect(rag_enabled_checkbox).not_to_be_checked()
-    
-    # Test enabling RAG again
-    rag_enabled_checkbox.check()
-    expect(rag_enabled_checkbox).to_be_checked()
+    # RAG functionality depends on provider
+    if test_config.get("provider_value") == "openai":
+        # For OpenAI, RAG should be functional
+        expect(rag_enabled_checkbox).not_to_be_disabled()
+        
+        # Enable if not already enabled
+        if not rag_enabled_checkbox.is_checked():
+            rag_enabled_checkbox.check()
+        expect(rag_enabled_checkbox).to_be_checked()
+        
+        # Test disabling RAG
+        rag_enabled_checkbox.uncheck()
+        expect(rag_enabled_checkbox).not_to_be_checked()
+        
+        # Test enabling RAG again
+        rag_enabled_checkbox.check()
+        expect(rag_enabled_checkbox).to_be_checked()
+    else:
+        # For non-OpenAI providers, RAG should be disabled
+        expect(rag_enabled_checkbox).to_be_disabled()
+        expect(rag_enabled_checkbox).not_to_be_checked()
+        
+        # Verify disabled message is shown
+        disabled_message = page.locator("#rag-disabled-message")
+        if disabled_message.is_visible():
+            expect(disabled_message).to_contain_text("RAG is only available with OpenAI provider")
     
     # Take screenshot of enable/disable functionality
     screenshot_with_markdown(page, "rag_enable_disable_functionality", {

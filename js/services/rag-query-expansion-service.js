@@ -18,12 +18,32 @@ window.RAGQueryExpansionService = (function() {
      * @returns {Promise<Array>} Array of search terms/phrases
      */
     async function expandQuery(userQuery, model = 'gpt-5-nano', apiKey, baseUrl = 'https://api.openai.com/v1') {
-        // Override with dedicated RAG expansion model if available
-        // This ensures we use a model that's capable of generating good search terms
-        const ragExpansionModel = window.DefaultModelsConfig?.DEFAULT_RAG_EXPANSION_MODEL || model;
-        if (ragExpansionModel !== model) {
-            console.log(`RAGQueryExpansionService: Using dedicated expansion model '${ragExpansionModel}' instead of '${model}'`);
-            model = ragExpansionModel;
+        // Get the current provider to use provider-specific expansion model
+        let provider = 'openai'; // Default provider
+        if (window.DataService && window.DataService.getBaseUrlProvider) {
+            provider = window.DataService.getBaseUrlProvider() || 'openai';
+        }
+        
+        // Override with provider-specific RAG expansion model if available
+        // Use "current" model if explicitly selected, otherwise use provider defaults
+        if (model === 'current') {
+            // Keep the current chat model
+            const currentModel = window.StorageService?.getModel?.() || 'gpt-5-nano';
+            console.log(`RAGQueryExpansionService: Using current chat model '${currentModel}' for expansion`);
+            model = currentModel;
+        } else if (window.DefaultModelsConfig && window.DefaultModelsConfig.getRagExpansionModel) {
+            const providerExpansionModel = window.DefaultModelsConfig.getRagExpansionModel(provider);
+            if (providerExpansionModel && providerExpansionModel !== model) {
+                console.log(`RAGQueryExpansionService: Using ${provider} expansion model '${providerExpansionModel}' instead of '${model}'`);
+                model = providerExpansionModel;
+            }
+        } else if (window.DefaultModelsConfig?.DEFAULT_RAG_EXPANSION_MODEL) {
+            // Fallback to default if provider-specific not available
+            const ragExpansionModel = window.DefaultModelsConfig.DEFAULT_RAG_EXPANSION_MODEL;
+            if (ragExpansionModel !== model) {
+                console.log(`RAGQueryExpansionService: Using default expansion model '${ragExpansionModel}' instead of '${model}'`);
+                model = ragExpansionModel;
+            }
         }
         if (!userQuery || !apiKey) {
             throw new Error('Query and API key are required');
