@@ -73,11 +73,18 @@ window.FunctionParser = (function() {
                 const hasInternalMarker = (jsDoc && jsDoc.includes('@internal')) || 
                     (singleLineComment && singleLineComment.includes('@internal'));
                 
-                // Initialize isCallable to false for internal functions, undefined for others
-                const initialIsCallable = hasInternalMarker ? false : undefined;
-                
-                // Mark as callable if it has any of the markers
-                const isCallable = hasCallableMarker || hasSingleLineCommentMarker || initialIsCallable;
+                // Determine if the function should be callable
+                let isCallable;
+                if (hasCallableMarker || hasSingleLineCommentMarker) {
+                    // Explicitly marked as callable
+                    isCallable = true;
+                } else if (hasInternalMarker) {
+                    // Explicitly marked as internal (not callable)
+                    isCallable = false;
+                } else {
+                    // Will be determined later based on whether any functions have markers
+                    isCallable = undefined;
+                }
                     
                 functions.push({
                     name: functionName,
