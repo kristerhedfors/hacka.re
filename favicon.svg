@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <!-- Background matching header in light mode (dark gray) -->
+  <rect width="32" height="32" rx="6" fill="#1f2937"/>
+  
+  <!-- White wizard hat matching the header icon -->
+  <!-- Hat crown (rounded top) -->
+  <ellipse cx="16" cy="13" rx="8" ry="6" fill="white"/>
+  <!-- Hat brim (oval) -->
+  <ellipse cx="16" cy="19" rx="12" ry="4" fill="white"/>
+  <!-- Depth line for 3D effect -->
+  <path d="M 4 16 Q 16 20 28 16" stroke="#111827" stroke-width="1.5" fill="none" opacity="0.5"/>
+</svg>

@@ -771,13 +771,21 @@ function cleanupGeneration(updateContextUsage, currentModel) {
                     window.DebugService.debugLog('rag', `Using user message as search query: "${queryPreview}"`);
                 }
                 
-                // Perform RAG search
+                // Get multi-query settings from RAG modal
+                const multiQueryEnabled = document.getElementById('rag-multi-query-enabled')?.checked ?? false;
+                const expansionModel = document.getElementById('rag-expansion-model')?.value || 'gpt-4o-mini';
+                const tokenLimit = parseInt(document.getElementById('rag-token-limit')?.value) || 5000;
+                
+                // Perform RAG search with multi-query support
                 const searchResults = await VectorRAGService.search(query, {
                     maxResults: 3, // Limit to 3 results to avoid context bloat
                     threshold: 0.4, // Slightly higher threshold for relevance
                     useTextFallback: true,
                     apiKey: apiKey,
-                    baseUrl: StorageService.getBaseUrl()
+                    baseUrl: StorageService.getBaseUrl(),
+                    useMultiQuery: multiQueryEnabled,
+                    expansionModel: expansionModel,
+                    tokenLimit: tokenLimit
                 });
                 
                 if (window.DebugService) {
@@ -796,7 +804,9 @@ function cleanupGeneration(updateContextUsage, currentModel) {
                 }
                 
                 // Format results for context injection
-                const ragContext = VectorRAGService.formatResultsForContext(searchResults.results, 1500);
+                // Use a higher character limit to accommodate more context (roughly 4 chars per token)
+                // For 3000 tokens, use ~12000 characters
+                const ragContext = VectorRAGService.formatResultsForContext(searchResults.results, 12000);
                 
                 if (window.DebugService) {
                     window.DebugService.debugLog('rag', `Formatted RAG context: ${ragContext.length} characters`);
@@ -804,7 +814,7 @@ function cleanupGeneration(updateContextUsage, currentModel) {
                     // Log details about each result
                     searchResults.results.forEach((result, index) => {
                         const similarity = (result.similarity * 100).toFixed(1);
-                        const source = result.promptName || result.fileName || result.bundleName || 'Unknown';
+                        const source = result.promptName || result.fileName || result.bundleName || result.documentName || 'Unknown';
                         window.DebugService.debugLog('rag', `  Result ${index + 1}: ${similarity}% similarity from "${source}"`);
                     });
                 }

@@ -37,20 +37,6 @@ window.RAGIndexStatsManager = (function() {
      */
     function updateIndexStats() {
         const stats = VectorRAGService.getIndexStats();
-        
-        // Update default prompts stats
-        const defaultChunksEl = document.getElementById('rag-default-chunks');
-        const defaultModelEl = document.getElementById('rag-default-model');
-        
-        if (defaultChunksEl) {
-            defaultChunksEl.textContent = `${stats.defaultPrompts.chunks} chunks indexed`;
-        }
-        
-        if (defaultModelEl) {
-            defaultModelEl.textContent = stats.defaultPrompts.available 
-                ? `Model: ${stats.settings.embeddingModel}`
-                : 'No embeddings model';
-        }
 
         // Update user bundles stats
         const userChunksEl = document.getElementById('rag-user-chunks');
@@ -69,15 +55,7 @@ window.RAGIndexStatsManager = (function() {
      * Update button states based on current conditions
      */
     function updateButtonStates() {
-        const apiKey = StorageService.getApiKey();
-        const generateBtn = document.getElementById('rag-index-defaults-btn');
-        
-        if (generateBtn) {
-            generateBtn.disabled = !apiKey;
-            generateBtn.title = apiKey 
-                ? 'Generate embeddings for selected default prompts'
-                : 'API key required for embedding generation';
-        }
+        // Currently no buttons to update after removing prompts functionality
     }
 
     /**
