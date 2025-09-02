@@ -45,7 +45,7 @@ def test_chat_interface_elements(page: Page, serve_hacka_re):
     # Check that the chat input is visible
     chat_input = page.locator("#message-input")
     expect(chat_input).to_be_visible()
-    expect(chat_input).to_have_attribute("placeholder", "Type your message here...")
+    expect(chat_input).to_have_attribute("placeholder", "Type your message...")
     
     # Check that the send button is visible
     send_button = page.locator("#send-btn")
