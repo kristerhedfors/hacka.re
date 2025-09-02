@@ -81,14 +81,14 @@ def test_rag_similarity_scores(page: Page, serve_hacka_re, api_key):
     
     # Set expansion model
     expansion_model_select = page.locator("#rag-expansion-model")
-    expansion_model_select.select_option("gpt-4o-mini")
+    expansion_model_select.select_option("gpt-5-nano")
     
     # Set token limit
     token_limit_input = page.locator("#rag-token-limit")
     token_limit_input.fill("5000")
     
     print(f"  ✓ Multi-query enabled: {multi_query_checkbox.is_checked()}")
-    print(f"  ✓ Expansion model: gpt-4o-mini")
+    print(f"  ✓ Expansion model: gpt-5-nano")
     print(f"  ✓ Token limit: 5000")
     
     # Step 4: Index EU AI Act

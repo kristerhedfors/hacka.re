@@ -383,7 +383,7 @@ def test_precached_embeddings_integration_with_chat(page: Page, serve_hacka_re, 
     # Configure API key
     page.evaluate(f"localStorage.setItem('openai_api_key', '{api_key}')")
     page.evaluate("localStorage.setItem('base_url', 'https://api.openai.com/v1')")
-    page.evaluate("localStorage.setItem('selected_model', 'gpt-4o-mini')")
+    page.evaluate("localStorage.setItem('selected_model', 'gpt-5-nano')")
     
     # Enable RAG in settings
     page.evaluate("localStorage.setItem('rag_enabled', 'true')")

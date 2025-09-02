@@ -166,8 +166,8 @@ def test_rag_multi_query_search(page: Page, serve_hacka_re, api_key):
     # Set token limit to a reasonable value for testing
     token_limit_input.fill("3000")
     
-    # Select gpt-4o-mini for cost efficiency
-    expansion_model_select.select_option("gpt-4o-mini")
+    # Select gpt-5-nano for cost efficiency
+    expansion_model_select.select_option("gpt-5-nano")
     
     print(f"  ✓ Multi-query enabled: {multi_query_checkbox.is_checked()}")
     print(f"  ✓ Expansion model: {expansion_model_select.input_value()}")
@@ -423,7 +423,7 @@ def test_rag_multi_query_debug(page: Page, serve_hacka_re, api_key):
             const query = 'What are the AI literacy requirements in the EU AI Act?';
             const searchTerms = await window.RAGQueryExpansionService.expandQuery(
                 query,
-                'gpt-4o-mini',
+                'gpt-5-nano',
                 apiKey,
                 baseUrl
             );

@@ -123,7 +123,7 @@ Tests use carefully crafted mock data to verify algorithms without API dependenc
 ### Real API Integration
 When API keys are available, tests make real calls to:
 - OpenAI embeddings API (`text-embedding-3-small` model)
-- OpenAI chat API (`gpt-4o-mini` model for cost efficiency)
+- OpenAI chat API (`gpt-5-nano` model for cost efficiency)
 - Verify actual functionality end-to-end
 
 ## Debugging and Screenshots

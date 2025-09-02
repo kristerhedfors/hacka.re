@@ -32,7 +32,7 @@ We systematically tested function calling across all three providers with comple
 - **mistralai/Devstral-Small-2505** 🔍 - Pending test
 
 #### OpenAI (Confirmed Working)
-- **gpt-4o-mini** ✓ - Excellent, recommended for testing
+- **gpt-5-nano** ✓ - Excellent, recommended for testing
 - **gpt-4o** ✓ - Full capabilities
 - **gpt-3.5-turbo** ✓ - Good basic support
 - **o4-mini** ✓ - Works well
@@ -82,7 +82,7 @@ BERGET_CHAT_MODELS = [
 OPENAI_CHAT_MODELS = [
     # Core GPT models
     "gpt-4", "gpt-4-turbo", "gpt-4o",    # ✓ Working
-    "gpt-4o-mini",                        # ✓ Working
+    "gpt-5-nano",                        # ✓ Working
     "gpt-3.5-turbo", "gpt-3.5-turbo-16k",# ✓ Working
     
     # GPT 4.1 series
@@ -118,7 +118,7 @@ OPENAI_CHAT_MODELS = [
 3. **Array Processing** (`processArray`)
    - Parameters: numbers[], operation
    - Tests: Array manipulation (sum, average, unique, sort)
-   - ✅ Works: gpt-4o-mini, gpt-4o
+   - ✅ Works: gpt-5-nano, gpt-4o
 
 4. **Async Simulation** (`searchDatabase`)
    - Parameters: query, delay
@@ -184,12 +184,12 @@ _venv/bin/python _tests/playwright/discover_all_models.py
 ## Recommendations
 
 ### For Production Use
-1. **Primary**: OpenAI gpt-4o-mini (reliable, cost-effective)
+1. **Primary**: OpenAI gpt-5-nano (reliable, cost-effective)
 2. **Alternative**: Groq moonshotai/kimi-k2-instruct (free tier available)
 3. **Backup**: Berget mistralai/Magistral-Small-2506
 
 ### For Development/Testing
-1. Use `gpt-4o-mini` for consistent results
+1. Use `gpt-5-nano` for consistent results
 2. Test with `kimi-k2` on Groq for free testing
 3. Validate with multiple providers before production
 

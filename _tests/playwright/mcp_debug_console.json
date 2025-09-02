@@ -461,12 +461,12 @@
   },
   {
     "type": "log",
-    "text": "No prompts found in shared link data: {baseUrl: https://api.openai.com/v1, apiKey: sk-proj-fdBdHYfZv_EEOJmOarr2AvFybJXEAoi6HYbqieaHt0\u2026WFG-a0FIdZ8IxnCc-xv30paD61gaJ8xcfNLk8Lejnb6uFEYgA, model: gpt-4o-mini, welcomeMessage: # hoho, mcpConnections: Object}",
+    "text": "No prompts found in shared link data: {baseUrl: https://api.openai.com/v1, apiKey: sk-proj-fdBdHYfZv_EEOJmOarr2AvFybJXEAoi6HYbqieaHt0\u2026WFG-a0FIdZ8IxnCc-xv30paD61gaJ8xcfNLk8Lejnb6uFEYgA, model: gpt-5-nano, welcomeMessage: # hoho, mcpConnections: Object}",
     "timestamp": 1755722408.5684
   },
   {
     "type": "log",
-    "text": "DEBUG: Full decrypted data structure: {\n  \"baseUrl\": \"https://api.openai.com/v1\",\n  \"apiKey\": \"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\",\n  \"model\": \"gpt-4o-mini\",\n  \"welcomeMessage\": \"# hoho\",\n  \"mcpConnections\": {\n    \"github\": \"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\",\n    \"shodan\": \"t2hW0hPlKpQY1KF0bn3kuhp3Mef7hptV\"\n  }\n}",
+    "text": "DEBUG: Full decrypted data structure: {\n  \"baseUrl\": \"https://api.openai.com/v1\",\n  \"apiKey\": \"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\",\n  \"model\": \"gpt-5-nano\",\n  \"welcomeMessage\": \"# hoho\",\n  \"mcpConnections\": {\n    \"github\": \"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\",\n    \"shodan\": \"t2hW0hPlKpQY1KF0bn3kuhp3Mef7hptV\"\n  }\n}",
     "timestamp": 1755722408.569461
   },
   {
@@ -591,7 +591,7 @@
   },
   {
     "type": "log",
-    "text": "\ud83d\udd0d No provider info, using model \"gpt-4o-mini\" as-is",
+    "text": "\ud83d\udd0d No provider info, using model \"gpt-5-nano\" as-is",
     "timestamp": 1755722408.753258
   },
   {
@@ -621,7 +621,7 @@
   },
   {
     "type": "log",
-    "text": "Updating memory model from storage: gpt-4o-mini",
+    "text": "Updating memory model from storage: gpt-5-nano",
     "timestamp": 1755722408.866262
   },
   {
@@ -941,7 +941,7 @@
   },
   {
     "type": "log",
-    "text": "Applied shared model: gpt-4o-mini",
+    "text": "Applied shared model: gpt-5-nano",
     "timestamp": 1755722411.790593
   },
   {
@@ -996,7 +996,7 @@
   },
   {
     "type": "log",
-    "text": "[ChatManager] DEBUG extracted shared data: {baseUrl: https://api.openai.com/v1, apiKey: sk-proj-fdBdHYfZv_EEOJmOarr2AvFybJXEAoi6HYbqieaHt0\u2026WFG-a0FIdZ8IxnCc-xv30paD61gaJ8xcfNLk8Lejnb6uFEYgA, systemPrompt: null, model: gpt-4o-mini, messages: null}",
+    "text": "[ChatManager] DEBUG extracted shared data: {baseUrl: https://api.openai.com/v1, apiKey: sk-proj-fdBdHYfZv_EEOJmOarr2AvFybJXEAoi6HYbqieaHt0\u2026WFG-a0FIdZ8IxnCc-xv30paD61gaJ8xcfNLk8Lejnb6uFEYgA, systemPrompt: null, model: gpt-5-nano, messages: null}",
     "timestamp": 1755722411.8578281
   },
   {
@@ -1341,7 +1341,7 @@
   },
   {
     "type": "log",
-    "text": "[API Debug] Request body: {messages: Array(2), stream: true, model: gpt-4o-mini, tools: [31 tools], tool_choice: auto}",
+    "text": "[API Debug] Request body: {messages: Array(2), stream: true, model: gpt-5-nano, tools: [31 tools], tool_choice: auto}",
     "timestamp": 1755722429.426489
   },
   {

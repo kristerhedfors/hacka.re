@@ -160,7 +160,7 @@ echo ""
 # Note about API requirements
 if [[ "$TEST_CATEGORY" == "all" || "$TEST_CATEGORY" == "indexing" || "$TEST_CATEGORY" == "integration" || "$TEST_CATEGORY" == "api" ]]; then
     echo "Note: Some tests require OpenAI API key in .env file for real embedding generation"
-    echo "Tests will use gpt-4o-mini model for cost efficiency"
+    echo "Tests will use gpt-5-nano model for cost efficiency"
     echo ""
 fi
 

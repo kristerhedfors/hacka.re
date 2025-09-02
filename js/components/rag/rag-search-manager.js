@@ -100,11 +100,13 @@ window.RAGSearchManager = (function() {
         const tokenLimit = parseInt(tokenLimitInput?.value || '5000');
         const multiQueryEnabled = document.getElementById('rag-multi-query-enabled')?.checked ?? true;
         const expansionModelSelect = document.getElementById('rag-expansion-model');
-        let expansionModel = expansionModelSelect?.value || 'gpt-4o-mini';
+        let expansionModel = expansionModelSelect?.value || 
+            (window.DefaultModelsConfig ? window.DefaultModelsConfig.DEFAULT_RAG_EXPANSION_MODEL : 'gpt-5-nano');
         
         // If "current" is selected, use the current chat model
         if (expansionModel === 'current') {
-            expansionModel = StorageService.getSelectedModel() || 'gpt-4o-mini';
+            expansionModel = StorageService.getSelectedModel() || 
+                (window.DefaultModelsConfig ? window.DefaultModelsConfig.DEFAULT_RAG_EXPANSION_MODEL : 'gpt-5-nano');
         }
         
         const apiKey = StorageService.getApiKey();

@@ -12,19 +12,19 @@ window.ApiKeyDetector = (function() {
             pattern: /^sk-proj-[A-Za-z0-9\-_]{50,}$/,
             providerValue: 'openai',
             providerName: '🇺🇸 OpenAI',
-            defaultModel: 'gpt-4o-mini'
+            defaultModel: window.DefaultModelsConfig ? window.DefaultModelsConfig.getDefaultModel('openai') : 'gpt-5-nano'
         },
         groqcloud: {
             pattern: /^gsk_[A-Za-z0-9]{32,}$/,
             providerValue: 'groq',
             providerName: '🇸🇦 GroqCloud',
-            defaultModel: 'moonshotai/kimi-k2-instruct'
+            defaultModel: window.DefaultModelsConfig ? window.DefaultModelsConfig.getDefaultModel('groq') : 'moonshotai/kimi-k2-instruct'
         },
         berget: {
             pattern: /^sk_ber_[A-Za-z0-9\-_]{30,}$/,
             providerValue: 'berget',
             providerName: '🇸🇪 Berget.AI',
-            defaultModel: 'mistralai/Magistral-Small-2506'
+            defaultModel: window.DefaultModelsConfig ? window.DefaultModelsConfig.getDefaultModel('berget') : 'mistralai/Magistral-Small-2506'
         }
     };
 

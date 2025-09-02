@@ -14,7 +14,7 @@ def test_rag_embedding_generation_ui(page: Page, serve_hacka_re, api_key):
     # Configure API key first
     page.evaluate(f"localStorage.setItem('openai_api_key', '{api_key}')")
     page.evaluate("localStorage.setItem('base_url', 'https://api.openai.com/v1')")
-    page.evaluate("localStorage.setItem('selected_model', 'gpt-4o-mini')")
+    page.evaluate("localStorage.setItem('selected_model', 'gpt-5-nano')")
     
     # Open the RAG modal
     rag_button = page.locator("#rag-btn")
@@ -52,7 +52,7 @@ def test_rag_embedding_generation_process(page: Page, serve_hacka_re, api_key):
     # Configure API key and settings
     page.evaluate(f"localStorage.setItem('openai_api_key', '{api_key}')")
     page.evaluate("localStorage.setItem('base_url', 'https://api.openai.com/v1')")
-    page.evaluate("localStorage.setItem('selected_model', 'gpt-4o-mini')")
+    page.evaluate("localStorage.setItem('selected_model', 'gpt-5-nano')")
     
     # Open the RAG modal
     rag_button = page.locator("#rag-btn")
@@ -207,7 +207,7 @@ def test_rag_embedding_caching(page: Page, serve_hacka_re, api_key):
     # Configure API key
     page.evaluate(f"localStorage.setItem('openai_api_key', '{api_key}')")
     page.evaluate("localStorage.setItem('base_url', 'https://api.openai.com/v1')")
-    page.evaluate("localStorage.setItem('selected_model', 'gpt-4o-mini')")
+    page.evaluate("localStorage.setItem('selected_model', 'gpt-5-nano')")
     
     # Test caching mechanism through browser console
     cache_test_result = page.evaluate("""() => {
