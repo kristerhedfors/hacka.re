@@ -1001,11 +1001,13 @@ window.RAGCoordinator = (function() {
         if (content && toggle) {
             if (content.style.display === 'none' || !content.style.display) {
                 content.style.display = 'block';
-                toggle.textContent = '▼';
+                toggle.classList.remove('fa-chevron-right');
+                toggle.classList.add('fa-chevron-down');
                 console.log('RAGCoordinator: Advanced section expanded');
             } else {
                 content.style.display = 'none';
-                toggle.textContent = '▶';
+                toggle.classList.remove('fa-chevron-down');
+                toggle.classList.add('fa-chevron-right');
                 console.log('RAGCoordinator: Advanced section collapsed');
             }
         }
