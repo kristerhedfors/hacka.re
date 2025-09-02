@@ -42,9 +42,20 @@
     };
 
     /**
-     * Default model for RAG query expansion
-     * Using gpt-4.1-mini as it's more capable for generating diverse search terms
-     * gpt-5-nano appears to be too weak for this specific task
+     * Provider-specific models for RAG query expansion
+     * These models are optimized for generating diverse search terms
+     */
+    const RAG_EXPANSION_MODELS = {
+        openai: 'gpt-4.1-mini',  // More capable for generating diverse search terms
+        groq: 'openai/gpt-oss-20b',  // 20B model for query expansion on Groq
+        berget: 'mistralai/Devstral-Small-2505',  // Devstral for Berget
+        ollama: 'llama3.2',  // Default Ollama model
+        custom: 'gpt-4.1-mini'  // Default to OpenAI's model for custom
+    };
+    
+    /**
+     * Default model for RAG query expansion (fallback)
+     * Used when provider-specific model is not available
      */
     const DEFAULT_RAG_EXPANSION_MODEL = 'gpt-4.1-mini';
 
@@ -59,6 +70,7 @@
         DEFAULT_MODELS,
         FALLBACK_MODELS,
         COMPATIBLE_MODELS,
+        RAG_EXPANSION_MODELS,
         DEFAULT_RAG_EXPANSION_MODEL,
         DEFAULT_TEST_MODEL,
         
@@ -87,6 +99,15 @@
          */
         getCompatibleModel: function(provider) {
             return COMPATIBLE_MODELS[provider] || null;
+        },
+        
+        /**
+         * Get RAG expansion model for a provider
+         * @param {string} provider - Provider name
+         * @returns {string} RAG expansion model ID (falls back to default)
+         */
+        getRagExpansionModel: function(provider) {
+            return RAG_EXPANSION_MODELS[provider] || DEFAULT_RAG_EXPANSION_MODEL;
         }
     };
 

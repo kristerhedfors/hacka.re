@@ -540,8 +540,14 @@ window.VectorRAGService = (function() {
             baseUrl = null,
             embeddingModel = ragSettings?.embeddingModel || 'text-embedding-3-small',
             useMultiQuery = false,
-            expansionModel = 'gpt-5-nano'
+            expansionModel = null  // Will be set to provider default if not specified
         } = options;
+        
+        // Set expansion model to provider default if not specified
+        if (!expansionModel) {
+            const provider = window.DataService?.getBaseUrlProvider?.() || 'openai';
+            expansionModel = window.DefaultModelsConfig?.getRagExpansionModel?.(provider) || 'gpt-4.1-mini';
+        }
 
         if (!query || typeof query !== 'string') {
             throw new Error('Invalid search query provided');

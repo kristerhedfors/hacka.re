@@ -807,11 +807,15 @@ async function getCurrentTimeInBerlin() {
                 <div class="rag-section rag-enable-section">
                     <div class="form-group">
                         <label class="checkbox-label">
-                            <input type="checkbox" id="rag-enabled-checkbox" checked>
+                            <input type="checkbox" id="rag-enabled-checkbox">
                             <span class="checkmark"></span>
                             <strong>Enable RAG (Retrieval-Augmented Generation)</strong>
                         </label>
-                        <p class="form-help">When enabled, chat responses will be enhanced with relevant context from your indexed knowledge base.</p>
+                        <p class="form-help" id="rag-help-text">When enabled, chat responses will be enhanced with relevant context from your indexed knowledge base.</p>
+                        <p class="form-help" id="rag-disabled-message" style="display: none; color: #f0ad4e;">
+                            <strong>⚠️ RAG is only available with OpenAI provider</strong><br>
+                            OpenAI provides the embeddings API required for vector search. Please switch to OpenAI in Settings to use RAG.
+                        </p>
                     </div>
                 </div>
                 

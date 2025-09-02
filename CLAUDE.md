@@ -126,6 +126,46 @@ _venv/bin/python -m pytest _tests/playwright/test_modals.py::test_prompts_modal 
 _venv/bin/python -m pytest _tests/playwright/ -k "prompts" -v
 ```
 
+**🚨 CRITICAL: HANDLING LARGE TEST BUNDLES - TIMEOUT SOLUTIONS 🚨**
+The test suite contains 377+ tests that can take 5-10 minutes to complete. NEVER run all tests with default timeout settings!
+
+**PROPER TEST EXECUTION STRATEGY:**
+```bash
+# 1. RUN TESTS IN SMALLER BATCHES (RECOMMENDED)
+# Instead of running all 53 RAG tests at once:
+_venv/bin/python -m pytest _tests/playwright/test_rag_modal.py -v  # 9 tests
+_venv/bin/python -m pytest _tests/playwright/test_rag_indexing.py -v  # 7 tests
+_venv/bin/python -m pytest _tests/playwright/test_rag_search.py -v  # 10 tests
+
+# 2. USE INCREASED TIMEOUT FOR LARGE BUNDLES
+# When running many tests, ALWAYS use timeout parameter:
+_venv/bin/python -m pytest _tests/playwright/test_rag_*.py --timeout=600 -v
+
+# 3. FOR SUMMARY/STATISTICS ONLY (NO ACTUAL TEST EXECUTION)
+# Use --collect-only or --co to just count tests:
+_venv/bin/python -m pytest _tests/playwright/test_rag_*.py --co -q
+
+# 4. QUICK PASS/FAIL COUNT (with proper timeout)
+_venv/bin/python -m pytest _tests/playwright/test_rag_*.py --tb=no -q --timeout=600
+
+# 5. NEVER DO THIS (WILL TIMEOUT):
+_venv/bin/python -m pytest _tests/playwright/test_*.py  # 377+ tests, will timeout!
+```
+
+**TEST BUNDLE SIZES (Approximate execution times):**
+- `test_rag_*.py`: 53 tests (~5 minutes)
+- `test_function_*.py`: 40+ tests (~4 minutes)  
+- `test_mcp_*.py`: 26 tests (~3 minutes)
+- `test_modals.py`: 20+ tests (~2 minutes)
+- **FULL SUITE**: 377+ tests (~15-20 minutes) - ALWAYS RUN IN BATCHES!
+
+**TIMEOUT BEST PRACTICES:**
+1. Single test file: Default timeout is usually fine
+2. 10-20 tests: Use `--timeout=300` (5 minutes)
+3. 20-50 tests: Use `--timeout=600` (10 minutes)
+4. 50+ tests: SPLIT INTO BATCHES or use `--timeout=1200` (20 minutes)
+5. For CI/CD: Always use explicit timeouts and run in parallel batches
+
 **Project Metrics:**
 ```bash
 # From project root
@@ -230,6 +270,16 @@ Refactored from monolithic ~800-line service into focused modules with clear dep
 - Plus 8 more specialized services
 
 ## Key Features
+
+### RAG (Retrieval-Augmented Generation) System
+**IMPORTANT: RAG is ONLY available with OpenAI provider** (requires embeddings API)
+- Automatically disabled when switching to non-OpenAI providers (Groq, Berget, Ollama, etc.)
+- Provider-specific query expansion models:
+  - OpenAI: `gpt-4.1-mini` (optimized for diverse search terms)
+  - Groq: `openai/gpt-oss-20b` (20B model for query expansion)
+  - Berget: `mistralai/Devstral-Small-2505` (Devstral model)
+- Visual indicators show when/why RAG is disabled
+- Checkbox is grayed out with warning message for non-OpenAI providers
 
 ### Function Calling System
 - Allows JavaScript functions to be executed by AI models
