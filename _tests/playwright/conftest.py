@@ -36,7 +36,7 @@ PROVIDER_CONFIGS = {
     },
     "berget": {
         "api_key": BERGET_API_KEY,
-        "model": "openai/gpt-oss-120b",  # Using the 120B open weights model on Berget
+        "model": "mistralai/Devstral-Small-2505",  # Devstral works properly with streaming
         "base_url": "https://api.berget.ai/v1",
         "provider_value": "berget"  # Berget is a default provider in the dropdown
     },
