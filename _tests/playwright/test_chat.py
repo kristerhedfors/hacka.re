@@ -47,54 +47,8 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
     # Wait for settings to save and UI to update
     page.wait_for_timeout(1500)
     
-    # Wait for the reload button to be enabled after API key is entered
-    reload_button = page.locator("#model-reload-btn")
-    try:
-        # Wait for button to be enabled
-        page.wait_for_function(
-            """() => {
-                const btn = document.getElementById('model-reload-btn');
-                return btn && !btn.disabled;
-            }""",
-            timeout=5000
-        )
-        # Wait a bit more before clicking to ensure UI is ready
-        page.wait_for_timeout(500)
-        # Click with force=True to ensure click happens even if button is slightly obscured
-        reload_button.click(force=True, timeout=5000)
-    except Exception as e:
-        print(f"Reload button not enabled, trying to close and re-open settings: {e}")
-        # Settings auto-save, so just close and re-open
-        close_button = page.locator("#close-settings")
-        if close_button.is_visible():
-            close_button.click()
-            page.wait_for_timeout(500)
-            # Re-open settings
-            settings_button = page.locator("#settings-btn")
-            settings_button.click(timeout=2000)
-            page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
-            # Wait for reload button to be enabled before clicking
-            try:
-                page.wait_for_function(
-                    """() => {
-                        const btn = document.getElementById('model-reload-btn');
-                        return btn && !btn.disabled;
-                    }""",
-                    timeout=3000
-                )
-                reload_button.click(force=True, timeout=5000)
-            except:
-                print("Reload button still disabled after reopening settings")
-                # Try to trigger a change event on the API key field to enable the button
-                page.evaluate("""() => {
-                    const apiKeyInput = document.getElementById('api-key-update');
-                    if (apiKeyInput) {
-                        apiKeyInput.dispatchEvent(new Event('input', { bubbles: true }));
-                        apiKeyInput.dispatchEvent(new Event('change', { bubbles: true }));
-                    }
-                }""")
-                page.wait_for_timeout(500)
-                reload_button.click(force=True, timeout=5000)
+    # Models should load automatically from cache when API key is set
+    # No need to click reload button - cache handles it automatically
     
     # Wait for the models to be loaded
     # First, check if the model select has any non-disabled options
@@ -113,23 +67,9 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
         print(f"Found {options_count} non-disabled options in model select")
         
         if options_count == 0:
-            # Try clicking the reload button again after waiting for it to be enabled
-            print("No options found, waiting for reload button to be enabled")
-            try:
-                page.wait_for_function(
-                    """() => {
-                        const btn = document.getElementById('model-reload-btn');
-                        return btn && !btn.disabled;
-                    }""",
-                    timeout=3000
-                )
-                reload_button.click(timeout=5000)
-                # Wait for models to load after clicking
-                page.wait_for_selector("#model-select option:not([disabled])", state="attached", timeout=5000)
-            except Exception as reload_error:
-                print(f"Failed to reload models: {reload_error}")
-                # Skip test if models can't be loaded
-                pytest.skip("Could not load models from API")
+            # Models should have loaded from cache automatically
+            print("No models found - cache may be missing or API key invalid")
+            pytest.skip("Could not load models from cache")
     
     # Select the recommended test model
     from test_utils import select_recommended_test_model
