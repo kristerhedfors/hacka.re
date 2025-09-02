@@ -93,10 +93,16 @@ class MobileLayoutHandler {
         // Save scroll position
         this.scrollPosition = window.scrollY;
         
-        // Prevent body scroll
-        document.body.style.position = 'fixed';
-        document.body.style.top = `-${this.scrollPosition}px`;
-        document.body.style.width = '100%';
+        // Only apply fixed positioning on mobile to prevent body scroll
+        const isMobile = window.innerWidth <= 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        
+        if (isMobile) {
+            // Prevent body scroll on mobile
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${this.scrollPosition}px`;
+            document.body.style.width = '100%';
+        }
+        
         document.body.classList.add('modal-open');
         
         // Ensure modal is properly layered
@@ -114,14 +120,20 @@ class MobileLayoutHandler {
             this.activeModal = null;
         }
         
-        // Restore body scroll
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.width = '';
-        document.body.classList.remove('modal-open');
+        // Only restore body scroll if it was modified (on mobile)
+        const isMobile = window.innerWidth <= 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         
-        // Restore scroll position
-        window.scrollTo(0, this.scrollPosition);
+        if (isMobile) {
+            // Restore body scroll on mobile
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.width = '';
+            
+            // Restore scroll position
+            window.scrollTo(0, this.scrollPosition);
+        }
+        
+        document.body.classList.remove('modal-open');
     }
 
     closeModal(modal) {
@@ -213,34 +225,67 @@ class MobileLayoutHandler {
     }
 
     ensureProperLayout() {
-        // Ensure main content area exists and is properly structured
-        const mainContent = document.getElementById('chat-messages-container') || 
-                          document.querySelector('main') || 
-                          document.querySelector('.main-content');
+        // Only apply mobile layout fixes on actual mobile devices
+        const isMobile = window.innerWidth <= 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         
-        if (mainContent) {
-            mainContent.style.paddingTop = '72px'; // Account for header
-            mainContent.style.paddingBottom = '80px'; // Account for input
-        }
-        
-        // Fix header positioning
-        const header = document.querySelector('header');
-        if (header) {
-            header.style.position = 'fixed';
-            header.style.top = '0';
-            header.style.left = '0';
-            header.style.right = '0';
-            header.style.zIndex = '100';
-        }
-        
-        // Fix chat input positioning
-        const chatInput = document.getElementById('chat-input-container');
-        if (chatInput) {
-            chatInput.style.position = 'fixed';
-            chatInput.style.bottom = '0';
-            chatInput.style.left = '0';
-            chatInput.style.right = '0';
-            chatInput.style.zIndex = '100';
+        if (isMobile) {
+            // Ensure main content area exists and is properly structured
+            const mainContent = document.getElementById('chat-messages-container') || 
+                              document.querySelector('main') || 
+                              document.querySelector('.main-content');
+            
+            if (mainContent) {
+                mainContent.style.paddingTop = '72px'; // Account for header
+                mainContent.style.paddingBottom = '80px'; // Account for input
+            }
+            
+            // Fix header positioning for mobile only
+            const header = document.querySelector('header');
+            if (header) {
+                header.style.position = 'fixed';
+                header.style.top = '0';
+                header.style.left = '0';
+                header.style.right = '0';
+                header.style.zIndex = '100';
+            }
+            
+            // Fix chat input positioning for mobile only
+            const chatInput = document.getElementById('chat-input-container');
+            if (chatInput) {
+                chatInput.style.position = 'fixed';
+                chatInput.style.bottom = '0';
+                chatInput.style.left = '0';
+                chatInput.style.right = '0';
+                chatInput.style.zIndex = '100';
+            }
+        } else {
+            // On desktop, ensure elements use their default CSS positioning
+            const header = document.querySelector('header');
+            if (header) {
+                header.style.position = '';
+                header.style.top = '';
+                header.style.left = '';
+                header.style.right = '';
+                header.style.zIndex = '';
+            }
+            
+            const chatInput = document.getElementById('chat-input-container');
+            if (chatInput) {
+                chatInput.style.position = '';
+                chatInput.style.bottom = '';
+                chatInput.style.left = '';
+                chatInput.style.right = '';
+                chatInput.style.zIndex = '';
+            }
+            
+            const mainContent = document.getElementById('chat-messages-container') || 
+                              document.querySelector('main') || 
+                              document.querySelector('.main-content');
+            
+            if (mainContent) {
+                mainContent.style.paddingTop = '';
+                mainContent.style.paddingBottom = '';
+            }
         }
     }
 
