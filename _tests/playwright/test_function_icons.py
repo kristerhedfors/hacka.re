@@ -1,7 +1,7 @@
 import pytest
 from playwright.sync_api import Page, expect
 import time
-from test_utils import dismiss_welcome_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown, enable_yolo_mode
 
 from function_calling_api.helpers.setup_helpers import (
     setup_console_logging, 
@@ -33,6 +33,9 @@ def test_function_calling_icons(page: Page, serve_hacka_re, api_key):
     # Enable tool calling and function tools
     enable_tool_calling_and_function_tools(page)
     
+    # Enable YOLO mode to bypass Function Execution Modal
+    enable_yolo_mode(page)
+    
     # Add a test function
     add_test_function(page)  # This uses the default weather function
     
@@ -46,13 +49,13 @@ def test_function_calling_icons(page: Page, serve_hacka_re, api_key):
     send_button.click()
     
     # Wait for the user message to appear in the chat
-    page.wait_for_selector(".message.user .message-content", state="visible", timeout=2000)
+    page.wait_for_selector(".message.user .message-content", state="visible", timeout=5000)
     
-    # Wait for the assistant response
+    # Wait for the assistant response (give more time for API call)
     try:
         page.wait_for_selector(".message.assistant .message-content", 
                               state="visible", 
-                              timeout=2000)
+                              timeout=10000)
         
         # Take a screenshot of the initial response
         screenshot_with_markdown(page, "assistant_response_initial", 
@@ -60,7 +63,7 @@ def test_function_calling_icons(page: Page, serve_hacka_re, api_key):
         
         # Wait for function call icon to appear
         try:
-            page.wait_for_selector(".function-call-icon", state="visible", timeout=2000)
+            page.wait_for_selector(".function-call-icon", state="visible", timeout=5000)
             
             # Take a screenshot showing the function call icon
             screenshot_with_markdown(page, "function_call_icon", 
@@ -109,7 +112,7 @@ def test_function_calling_icons(page: Page, serve_hacka_re, api_key):
         
         # Wait for function result icon to appear
         try:
-            page.wait_for_selector(".function-result-icon", state="visible", timeout=2000)
+            page.wait_for_selector(".function-result-icon", state="visible", timeout=5000)
             
             # Take a screenshot showing the function result icon
             screenshot_with_markdown(page, "function_result_icon", 
@@ -189,6 +192,9 @@ def test_multiple_function_calls_colors(page: Page, serve_hacka_re, api_key):
     # Enable tool calling and function tools
     enable_tool_calling_and_function_tools(page)
     
+    # Enable YOLO mode to bypass Function Execution Modal
+    enable_yolo_mode(page)
+    
     # Add multiple test functions
     add_multiple_test_functions(page)
     
@@ -201,21 +207,21 @@ def test_multiple_function_calls_colors(page: Page, serve_hacka_re, api_key):
     send_button = page.locator("#send-btn")
     send_button.click()
     
-    # Wait for the assistant response
+    # Wait for the assistant response (give more time for API call)
     try:
         page.wait_for_selector(".message.assistant .message-content", 
                               state="visible", 
-                              timeout=2000)
+                              timeout=10000)
         
         # Wait for function call icons to appear
-        page.wait_for_selector(".function-call-icon", state="visible", timeout=2000)
+        page.wait_for_selector(".function-call-icon", state="visible", timeout=5000)
         
         # Wait for at least 2 function call icons (may take some time)
         try:
             # Wait for the second function call icon
             page.wait_for_function(
                 """() => document.querySelectorAll('.function-call-icon').length >= 2""",
-                timeout=2000
+                timeout=5000
             )
             
             # Take a screenshot showing multiple function call icons

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Cache Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #00ff00;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #00ff00;
+            border-bottom: 2px solid #00ff00;
+            padding-bottom: 10px;
+        }
+        button {
+            background: #003300;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+            font-family: monospace;
+        }
+        button:hover {
+            background: #005500;
+        }
+        .log {
+            background: #000;
+            border: 1px solid #00ff00;
+            padding: 10px;
+            margin: 10px 0;
+            height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .status {
+            background: #003300;
+            border: 1px solid #00ff00;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .provider-button {
+            display: inline-block;
+            margin: 5px;
+        }
+        .cached {
+            color: #ffff00;
+        }
+        .api-call {
+            color: #ff00ff;
+        }
+        .error {
+            color: #ff0000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Model Cache Testing Interface</h1>
+        
+        <div class="status">
+            <strong>Cache Status:</strong> <span id="cache-status">Loading...</span><br>
+            <strong>Cache Timestamp:</strong> <span id="cache-timestamp">N/A</span><br>
+            <strong>Cached Providers:</strong> <span id="cached-providers">N/A</span>
+        </div>
+
+        <div>
+            <h2>Select Provider:</h2>
+            <button class="provider-button" onclick="testProvider('openai')">OpenAI</button>
+            <button class="provider-button" onclick="testProvider('groq')">Groq</button>
+            <button class="provider-button" onclick="testProvider('berget')">Berget.ai</button>
+            <button class="provider-button" onclick="testProvider('ollama')">Ollama (no cache)</button>
+        </div>
+
+        <div>
+            <h2>Actions:</h2>
+            <button onclick="fetchWithCache()">📦 Fetch Models (Use Cache)</button>
+            <button onclick="fetchWithoutCache()">🔄 Force Refresh (Bypass Cache)</button>
+            <button onclick="clearLog()">🗑️ Clear Log</button>
+        </div>
+
+        <div class="log" id="log"></div>
+    </div>
+
+    <!-- Load necessary scripts -->
+    <script src="js/services/model-cache.js"></script>
+    <script>
+        let currentProvider = 'openai';
+        let currentBaseUrl = 'https://api.openai.com/v1';
+
+        function log(message, type = '') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type ? ` class="${type}"` : '';
+            logDiv.innerHTML += `<span${className}>[${timestamp}] ${message}</span>\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function updateCacheStatus() {
+            const statusEl = document.getElementById('cache-status');
+            const timestampEl = document.getElementById('cache-timestamp');
+            const providersEl = document.getElementById('cached-providers');
+            
+            if (window.ModelCache && window.ModelCache.providers) {
+                statusEl.textContent = '✅ Cache Loaded';
+                statusEl.style.color = '#00ff00';
+                timestampEl.textContent = window.ModelCache.timestamp;
+                
+                const providers = Object.keys(window.ModelCache.providers);
+                const providerInfo = providers.map(p => {
+                    const count = window.ModelCache.providers[p]?.data?.length || 0;
+                    return `${p} (${count} models)`;
+                }).join(', ');
+                providersEl.textContent = providerInfo;
+                
+                log(`Cache initialized with ${providers.length} providers`, 'cached');
+            } else {
+                statusEl.textContent = '❌ No Cache';
+                statusEl.style.color = '#ff0000';
+                timestampEl.textContent = 'N/A';
+                providersEl.textContent = 'None';
+                log('No cache found', 'error');
+            }
+        }
+
+        function testProvider(provider) {
+            currentProvider = provider;
+            const urls = {
+                'openai': 'https://api.openai.com/v1',
+                'groq': 'https://api.groq.com/openai/v1',
+                'berget': 'https://api.berget.ai/v1',
+                'ollama': 'http://localhost:11434/v1'
+            };
+            currentBaseUrl = urls[provider];
+            log(`\n🎯 Selected provider: ${provider.toUpperCase()} (${currentBaseUrl})`, 'status');
+        }
+
+        function fetchWithCache() {
+            log('\n📦 Fetching models WITH cache...', 'cached');
+            
+            // Check if cache exists for this provider
+            if (window.ModelCache && window.ModelCache.providers) {
+                let providerKey = null;
+                
+                if (currentBaseUrl.includes('openai.com')) {
+                    providerKey = 'openai';
+                } else if (currentBaseUrl.includes('groq.com')) {
+                    providerKey = 'groq';
+                } else if (currentBaseUrl.includes('berget.ai')) {
+                    providerKey = 'berget';
+                }
+                
+                if (providerKey && window.ModelCache.providers[providerKey]) {
+                    const cachedData = window.ModelCache.providers[providerKey];
+                    log(`✅ Using cached models for ${providerKey}`, 'cached');
+                    log(`   Found ${cachedData.data?.length || 0} models`, 'cached');
+                    log(`   Cache timestamp: ${window.ModelCache.timestamp}`, 'cached');
+                    
+                    // Display first 3 models as examples
+                    if (cachedData.data && cachedData.data.length > 0) {
+                        log('   Example models:', 'cached');
+                        cachedData.data.slice(0, 3).forEach(model => {
+                            log(`     - ${model.id}`, 'cached');
+                        });
+                        if (cachedData.data.length > 3) {
+                            log(`     ... and ${cachedData.data.length - 3} more`, 'cached');
+                        }
+                    }
+                } else {
+                    log(`⚠️ No cache available for ${currentProvider}`, 'error');
+                    log('   Would fall back to API call', 'api-call');
+                }
+            } else {
+                log('❌ ModelCache not loaded', 'error');
+            }
+        }
+
+        function fetchWithoutCache() {
+            log('\n🔄 Force refresh (bypass cache) - simulated', 'api-call');
+            log(`   Would fetch from: ${currentBaseUrl}/models`, 'api-call');
+            log('   forceRefresh: true', 'api-call');
+            log('   This would make a real API call even if cache exists', 'api-call');
+            
+            // In the real implementation, this would call:
+            // ApiService.fetchAvailableModels(apiKey, baseUrl, true)
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+            log('Log cleared', 'status');
+        }
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            updateCacheStatus();
+            log('🚀 Model Cache Test Interface Ready', 'status');
+            log('Select a provider and test cache behavior', 'status');
+        });
+    </script>
+</body>
+</html>
