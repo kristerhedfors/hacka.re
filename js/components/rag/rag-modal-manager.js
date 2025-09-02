@@ -48,6 +48,17 @@ window.RAGModalManager = (function() {
             });
         }
 
+        // Info icon click handler
+        const ragInfoIcon = document.getElementById('rag-info-icon');
+        if (ragInfoIcon) {
+            ragInfoIcon.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (window.SettingsInfoModalService) {
+                    window.SettingsInfoModalService.showRagInfoModal(ragInfoIcon);
+                }
+            });
+        }
+
         // RAG enable/disable checkbox
         const ragEnabledCheckbox = document.getElementById('rag-enabled-checkbox');
         const ragHelpText = document.getElementById('rag-help-text');
