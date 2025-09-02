@@ -16,13 +16,7 @@ import time
 import os
 from playwright.sync_api import Page, expect
 from test_utils import dismiss_welcome_modal, screenshot_with_markdown
-import sys
-# Import from parent directory's conftest, not shodan's
-parent_dir = os.path.dirname(__file__)
-if parent_dir not in sys.path:
-    sys.path.insert(0, parent_dir)
-import conftest as main_conftest
-ACTIVE_TEST_CONFIG = main_conftest.ACTIVE_TEST_CONFIG
+# No need to import conftest directly - pytest handles it
 
 
 @pytest.fixture
@@ -47,7 +41,7 @@ def openai_api_key():
     return api_key
 
 
-def test_complete_shodan_integration(page: Page, serve_hacka_re, openai_api_key, shodan_api_key):
+def test_complete_shodan_integration(page: Page, serve_hacka_re, openai_api_key, shodan_api_key, test_config):
     """Test complete Shodan integration with real API keys"""
     
     # Capture console messages for debugging
@@ -81,7 +75,7 @@ def test_complete_shodan_integration(page: Page, serve_hacka_re, openai_api_key,
         }}
         
         // Set model from centralized test config
-        const testModel = '{ACTIVE_TEST_CONFIG["model"]}';
+        const testModel = '{test_config["model"]}';
         if (window.CoreStorageService) {{
             window.CoreStorageService.setValue('selected_model', testModel);
         }} else {{
@@ -100,7 +94,7 @@ def test_complete_shodan_integration(page: Page, serve_hacka_re, openai_api_key,
     
     screenshot_with_markdown(page, "openai_configured", {
         "Status": "OpenAI API configured",
-        "Model": f"{ACTIVE_TEST_CONFIG['model']} selected",
+        "Model": f"{test_config['model']} selected",
         "API Key": "Configured"
     })
     
