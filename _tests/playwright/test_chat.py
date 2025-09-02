@@ -6,17 +6,11 @@ from dotenv import load_dotenv
 from playwright.sync_api import Page, expect
 
 from test_utils import dismiss_welcome_modal, check_system_messages, screenshot_with_markdown
-import sys
-sys.path.insert(0, os.path.dirname(__file__))
-import conftest
-ACTIVE_TEST_CONFIG = conftest.ACTIVE_TEST_CONFIG
 
 # Load environment variables from .env file in the current directory
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
-# Get API key from centralized test configuration
-API_KEY = ACTIVE_TEST_CONFIG["api_key"]
 
-def test_chat_message_send_receive(page: Page, serve_hacka_re):
+def test_chat_message_send_receive(page: Page, serve_hacka_re, api_key, test_config):
     """Test sending a message and receiving a response with real API."""
     
     # Set up console logging
@@ -39,9 +33,9 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
     # Take initial screenshot
     screenshot_with_markdown(page, "01_initial_load", {
         "Status": "Page loaded",
-        "Provider": ACTIVE_TEST_CONFIG["provider_value"],
-        "Model": ACTIVE_TEST_CONFIG["model"],
-        "Base URL": ACTIVE_TEST_CONFIG["base_url"]
+        "Provider": test_config["provider_value"],
+        "Model": test_config["model"],
+        "Base URL": test_config["base_url"]
     })
     
     # Dismiss welcome modal if present
@@ -56,20 +50,20 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
     
     # Enter the API key from centralized config
     api_key_input = page.locator("#api-key-update")
-    api_key_input.fill(API_KEY)
+    api_key_input.fill(api_key)
     
     # Select the configured test provider
     base_url_select = page.locator("#base-url-select")
-    if ACTIVE_TEST_CONFIG["provider_value"] == "berget":
+    if test_config["provider_value"] == "berget":
         base_url_select.select_option("berget")
     else:
-        base_url_select.select_option(ACTIVE_TEST_CONFIG["provider_value"])
+        base_url_select.select_option(test_config["provider_value"])
     
     # Take screenshot of settings
     screenshot_with_markdown(page, "02_settings_configured", {
         "Status": "Settings configured",
-        "API Key Length": str(len(API_KEY)),
-        "Provider": ACTIVE_TEST_CONFIG["provider_value"]
+        "API Key Length": str(len(api_key)),
+        "Provider": test_config["provider_value"]
     })
     
     # Wait for models to load
@@ -161,7 +155,7 @@ def test_chat_message_send_receive(page: Page, serve_hacka_re):
         
         # Enter the API key again
         modal_api_input = page.locator("#api-key")
-        modal_api_input.fill(API_KEY)
+        modal_api_input.fill(api_key)
         
         # Submit the API key form
         submit_button = page.locator("#api-key-form button[type='submit']")

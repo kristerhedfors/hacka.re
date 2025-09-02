@@ -17,12 +17,10 @@ Port: 8000
 Project Root: /Users/user/dev/hacka.re
 ==================================================
 Checking for existing HTTP server processes on port 8000...
-Found existing processes: 74235
-Killing existing processes...
-Processes killed.
+No existing processes found on port 8000.
 Changing to project root directory: /Users/user/dev/hacka.re
 Starting Python HTTP server on port 8000...
-Server started successfully with PID: 77491
+Server started successfully with PID: 96741
 Server is now running at http://localhost:8000
 Server PID saved to: /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt
 ==================================================
@@ -38,7 +36,7 @@ rootdir: /Users/user/dev/hacka.re/_tests/playwright
 configfile: pytest.ini
 testpaths: .
 plugins: playwright-0.7.0, base-url-2.1.0
-collected 918 items / 4 errors / 730 deselected / 188 selected
+collected 914 items / 4 errors / 730 deselected / 184 selected
 
 ==================================== ERRORS ====================================
 __________________ ERROR collecting test_agent_load_simple.py __________________
@@ -46,23 +44,13 @@ test_agent_load_simple.py:14: in <module>
     ACTIVE_TEST_CONFIG = main_conftest.ACTIVE_TEST_CONFIG
 E   AttributeError: module 'conftest' has no attribute 'ACTIVE_TEST_CONFIG'
 _________________________ ERROR collecting test_api.py _________________________
-ImportError while importing test module '/Users/user/dev/hacka.re/_tests/playwright/test_api.py'.
-Hint: make sure your test modules/packages have valid Python names.
-Traceback:
-/opt/homebrew/Cellar/python@3.13/3.13.3/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
-    return _bootstrap._gcd_import(name[level:], package, level)
-test_api.py:8: in <module>
-    from conftest import ACTIVE_TEST_CONFIG
-E   ImportError: cannot import name 'ACTIVE_TEST_CONFIG' from 'conftest' (/Users/user/dev/hacka.re/_tests/playwright/shodan/conftest.py)
+test_api.py:12: in <module>
+    ACTIVE_TEST_CONFIG = conftest.ACTIVE_TEST_CONFIG
+E   AttributeError: module 'conftest' has no attribute 'ACTIVE_TEST_CONFIG'
 ________________________ ERROR collecting test_chat.py _________________________
-ImportError while importing test module '/Users/user/dev/hacka.re/_tests/playwright/test_chat.py'.
-Hint: make sure your test modules/packages have valid Python names.
-Traceback:
-/opt/homebrew/Cellar/python@3.13/3.13.3/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
-    return _bootstrap._gcd_import(name[level:], package, level)
-test_chat.py:8: in <module>
-    from conftest import ACTIVE_TEST_CONFIG
-E   ImportError: cannot import name 'ACTIVE_TEST_CONFIG' from 'conftest' (/Users/user/dev/hacka.re/_tests/playwright/shodan/conftest.py)
+test_chat.py:12: in <module>
+    ACTIVE_TEST_CONFIG = conftest.ACTIVE_TEST_CONFIG
+E   AttributeError: module 'conftest' has no attribute 'ACTIVE_TEST_CONFIG'
 _____________ ERROR collecting test_complete_shodan_integration.py _____________
 test_complete_shodan_integration.py:25: in <module>
     ACTIVE_TEST_CONFIG = main_conftest.ACTIVE_TEST_CONFIG
@@ -107,11 +95,11 @@ test_rag_similarity_scores.py:14
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
 =========================== short test summary info ============================
 ERROR test_agent_load_simple.py - AttributeError: module 'conftest' has no at...
-ERROR test_api.py
-ERROR test_chat.py
+ERROR test_api.py - AttributeError: module 'conftest' has no attribute 'ACTIV...
+ERROR test_chat.py - AttributeError: module 'conftest' has no attribute 'ACTI...
 ERROR test_complete_shodan_integration.py - AttributeError: module 'conftest'...
 !!!!!!!!!!!!!!!!!!! Interrupted: 4 errors during collection !!!!!!!!!!!!!!!!!!!!
-================ 730 deselected, 9 warnings, 4 errors in 0.49s =================
+================ 730 deselected, 9 warnings, 4 errors in 0.72s =================
 Generating test results markdown files...
 No arguments provided. Using default files.
 Processing default files...
@@ -128,7 +116,7 @@ You can view the markdown report with: glow -p run_tests.out_bundle.md
 These files can be used by the coding assistant LLM to analyze test results
 Stopping HTTP server...
 ===== Stopping HTTP Server for hacka.re Tests =====
-Found server process with PID: 77491
+Found server process with PID: 96741
 Stopping server...
 Server stopped.
 Removed PID file: /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt

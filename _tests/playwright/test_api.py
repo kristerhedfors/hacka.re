@@ -5,18 +5,11 @@ from dotenv import load_dotenv
 from playwright.sync_api import Page, expect
 
 from test_utils import dismiss_welcome_modal, check_system_messages, setup_test_environment
-import sys
-import os
-sys.path.insert(0, os.path.dirname(__file__))
-import conftest
-ACTIVE_TEST_CONFIG = conftest.ACTIVE_TEST_CONFIG
 
 # Load environment variables from .env file in the current directory
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
-# Get API key from centralized test configuration
-API_KEY = ACTIVE_TEST_CONFIG["api_key"]
 
-def test_api_key_configuration(page, serve_hacka_re):
+def test_api_key_configuration(page, serve_hacka_re, api_key):
     """Test the API key configuration functionality."""
     # Navigate to the application
     page.goto(serve_hacka_re)
@@ -39,7 +32,7 @@ def test_api_key_configuration(page, serve_hacka_re):
     
     # Enter the API key from centralized config
     api_key_input = page.locator("#api-key-update")
-    api_key_input.fill(API_KEY)
+    api_key_input.fill(api_key)
     
     # Print the current state of the form
     print("Current form state:")
@@ -132,7 +125,7 @@ def test_api_key_configuration(page, serve_hacka_re):
         print("WARNING: No items found in either localStorage or sessionStorage")
         assert False, "No items found in storage"
 
-def test_model_selection(page, serve_hacka_re):
+def test_model_selection(page, serve_hacka_re, api_key, test_model, test_config):
     """Test the model selection functionality."""
     # Navigate to the application
     page.goto(serve_hacka_re)
@@ -152,11 +145,11 @@ def test_model_selection(page, serve_hacka_re):
     
     # Enter the API key from centralized config
     api_key_input = page.locator("#api-key-update")
-    api_key_input.fill(API_KEY)
+    api_key_input.fill(api_key)
     
     # Select the configured test provider
     base_url_select = page.locator("#base-url-select")
-    base_url_select.select_option(ACTIVE_TEST_CONFIG["provider_value"])
+    base_url_select.select_option(test_config["provider_value"])
     
     # Models should load automatically from cache when API key is set
     # Wait for the models to be loaded (they load from cache automatically)
