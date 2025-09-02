@@ -2,7 +2,7 @@ import pytest
 import json
 from playwright.sync_api import Page, expect
 
-from test_utils import dismiss_welcome_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown, set_test_model_in_storage
 
 def test_rag_embedding_generation_ui(page: Page, serve_hacka_re, api_key):
     """Test the RAG embedding generation UI and progress indicators."""
@@ -14,7 +14,7 @@ def test_rag_embedding_generation_ui(page: Page, serve_hacka_re, api_key):
     # Configure API key first
     page.evaluate(f"localStorage.setItem('openai_api_key', '{api_key}')")
     page.evaluate("localStorage.setItem('base_url', 'https://api.openai.com/v1')")
-    page.evaluate("localStorage.setItem('selected_model', 'gpt-5-nano')")
+    set_test_model_in_storage(page)
     
     # Open the RAG modal
     rag_button = page.locator("#rag-btn")
@@ -52,7 +52,7 @@ def test_rag_embedding_generation_process(page: Page, serve_hacka_re, api_key):
     # Configure API key and settings
     page.evaluate(f"localStorage.setItem('openai_api_key', '{api_key}')")
     page.evaluate("localStorage.setItem('base_url', 'https://api.openai.com/v1')")
-    page.evaluate("localStorage.setItem('selected_model', 'gpt-5-nano')")
+    set_test_model_in_storage(page)
     
     # Open the RAG modal
     rag_button = page.locator("#rag-btn")
@@ -207,7 +207,7 @@ def test_rag_embedding_caching(page: Page, serve_hacka_re, api_key):
     # Configure API key
     page.evaluate(f"localStorage.setItem('openai_api_key', '{api_key}')")
     page.evaluate("localStorage.setItem('base_url', 'https://api.openai.com/v1')")
-    page.evaluate("localStorage.setItem('selected_model', 'gpt-5-nano')")
+    set_test_model_in_storage(page)
     
     # Test caching mechanism through browser console
     cache_test_result = page.evaluate("""() => {

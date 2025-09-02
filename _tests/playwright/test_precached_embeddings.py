@@ -7,7 +7,7 @@ import pytest
 import json
 import time
 from playwright.sync_api import Page, expect
-from test_utils import dismiss_welcome_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown, set_test_model_in_storage
 
 def test_precached_embeddings_load_on_startup(page: Page, serve_hacka_re):
     """Test that pre-cached embeddings are loaded automatically on startup."""
@@ -383,7 +383,7 @@ def test_precached_embeddings_integration_with_chat(page: Page, serve_hacka_re, 
     # Configure API key
     page.evaluate(f"localStorage.setItem('openai_api_key', '{api_key}')")
     page.evaluate("localStorage.setItem('base_url', 'https://api.openai.com/v1')")
-    page.evaluate("localStorage.setItem('selected_model', 'gpt-5-nano')")
+    set_test_model_in_storage(page)
     
     # Enable RAG in settings
     page.evaluate("localStorage.setItem('rag_enabled', 'true')")
