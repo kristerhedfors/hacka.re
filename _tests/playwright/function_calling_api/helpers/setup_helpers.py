@@ -67,8 +67,9 @@ def configure_api_key_and_model(page, api_key):
     reload_button.click()
     
     # Wait for the models to be loaded
+    # Note: Options might not be "visible" in dropdown, just need to be attached to DOM
     try:
-        page.wait_for_selector("#model-select option:not([disabled])", state="visible", timeout=5000)
+        page.wait_for_selector("#model-select option:not([disabled])", state="attached", timeout=5000)
         print("Models loaded successfully")
     except Exception as e:
         print(f"Error waiting for models to load: {e}")
@@ -102,9 +103,9 @@ def configure_api_key_and_model(page, api_key):
     
     print(f"Selected model: {selected_model}")
     
-    # Save the settings
-    save_button = page.locator("#save-settings-btn")
-    save_button.click(force=True)
+    # Settings auto-save, so just close the modal
+    close_button = page.locator("#close-settings")
+    close_button.click()
     
     # Wait for the settings modal to be closed
     page.wait_for_selector("#settings-modal", state="hidden", timeout=2000)
