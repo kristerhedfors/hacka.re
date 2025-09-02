@@ -41,7 +41,7 @@ def test_models_dev_context_windows(page: Page, serve_hacka_re, api_key):
     test_cases = [
         ("gpt-4", 8192),  # Standard GPT-4 has 8k context
         ("gpt-4o", 128000),  # GPT-4o has 128k context
-        ("gpt-4o-mini", 128000),  # GPT-4o-mini has 128k context
+        ("gpt-5-nano", 128000),  # GPT-4o-mini has 128k context
         ("gpt-4.1", 128000),  # GPT-4.1 has 128k context based on models.json
         ("o1", 200000),  # o1 has 200k context
         ("o1-mini", 128000),  # o1-mini has 128k context

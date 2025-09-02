@@ -28,7 +28,7 @@ GROQ_MODELS = [
 
 # List of OpenAI models to test (only chat models, excluding non-chat models)
 OPENAI_MODELS = [
-    "gpt-4o-mini",      # Primary test model - supports functions
+    "gpt-5-nano",      # Primary test model - supports functions
     "gpt-4o",           # Full GPT-4o - supports functions
     "gpt-4.1-mini",     # Latest mini model
     "gpt-4-turbo",      # GPT-4 Turbo - supports functions
@@ -548,7 +548,7 @@ def test_openai_complex_function(page: Page, serve_hacka_re, api_key):
         pytest.skip("OPENAI_API_KEY not configured")
     
     # Use GPT-4o-mini for cost efficiency
-    model = "gpt-4o-mini"
+    model = "gpt-5-nano"
     
     # Setup
     console_messages = setup_console_logging(page)

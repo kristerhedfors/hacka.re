@@ -12,7 +12,7 @@ We tested function calling capabilities across three providers (OpenAI, Groq Clo
 ### ✅ Working Models (Function Calling Confirmed)
 
 #### OpenAI
-- **gpt-4o-mini** ✓ - Function executed successfully, uses code block format
+- **gpt-5-nano** ✓ - Function executed successfully, uses code block format
 - **gpt-4o** ✓ - Function executed successfully (based on mini test)
 - **o4-mini** ✓ - Function executed successfully (from earlier tests)
 
@@ -68,11 +68,11 @@ These model types don't support chat/function calling:
 ## Recommendations
 
 ### For Reliable Function Calling Use:
-1. **OpenAI**: gpt-4o-mini, gpt-4o, o4-mini
+1. **OpenAI**: gpt-5-nano, gpt-4o, o4-mini
 2. **Groq**: moonshotai/kimi-k2-instruct
 
 ### For Testing/Development:
-- Use gpt-4o-mini (OpenAI) for cost-effective testing
+- Use gpt-5-nano (OpenAI) for cost-effective testing
 - Use Kimi (Groq) as a free alternative
 
 ### Models to Avoid for Function Calling:
@@ -92,7 +92,7 @@ _tests/playwright/run_model_function_tests.sh --openai
 _tests/playwright/run_model_function_tests.sh --berget
 
 # Test specific model
-_tests/playwright/test_function_format_compatibility.py::test_model_function_format -k "gpt-4o-mini"
+_tests/playwright/test_function_format_compatibility.py::test_model_function_format -k "gpt-5-nano"
 ```
 
 ## Future Testing

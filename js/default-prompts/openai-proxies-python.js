@@ -252,7 +252,7 @@ import json
 response = requests.post(
     "http://localhost:8000/v1/chat/completions",
     json={
-        "model": "gpt-4o-mini",
+        "model": "gpt-5-nano",
         "messages": [{"role": "user", "content": "Hello"}],
         "max_tokens": 50
     },
@@ -274,7 +274,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="gpt-4o-mini",
+    model="gpt-5-nano",
     messages=[{"role": "user", "content": "Hello"}],
     max_tokens=50
 )

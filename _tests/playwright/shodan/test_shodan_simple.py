@@ -36,7 +36,7 @@ def test_shodan_api_key_setup(page: Page, serve_hacka_re, shodan_api_key):
     page.evaluate(f"""() => {{
         localStorage.setItem('shodan_api_key', '{shodan_api_key}');
         localStorage.setItem('openai_api_key', 'test-key');  // Need basic API too
-        localStorage.setItem('selected_model', 'gpt-4o-mini');
+        localStorage.setItem('selected_model', 'gpt-5-nano');
     }}""")
     
     # Verify storage

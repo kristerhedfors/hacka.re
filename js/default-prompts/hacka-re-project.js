@@ -239,7 +239,7 @@ The application dynamically determines storage type based on access method:
 ### Test Philosophy
 
 **Real API Testing**: No mocking - all tests use real API calls to validate actual functionality
-- Uses \`gpt-4o-mini\` model for cost efficiency
+- Uses \`gpt-5-nano\` model for cost efficiency
 - Validates against actual LLM providers
 - Ensures real-world compatibility
 

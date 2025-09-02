@@ -201,7 +201,7 @@ def wait_and_ensure_visible(page: Page, selector: str, timeout: int = 5000):
 
 #### Configure API Key and Model
 ```python
-def configure_api_key_and_model(page: Page, api_key: str, model: str = "gpt-4o-mini"):
+def configure_api_key_and_model(page: Page, api_key: str, model: str = "gpt-5-nano"):
     # Open settings modal
     page.locator("#settings-btn").click()
     expect(page.locator("#settings-modal")).to_be_visible()
@@ -275,7 +275,7 @@ def get_function_count(page: Page):
 
 # Check current model
 def get_current_model(page: Page):
-    return get_local_storage(page, "openai_api_model") or "gpt-4o-mini"
+    return get_local_storage(page, "openai_api_model") or "gpt-5-nano"
 ```
 
 ### Console Logging and Debugging

@@ -125,7 +125,7 @@ Comprehensive test runner script with the following features:
 
 ### Test Patterns Used
 1. **Comprehensive Configuration Capture** - Tests capture complete application state before and after agent operations
-2. **Real API Integration** - Tests use actual API configurations (with `gpt-4o-mini` for cost efficiency)
+2. **Real API Integration** - Tests use actual API configurations (with `gpt-5-nano` for cost efficiency)
 3. **Screenshot-Driven Debugging** - All tests include contextual screenshots with metadata for debugging
 4. **Modal Management** - Proper handling of welcome modals, settings modals, and confirmation dialogs
 5. **State Validation** - Deep validation of restored state against original configuration

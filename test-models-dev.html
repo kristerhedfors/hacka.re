@@ -106,7 +106,7 @@
             const testModels = [
                 { provider: 'openai', model: 'gpt-4', expected: 8192 },
                 { provider: 'openai', model: 'gpt-4o', expected: 128000 },
-                { provider: 'openai', model: 'gpt-4o-mini', expected: 128000 },
+                { provider: 'openai', model: 'gpt-5-nano', expected: 128000 },
                 { provider: 'openai', model: 'o1', expected: 200000 },
                 { provider: 'groq', model: 'llama-3.3-70b-versatile', expected: 131072 },
                 { provider: 'groq', model: 'mixtral-8x7b-32768', expected: 32768 }
@@ -188,7 +188,7 @@
                 }
                 
                 const testIntegration = [
-                    'gpt-4', 'gpt-4o', 'gpt-4o-mini', 'o1', 'o1-mini',
+                    'gpt-4', 'gpt-4o', 'gpt-5-nano', 'o1', 'o1-mini',
                     'llama-3.3-70b-versatile', 'mixtral-8x7b-32768'
                 ];
                 

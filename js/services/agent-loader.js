@@ -61,7 +61,7 @@ window.AgentLoader = (function() {
                 },
                 settings: {
                     systemPrompt: 'You are a helpful AI assistant.',
-                    model: 'gpt-4o-mini',
+                    model: 'gpt-5-nano',
                     provider: 'openai'
                 },
                 metadata: {

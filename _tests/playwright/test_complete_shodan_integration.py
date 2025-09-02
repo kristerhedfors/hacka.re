@@ -75,9 +75,9 @@ def test_complete_shodan_integration(page: Page, serve_hacka_re, openai_api_key,
         
         // Set model
         if (window.CoreStorageService) {{
-            window.CoreStorageService.setValue('selected_model', 'gpt-4o-mini');
+            window.CoreStorageService.setValue('selected_model', 'gpt-5-nano');
         }} else {{
-            localStorage.setItem('selected_model', 'gpt-4o-mini');
+            localStorage.setItem('selected_model', 'gpt-5-nano');
         }}
     }}""")
     
@@ -92,7 +92,7 @@ def test_complete_shodan_integration(page: Page, serve_hacka_re, openai_api_key,
     
     screenshot_with_markdown(page, "openai_configured", {
         "Status": "OpenAI API configured",
-        "Model": "gpt-4o-mini selected",
+        "Model": "gpt-5-nano selected",
         "API Key": "Configured"
     })
     

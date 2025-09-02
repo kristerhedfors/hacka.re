@@ -127,7 +127,7 @@ window.ModelInfoService = (function() {
         'gpt-4.1-nano': 1048576,
         'gpt-4.5': 128000,
         'gpt-4o': 128000,
-        'gpt-4o-mini': 128000,
+        'gpt-5-nano': 128000,
         'gpt-4': 8192,
         'gpt-4-32k': 32768,
         'gpt-4-turbo': 128000,
@@ -148,8 +148,8 @@ window.ModelInfoService = (function() {
         'dall-e-3': 4000,
         'whisper-1': 25 * 1024 * 1024, // 25MB audio input
         'gpt-4o-transcribe': 25 * 1024 * 1024, // audio input
-        'gpt-4o-mini-transcribe': 25 * 1024 * 1024, // audio input
-        'gpt-4o-mini-tts': 4096, // text input
+        'gpt-5-nano-transcribe': 25 * 1024 * 1024, // audio input
+        'gpt-5-nano-tts': 4096, // text input
         'tts-1': 4096, // text input
         'tts-1-hd': 4096 // text input
     };

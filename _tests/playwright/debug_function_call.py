@@ -50,9 +50,9 @@ def test_function_calling():
         # Wait for models
         time.sleep(2)
         
-        # Select gpt-4o-mini
+        # Select gpt-5-nano
         model_select = page.locator("#model-select")
-        model_select.select_option("gpt-4o-mini")
+        model_select.select_option("gpt-5-nano")
         
         # Save
         save_btn = page.locator("#close-settings")

@@ -17,7 +17,7 @@ window.RAGQueryExpansionService = (function() {
      * @param {string} baseUrl - API base URL
      * @returns {Promise<Array>} Array of search terms/phrases
      */
-    async function expandQuery(userQuery, model = 'gpt-4o-mini', apiKey, baseUrl = 'https://api.openai.com/v1') {
+    async function expandQuery(userQuery, model = 'gpt-5-nano', apiKey, baseUrl = 'https://api.openai.com/v1') {
         if (!userQuery || !apiKey) {
             throw new Error('Query and API key are required');
         }
