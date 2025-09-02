@@ -7,6 +7,7 @@
 const SettingsInfoModalService = (() => {
     let agentInfoModal = null;
     let mcpInfoModal = null;
+    let ragInfoModal = null;
     let sharePasswordInfoModal = null;
     let shareLinkInfoModal = null;
     let heartInfoModal = null;
@@ -39,6 +40,21 @@ const SettingsInfoModalService = (() => {
             );
         }
         mcpInfoModal.classList.add('active');
+    }
+    
+    /**
+     * Initialize and show the RAG info modal
+     * @param {HTMLElement} infoIcon - The info icon that was clicked
+     */
+    function showRagInfoModal(infoIcon) {
+        if (!ragInfoModal) {
+            ragInfoModal = createInfoModal(
+                'rag-info-modal',
+                'About Knowledge Base (RAG)',
+                infoIcon
+            );
+        }
+        ragInfoModal.classList.add('active');
     }
     
     /**
@@ -236,6 +252,7 @@ const SettingsInfoModalService = (() => {
     return {
         showAgentInfoModal,
         showMcpInfoModal,
+        showRagInfoModal,
         showSharePasswordInfoModal,
         showShareLinkInfoModal,
         showHeartInfoModal
