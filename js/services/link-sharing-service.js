@@ -375,6 +375,12 @@ window.LinkSharingService = (function() {
                     console.log('Extracted selected prompt IDs from shared link:', data.selectedPromptIds);
                 }
                 
+                // Include selected default prompt IDs if present
+                if (data.selectedDefaultPromptIds) {
+                    result.selectedDefaultPromptIds = data.selectedDefaultPromptIds;
+                    console.log('Extracted selected default prompt IDs from shared link:', data.selectedDefaultPromptIds);
+                }
+                
                 // Include function library if present
                 if (data.functions) {
                     result.functions = data.functions;

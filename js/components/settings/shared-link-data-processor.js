@@ -357,6 +357,10 @@ function createSharedLinkDataProcessor() {
                 // Apply specific default prompt selections from shared data
                 window.DefaultPromptsService.setSelectedDefaultPromptIds(sharedData.selectedDefaultPromptIds);
                 promptsSummary.defaultSelectedCount = sharedData.selectedDefaultPromptIds.length;
+                console.log('[SharedLink] Applied default prompt selections:', sharedData.selectedDefaultPromptIds);
+                
+                // Store flag to trigger UI refresh when prompts modal is opened
+                window._sharedLinkDefaultPromptsApplied = true;
             } else {
                 // No default prompt selections in shared data means default state (none selected)
                 window.DefaultPromptsService.setSelectedDefaultPromptIds([]);
@@ -367,6 +371,29 @@ function createSharedLinkDataProcessor() {
         if ((sharedData.selectedPromptIds && sharedData.selectedPromptIds.length > 0) || 
             (sharedData.selectedDefaultPromptIds && sharedData.selectedDefaultPromptIds.length > 0)) {
             PromptsService.applySelectedPromptsAsSystem();
+        }
+        
+        // Refresh prompts UI if available - try multiple times to ensure it takes effect
+        // This is needed because the prompts manager might not be fully initialized yet
+        const refreshPromptsUI = () => {
+            if (window.aiHackare && window.aiHackare.promptsManager && 
+                typeof window.aiHackare.promptsManager.refresh === 'function') {
+                window.aiHackare.promptsManager.refresh();
+                console.log('[SharedLink] Refreshed prompts UI to reflect shared selections');
+                return true;
+            }
+            return false;
+        };
+        
+        // Try immediately
+        if (!refreshPromptsUI()) {
+            // Try again after a short delay
+            setTimeout(() => {
+                if (!refreshPromptsUI()) {
+                    // Final attempt after longer delay
+                    setTimeout(refreshPromptsUI, 500);
+                }
+            }, 100);
         }
         
         return promptsSummary;
@@ -1122,8 +1149,11 @@ function createSharedLinkDataProcessor() {
             if (collectSystemMessage) {
                 const additionalParts = [];
                 
-                // Prompts summary - just show count since we only share active ones
-                const totalPrompts = promptsSummary.promptCount + promptsSummary.selectedCount + promptsSummary.defaultSelectedCount;
+                // Prompts summary - count unique prompts
+                // User prompts that are shared are already counted in promptCount
+                // selectedCount just indicates which of those are selected (not additional prompts)
+                // defaultSelectedCount are additional default prompts that are selected
+                const totalPrompts = promptsSummary.promptCount + promptsSummary.defaultSelectedCount;
                 if (totalPrompts > 0) {
                     additionalParts.push(`${totalPrompts} prompt${totalPrompts !== 1 ? 's' : ''}`);
                 }
