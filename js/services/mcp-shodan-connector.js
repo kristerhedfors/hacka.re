@@ -286,28 +286,8 @@
                 }
             }
             
-            // Auto-register and enable Shodan function collection if available
-            if (window.DefaultFunctionsService && window.ShodanFunctions) {
-                try {
-                    // Re-initialize to pick up the Shodan functions
-                    window.DefaultFunctionsService.initializeDefaultFunctions();
-                    
-                    // Enable the collection if it's not already selected
-                    if (!window.DefaultFunctionsService.isDefaultFunctionCollectionSelected('shodan-functions')) {
-                        window.DefaultFunctionsService.toggleDefaultFunctionCollectionSelection('shodan-functions', true);
-                        perfLogger.log('Shodan function collection auto-enabled');
-                        
-                        // Refresh UI to show the checked state
-                        if (window.DefaultFunctionsManager && window.DefaultFunctionsManager.refreshCollectionUIState) {
-                            window.DefaultFunctionsManager.refreshCollectionUIState('shodan-functions');
-                        }
-                    } else {
-                        perfLogger.log('Shodan function collection already enabled');
-                    }
-                } catch (error) {
-                    console.warn('[ShodanConnector] Failed to enable Shodan functions:', error);
-                }
-            }
+            // Shodan functions are now registered as user-defined functions via MCP tools
+            // No need for separate default function collection
             
             perfLogger.log('Connected successfully');
             return true;
