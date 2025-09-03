@@ -66,11 +66,12 @@ window.ShareService = (function() {
         console.log('🔗 SHARE LINK CREATION STARTED 🔗');
         console.log('📋 ShareService: Input options:', JSON.stringify(options, null, 2));
         
-        // If no password provided, return just the base URL
+        // If no password provided, return just the hacka.re app URL
         if (!options.password) {
-            const baseUrl = options.baseUrl || window.location.href.split('#')[0];
-            console.log('🔗 ShareService: No password provided, returning base URL:', baseUrl);
-            return baseUrl;
+            // Always return the hacka.re app URL, NOT the API endpoint URL
+            const hackareUrl = window.location.href.split('#')[0];
+            console.log('🔗 ShareService: No password provided, returning hacka.re app URL:', hackareUrl);
+            return hackareUrl;
         }
         
         const payload = {};
@@ -121,11 +122,18 @@ window.ShareService = (function() {
             itemsIncluded.push(`✅ MODEL (${options.model})`);
         }
         
-        if (options.includeConversation && options.messages && options.messages.length > 0) {
-            const messageCount = options.messageCount || options.messages.length;
-            const startIndex = Math.max(0, options.messages.length - messageCount);
-            payload.messages = options.messages.slice(startIndex);
-            itemsIncluded.push(`✅ CONVERSATION (${payload.messages.length} messages)`);
+        if (options.includeConversation) {
+            // Include conversation even if empty - this ensures we generate a proper share link
+            if (options.messages && options.messages.length > 0) {
+                const messageCount = options.messageCount || options.messages.length;
+                const startIndex = Math.max(0, options.messages.length - messageCount);
+                payload.messages = options.messages.slice(startIndex);
+                itemsIncluded.push(`✅ CONVERSATION (${payload.messages.length} messages)`);
+            } else {
+                // Include empty messages array to indicate conversation sharing is enabled
+                payload.messages = [];
+                itemsIncluded.push(`✅ CONVERSATION (ready to receive messages)`);
+            }
         }
         
         if (options.includeWelcomeMessage && options.welcomeMessage && options.welcomeMessage.trim()) {
@@ -280,11 +288,15 @@ window.ShareService = (function() {
         }
         console.log('═══════════════════════════════════════════════════');
         
-        // If payload is empty, just return base URL
+        // If payload is empty, still generate a proper hacka.re share link
+        // This ensures users always get a shareable hacka.re URL, not an API endpoint
         if (Object.keys(payload).length === 0) {
-            const baseUrl = options.baseUrl || window.location.href.split('#')[0];
-            console.log('🔗 ShareService: Empty payload, returning base URL:', baseUrl);
-            return baseUrl;
+            // CRITICAL: Do NOT return options.baseUrl here as it contains the API endpoint URL
+            // Instead, always return the hacka.re app URL
+            const hackareUrl = window.location.href.split('#')[0];
+            console.log('🔗 ShareService: Empty payload, returning hacka.re app URL:', hackareUrl);
+            // Return just the base hacka.re URL - this allows sharing the app itself
+            return hackareUrl;
         }
         
         // Create the link using LinkSharingService for backward compatibility
