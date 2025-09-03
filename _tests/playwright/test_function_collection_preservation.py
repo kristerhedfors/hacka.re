@@ -235,8 +235,8 @@ function add_test(a, b) {
         "Function Names": "multiply_test, add_test"
     })
     
-    # Clean up - delete the test functions
-    delete_button = function_list.locator(".function-item-delete").first
+    # Clean up - delete the test functions collection
+    delete_button = page.locator(".function-collection-delete").first
     delete_button.scroll_into_view_if_needed()
     expect(delete_button).to_be_visible()
     

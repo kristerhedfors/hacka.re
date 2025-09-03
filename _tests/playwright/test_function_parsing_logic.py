@@ -124,8 +124,8 @@ function multiply_numbers(a, b) {
     page.on("dialog", lambda dialog: dialog.accept())
     
     # Delete all functions
-    while function_list.locator(".function-item-delete").count() > 0:
-        function_list.locator(".function-item-delete").first.click()
+    while page.locator(".function-collection-delete").count() > 0:
+        page.locator(".function-collection-delete").first.click()
         # Small wait to allow the UI to update
         # page.wait_for_timeout(100)  # TODO: Replace with proper wait condition
     
@@ -247,8 +247,8 @@ function multiply_numbers(a, b) {
     page.on("dialog", lambda dialog: dialog.accept())
     
     # Delete all functions
-    while function_list.locator(".function-item-delete").count() > 0:
-        function_list.locator(".function-item-delete").first.click()
+    while page.locator(".function-collection-delete").count() > 0:
+        page.locator(".function-collection-delete").first.click()
         # Small wait to allow the UI to update
         # page.wait_for_timeout(100)  # TODO: Replace with proper wait condition
     
@@ -370,8 +370,8 @@ function multiply_numbers(a, b) {
     page.on("dialog", lambda dialog: dialog.accept())
     
     # Delete all functions
-    while function_list.locator(".function-item-delete").count() > 0:
-        function_list.locator(".function-item-delete").first.click()
+    while page.locator(".function-collection-delete").count() > 0:
+        page.locator(".function-collection-delete").first.click()
         # Small wait to allow the UI to update
         # page.wait_for_timeout(100)  # TODO: Replace with proper wait condition
     
@@ -494,8 +494,8 @@ function multiply_numbers(a, b) {
     page.on("dialog", lambda dialog: dialog.accept())
     
     # Delete all functions
-    while function_list.locator(".function-item-delete").count() > 0:
-        function_list.locator(".function-item-delete").first.click()
+    while page.locator(".function-collection-delete").count() > 0:
+        page.locator(".function-collection-delete").first.click()
         # Small wait to allow the UI to update
         # page.wait_for_timeout(100)  # TODO: Replace with proper wait condition
     
@@ -618,8 +618,8 @@ function multiply_numbers(a, b) {
     page.on("dialog", lambda dialog: dialog.accept())
     
     # Delete all functions
-    while function_list.locator(".function-item-delete").count() > 0:
-        function_list.locator(".function-item-delete").first.click()
+    while page.locator(".function-collection-delete").count() > 0:
+        page.locator(".function-collection-delete").first.click()
         # Small wait to allow the UI to update
         # page.wait_for_timeout(100)  # TODO: Replace with proper wait condition
     
