@@ -278,22 +278,22 @@ hacka.re features 15 specialized modal windows, each serving a distinct purpose:
 - View function source code via eye icon
 - Copy parameters and results as JSON
 
-### 8. Function Execute Modal (`#function-execute-modal`)
-**Purpose**: Manual function testing and debugging
-- **Test Interface**
-  - Parameter input fields
-  - Type validation
-  - Default values
-  - Execute button
-- **Results Display**
-  - Return value
-  - Execution time
-  - Console output
-  - Error messages
-- **Debug Tools**
-  - Step-through execution
-  - Variable inspection
-  - Call stack trace
+### 8. Function Execution Modal (`#function-execution-modal`)
+**Purpose**: Function call approval and result interception
+- **Two-tab interface**
+  - Function Call Details tab (with editable parameters)
+  - Function Result Details tab (shows after execution)
+- **Parameter Editing**
+  - Edit JSON arguments before execution
+  - View function source via eye icon
+- **Execution Control**
+  - Execute: Run with original or edited parameters
+  - Block: Prevent function execution
+  - "Remember my choice" checkbox for auto-approve/block in session
+- **Result Handling**
+  - Intercept and modify results before returning to AI
+  - View execution results in second tab
+
 
 ### 9. Agent Configuration Modal (`#agent-config-modal`)
 **Purpose**: AI agent personality and behavior management
