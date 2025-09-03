@@ -295,9 +295,12 @@
                     // Enable the collection if it's not already selected
                     if (!window.DefaultFunctionsService.isDefaultFunctionCollectionSelected('shodan-functions')) {
                         window.DefaultFunctionsService.toggleDefaultFunctionCollectionSelection('shodan-functions', true);
-                        // Also need to load the functions into the Function Tools Service
-                        window.DefaultFunctionsService.loadSelectedDefaultFunctions();
                         perfLogger.log('Shodan function collection auto-enabled');
+                        
+                        // Refresh UI to show the checked state
+                        if (window.DefaultFunctionsManager && window.DefaultFunctionsManager.refreshCollectionUIState) {
+                            window.DefaultFunctionsManager.refreshCollectionUIState('shodan-functions');
+                        }
                     } else {
                         perfLogger.log('Shodan function collection already enabled');
                     }

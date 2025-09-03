@@ -223,9 +223,12 @@
                     // Enable the collection if it's not already selected
                     if (!window.DefaultFunctionsService.isDefaultFunctionCollectionSelected('github-functions')) {
                         window.DefaultFunctionsService.toggleDefaultFunctionCollectionSelection('github-functions', true);
-                        // Also need to load the functions into the Function Tools Service
-                        window.DefaultFunctionsService.loadSelectedDefaultFunctions();
                         console.log('[GitHubConnector] GitHub function collection auto-enabled');
+                        
+                        // Refresh UI to show the checked state
+                        if (window.DefaultFunctionsManager && window.DefaultFunctionsManager.refreshCollectionUIState) {
+                            window.DefaultFunctionsManager.refreshCollectionUIState('github-functions');
+                        }
                     } else {
                         console.log('[GitHubConnector] GitHub function collection already enabled');
                     }

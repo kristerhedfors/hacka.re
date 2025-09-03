@@ -165,15 +165,19 @@ window.DefaultFunctionsService = (function() {
     /**
      * Toggle a default function collection's selection status
      * @param {string} id - The default function collection ID to toggle
+     * @param {boolean} forceState - Optional: force enable (true) or disable (false)
      * @returns {boolean} True if the function collection is now selected, false if unselected
      */
-    function toggleDefaultFunctionCollectionSelection(id) {
-        console.log("DefaultFunctionsService.toggleDefaultFunctionCollectionSelection called for id:", id);
+    function toggleDefaultFunctionCollectionSelection(id, forceState) {
+        console.log("DefaultFunctionsService.toggleDefaultFunctionCollectionSelection called for id:", id, "forceState:", forceState);
         const selectedIds = getSelectedDefaultFunctionIds();
         const index = selectedIds.indexOf(id);
         let result;
         
-        if (index >= 0) {
+        // Determine the action based on forceState or current state
+        const shouldEnable = forceState !== undefined ? forceState : (index < 0);
+        
+        if (!shouldEnable && index >= 0) {
             // Remove from selected
             selectedIds.splice(index, 1);
             setSelectedDefaultFunctionIds(selectedIds);
@@ -188,7 +192,7 @@ window.DefaultFunctionsService = (function() {
                     }
                 });
             }
-        } else {
+        } else if (shouldEnable && index < 0) {
             // Add to selected
             selectedIds.push(id);
             setSelectedDefaultFunctionIds(selectedIds);
@@ -227,6 +231,12 @@ window.DefaultFunctionsService = (function() {
                 
                 console.log(`Added ${parsedFunctions.length} default functions from collection: ${id}`);
             }
+        } else if (shouldEnable && index >= 0) {
+            // Already selected, just return true
+            result = true;
+        } else {
+            // Already unselected, just return false
+            result = false;
         }
         
         return result;
