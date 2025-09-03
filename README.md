@@ -1368,7 +1368,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 <div align="center">
 
-**hacka.re** - Your privacy, your control, your AI
+**hacka.re**
 
 *Free, open, för hackare, av hackare*
 
