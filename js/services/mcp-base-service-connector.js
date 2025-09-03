@@ -111,7 +111,16 @@
                 if (newFunctions.length > 0) {
                     enabledFunctions.push(...newFunctions);
                     window.FunctionToolsStorage.setEnabledFunctions(enabledFunctions);
-                    window.FunctionToolsStorage.save(); // Single save for all tools
+                }
+                // Always save to ensure collection metadata is persisted
+                window.FunctionToolsStorage.save(); // Single save for all tools
+                
+                // Refresh the function list UI to show the new collection
+                if (window.functionListRenderer && window.functionListRenderer.renderMainFunctionList) {
+                    setTimeout(() => {
+                        window.functionListRenderer.renderMainFunctionList();
+                        console.log(`[${this.constructor.name}] Refreshed function list UI for ${tools.length} tools`);
+                    }, 100);
                 }
             }
             
@@ -212,9 +221,11 @@
 
                     const collectionId = `mcp_${this.serviceKey}_collection`;
                     const collectionMetadata = {
-                        name: `${this.config.name} MCP tools`,
+                        name: `${this.config.name} Functions`,
+                        description: `Functions provided by ${this.config.name} MCP service`,
                         createdAt: Date.now(),
-                        source: 'mcp-service'
+                        source: 'mcp-service',
+                        serviceKey: this.serviceKey
                     };
 
                     // Directly manipulate storage to avoid the save() call in addJsFunction
