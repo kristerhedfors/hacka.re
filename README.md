@@ -236,8 +236,9 @@ hacka.re features 15 specialized modal windows, each serving a distinct purpose:
   - Active Model
   - System Prompts
   - Function Library
+  - MCP connections
   - Conversation History
-  - Agent Configurations
+  - Welcome Message
 - **Security Features**
   - Password protection (required)
   - Encryption before URL encoding
@@ -253,15 +254,13 @@ hacka.re features 15 specialized modal windows, each serving a distinct purpose:
 ### 6. Function Calling Modal (`#function-modal`)
 **Purpose**: JavaScript function management for AI execution
 - **Function Editor**
-  - Syntax-highlighted code editor
+  - Simple Code editor
   - JSDoc comment support
-  - Auto-parsing of function names
-  - Validation and error checking
+  - Validation and error checking of JS functions
 - **Function Library**
-  - Default functions (RC4, Math, API Auth, MCP)
+  - Default functions (RC4, Math)
   - Custom function creation
   - Function collections
-  - Import/export functions
 - **Function Features**
   - `@callable` tag for selective calling
   - `@tool` tag for tool functions
@@ -271,17 +270,13 @@ hacka.re features 15 specialized modal windows, each serving a distinct purpose:
 - **Collection Management**
   - Group related functions
   - Enable/disable collections
-  - Color coding by status
-  - Bulk operations
 
 ### 7. Function Details Modal (`#function-details-modal`)
-**Purpose**: Individual function inspection and editing
-- Full function source code
-- Execution history
-- Parameter documentation
-- Return value examples
-- Performance metrics
-- Error logs
+**Purpose**: View function call and result details from chat messages
+- Click ƒ icon to see function call parameters
+- Click → icon to see function return values
+- View function source code via eye icon
+- Copy parameters and results as JSON
 
 ### 8. Function Execute Modal (`#function-execute-modal`)
 **Purpose**: Manual function testing and debugging
