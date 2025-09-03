@@ -119,6 +119,58 @@ window.ModalManager = (function() {
                 window.aiHackare.shareManager.updateShareItemStatuses();
             }
             
+            // Restore welcome message state when modal opens
+            const shareWelcomeMessageInput = document.getElementById('share-welcome-message');
+            const shareWelcomeMessageCheckbox = document.getElementById('share-welcome-message-checkbox');
+            if (shareWelcomeMessageInput && shareWelcomeMessageCheckbox) {
+                // First check if we have a shared welcome message from a shared link
+                let welcomeMessage = null;
+                if (window.aiHackare && window.aiHackare.shareManager) {
+                    const sharedWelcomeMessage = window.aiHackare.shareManager.getSharedWelcomeMessage();
+                    if (sharedWelcomeMessage) {
+                        welcomeMessage = sharedWelcomeMessage;
+                    }
+                }
+                
+                // If no shared welcome message, check localStorage for a saved one
+                if (!welcomeMessage) {
+                    const savedWelcome = localStorage.getItem('shareModalWelcomeMessage');
+                    if (savedWelcome) {
+                        welcomeMessage = savedWelcome;
+                    }
+                }
+                
+                // Also restore checkbox state from localStorage
+                const savedCheckboxState = localStorage.getItem('shareModalWelcomeCheckbox');
+                if (savedCheckboxState !== null) {
+                    shareWelcomeMessageCheckbox.checked = savedCheckboxState === 'true';
+                }
+                
+                // Restore welcome message if we have one
+                if (welcomeMessage) {
+                    shareWelcomeMessageInput.value = welcomeMessage;
+                    // Only auto-check the checkbox if this is from a shared link
+                    // For manually entered messages, respect the saved checkbox state
+                    if (window.aiHackare && window.aiHackare.shareManager) {
+                        const sharedWelcomeMessage = window.aiHackare.shareManager.getSharedWelcomeMessage();
+                        if (sharedWelcomeMessage && welcomeMessage === sharedWelcomeMessage) {
+                            // This is from a shared link, ensure checkbox is checked
+                            shareWelcomeMessageCheckbox.checked = true;
+                        }
+                        // Otherwise, savedCheckboxState already set the checkbox correctly
+                    }
+                }
+                
+                // Sync the input enabled/disabled state based on checkbox
+                if (shareWelcomeMessageCheckbox.checked) {
+                    shareWelcomeMessageInput.disabled = false;
+                    shareWelcomeMessageInput.style.opacity = '1';
+                } else {
+                    shareWelcomeMessageInput.disabled = true;
+                    shareWelcomeMessageInput.style.opacity = '0.5';
+                }
+            }
+            
             // NUCLEAR FIX: Force-attach MCP checkbox event listener when modal opens
             setTimeout(() => {
                 const mcpCheckbox = document.getElementById('share-mcp-connections');
@@ -217,7 +269,26 @@ window.ModalManager = (function() {
                     });
                     
                     // Checkbox change updates immediately (less frequent)
-                    shareWelcomeMessageCheckbox.addEventListener('change', updateWelcomeLinkLength);
+                    shareWelcomeMessageCheckbox.addEventListener('change', function() {
+                        // Enable/disable and style the textarea based on checkbox state
+                        if (shareWelcomeMessageCheckbox.checked) {
+                            shareWelcomeMessage.disabled = false;
+                            shareWelcomeMessage.style.opacity = '1';
+                        } else {
+                            shareWelcomeMessage.disabled = true;
+                            shareWelcomeMessage.style.opacity = '0.5';
+                        }
+                        updateWelcomeLinkLength();
+                    });
+                    
+                    // Sync initial state based on checkbox state
+                    if (shareWelcomeMessageCheckbox.checked) {
+                        shareWelcomeMessage.disabled = false;
+                        shareWelcomeMessage.style.opacity = '1';
+                    } else {
+                        shareWelcomeMessage.disabled = true;
+                        shareWelcomeMessage.style.opacity = '0.5';
+                    }
                     
                     // Mark as initialized to prevent duplicate listeners
                     shareWelcomeMessage._linkLengthInitialized = true;
@@ -229,6 +300,16 @@ window.ModalManager = (function() {
          * Hide the share modal
          */
         function hideShareModal() {
+            // Save welcome message state before closing
+            const shareWelcomeMessageInput = document.getElementById('share-welcome-message');
+            const shareWelcomeMessageCheckbox = document.getElementById('share-welcome-message-checkbox');
+            if (shareWelcomeMessageInput && shareWelcomeMessageCheckbox) {
+                // Save the welcome message text
+                localStorage.setItem('shareModalWelcomeMessage', shareWelcomeMessageInput.value || '');
+                // Save the checkbox state
+                localStorage.setItem('shareModalWelcomeCheckbox', shareWelcomeMessageCheckbox.checked.toString());
+            }
+            
             elements.shareModal.classList.remove('active');
             
             // Focus the message input after modal closes

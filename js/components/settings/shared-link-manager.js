@@ -202,8 +202,13 @@ window.SharedLinkManager = (function() {
             
             try {
                 const sharedData = await LinkSharingService.extractSharedApiKey(sessionKey);
-                // Allow shared data with MCP connections even without API key
-                if (!sharedData || (!sharedData.apiKey && !sharedData.mcpConnections)) {
+                // Allow shared data with welcome message, MCP connections, or API key
+                if (!sharedData) {
+                    return null;
+                }
+                // Check if there's any meaningful data to process
+                if (!sharedData.apiKey && !sharedData.mcpConnections && !sharedData.welcomeMessage && 
+                    !sharedData.messages && !sharedData.prompts && !sharedData.functions) {
                     return null;
                 }
                 
@@ -218,8 +223,8 @@ window.SharedLinkManager = (function() {
                 }
                 
                 const processedModel = window.SharedLinkDataProcessor ? 
-                    window.SharedLinkDataProcessor.processSharedData(
-                        sharedData, { addSystemMessage, setMessages, elements, displayWelcomeMessage: true }
+                    await window.SharedLinkDataProcessor.processSharedData(
+                        sharedData, { addSystemMessage, setMessages, displayWelcomeMessage: true }
                     ) : null;
                 
                 if (processedModel) {

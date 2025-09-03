@@ -9,6 +9,7 @@
     class MCPServiceManager {
         constructor() {
             this.connectors = new Map();
+            this.perfLogger = window.mcpPerfLogger || new (window.PerformanceLogger || class { log() {} })('MCPServiceManager');
             this.initializeConnectors();
         }
 
@@ -36,7 +37,7 @@
                 this.registerConnector('gdocs', new global.GDocsConnector());
             }
 
-            console.log(`[MCPServiceManager] Initialized with ${this.connectors.size} connectors`);
+            this.perfLogger.log(`Initialized with ${this.connectors.size} connectors`);
         }
 
         /**
@@ -44,7 +45,7 @@
          */
         registerConnector(serviceKey, connector) {
             this.connectors.set(serviceKey, connector);
-            console.log(`[MCPServiceManager] Registered connector: ${serviceKey}`);
+            this.perfLogger.log(`Registered connector: ${serviceKey}`);
         }
 
         /**
@@ -63,7 +64,7 @@
                 throw new Error(`Unknown service: ${serviceKey}`);
             }
 
-            console.log(`[MCPServiceManager] Connecting to ${serviceKey}...`);
+            this.perfLogger.log(`Connecting to ${serviceKey}...`);
 
             // If credentials provided, use them directly
             if (credentials) {
@@ -104,7 +105,7 @@
                 throw new Error(`Unknown service: ${serviceKey}`);
             }
 
-            console.log(`[MCPServiceManager] Disconnecting from ${serviceKey}...`);
+            this.perfLogger.log(`Disconnecting from ${serviceKey}...`);
             return await connector.disconnect();
         }
 
@@ -134,7 +135,7 @@
                 }
             }
             
-            console.log(`[MCPServiceManager] ${connected.length} services connected`);
+            this.perfLogger.log(`${connected.length} services connected`);
             return connected;
         }
 
@@ -170,11 +171,11 @@
             }
 
             const connected = connector.isConnected();
-            console.log(`[MCPServiceManager] executeServiceTool ${serviceKey}:${toolName} - connected: ${connected}`);
+            this.perfLogger.log(`executeServiceTool ${serviceKey}:${toolName} - connected: ${connected}`);
             
             if (!connected) {
-                console.log(`[MCPServiceManager] Connection state:`, connector.connection);
-                console.log(`[MCPServiceManager] hasValidCredentials:`, connector.hasValidCredentials());
+                this.perfLogger.log(`Connection state:`, connector.connection);
+                this.perfLogger.log(`hasValidCredentials:`, connector.hasValidCredentials());
                 throw new Error(`Service ${serviceKey} not connected`);
             }
 
@@ -197,7 +198,7 @@
          * Bulk disconnect services
          */
         async bulkDisconnectServices(serviceKeys = []) {
-            console.log(`[MCPServiceManager] Bulk disconnecting ${serviceKeys.length} services`);
+            this.perfLogger.log(`Bulk disconnecting ${serviceKeys.length} services`);
             
             const results = {
                 successful: [],

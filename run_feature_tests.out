@@ -20,7 +20,7 @@ Checking for existing HTTP server processes on port 8000...
 No existing processes found on port 8000.
 Changing to project root directory: /Users/user/dev/hacka.re
 Starting Python HTTP server on port 8000...
-Server started successfully with PID: 96741
+Server started successfully with PID: 20019
 Server is now running at http://localhost:8000
 Server PID saved to: /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt
 ==================================================
@@ -31,94 +31,122 @@ Running Advanced Feature tests with chromium browser...
 Test filter: not (test_page or test_api or test_chat or test_welcome_modal) and (test_function_modal or test_function_icons or test_sharing or test_default_prompts or test_themes or test_clear_chat or test_model_selection or test_copy_chat or test_button_tooltips or test_function_library or test_context_window or test_function_copy or test_function_deletion or test_function_editing or test_function_group or test_function_parsing or test_function_tooltip or test_deterministic_crypto or test_clear_namespace or test_system_prompt or test_token_counter or test_input_field or test_logo_tooltip or test_modals or test_debug_mode or test_model_context_window or test_owasp_prompt_bug or test_prompt_order_and_function_library_prompt or test_rag_modal or test_rag_indexing or test_rag_search or test_rag_bundles or test_rag_integration)
 
 ============================= test session starts ==============================
-platform darwin -- Python 3.13.3, pytest-8.3.5, pluggy-1.5.0
+platform darwin -- Python 3.13.3, pytest-8.3.5, pluggy-1.5.0 -- /Users/user/dev/hacka.re/_tests/playwright/.venv/bin/python
+cachedir: .pytest_cache
 rootdir: /Users/user/dev/hacka.re/_tests/playwright
 configfile: pytest.ini
 testpaths: .
 plugins: playwright-0.7.0, base-url-2.1.0
-collected 914 items / 4 errors / 730 deselected / 184 selected
+collecting ... collected 936 items / 752 deselected / 184 selected
 
-==================================== ERRORS ====================================
-__________________ ERROR collecting test_agent_load_simple.py __________________
-test_agent_load_simple.py:14: in <module>
-    ACTIVE_TEST_CONFIG = main_conftest.ACTIVE_TEST_CONFIG
-E   AttributeError: module 'conftest' has no attribute 'ACTIVE_TEST_CONFIG'
-_________________________ ERROR collecting test_api.py _________________________
-test_api.py:12: in <module>
-    ACTIVE_TEST_CONFIG = conftest.ACTIVE_TEST_CONFIG
-E   AttributeError: module 'conftest' has no attribute 'ACTIVE_TEST_CONFIG'
-________________________ ERROR collecting test_chat.py _________________________
-test_chat.py:12: in <module>
-    ACTIVE_TEST_CONFIG = conftest.ACTIVE_TEST_CONFIG
-E   AttributeError: module 'conftest' has no attribute 'ACTIVE_TEST_CONFIG'
-_____________ ERROR collecting test_complete_shodan_integration.py _____________
-test_complete_shodan_integration.py:25: in <module>
-    ACTIVE_TEST_CONFIG = main_conftest.ACTIVE_TEST_CONFIG
-E   AttributeError: module 'conftest' has no attribute 'ACTIVE_TEST_CONFIG'
-=============================== warnings summary ===============================
-test_complete_mcp_share_flow.py:8
-  /Users/user/dev/hacka.re/_tests/playwright/test_complete_mcp_share_flow.py:8: PytestUnknownMarkWarning: Unknown pytest.mark.feature_test - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
-    @pytest.mark.feature_test
-
-test_cross_tab_loop_fix.py:8
-  /Users/user/dev/hacka.re/_tests/playwright/test_cross_tab_loop_fix.py:8: PytestUnknownMarkWarning: Unknown pytest.mark.feature_test - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
-    @pytest.mark.feature_test
-
-test_cross_tab_sync_optimization.py:7
-  /Users/user/dev/hacka.re/_tests/playwright/test_cross_tab_sync_optimization.py:7: PytestUnknownMarkWarning: Unknown pytest.mark.feature_test - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
-    @pytest.mark.feature_test
-
-test_cross_tab_sync_optimization.py:59
-  /Users/user/dev/hacka.re/_tests/playwright/test_cross_tab_sync_optimization.py:59: PytestUnknownMarkWarning: Unknown pytest.mark.feature_test - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
-    @pytest.mark.feature_test
-
-test_debug_utils.py:25
-  /Users/user/dev/hacka.re/_tests/playwright/test_debug_utils.py:25: PytestCollectionWarning: cannot collect test class 'TestDebugger' because it has a __init__ constructor (from: test_debug_utils.py)
-    class TestDebugger:
-
-test_debug_utils.py:25
-  /Users/user/dev/hacka.re/_tests/playwright/test_debug_utils.py:25: PytestCollectionWarning: cannot collect test class 'TestDebugger' because it has a __init__ constructor (from: test_example_with_debugging.py)
-    class TestDebugger:
-
-test_rag_multi_query.py:104
-  /Users/user/dev/hacka.re/_tests/playwright/test_rag_multi_query.py:104: PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
-    @pytest.mark.asyncio
-
-test_rag_multi_query.py:377
-  /Users/user/dev/hacka.re/_tests/playwright/test_rag_multi_query.py:377: PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
-    @pytest.mark.asyncio
-
-test_rag_similarity_scores.py:14
-  /Users/user/dev/hacka.re/_tests/playwright/test_rag_similarity_scores.py:14: PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
-    @pytest.mark.asyncio
-
--- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-=========================== short test summary info ============================
-ERROR test_agent_load_simple.py - AttributeError: module 'conftest' has no at...
-ERROR test_api.py - AttributeError: module 'conftest' has no attribute 'ACTIV...
-ERROR test_chat.py - AttributeError: module 'conftest' has no attribute 'ACTI...
-ERROR test_complete_shodan_integration.py - AttributeError: module 'conftest'...
-!!!!!!!!!!!!!!!!!!! Interrupted: 4 errors during collection !!!!!!!!!!!!!!!!!!!!
-================ 730 deselected, 9 warnings, 4 errors in 0.72s =================
-Generating test results markdown files...
-No arguments provided. Using default files.
-Processing default files...
-Generating markdown report for 'test_output.log' -> 'test_results.md'...
-Markdown report generated: test_results.md
-You can view it with: glow -p test_results.md
-Warning: Output file 'run_tests.out_bundle.md' is newer than input file 'run_tests.out'.
-This suggests the bundle has already been generated for this test run.
-To regenerate, delete 'run_tests.out_bundle.md' first.
-
-All feature test output, including any Ctrl+C interruptions, has been captured to run_feature_tests.out
-A bundled markdown report has been generated at run_tests.out_bundle.md
-You can view the markdown report with: glow -p run_tests.out_bundle.md
-These files can be used by the coding assistant LLM to analyze test results
-Stopping HTTP server...
-===== Stopping HTTP Server for hacka.re Tests =====
-Found server process with PID: 96741
-Stopping server...
-Server stopped.
-Removed PID file: /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt
-==================================================
-Server stopped.
+test_button_tooltips.py::test_button_tooltips[chromium0] PASSED          [  0%]
+test_clear_chat.py::test_clear_chat_button_exists[chromium0] PASSED      [  1%]
+test_clear_chat.py::test_clear_chat_confirmation_dialog[chromium0] PASSED [  1%]
+test_clear_namespace_settings.py::test_clear_namespace_settings[chromium0] PASSED [  2%]
+test_context_window_scaling.py::test_context_window_scaling[chromium0] PASSED [  2%]
+test_copy_chat.py::test_copy_chat_button_exists[chromium0] PASSED        [  3%]
+test_copy_chat.py::test_copy_chat_functionality[chromium0] PASSED        [  3%]
+test_copy_chat.py::test_copy_chat_button_tooltip[chromium0] PASSED       [  4%]
+test_debug_mode.py::test_debug_mode_checkbox_exists[chromium0] PASSED    [  4%]
+test_debug_mode.py::test_debug_mode_toggle[chromium0] PASSED             [  5%]
+test_default_prompts.py::test_default_prompts_section_exists[chromium0] PASSED [  5%]
+test_default_prompts.py::test_default_prompts_expand_collapse[chromium0] PASSED [  6%]
+test_default_prompts.py::test_default_prompts_content[chromium0] PASSED  [  7%]
+test_default_prompts.py::test_default_prompts_selection[chromium0] PASSED [  7%]
+test_default_prompts.py::test_default_prompts_info_button[chromium0] PASSED [  8%]
+test_default_prompts.py::test_default_prompts_name_click[chromium0] PASSED [  8%]
+test_function_copy_buttons.py::test_function_copy_buttons_exist[chromium0] PASSED [  9%]
+test_function_copy_buttons.py::test_function_copy_functionality[chromium0] PASSED [  9%]
+test_function_deletion.py::test_function_deletion_removes_entire_bundle[chromium0] PASSED [ 10%]
+test_function_deletion.py::test_multiple_function_collections[chromium0] PASSED [ 10%]
+test_function_editing.py::test_function_editing[chromium0] PASSED        [ 11%]
+test_function_group_colors.py::test_function_collection_colors[chromium0] FAILED [ 11%]
+test_function_icons.py::test_function_calling_icons[chromium0] FAILED    [ 12%]
+test_function_icons.py::test_multiple_function_calls_colors[chromium0] FAILED [ 13%]
+test_function_library_multi.py::test_function_library_multi[chromium0] FAILED [ 13%]
+test_function_library_sharing.py::test_function_library_sharing[chromium0] FAILED [ 14%]
+test_function_modal.py::test_function_modal_basic[chromium0] PASSED      [ 14%]
+test_function_modal.py::test_function_modal_elements[chromium0] PASSED   [ 15%]
+test_function_parsing_logic.py::test_all_functions_callable_by_default[chromium0] FAILED [ 15%]
+test_function_parsing_logic.py::test_only_tagged_functions_callable[chromium0] FAILED [ 16%]
+test_function_parsing_logic.py::test_tool_tag_works[chromium0] FAILED    [ 16%]
+test_function_parsing_logic.py::test_single_line_comment_tags[chromium0] FAILED [ 17%]
+test_function_parsing_logic.py::test_mixed_tag_types[chromium0] FAILED   [ 17%]
+test_function_tooltip.py::test_function_modal_basic[chromium0] PASSED    [ 18%]
+test_function_tooltip.py::test_function_modal_elements[chromium0] PASSED [ 19%]
+test_logo_tooltip.py::test_heart_logo_tooltip[chromium0] FAILED          [ 19%]
+test_modals.py::test_settings_modal[chromium0] PASSED                    [ 20%]
+test_modals.py::test_prompts_modal[chromium0] PASSED                     [ 20%]
+test_modals.py::test_share_modal[chromium0] PASSED                       [ 21%]
+test_model_context_window.py::test_model_context_window_display[chromium0] SKIPPED [ 21%]
+test_model_selection_context_window.py::test_context_window_updates_on_model_selection[chromium0] PASSED [ 22%]
+test_model_selection_o4_mini.py::test_o4_mini_context_window_display[chromium0] PASSED [ 22%]
+test_models_context_simple.py::test_context_window_display[chromium0] FAILED [ 23%]
+test_prompt_order_and_function_library_prompt.py::test_user_prompts_before_default_prompts[chromium0] PASSED [ 23%]
+test_prompt_order_and_function_library_prompt.py::test_function_library_default_prompt[chromium0] FAILED [ 24%]
+test_rag_bundles.py::test_rag_user_bundles_ui_elements[chromium0] FAILED [ 25%]
+test_rag_bundles.py::test_rag_bundle_validation_algorithm[chromium0] PASSED [ 25%]
+test_rag_bundles.py::test_rag_bundle_storage_operations[chromium0] PASSED [ 26%]
+test_rag_bundles.py::test_rag_bundle_display_elements[chromium0] PASSED  [ 26%]
+test_rag_bundles.py::test_rag_bundle_file_input_creation[chromium0] PASSED [ 27%]
+test_rag_bundles.py::test_rag_bundle_load_button_interaction[chromium0] FAILED [ 27%]
+test_rag_bundles.py::test_rag_bundle_removal_confirmation[chromium0] PASSED [ 28%]
+test_rag_bundles.py::test_rag_bundle_statistics_accuracy[chromium0] PASSED [ 28%]
+test_rag_indexing.py::test_rag_embedding_generation_ui[chromium0] FAILED [ 29%]
+test_rag_indexing.py::test_rag_embedding_generation_process[chromium0] FAILED [ 29%]
+test_rag_indexing.py::test_rag_embedding_generation_without_api_key[chromium0] FAILED [ 30%]
+test_rag_indexing.py::test_rag_chunking_algorithm[chromium0] PASSED      [ 30%]
+test_rag_indexing.py::test_rag_embedding_caching[chromium0] FAILED       [ 31%]
+test_rag_indexing.py::test_rag_indexing_service_error_handling[chromium0] PASSED [ 32%]
+test_rag_indexing.py::test_rag_progress_callback_functionality[chromium0] PASSED [ 32%]
+test_rag_integration.py::test_rag_chat_integration_setup[chromium0] FAILED [ 33%]
+test_rag_integration.py::test_rag_enhanced_chat_response[chromium0] FAILED [ 33%]
+test_rag_integration.py::test_rag_context_injection_mechanism[chromium0] FAILED [ 34%]
+test_rag_integration.py::test_rag_search_query_extraction[chromium0] PASSED [ 34%]
+test_rag_integration.py::test_rag_end_to_end_workflow[chromium0] FAILED  [ 35%]
+test_rag_integration.py::test_rag_no_relevant_context_handling[chromium0] PASSED [ 35%]
+test_rag_integration.py::test_rag_multiple_source_integration[chromium0] FAILED [ 36%]
+test_rag_integration.py::test_rag_enable_disable_state_integration[chromium0] FAILED [ 36%]
+test_rag_integration.py::test_rag_debug_logging_functionality[chromium0] FAILED [ 37%]
+test_rag_modal.py::test_rag_button_visibility[chromium0] PASSED          [ 38%]
+test_rag_modal.py::test_rag_modal_open_close[chromium0] PASSED           [ 38%]
+test_rag_modal.py::test_rag_modal_structure[chromium0] PASSED            [ 39%]
+test_rag_modal.py::test_rag_modal_sections_exist[chromium0] PASSED       [ 39%]
+test_rag_modal.py::test_rag_modal_search_section[chromium0] PASSED       [ 40%]
+test_rag_modal.py::test_rag_modal_keyboard_interaction[chromium0] PASSED [ 40%]
+test_rag_modal.py::test_rag_enable_disable_functionality[chromium0] PASSED [ 41%]
+test_rag_search.py::test_rag_search_ui_elements[chromium0] PASSED        [ 41%]
+test_rag_search.py::test_rag_search_without_index[chromium0] PASSED      [ 42%]
+test_rag_search.py::test_rag_cosine_similarity_algorithm[chromium0] PASSED [ 42%]
+test_rag_search.py::test_rag_search_with_mock_data[chromium0] SKIPPED    [ 43%]
+test_rag_search.py::test_rag_search_ranking_and_relevance[chromium0] PASSED [ 44%]
+test_rag_search.py::test_rag_search_enter_key_functionality[chromium0] SKIPPED [ 44%]
+test_rag_search.py::test_rag_search_empty_query_handling[chromium0] PASSED [ 45%]
+test_rag_search.py::test_rag_search_result_formatting[chromium0] SKIPPED [ 45%]
+test_rag_with_precached.py::test_rag_search_with_real_embeddings[chromium0] FAILED [ 46%]
+test_sharing.py::test_model_sharing_link_creation[chromium0] SKIPPED     [ 46%]
+test_sharing.py::test_model_sharing_link_loading[chromium0] SKIPPED      [ 47%]
+test_themes.py::test_theme_toggle_button_exists[chromium0] PASSED        [ 47%]
+test_themes.py::test_theme_switching[chromium0] PASSED                   [ 48%]
+test_themes.py::test_light_mode_default[chromium0] PASSED                [ 48%]
+test_themes.py::test_mobile_utils_loaded[chromium0] PASSED               [ 49%]
+test_token_counter_debounce.py::test_token_counter_debounce[chromium0] PASSED [ 50%]
+test_button_tooltips.py::test_button_tooltips[chromium1] PASSED          [ 50%]
+test_clear_chat.py::test_clear_chat_button_exists[chromium1] PASSED      [ 51%]
+test_clear_chat.py::test_clear_chat_confirmation_dialog[chromium1] PASSED [ 51%]
+test_clear_namespace_settings.py::test_clear_namespace_settings[chromium1] PASSED [ 52%]
+test_context_window_scaling.py::test_context_window_scaling[chromium1] PASSED [ 52%]
+test_copy_chat.py::test_copy_chat_button_exists[chromium1] PASSED        [ 53%]
+test_copy_chat.py::test_copy_chat_functionality[chromium1] PASSED        [ 53%]
+test_copy_chat.py::test_copy_chat_button_tooltip[chromium1] PASSED       [ 54%]
+test_debug_mode.py::test_debug_mode_checkbox_exists[chromium1] PASSED    [ 54%]
+test_debug_mode.py::test_debug_mode_toggle[chromium1] PASSED             [ 55%]
+test_default_prompts.py::test_default_prompts_section_exists[chromium1] PASSED [ 55%]
+test_default_prompts.py::test_default_prompts_expand_collapse[chromium1] PASSED [ 56%]
+test_default_prompts.py::test_default_prompts_content[chromium1] PASSED  [ 57%]
+test_default_prompts.py::test_default_prompts_selection[chromium1] PASSED [ 57%]
+test_default_prompts.py::test_default_prompts_info_button[chromium1] PASSED [ 58%]
+test_default_prompts.py::test_default_prompts_name_click[chromium1] PASSED [ 58%]
+test_function_copy_buttons.py::test_function_copy_buttons_exist[chromium1] PASSED [ 59%]
+test_function_copy_buttons.py::test_function_copy_functionality[chromium1] PASSED [ 59%]
+test_function_deletion.py::test_function_deletion_removes_entire_bundle[chromium1] 

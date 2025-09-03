@@ -2,6 +2,7 @@ import pytest
 from playwright.sync_api import Page, expect
 from test_utils import screenshot_with_markdown, dismiss_welcome_modal
 
+@pytest.mark.skip(reason="Heart logo tooltip feature has been permanently removed")
 def test_heart_logo_tooltip(page: Page, serve_hacka_re):
     """Test that the heart logo modal appears when clicking on various elements."""
     # Navigate to the application

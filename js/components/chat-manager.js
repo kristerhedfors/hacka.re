@@ -12,6 +12,7 @@ window.ChatManager = (function() {
     function createChatManager(elements) {
         // Chat state
         let messages = [];
+        let conversationMessageCount = 0; // Track only user/assistant messages
         let isGenerating = false;
         let controller = null;
         
@@ -208,6 +209,10 @@ function finalizeResponse(finalContent, typingIndicator) {
     // Update messages array with complete AI response
     if (messages.length > 0 && messages[messages.length - 1].role === 'assistant') {
         messages[messages.length - 1].content = finalContent;
+        // Only increment counter if the assistant message has actual content
+        if (finalContent && finalContent.trim()) {
+            conversationMessageCount++;
+        }
     }
     
     // Save chat history
@@ -285,6 +290,9 @@ function cleanupGeneration(updateContextUsage, currentModel) {
                 content: content
             });
             
+            // Increment conversation message counter
+            conversationMessageCount++;
+            
             // Add to UI
             uiHandler.addUserMessageToUI(content);
             
@@ -350,6 +358,15 @@ function cleanupGeneration(updateContextUsage, currentModel) {
             if (savedHistory) {
                 try {
                     messages = savedHistory;
+                    
+                    // Count conversation messages (user and assistant with content)
+                    conversationMessageCount = 0;
+                    messages.forEach(msg => {
+                        if (msg.role === 'user' || 
+                            (msg.role === 'assistant' && msg.content && msg.content.trim())) {
+                            conversationMessageCount++;
+                        }
+                    });
                     
                     // Display messages using UI handler
                     uiHandler.displayMessages(messages);
@@ -462,6 +479,15 @@ function cleanupGeneration(updateContextUsage, currentModel) {
                     // Update our messages array - but ONLY with the actual conversation (no welcome message)
                     // The welcome message is only for display, not for storage
                     messages = validMessages;
+                    
+                    // Count conversation messages (user and assistant with content)
+                    conversationMessageCount = 0;
+                    messages.forEach(msg => {
+                        if (msg.role === 'user' || 
+                            (msg.role === 'assistant' && msg.content && msg.content.trim())) {
+                            conversationMessageCount++;
+                        }
+                    });
                     
                     
                     // Display all messages including welcome message first
@@ -590,6 +616,9 @@ function cleanupGeneration(updateContextUsage, currentModel) {
         function clearChatHistory(updateContextUsage) {
             // Clear messages array completely - no system messages, no welcome messages
             messages = [];
+            
+            // Reset conversation message counter
+            conversationMessageCount = 0;
             
             // Clear UI completely
             uiHandler.clearChat();
@@ -854,6 +883,7 @@ function cleanupGeneration(updateContextUsage, currentModel) {
             clearChatHistory,
             estimateContextUsage,
             getMessages,
+            getConversationMessageCount: () => conversationMessageCount,
             getIsGenerating,
             setMessages
         };

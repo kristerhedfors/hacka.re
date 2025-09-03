@@ -99,12 +99,34 @@
                 });
             }
 
-            // Register each tool
-            for (const tool of tools) {
-                await this.registerSingleTool(tool);
+            // Batch register all tools for better performance
+            // We'll update storage once at the end instead of for each tool
+            const registrationPromises = tools.map(tool => this.registerSingleToolWithoutSave(tool));
+            const results = await Promise.all(registrationPromises);
+            
+            // Now save all enabled functions at once
+            if (window.FunctionToolsStorage) {
+                const enabledFunctions = window.FunctionToolsStorage.getEnabledFunctions() || [];
+                const newFunctions = tools.map(t => t.name).filter(name => !enabledFunctions.includes(name));
+                if (newFunctions.length > 0) {
+                    enabledFunctions.push(...newFunctions);
+                    window.FunctionToolsStorage.setEnabledFunctions(enabledFunctions);
+                }
+                // Always save to ensure collection metadata is persisted
+                window.FunctionToolsStorage.save(); // Single save for all tools
+                
+                // Refresh the function list UI to show the new collection
+                if (window.functionListRenderer && window.functionListRenderer.renderMainFunctionList) {
+                    setTimeout(() => {
+                        window.functionListRenderer.renderMainFunctionList();
+                        console.log(`[${this.constructor.name}] Refreshed function list UI for ${tools.length} tools`);
+                    }, 100);
+                }
             }
-
-            return tools.length;
+            
+            // Count successful registrations
+            const successCount = results.filter(result => result === true).length;
+            return successCount;
         }
 
         /**
@@ -150,9 +172,23 @@
         }
 
         /**
-         * Register a single tool with the system
+         * Register a single tool with the system (with storage save)
          */
         async registerSingleTool(tool) {
+            const result = await this.registerSingleToolWithoutSave(tool);
+            
+            // Save after single tool registration (for backward compatibility)
+            if (result && window.FunctionToolsStorage) {
+                window.FunctionToolsStorage.save();
+            }
+            
+            return result;
+        }
+
+        /**
+         * Register a single tool without saving to storage (for batch operations)
+         */
+        async registerSingleToolWithoutSave(tool) {
             try {
                 // Add function to global scope
                 try {
@@ -185,30 +221,40 @@
 
                     const collectionId = `mcp_${this.serviceKey}_collection`;
                     const collectionMetadata = {
-                        name: `${this.config.name} MCP tools`,
+                        name: `${this.config.name} Functions`,
+                        description: `Functions provided by ${this.config.name} MCP service`,
                         createdAt: Date.now(),
-                        source: 'mcp-service'
+                        source: 'mcp-service',
+                        serviceKey: this.serviceKey
                     };
 
-                    const added = window.FunctionToolsRegistry.addJsFunction(
-                        tool.name,
-                        tool.code,
-                        toolDefinition,
-                        collectionId,
-                        collectionMetadata
-                    );
-
-                    if (added) {
-                        // Enable the function by default
-                        const enabledFunctions = window.FunctionToolsStorage.getEnabledFunctions() || [];
-                        if (!enabledFunctions.includes(tool.name)) {
-                            enabledFunctions.push(tool.name);
-                            window.FunctionToolsStorage.setEnabledFunctions(enabledFunctions);
-                            window.FunctionToolsStorage.save();
-                        }
+                    // Directly manipulate storage to avoid the save() call in addJsFunction
+                    // We're essentially doing what addJsFunction does but without the save
+                    const jsFunctions = window.FunctionToolsStorage.getJsFunctions();
+                    const functionCollections = window.FunctionToolsStorage.getFunctionCollections();
+                    const functionCollectionMetadata = window.FunctionToolsStorage.getFunctionCollectionMetadata();
+                    
+                    // Add the function to the registry
+                    jsFunctions[tool.name] = {
+                        code: tool.code,
+                        toolDefinition: toolDefinition
+                    };
+                    
+                    // Associate the function with its collection
+                    functionCollections[tool.name] = collectionId;
+                    
+                    // Store collection metadata if provided
+                    if (collectionMetadata && !functionCollectionMetadata[collectionId]) {
+                        functionCollectionMetadata[collectionId] = collectionMetadata;
                     }
-
-                    return added;
+                    
+                    // Update storage objects (but don't save yet)
+                    window.FunctionToolsStorage.setJsFunctions(jsFunctions);
+                    window.FunctionToolsStorage.setFunctionCollections(functionCollections);
+                    window.FunctionToolsStorage.setFunctionCollectionMetadata(functionCollectionMetadata);
+                    
+                    // Note: We don't call Storage.save() here - that's done in batch by registerTools
+                    return true;
                 }
 
                 return true;
