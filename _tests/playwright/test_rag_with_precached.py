@@ -8,7 +8,6 @@ import time
 from playwright.sync_api import Page, expect
 from test_utils import dismiss_welcome_modal, screenshot_with_markdown, set_test_model_in_storage
 
-@pytest.mark.skip(reason="RAG system redesigned - needs update for new pre-generated embeddings structure")
 def test_rag_search_with_real_embeddings(page: Page, serve_hacka_re, api_key):
     """Test that RAG search works with real pre-cached embeddings and API key for query."""
     # Navigate to the application
