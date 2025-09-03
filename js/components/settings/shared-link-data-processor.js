@@ -515,16 +515,6 @@ function createSharedLinkDataProcessor() {
             }
         }
         
-        // Return summary of what was applied
-        return {
-            functionCount: functionCount,
-            enabledCount: enabledCount,
-            collectionCount: sharedData.functionCollectionMetadata ? Object.keys(sharedData.functionCollectionMetadata).length : 0,
-            toolsEnabled: functionToolsEnabled,
-            enabledFunctions: sharedData.enabledFunctions || [],
-            defaultFunctionCount: (sharedData.selectedDefaultFunctionIds || []).length + (sharedData.selectedDefaultFunctionCollectionIds || []).length
-        };
-        
         // Apply default function selections if present
         if (window.DefaultFunctionsService && (sharedData.selectedDefaultFunctionIds || sharedData.selectedDefaultFunctionCollectionIds)) {
             // Apply default function collection selections
@@ -541,10 +531,17 @@ function createSharedLinkDataProcessor() {
                     window.DefaultFunctionsService.loadSelectedDefaultFunctions();
                 }
             }
-            
         }
         
-        // Return statement is now above, this closing brace ends the function
+        // Return summary of what was applied
+        return {
+            functionCount: functionCount,
+            enabledCount: enabledCount,
+            collectionCount: sharedData.functionCollectionMetadata ? Object.keys(sharedData.functionCollectionMetadata).length : 0,
+            toolsEnabled: functionToolsEnabled,
+            enabledFunctions: sharedData.enabledFunctions || [],
+            defaultFunctionCount: (sharedData.selectedDefaultFunctionIds || []).length + (sharedData.selectedDefaultFunctionCollectionIds || []).length
+        };
     }
     
     /**
@@ -1093,14 +1090,8 @@ function createSharedLinkDataProcessor() {
                     }
                 }
                 
-                // Only mention RAG if it was enabled and is available, or if documents were selected
-                if (ragSummary.ragEnabled && ragSummary.ragAvailable && ragSummary.documents.length > 0) {
-                    messageParts.push(`RAG enabled with documents: ${ragSummary.documents.join(', ')}`);
-                }
-                // Don't mention RAG at all if:
-                // 1. It's disabled
-                // 2. It's not available for the provider
-                // 3. No documents were selected
+                // RAG will be mentioned in the "Loaded:" message if enabled
+                // Don't mention RAG in the "Configuration applied:" message
                 
                 if (configSummary.systemPrompt) {
                     messageParts.push('custom system prompt');
@@ -1146,6 +1137,9 @@ function createSharedLinkDataProcessor() {
                         // Just show count if more than 5
                         additionalParts.push(`${functionsSummary.functionCount} function${functionsSummary.functionCount !== 1 ? 's' : ''}`);
                     }
+                } else if (functionsSummary.defaultFunctionCount > 0) {
+                    // Show default function selections even if no user functions
+                    additionalParts.push(`${functionsSummary.defaultFunctionCount} default function${functionsSummary.defaultFunctionCount !== 1 ? 's' : ''}`);
                 }
                 
                 // MCP summary
@@ -1160,6 +1154,11 @@ function createSharedLinkDataProcessor() {
                 if (themeName) {
                     const displayTheme = themeName.charAt(0).toUpperCase() + themeName.slice(1);
                     additionalParts.push(`Theme: ${displayTheme}`);
+                }
+                
+                // RAG indicator - add to "Loaded:" message if enabled and available
+                if (ragSummary.ragEnabled && ragSummary.ragAvailable && ragSummary.documents.length > 0) {
+                    additionalParts.push(`RAG enabled with documents: ${ragSummary.documents.join(', ')}`);
                 }
                 
                 // Welcome message indicator

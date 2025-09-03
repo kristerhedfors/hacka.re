@@ -234,10 +234,27 @@ window.ShareService = (function() {
                 console.log('🔍 ShareService: Enabled functions after filtering:', enabledFunctions.length);
             }
             
+            // Include functions if any exist
             if (functions && Object.keys(functions).length > 0) {
                 payload.functions = functions;
                 payload.enabledFunctions = enabledFunctions || [];
                 itemsIncluded.push(`✅ FUNCTION LIBRARY (${Object.keys(functions).length} functions)`);
+            }
+            
+            // Include default function selections even if no user functions exist
+            if (window.DefaultFunctionsService) {
+                const selectedDefaultFunctionIds = window.DefaultFunctionsService.getSelectedIndividualFunctionIds();
+                const selectedDefaultCollectionIds = window.DefaultFunctionsService.getSelectedDefaultFunctionIds();
+                
+                if (selectedDefaultFunctionIds && selectedDefaultFunctionIds.length > 0) {
+                    payload.selectedDefaultFunctionIds = selectedDefaultFunctionIds;
+                    itemsIncluded.push(`✅ DEFAULT FUNCTIONS (${selectedDefaultFunctionIds.length} selected)`);
+                }
+                
+                if (selectedDefaultCollectionIds && selectedDefaultCollectionIds.length > 0) {
+                    payload.selectedDefaultFunctionCollectionIds = selectedDefaultCollectionIds;
+                    itemsIncluded.push(`✅ DEFAULT FUNCTION COLLECTIONS (${selectedDefaultCollectionIds.length} selected)`);
+                }
             }
         }
         
@@ -254,10 +271,24 @@ window.ShareService = (function() {
                 selectedPromptIds = window.PromptsService.getSelectedPromptIds();
             }
             
+            // Include prompts if any exist
             if (prompts && prompts.length > 0) {
                 payload.prompts = prompts;
                 payload.selectedPromptIds = selectedPromptIds || [];
                 itemsIncluded.push(`✅ PROMPT LIBRARY (${prompts.length} prompts)`);
+            }
+            
+            // Include default prompt selections even if no user prompts exist
+            if (window.DefaultPromptsService) {
+                const selectedDefaultPromptIds = window.DefaultPromptsService.getSelectedDefaultPromptIds();
+                // Filter out MCP prompt IDs from selected default prompts
+                const mcpPromptIds = ['shodan-integration-guide', 'github-integration-guide', 'gmail-integration-guide'];
+                const filteredDefaultPromptIds = selectedDefaultPromptIds.filter(id => !mcpPromptIds.includes(id));
+                
+                if (filteredDefaultPromptIds && filteredDefaultPromptIds.length > 0) {
+                    payload.selectedDefaultPromptIds = filteredDefaultPromptIds;
+                    itemsIncluded.push(`✅ DEFAULT PROMPTS (${filteredDefaultPromptIds.length} selected)`);
+                }
             }
         }
         
