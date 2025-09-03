@@ -17,12 +17,12 @@ Port: 8000
 Project Root: /Users/user/dev/hacka.re
 ==================================================
 Checking for existing HTTP server processes on port 8000...
-Found existing processes: 82434
+Found existing processes: 28905
 Killing existing processes...
 Processes killed.
 Changing to project root directory: /Users/user/dev/hacka.re
 Starting Python HTTP server on port 8000...
-Server started successfully with PID: 14018
+Server started successfully with PID: 58651
 Server is now running at http://localhost:8000
 Server PID saved to: /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt
 ==================================================
@@ -33,13 +33,12 @@ Running Core Functionality tests with chromium browser...
 Test filter: test_page or test_api or test_chat or test_welcome_modal
 
 ============================= test session starts ==============================
-platform darwin -- Python 3.13.3, pytest-8.3.5, pluggy-1.5.0 -- /Users/user/dev/hacka.re/_tests/playwright/.venv/bin/python
-cachedir: .pytest_cache
+platform darwin -- Python 3.13.3, pytest-8.3.5, pluggy-1.5.0
 rootdir: /Users/user/dev/hacka.re/_tests/playwright
 configfile: pytest.ini
 testpaths: .
 plugins: playwright-0.7.0, base-url-2.1.0
-collecting ... collected 936 items / 898 deselected / 38 selected
+collected 944 items / 906 deselected / 38 selected
 
 shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_info[chromium0] PASSED [  2%]
 shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_plan_details[chromium0] PASSED [  5%]
@@ -118,7 +117,7 @@ test_rag_similarity_scores.py:14
     @pytest.mark.asyncio
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-==== 36 passed, 2 skipped, 898 deselected, 9 warnings in 261.03s (0:04:21) =====
+==== 36 passed, 2 skipped, 906 deselected, 9 warnings in 271.90s (0:04:31) =====
 Generating test results markdown files...
 No arguments provided. Using default files.
 Processing default files...
@@ -135,7 +134,7 @@ You can view the markdown report with: glow -p run_tests.out_bundle.md
 These files can be used by the coding assistant LLM to analyze test results
 Stopping HTTP server...
 ===== Stopping HTTP Server for hacka.re Tests =====
-Found server process with PID: 14018
+Found server process with PID: 58651
 Stopping server...
 Server stopped.
 Removed PID file: /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt

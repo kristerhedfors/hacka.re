@@ -269,6 +269,33 @@ window.DataService = (function() {
     }
     
     /**
+     * Save share modal welcome message settings
+     * @param {string} message - The welcome message
+     * @param {boolean} enabled - Whether the welcome message is enabled
+     */
+    function saveShareWelcomeSettings(message, enabled) {
+        CoreStorageService.setValue('share_welcome_message', message || '');
+        CoreStorageService.setValue('share_welcome_enabled', enabled);
+    }
+
+    /**
+     * Get share modal welcome message
+     * @returns {string|null} The stored welcome message or null if not found
+     */
+    function getShareWelcomeMessage() {
+        return CoreStorageService.getValue('share_welcome_message', 'share_welcome_message', (val) => saveShareWelcomeSettings(val, getShareWelcomeEnabled()));
+    }
+
+    /**
+     * Get share modal welcome enabled state
+     * @returns {boolean} Whether the welcome message is enabled
+     */
+    function getShareWelcomeEnabled() {
+        const value = CoreStorageService.getValue('share_welcome_enabled', 'share_welcome_enabled', (val) => saveShareWelcomeSettings(getShareWelcomeMessage(), val));
+        return value === true || value === 'true';
+    }
+    
+    /**
      * Save debug mode setting to local storage
      * @param {boolean} enabled - Whether debug mode is enabled
      */
@@ -330,6 +357,9 @@ window.DataService = (function() {
         getTitle: getTitle,
         saveSubtitle: saveSubtitle,
         getSubtitle: getSubtitle,
+        saveShareWelcomeSettings: saveShareWelcomeSettings,
+        getShareWelcomeMessage: getShareWelcomeMessage,
+        getShareWelcomeEnabled: getShareWelcomeEnabled,
         saveDebugMode: saveDebugMode,
         getDebugMode: getDebugMode,
         saveDebugCategories: saveDebugCategories,

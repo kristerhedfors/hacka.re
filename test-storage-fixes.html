@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Storage Fixes Test</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: #0a0a0a;
+            border: 1px solid #00ff00;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        h1, h2 {
+            color: #00ff00;
+            text-shadow: 0 0 5px rgba(0,255,0,0.5);
+        }
+        button {
+            background: #003300;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 8px 15px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+        button:hover {
+            background: #004400;
+            box-shadow: 0 0 10px rgba(0,255,0,0.3);
+        }
+        .log {
+            background: #000;
+            border: 1px solid #333;
+            padding: 10px;
+            margin-top: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-size: 12px;
+        }
+        .status {
+            padding: 5px;
+            margin: 5px 0;
+            border-radius: 3px;
+        }
+        .status.pass {
+            background: #003300;
+            border-left: 3px solid #00ff00;
+        }
+        .status.fail {
+            background: #330000;
+            border-left: 3px solid #ff0000;
+            color: #ff6666;
+        }
+        .status.warn {
+            background: #333300;
+            border-left: 3px solid #ffff00;
+            color: #ffff66;
+        }
+        .value {
+            color: #00ffff;
+        }
+        .key {
+            color: #ffff00;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Storage Fixes Test Suite</h1>
+    
+    <div class="test-section">
+        <h2>📝 Test 1: Share Welcome Settings Migration</h2>
+        <p>This test verifies that share welcome settings are properly stored in encrypted storage.</p>
+        <button onclick="testShareWelcomeSettings()">Run Test</button>
+        <button onclick="clearLegacyShareSettings()">Clear Legacy Settings</button>
+        <div id="share-welcome-log" class="log"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🗑️ Test 2: Namespace Deletion Cleanup</h2>
+        <p>This test verifies that all session keys and storage type are cleared during namespace deletion.</p>
+        <button onclick="createTestNamespaceData()">Create Test Data</button>
+        <button onclick="testNamespaceDeletion()">Test Deletion</button>
+        <div id="namespace-deletion-log" class="log"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔍 Test 3: Storage Inspection</h2>
+        <p>Inspect current storage state to verify fixes.</p>
+        <button onclick="inspectStorage()">Inspect All Storage</button>
+        <button onclick="inspectSessionKeys()">Inspect Session Keys</button>
+        <button onclick="inspectPlainTextKeys()">Check for Plain Text Keys</button>
+        <div id="inspection-log" class="log"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🚀 Test 4: Full Application Test</h2>
+        <p>Test the fixes within the actual application context.</p>
+        <button onclick="window.open('/', '_blank')">Open Application</button>
+        <button onclick="runFullAppTest()">Run Full App Test</button>
+        <div id="app-test-log" class="log"></div>
+    </div>
+    
+    <!-- Load all required scripts -->
+    <script src="js/lib/tweetnacl.min.js"></script>
+    <script src="js/lib/tweetnacl-util.min.js"></script>
+    <script src="js/utils/crypto-utils.js"></script>
+    <script src="js/services/encryption-service.js"></script>
+    <script src="js/services/storage-type-service.js"></script>
+    <script src="js/services/namespace-service.js"></script>
+    <script src="js/services/core-storage-service.js"></script>
+    <script src="js/services/data-service.js"></script>
+    <script src="js/services/storage-service.js"></script>
+    
+    <script>
+        function log(elementId, message, type = 'info') {
+            const logElement = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            const typeSymbol = {
+                'info': 'ℹ️',
+                'pass': '✅',
+                'fail': '❌',
+                'warn': '⚠️'
+            }[type] || '📝';
+            
+            const statusClass = type === 'info' ? '' : ` class="${type}"`;
+            const statusDiv = type === 'info' ? '' : `<div class="status ${type}">`;
+            const statusDivEnd = type === 'info' ? '' : '</div>';
+            
+            logElement.innerHTML += `${statusDiv}[${timestamp}] ${typeSymbol} ${message}${statusDivEnd}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+        
+        async function testShareWelcomeSettings() {
+            const logId = 'share-welcome-log';
+            log(logId, 'Starting Share Welcome Settings Test...', 'info');
+            
+            try {
+                // Test 1: Check for legacy plain text keys
+                log(logId, 'Checking for legacy plain text keys...', 'info');
+                const legacyMessage = localStorage.getItem('shareModalWelcomeMessage');
+                const legacyCheckbox = localStorage.getItem('shareModalWelcomeCheckbox');
+                
+                if (legacyMessage || legacyCheckbox) {
+                    log(logId, `Found legacy keys: message=${legacyMessage ? 'YES' : 'NO'}, checkbox=${legacyCheckbox ? 'YES' : 'NO'}`, 'warn');
+                } else {
+                    log(logId, 'No legacy plain text keys found', 'pass');
+                }
+                
+                // Test 2: Save settings using new encrypted storage
+                log(logId, 'Testing encrypted storage save...', 'info');
+                const testMessage = 'Test welcome message 🔐';
+                const testEnabled = true;
+                
+                window.StorageService.saveShareWelcomeSettings(testMessage, testEnabled);
+                log(logId, `Saved: message="${testMessage}", enabled=${testEnabled}`, 'pass');
+                
+                // Test 3: Retrieve settings from encrypted storage
+                log(logId, 'Testing encrypted storage retrieval...', 'info');
+                const retrievedMessage = window.StorageService.getShareWelcomeMessage();
+                const retrievedEnabled = window.StorageService.getShareWelcomeEnabled();
+                
+                if (retrievedMessage === testMessage && retrievedEnabled === testEnabled) {
+                    log(logId, `Retrieved correctly: message="${retrievedMessage}", enabled=${retrievedEnabled}`, 'pass');
+                } else {
+                    log(logId, `Mismatch: expected ("${testMessage}", ${testEnabled}), got ("${retrievedMessage}", ${retrievedEnabled})`, 'fail');
+                }
+                
+                // Test 4: Verify encrypted in storage
+                log(logId, 'Verifying encryption in storage...', 'info');
+                const namespace = window.NamespaceService.getNamespace();
+                const storage = window.StorageTypeService.getStorage();
+                const encryptedMessageKey = `hackare_${namespace}_share_welcome_message`;
+                const encryptedEnabledKey = `hackare_${namespace}_share_welcome_enabled`;
+                
+                const rawMessage = storage.getItem(encryptedMessageKey);
+                const rawEnabled = storage.getItem(encryptedEnabledKey);
+                
+                if (rawMessage && rawMessage.includes('encrypted:')) {
+                    log(logId, `Message is encrypted: ${rawMessage.substring(0, 50)}...`, 'pass');
+                } else {
+                    log(logId, `Message may not be encrypted properly: ${rawMessage}`, 'warn');
+                }
+                
+                if (rawEnabled && rawEnabled.includes('encrypted:')) {
+                    log(logId, `Enabled state is encrypted: ${rawEnabled.substring(0, 50)}...`, 'pass');
+                } else {
+                    log(logId, `Enabled state may not be encrypted properly: ${rawEnabled}`, 'warn');
+                }
+                
+                log(logId, 'Share Welcome Settings Test Complete!', 'pass');
+                
+            } catch (error) {
+                log(logId, `Test failed with error: ${error.message}`, 'fail');
+                console.error(error);
+            }
+        }
+        
+        function clearLegacyShareSettings() {
+            const logId = 'share-welcome-log';
+            log(logId, 'Clearing legacy share settings...', 'info');
+            
+            const keysToRemove = ['shareModalWelcomeMessage', 'shareModalWelcomeCheckbox'];
+            let removed = 0;
+            
+            keysToRemove.forEach(key => {
+                if (localStorage.getItem(key)) {
+                    localStorage.removeItem(key);
+                    log(logId, `Removed from localStorage: ${key}`, 'pass');
+                    removed++;
+                }
+                if (sessionStorage.getItem(key)) {
+                    sessionStorage.removeItem(key);
+                    log(logId, `Removed from sessionStorage: ${key}`, 'pass');
+                    removed++;
+                }
+            });
+            
+            if (removed === 0) {
+                log(logId, 'No legacy keys found to remove', 'info');
+            } else {
+                log(logId, `Cleared ${removed} legacy keys`, 'pass');
+            }
+        }
+        
+        function createTestNamespaceData() {
+            const logId = 'namespace-deletion-log';
+            log(logId, 'Creating test namespace data...', 'info');
+            
+            try {
+                // Create multiple session keys
+                sessionStorage.setItem('__hacka_re_session_key_test1', 'test-key-1');
+                sessionStorage.setItem('__hacka_re_session_key_test2', 'test-key-2');
+                sessionStorage.setItem('__hacka_re_session_key_default_session', 'default-key');
+                log(logId, 'Created 3 test session keys', 'pass');
+                
+                // Create storage type indicator
+                sessionStorage.setItem('__hacka_re_storage_type__', 'sessionStorage');
+                log(logId, 'Created storage type indicator', 'pass');
+                
+                // Create some namespace-specific encrypted data
+                const namespace = window.NamespaceService.getNamespace();
+                window.StorageService.saveApiKey('test-api-key');
+                window.StorageService.saveModel('test-model');
+                log(logId, `Created encrypted data for namespace: ${namespace}`, 'pass');
+                
+                log(logId, 'Test data creation complete', 'pass');
+                
+            } catch (error) {
+                log(logId, `Failed to create test data: ${error.message}`, 'fail');
+            }
+        }
+        
+        function testNamespaceDeletion() {
+            const logId = 'namespace-deletion-log';
+            log(logId, 'Testing namespace deletion cleanup...', 'info');
+            
+            try {
+                // Count items before deletion
+                let sessionKeysBefore = 0;
+                let storageTypeBefore = false;
+                
+                for (let i = 0; i < sessionStorage.length; i++) {
+                    const key = sessionStorage.key(i);
+                    if (key && key.startsWith('__hacka_re_session_key_')) {
+                        sessionKeysBefore++;
+                    }
+                    if (key === '__hacka_re_storage_type__') {
+                        storageTypeBefore = true;
+                    }
+                }
+                
+                log(logId, `Before deletion: ${sessionKeysBefore} session keys, storage type: ${storageTypeBefore ? 'EXISTS' : 'NOT FOUND'}`, 'info');
+                
+                // Call clearAllData
+                log(logId, 'Calling CoreStorageService.clearAllData()...', 'info');
+                const result = window.CoreStorageService.clearAllData();
+                
+                if (result.success) {
+                    log(logId, `Cleared ${result.clearedKeys.length} keys total`, 'pass');
+                    
+                    // Show some of the cleared keys
+                    const sessionKeysCleared = result.clearedKeys.filter(k => k.includes('session_key'));
+                    const storageTypeCleared = result.clearedKeys.filter(k => k.includes('storage_type'));
+                    
+                    if (sessionKeysCleared.length > 0) {
+                        log(logId, `Session keys cleared: ${sessionKeysCleared.join(', ')}`, 'pass');
+                    }
+                    if (storageTypeCleared.length > 0) {
+                        log(logId, `Storage type cleared: ${storageTypeCleared.join(', ')}`, 'pass');
+                    }
+                } else {
+                    log(logId, 'clearAllData reported failure', 'fail');
+                }
+                
+                // Verify deletion
+                let sessionKeysAfter = 0;
+                let storageTypeAfter = false;
+                
+                for (let i = 0; i < sessionStorage.length; i++) {
+                    const key = sessionStorage.key(i);
+                    if (key && key.startsWith('__hacka_re_session_key_')) {
+                        sessionKeysAfter++;
+                        log(logId, `WARNING: Session key still exists: ${key}`, 'warn');
+                    }
+                    if (key === '__hacka_re_storage_type__') {
+                        storageTypeAfter = true;
+                        log(logId, `WARNING: Storage type still exists`, 'warn');
+                    }
+                }
+                
+                // Also check localStorage for storage type
+                if (localStorage.getItem('__hacka_re_storage_type__')) {
+                    log(logId, 'WARNING: Storage type found in localStorage', 'warn');
+                }
+                
+                log(logId, `After deletion: ${sessionKeysAfter} session keys, storage type: ${storageTypeAfter ? 'STILL EXISTS' : 'CLEARED'}`, 'info');
+                
+                if (sessionKeysAfter === 0 && !storageTypeAfter) {
+                    log(logId, 'All session keys and storage type successfully cleared!', 'pass');
+                } else {
+                    log(logId, 'Some items were not cleared properly', 'fail');
+                }
+                
+            } catch (error) {
+                log(logId, `Test failed with error: ${error.message}`, 'fail');
+                console.error(error);
+            }
+        }
+        
+        function inspectStorage() {
+            const logId = 'inspection-log';
+            log(logId, 'Inspecting all storage...', 'info');
+            
+            // Inspect localStorage
+            log(logId, `\n<span class="key">localStorage (${localStorage.length} items):</span>`, 'info');
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+                const preview = value && value.length > 100 ? value.substring(0, 100) + '...' : value;
+                log(logId, `  ${key}: <span class="value">${preview}</span>`, 'info');
+            }
+            
+            // Inspect sessionStorage
+            log(logId, `\n<span class="key">sessionStorage (${sessionStorage.length} items):</span>`, 'info');
+            for (let i = 0; i < sessionStorage.length; i++) {
+                const key = sessionStorage.key(i);
+                const value = sessionStorage.getItem(key);
+                const preview = value && value.length > 100 ? value.substring(0, 100) + '...' : value;
+                log(logId, `  ${key}: <span class="value">${preview}</span>`, 'info');
+            }
+        }
+        
+        function inspectSessionKeys() {
+            const logId = 'inspection-log';
+            log(logId, 'Inspecting session keys...', 'info');
+            
+            let found = 0;
+            for (let i = 0; i < sessionStorage.length; i++) {
+                const key = sessionStorage.key(i);
+                if (key && key.startsWith('__hacka_re_session_key_')) {
+                    const value = sessionStorage.getItem(key);
+                    log(logId, `Found: ${key} = <span class="value">${value}</span>`, 'warn');
+                    found++;
+                }
+            }
+            
+            const storageType = sessionStorage.getItem('__hacka_re_storage_type__');
+            if (storageType) {
+                log(logId, `Storage type: <span class="value">${storageType}</span>`, 'warn');
+                found++;
+            }
+            
+            if (found === 0) {
+                log(logId, 'No session keys or storage type found', 'pass');
+            } else {
+                log(logId, `Found ${found} session-related items`, 'info');
+            }
+        }
+        
+        function inspectPlainTextKeys() {
+            const logId = 'inspection-log';
+            log(logId, 'Checking for plain text keys...', 'info');
+            
+            const suspiciousKeys = [
+                'shareModalWelcomeMessage',
+                'shareModalWelcomeCheckbox',
+                'api_key',
+                'openai_api_key',
+                'system_prompt',
+                'chat_history'
+            ];
+            
+            let found = 0;
+            
+            suspiciousKeys.forEach(key => {
+                const localValue = localStorage.getItem(key);
+                const sessionValue = sessionStorage.getItem(key);
+                
+                if (localValue) {
+                    log(logId, `PLAIN TEXT in localStorage: ${key} = <span class="value">${localValue.substring(0, 50)}...</span>`, 'fail');
+                    found++;
+                }
+                if (sessionValue) {
+                    log(logId, `PLAIN TEXT in sessionStorage: ${key} = <span class="value">${sessionValue.substring(0, 50)}...</span>`, 'fail');
+                    found++;
+                }
+            });
+            
+            if (found === 0) {
+                log(logId, 'No plain text sensitive keys found', 'pass');
+            } else {
+                log(logId, `Found ${found} plain text keys that should be encrypted`, 'fail');
+            }
+        }
+        
+        async function runFullAppTest() {
+            const logId = 'app-test-log';
+            log(logId, 'Running full application test...', 'info');
+            
+            try {
+                // Test 1: Share welcome settings through StorageService
+                log(logId, 'Testing share welcome settings...', 'info');
+                window.StorageService.saveShareWelcomeSettings('Full app test message', true);
+                const msg = window.StorageService.getShareWelcomeMessage();
+                const enabled = window.StorageService.getShareWelcomeEnabled();
+                
+                if (msg === 'Full app test message' && enabled === true) {
+                    log(logId, 'Share welcome settings work correctly', 'pass');
+                } else {
+                    log(logId, `Share welcome settings failed: got "${msg}", ${enabled}`, 'fail');
+                }
+                
+                // Test 2: Namespace deletion clears all session keys
+                log(logId, 'Testing comprehensive cleanup...', 'info');
+                
+                // Create test data
+                sessionStorage.setItem('__hacka_re_session_key_app_test', 'test-key');
+                sessionStorage.setItem('__hacka_re_storage_type__', 'sessionStorage');
+                localStorage.setItem('shareModalWelcomeMessage', 'legacy-message');
+                
+                // Clear all
+                const result = window.CoreStorageService.clearAllData();
+                
+                // Verify
+                const sessionKey = sessionStorage.getItem('__hacka_re_session_key_app_test');
+                const storageType = sessionStorage.getItem('__hacka_re_storage_type__');
+                const legacyMsg = localStorage.getItem('shareModalWelcomeMessage');
+                
+                if (!sessionKey && !storageType && !legacyMsg) {
+                    log(logId, 'All test data cleared successfully', 'pass');
+                } else {
+                    log(logId, 'Some test data was not cleared', 'fail');
+                    if (sessionKey) log(logId, '  - Session key still exists', 'fail');
+                    if (storageType) log(logId, '  - Storage type still exists', 'fail');
+                    if (legacyMsg) log(logId, '  - Legacy message still exists', 'fail');
+                }
+                
+                log(logId, 'Full application test complete!', 'pass');
+                
+            } catch (error) {
+                log(logId, `Test failed with error: ${error.message}`, 'fail');
+                console.error(error);
+            }
+        }
+        
+        // Initialize on load
+        window.addEventListener('load', () => {
+            log('share-welcome-log', 'Test suite loaded and ready', 'info');
+            log('namespace-deletion-log', 'Click "Create Test Data" then "Test Deletion"', 'info');
+            log('inspection-log', 'Use inspection tools to verify storage state', 'info');
+            log('app-test-log', 'Run full app test to verify all fixes work together', 'info');
+        });
+    </script>
+</body>
+</html>
