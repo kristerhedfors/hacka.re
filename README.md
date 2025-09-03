@@ -72,7 +72,7 @@ hacka.re is designed for:
 ### Online Usage
 
 1. Visit [hacka.re](https://hacka.re/)
-2. Click "Get Started" or press Settings
+2. Click Settings icon, upper right in header
 3. Enter your API key from any supported provider
 4. Select your model
 5. Start chatting
@@ -773,44 +773,6 @@ Text     Synonyms   Representation Similarity    Results     Prompt
 | Chunk Overlap | Overlap between chunks | 50 |
 | Query Expansion | Generate search variants | Enabled |
 
-### Agent System
-
-The agent system provides specialized AI personalities:
-
-#### Pre-Built Agents
-
-1. **Coding Specialist**: Expert in software development
-2. **Data Analyst**: Statistical analysis and visualization
-3. **Documentation Specialist**: Technical writing expert
-4. **Planning Specialist**: Project management and strategy
-5. **Research Specialist**: Information gathering and synthesis
-6. **Security Analyst**: Vulnerability assessment and threat modeling
-7. **Testing Specialist**: QA and test automation
-8. **Project Manager**: Coordination and tracking
-9. **Orchestrator**: Multi-agent coordination
-
-#### Agent Configuration
-
-```javascript
-{
-    name: "Security Analyst",
-    description: "Expert in cybersecurity and threat analysis",
-    systemPrompt: "You are a senior security analyst...",
-    temperature: 0.3,  // Lower for consistency
-    maxTokens: 2000,
-    specializations: ["penetration testing", "threat modeling"],
-    tools: ["nmap", "metasploit", "burp"],
-    responseStyle: "technical and precise"
-}
-```
-
-#### Agent Features
-
-- **Context Isolation**: Each agent maintains separate context
-- **Configuration Persistence**: Settings saved encrypted
-- **Quick Switch**: Rapid agent switching via dropdown
-- **Custom Agents**: Create your own specialized agents
-- **Agent Sharing**: Share via encrypted links
 
 ### MCP (Model Context Protocol) Integration
 
@@ -844,35 +806,6 @@ Tools are exposed to the AI model:
 }
 ```
 
-### Default Prompts System
-
-26+ specialized prompts organized by category:
-
-#### Agent Prompts
-- `agent-coding-specialist.js`
-- `agent-data-analyst.js`
-- `agent-documentation-specialist.js`
-- `agent-planning-specialist.js`
-- `agent-research-specialist.js`
-- `agent-security-analyst.js`
-- `agent-testing-specialist.js`
-
-#### Integration Guides
-- `github-integration-guide.js`
-- `gmail-integration-guide.js`
-- `shodan-integration-guide.js`
-- `share-link-mcp-guide.js`
-
-#### Technical Documentation
-- `api-auth-libsodium.js`
-- `mcp-sdk-readme.js`
-- `openai-proxies-python.js`
-- `hacka-re-project.js`
-
-#### Security & Compliance
-- `owasp-llm-top10.js`
-- `interpretability-urgency.js`
-
 ---
 
 ## Development Environment
@@ -896,7 +829,6 @@ hacka.re/
 ├── lib/                      # Third-party libraries
 │   ├── tweetnacl/           # Encryption
 │   ├── marked/              # Markdown parsing
-│   ├── prism/               # Syntax highlighting
 │   ├── dompurify/           # XSS protection
 │   └── font-awesome/        # Icons
 ├── about/                    # Information pages
@@ -913,9 +845,8 @@ hacka.re/
 
 #### Prerequisites
 - Python 3.11+ (for local server and testing)
-- Modern browser (Chrome, Firefox, Safari, Edge)
+- Web Browser (Chrome, Firefox, Safari, Edge)
 - Git for version control
-- 2GB free disk space
 
 #### Environment Setup
 
@@ -1316,18 +1247,6 @@ OLLAMA_ORIGINS=http://localhost:8000 ollama serve
 - CORS headers if browser-to-API
 - Optional: API key authentication
 
-#### Setup
-```javascript
-// Example custom endpoint
-{
-    provider: "Custom",
-    baseUrl: "https://your-api.com/v1",
-    apiKey: "your-api-key",
-    headers: {
-        "X-Custom-Header": "value"
-    }
-}
-```
 
 #### Proxy Setup (Optional)
 ```python
@@ -1379,37 +1298,6 @@ if __name__ == '__main__':
 *After initial model download
 **Local embedding models exist but are not supported by hacka.re's pre-built indexes
 
-### Model Recommendations
-
-#### For Code Generation
-1. **GPT-4**: Best overall quality
-2. **Claude 3**: Excellent for complex tasks
-3. **Codellama**: Good open-source option
-4. **Mixtral**: Fast and capable
-
-#### For General Chat
-1. **GPT-3.5 Turbo**: Cost-effective
-2. **Llama 3**: Great open option
-3. **Mistral**: Balanced performance
-
-#### For Privacy-Critical
-1. **Local LLMs**: Complete control over your data
-2. **Self-hosted**: Custom deployment
-3. **Air-gapped**: No network connection
-
-#### For Speed
-1. **Groq**: Fastest inference
-2. **GPT-3.5 Turbo**: Fast and reliable
-3. **Small local models**: Instant responses
-
-### API Limits and Quotas
-
-| Provider | Rate Limits | Token Limits | Monthly Quotas |
-|----------|------------|--------------|----------------|
-| OpenAI | 10000 req/min | 128k (GPT-4) | Pay-as-you-go |
-| Groq | 30 req/min | 32k | Free tier available |
-| Local LLMs | Unlimited | Model-dependent | Unlimited |
-
 ---
 
 ## Performance & Optimization
@@ -1426,27 +1314,9 @@ if __name__ == '__main__':
 - **Virtual Scrolling**: For long conversations
 - **Debounced Inputs**: Reduces API calls
 - **Worker Threads**: For heavy computation
-- **Indexed Storage**: Fast data retrieval
 
 ### Memory Management
-
-#### Conversation Limits
-- Auto-cleanup after 100 messages
-- Configurable history size
-- Compressed storage format
 - Efficient token counting
-
-#### Storage Optimization
-```javascript
-// Automatic cleanup
-if (messages.length > maxMessages) {
-    messages = messages.slice(-keepMessages);
-}
-
-// Compression before storage
-const compressed = LZString.compress(JSON.stringify(data));
-localStorage.setItem(key, compressed);
-```
 
 ### Network Optimization
 
@@ -1456,357 +1326,43 @@ localStorage.setItem(key, compressed);
 - Connection pooling
 - Stream processing
 
-#### Caching Strategy
-- Model information cached
-- Function definitions cached
-- Settings cached
-- API responses not cached (privacy)
-
-### Best Practices
-
-1. **Clear old conversations** regularly
-2. **Use appropriate models** for tasks
-3. **Enable streaming** for better UX
-4. **Limit context size** when possible
-5. **Use local models** for sensitive data
-
----
-
-## Troubleshooting
-
-### Common Issues
-
-#### API Key Issues
-
-**Problem**: "Invalid API key" error
-```
-Solutions:
-1. Check key is correctly pasted (no spaces)
-2. Verify key is active on provider dashboard
-3. Check provider selection matches key
-4. Clear cache and re-enter key
-```
-
-**Problem**: "Rate limit exceeded"
-```
-Solutions:
-1. Wait for rate limit reset
-2. Upgrade API plan
-3. Use different model
-4. Implement request queuing
-```
-
-#### Connection Issues
-
-**Problem**: "Failed to connect to API"
-```
-Solutions:
-1. Check internet connection
-2. Verify provider is operational
-3. Check CORS settings (local models)
-4. Try different browser
-5. Check firewall settings
-```
 
 **Problem**: "CORS error with local LLMs"
 ```
 Solutions:
-1. Start with correct CORS flags
+1. Configure LLM API to allow CORS
 2. Check URL includes /v1
 3. Verify port number
 4. Use localhost not 127.0.0.1
 ```
 
-#### Storage Issues
-
-**Problem**: "Failed to save settings"
-```
-Solutions:
-1. Check localStorage is enabled
-2. Clear browser storage
-3. Check available space
-4. Try incognito mode
-5. Check browser permissions
-```
-
-**Problem**: "Lost conversation history"
-```
-Solutions:
-1. Check correct namespace
-2. Verify storage type
-3. Check browser didn't clear data
-4. Look for backup in sessionStorage
-```
-
-#### Function Calling Issues
-
-**Problem**: "Function not found"
-```
-Solutions:
-1. Check function has @callable tag
-2. Verify function is enabled
-3. Check syntax errors
-4. Ensure function is saved
-5. Refresh the page
-```
-
-**Problem**: "Function execution timeout"
-```
-Solutions:
-1. Optimize function code
-2. Add async/await properly
-3. Increase timeout setting
-4. Check infinite loops
-5. Use lighter operations
-```
-
-### Browser Compatibility
-
-#### Supported Browsers
-- ✅ Chrome 90+
-- ✅ Firefox 88+
-- ✅ Safari 14+
-- ✅ Edge 90+
-- ⚠️ Opera (with caveats)
-- ❌ Internet Explorer
-
-#### Required Features
-- localStorage/sessionStorage
-- Web Crypto API
-- ES6 JavaScript
-- CSS Grid/Flexbox
-- WebSocket (for MCP)
 
 ### Debug Mode
 
-Enable debug mode for troubleshooting:
+Enable debug mode in Settings for troubleshooting:
 
-1. Open browser console
-2. Run: `localStorage.setItem('debug_mode', 'true')`
-3. Reload page
-4. Check console for detailed logs
+Select debug information selectively from:
+- Crypto
+- Storage
+- Shared Links
+- Functions
+- MCP Events
+- API
+- RAG
+- Voice
 
-Debug information includes:
-- API requests/responses
-- Encryption operations
-- Storage operations
-- Event flow
-- Error stack traces
-
-### Getting Help
-
-#### Resources
-1. [GitHub Issues](https://github.com/yourusername/hacka.re/issues)
-2. [Documentation](https://hacka.re/docs)
-3. [Discord Community](https://discord.gg/hacka-re)
-4. [Security Reports](security@hacka.re)
-
-#### Reporting Issues
-
-Include in bug reports:
-1. Browser version
-2. Provider being used
-3. Error messages
-4. Console logs (debug mode)
-5. Steps to reproduce
-6. Screenshots if UI issue
-
----
-
-## Contributing
-
-### How to Contribute
-
-We welcome contributions from the community!
-
-#### Types of Contributions
-- 🐛 Bug fixes
-- ✨ New features
-- 📝 Documentation
-- 🌐 Translations
-- 🎨 UI/UX improvements
-- 🔒 Security enhancements
-- ⚡ Performance optimizations
-
-### Development Workflow
-
-#### 1. Fork and Clone
-```bash
-# Fork on GitHub, then:
-git clone https://github.com/yourusername/hacka.re.git
-cd hacka.re
-git remote add upstream https://github.com/original/hacka.re.git
-```
-
-#### 2. Create Feature Branch
-```bash
-git checkout -b feature/your-feature-name
-```
-
-#### 3. Make Changes
-- Follow existing code style
-- Add tests for new features
-- Update documentation
-- Ensure all tests pass
-
-#### 4. Test Your Changes
-```bash
-# Start server
-./scripts/start_server.sh
-
-# Run tests
-_tests/playwright/run_tests.sh
-
-# Run security check
-python run_verifier.py
-```
-
-#### 5. Commit Changes
-```bash
-git add .
-git commit -m "feat: add new feature
-
-- Detailed description
-- Why this change is needed
-- Any breaking changes"
-```
-
-#### 6. Push and Create PR
-```bash
-git push origin feature/your-feature-name
-```
-
-### Code Style Guidelines
-
-#### JavaScript
-- Use ES6+ features
-- Prefer const/let over var
-- Use template literals
-- Add JSDoc comments
-- Follow existing patterns
-
-#### CSS
-- Use CSS variables
-- Mobile-first responsive
-- Follow BEM naming
-- Group related properties
-
-#### HTML
-- Semantic HTML5
-- Accessible markup
-- Valid structure
-- Meaningful IDs
-
-### Testing Guidelines
-
-#### Writing Tests
-- Test real functionality
-- Include edge cases
-- Add debugging screenshots
-- Use descriptive names
-- Clean up after tests
-
-#### Test Coverage
-- New features need tests
-- Bug fixes need regression tests
-- Refactors need existing tests to pass
-
-### Security Guidelines
-
-#### Security First
-- Never log sensitive data
-- Sanitize all inputs
-- Use encryption for storage
-- No external dependencies
-- Regular security audits
-
-#### Reporting Security Issues
-- **DO NOT** create public issues
-- Email: security@hacka.re
-- Include detailed description
-- Provide proof of concept
-- Allow time for fix
-
-### Documentation
-
-#### What to Document
-- New features
-- API changes
-- Configuration options
-- Troubleshooting steps
-- Integration guides
-
-#### Documentation Style
-- Clear and concise
-- Include examples
-- Explain why, not just how
-- Keep updated
-- Test documentation steps
-
-### Review Process
-
-#### PR Requirements
-1. Tests pass
-2. No security issues
-3. Documentation updated
-4. Follows code style
-5. Meaningful commit messages
-
-#### Review Timeline
-- Initial review: 2-3 days
-- Feedback incorporation: Ongoing
-- Merge decision: After approval
 
 ---
 
 ## License
 
-MIT License
+MIT No Attribution
 
-Copyright (c) 2024 hacka.re contributors
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ---
-
-## Acknowledgments
-
-hacka.re is built on the shoulders of giants:
-
-### Open Source Libraries
-- **TweetNaCl.js**: Cryptography
-- **Marked.js**: Markdown parsing
-- **Prism.js**: Syntax highlighting
-- **DOMPurify**: XSS protection
-- **Font Awesome**: Icons
-
-### Community
-- All contributors who have submitted PRs
-- Security researchers who have reported issues
-- Users who provide feedback and suggestions
-- Translators who help with internationalization
-
-### Special Thanks
-- The cypherpunk movement for inspiration
-- The open-source community for collaboration
-- Privacy advocates for keeping us honest
-- Whitehats everywhere for making the internet safer
 
 ---
 
@@ -1816,6 +1372,6 @@ hacka.re is built on the shoulders of giants:
 
 *Free, open, för hackare, av hackare*
 
-[Website](https://hacka.re) | [GitHub](https://github.com/yourusername/hacka.re) | [Documentation](https://hacka.re/docs)
+[Website](https://hacka.re) | [GitHub](https://github.com/yourusername/hacka.re) 
 
 </div>
