@@ -235,8 +235,8 @@ function test_function(input) {
     function_item = page.locator(".function-item:has-text('test_function')")
     expect(function_item).to_be_visible()
     
-    # Click the delete button
-    delete_button = function_item.locator(".function-item-delete")
+    # Click the collection delete button (functions are deleted as a collection)
+    delete_button = page.locator(".function-collection-delete").first
     
     # Set up dialog handler before clicking delete
     page.once("dialog", lambda dialog: dialog.accept())
