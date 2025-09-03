@@ -415,7 +415,9 @@ window.CoreStorageService = (function() {
                 'rag_regulations_metadata', 
                 'rag_regulations_index',
                 'voice_control_enabled',
-                'mcp_share_link_enabled'
+                'mcp_share_link_enabled',
+                'share_welcome_message',
+                'share_welcome_enabled'
             ];
             
             // Define function tools storage keys (namespaced manually)
@@ -502,22 +504,45 @@ window.CoreStorageService = (function() {
             clearedKeys.push('voice_control_enabled (legacy)');
             console.log('Cleared legacy non-namespaced key: voice_control_enabled');
             
-            // Clear system keys for the current namespace
+            // Clear ALL session keys (not just for current namespace)
             // These are critical session management keys that should be cleared when user requests full reset
-            const sessionKeyStorageKey = `__hacka_re_session_key_${currentNamespace}`;
-            if (storage.getItem(sessionKeyStorageKey)) {
-                storage.removeItem(sessionKeyStorageKey);
-                clearedKeys.push(sessionKeyStorageKey);
-                console.log(`Cleared session key: ${sessionKeyStorageKey}`);
+            for (let i = storage.length - 1; i >= 0; i--) {
+                const key = storage.key(i);
+                if (key && key.startsWith('__hacka_re_session_key_')) {
+                    storage.removeItem(key);
+                    clearedKeys.push(key);
+                    console.log(`Cleared session key: ${key}`);
+                }
             }
             
-            // Clear the storage type indicator
+            // Clear the storage type indicator (always in sessionStorage)
             const storageTypeKey = '__hacka_re_storage_type__';
-            if (storage.getItem(storageTypeKey)) {
-                storage.removeItem(storageTypeKey);
-                clearedKeys.push(storageTypeKey);
-                console.log(`Cleared storage type key: ${storageTypeKey}`);
+            // Clear from both storages to be thorough
+            if (localStorage.getItem(storageTypeKey)) {
+                localStorage.removeItem(storageTypeKey);
+                clearedKeys.push(storageTypeKey + ' (localStorage)');
+                console.log(`Cleared storage type key from localStorage: ${storageTypeKey}`);
             }
+            if (sessionStorage.getItem(storageTypeKey)) {
+                sessionStorage.removeItem(storageTypeKey);
+                clearedKeys.push(storageTypeKey + ' (sessionStorage)');
+                console.log(`Cleared storage type key from sessionStorage: ${storageTypeKey}`);
+            }
+            
+            // Clear legacy plain text share welcome settings (from old version)
+            const legacyShareKeys = ['shareModalWelcomeMessage', 'shareModalWelcomeCheckbox'];
+            legacyShareKeys.forEach(key => {
+                if (localStorage.getItem(key)) {
+                    localStorage.removeItem(key);
+                    clearedKeys.push(key + ' (legacy localStorage)');
+                    console.log(`Cleared legacy plain text key from localStorage: ${key}`);
+                }
+                if (sessionStorage.getItem(key)) {
+                    sessionStorage.removeItem(key);
+                    clearedKeys.push(key + ' (legacy sessionStorage)');
+                    console.log(`Cleared legacy plain text key from sessionStorage: ${key}`);
+                }
+            });
             
             // Reset the session key if ShareManager is available
             if (window.aiHackare && window.aiHackare.shareManager) {
