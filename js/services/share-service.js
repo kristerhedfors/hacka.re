@@ -66,11 +66,12 @@ window.ShareService = (function() {
         console.log('🔗 SHARE LINK CREATION STARTED 🔗');
         console.log('📋 ShareService: Input options:', JSON.stringify(options, null, 2));
         
-        // If no password provided, return just the base URL
+        // If no password provided, return just the hacka.re app URL
         if (!options.password) {
-            const baseUrl = options.baseUrl || window.location.href.split('#')[0];
-            console.log('🔗 ShareService: No password provided, returning base URL:', baseUrl);
-            return baseUrl;
+            // Always return the hacka.re app URL, NOT the API endpoint URL
+            const hackareUrl = window.location.href.split('#')[0];
+            console.log('🔗 ShareService: No password provided, returning hacka.re app URL:', hackareUrl);
+            return hackareUrl;
         }
         
         const payload = {};
@@ -121,11 +122,18 @@ window.ShareService = (function() {
             itemsIncluded.push(`✅ MODEL (${options.model})`);
         }
         
-        if (options.includeConversation && options.messages && options.messages.length > 0) {
-            const messageCount = options.messageCount || options.messages.length;
-            const startIndex = Math.max(0, options.messages.length - messageCount);
-            payload.messages = options.messages.slice(startIndex);
-            itemsIncluded.push(`✅ CONVERSATION (${payload.messages.length} messages)`);
+        if (options.includeConversation) {
+            // Include conversation even if empty - this ensures we generate a proper share link
+            if (options.messages && options.messages.length > 0) {
+                const messageCount = options.messageCount || options.messages.length;
+                const startIndex = Math.max(0, options.messages.length - messageCount);
+                payload.messages = options.messages.slice(startIndex);
+                itemsIncluded.push(`✅ CONVERSATION (${payload.messages.length} messages)`);
+            } else {
+                // Include empty messages array to indicate conversation sharing is enabled
+                payload.messages = [];
+                itemsIncluded.push(`✅ CONVERSATION (ready to receive messages)`);
+            }
         }
         
         if (options.includeWelcomeMessage && options.welcomeMessage && options.welcomeMessage.trim()) {
@@ -178,6 +186,7 @@ window.ShareService = (function() {
         if (options.includeFunctionLibrary) {
             let functions = options.functions;
             let enabledFunctions = options.enabledFunctions;
+            let mcpCollectionIds = []; // Define at the outer scope
             
             // If not provided, try to collect them (excluding MCP functions)
             if (!functions && window.FunctionToolsService) {
@@ -187,7 +196,6 @@ window.ShareService = (function() {
                 const functionCollections = window.FunctionToolsService.getFunctionCollections();
                 
                 // Identify MCP collections
-                const mcpCollectionIds = [];
                 Object.values(allCollections).forEach(collection => {
                     const isMcpCollection = collection.metadata.source === 'mcp' || 
                                           collection.metadata.source === 'mcp-service' ||
@@ -226,10 +234,58 @@ window.ShareService = (function() {
                 console.log('🔍 ShareService: Enabled functions after filtering:', enabledFunctions.length);
             }
             
+            // Include functions if any exist
             if (functions && Object.keys(functions).length > 0) {
                 payload.functions = functions;
                 payload.enabledFunctions = enabledFunctions || [];
+                
+                // Include collection information to preserve function organization
+                if (window.FunctionToolsService) {
+                    const functionCollections = window.FunctionToolsService.getFunctionCollections();
+                    const allCollections = window.FunctionToolsService.getAllFunctionCollections();
+                    
+                    // Build collection metadata for non-MCP functions
+                    const relevantCollections = {};
+                    const relevantMetadata = {};
+                    
+                    Object.keys(functions).forEach(funcName => {
+                        const collectionId = functionCollections[funcName];
+                        if (collectionId && !mcpCollectionIds.includes(collectionId)) {
+                            relevantCollections[funcName] = collectionId;
+                            
+                            // Add collection metadata if not already added
+                            if (!relevantMetadata[collectionId] && allCollections[collectionId]) {
+                                relevantMetadata[collectionId] = allCollections[collectionId].metadata;
+                            }
+                        }
+                    });
+                    
+                    // Add collection data to payload
+                    if (Object.keys(relevantCollections).length > 0) {
+                        payload.functionCollections = relevantCollections;
+                        payload.functionCollectionMetadata = relevantMetadata;
+                        const uniqueCollections = new Set(Object.values(relevantCollections)).size;
+                        console.log(`🔍 ShareService: Including collection info for ${uniqueCollections} collections`);
+                    }
+                }
+                
                 itemsIncluded.push(`✅ FUNCTION LIBRARY (${Object.keys(functions).length} functions)`);
+            }
+            
+            // Include default function selections even if no user functions exist
+            if (window.DefaultFunctionsService) {
+                const selectedDefaultFunctionIds = window.DefaultFunctionsService.getSelectedIndividualFunctionIds();
+                const selectedDefaultCollectionIds = window.DefaultFunctionsService.getSelectedDefaultFunctionIds();
+                
+                if (selectedDefaultFunctionIds && selectedDefaultFunctionIds.length > 0) {
+                    payload.selectedDefaultFunctionIds = selectedDefaultFunctionIds;
+                    itemsIncluded.push(`✅ DEFAULT FUNCTIONS (${selectedDefaultFunctionIds.length} selected)`);
+                }
+                
+                if (selectedDefaultCollectionIds && selectedDefaultCollectionIds.length > 0) {
+                    payload.selectedDefaultFunctionCollectionIds = selectedDefaultCollectionIds;
+                    itemsIncluded.push(`✅ DEFAULT FUNCTION COLLECTIONS (${selectedDefaultCollectionIds.length} selected)`);
+                }
             }
         }
         
@@ -246,10 +302,24 @@ window.ShareService = (function() {
                 selectedPromptIds = window.PromptsService.getSelectedPromptIds();
             }
             
+            // Include prompts if any exist
             if (prompts && prompts.length > 0) {
                 payload.prompts = prompts;
                 payload.selectedPromptIds = selectedPromptIds || [];
                 itemsIncluded.push(`✅ PROMPT LIBRARY (${prompts.length} prompts)`);
+            }
+            
+            // Include default prompt selections even if no user prompts exist
+            if (window.DefaultPromptsService) {
+                const selectedDefaultPromptIds = window.DefaultPromptsService.getSelectedDefaultPromptIds();
+                // Filter out MCP prompt IDs from selected default prompts
+                const mcpPromptIds = ['shodan-integration-guide', 'github-integration-guide', 'gmail-integration-guide'];
+                const filteredDefaultPromptIds = selectedDefaultPromptIds.filter(id => !mcpPromptIds.includes(id));
+                
+                if (filteredDefaultPromptIds && filteredDefaultPromptIds.length > 0) {
+                    payload.selectedDefaultPromptIds = filteredDefaultPromptIds;
+                    itemsIncluded.push(`✅ DEFAULT PROMPTS (${filteredDefaultPromptIds.length} selected)`);
+                }
             }
         }
         
@@ -280,11 +350,15 @@ window.ShareService = (function() {
         }
         console.log('═══════════════════════════════════════════════════');
         
-        // If payload is empty, just return base URL
+        // If payload is empty, still generate a proper hacka.re share link
+        // This ensures users always get a shareable hacka.re URL, not an API endpoint
         if (Object.keys(payload).length === 0) {
-            const baseUrl = options.baseUrl || window.location.href.split('#')[0];
-            console.log('🔗 ShareService: Empty payload, returning base URL:', baseUrl);
-            return baseUrl;
+            // CRITICAL: Do NOT return options.baseUrl here as it contains the API endpoint URL
+            // Instead, always return the hacka.re app URL
+            const hackareUrl = window.location.href.split('#')[0];
+            console.log('🔗 ShareService: Empty payload, returning hacka.re app URL:', hackareUrl);
+            // Return just the base hacka.re URL - this allows sharing the app itself
+            return hackareUrl;
         }
         
         // Create the link using LinkSharingService for backward compatibility

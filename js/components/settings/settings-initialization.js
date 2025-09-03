@@ -102,8 +102,13 @@ window.SettingsInitialization = (function() {
                         await componentManagers.sharedLink.trySessionKeyDecryption(addSystemMessage, state.setMessages) :
                         null;
                     
-                    if (sessionResult && sessionResult.success && sessionResult.pendingSharedModel) {
-                        processSharedModel(sessionResult.pendingSharedModel, componentManagers, state, updateModelInfoDisplay);
+                    if (sessionResult && sessionResult.success) {
+                        // Process model if there is one
+                        if (sessionResult.pendingSharedModel) {
+                            processSharedModel(sessionResult.pendingSharedModel, componentManagers, state, updateModelInfoDisplay);
+                        }
+                        // Success means data was processed (welcome messages, etc.) even if no model
+                        console.log('[Settings Init] Shared data processed successfully');
                     } else {
                         console.warn('[Settings Init] Early password verification completed but no shared data could be processed');
                     }

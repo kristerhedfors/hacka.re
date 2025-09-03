@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test MCP Functions (Clean)</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #00ff00;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #00ff00;
+        }
+        button {
+            background: #002200;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: monospace;
+        }
+        button:hover {
+            background: #003300;
+        }
+        .output {
+            margin: 10px 0;
+            padding: 10px;
+            background: #000;
+            border: 1px solid #333;
+            white-space: pre-wrap;
+        }
+        .success { color: #00ff00; }
+        .error { color: #ff0000; }
+        .info { color: #ffff00; }
+    </style>
+</head>
+<body>
+    <h1>🧪 MCP Functions Test (Clean Architecture)</h1>
+    
+    <div class="test-section">
+        <h2>Test Objectives</h2>
+        <ul>
+            <li>✅ GitHub and Shodan functions NO LONGER appear in Default Functions</li>
+            <li>✅ MCP functions are registered as user-defined functions when connecting</li>
+            <li>✅ No duplicate functions in the system</li>
+            <li>✅ Functions execute properly with API credentials</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>1. Check Default Functions (Should NOT include GitHub/Shodan)</h2>
+        <button onclick="checkDefaultFunctions()">Check Default Functions</button>
+        <div id="default-functions-output" class="output"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Connect MCP Services</h2>
+        <button onclick="connectGitHub()">Connect GitHub MCP</button>
+        <button onclick="connectShodan()">Connect Shodan MCP</button>
+        <div id="mcp-connect-output" class="output"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Check Registered Functions</h2>
+        <button onclick="checkRegisteredFunctions()">Check All Functions</button>
+        <div id="registered-functions-output" class="output"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Test Function Execution</h2>
+        <button onclick="testGitHubFunction()">Test GitHub Search</button>
+        <button onclick="testShodanFunction()">Test Shodan MyIP</button>
+        <div id="function-test-output" class="output"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info', elementId = 'default-functions-output') {
+            const output = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            output.innerHTML += `<span class="${type}">[${timestamp}] ${message}</span>\n`;
+        }
+
+        async function checkDefaultFunctions() {
+            log('Checking default function collections...', 'info', 'default-functions-output');
+            
+            // Wait for page to load
+            await new Promise(resolve => {
+                if (window.DefaultFunctionsService) {
+                    resolve();
+                } else {
+                    window.addEventListener('load', resolve);
+                }
+            });
+            
+            if (window.DefaultFunctionsService) {
+                const collections = window.DefaultFunctionsService.getDefaultFunctionCollections();
+                log(`Found ${collections.length} default function collections:`, 'info', 'default-functions-output');
+                
+                collections.forEach(collection => {
+                    const funcCount = collection.functions ? collection.functions.length : 0;
+                    log(`  - ${collection.name} (${collection.id}): ${funcCount} functions`, 'info', 'default-functions-output');
+                });
+                
+                // Check for GitHub/Shodan (should NOT be present)
+                const hasGitHub = collections.some(c => c.id === 'github-functions');
+                const hasShodan = collections.some(c => c.id === 'shodan-functions');
+                
+                if (!hasGitHub && !hasShodan) {
+                    log('✅ SUCCESS: GitHub and Shodan are NOT in default functions', 'success', 'default-functions-output');
+                } else {
+                    log('❌ ERROR: GitHub or Shodan still in default functions!', 'error', 'default-functions-output');
+                    if (hasGitHub) log('  - GitHub functions still present', 'error', 'default-functions-output');
+                    if (hasShodan) log('  - Shodan functions still present', 'error', 'default-functions-output');
+                }
+            } else {
+                log('DefaultFunctionsService not available', 'error', 'default-functions-output');
+            }
+        }
+
+        async function connectGitHub() {
+            log('Attempting to connect GitHub MCP...', 'info', 'mcp-connect-output');
+            
+            // Simulate GitHub token
+            const testToken = 'ghp_test_token_' + Math.random().toString(36).substr(2, 9);
+            
+            if (window.MCPServiceConnectors && window.MCPServiceConnectors.github) {
+                try {
+                    // Store test token
+                    const storageKey = '__hacka_re_mcp_github_token';
+                    localStorage.setItem(storageKey, testToken);
+                    
+                    const result = await window.MCPServiceConnectors.github.connect();
+                    if (result) {
+                        log('✅ GitHub MCP connected successfully', 'success', 'mcp-connect-output');
+                    } else {
+                        log('❌ GitHub MCP connection failed', 'error', 'mcp-connect-output');
+                    }
+                } catch (error) {
+                    log(`❌ Error connecting GitHub: ${error.message}`, 'error', 'mcp-connect-output');
+                }
+            } else {
+                log('GitHub connector not available', 'error', 'mcp-connect-output');
+            }
+        }
+
+        async function connectShodan() {
+            log('Attempting to connect Shodan MCP...', 'info', 'mcp-connect-output');
+            
+            // Simulate Shodan API key
+            const testKey = 'test_shodan_key_' + Math.random().toString(36).substr(2, 9);
+            
+            if (window.MCPServiceConnectors && window.MCPServiceConnectors.shodan) {
+                try {
+                    // Store test key
+                    const storageKey = '__hacka_re_mcp_shodan_api_key';
+                    localStorage.setItem(storageKey, testKey);
+                    
+                    const result = await window.MCPServiceConnectors.shodan.connect();
+                    if (result) {
+                        log('✅ Shodan MCP connected successfully', 'success', 'mcp-connect-output');
+                    } else {
+                        log('❌ Shodan MCP connection failed', 'error', 'mcp-connect-output');
+                    }
+                } catch (error) {
+                    log(`❌ Error connecting Shodan: ${error.message}`, 'error', 'mcp-connect-output');
+                }
+            } else {
+                log('Shodan connector not available', 'error', 'mcp-connect-output');
+            }
+        }
+
+        function checkRegisteredFunctions() {
+            log('Checking all registered functions...', 'info', 'registered-functions-output');
+            
+            if (window.FunctionToolsRegistry) {
+                const allFunctions = window.FunctionToolsRegistry.getAvailableFunctions();
+                const enabledFunctions = window.FunctionToolsRegistry.getEnabledFunctions();
+                
+                log(`Total functions: ${allFunctions.length}`, 'info', 'registered-functions-output');
+                log(`Enabled functions: ${enabledFunctions.length}`, 'info', 'registered-functions-output');
+                
+                // Check for GitHub functions
+                const githubFunctions = allFunctions.filter(name => name.startsWith('github_'));
+                if (githubFunctions.length > 0) {
+                    log(`Found ${githubFunctions.length} GitHub functions:`, 'success', 'registered-functions-output');
+                    githubFunctions.slice(0, 5).forEach(name => {
+                        log(`  - ${name}`, 'info', 'registered-functions-output');
+                    });
+                    if (githubFunctions.length > 5) {
+                        log(`  ... and ${githubFunctions.length - 5} more`, 'info', 'registered-functions-output');
+                    }
+                }
+                
+                // Check for Shodan functions
+                const shodanFunctions = allFunctions.filter(name => name.startsWith('shodan_'));
+                if (shodanFunctions.length > 0) {
+                    log(`Found ${shodanFunctions.length} Shodan functions:`, 'success', 'registered-functions-output');
+                    shodanFunctions.slice(0, 5).forEach(name => {
+                        log(`  - ${name}`, 'info', 'registered-functions-output');
+                    });
+                    if (shodanFunctions.length > 5) {
+                        log(`  ... and ${shodanFunctions.length - 5} more`, 'info', 'registered-functions-output');
+                    }
+                }
+                
+                // Check for duplicates
+                const functionCounts = {};
+                allFunctions.forEach(name => {
+                    functionCounts[name] = (functionCounts[name] || 0) + 1;
+                });
+                
+                const duplicates = Object.entries(functionCounts).filter(([name, count]) => count > 1);
+                if (duplicates.length > 0) {
+                    log(`❌ Found ${duplicates.length} duplicate functions:`, 'error', 'registered-functions-output');
+                    duplicates.forEach(([name, count]) => {
+                        log(`  - ${name}: ${count} instances`, 'error', 'registered-functions-output');
+                    });
+                } else {
+                    log('✅ No duplicate functions found', 'success', 'registered-functions-output');
+                }
+                
+            } else {
+                log('FunctionToolsRegistry not available', 'error', 'registered-functions-output');
+            }
+            
+            // Also check default functions to ensure GitHub/Shodan aren't there
+            if (window.DefaultFunctionsService) {
+                const enabledDefaults = window.DefaultFunctionsService.getEnabledDefaultFunctions();
+                const defaultNames = Object.keys(enabledDefaults);
+                
+                const githubInDefaults = defaultNames.filter(name => name.startsWith('github_'));
+                const shodanInDefaults = defaultNames.filter(name => name.startsWith('shodan_'));
+                
+                if (githubInDefaults.length > 0 || shodanInDefaults.length > 0) {
+                    log('❌ ERROR: MCP functions found in default functions!', 'error', 'registered-functions-output');
+                    if (githubInDefaults.length > 0) {
+                        log(`  - ${githubInDefaults.length} GitHub functions in defaults`, 'error', 'registered-functions-output');
+                    }
+                    if (shodanInDefaults.length > 0) {
+                        log(`  - ${shodanInDefaults.length} Shodan functions in defaults`, 'error', 'registered-functions-output');
+                    }
+                } else {
+                    log('✅ MCP functions are NOT in default functions (correct)', 'success', 'registered-functions-output');
+                }
+            }
+        }
+
+        async function testGitHubFunction() {
+            log('Testing GitHub search function...', 'info', 'function-test-output');
+            
+            if (window.FunctionToolsExecutor) {
+                try {
+                    const result = await window.FunctionToolsExecutor.executeFunction(
+                        'github_search_code',
+                        { query: 'language:javascript', per_page: 1 }
+                    );
+                    log('✅ GitHub function executed successfully', 'success', 'function-test-output');
+                    log(`Result: ${JSON.stringify(result).substring(0, 200)}...`, 'info', 'function-test-output');
+                } catch (error) {
+                    log(`❌ Error executing GitHub function: ${error.message}`, 'error', 'function-test-output');
+                }
+            } else {
+                log('FunctionToolsExecutor not available', 'error', 'function-test-output');
+            }
+        }
+
+        async function testShodanFunction() {
+            log('Testing Shodan MyIP function...', 'info', 'function-test-output');
+            
+            if (window.FunctionToolsExecutor) {
+                try {
+                    const result = await window.FunctionToolsExecutor.executeFunction(
+                        'shodan_tools_myip',
+                        {}
+                    );
+                    log('✅ Shodan function executed successfully', 'success', 'function-test-output');
+                    log(`Result: ${JSON.stringify(result)}`, 'info', 'function-test-output');
+                } catch (error) {
+                    log(`❌ Error executing Shodan function: ${error.message}`, 'error', 'function-test-output');
+                }
+            } else {
+                log('FunctionToolsExecutor not available', 'error', 'function-test-output');
+            }
+        }
+
+        // Run initial check on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                log('Page loaded, running initial checks...', 'info', 'default-functions-output');
+                checkDefaultFunctions();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -37,6 +37,16 @@ window.DefaultFunctionsService = (function() {
             DEFAULT_FUNCTIONS.push(window.MCPExampleFunctions);
         }
         
+        // Add GitHub functions if they exist
+        if (window.GitHubFunctions) {
+            DEFAULT_FUNCTIONS.push(window.GitHubFunctions);
+        }
+        
+        // Add Shodan functions if they exist
+        if (window.ShodanFunctions) {
+            DEFAULT_FUNCTIONS.push(window.ShodanFunctions);
+        }
+        
         // Additional default function collections can be added here in the future
         
         console.log(`Loaded ${DEFAULT_FUNCTIONS.length} default function collections:`, DEFAULT_FUNCTIONS.map(g => g.name));
@@ -155,15 +165,19 @@ window.DefaultFunctionsService = (function() {
     /**
      * Toggle a default function collection's selection status
      * @param {string} id - The default function collection ID to toggle
+     * @param {boolean} forceState - Optional: force enable (true) or disable (false)
      * @returns {boolean} True if the function collection is now selected, false if unselected
      */
-    function toggleDefaultFunctionCollectionSelection(id) {
-        console.log("DefaultFunctionsService.toggleDefaultFunctionCollectionSelection called for id:", id);
+    function toggleDefaultFunctionCollectionSelection(id, forceState) {
+        console.log("DefaultFunctionsService.toggleDefaultFunctionCollectionSelection called for id:", id, "forceState:", forceState);
         const selectedIds = getSelectedDefaultFunctionIds();
         const index = selectedIds.indexOf(id);
         let result;
         
-        if (index >= 0) {
+        // Determine the action based on forceState or current state
+        const shouldEnable = forceState !== undefined ? forceState : (index < 0);
+        
+        if (!shouldEnable && index >= 0) {
             // Remove from selected
             selectedIds.splice(index, 1);
             setSelectedDefaultFunctionIds(selectedIds);
@@ -178,7 +192,7 @@ window.DefaultFunctionsService = (function() {
                     }
                 });
             }
-        } else {
+        } else if (shouldEnable && index < 0) {
             // Add to selected
             selectedIds.push(id);
             setSelectedDefaultFunctionIds(selectedIds);
@@ -217,6 +231,12 @@ window.DefaultFunctionsService = (function() {
                 
                 console.log(`Added ${parsedFunctions.length} default functions from collection: ${id}`);
             }
+        } else if (shouldEnable && index >= 0) {
+            // Already selected, just return true
+            result = true;
+        } else {
+            // Already unselected, just return false
+            result = false;
         }
         
         return result;
@@ -405,6 +425,33 @@ window.DefaultFunctionsService = (function() {
         // Load individually selected functions
         const selectedFunctionIds = getSelectedIndividualFunctionIds();
         console.log('Selected function IDs from storage:', selectedFunctionIds);
+        
+        // Skip if no functions selected
+        if (!selectedFunctionIds || selectedFunctionIds.length === 0) {
+            console.log('No default functions selected, skipping load');
+            return;
+        }
+        
+        // Check if already loaded to prevent redundant processing
+        const enabledDefaultFunctions = getEnabledDefaultFunctions();
+        const alreadyLoadedCount = Object.keys(enabledDefaultFunctions).length;
+        const expectedCount = selectedFunctionIds.length;
+        
+        // If all selected functions are already loaded, skip re-processing
+        if (alreadyLoadedCount === expectedCount) {
+            const loadedNames = Object.keys(enabledDefaultFunctions);
+            const expectedNames = selectedFunctionIds.map(id => {
+                const [groupId, functionName] = id.split(':');
+                return functionName;
+            });
+            
+            // Check if the loaded functions match what's expected
+            const allMatch = expectedNames.every(name => loadedNames.includes(name));
+            if (allMatch) {
+                console.log('All selected default functions already loaded, skipping re-processing');
+                return;
+            }
+        }
         
         selectedFunctionIds.forEach(functionId => {
             const [groupId, functionName] = functionId.split(':');

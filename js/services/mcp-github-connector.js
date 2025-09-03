@@ -214,6 +214,9 @@
                 }
             }
             
+            // GitHub functions are now registered as user-defined functions via MCP tools
+            // No need for separate default function collection
+            
             console.log(`[GitHubConnector] Connected successfully`);
             return true;
         }

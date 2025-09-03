@@ -4,6 +4,7 @@ from playwright.sync_api import Page, expect
 
 from test_utils import dismiss_welcome_modal, screenshot_with_markdown, set_test_model_in_storage
 
+@pytest.mark.skip(reason="Embedding generation UI has been removed - RAG now uses pre-generated embeddings")
 def test_rag_embedding_generation_ui(page: Page, serve_hacka_re, api_key):
     """Test the RAG embedding generation UI and progress indicators."""
     # Navigate to the application
@@ -42,6 +43,7 @@ def test_rag_embedding_generation_ui(page: Page, serve_hacka_re, api_key):
         "API Key": "Configured"
     })
 
+@pytest.mark.skip(reason="Embedding generation process has been removed - RAG now uses pre-generated embeddings")
 def test_rag_embedding_generation_process(page: Page, serve_hacka_re, api_key):
     """Test the actual embedding generation process with real API calls."""
     # Navigate to the application
@@ -114,6 +116,7 @@ def test_rag_embedding_generation_process(page: Page, serve_hacka_re, api_key):
         "Storage": "Embeddings stored in localStorage"
     })
 
+@pytest.mark.skip(reason="Embedding generation has been removed - RAG now uses pre-generated embeddings")
 def test_rag_embedding_generation_without_api_key(page: Page, serve_hacka_re):
     """Test embedding generation behavior without API key."""
     # Navigate to the application
@@ -197,6 +200,7 @@ def test_rag_chunking_algorithm(page: Page, serve_hacka_re):
         "Algorithm": "Working correctly"
     })
 
+@pytest.mark.skip(reason="Embedding caching test no longer applicable - using pre-generated embeddings")
 def test_rag_embedding_caching(page: Page, serve_hacka_re, api_key):
     """Test embedding caching functionality."""
     # Navigate to the application
