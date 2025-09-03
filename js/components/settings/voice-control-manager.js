@@ -12,10 +12,43 @@ window.VoiceControlManager = (function() {
         let currentStream = null;
         let recordingStartTime = null; // Track when recording starts
         
+        // Performance tracking
+        const perfLogger = window.PerformanceLogger ? new window.PerformanceLogger('🎤 Voice') : null;
+        const performanceMetrics = {
+            recordingStartTime: 0,
+            recordingEndTime: 0,
+            processingStartTime: 0,
+            processingEndTime: 0,
+            whisperRequestStartTime: 0,
+            whisperResponseTime: 0,
+            transcriptionStartTime: 0,
+            transcriptionEndTime: 0,
+            totalAudioBytes: 0,
+            totalChunks: 0,
+            streamAcquisitionTime: 0,
+            recorderCreationTime: 0,
+            failures: [],
+            successCount: 0,
+            failureCount: 0,
+            averageProcessingTime: 0,
+            lastProcessingSpeed: 0
+        };
+        
+        // Track performance over time
+        const performanceHistory = [];
+        const MAX_HISTORY_SIZE = 50;
+        
         function init() {
             console.log('🎤 VoiceControlManager: Starting fresh implementation');
+            if (perfLogger) {
+                perfLogger.reset();
+                perfLogger.log('VoiceControlManager initialization started');
+            }
             addVoiceControlCheckbox();
             initializeMicrophoneButton();
+            if (perfLogger) {
+                perfLogger.log('VoiceControlManager initialization complete');
+            }
         }
         
         function addVoiceControlCheckbox() {
@@ -192,21 +225,34 @@ window.VoiceControlManager = (function() {
         // PHASE 1: Absolute minimal recording implementation
         async function startRecording() {
             try {
+                if (perfLogger) {
+                    perfLogger.reset();
+                    perfLogger.log('Starting recording sequence');
+                }
+                
                 console.log('🎤 MINIMAL: Starting basic recording test...');
                 microphoneState = 'recording';
                 recordingStartTime = Date.now(); // Track when recording starts
+                performanceMetrics.recordingStartTime = performance.now();
                 
                 // Clean up any existing stream first
                 if (currentStream) {
+                    if (perfLogger) perfLogger.log('Cleaning up existing stream');
                     currentStream.getTracks().forEach(track => track.stop());
                     currentStream = null;
                 }
                 
                 // Phase 1: Most basic getUserMedia call possible
                 console.log('🎤 MINIMAL: Requesting basic microphone access...');
+                if (perfLogger) perfLogger.log('Requesting getUserMedia');
+                const streamStartTime = performance.now();
+                
                 currentStream = await navigator.mediaDevices.getUserMedia({ 
                     audio: true 
                 });
+                
+                performanceMetrics.streamAcquisitionTime = performance.now() - streamStartTime;
+                if (perfLogger) perfLogger.log(`Stream acquired in ${performanceMetrics.streamAcquisitionTime.toFixed(1)}ms`);
                 
                 console.log('🎤 MINIMAL: Stream created successfully');
                 console.log('🎤 MINIMAL: Stream details:', {
@@ -218,24 +264,46 @@ window.VoiceControlManager = (function() {
                 
                 // Phase 1: Most basic MediaRecorder - no options at all
                 console.log('🎤 MINIMAL: Creating basic MediaRecorder...');
+                if (perfLogger) perfLogger.log('Creating MediaRecorder');
+                const recorderStartTime = performance.now();
+                
                 mediaRecorder = new MediaRecorder(currentStream);
+                
+                performanceMetrics.recorderCreationTime = performance.now() - recorderStartTime;
+                if (perfLogger) perfLogger.log(`MediaRecorder created in ${performanceMetrics.recorderCreationTime.toFixed(1)}ms`);
                 
                 console.log('🎤 MINIMAL: MediaRecorder created with state:', mediaRecorder.state);
                 console.log('🎤 MINIMAL: Default mimeType:', mediaRecorder.mimeType);
                 
                 audioChunks = [];
+                performanceMetrics.totalChunks = 0;
+                performanceMetrics.totalAudioBytes = 0;
                 
                 mediaRecorder.ondataavailable = (event) => {
                     console.log('🎤 MINIMAL: Data received:', event.data.size, 'bytes');
                     if (event.data.size > 0) {
                         audioChunks.push(event.data);
+                        performanceMetrics.totalChunks++;
+                        performanceMetrics.totalAudioBytes += event.data.size;
+                        if (perfLogger) perfLogger.log(`Data chunk ${performanceMetrics.totalChunks}: ${event.data.size} bytes`);
                     }
                 };
                 
                 mediaRecorder.onstop = async () => {
+                    performanceMetrics.recordingEndTime = performance.now();
+                    const recordingDuration = performanceMetrics.recordingEndTime - performanceMetrics.recordingStartTime;
+                    
+                    if (perfLogger) perfLogger.log(`Recording stopped after ${recordingDuration.toFixed(1)}ms`);
+                    
                     console.log('🎤 MINIMAL: Recording stopped, chunks:', audioChunks.length);
                     const totalSize = audioChunks.reduce((sum, chunk) => sum + chunk.size, 0);
                     console.log('🎤 MINIMAL: Total audio data:', totalSize, 'bytes');
+                    
+                    if (perfLogger) {
+                        perfLogger.log(`Total chunks: ${performanceMetrics.totalChunks}`);
+                        perfLogger.log(`Total bytes: ${performanceMetrics.totalAudioBytes}`);
+                        perfLogger.log(`Bytes/second: ${(performanceMetrics.totalAudioBytes / (recordingDuration / 1000)).toFixed(0)}`);
+                    }
                     
                     // Set processing state immediately after stopping
                     microphoneState = 'processing';
@@ -270,14 +338,24 @@ window.VoiceControlManager = (function() {
                 
                 // Start recording
                 console.log('🎤 MINIMAL: Starting MediaRecorder...');
+                if (perfLogger) perfLogger.log('Starting MediaRecorder');
                 mediaRecorder.start();
                 
                 // Update button to recording state
                 updateButtonState();
                 
+                if (perfLogger) perfLogger.log('Recording started successfully');
                 console.log('🎤 MINIMAL: Recording started successfully, state:', mediaRecorder.state);
                 
             } catch (error) {
+                performanceMetrics.failureCount++;
+                performanceMetrics.failures.push({
+                    timestamp: Date.now(),
+                    error: error.message,
+                    phase: 'start_recording'
+                });
+                
+                if (perfLogger) perfLogger.log(`Recording start failed: ${error.message}`);
                 console.error('🎤 MINIMAL: Error starting recording:', error);
                 alert('Failed to start recording: ' + error.message);
                 
@@ -406,20 +484,36 @@ window.VoiceControlManager = (function() {
         // Process audio with Whisper API with auto-provider detection
         async function processAudioWithWhisper(audioBlob) {
             try {
+                performanceMetrics.processingStartTime = performance.now();
+                if (perfLogger) {
+                    perfLogger.log('Starting Whisper processing');
+                    perfLogger.log(`Audio blob size: ${audioBlob.size} bytes`);
+                }
+                
                 // Get API configuration
                 const apiKey = window.StorageService?.getApiKey();
                 const baseUrl = window.StorageService?.getBaseUrl() || 'https://api.openai.com/v1';
                 
                 if (!apiKey) {
                     alert('Please configure your API key to use voice control.');
+                    performanceMetrics.failureCount++;
+                    performanceMetrics.failures.push({
+                        timestamp: Date.now(),
+                        error: 'No API key',
+                        phase: 'whisper_processing'
+                    });
                     return;
                 }
                 
                 // Auto-detect provider and get appropriate configuration
                 const providerConfig = detectWhisperProvider(baseUrl);
+                if (perfLogger) perfLogger.log(`Provider detected: ${providerConfig.name}`);
                 
                 // Select best available Whisper model
+                const modelSelectionStart = performance.now();
                 const selectedModel = await selectBestWhisperModel();
+                const modelSelectionTime = performance.now() - modelSelectionStart;
+                if (perfLogger) perfLogger.log(`Model selected: ${selectedModel} (${modelSelectionTime.toFixed(1)}ms)`);
                 
                 console.log('🎤 Auto-detected provider:', providerConfig.name);
                 console.log('🎤 Using endpoint:', providerConfig.endpoint);
@@ -450,6 +544,9 @@ window.VoiceControlManager = (function() {
                 formData.append('model', selectedModel);
                 
                 // Send to provider-specific endpoint
+                performanceMetrics.whisperRequestStartTime = performance.now();
+                if (perfLogger) perfLogger.log(`Sending request to ${providerConfig.name}`);
+                
                 const response = await fetch(providerConfig.endpoint, {
                     method: 'POST',
                     headers: {
@@ -458,31 +555,97 @@ window.VoiceControlManager = (function() {
                     body: formData
                 });
                 
+                performanceMetrics.whisperResponseTime = performance.now();
+                const apiCallDuration = performanceMetrics.whisperResponseTime - performanceMetrics.whisperRequestStartTime;
+                if (perfLogger) perfLogger.log(`API response received in ${apiCallDuration.toFixed(1)}ms (status: ${response.status})`);
+                
                 console.log('🎤 MINIMAL: Whisper API response:', response.status);
                 
                 if (!response.ok) {
                     const errorText = await response.text();
                     console.error('🎤 API Error Response:', errorText);
+                    performanceMetrics.failureCount++;
+                    performanceMetrics.failures.push({
+                        timestamp: Date.now(),
+                        error: `API ${response.status}`,
+                        phase: 'whisper_api_call',
+                        duration: apiCallDuration
+                    });
                     throw new Error(`${providerConfig.name} API error: ${response.status} ${response.statusText}`);
                 }
                 
+                performanceMetrics.transcriptionStartTime = performance.now();
                 const result = await response.json();
+                performanceMetrics.transcriptionEndTime = performance.now();
+                
+                if (perfLogger) {
+                    const parseTime = performanceMetrics.transcriptionEndTime - performanceMetrics.transcriptionStartTime;
+                    perfLogger.log(`Response parsed in ${parseTime.toFixed(1)}ms`);
+                }
+                
                 console.log('🎤 MINIMAL: Transcription result:', result);
                 
                 if (result.text) {
                     console.log('🎤 MINIMAL: Transcribed text:', `"${result.text}"`);
                     
-                    // Calculate recording metrics
-                    const recordingEndTime = Date.now();
-                    const recordingDuration = (recordingEndTime - recordingStartTime) / 1000; // Duration in seconds
+                    // Calculate comprehensive performance metrics
+                    performanceMetrics.processingEndTime = performance.now();
+                    const totalProcessingTime = performanceMetrics.processingEndTime - performanceMetrics.processingStartTime;
+                    const recordingDuration = (performanceMetrics.recordingEndTime - performanceMetrics.recordingStartTime) / 1000; // seconds
+                    const processingSpeed = recordingDuration / (totalProcessingTime / 1000); // x realtime speed
+                    
+                    // Track performance history
+                    performanceMetrics.lastProcessingSpeed = processingSpeed;
+                    performanceMetrics.successCount++;
+                    
+                    // Add to history for trend analysis
+                    performanceHistory.push({
+                        timestamp: Date.now(),
+                        recordingDuration: recordingDuration,
+                        processingTime: totalProcessingTime,
+                        processingSpeed: processingSpeed,
+                        audioBytes: performanceMetrics.totalAudioBytes,
+                        apiCallTime: performanceMetrics.whisperResponseTime - performanceMetrics.whisperRequestStartTime,
+                        streamAcquisitionTime: performanceMetrics.streamAcquisitionTime
+                    });
+                    
+                    // Keep history size limited
+                    if (performanceHistory.length > MAX_HISTORY_SIZE) {
+                        performanceHistory.shift();
+                    }
+                    
+                    // Calculate average processing speed from recent history
+                    const recentHistory = performanceHistory.slice(-10);
+                    const avgSpeed = recentHistory.reduce((sum, h) => sum + h.processingSpeed, 0) / recentHistory.length;
+                    performanceMetrics.averageProcessingTime = avgSpeed;
+                    
+                    // Detect performance degradation
+                    let degradationWarning = '';
+                    if (performanceHistory.length >= 3) {
+                        const lastThree = performanceHistory.slice(-3);
+                        const speedTrend = lastThree.map(h => h.processingSpeed);
+                        if (speedTrend[2] < speedTrend[0] * 0.7) {
+                            degradationWarning = ' ⚠️ Performance degrading';
+                        }
+                    }
+                    
+                    // Calculate words per second
                     const words = result.text.trim().split(/\s+/).filter(word => word.length > 0);
                     const wordCount = words.length;
-                    const tokenCount = Math.round(result.text.length / 4); // Rough estimate: ~4 chars per token
-                    const wordsPerSecond = recordingDuration > 0 ? (wordCount / recordingDuration).toFixed(2) : 0;
+                    const wordsPerSecond = recordingDuration > 0 ? (wordCount / recordingDuration) : 0;
                     
-                    // Display system message with metrics
-                    const metricsMessage = `🎤 Recording complete: ${recordingDuration.toFixed(1)}s, ~${tokenCount} tokens, ${wordsPerSecond} words/sec`;
-                    console.log('🎤 MINIMAL: Recording metrics:', metricsMessage);
+                    // Display enhanced system message with processing speed
+                    const metricsMessage = `🎤 Recording: ${recordingDuration.toFixed(1)}s | Speed: ${processingSpeed.toFixed(2)}x realtime | ${wordsPerSecond.toFixed(2)} words/sec${degradationWarning}`;
+                    console.log('🎤 MINIMAL: Performance metrics:', metricsMessage);
+                    
+                    if (perfLogger) {
+                        perfLogger.log(`Total processing time: ${totalProcessingTime.toFixed(1)}ms`);
+                        perfLogger.log(`Processing speed: ${processingSpeed.toFixed(2)}x realtime`);
+                        perfLogger.log(`Success rate: ${performanceMetrics.successCount}/${performanceMetrics.successCount + performanceMetrics.failureCount}`);
+                        if (degradationWarning) {
+                            perfLogger.log(`Performance degradation detected!`);
+                        }
+                    }
                     
                     // Try to add system message using the global aiHackare object
                     if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
@@ -522,16 +685,57 @@ window.VoiceControlManager = (function() {
                     }
                 } else {
                     console.warn('🎤 MINIMAL: No text in API response');
+                    performanceMetrics.failureCount++;
+                    performanceMetrics.failures.push({
+                        timestamp: Date.now(),
+                        error: 'No text in response',
+                        phase: 'whisper_transcription'
+                    });
+                    
+                    if (perfLogger) {
+                        perfLogger.log('Transcription failed: No text detected');
+                        perfLogger.log(`Failure rate: ${performanceMetrics.failureCount}/${performanceMetrics.successCount + performanceMetrics.failureCount}`);
+                    }
                     alert('No speech was detected in the recording.');
                 }
                 
             } catch (error) {
+                performanceMetrics.failureCount++;
+                const processingTime = performance.now() - performanceMetrics.processingStartTime;
+                performanceMetrics.failures.push({
+                    timestamp: Date.now(),
+                    error: error.message,
+                    phase: 'whisper_processing',
+                    duration: processingTime
+                });
+                
+                if (perfLogger) {
+                    perfLogger.log(`Whisper API error after ${processingTime.toFixed(1)}ms: ${error.message}`);
+                    perfLogger.log(`Total failures: ${performanceMetrics.failureCount}`);
+                    
+                    // Log recent failure pattern if multiple failures
+                    if (performanceMetrics.failures.length >= 3) {
+                        const recentFailures = performanceMetrics.failures.slice(-3);
+                        perfLogger.log('Recent failure pattern:');
+                        recentFailures.forEach(f => {
+                            perfLogger.log(`  - ${f.phase}: ${f.error}`);
+                        });
+                    }
+                }
+                
                 console.error('🎤 MINIMAL: Whisper API error:', error);
                 alert('Failed to transcribe audio: ' + error.message);
             } finally {
                 // Always reset to idle state when processing is complete
                 microphoneState = 'idle';
                 updateButtonState();
+                
+                if (perfLogger) {
+                    const totalTime = performance.now() - (performanceMetrics.recordingStartTime || 0);
+                    perfLogger.log(`Session complete. Total time: ${totalTime.toFixed(1)}ms`);
+                    perfLogger.log(`Final state: ${microphoneState}`);
+                }
+                
                 console.log('🎤 MINIMAL: Processing complete, state reset to idle');
             }
         }
@@ -622,10 +826,58 @@ window.VoiceControlManager = (function() {
             return `Enabled (auto-detected: ${providerConfig.name})`;
         }
         
+        /**
+         * Get performance diagnostics for debugging
+         * @returns {Object} Performance metrics and history
+         */
+        function getPerformanceDiagnostics() {
+            const diagnostics = {
+                currentMetrics: performanceMetrics,
+                history: performanceHistory,
+                statistics: {
+                    totalSessions: performanceMetrics.successCount + performanceMetrics.failureCount,
+                    successRate: performanceMetrics.successCount / (performanceMetrics.successCount + performanceMetrics.failureCount) || 0,
+                    averageSpeed: performanceMetrics.averageProcessingTime,
+                    lastSpeed: performanceMetrics.lastProcessingSpeed,
+                    recentFailures: performanceMetrics.failures.slice(-5)
+                }
+            };
+            
+            // Calculate performance trends if enough history
+            if (performanceHistory.length >= 5) {
+                const recent = performanceHistory.slice(-5);
+                diagnostics.statistics.recentTrend = {
+                    avgProcessingTime: recent.reduce((sum, h) => sum + h.processingTime, 0) / recent.length,
+                    avgApiCallTime: recent.reduce((sum, h) => sum + h.apiCallTime, 0) / recent.length,
+                    avgSpeed: recent.reduce((sum, h) => sum + h.processingSpeed, 0) / recent.length
+                };
+            }
+            
+            return diagnostics;
+        }
+        
+        /**
+         * Reset performance metrics (useful for testing)
+         */
+        function resetPerformanceMetrics() {
+            performanceMetrics.successCount = 0;
+            performanceMetrics.failureCount = 0;
+            performanceMetrics.failures = [];
+            performanceMetrics.averageProcessingTime = 0;
+            performanceMetrics.lastProcessingSpeed = 0;
+            performanceHistory.length = 0;
+            if (perfLogger) {
+                perfLogger.reset();
+                perfLogger.log('Performance metrics reset');
+            }
+        }
+        
         return {
             init,
             getVoiceControlStatus,
-            getVoiceControlEnabled
+            getVoiceControlEnabled,
+            getPerformanceDiagnostics,
+            resetPerformanceMetrics
         };
     }
 
