@@ -18,7 +18,7 @@ def test_context_window_display(page: Page, serve_hacka_re, api_key):
     page.wait_for_selector("#settings-modal", state="visible")
     
     # Configure OpenAI API
-    api_key_input = page.locator("#api-key-input")
+    api_key_input = page.locator("#api-key-update")
     api_key_input.fill(api_key)
     
     # Select OpenAI provider
@@ -51,7 +51,7 @@ def test_context_window_display(page: Page, serve_hacka_re, api_key):
         page.on("console", lambda msg: console_logs.append(f"{msg.type}: {msg.text}"))
         
         # Trigger a re-render by typing something
-        chat_input = page.locator("#chat-input")
+        chat_input = page.locator("#message-input")
         chat_input.fill("Test message")
         page.wait_for_timeout(500)
         
