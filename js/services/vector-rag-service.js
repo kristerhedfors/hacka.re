@@ -540,10 +540,11 @@ window.VectorRAGService = (function() {
             baseUrl = null,
             embeddingModel = ragSettings?.embeddingModel || 'text-embedding-3-small',
             useMultiQuery = false,
-            expansionModel = null  // Will be set to provider default if not specified
+            expansionModel: providedExpansionModel = null  // Will be set to provider default if not specified
         } = options;
         
         // Set expansion model to provider default if not specified
+        let expansionModel = providedExpansionModel;
         if (!expansionModel) {
             const provider = window.DataService?.getBaseUrlProvider?.() || 'openai';
             expansionModel = window.DefaultModelsConfig?.getRagExpansionModel?.(provider) || 'gpt-4.1-mini';

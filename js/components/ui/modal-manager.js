@@ -132,18 +132,17 @@ window.ModalManager = (function() {
                     }
                 }
                 
-                // If no shared welcome message, check localStorage for a saved one
-                if (!welcomeMessage) {
-                    const savedWelcome = localStorage.getItem('shareModalWelcomeMessage');
+                // If no shared welcome message, check encrypted storage for a saved one
+                if (!welcomeMessage && window.StorageService) {
+                    const savedWelcome = window.StorageService.getShareWelcomeMessage();
                     if (savedWelcome) {
                         welcomeMessage = savedWelcome;
                     }
                 }
                 
-                // Also restore checkbox state from localStorage
-                const savedCheckboxState = localStorage.getItem('shareModalWelcomeCheckbox');
-                if (savedCheckboxState !== null) {
-                    shareWelcomeMessageCheckbox.checked = savedCheckboxState === 'true';
+                // Also restore checkbox state from encrypted storage
+                if (window.StorageService) {
+                    shareWelcomeMessageCheckbox.checked = window.StorageService.getShareWelcomeEnabled();
                 }
                 
                 // Restore welcome message if we have one
@@ -303,11 +302,12 @@ window.ModalManager = (function() {
             // Save welcome message state before closing
             const shareWelcomeMessageInput = document.getElementById('share-welcome-message');
             const shareWelcomeMessageCheckbox = document.getElementById('share-welcome-message-checkbox');
-            if (shareWelcomeMessageInput && shareWelcomeMessageCheckbox) {
-                // Save the welcome message text
-                localStorage.setItem('shareModalWelcomeMessage', shareWelcomeMessageInput.value || '');
-                // Save the checkbox state
-                localStorage.setItem('shareModalWelcomeCheckbox', shareWelcomeMessageCheckbox.checked.toString());
+            if (shareWelcomeMessageInput && shareWelcomeMessageCheckbox && window.StorageService) {
+                // Save the welcome message settings to encrypted storage
+                window.StorageService.saveShareWelcomeSettings(
+                    shareWelcomeMessageInput.value || '',
+                    shareWelcomeMessageCheckbox.checked
+                );
             }
             
             elements.shareModal.classList.remove('active');

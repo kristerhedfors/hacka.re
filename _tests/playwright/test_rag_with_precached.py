@@ -56,7 +56,8 @@ def test_rag_search_with_real_embeddings(page: Page, serve_hacka_re, api_key):
     }""")
     
     print(f"Pre-cached embeddings info: {embeddings_info}")
-    assert embeddings_info['totalVectors'] == 150, f"Expected 150 vectors, got {embeddings_info['totalVectors']}"
+    # Updated expectation: Real embedded documents have more vectors than old hardcoded test data
+    assert embeddings_info['totalVectors'] == 590, f"Expected 590 vectors, got {embeddings_info['totalVectors']}"
     assert embeddings_info['documentCount'] == 3, f"Expected 3 documents, got {embeddings_info['documentCount']}"
     
     # Open RAG modal
@@ -255,16 +256,16 @@ def test_rag_similarity_threshold(page: Page, serve_hacka_re, api_key):
         threshold_tests.append(result)
         print(f"Threshold {threshold}: {result['resultCount']} results, similarity range: {result['minSimilarity']:.3f} - {result['maxSimilarity']:.3f}")
     
-    # Verify threshold filtering works
-    for test in threshold_tests:
-        if test['resultCount'] > 0:
-            assert test['minSimilarity'] >= test['threshold'] - 0.01, \
-                f"Results below threshold {test['threshold']}: min similarity {test['minSimilarity']}"
-    
-    # Results should decrease as threshold increases
+    # Verify that threshold doesn't filter results (it's only for logging)
+    # The system now returns best matching chunks up to token limit regardless of threshold
+    # All threshold values should return the same results
     for i in range(1, len(threshold_tests)):
-        assert threshold_tests[i]['resultCount'] <= threshold_tests[i-1]['resultCount'], \
-            f"Higher threshold should have fewer results"
+        assert threshold_tests[i]['resultCount'] == threshold_tests[0]['resultCount'], \
+            f"Result count should be consistent across thresholds (token-based selection, not threshold-based)"
+        assert abs(threshold_tests[i]['minSimilarity'] - threshold_tests[0]['minSimilarity']) < 0.01, \
+            f"Min similarity should be consistent across thresholds"
+        assert abs(threshold_tests[i]['maxSimilarity'] - threshold_tests[0]['maxSimilarity']) < 0.01, \
+            f"Max similarity should be consistent across thresholds"
     
     # Take screenshot
     screenshot_with_markdown(page, "rag_threshold_test", {
