@@ -385,15 +385,10 @@ function createSharedLinkDataProcessor() {
             return false;
         };
         
-        // Try immediately
+        // Refresh UI immediately, with one quick retry if needed
         if (!refreshPromptsUI()) {
-            // Try again after a short delay
-            setTimeout(() => {
-                if (!refreshPromptsUI()) {
-                    // Final attempt after longer delay
-                    setTimeout(refreshPromptsUI, 500);
-                }
-            }, 100);
+            // Single retry after minimal delay
+            setTimeout(refreshPromptsUI, 50);
         }
         
         return promptsSummary;
@@ -697,9 +692,10 @@ function createSharedLinkDataProcessor() {
                 
                 // Trigger MCP service connector to recreate connections if available
                 if (window.mcpServiceManager) {
-                    // Delay slightly to ensure storage is committed
-                    setTimeout(async () => {
-                        for (const serviceKey of connectionKeys) {
+                    // Process GitHub connections immediately in parallel
+                    const githubReconnectPromise = (async () => {
+                        const githubKeys = connectionKeys.filter(key => key === 'github');
+                        for (const serviceKey of githubKeys) {
                             // Try to recreate the connection automatically
                             if (window.mcpServiceManager.quickConnect && serviceKey === 'github') {
                                 try {
@@ -734,22 +730,21 @@ function createSharedLinkDataProcessor() {
                                         addSystemMessage(`${serviceKey} MCP connection restoration failed: ${error.message}. Please reconnect manually.`);
                                     }
                                 }
-                            } else if (serviceKey === 'shodan') {
-                                // Shodan connections are now established immediately during restore
-                                // No need for delayed reconnection
-                                console.log(`${serviceKey} connection already handled during restore`);
                             }
                         }
-                    }, 100);
+                    })();
+                    
+                    // Don't wait for GitHub reconnection to complete - let it run in background
+                    githubReconnectPromise.catch(error => {
+                        console.warn('GitHub reconnection error:', error);
+                    });
                 }
                 
                 // Update UI to reflect the loaded credentials
                 if (window.MCPQuickConnectors && typeof window.MCPQuickConnectors.updateAllConnectorStatuses === 'function') {
-                    // Give the services time to initialize, then update UI
-                    setTimeout(() => {
-                        window.MCPQuickConnectors.updateAllConnectorStatuses();
-                        perfLogger.log('Updated MCP connector UI statuses');
-                    }, 200);
+                    // Update UI immediately - no need to wait
+                    window.MCPQuickConnectors.updateAllConnectorStatuses();
+                    perfLogger.log('Updated MCP connector UI statuses');
                 }
                 
                 // Return summary info
