@@ -85,14 +85,28 @@ window.PromptsManager = (function() {
             // Reset current prompt
             currentPrompt = null;
             
-            // Load prompts with error handling
-            try {
-                loadPromptsList();
-                // Update the main context usage display
-                updateMainContextUsage();
-            } catch (error) {
-                console.error('Error loading prompts list:', error);
-                // Even if there's an error, keep the modal visible
+            // Check if we need to refresh due to shared link data being applied
+            // This ensures checkboxes reflect the state from shared links
+            if (window._sharedLinkDefaultPromptsApplied) {
+                console.log('[PromptsManager] Detected shared link default prompts - ensuring UI sync');
+                window._sharedLinkDefaultPromptsApplied = false; // Clear the flag
+                
+                // Force a fresh load to ensure checkboxes are properly set
+                // Small delay to ensure storage is fully updated
+                setTimeout(() => {
+                    loadPromptsList();
+                    updateMainContextUsage();
+                }, 50);
+            } else {
+                // Load prompts with error handling
+                try {
+                    loadPromptsList();
+                    // Update the main context usage display
+                    updateMainContextUsage();
+                } catch (error) {
+                    console.error('Error loading prompts list:', error);
+                    // Even if there's an error, keep the modal visible
+                }
             }
             
             // Focus on the prompt name input field
