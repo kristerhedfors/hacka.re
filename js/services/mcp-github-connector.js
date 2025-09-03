@@ -214,28 +214,8 @@
                 }
             }
             
-            // Auto-register and enable GitHub function collection if available
-            if (window.DefaultFunctionsService && window.GitHubFunctions) {
-                try {
-                    // Re-initialize to pick up the GitHub functions
-                    window.DefaultFunctionsService.initializeDefaultFunctions();
-                    
-                    // Enable the collection if it's not already selected
-                    if (!window.DefaultFunctionsService.isDefaultFunctionCollectionSelected('github-functions')) {
-                        window.DefaultFunctionsService.toggleDefaultFunctionCollectionSelection('github-functions', true);
-                        console.log('[GitHubConnector] GitHub function collection auto-enabled');
-                        
-                        // Refresh UI to show the checked state
-                        if (window.DefaultFunctionsManager && window.DefaultFunctionsManager.refreshCollectionUIState) {
-                            window.DefaultFunctionsManager.refreshCollectionUIState('github-functions');
-                        }
-                    } else {
-                        console.log('[GitHubConnector] GitHub function collection already enabled');
-                    }
-                } catch (error) {
-                    console.warn('[GitHubConnector] Failed to enable GitHub functions:', error);
-                }
-            }
+            // GitHub functions are now registered as user-defined functions via MCP tools
+            // No need for separate default function collection
             
             console.log(`[GitHubConnector] Connected successfully`);
             return true;
