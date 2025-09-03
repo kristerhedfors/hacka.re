@@ -17,12 +17,12 @@ Port: 8000
 Project Root: /Users/user/dev/hacka.re
 ==================================================
 Checking for existing HTTP server processes on port 8000...
-Found existing processes: 4338
+Found existing processes: 82434
 Killing existing processes...
 Processes killed.
 Changing to project root directory: /Users/user/dev/hacka.re
 Starting Python HTTP server on port 8000...
-Server started successfully with PID: 10051
+Server started successfully with PID: 14018
 Server is now running at http://localhost:8000
 Server PID saved to: /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt
 ==================================================
@@ -33,15 +33,16 @@ Running Core Functionality tests with chromium browser...
 Test filter: test_page or test_api or test_chat or test_welcome_modal
 
 ============================= test session starts ==============================
-platform darwin -- Python 3.13.3, pytest-8.3.5, pluggy-1.5.0
+platform darwin -- Python 3.13.3, pytest-8.3.5, pluggy-1.5.0 -- /Users/user/dev/hacka.re/_tests/playwright/.venv/bin/python
+cachedir: .pytest_cache
 rootdir: /Users/user/dev/hacka.re/_tests/playwright
 configfile: pytest.ini
 testpaths: .
 plugins: playwright-0.7.0, base-url-2.1.0
-collected 926 items / 888 deselected / 38 selected
+collecting ... collected 936 items / 898 deselected / 38 selected
 
 shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_info[chromium0] PASSED [  2%]
-shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_plan_details[chromium0] FAILED [  5%]
+shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_plan_details[chromium0] PASSED [  5%]
 test_api.py::test_api_key_configuration[chromium0] PASSED                [  7%]
 test_api.py::test_model_selection[chromium0] PASSED                      [ 10%]
 test_api_key_detection_simple.py::test_api_key_detection_simple[chromium0] PASSED [ 13%]
@@ -79,38 +80,6 @@ test_welcome_modal_new_logic.py::test_welcome_modal_hidden_for_returning_user[ch
 test_welcome_modal_new_logic.py::test_welcome_modal_disabled_with_url_param[chromium1] PASSED [ 97%]
 test_welcome_modal_new_logic.py::test_no_auto_settings_after_welcome[chromium1] PASSED [100%]
 
-=================================== FAILURES ===================================
-______________ TestShodanAPIInfo.test_api_plan_details[chromium0] ______________
-
-self = <test_shodan_account_apis.TestShodanAPIInfo object at 0x103f7a3f0>
-shodan_chat_interface = <Page url='http://localhost:8000/'>
-
-    def test_api_plan_details(self, shodan_chat_interface):
-        """Test understanding API plan features"""
-        page = shodan_chat_interface
-    
-        # Query about plan details
-        query = "What Shodan API features are available with my current plan?"
-        response = send_shodan_query(page, query)
-    
-        # Should list features - be more flexible with keywords
-        feature_keywords = ["search", "scan", "monitor", "filter", "export", "download", "api",
-                          "query", "data", "access", "information", "lookup", "check"]
-        features_found = sum(1 for keyword in feature_keywords if keyword in response.lower())
-    
-        # Lower threshold to 1 keyword as minimum, since responses can vary
->       assert features_found >= 1, f"Response should list API features, found {features_found} features"
-E       AssertionError: Response should list API features, found 0 features
-E       assert 0 >= 1
-
-shodan/test_shodan_account_apis.py:101: AssertionError
----------------------------- Captured stdout setup -----------------------------
-welcome-modal is visible, closing it
-Found close button with selector: #close-welcome-modal
-Clicked close button
-Modal closed successfully
---------------------------- Captured stdout teardown ---------------------------
-HTTP server process already terminated
 =============================== warnings summary ===============================
 test_complete_mcp_share_flow.py:8
   /Users/user/dev/hacka.re/_tests/playwright/test_complete_mcp_share_flow.py:8: PytestUnknownMarkWarning: Unknown pytest.mark.feature_test - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
@@ -149,9 +118,7 @@ test_rag_similarity_scores.py:14
     @pytest.mark.asyncio
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-=========================== short test summary info ============================
-FAILED shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_plan_details[chromium0]
-= 1 failed, 35 passed, 2 skipped, 888 deselected, 9 warnings in 225.59s (0:03:45) =
+==== 36 passed, 2 skipped, 898 deselected, 9 warnings in 261.03s (0:04:21) =====
 Generating test results markdown files...
 No arguments provided. Using default files.
 Processing default files...
@@ -168,7 +135,7 @@ You can view the markdown report with: glow -p run_tests.out_bundle.md
 These files can be used by the coding assistant LLM to analyze test results
 Stopping HTTP server...
 ===== Stopping HTTP Server for hacka.re Tests =====
-Found server process with PID: 10051
+Found server process with PID: 14018
 Stopping server...
 Server stopped.
 Removed PID file: /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt
