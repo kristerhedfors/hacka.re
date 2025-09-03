@@ -6,6 +6,9 @@
 (function(global) {
     'use strict';
 
+    // Performance logger
+    const perfLogger = window.mcpPerfLogger || new (window.PerformanceLogger || class { log() {} })('MCPShodan');
+
     class ShodanConnector extends global.BaseServiceConnector {
         constructor() {
             super('shodan', {
@@ -191,17 +194,22 @@
          * Connect to Shodan using API key
          */
         async connect() {
+            if (perfLogger.reset) perfLogger.reset();
+            perfLogger.log('Starting Shodan connection');
+            
             // First try to load existing connection
+            perfLogger.log('Loading existing connection');
             await this.loadConnection();
+            perfLogger.log('Connection load complete');
             
             // Check for invalid cached connection (boolean apiKey from testing)
             if (this.connection && typeof this.connection.apiKey === 'boolean') {
-                console.log(`[ShodanConnector] Clearing invalid cached connection`);
+                perfLogger.log('Clearing invalid cached connection');
                 await this.clearConnection();
             }
             
             if (this.isConnected()) {
-                console.log(`[ShodanConnector] Using loaded connection with ${Object.keys(this.getToolsToRegister()).length} tools`);
+                perfLogger.log(`Using loaded connection with ${Object.keys(this.getToolsToRegister()).length} tools`);
                 return true;
             }
 
@@ -212,7 +220,7 @@
             if (existingKey) {
                 const isValid = await this.validateApiKey(existingKey);
                 if (isValid) {
-                    console.log(`[ShodanConnector] Using existing API key`);
+                    perfLogger.log('Using existing API key');
                     await this.createConnection(existingKey);
                     return true;
                 }
@@ -253,13 +261,17 @@
             };
 
             await this.storeConnection(connectionData);
+            perfLogger.log('Connection data stored');
             
             // Store API key separately for compatibility
             const keyStorage = this.getStorageKey('api_key');
             await this.storage.setValue(keyStorage, apiKey);
+            perfLogger.log('API key stored');
             
             // Register tools
+            perfLogger.log('Registering Shodan tools');
             await this.registerTools(apiKey);
+            perfLogger.log('Tools registered');
             
             // Auto-register and enable the Shodan Integration Guide prompt
             if (window.DefaultPromptsService && window.ShodanIntegrationGuide) {
@@ -268,13 +280,13 @@
                     window.DefaultPromptsService.registerPrompt(window.ShodanIntegrationGuide);
                     // Then enable it
                     window.DefaultPromptsService.enablePrompt('Shodan MCP prompt');
-                    console.log('[ShodanConnector] Shodan MCP prompt registered and auto-enabled');
+                    perfLogger.log('Shodan MCP prompt registered and auto-enabled');
                 } catch (error) {
                     console.warn('[ShodanConnector] Failed to register/enable Shodan prompt:', error);
                 }
             }
             
-            console.log(`[ShodanConnector] Connected successfully`);
+            perfLogger.log('Connected successfully');
             return true;
         }
 

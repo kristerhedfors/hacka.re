@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Performance Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #0f0;
+        }
+        #console {
+            background: #000;
+            padding: 10px;
+            border: 1px solid #0f0;
+            min-height: 400px;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            max-height: 600px;
+        }
+        button {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: monospace;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #0a0;
+        }
+        .header {
+            color: #0f0;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>MCP Performance Logger Test</h1>
+        <p>Test MCP loading performance with millisecond-level timing between operations</p>
+    </div>
+    
+    <div>
+        <button onclick="testMCPLoading()">Test MCP Loading</button>
+        <button onclick="testSharedLink()">Test Shared Link Loading</button>
+        <button onclick="clearConsole()">Clear Console</button>
+    </div>
+    
+    <div id="console"></div>
+
+    <script>
+        const consoleDiv = document.getElementById('console');
+        
+        // Override console.log to display in our div
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog(...args);
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            consoleDiv.textContent += message + '\n';
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        };
+        
+        function clearConsole() {
+            consoleDiv.textContent = '';
+        }
+        
+        async function testMCPLoading() {
+            console.log('=== Starting MCP Loading Test ===\n');
+            
+            // Load the performance logger first
+            await loadScript('/js/utils/performance-logger.js');
+            console.log('Performance logger loaded\n');
+            
+            // Create a test logger
+            const testLogger = new window.PerformanceLogger('TEST');
+            testLogger.reset();
+            
+            testLogger.log('Starting test sequence');
+            
+            // Simulate MCP operations with delays
+            await simulateDelay(100);
+            testLogger.log('Initialized MCP service manager');
+            
+            await simulateDelay(50);
+            testLogger.log('Loading Shodan connector');
+            
+            await simulateDelay(200);
+            testLogger.log('Shodan connector loaded');
+            
+            await simulateDelay(75);
+            testLogger.log('Loading GitHub connector');
+            
+            await simulateDelay(150);
+            testLogger.log('GitHub connector loaded');
+            
+            await simulateDelay(25);
+            testLogger.log('All connectors registered');
+            
+            console.log('\n=== Test Complete ===\n');
+        }
+        
+        async function testSharedLink() {
+            console.log('=== Testing Shared Link MCP Loading ===\n');
+            
+            // Load required scripts
+            await loadScript('/js/utils/performance-logger.js');
+            
+            const perfLogger = new window.PerformanceLogger('ShareLink');
+            perfLogger.reset();
+            
+            perfLogger.log('Processing shared link data');
+            
+            await simulateDelay(50);
+            perfLogger.log('Starting MCP connection restore for 3 services: github, shodan, gmail');
+            
+            await simulateDelay(30);
+            perfLogger.log('Applied GitHub PAT from shared link');
+            
+            await simulateDelay(25);
+            perfLogger.log('Applied Shodan API key from shared link');
+            
+            await simulateDelay(20);
+            perfLogger.log('Shodan credentials stored (not connected - deferred until first use)');
+            
+            await simulateDelay(35);
+            perfLogger.log('Applied Gmail OAuth from shared link');
+            
+            await simulateDelay(40);
+            perfLogger.log('Completed MCP connection restore - 3 services configured');
+            
+            console.log('\n=== Shared Link Loading Complete ===\n');
+            console.log('Note: Shodan connection is now deferred until first use (not on load)');
+        }
+        
+        function simulateDelay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+        
+        // Auto-run a test on load
+        window.addEventListener('load', () => {
+            console.log('MCP Performance Test Ready\n');
+            console.log('Click buttons above to test different scenarios\n');
+            console.log('Times shown are milliseconds since last logged operation\n');
+        });
+    </script>
+</body>
+</html>

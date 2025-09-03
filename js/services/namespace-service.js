@@ -20,6 +20,20 @@
  */
 
 window.NamespaceService = (function() {
+    // Cache for session key to prevent excessive lookups
+    let sessionKeyCache = {
+        key: null,
+        timestamp: 0,
+        TTL: 5000 // Cache for 5 seconds
+    };
+    
+    // Cache for namespace data to prevent excessive computations
+    let namespaceCache = {
+        data: null,
+        timestamp: 0,
+        TTL: 5000 // Cache for 5 seconds
+    };
+    
     // Constants
     const NAMESPACE_PREFIX = 'hackare_';
     const NAMESPACE_SUFFIX = '_namespace';
@@ -76,6 +90,12 @@ window.NamespaceService = (function() {
     
     // Helper functions
     function getSessionKey() {
+        // Check cache first
+        const now = Date.now();
+        if (sessionKeyCache.key && (now - sessionKeyCache.timestamp) < sessionKeyCache.TTL) {
+            return sessionKeyCache.key;
+        }
+        
         // Session key retrieval with multiple fallback mechanisms
         // Priority order:
         // 1. Direct sessionStorage lookup for shared links (works before ShareManager init)
@@ -94,7 +114,9 @@ window.NamespaceService = (function() {
                 if (key && key.startsWith('__hacka_re_session_key_')) {
                     const storedKey = sessionStorage.getItem(key);
                     if (storedKey) {
-                        console.log(`[NamespaceService] Found session key in sessionStorage: ${key}`);
+                        // Cache the result
+                        sessionKeyCache.key = storedKey;
+                        sessionKeyCache.timestamp = now;
                         return storedKey;
                     }
                 }
@@ -114,7 +136,9 @@ window.NamespaceService = (function() {
                 const storageKey = `__hacka_re_session_key_${linkHash.substring(0, 16)}`;
                 const storedKey = sessionStorage.getItem(storageKey);
                 if (storedKey) {
-                    console.log(`[NamespaceService] Found session key in sessionStorage (via CryptoUtils): ${storageKey}`);
+                    // Cache the result
+                    sessionKeyCache.key = storedKey;
+                    sessionKeyCache.timestamp = now;
                     return storedKey;
                 }
             }
@@ -124,7 +148,9 @@ window.NamespaceService = (function() {
             const sessionKeyStorageKey = `__hacka_re_session_key_${defaultNamespace}`;
             const storedKey = sessionStorage.getItem(sessionKeyStorageKey);
             if (storedKey) {
-                console.log(`[NamespaceService] Found session key for direct visit: ${sessionKeyStorageKey}`);
+                // Cache the result
+                sessionKeyCache.key = storedKey;
+                sessionKeyCache.timestamp = now;
                 return storedKey;
             }
         }
@@ -134,13 +160,22 @@ window.NamespaceService = (function() {
             typeof window.aiHackare.shareManager.getSessionKey === 'function') {
             const sessionKey = window.aiHackare.shareManager.getSessionKey();
             if (sessionKey) {
+                // Cache the result
+                sessionKeyCache.key = sessionKey;
+                sessionKeyCache.timestamp = now;
                 return sessionKey;
             }
         }
         
         // Fallback to legacy ShareManager
         if (window.ShareManager && typeof window.ShareManager.getSessionKey === 'function') {
-            return window.ShareManager.getSessionKey();
+            const sessionKey = window.ShareManager.getSessionKey();
+            if (sessionKey) {
+                // Cache the result
+                sessionKeyCache.key = sessionKey;
+                sessionKeyCache.timestamp = now;
+                return sessionKey;
+            }
         }
         
         return null;
@@ -400,23 +435,39 @@ window.NamespaceService = (function() {
      * @returns {Object} Object with namespaceId, namespaceHash, and masterKey
      */
     function getOrCreateNamespace() {
+        // Check cache first
+        const now = Date.now();
+        if (namespaceCache.data && (now - namespaceCache.timestamp) < namespaceCache.TTL) {
+            return namespaceCache.data;
+        }
+        
         // If we're waiting for a shared link password, delay namespace creation
         if (window._waitingForSharedLinkPassword) {
-            console.log('[NamespaceService] Waiting for shared link password before creating namespace');
+            // Only log once per second to reduce console spam
+            if (!window._lastNamespaceWaitLog || now - window._lastNamespaceWaitLog > 1000) {
+                console.log('[NamespaceService] Waiting for shared link password before creating namespace');
+                window._lastNamespaceWaitLog = now;
+            }
             // Return a temporary namespace that won't be used for encryption
-            return {
+            const tempResult = {
                 namespaceId: 'temp_waiting',
                 namespaceHash: 'temp_waiting',
                 masterKey: null
             };
+            // Don't cache the temporary result
+            return tempResult;
         }
         // If we already have a namespace, return it
         if (state.current.namespaceId && state.current.namespaceKey && state.current.namespaceHash) {
-            return {
+            const result = {
                 namespaceId: state.current.namespaceId,
                 namespaceHash: state.current.namespaceHash,
                 masterKey: state.current.namespaceKey
             };
+            // Cache the result
+            namespaceCache.data = result;
+            namespaceCache.timestamp = now;
+            return result;
         }
         
         // Initialize storage type service if needed
@@ -657,7 +708,12 @@ window.NamespaceService = (function() {
     function getNamespaceKey() {
         // If we're waiting for shared link password, don't provide a key yet
         if (window._waitingForSharedLinkPassword) {
-            console.log('[NamespaceService] Cannot provide namespace key - waiting for shared link password');
+            // Only log once per second to reduce console spam
+            const now = Date.now();
+            if (!window._lastNamespaceKeyLog || now - window._lastNamespaceKeyLog > 1000) {
+                console.log('[NamespaceService] Cannot provide namespace key - waiting for shared link password');
+                window._lastNamespaceKeyLog = now;
+            }
             return null;
         }
         // For shared links, ensure we wait for proper initialization
@@ -1003,6 +1059,14 @@ window.NamespaceService = (function() {
         }
     }
 
+    // Function to clear all caches (useful when switching contexts)
+    function clearAllCaches() {
+        sessionKeyCache.key = null;
+        sessionKeyCache.timestamp = 0;
+        namespaceCache.data = null;
+        namespaceCache.timestamp = 0;
+    }
+    
     // Public API
     return {
         BASE_STORAGE_KEYS: BASE_STORAGE_KEYS,
@@ -1024,6 +1088,7 @@ window.NamespaceService = (function() {
         getNamespaceMetadata: getNamespaceMetadata,
         setCurrentNamespace: setCurrentNamespace,
         reinitializeNamespace: reinitializeNamespace,
-        isReturningToExistingNamespace: isReturningToExistingNamespace
+        isReturningToExistingNamespace: isReturningToExistingNamespace,
+        clearAllCaches: clearAllCaches
     };
 })();

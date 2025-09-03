@@ -21,6 +21,9 @@
  * for MCP functionality in hacka.re.
  */
 window.MCPClientService = (function() {
+    // Performance logger
+    const perfLogger = window.mcpPerfLogger || new (window.PerformanceLogger || class { log() {} })('MCPClient');
+    
     // Component instances
     let connectionManager = null;
     let requestManager = null;
@@ -35,6 +38,7 @@ window.MCPClientService = (function() {
             return;
         }
 
+        perfLogger.log('Initializing MCP client service');
         // Initialize components
         if (window.MCPConnectionManager) {
             connectionManager = new window.MCPConnectionManager.ConnectionManager();
@@ -53,7 +57,7 @@ window.MCPClientService = (function() {
         }
 
         initialized = true;
-        console.log('[MCP Client] Initialized successfully');
+        perfLogger.log('MCP client service initialized successfully');
     }
 
     /**
@@ -131,7 +135,8 @@ window.MCPClientService = (function() {
             throw new Error(`Already connected to server: ${name}`);
         }
         
-        // Attempting to connect to MCP server
+        perfLogger.reset();
+        perfLogger.log(`Starting connection to MCP server: ${name}`);
         
         try {
             // Create transport
@@ -139,10 +144,12 @@ window.MCPClientService = (function() {
                 throw new Error('MCPTransportService not available');
             }
             
+            perfLogger.log(`Creating transport for ${name} (type: ${config.transport})`);
             const transport = window.MCPTransportService.TransportFactory.createTransport(
                 config.transport, 
                 name
             );
+            perfLogger.log(`Transport created for ${name}`);
             
             // Create connection object
             const connection = connectionManager.createConnection(name, config, transport, options);
@@ -158,13 +165,19 @@ window.MCPClientService = (function() {
             };
             
             // Connect transport
+            perfLogger.log(`Connecting transport for ${name}`);
             await transport.connect();
+            perfLogger.log(`Transport connected for ${name}`);
             
             // Initialize the connection
+            perfLogger.log(`Initializing MCP protocol for ${name}`);
             await connection.initialize(requestManager);
+            perfLogger.log(`MCP protocol initialized for ${name}`);
             
             // Fetch available tools, resources, and prompts
+            perfLogger.log(`Fetching capabilities for ${name}`);
             await connection.refreshCapabilities(requestManager, toolRegistry);
+            perfLogger.log(`Connection complete for ${name} - ${connection.tools?.length || 0} tools available`);
             
             return connection;
         } catch (error) {
@@ -172,6 +185,7 @@ window.MCPClientService = (function() {
             if (connectionManager.hasConnection(name)) {
                 connectionManager.removeConnection(name, toolRegistry);
             }
+            perfLogger.log(`Connection failed for ${name}: ${error.message}`);
             throw new Error(`Failed to connect to ${name}: ${error.message}`);
         }
     }
