@@ -125,7 +125,7 @@ These providers run AI models entirely on your machine:
 #### Cloud Providers
 | Provider | Models | Special Features | Notes |
 |----------|--------|------------------|-------|
-| **OpenAI** | GPT-4, GPT-3.5, etc. | Full function calling, RAG with embeddings | Industry standard |
+| **OpenAI** | GPT-5, O3, GPT-4o, etc. | Full function calling, RAG with embeddings | Industry standard |
 | **Groq** | Llama, Mixtral, etc. | Ultra-fast inference | Excellent for rapid iteration |
 | **Custom** | Any compatible API | Full flexibility | For self-hosted or proxy APIs |
 
@@ -521,7 +521,7 @@ Example:
 ```javascript
 // Component emits event
 window.dispatchEvent(new CustomEvent('modelChanged', {
-    detail: { model: 'gpt-4', provider: 'openai' }
+    detail: { model: 'gpt-5', provider: 'openai' }
 }));
 
 // Another component listens
@@ -1170,7 +1170,7 @@ pytest test_file.py --headed
 2. Open hacka.re settings
 3. Select "OpenAI" as provider
 4. Paste API key
-5. Select model (GPT-4, GPT-3.5, etc.)
+5. Select model (GPT-5, O3, GPT-4o, etc.)
 
 #### Features Available
 - ✅ Function calling
