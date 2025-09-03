@@ -53,8 +53,17 @@ function createSharedLinkDataProcessor() {
      * Apply API configuration from shared data
      * @param {Object} sharedData - Shared data object
      * @param {Function} addSystemMessage - Function to add system messages
+     * @returns {Object} Configuration summary for consolidated message
      */
     function applyApiConfiguration(sharedData, addSystemMessage) {
+        const configSummary = {
+            apiKey: null,
+            provider: null,
+            baseUrl: null,
+            model: null,
+            systemPrompt: false
+        };
+        
         // Save the shared API key
         if (sharedData.apiKey) {
             if (DataService && typeof DataService.saveApiKey === 'function') {
@@ -62,10 +71,7 @@ function createSharedLinkDataProcessor() {
             } else {
                 StorageService.saveApiKey(sharedData.apiKey);
             }
-            const maskedApiKey = maskApiKey(sharedData.apiKey);
-            if (addSystemMessage) {
-                addSystemMessage(`Shared API key (${maskedApiKey}) has been applied.`);
-            }
+            configSummary.apiKey = maskApiKey(sharedData.apiKey);
         }
         
         // If there's a base URL, save it too
@@ -75,9 +81,7 @@ function createSharedLinkDataProcessor() {
             } else {
                 StorageService.saveBaseUrl(sharedData.baseUrl);
             }
-            if (addSystemMessage) {
-                addSystemMessage(`Shared base URL has been applied.`);
-            }
+            configSummary.baseUrl = sharedData.baseUrl;
         }
         
         // If there's a system prompt, save it too
@@ -87,9 +91,7 @@ function createSharedLinkDataProcessor() {
             } else {
                 StorageService.saveSystemPrompt(sharedData.systemPrompt);
             }
-            if (addSystemMessage) {
-                addSystemMessage(`Shared system prompt has been applied.`);
-            }
+            configSummary.systemPrompt = true;
         }
         
         // If there's a provider, save it and set the appropriate base URL
@@ -100,6 +102,8 @@ function createSharedLinkDataProcessor() {
             } else if (StorageService && typeof StorageService.saveBaseUrlProvider === 'function') {
                 StorageService.saveBaseUrlProvider(sharedData.provider);
             }
+            
+            configSummary.provider = sharedData.provider;
             
             // Always set the base URL for known providers, not just when baseUrl is missing
             let defaultBaseUrl = null;
@@ -114,15 +118,18 @@ function createSharedLinkDataProcessor() {
                 } else {
                     StorageService.saveBaseUrl(defaultBaseUrl);
                 }
-                if (addSystemMessage) {
-                    addSystemMessage(`Shared provider (${sharedData.provider}) with base URL ${defaultBaseUrl} has been applied.`);
-                }
-            } else {
-                if (addSystemMessage) {
-                    addSystemMessage(`Shared provider (${sharedData.provider}) has been applied.`);
+                if (!configSummary.baseUrl) {
+                    configSummary.baseUrl = defaultBaseUrl;
                 }
             }
         }
+        
+        // Store model info if present (will be applied later)
+        if (sharedData.model) {
+            configSummary.model = sharedData.model;
+        }
+        
+        return configSummary;
     }
     
     /**
@@ -141,17 +148,11 @@ function createSharedLinkDataProcessor() {
             // Log the model being applied
             console.log(`🔍 Applying shared model: "${sharedData.model}"`);
             
-            // Only provide informational messages, don't override the model choice
+            // Don't add individual messages here - will be consolidated later
             if (sharedData.provider) {
                 console.log(`🔍 Provider: ${sharedData.provider}, Model: ${sharedData.model}`);
-                if (addSystemMessage) {
-                    addSystemMessage(`Applying shared model "${sharedData.model}" with ${sharedData.provider} provider.`);
-                }
             } else {
                 console.log(`🔍 No provider info, using model "${sharedData.model}" as-is`);
-                if (addSystemMessage) {
-                    addSystemMessage(`Applying shared model "${sharedData.model}".`);
-                }
             }
             
             // Trigger model list refresh after API configuration is applied
@@ -326,26 +327,27 @@ function createSharedLinkDataProcessor() {
      * Apply prompts from shared data
      * @param {Object} sharedData - Shared data object
      * @param {Function} addSystemMessage - Function to add system messages
+     * @returns {Object} Prompts summary
      */
     function applyPrompts(sharedData, addSystemMessage) {
+        const promptsSummary = {
+            promptCount: 0,
+            selectedCount: 0,
+            defaultSelectedCount: 0
+        };
+        
         // If there are shared prompts, save them
         if (sharedData.prompts && Array.isArray(sharedData.prompts)) {
             sharedData.prompts.forEach(prompt => {
                 PromptsService.savePrompt(prompt);
             });
-            
-            if (addSystemMessage) {
-                addSystemMessage(`Shared prompt library with ${sharedData.prompts.length} prompts has been loaded.`);
-            }
+            promptsSummary.promptCount = sharedData.prompts.length;
         }
         
         // If there are shared selected prompt IDs, save them
         if (sharedData.selectedPromptIds && Array.isArray(sharedData.selectedPromptIds)) {
             PromptsService.setSelectedPromptIds(sharedData.selectedPromptIds);
-            
-            if (addSystemMessage) {
-                addSystemMessage(`Shared prompt selections have been applied.`);
-            }
+            promptsSummary.selectedCount = sharedData.selectedPromptIds.length;
         }
         
         // Apply shared default prompt selections (or reset to default if not present)
@@ -353,10 +355,7 @@ function createSharedLinkDataProcessor() {
             if (sharedData.selectedDefaultPromptIds && Array.isArray(sharedData.selectedDefaultPromptIds)) {
                 // Apply specific default prompt selections from shared data
                 window.DefaultPromptsService.setSelectedDefaultPromptIds(sharedData.selectedDefaultPromptIds);
-                
-                if (addSystemMessage) {
-                    addSystemMessage(`Shared default prompt selections have been applied.`);
-                }
+                promptsSummary.defaultSelectedCount = sharedData.selectedDefaultPromptIds.length;
             } else {
                 // No default prompt selections in shared data means default state (none selected)
                 window.DefaultPromptsService.setSelectedDefaultPromptIds([]);
@@ -368,26 +367,36 @@ function createSharedLinkDataProcessor() {
             (sharedData.selectedDefaultPromptIds && sharedData.selectedDefaultPromptIds.length > 0)) {
             PromptsService.applySelectedPromptsAsSystem();
         }
+        
+        return promptsSummary;
     }
     
     /**
      * Apply RAG settings from shared data
      * @param {Object} sharedData - Shared data object
      * @param {Function} addSystemMessage - Function to add system messages
+     * @returns {Object} RAG configuration summary
      */
     function applyRAGSettings(sharedData, addSystemMessage) {
+        const ragSummary = {
+            ragEnabled: false,
+            ragAvailable: false,
+            documents: []
+        };
+        
+        // Check if RAG is available for the provider
+        const provider = sharedData.provider || StorageService.getBaseUrlProvider();
+        ragSummary.ragAvailable = (provider === 'openai');
+        
         // Apply RAG enabled state
         if (sharedData.ragEnabled !== undefined && window.RAGStorageService) {
             window.RAGStorageService.setRAGEnabled(sharedData.ragEnabled);
+            ragSummary.ragEnabled = sharedData.ragEnabled;
             
             // Update checkbox UI if available
             const ragEnabledCheckbox = document.getElementById('rag-enabled-checkbox');
             if (ragEnabledCheckbox) {
                 ragEnabledCheckbox.checked = sharedData.ragEnabled;
-            }
-            
-            if (addSystemMessage) {
-                addSystemMessage(`RAG ${sharedData.ragEnabled ? 'enabled' : 'disabled'} from shared link.`);
             }
         }
         
@@ -403,16 +412,17 @@ function createSharedLinkDataProcessor() {
                 }
             });
             
-            if (addSystemMessage && sharedData.ragEUDocuments.length > 0) {
+            if (sharedData.ragEUDocuments.length > 0) {
                 const docNames = {
                     'cra': 'CRA',
                     'aia': 'AIA',
                     'dora': 'DORA'
                 };
-                const enabledDocs = sharedData.ragEUDocuments.map(id => docNames[id] || id).join(', ');
-                addSystemMessage(`EU regulation documents enabled: ${enabledDocs}`);
+                ragSummary.documents = sharedData.ragEUDocuments.map(id => docNames[id] || id);
             }
         }
+        
+        return ragSummary;
     }
     
     /**
@@ -420,6 +430,7 @@ function createSharedLinkDataProcessor() {
      * @param {Object} sharedData - Shared data object
      * @param {Function} addSystemMessage - Function to add system messages
      * @param {boolean} systematicActivation - Whether to systematically control tool activation (default: false for backwards compatibility)
+     * @returns {Object} Functions summary
      */
     function applyFunctions(sharedData, addSystemMessage, systematicActivation = false) {
         const functionCount = sharedData.functions ? Object.keys(sharedData.functions).length : 0;
@@ -449,11 +460,8 @@ function createSharedLinkDataProcessor() {
                 );
             });
             
-            if (addSystemMessage) {
-                const collectionCount = Object.keys(collectionMetadata).length;
-                const collectionText = collectionCount > 0 ? ` in ${collectionCount} collection(s)` : '';
-                addSystemMessage(`Shared function library with ${Object.keys(sharedData.functions).length} functions${collectionText} has been loaded.`);
-            }
+            // Store summary info instead of adding message
+            const collectionCount = Object.keys(collectionMetadata).length;
         }
         
         // Handle function activation based on mode
@@ -487,24 +495,34 @@ function createSharedLinkDataProcessor() {
                 });
             }
             
-            if (addSystemMessage) {
-                const method = systematicActivation ? 'systematically applied' : 'applied';
-                addSystemMessage(`Shared function selections have been ${method}.`);
-            }
+            // Summary info captured below
         }
         
         // Apply function tools enabled state
+        let functionToolsEnabled = false;
         if (typeof sharedData.functionToolsEnabled === 'boolean' && FunctionToolsService && typeof FunctionToolsService.setFunctionToolsEnabled === 'function') {
-            FunctionToolsService.setFunctionToolsEnabled(sharedData.functionToolsEnabled, addSystemMessage);
+            FunctionToolsService.setFunctionToolsEnabled(sharedData.functionToolsEnabled, null); // Don't add message
+            functionToolsEnabled = sharedData.functionToolsEnabled;
         } else {
             // Fallback: Enable function tools if we have functions
             const hasFunctions = (sharedData.functions && Object.keys(sharedData.functions).length > 0) ||
                                (sharedData.enabledFunctions && sharedData.enabledFunctions.length > 0);
             
             if (hasFunctions && FunctionToolsService && typeof FunctionToolsService.setFunctionToolsEnabled === 'function') {
-                FunctionToolsService.setFunctionToolsEnabled(true, addSystemMessage);
+                FunctionToolsService.setFunctionToolsEnabled(true, null); // Don't add message
+                functionToolsEnabled = true;
             }
         }
+        
+        // Return summary of what was applied
+        return {
+            functionCount: functionCount,
+            enabledCount: enabledCount,
+            collectionCount: sharedData.functionCollectionMetadata ? Object.keys(sharedData.functionCollectionMetadata).length : 0,
+            toolsEnabled: functionToolsEnabled,
+            enabledFunctions: sharedData.enabledFunctions || [],
+            defaultFunctionCount: (sharedData.selectedDefaultFunctionIds || []).length + (sharedData.selectedDefaultFunctionCollectionIds || []).length
+        };
         
         // Apply default function selections if present
         if (window.DefaultFunctionsService && (sharedData.selectedDefaultFunctionIds || sharedData.selectedDefaultFunctionCollectionIds)) {
@@ -523,39 +541,33 @@ function createSharedLinkDataProcessor() {
                 }
             }
             
-            if (addSystemMessage) {
-                const totalSelections = (sharedData.selectedDefaultFunctionIds || []).length + (sharedData.selectedDefaultFunctionCollectionIds || []).length;
-                if (totalSelections > 0) {
-                    addSystemMessage(`Shared default function selections (${totalSelections} items) have been applied.`);
-                }
-            }
         }
+        
+        // Return statement is now above, this closing brace ends the function
     }
     
     /**
      * Apply theme from shared data
      * @param {Object} sharedData - Shared data object
      * @param {Function} addSystemMessage - Function to add system messages
+     * @returns {string|null} Theme name
      */
     function applyTheme(sharedData, addSystemMessage) {
         if (sharedData.theme && window.ThemeService) {
             // Apply the theme using ThemeService
             if (window.ThemeService.applyTheme) {
                 window.ThemeService.applyTheme(sharedData.theme);
-                
-                if (addSystemMessage) {
-                    // Capitalize theme name for display
-                    const displayTheme = sharedData.theme.charAt(0).toUpperCase() + sharedData.theme.slice(1);
-                    addSystemMessage(`Theme set to ${displayTheme}.`);
-                }
+                return sharedData.theme;
             }
         }
+        return null;
     }
     
     /**
      * Apply MCP connections from shared data
      * @param {Object} sharedData - Shared data object
      * @param {Function} addSystemMessage - Function to add system messages
+     * @returns {Promise<Object>} MCP summary
      */
     async function applyMcpConnections(sharedData, addSystemMessage) {
         // If there are shared MCP connections, restore them
@@ -637,15 +649,13 @@ function createSharedLinkDataProcessor() {
                     
                     
                     appliedCount++;
-                    
-                    if (addSystemMessage) {
-                        addSystemMessage(`Shared ${serviceKey} MCP connection has been applied.`);
-                    }
                 }
                 
-                if (appliedCount > 0 && addSystemMessage) {
-                    addSystemMessage(`Total ${appliedCount} MCP connection(s) restored. You may need to manually reconnect in the MCP Servers panel.`);
-                }
+                // Return summary info
+                return {
+                    mcpCount: appliedCount,
+                    services: connectionKeys
+                };
                 
                 // Trigger MCP service connector to recreate connections if available
                 if (window.mcpServiceManager) {
@@ -697,11 +707,19 @@ function createSharedLinkDataProcessor() {
                 
             } catch (error) {
                 console.error('Error applying MCP connections from shared data:', error);
-                if (addSystemMessage) {
-                    addSystemMessage(`Error applying MCP connections: ${error.message}`);
-                }
+                // Return error summary
+                return {
+                    mcpCount: 0,
+                    services: [],
+                    error: error.message
+                };
             }
         }
+        
+        return {
+            mcpCount: 0,
+            services: []
+        };
     }
     
     /**
@@ -1009,26 +1027,151 @@ function createSharedLinkDataProcessor() {
             // Apply data and collect system messages
             // IMPORTANT: Apply API configuration and model together to ensure compatibility
             console.log('🔧 processSharedData: Applying API and model configuration');
-            applyApiConfiguration(sharedData, collectSystemMessage);
-            const pendingSharedModel = await applyModelConfiguration(sharedData, collectSystemMessage);
+            const configSummary = applyApiConfiguration(sharedData, null); // Don't add individual messages
+            const pendingSharedModel = await applyModelConfiguration(sharedData, null); // Don't add individual messages
             
-            // Apply other configurations
-            console.log('🔧 processSharedData: Applying prompts and functions');
-            applyPrompts(sharedData, collectSystemMessage);
-            
-            // Apply RAG settings
+            // Apply RAG settings and check availability
             console.log('🔧 processSharedData: Applying RAG settings');
-            applyRAGSettings(sharedData, collectSystemMessage);
+            const ragSummary = applyRAGSettings(sharedData, null); // Don't add individual messages
+            
+            // Create consolidated configuration message
+            if (collectSystemMessage) {
+                const messageParts = [];
+                
+                // Get provider and model flags
+                const getProviderFlag = (provider) => {
+                    const providerFlags = {
+                        'openai': '🇺🇸',
+                        'groq': '🇺🇸',
+                        'berget': '🇸🇪',
+                        'ollama': '🏠', // Local/home icon for local models
+                        'anthropic': '🇺🇸',
+                        'google': '🇺🇸',
+                        'cohere': '🇨🇦',
+                        'ai21': '🇮🇱',
+                        'mistral': '🇫🇷',
+                        'perplexity': '🇺🇸',
+                        'together': '🇺🇸',
+                        'replicate': '🇺🇸'
+                    };
+                    return providerFlags[provider?.toLowerCase()] || '';
+                };
+                
+                // API configuration message
+                if (configSummary.apiKey || configSummary.provider || configSummary.baseUrl) {
+                    if (configSummary.provider) {
+                        const providerFlag = getProviderFlag(configSummary.provider);
+                        let providerMsg = providerFlag ? `${providerFlag} ${configSummary.provider}` : configSummary.provider;
+                        providerMsg += ' provider';
+                        
+                        if (configSummary.baseUrl) {
+                            providerMsg += ` (${configSummary.baseUrl})`;
+                        }
+                        if (configSummary.apiKey) {
+                            providerMsg += ` with key ${configSummary.apiKey}`;
+                        }
+                        if (configSummary.model || pendingSharedModel) {
+                            const modelId = configSummary.model || pendingSharedModel;
+                            // Get model flag if ModelCountryMapping is available
+                            let modelWithFlag = modelId;
+                            if (window.ModelCountryMapping && window.ModelCountryMapping.getModelFlag) {
+                                const modelFlag = window.ModelCountryMapping.getModelFlag(modelId);
+                                if (modelFlag) {
+                                    modelWithFlag = `${modelFlag} ${modelId}`;
+                                }
+                            }
+                            providerMsg += `, model "${modelWithFlag}"`;
+                        }
+                        messageParts.push(providerMsg);
+                    } else if (configSummary.apiKey) {
+                        let keyMsg = `API key ${configSummary.apiKey}`;
+                        if (configSummary.baseUrl) {
+                            keyMsg += `, endpoint ${configSummary.baseUrl}`;
+                        }
+                        messageParts.push(keyMsg);
+                    }
+                }
+                
+                // Only mention RAG if it was enabled and is available, or if documents were selected
+                if (ragSummary.ragEnabled && ragSummary.ragAvailable && ragSummary.documents.length > 0) {
+                    messageParts.push(`RAG enabled with documents: ${ragSummary.documents.join(', ')}`);
+                }
+                // Don't mention RAG at all if:
+                // 1. It's disabled
+                // 2. It's not available for the provider
+                // 3. No documents were selected
+                
+                if (configSummary.systemPrompt) {
+                    messageParts.push('custom system prompt');
+                }
+                
+                // Create single consolidated message if there's anything to report
+                if (messageParts.length > 0) {
+                    const message = `Configuration applied: ${messageParts.join(', ')}.`;
+                    collectSystemMessage(message);
+                }
+            }
+            
+            // Apply other configurations and collect summaries
+            console.log('🔧 processSharedData: Applying prompts and functions');
+            const promptsSummary = applyPrompts(sharedData, null); // Don't add individual messages
             
             // Use systematic activation for agent loading when cleanSlate is true
-            applyFunctions(sharedData, collectSystemMessage, cleanSlate);
+            const functionsSummary = applyFunctions(sharedData, null, cleanSlate); // Don't add individual messages
             
             console.log('🔧 processSharedData: Applying MCP connections');
-            await applyMcpConnections(sharedData, collectSystemMessage);
+            const mcpSummary = await applyMcpConnections(sharedData, null); // Don't add individual messages
             
             // Apply theme if included in shared data
             console.log('🔧 processSharedData: Applying theme');
-            applyTheme(sharedData, collectSystemMessage);
+            const themeName = applyTheme(sharedData, null); // Don't add individual messages
+            
+            // Create consolidated secondary message for all other configurations
+            if (collectSystemMessage) {
+                const additionalParts = [];
+                
+                // Prompts summary - just show count since we only share active ones
+                const totalPrompts = promptsSummary.promptCount + promptsSummary.selectedCount + promptsSummary.defaultSelectedCount;
+                if (totalPrompts > 0) {
+                    additionalParts.push(`${totalPrompts} prompt${totalPrompts !== 1 ? 's' : ''}`);
+                }
+                
+                // Functions summary
+                if (functionsSummary.functionCount > 0 || functionsSummary.enabledCount > 0) {
+                    // Show function names if there are 5 or fewer
+                    if (functionsSummary.enabledCount > 0 && functionsSummary.enabledCount <= 5 && functionsSummary.enabledFunctions.length > 0) {
+                        additionalParts.push(`Functions: ${functionsSummary.enabledFunctions.join(', ')}`);
+                    } else if (functionsSummary.functionCount > 0) {
+                        // Just show count if more than 5
+                        additionalParts.push(`${functionsSummary.functionCount} function${functionsSummary.functionCount !== 1 ? 's' : ''}`);
+                    }
+                }
+                
+                // MCP summary
+                if (mcpSummary.mcpCount > 0) {
+                    const mcpServices = mcpSummary.services.join(', ');
+                    additionalParts.push(`MCP: ${mcpServices}`);
+                } else if (mcpSummary.error) {
+                    additionalParts.push(`MCP error`);
+                }
+                
+                // Theme
+                if (themeName) {
+                    const displayTheme = themeName.charAt(0).toUpperCase() + themeName.slice(1);
+                    additionalParts.push(`Theme: ${displayTheme}`);
+                }
+                
+                // Welcome message indicator
+                if (sharedData.welcomeMessage && displayWelcomeMessage) {
+                    additionalParts.push('Welcome message');
+                }
+                
+                // Create the consolidated additional features message
+                if (additionalParts.length > 0) {
+                    const message = `Loaded: ${additionalParts.join(' | ')}`;
+                    collectSystemMessage(message);
+                }
+            }
             
             // Session key is now applied immediately in shared-link-manager.js when password is validated
             // This redundant call is no longer needed
