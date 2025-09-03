@@ -217,7 +217,17 @@ window.ModalManager = (function() {
                     });
                     
                     // Checkbox change updates immediately (less frequent)
-                    shareWelcomeMessageCheckbox.addEventListener('change', updateWelcomeLinkLength);
+                    shareWelcomeMessageCheckbox.addEventListener('change', function() {
+                        // Enable/disable and style the textarea based on checkbox state
+                        if (shareWelcomeMessageCheckbox.checked) {
+                            shareWelcomeMessage.disabled = false;
+                            shareWelcomeMessage.style.opacity = '1';
+                        } else {
+                            shareWelcomeMessage.disabled = true;
+                            shareWelcomeMessage.style.opacity = '0.5';
+                        }
+                        updateWelcomeLinkLength();
+                    });
                     
                     // Mark as initialized to prevent duplicate listeners
                     shareWelcomeMessage._linkLengthInitialized = true;
