@@ -597,11 +597,15 @@ function createSharedLinkDataProcessor() {
      * @returns {Promise<Object>} MCP summary
      */
     async function applyMcpConnections(sharedData, addSystemMessage) {
+        const perfLogger = window.mcpPerfLogger || new (window.PerformanceLogger || class { log() {} reset() {} })('MCPShareLink');
+        if (perfLogger.reset) perfLogger.reset();
+        
         // If there are shared MCP connections, restore them
         if (sharedData.mcpConnections && typeof sharedData.mcpConnections === 'object') {
             try {
                 const connectionKeys = Object.keys(sharedData.mcpConnections);
                 let appliedCount = 0;
+                perfLogger.log(`Starting MCP connection restore for ${connectionKeys.length} services: ${connectionKeys.join(', ')}`);
                 
                 for (const serviceKey of connectionKeys) {
                     const connectionData = sharedData.mcpConnections[serviceKey];
@@ -610,13 +614,13 @@ function createSharedLinkDataProcessor() {
                         // Gmail uses OAuth - store the complete OAuth object
                         const storageKey = 'mcp_gmail_oauth';
                         await window.CoreStorageService.setValue(storageKey, connectionData);
-                        console.log('Applied Gmail OAuth from shared link');
+                        perfLogger.log('Applied Gmail OAuth from shared link');
                         
                         // Automatically register Gmail functions after OAuth is restored
                         if (window.mcpServiceManager && window.mcpServiceManager.registerGmailFunctions) {
                             try {
                                 await window.mcpServiceManager.registerGmailFunctions(connectionData);
-                                console.log('✅ Gmail functions automatically registered after OAuth restore');
+                                perfLogger.log('✅ Gmail functions automatically registered after OAuth restore');
                             } catch (error) {
                                 console.warn('Failed to auto-register Gmail functions:', error);
                             }
@@ -634,7 +638,7 @@ function createSharedLinkDataProcessor() {
                         // Store the PAT token using the appropriate storage key
                         const storageKey = 'mcp_github_token';
                         await window.CoreStorageService.setValue(storageKey, token);
-                        console.log('Applied GitHub PAT from shared link');
+                        perfLogger.log('Applied GitHub PAT from shared link');
                     } else if (serviceKey === 'shodan') {
                         // Shodan uses API key - should be a string
                         let apiKey = connectionData;
@@ -648,27 +652,38 @@ function createSharedLinkDataProcessor() {
                         // Store the API key using the same storage key as MCP service connectors
                         const storageKey = 'mcp_shodan_api_key';
                         await window.CoreStorageService.setValue(storageKey, apiKey);
-                        console.log('Applied Shodan API key from shared link');
+                        perfLogger.log('Applied Shodan API key from shared link');
                         
                         // Also store in the sharing format for configuration service compatibility
                         await window.CoreStorageService.setValue('shodan_api_key', apiKey);
                         
-                        // Automatically connect to Shodan if mcpServiceManager is available
-                        if (window.mcpServiceManager && window.mcpServiceManager.connectService) {
+                        // Store connection data for the Shodan connector to find
+                        const shodanConnectionData = {
+                            apiKey: apiKey,
+                            connectedAt: Date.now(),
+                            lastValidated: Date.now()
+                        };
+                        const connectionStorageKey = 'hacka.re.mcp_shodan_connection';
+                        await window.CoreStorageService.setValue(connectionStorageKey, shodanConnectionData);
+                        
+                        // Now establish the actual connection to Shodan
+                        perfLogger.log('Attempting to establish Shodan connection...');
+                        
+                        // Try to connect using the stored credentials
+                        if (window.mcpServiceManager) {
                             try {
-                                // Connect using the stored API key with proper object format
-                                const result = await window.mcpServiceManager.connectService('shodan', { apiKey: apiKey });
-                                
-                                if (result) {
-                                    console.log('Shodan auto-connection successful from shared link');
+                                const connected = await window.mcpServiceManager.connectService('shodan');
+                                if (connected) {
+                                    perfLogger.log('Successfully connected to Shodan MCP service');
                                 } else {
-                                    console.warn('Shodan auto-connection returned false');
+                                    console.warn('Failed to connect to Shodan MCP service');
                                 }
                             } catch (error) {
-                                console.warn('Failed to auto-connect Shodan service:', error);
-                                // Don't let Shodan connection errors break the entire shared link processing
+                                console.warn('Error connecting to Shodan MCP service:', error);
                             }
                         }
+                        
+                        perfLogger.log('Shodan credentials stored and connection attempted');
                     } else {
                         console.warn(`Unknown MCP service type: ${serviceKey}`, connectionData);
                         continue;
@@ -678,11 +693,7 @@ function createSharedLinkDataProcessor() {
                     appliedCount++;
                 }
                 
-                // Return summary info
-                return {
-                    mcpCount: appliedCount,
-                    services: connectionKeys
-                };
+                perfLogger.log(`Completed MCP connection restore - ${appliedCount} services configured`);
                 
                 // Trigger MCP service connector to recreate connections if available
                 if (window.mcpServiceManager) {
@@ -710,7 +721,7 @@ function createSharedLinkDataProcessor() {
                                     
                                     const connected = await window.mcpServiceManager.quickConnect('github');
                                     if (connected) {
-                                        console.log(`Auto-reconnected to ${serviceKey} MCP service`);
+                                        perfLogger.log(`Auto-reconnected to ${serviceKey} MCP service`);
                                     } else {
                                         console.warn(`Auto-reconnection to ${serviceKey} MCP service failed - no valid token`);
                                         if (addSystemMessage) {
@@ -724,15 +735,31 @@ function createSharedLinkDataProcessor() {
                                     }
                                 }
                             } else if (serviceKey === 'shodan') {
-                                // Shodan connections are already established immediately during restore
-                                // Skip delayed reconnection to avoid double connection attempts
-                                console.log(`Skipping delayed reconnection for ${serviceKey} - already connected during restore`);
+                                // Shodan connections are now established immediately during restore
+                                // No need for delayed reconnection
+                                console.log(`${serviceKey} connection already handled during restore`);
                             }
                         }
                     }, 100);
                 }
                 
+                // Update UI to reflect the loaded credentials
+                if (window.MCPQuickConnectors && typeof window.MCPQuickConnectors.updateAllConnectorStatuses === 'function') {
+                    // Give the services time to initialize, then update UI
+                    setTimeout(() => {
+                        window.MCPQuickConnectors.updateAllConnectorStatuses();
+                        perfLogger.log('Updated MCP connector UI statuses');
+                    }, 200);
+                }
+                
+                // Return summary info
+                return {
+                    mcpCount: appliedCount,
+                    services: connectionKeys
+                };
+                
             } catch (error) {
+                perfLogger.log(`Error applying MCP connections from shared data: ${error.message}`);
                 console.error('Error applying MCP connections from shared data:', error);
                 // Return error summary
                 return {
