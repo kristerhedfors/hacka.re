@@ -286,6 +286,26 @@
                 }
             }
             
+            // Auto-register and enable Shodan function collection if available
+            if (window.DefaultFunctionsService && window.ShodanFunctions) {
+                try {
+                    // Re-initialize to pick up the Shodan functions
+                    window.DefaultFunctionsService.initializeDefaultFunctions();
+                    
+                    // Enable the collection if it's not already selected
+                    if (!window.DefaultFunctionsService.isDefaultFunctionCollectionSelected('shodan-functions')) {
+                        window.DefaultFunctionsService.toggleDefaultFunctionCollectionSelection('shodan-functions', true);
+                        // Also need to load the functions into the Function Tools Service
+                        window.DefaultFunctionsService.loadSelectedDefaultFunctions();
+                        perfLogger.log('Shodan function collection auto-enabled');
+                    } else {
+                        perfLogger.log('Shodan function collection already enabled');
+                    }
+                } catch (error) {
+                    console.warn('[ShodanConnector] Failed to enable Shodan functions:', error);
+                }
+            }
+            
             perfLogger.log('Connected successfully');
             return true;
         }
