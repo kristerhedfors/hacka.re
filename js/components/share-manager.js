@@ -191,7 +191,15 @@ window.ShareManager = (function() {
                 
                 // Set MCP connections checkbox if it exists
                 if (elements.shareMcpConnectionsCheckbox) {
-                    elements.shareMcpConnectionsCheckbox.checked = options.includeMcpConnections || false;
+                    // First check if we came from a shared link that included MCP connections
+                    if (sharedLinkOptions && sharedLinkOptions.includeMcpConnections) {
+                        // If we loaded from a shared link with MCP connections, pre-check the box
+                        elements.shareMcpConnectionsCheckbox.checked = true;
+                        console.log('[ShareManager] Pre-checking MCP connections checkbox because current session loaded from shared link with MCP connections');
+                    } else {
+                        // Otherwise use the saved preference from localStorage
+                        elements.shareMcpConnectionsCheckbox.checked = options.includeMcpConnections || false;
+                    }
                 }
                 
                 // Set welcome message checkbox if it exists
