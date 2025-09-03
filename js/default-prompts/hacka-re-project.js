@@ -46,12 +46,14 @@ window.HackaReProjectPrompt = {
 ### Core Principles
 
 1. **Privacy First**: Your data never touches our servers because we don't have any
-2. **Zero Trust Architecture**: All sensitive data is encrypted client-side
-3. **Transparency**: 100% open source, auditable code
-4. **No Telemetry**: Zero analytics, tracking, or phone-home functionality
-5. **Direct Communication**: Your browser talks directly to AI provider APIs
-6. **Local Interface**: The UI runs in your browser, AI models run on provider servers (unless using local LLMs)
-7. **Serverless**: Pure static site - can be hosted anywhere or run locally
+2. **Zero Trust**: All sensitive data is encrypted client-side, no external services trusted
+3. **Zero Dependencies**: Minimal third-party libraries (only essential ones), all hosted locally - no CDN dependencies
+4. **Zero Infrastructure**: Pure static site, no backend servers required
+5. **Transparency**: 100% open source, auditable code
+6. **No Telemetry**: Zero analytics, tracking, or phone-home functionality
+7. **Direct Communication**: Your browser talks directly to AI provider APIs
+8. **Local Interface**: The UI runs in your browser, AI models run on provider servers (unless using local LLMs)
+9. **Serverless**: Can be hosted anywhere or run locally
 
 ### What Makes hacka.re Different
 
