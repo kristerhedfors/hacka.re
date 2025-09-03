@@ -347,21 +347,19 @@ hacka.re features 14 specialized modal windows, each serving a distinct purpose:
 - Metadata display
 
 ### 13. Model Selection Modal (`#model-selection-modal`)
-**Purpose**: Advanced model selection with search
+**Purpose**: Quick model selection with live search
 - **Live Search**
-  - Filter by name
-  - Filter by capability
-  - Filter by context size
-  - Filter by provider
-- **Model Information**
-  - Context window
-  - Pricing
-  - Capabilities
-  - Benchmarks
-- **Quick Actions**
-  - Favorite models
-  - Recent models
-  - Model comparison
+  - Character-by-character filtering as you type
+  - Instant results highlighting
+  - Case-insensitive matching
+- **Keyboard Navigation**
+  - Cmd/Ctrl+M to open modal
+  - Arrow keys to navigate models
+  - Enter to select
+  - Escape to close
+- **Model Display**
+  - Shows available models from current provider
+  - Click model header to open modal
 
 ### 14. System Prompt Viewer Modal (`#system-prompt-viewer-modal`)
 **Purpose**: View and debug active system prompts
