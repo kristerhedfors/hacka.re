@@ -367,7 +367,28 @@ window.ShareManager = (function() {
             // Get current model
             const currentModel = StorageService.getModel();
             
-            if (currentModel) {
+            if (!currentModel) {
+                // No model selected - disable checkbox
+                checkbox.disabled = true;
+                checkbox.checked = false;
+                label.style.opacity = '0.5';
+                label.style.cursor = 'not-allowed';
+                
+                // Add status text explaining why it's disabled
+                const statusSpan = document.createElement('span');
+                statusSpan.className = 'share-item-status';
+                statusSpan.style.marginLeft = '10px';
+                statusSpan.style.color = 'var(--text-color-secondary)';
+                statusSpan.style.fontSize = '0.85em';
+                statusSpan.style.fontWeight = 'normal';
+                statusSpan.textContent = '(No model selected)';
+                label.appendChild(statusSpan);
+            } else {
+                // Model is selected - enable checkbox
+                checkbox.disabled = false;
+                label.style.opacity = '1';
+                label.style.cursor = 'pointer';
+                
                 const statusSpan = document.createElement('span');
                 statusSpan.className = 'share-item-status';
                 statusSpan.style.marginLeft = '10px';
@@ -416,10 +437,31 @@ window.ShareManager = (function() {
                 enabledDefaultPrompts = nonMcpDefaultPrompts.length;
             }
             
-            // Only show status if there are enabled prompts
+            // Check if there are enabled prompts
             const totalEnabled = enabledUserPrompts + enabledDefaultPrompts;
             
-            if (totalEnabled > 0) {
+            if (totalEnabled === 0) {
+                // No prompts enabled - disable checkbox
+                checkbox.disabled = true;
+                checkbox.checked = false;
+                label.style.opacity = '0.5';
+                label.style.cursor = 'not-allowed';
+                
+                // Add status text explaining why it's disabled
+                const statusSpan = document.createElement('span');
+                statusSpan.className = 'share-item-status';
+                statusSpan.style.marginLeft = '10px';
+                statusSpan.style.color = 'var(--text-color-secondary)';
+                statusSpan.style.fontSize = '0.85em';
+                statusSpan.style.fontWeight = 'normal';
+                statusSpan.textContent = '(No prompts enabled)';
+                label.appendChild(statusSpan);
+            } else {
+                // Prompts are enabled - enable checkbox
+                checkbox.disabled = false;
+                label.style.opacity = '1';
+                label.style.cursor = 'pointer';
+                
                 const statusSpan = document.createElement('span');
                 statusSpan.className = 'share-item-status';
                 statusSpan.style.marginLeft = '10px';
@@ -514,10 +556,31 @@ window.ShareManager = (function() {
                 });
             }
             
-            // Only show status if there are enabled functions
+            // Check if there are enabled functions
             const totalEnabled = enabledUserFunctions + enabledDefaultFunctions;
             
-            if (totalEnabled > 0) {
+            if (totalEnabled === 0) {
+                // No functions enabled - disable checkbox
+                checkbox.disabled = true;
+                checkbox.checked = false;
+                label.style.opacity = '0.5';
+                label.style.cursor = 'not-allowed';
+                
+                // Add status text explaining why it's disabled
+                const statusSpan = document.createElement('span');
+                statusSpan.className = 'share-item-status';
+                statusSpan.style.marginLeft = '10px';
+                statusSpan.style.color = 'var(--text-color-secondary)';
+                statusSpan.style.fontSize = '0.85em';
+                statusSpan.style.fontWeight = 'normal';
+                statusSpan.textContent = '(No functions enabled)';
+                label.appendChild(statusSpan);
+            } else {
+                // Functions are enabled - enable checkbox
+                checkbox.disabled = false;
+                label.style.opacity = '1';
+                label.style.cursor = 'pointer';
+                
                 const statusSpan = document.createElement('span');
                 statusSpan.className = 'share-item-status';
                 statusSpan.style.marginLeft = '10px';
@@ -587,6 +650,11 @@ window.ShareManager = (function() {
                     }
                     
                     if (connections.length > 0) {
+                        // MCP connections exist - enable checkbox
+                        checkbox.disabled = false;
+                        label.style.opacity = '1';
+                        label.style.cursor = 'pointer';
+                        
                         console.log(`🎯 updateMcpConnectionsStatus: Creating new status indicator, checkbox.checked = ${checkbox.checked}`);
                         const statusSpan = document.createElement('span');
                         statusSpan.className = 'share-item-status';
@@ -599,6 +667,22 @@ window.ShareManager = (function() {
                         const connectionsText = connections.join(', ');
                         statusSpan.textContent = `(${connectionsText} ${actionText})`;
                         console.log(`🎯 updateMcpConnectionsStatus: Status text set to '${statusSpan.textContent}'`);
+                        label.appendChild(statusSpan);
+                    } else {
+                        // No MCP connections - disable checkbox
+                        checkbox.disabled = true;
+                        checkbox.checked = false;
+                        label.style.opacity = '0.5';
+                        label.style.cursor = 'not-allowed';
+                        
+                        // Add status text explaining why it's disabled
+                        const statusSpan = document.createElement('span');
+                        statusSpan.className = 'share-item-status';
+                        statusSpan.style.marginLeft = '10px';
+                        statusSpan.style.color = 'var(--text-color-secondary)';
+                        statusSpan.style.fontSize = '0.85em';
+                        statusSpan.style.fontWeight = 'normal';
+                        statusSpan.textContent = '(No MCP connections configured)';
                         label.appendChild(statusSpan);
                     }
                 } else {
@@ -621,6 +705,11 @@ window.ShareManager = (function() {
                     }
                     
                     if (connections.length > 0) {
+                        // MCP connections exist - enable checkbox
+                        checkbox.disabled = false;
+                        label.style.opacity = '1';
+                        label.style.cursor = 'pointer';
+                        
                         const statusSpan = document.createElement('span');
                         statusSpan.className = 'share-item-status';
                         statusSpan.style.marginLeft = '10px';
@@ -631,6 +720,22 @@ window.ShareManager = (function() {
                         const actionText = checkbox.checked ? 'will be shared' : 'available';
                         const connectionsText = connections.join(', ');
                         statusSpan.textContent = `(${connectionsText} ${actionText})`;
+                        label.appendChild(statusSpan);
+                    } else {
+                        // No MCP connections - disable checkbox
+                        checkbox.disabled = true;
+                        checkbox.checked = false;
+                        label.style.opacity = '0.5';
+                        label.style.cursor = 'not-allowed';
+                        
+                        // Add status text explaining why it's disabled
+                        const statusSpan = document.createElement('span');
+                        statusSpan.className = 'share-item-status';
+                        statusSpan.style.marginLeft = '10px';
+                        statusSpan.style.color = 'var(--text-color-secondary)';
+                        statusSpan.style.fontSize = '0.85em';
+                        statusSpan.style.fontWeight = 'normal';
+                        statusSpan.textContent = '(No MCP connections configured)';
                         label.appendChild(statusSpan);
                     }
                 }
@@ -712,10 +817,85 @@ window.ShareManager = (function() {
             const allExistingStatus = label.querySelectorAll('.share-item-status');
             allExistingStatus.forEach(status => status.remove());
             
-            // Get message count from the chat container
-            const messageCount = document.querySelectorAll('#chat-container .message').length;
+            // Get conversation message count from ChatManager (the source of truth)
+            let conversationMessageCount = 0;
+            const chatManager = window.aiHackare && window.aiHackare.chatManager;
             
-            if (messageCount > 0) {
+            if (chatManager && typeof chatManager.getConversationMessageCount === 'function') {
+                conversationMessageCount = chatManager.getConversationMessageCount();
+                console.log('💬 Conversation messages from ChatManager:', conversationMessageCount);
+            } else {
+                console.warn('⚠️ ChatManager.getConversationMessageCount not available');
+                // Fallback: count non-system messages in the messages array
+                const messages = chatManager ? chatManager.getMessages() : [];
+                conversationMessageCount = messages.filter(msg => 
+                    msg.role === 'user' || 
+                    (msg.role === 'assistant' && msg.content && msg.content.trim())
+                ).length;
+                console.log('💬 Conversation messages (fallback count):', conversationMessageCount);
+            }
+            
+            // Update the message history count input max value and constraints
+            if (elements.messageHistoryCount) {
+                if (conversationMessageCount > 0) {
+                    elements.messageHistoryCount.max = conversationMessageCount;
+                    // If current value is higher than max, adjust it
+                    const currentValue = parseInt(elements.messageHistoryCount.value, 10);
+                    if (currentValue > conversationMessageCount) {
+                        elements.messageHistoryCount.value = conversationMessageCount;
+                    }
+                    // Ensure minimum is 1 when messages exist
+                    elements.messageHistoryCount.min = 1;
+                } else {
+                    // No messages - set to 0 and disable
+                    elements.messageHistoryCount.value = 0;
+                    elements.messageHistoryCount.min = 0;
+                    elements.messageHistoryCount.max = 0;
+                }
+            }
+            
+            if (conversationMessageCount === 0) {
+                // No conversation messages - disable checkbox
+                checkbox.disabled = true;
+                checkbox.checked = false;
+                label.style.opacity = '0.5';
+                label.style.cursor = 'not-allowed';
+                
+                // Also disable the message count input
+                if (elements.messageHistoryCount) {
+                    elements.messageHistoryCount.disabled = true;
+                }
+                if (elements.messageHistoryContainer) {
+                    elements.messageHistoryContainer.classList.remove('active');
+                }
+                
+                // Add status text explaining why it's disabled
+                const statusSpan = document.createElement('span');
+                statusSpan.className = 'share-item-status';
+                statusSpan.style.marginLeft = '10px';
+                statusSpan.style.color = 'var(--text-color-secondary)';
+                statusSpan.style.fontSize = '0.85em';
+                statusSpan.style.fontWeight = 'normal';
+                statusSpan.textContent = '(No conversation messages)';
+                label.appendChild(statusSpan);
+            } else {
+                // Has conversation messages - enable checkbox
+                checkbox.disabled = false;
+                label.style.opacity = '1';
+                label.style.cursor = 'pointer';
+                
+                // Enable/disable message count input based on checkbox state
+                if (elements.messageHistoryCount) {
+                    elements.messageHistoryCount.disabled = !checkbox.checked;
+                }
+                if (elements.messageHistoryContainer) {
+                    if (checkbox.checked) {
+                        elements.messageHistoryContainer.classList.add('active');
+                    } else {
+                        elements.messageHistoryContainer.classList.remove('active');
+                    }
+                }
+                
                 const statusSpan = document.createElement('span');
                 statusSpan.className = 'share-item-status';
                 statusSpan.style.marginLeft = '10px';
@@ -723,9 +903,9 @@ window.ShareManager = (function() {
                 statusSpan.style.fontSize = '0.85em';
                 statusSpan.style.fontWeight = 'normal';
                 
-                const messageText = messageCount !== 1 ? 'messages' : 'message';
-                const actionText = checkbox.checked ? 'will be shared' : 'available';
-                statusSpan.textContent = `(${messageCount} ${messageText} ${actionText})`;
+                const messageText = conversationMessageCount !== 1 ? 'messages' : 'message';
+                // Always show "available" - never "will be shared"
+                statusSpan.textContent = `(${conversationMessageCount} ${messageText} available)`;
                 label.appendChild(statusSpan);
             }
         }
@@ -1041,32 +1221,74 @@ window.ShareManager = (function() {
                 }
             }
             
-            // Build options for the new unified API
+            // Build options for the new unified API - only include data when checkbox is checked
             const options = {
-                password: password,
-                baseUrl: baseUrl,
-                apiKey: apiKey,
-                systemPrompt: systemPrompt,
-                model: currentModel,
-                messages: messages,
-                messageCount: parseInt(elements.messageHistoryCount.value, 10) || 1,
-                welcomeMessage: welcomeMessage,
-                mcpConnections: mcpConnections, // Pass the collected connections
-                includeBaseUrl: elements.shareBaseUrlCheckbox ? elements.shareBaseUrlCheckbox.checked : false,
-                includeApiKey: elements.shareApiKeyCheckbox ? elements.shareApiKeyCheckbox.checked : false,
-                includeSystemPrompt: false, // System prompt is now handled by prompt library
-                includeModel: elements.shareModelCheckbox ? elements.shareModelCheckbox.checked : false,
-                includeConversation: elements.shareConversationCheckbox ? elements.shareConversationCheckbox.checked : false,
-                includeWelcomeMessage: (elements.shareWelcomeMessageCheckbox ? elements.shareWelcomeMessageCheckbox.checked : false) && welcomeMessage,
-                includePromptLibrary: elements.sharePromptLibraryCheckbox ? elements.sharePromptLibraryCheckbox.checked : false,
-                includeFunctionLibrary: elements.shareFunctionLibraryCheckbox ? elements.shareFunctionLibraryCheckbox.checked : false,
-                includeMcpConnections: mcpConnectionsChecked,
-                includeTheme: elements.shareThemeCheckbox ? elements.shareThemeCheckbox.checked : false,
-                theme: theme,
-                includeRagSettings: elements.shareRagSettingsCheckbox ? elements.shareRagSettingsCheckbox.checked : false,
-                ragEnabled: ragEnabled,
-                ragEUDocuments: ragEUDocuments
+                password: password
             };
+            
+            // Only add data fields when their corresponding checkbox is checked
+            if (elements.shareBaseUrlCheckbox && elements.shareBaseUrlCheckbox.checked) {
+                options.includeBaseUrl = true;
+                options.baseUrl = baseUrl;
+            }
+            
+            if (elements.shareApiKeyCheckbox && elements.shareApiKeyCheckbox.checked) {
+                options.includeApiKey = true;
+                options.apiKey = apiKey;
+            }
+            
+            if (elements.shareModelCheckbox && elements.shareModelCheckbox.checked) {
+                options.includeModel = true;
+                options.model = currentModel;
+            }
+            
+            if (elements.shareConversationCheckbox && elements.shareConversationCheckbox.checked) {
+                options.includeConversation = true;
+                // Filter out system messages and empty assistant messages - only share actual conversation
+                const conversationMessages = messages.filter(msg => {
+                    // Include user messages
+                    if (msg.role === 'user') return true;
+                    // Include assistant messages only if they have content
+                    if (msg.role === 'assistant' && msg.content && msg.content.trim()) return true;
+                    // Exclude everything else (system messages, empty messages)
+                    return false;
+                });
+                options.messages = conversationMessages;
+                options.messageCount = parseInt(elements.messageHistoryCount.value, 10) || 1;
+            }
+            
+            if (elements.shareWelcomeMessageCheckbox && elements.shareWelcomeMessageCheckbox.checked && welcomeMessage) {
+                options.includeWelcomeMessage = true;
+                options.welcomeMessage = welcomeMessage;
+            }
+            
+            if (elements.sharePromptLibraryCheckbox && elements.sharePromptLibraryCheckbox.checked) {
+                options.includePromptLibrary = true;
+            }
+            
+            if (elements.shareFunctionLibraryCheckbox && elements.shareFunctionLibraryCheckbox.checked) {
+                options.includeFunctionLibrary = true;
+            }
+            
+            if (mcpConnectionsChecked && mcpConnections) {
+                options.includeMcpConnections = true;
+                options.mcpConnections = mcpConnections;
+            }
+            
+            if (elements.shareThemeCheckbox && elements.shareThemeCheckbox.checked && theme) {
+                options.includeTheme = true;
+                options.theme = theme;
+            }
+            
+            if (elements.shareRagSettingsCheckbox && elements.shareRagSettingsCheckbox.checked) {
+                options.includeRagSettings = true;
+                if (ragEnabled !== undefined) {
+                    options.ragEnabled = ragEnabled;
+                }
+                if (ragEUDocuments !== undefined) {
+                    options.ragEUDocuments = ragEUDocuments;
+                }
+            }
             
             console.log('🎯 ShareManager: Final options object:', JSON.stringify(options, null, 2));
             
