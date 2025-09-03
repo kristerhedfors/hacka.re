@@ -312,11 +312,12 @@ function createSharedLinkDataProcessor() {
             console.log('[SharedLinkDataProcessor] Loading shared conversation with', sharedData.messages.length, 'messages');
             
             // Combine system messages with shared conversation history
+            // Note: systemMessages includes the welcome message, which is always present
             const allMessages = [...systemMessages, ...sharedData.messages];
             setMessages(allMessages);
         } else if (systemMessages.length > 0 && setMessages) {
+            // Only system messages (including welcome message) - no actual conversation
             console.log('[SharedLinkDataProcessor] No shared messages, only system messages:', systemMessages.length);
-            // Even if no conversation history, show system messages
             setMessages(systemMessages);
         } else {
             console.log('[SharedLinkDataProcessor] No messages to set at all');

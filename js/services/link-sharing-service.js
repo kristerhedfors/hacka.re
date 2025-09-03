@@ -214,15 +214,9 @@ window.LinkSharingService = (function() {
         // Compress the payload first (now async)
         const compressedPayload = await CompressionUtils.compressPayload(finalPayload);
         
-        // Wrap compressed string in an object for CryptoUtils (it expects an object)
-        // Use a marker to identify compressed data
-        const wrappedPayload = {
-            _compressed: true,
-            data: compressedPayload
-        };
-        
-        // Encrypt the wrapped compressed payload
-        const encryptedData = CryptoUtils.encryptData(wrappedPayload, password);
+        // Encrypt the compressed payload directly
+        // Since compression is always used, we don't need a wrapper object
+        const encryptedData = CryptoUtils.encryptData(compressedPayload, password);
         
         // Create URL with hash fragment
         const baseUrl = _location.href.split('#')[0];
@@ -325,20 +319,27 @@ window.LinkSharingService = (function() {
                     return null;
                 }
                 
-                // Check if data is compressed (has our marker)
+                // Handle decompression
                 let data;
                 if (decryptedData._compressed === true && decryptedData.data) {
-                    // Decompress the data (now async)
+                    // Old format with wrapper object - decompress the data
                     try {
                         data = await CompressionUtils.decompressPayload(decryptedData.data);
                     } catch (decompressError) {
                         console.error('Decompression failed:', decompressError);
                         return null;
                     }
+                } else if (typeof decryptedData === 'string') {
+                    // New format - compressed data directly (string)
+                    try {
+                        data = await CompressionUtils.decompressPayload(decryptedData);
+                    } catch (decompressError) {
+                        console.error('Decompression failed:', decompressError);
+                        return null;
+                    }
                 } else {
-                    // This shouldn't happen with new links, but handle it gracefully
-                    console.error('Unexpected data format - missing compression marker');
-                    return null;
+                    // Fallback for very old uncompressed format (shouldn't happen)
+                    data = decryptedData;
                 }
                 
                 // Check if the decrypted data contains at least one valid field
