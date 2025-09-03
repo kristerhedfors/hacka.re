@@ -41,7 +41,7 @@
 1. **Privacy First**: Your data never touches our servers because we don't have any
 2. **Zero Trust**: All sensitive data is encrypted client-side, no external services trusted
 3. **Zero Dependencies**: Minimal third-party libraries (only essential ones), all hosted locally - no CDN dependencies
-4. **Zero Infrastructure**: Pure static site, no backend servers required
+4. **Zero Infrastructure**: Pure static site, no backend servers required other than OpenAI-compatible LLM API
 5. **Transparency**: 100% open source, auditable code
 6. **No Telemetry**: Zero analytics, tracking, or phone-home functionality
 7. **Direct Communication**: Your browser talks directly to AI provider APIs
