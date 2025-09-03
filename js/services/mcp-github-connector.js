@@ -214,6 +214,26 @@
                 }
             }
             
+            // Auto-register and enable GitHub function collection if available
+            if (window.DefaultFunctionsService && window.GitHubFunctions) {
+                try {
+                    // Re-initialize to pick up the GitHub functions
+                    window.DefaultFunctionsService.initializeDefaultFunctions();
+                    
+                    // Enable the collection if it's not already selected
+                    if (!window.DefaultFunctionsService.isDefaultFunctionCollectionSelected('github-functions')) {
+                        window.DefaultFunctionsService.toggleDefaultFunctionCollectionSelection('github-functions', true);
+                        // Also need to load the functions into the Function Tools Service
+                        window.DefaultFunctionsService.loadSelectedDefaultFunctions();
+                        console.log('[GitHubConnector] GitHub function collection auto-enabled');
+                    } else {
+                        console.log('[GitHubConnector] GitHub function collection already enabled');
+                    }
+                } catch (error) {
+                    console.warn('[GitHubConnector] Failed to enable GitHub functions:', error);
+                }
+            }
+            
             console.log(`[GitHubConnector] Connected successfully`);
             return true;
         }

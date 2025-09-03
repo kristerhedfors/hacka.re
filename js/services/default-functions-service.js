@@ -37,6 +37,16 @@ window.DefaultFunctionsService = (function() {
             DEFAULT_FUNCTIONS.push(window.MCPExampleFunctions);
         }
         
+        // Add GitHub functions if they exist
+        if (window.GitHubFunctions) {
+            DEFAULT_FUNCTIONS.push(window.GitHubFunctions);
+        }
+        
+        // Add Shodan functions if they exist
+        if (window.ShodanFunctions) {
+            DEFAULT_FUNCTIONS.push(window.ShodanFunctions);
+        }
+        
         // Additional default function collections can be added here in the future
         
         console.log(`Loaded ${DEFAULT_FUNCTIONS.length} default function collections:`, DEFAULT_FUNCTIONS.map(g => g.name));
