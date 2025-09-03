@@ -137,6 +137,9 @@ window.DefaultFunctionsManager = (function() {
                 
                 const isChecked = this.checked;
                 
+                // Use collection-level toggle for better efficiency
+                DefaultFunctionsService.toggleDefaultFunctionCollectionSelection(collection.id, isChecked);
+                
                 // Update individual checkboxes immediately for responsive UI
                 const collectionContainer = document.querySelector(`[data-id="${collection.id}"]`);
                 if (collectionContainer) {
@@ -152,11 +155,22 @@ window.DefaultFunctionsManager = (function() {
                     addSystemMessage(`All functions in "${collection.name}" ${actionText}.`);
                 }
                 
-                // Defer backend operations
-                setTimeout(() => {
-                    toggleAllFunctionsInCollectionBackend(collection, isChecked);
-                    // Count updates are handled in toggleAllFunctionsInCollectionBackend
-                }, 0);
+                // Update collection count display immediately
+                updateDefaultCollectionCount(collection);
+                
+                // Update section count display immediately
+                updateDefaultFunctionsSectionCount();
+                
+                // Defer the expensive main function list re-render
+                if (window.functionListRenderer) {
+                    if (window.defaultFunctionsRenderTimeout) {
+                        clearTimeout(window.defaultFunctionsRenderTimeout);
+                    }
+                    window.defaultFunctionsRenderTimeout = setTimeout(() => {
+                        window.functionListRenderer.renderMainFunctionList();
+                        window.defaultFunctionsRenderTimeout = null;
+                    }, 100);
+                }
             });
             headerContainer.appendChild(collectionCheckbox);
             
@@ -243,43 +257,48 @@ window.DefaultFunctionsManager = (function() {
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.className = 'function-item-checkbox';
+            checkbox.setAttribute('data-function', func.name);
             const functionId = `${collection.id}:${func.name}`;
             checkbox.checked = DefaultFunctionsService.isIndividualFunctionSelected(functionId);
             checkbox.addEventListener('click', (e) => {
                 e.stopPropagation();
                 console.log("Individual function checkbox clicked:", functionId);
                 
-                // Use setTimeout to make UI responsive
-                setTimeout(() => {
-                    // Toggle the individual function selection
-                    const wasSelected = DefaultFunctionsService.toggleIndividualFunctionSelection(functionId);
-                    
-                    // Update the collection checkbox state
-                    const collectionCheckbox = document.getElementById(`collection-checkbox-${collection.id}`);
-                    if (collectionCheckbox) {
-                        updateCollectionCheckboxState(collectionCheckbox, collection);
+                // Toggle the individual function selection immediately
+                const wasSelected = DefaultFunctionsService.toggleIndividualFunctionSelection(functionId);
+                
+                // Update the collection checkbox state immediately
+                const collectionCheckbox = document.getElementById(`collection-checkbox-${collection.id}`);
+                if (collectionCheckbox) {
+                    updateCollectionCheckboxState(collectionCheckbox, collection);
+                }
+                
+                // Update collection count display
+                updateDefaultCollectionCount(collection);
+                
+                // Update section count display
+                updateDefaultFunctionsSectionCount();
+                
+                // Defer the expensive main function list re-render
+                // Use a debounced approach to avoid multiple renders
+                if (window.functionListRenderer) {
+                    if (window.defaultFunctionsRenderTimeout) {
+                        clearTimeout(window.defaultFunctionsRenderTimeout);
                     }
-                    
-                    // Update collection count display
-                    updateDefaultCollectionCount(collection);
-                    
-                    // Update section count display
-                    updateDefaultFunctionsSectionCount();
-                    
-                    // Update only the main function list without affecting the default functions tree
-                    if (window.functionListRenderer) {
+                    window.defaultFunctionsRenderTimeout = setTimeout(() => {
                         window.functionListRenderer.renderMainFunctionList();
+                        window.defaultFunctionsRenderTimeout = null;
+                    }, 100);
+                }
+                
+                // Add system message
+                if (addSystemMessage) {
+                    if (wasSelected) {
+                        addSystemMessage(`Default function "${func.name}" enabled.`);
+                    } else {
+                        addSystemMessage(`Default function "${func.name}" disabled.`);
                     }
-                    
-                    // Add system message
-                    if (addSystemMessage) {
-                        if (wasSelected) {
-                            addSystemMessage(`Default function "${func.name}" enabled.`);
-                        } else {
-                            addSystemMessage(`Default function "${func.name}" disabled.`);
-                        }
-                    }
-                }, 0);
+                }
             });
             functionItem.appendChild(checkbox);
             
@@ -359,7 +378,14 @@ window.DefaultFunctionsManager = (function() {
                 return;
             }
             
-            // Count how many functions in this collection are selected
+            // Check if the entire collection is selected (e.g., via MCP connection)
+            if (DefaultFunctionsService.isDefaultFunctionCollectionSelected(collection.id)) {
+                collectionCheckbox.checked = true;
+                collectionCheckbox.indeterminate = false;
+                return;
+            }
+            
+            // Count how many functions in this collection are selected individually
             let selectedCount = 0;
             collection.functions.forEach(func => {
                 const functionId = `${collection.id}:${func.name}`;
@@ -598,6 +624,65 @@ window.DefaultFunctionsManager = (function() {
             }
         }
         
+        /**
+         * Refresh UI state for a specific collection (e.g., after programmatic enable/disable)
+         */
+        function refreshCollectionUIState(collectionId) {
+            const collection = DefaultFunctionsService.getDefaultFunctionCollectionById(collectionId);
+            if (!collection) return;
+            
+            // Update collection checkbox
+            const collectionCheckbox = document.getElementById(`collection-checkbox-${collectionId}`);
+            if (collectionCheckbox) {
+                // Check if collection is selected at collection level
+                const isCollectionSelected = DefaultFunctionsService.isDefaultFunctionCollectionSelected(collectionId);
+                
+                if (isCollectionSelected) {
+                    collectionCheckbox.checked = true;
+                    collectionCheckbox.indeterminate = false;
+                    
+                    // Update all individual checkboxes to checked
+                    const collectionContainer = document.querySelector(`[data-id="${collectionId}"]`);
+                    if (collectionContainer) {
+                        const individualCheckboxes = collectionContainer.querySelectorAll('.function-item-checkbox');
+                        individualCheckboxes.forEach(checkbox => {
+                            checkbox.checked = true;
+                        });
+                    }
+                } else {
+                    // Update based on individual function selection
+                    updateCollectionCheckboxState(collectionCheckbox, collection);
+                    
+                    // Update individual checkboxes based on their actual state
+                    const collectionContainer = document.querySelector(`[data-id="${collectionId}"]`);
+                    if (collectionContainer && collection.functions) {
+                        collection.functions.forEach(func => {
+                            const functionId = `${collectionId}:${func.name}`;
+                            const checkbox = collectionContainer.querySelector(`.function-item-checkbox[data-function="${func.name}"]`);
+                            if (checkbox) {
+                                checkbox.checked = DefaultFunctionsService.isIndividualFunctionSelected(functionId);
+                            }
+                        });
+                    }
+                }
+            }
+            
+            // Update counts
+            updateDefaultCollectionCount(collection);
+            updateDefaultFunctionsSectionCount();
+            
+            // Schedule main function list update
+            if (window.functionListRenderer) {
+                if (window.defaultFunctionsRenderTimeout) {
+                    clearTimeout(window.defaultFunctionsRenderTimeout);
+                }
+                window.defaultFunctionsRenderTimeout = setTimeout(() => {
+                    window.functionListRenderer.renderMainFunctionList();
+                    window.defaultFunctionsRenderTimeout = null;
+                }, 100);
+            }
+        }
+        
         // Public API
         return {
             addDefaultFunctionsSection,
@@ -609,7 +694,8 @@ window.DefaultFunctionsManager = (function() {
             updateDefaultCollectionCount,
             updateDefaultFunctionsSectionCount,
             copyEnabledDefaultFunctions,
-            updateAllCounts
+            updateAllCounts,
+            refreshCollectionUIState
         };
     }
 
