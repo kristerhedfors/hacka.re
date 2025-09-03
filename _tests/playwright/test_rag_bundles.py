@@ -6,6 +6,7 @@ from playwright.sync_api import Page, expect
 
 from test_utils import dismiss_welcome_modal, screenshot_with_markdown
 
+@pytest.mark.skip(reason="User bundles feature has been removed from RAG modal")
 def test_rag_user_bundles_ui_elements(page: Page, serve_hacka_re):
     """Test the user bundles UI elements and basic functionality."""
     # Navigate to the application
@@ -343,6 +344,7 @@ def test_rag_bundle_file_input_creation(page: Page, serve_hacka_re):
         "Callbacks": "Configured for load and error"
     })
 
+@pytest.mark.skip(reason="User bundles feature has been removed from RAG modal")
 def test_rag_bundle_load_button_interaction(page: Page, serve_hacka_re):
     """Test the load bundle button interaction."""
     # Navigate to the application
