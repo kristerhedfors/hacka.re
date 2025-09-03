@@ -406,6 +406,33 @@ window.DefaultFunctionsService = (function() {
         const selectedFunctionIds = getSelectedIndividualFunctionIds();
         console.log('Selected function IDs from storage:', selectedFunctionIds);
         
+        // Skip if no functions selected
+        if (!selectedFunctionIds || selectedFunctionIds.length === 0) {
+            console.log('No default functions selected, skipping load');
+            return;
+        }
+        
+        // Check if already loaded to prevent redundant processing
+        const enabledDefaultFunctions = getEnabledDefaultFunctions();
+        const alreadyLoadedCount = Object.keys(enabledDefaultFunctions).length;
+        const expectedCount = selectedFunctionIds.length;
+        
+        // If all selected functions are already loaded, skip re-processing
+        if (alreadyLoadedCount === expectedCount) {
+            const loadedNames = Object.keys(enabledDefaultFunctions);
+            const expectedNames = selectedFunctionIds.map(id => {
+                const [groupId, functionName] = id.split(':');
+                return functionName;
+            });
+            
+            // Check if the loaded functions match what's expected
+            const allMatch = expectedNames.every(name => loadedNames.includes(name));
+            if (allMatch) {
+                console.log('All selected default functions already loaded, skipping re-processing');
+                return;
+            }
+        }
+        
         selectedFunctionIds.forEach(functionId => {
             const [groupId, functionName] = functionId.split(':');
             const group = getDefaultFunctionCollectionById(groupId);

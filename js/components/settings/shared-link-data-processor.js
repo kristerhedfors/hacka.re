@@ -567,7 +567,9 @@ function createSharedLinkDataProcessor() {
             collectionCount: sharedData.functionCollectionMetadata ? Object.keys(sharedData.functionCollectionMetadata).length : 0,
             toolsEnabled: functionToolsEnabled,
             enabledFunctions: sharedData.enabledFunctions || [],
-            defaultFunctionCount: (sharedData.selectedDefaultFunctionIds || []).length + (sharedData.selectedDefaultFunctionCollectionIds || []).length
+            defaultFunctionCount: (sharedData.selectedDefaultFunctionIds || []).length + (sharedData.selectedDefaultFunctionCollectionIds || []).length,
+            selectedDefaultFunctionIds: sharedData.selectedDefaultFunctionIds || [],
+            selectedDefaultFunctionCollectionIds: sharedData.selectedDefaultFunctionCollectionIds || []
         };
     }
     
@@ -1158,18 +1160,36 @@ function createSharedLinkDataProcessor() {
                     additionalParts.push(`${totalPrompts} prompt${totalPrompts !== 1 ? 's' : ''}`);
                 }
                 
-                // Functions summary
-                if (functionsSummary.functionCount > 0 || functionsSummary.enabledCount > 0) {
-                    // Show function names if there are 5 or fewer
-                    if (functionsSummary.enabledCount > 0 && functionsSummary.enabledCount <= 5 && functionsSummary.enabledFunctions.length > 0) {
-                        additionalParts.push(`Functions: ${functionsSummary.enabledFunctions.join(', ')}`);
-                    } else if (functionsSummary.functionCount > 0) {
-                        // Just show count if more than 5
-                        additionalParts.push(`${functionsSummary.functionCount} function${functionsSummary.functionCount !== 1 ? 's' : ''}`);
+                // Functions summary - combine user and default functions
+                const allFunctionNames = [];
+                
+                // Add user function names
+                if (functionsSummary.enabledFunctions && functionsSummary.enabledFunctions.length > 0) {
+                    allFunctionNames.push(...functionsSummary.enabledFunctions);
+                }
+                
+                // Add default function names (extract actual function names from IDs like "rc4-encryption:rc4_encrypt")
+                if (functionsSummary.selectedDefaultFunctionIds && functionsSummary.selectedDefaultFunctionIds.length > 0) {
+                    const defaultFuncNames = functionsSummary.selectedDefaultFunctionIds.map(id => {
+                        // Extract function name from ID format "collection:function"
+                        const parts = id.split(':');
+                        return parts.length > 1 ? parts[1] : id;
+                    });
+                    allFunctionNames.push(...defaultFuncNames);
+                }
+                
+                // Display functions
+                if (allFunctionNames.length > 0) {
+                    if (allFunctionNames.length <= 5) {
+                        // Show all function names if 5 or fewer
+                        additionalParts.push(`Functions: ${allFunctionNames.join(', ')}`);
+                    } else {
+                        // Show count if more than 5
+                        const userCount = functionsSummary.enabledCount || 0;
+                        const defaultCount = functionsSummary.defaultFunctionCount || 0;
+                        const totalCount = userCount + defaultCount;
+                        additionalParts.push(`${totalCount} function${totalCount !== 1 ? 's' : ''}`);
                     }
-                } else if (functionsSummary.defaultFunctionCount > 0) {
-                    // Show default function selections even if no user functions
-                    additionalParts.push(`${functionsSummary.defaultFunctionCount} default function${functionsSummary.defaultFunctionCount !== 1 ? 's' : ''}`);
                 }
                 
                 // MCP summary

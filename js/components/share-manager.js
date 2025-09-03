@@ -631,22 +631,36 @@ window.ShareManager = (function() {
                 if (window.CoreStorageService) {
                     const connections = [];
                     
-                    // Check for GitHub token
-                    const githubToken = await window.CoreStorageService.getValue('mcp_github_token');
-                    if (githubToken) {
+                    // Check for ACTIVE connections, not just stored credentials
+                    // Use MCPServiceConnectors or mcpServiceManager to check actual connection state
+                    
+                    // Check if GitHub is actually connected (not just has credentials)
+                    if (window.MCPServiceConnectors?.isConnected?.('github') || 
+                        window.mcpServiceManager?.isServiceConnected?.('github')) {
                         connections.push('GitHub');
                     }
                     
-                    // Check for Gmail OAuth
-                    const gmailAuth = await window.CoreStorageService.getValue('mcp_gmail_oauth');
-                    if (gmailAuth) {
+                    // Check if Gmail is actually connected
+                    if (window.MCPServiceConnectors?.isConnected?.('gmail') || 
+                        window.mcpServiceManager?.isServiceConnected?.('gmail')) {
                         connections.push('Gmail');
                     }
                     
-                    // Check for Shodan API key
-                    const shodanApiKey = await window.CoreStorageService.getValue('mcp_shodan_api_key');
-                    if (shodanApiKey) {
+                    // Check if Shodan is actually connected
+                    if (window.MCPServiceConnectors?.isConnected?.('shodan') || 
+                        window.mcpServiceManager?.isServiceConnected?.('shodan')) {
                         connections.push('Shodan');
+                    }
+                    
+                    // Also check MCPClient for any other active MCP connections
+                    if (window.MCPClient?.getActiveConnections) {
+                        const activeConnections = window.MCPClient.getActiveConnections();
+                        activeConnections.forEach(conn => {
+                            // Add any connections not already in the list
+                            if (!connections.includes(conn)) {
+                                connections.push(conn);
+                            }
+                        });
                     }
                     
                     if (connections.length > 0) {
