@@ -392,6 +392,18 @@ window.LinkSharingService = (function() {
                     console.log('Extracted enabled function names from shared link:', data.enabledFunctions);
                 }
                 
+                // Include function collections if present
+                if (data.functionCollections) {
+                    result.functionCollections = data.functionCollections;
+                    console.log('Extracted function collections from shared link:', Object.keys(data.functionCollections).length, 'mappings');
+                }
+                
+                // Include function collection metadata if present
+                if (data.functionCollectionMetadata) {
+                    result.functionCollectionMetadata = data.functionCollectionMetadata;
+                    console.log('Extracted function collection metadata from shared link:', Object.keys(data.functionCollectionMetadata));
+                }
+                
                 // Include default function selections if present (by reference)
                 if (data.selectedDefaultFunctionCollectionIds) {
                     result.selectedDefaultFunctionCollectionIds = data.selectedDefaultFunctionCollectionIds;
