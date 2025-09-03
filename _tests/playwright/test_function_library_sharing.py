@@ -205,10 +205,8 @@ def test_function_library_sharing(page: Page, serve_hacka_re):
     # Handle the confirmation dialog
     page.on("dialog", lambda dialog: dialog.accept())
     
-    # Find and click the delete button for the function
-    # The delete button is in the same function-item div as the function name
-    function_item = page.locator(f"#function-list .function-item").filter(has=page.locator(f".function-item-name:has-text('{function_name}')"))
-    delete_btn = function_item.locator(".function-item-delete")
+    # Click the collection delete button (functions are deleted as a collection)
+    delete_btn = page.locator(".function-collection-delete").first
     delete_btn.click()
     
     # Verify the function was deleted

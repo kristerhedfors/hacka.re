@@ -447,9 +447,9 @@ function rc4_decrypt(ciphertext, key) {
     
     # Delete all functions
     try:
-        function_list = page.locator("#function-list")
-        while function_list.locator(".function-item-delete").count() > 0:
-            function_list.locator(".function-item-delete").first.click()
+        # Delete all function collections
+        while page.locator(".function-collection-delete").count() > 0:
+            page.locator(".function-collection-delete").first.click()
             # Small wait to allow the UI to update
             page.wait_for_timeout(100)
         print("Deleted all functions")
@@ -457,7 +457,7 @@ function rc4_decrypt(ciphertext, key) {
         print(f"Error deleting functions: {e}")
         # Try JavaScript as a fallback
         page.evaluate("""() => {
-            const deleteButtons = document.querySelectorAll('.function-item-delete');
+            const deleteButtons = document.querySelectorAll('.function-collection-delete');
             for (const button of deleteButtons) {
                 button.click();
             }
