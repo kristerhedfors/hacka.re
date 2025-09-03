@@ -324,8 +324,7 @@ hacka.re features 14 specialized modal windows, each serving a distinct purpose:
   - CRA regulations (pre-embedded with OpenAI)
   - DORA compliance (pre-embedded with OpenAI)
 - **RAG Settings**
-  - Similarity threshold
-  - Max results
+  - Configurable Knowledge Window
   - Reranking options
   - Query expansion
 - **Privacy Note**: Both queries and context are sent to OpenAI
@@ -334,7 +333,6 @@ hacka.re features 14 specialized modal windows, each serving a distinct purpose:
 **Purpose**: Individual document configuration for RAG
 - Chunking strategy
 - Overlap settings
-- Metadata extraction
 - Embedding model selection
 - Update frequency
 
@@ -692,7 +690,6 @@ async function getWeather(location, units = 'celsius') {
 - **No tags**: All functions callable by default
 - **@callable**: Function is callable when selective mode enabled
 - **@tool**: Alias for @callable
-- **@private**: Function not callable (future)
 
 #### Sandboxed Execution
 
