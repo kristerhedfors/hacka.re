@@ -2795,9 +2795,14 @@ body:has(.modal.active) #chat-input-container {
     font-size: 0.85rem;
 }
 
-/* System Prompt Viewer Modal - appears above other modals */
+/* Prompts modal - standard modal z-index */
+#prompts-modal {
+    z-index: 999999 !important; /* Standard modal z-index */
+}
+
+/* System Prompt Viewer Modal - appears above all other modals */
 #system-prompt-viewer-modal {
-    z-index: 9999999; /* Higher than regular modals (999999) */
+    z-index: 10000000 !important; /* Much higher than all other modals including prompts modal */
 }
 
 #system-prompt-viewer-modal .modal-content {
