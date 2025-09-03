@@ -182,7 +182,7 @@ Share configurations without exposing credentials:
 
 ## Modal Windows & UI Components
 
-hacka.re features 15 specialized modal windows, each serving a distinct purpose:
+hacka.re features 14 specialized modal windows, each serving a distinct purpose:
 
 ### 1. Welcome Modal
 **Purpose**: Information and navigation hub
@@ -295,26 +295,7 @@ hacka.re features 15 specialized modal windows, each serving a distinct purpose:
   - View execution results in second tab
 
 
-### 9. Agent Configuration Modal (`#agent-config-modal`)
-**Purpose**: AI agent personality and behavior management
-- **Agent Library**
-  - Pre-configured specialists
-  - Custom agent creation
-  - Agent templates
-  - Role definitions
-- **Configuration Options**
-  - Name and description
-  - System prompts
-  - Behavioral parameters
-  - Knowledge domains
-  - Response style
-- **Agent Features**
-  - Save/load agents
-  - Quick switch
-  - Context preservation
-  - History isolation
-
-### 10. MCP Servers Modal (`#mcp-servers-modal`)
+### 9. MCP Servers Modal (`#mcp-servers-modal`)
 **Purpose**: Model Context Protocol server management
 - **Server Configuration**
   - Add/remove servers
@@ -332,7 +313,7 @@ hacka.re features 15 specialized modal windows, each serving a distinct purpose:
   - Custom transports
   - WebSocket support
 
-### 11. RAG Modal (`#rag-modal`)
+### 10. RAG Modal (`#rag-modal`)
 **Purpose**: Retrieval-Augmented Generation configuration (OpenAI only)
 - **Requirements**
   - OpenAI API key required
@@ -349,7 +330,7 @@ hacka.re features 15 specialized modal windows, each serving a distinct purpose:
   - Query expansion
 - **Privacy Note**: Both queries and context are sent to OpenAI
 
-### 12. RAG Document Settings Modal (`#rag-document-settings-modal`)
+### 11. RAG Document Settings Modal (`#rag-document-settings-modal`)
 **Purpose**: Individual document configuration for RAG
 - Chunking strategy
 - Overlap settings
@@ -357,7 +338,7 @@ hacka.re features 15 specialized modal windows, each serving a distinct purpose:
 - Embedding model selection
 - Update frequency
 
-### 13. RAG Document Viewer Modal (`#rag-document-viewer-modal`)
+### 12. RAG Document Viewer Modal (`#rag-document-viewer-modal`)
 **Purpose**: Preview and inspect RAG documents
 - Full document view
 - Chunk boundaries
@@ -365,7 +346,7 @@ hacka.re features 15 specialized modal windows, each serving a distinct purpose:
 - Search preview
 - Metadata display
 
-### 14. Model Selection Modal (`#model-selection-modal`)
+### 13. Model Selection Modal (`#model-selection-modal`)
 **Purpose**: Advanced model selection with search
 - **Live Search**
   - Filter by name
@@ -382,7 +363,7 @@ hacka.re features 15 specialized modal windows, each serving a distinct purpose:
   - Recent models
   - Model comparison
 
-### 15. System Prompt Viewer Modal (`#system-prompt-viewer-modal`)
+### 14. System Prompt Viewer Modal (`#system-prompt-viewer-modal`)
 **Purpose**: View and debug active system prompts
 - Combined prompt preview
 - Individual prompt inspection
