@@ -77,9 +77,33 @@ class AIHackare {
     }
     
     setupTextareaAutoResize() {
+        // Cache for performance
+        let resizeScheduled = false;
+        const maxHeight = 150; // Match CSS max-height
+        
         this.messageInput.addEventListener('input', () => {
-            this.messageInput.style.height = 'auto';
-            this.messageInput.style.height = (this.messageInput.scrollHeight) + 'px';
+            // Use requestAnimationFrame to batch DOM updates
+            if (!resizeScheduled) {
+                resizeScheduled = true;
+                
+                requestAnimationFrame(() => {
+                    // Reset height to auto to get accurate scrollHeight
+                    this.messageInput.style.height = 'auto';
+                    
+                    // Calculate new height, but respect max-height
+                    const newHeight = Math.min(this.messageInput.scrollHeight, maxHeight);
+                    this.messageInput.style.height = newHeight + 'px';
+                    
+                    // If we've hit max height, ensure overflow is set
+                    if (this.messageInput.scrollHeight > maxHeight) {
+                        this.messageInput.style.overflowY = 'auto';
+                    } else {
+                        this.messageInput.style.overflowY = 'hidden';
+                    }
+                    
+                    resizeScheduled = false;
+                });
+            }
         });
     }
     
