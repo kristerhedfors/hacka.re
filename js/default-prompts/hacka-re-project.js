@@ -545,7 +545,34 @@ window.addEventListener('modelChanged', (e) => {
 
 ### Encryption System
 
-hacka.re uses **TweetNaCl.js** for all cryptographic operations:
+⚠️ **CRITICAL SECURITY INFORMATION** ⚠️
+
+#### Storage Modes and Security Implications
+
+**Direct Access (hacka.re without shared link):**
+- ⚠️ Uses **sessionStorage** for data persistence
+- ⚠️ Master key stored in **PLAIN TEXT** in sessionStorage
+- ⚠️ Data is **OBFUSCATED, NOT ENCRYPTED**
+- ⚠️ All secrets, API keys, conversations are **readable from sessionStorage**
+- ✅ Data persists only for browser session (until tab closed)
+- ⚠️ Any script in hacka.re context can access ALL secrets
+
+**Shared Link Access (hacka.re#gpt=...):**
+- ✅ Uses **localStorage** for data persistence
+- ✅ Master key (32-byte NaCl key) is **embedded in the URL fragment**
+- ✅ Master key **NEVER stored** in localStorage/sessionStorage
+- ✅ Data is **truly encrypted** with the embedded key
+- ✅ Same link = same master key (enables multi-tab sharing)
+- ⚠️ Key exists in JavaScript memory during runtime
+
+**JavaScript Runtime Security (BOTH modes):**
+- ⚠️ Passwords and master keys exist in JavaScript variables
+- ⚠️ Variables isolated to browser origin (hacka.re)
+- ⚠️ Rogue scripts in hacka.re context can access ALL keys
+- ⚠️ Browser DevTools can inspect variables with secrets
+- ⚠️ XSS vulnerabilities would compromise all data
+
+hacka.re uses **TweetNaCl.js** for cryptographic operations:
 
 #### Symmetric Encryption
 - **Algorithm**: XSalsa20-Poly1305

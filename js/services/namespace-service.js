@@ -70,17 +70,15 @@ window.NamespaceService = (function() {
         // Previous namespace when it changes
         previous: {
             namespaceId: null,
-            namespaceKey: null,
+            masterKey: null,
             namespaceHash: null
         },
         // Current namespace - will be updated when title/subtitle change
         current: {
             namespaceId: null,
-            namespaceKey: null,
+            masterKey: null,
             namespaceHash: null
         },
-        // Flag to track if the current master key was decrypted using the fallback namespace hash
-        usingFallbackForMasterKey: false,
         // Flag to track if we're returning to an existing namespace vs creating new
         isReturningToExistingNamespace: false
     };
@@ -89,92 +87,47 @@ window.NamespaceService = (function() {
     let hasAttemptedSessionCleanup = false;
     
     // Helper functions
-    function getSessionKey() {
+    /**
+     * Get the password for shared links (used to decrypt the share link payload)
+     * For direct visits, this returns null as no password is needed
+     * @returns {string|null} The password for shared links or null
+     */
+    function getSharedLinkPassword() {
+        // Only relevant for shared links
+        const hasSharedLink = window.location.hash && 
+            (window.location.hash.includes('#gpt=') || window.location.hash.includes('#shared='));
+        
+        if (!hasSharedLink) {
+            return null; // Direct visits don't have passwords
+        }
+        
         // Check cache first
         const now = Date.now();
         if (sessionKeyCache.key && (now - sessionKeyCache.timestamp) < sessionKeyCache.TTL) {
             return sessionKeyCache.key;
         }
         
-        // Session key retrieval with multiple fallback mechanisms
-        // Priority order:
-        // 1. Direct sessionStorage lookup for shared links (works before ShareManager init)
-        // 2. Direct sessionStorage lookup for direct visits (default_session namespace)
-        // 3. CryptoUtils-based lookup using hash of encrypted data
-        // 4. ShareManager instance (aiHackare.shareManager)
-        // 5. Legacy ShareManager fallback
-        
-        // First, check sessionStorage directly for shared link session keys
-        // This ensures we get the session key even before ShareManager is initialized
-        if (window.location.hash && (window.location.hash.includes('#gpt=') || window.location.hash.includes('#shared='))) {
-            // Try to find any session key in sessionStorage that matches the pattern
-            // This works even if CryptoUtils isn't loaded yet
-            for (let i = 0; i < sessionStorage.length; i++) {
-                const key = sessionStorage.key(i);
-                if (key && key.startsWith('__hacka_re_session_key_')) {
-                    const storedKey = sessionStorage.getItem(key);
-                    if (storedKey) {
-                        // Cache the result
-                        sessionKeyCache.key = storedKey;
-                        sessionKeyCache.timestamp = now;
-                        return storedKey;
-                    }
-                }
-            }
-            
-            // If CryptoUtils is available, try the more specific approach
-            const hash = window.location.hash;
-            let encryptedData = null;
-            if (hash.includes('#gpt=')) {
-                encryptedData = hash.split('#gpt=')[1];
-            } else if (hash.includes('#shared=')) {
-                encryptedData = hash.split('#shared=')[1];
-            }
-            if (encryptedData && window.CryptoUtils) {
-                // Create a consistent key based on the encrypted data hash
-                const linkHash = CryptoUtils.hashString(encryptedData);
-                const storageKey = `__hacka_re_session_key_${linkHash.substring(0, 16)}`;
-                const storedKey = sessionStorage.getItem(storageKey);
-                if (storedKey) {
-                    // Cache the result
-                    sessionKeyCache.key = storedKey;
-                    sessionKeyCache.timestamp = now;
-                    return storedKey;
-                }
-            }
-        } else {
-            // For direct visits (no shared link), check for session key with default namespace
-            const defaultNamespace = 'default_session';
-            const sessionKeyStorageKey = `__hacka_re_session_key_${defaultNamespace}`;
-            const storedKey = sessionStorage.getItem(sessionKeyStorageKey);
-            if (storedKey) {
-                // Cache the result
-                sessionKeyCache.key = storedKey;
-                sessionKeyCache.timestamp = now;
-                return storedKey;
-            }
-        }
-        
-        // For shared links, prioritize the aiHackare.shareManager instance
+        // Get password from ShareManager (memory only, never from storage)
+        // Priority: aiHackare.shareManager over legacy ShareManager
         if (window.aiHackare && window.aiHackare.shareManager && 
             typeof window.aiHackare.shareManager.getSessionKey === 'function') {
-            const sessionKey = window.aiHackare.shareManager.getSessionKey();
-            if (sessionKey) {
+            const password = window.aiHackare.shareManager.getSessionKey();
+            if (password) {
                 // Cache the result
-                sessionKeyCache.key = sessionKey;
+                sessionKeyCache.key = password;
                 sessionKeyCache.timestamp = now;
-                return sessionKey;
+                return password;
             }
         }
         
         // Fallback to legacy ShareManager
         if (window.ShareManager && typeof window.ShareManager.getSessionKey === 'function') {
-            const sessionKey = window.ShareManager.getSessionKey();
-            if (sessionKey) {
+            const password = window.ShareManager.getSessionKey();
+            if (password) {
                 // Cache the result
-                sessionKeyCache.key = sessionKey;
+                sessionKeyCache.key = password;
                 sessionKeyCache.timestamp = now;
-                return sessionKey;
+                return password;
             }
         }
         
@@ -205,54 +158,22 @@ window.NamespaceService = (function() {
      */
     function storeNamespaceData(namespaceId, namespaceHash, masterKey) {
         try {
-            const sessionKey = getSessionKey();
-            const encryptionKey = sessionKey || namespaceHash;
-            
-            // Set the flag if we're using the namespace hash as fallback
-            if (!sessionKey) {
-                state.usingFallbackForMasterKey = true;
+            // For shared links with master key, don't store anything
+            // The master key from the share link is the only key needed
+            if (window._sharedLinkMasterKey) {
+                addSystemMessage(`[CRYPTO] Using master key from share link - not storing to disk for security`);
+                return;
             }
             
-            // Add a system message if available
-            addSystemMessage(
-                sessionKey 
-                    ? `[CRYPTO] Using session key to encrypt namespace hash for ${namespaceId}`
-                    : `[CRYPTO] FALLBACK: Using namespace hash to encrypt itself for ${namespaceId} (no session key available)`
-            );
-            
-            // Debug logging
-            if (window.DebugService && window.DebugService.debugLog) {
-                const keyType = sessionKey ? 'session key' : 'namespace hash (fallback)';
-                window.DebugService.debugLog('crypto', `🔐 Encrypting namespace hash for ${namespaceId} using ${keyType} for storage`);
+            // For direct visits (sessionStorage), the master key is already stored in plaintext
+            // We don't need to store namespace data separately
+            if (StorageTypeService && StorageTypeService.isUsingSessionStorage()) {
+                addSystemMessage(`[CRYPTO] Direct visit - master key already in sessionStorage, no additional storage needed`);
+                return;
             }
             
-            // Store the encrypted hash in the namespace entry
-            const encryptedData = EncryptionService.encrypt(namespaceHash, encryptionKey);
-            const namespaceStorageKey = getNamespaceStorageKey(namespaceId);
-            
-            // Use dynamic storage based on storage type
-            const storage = StorageTypeService ? StorageTypeService.getStorage() : localStorage;
-            storage.setItem(namespaceStorageKey, encryptedData);
-            
-            // Store the master key in a separate entry
-            const masterKeyStorageKey = CryptoUtils.getMasterKeyStorageKey(namespaceId);
-            
-            // Add a system message for master key encryption
-            addSystemMessage(
-                sessionKey 
-                    ? `[CRYPTO] Using session key to encrypt master key for ${namespaceId}`
-                    : `[CRYPTO] FALLBACK: Using namespace hash to encrypt master key for ${namespaceId} (no session key available)`
-            );
-            
-            // Debug logging
-            if (window.DebugService && window.DebugService.debugLog) {
-                const keyType = sessionKey ? 'session key' : 'namespace hash (fallback)';
-                window.DebugService.debugLog('crypto', `🔐 Encrypting master key for ${namespaceId} using ${keyType} for secure storage`);
-            }
-            
-            // Encrypt the master key with the session key or namespace hash
-            const encryptedMasterKey = EncryptionService.encrypt(masterKey, encryptionKey);
-            storage.setItem(masterKeyStorageKey, encryptedMasterKey);
+            // This function should not be called for any other scenario
+            addSystemMessage(`[CRYPTO] WARNING: Unexpected call to storeNamespaceData - no storage needed`);
         } catch (error) {
             console.error('Failed to store namespace data:', error);
         }
@@ -261,74 +182,40 @@ window.NamespaceService = (function() {
     /**
      * Get the master key for a namespace
      * @param {string} namespaceId - The namespace ID
-     * @param {string} namespaceHash - The namespace hash used as fallback encryption key
+     * @param {string} namespaceHash - The namespace hash (not used for decryption)
      * @returns {string|null} The master key or null if not found
      */
     function getMasterKey(namespaceId, namespaceHash) {
         try {
-            const masterKeyStorageKey = CryptoUtils.getMasterKeyStorageKey(namespaceId);
-            // Use dynamic storage based on storage type
-            const storage = StorageTypeService ? StorageTypeService.getStorage() : localStorage;
-            const encryptedMasterKey = storage.getItem(masterKeyStorageKey);
+            // For shared links, use the master key from memory only (check all caches)
+            const sharedLinkMasterKey = window._sharedLinkMasterKey || sharedLinkMasterKeyCache || state.current.sharedLinkMasterKey;
+            if (sharedLinkMasterKey) {
+                addSystemMessage(`[CRYPTO] Using master key from share link (memory only)`);
+                // Update all caches to ensure consistency
+                if (!window._sharedLinkMasterKey) window._sharedLinkMasterKey = sharedLinkMasterKey;
+                if (!sharedLinkMasterKeyCache) sharedLinkMasterKeyCache = sharedLinkMasterKey;
+                if (!state.current.sharedLinkMasterKey) state.current.sharedLinkMasterKey = sharedLinkMasterKey;
+                return sharedLinkMasterKey;
+            }
             
-            if (!encryptedMasterKey) {
-                addSystemMessage(`[CRYPTO] ERROR: No encrypted master key found for ${namespaceId}`);
+            // For direct visits, master key is stored in plaintext in sessionStorage
+            if (StorageTypeService && StorageTypeService.isUsingSessionStorage()) {
+                const defaultNamespace = StorageTypeService.getDefaultNamespace();
+                const masterKeyStorageKey = `__hacka_re_master_key_${defaultNamespace}`;
+                const masterKey = sessionStorage.getItem(masterKeyStorageKey);
+                
+                if (masterKey) {
+                    addSystemMessage(`[CRYPTO] Retrieved master key from sessionStorage (direct visit)`);
+                    return masterKey;
+                }
+                
+                addSystemMessage(`[CRYPTO] No master key found in sessionStorage for ${namespaceId}`);
                 return null;
             }
             
-            const sessionKey = getSessionKey();
-            let masterKey = null;
-            let decryptionMethod = null;
-            
-            // Try to decrypt with session key first
-            if (sessionKey) {
-                try {
-                    addSystemMessage(`[CRYPTO] Attempting to decrypt master key with session key for ${namespaceId}`);
-                    
-                    // Debug logging
-                    if (window.DebugService && window.DebugService.debugLog) {
-                        window.DebugService.debugLog('crypto', `🔓 Decrypting master key for ${namespaceId} using session key`);
-                    }
-                    
-                    masterKey = EncryptionService.decrypt(encryptedMasterKey, sessionKey);
-                    if (masterKey) {
-                        decryptionMethod = 'SESSION_KEY';
-                    }
-                } catch (e) {
-                    addSystemMessage(`[CRYPTO] Session key decryption failed for master key, trying namespace hash fallback`);
-                }
-            }
-            
-            // Fallback to namespace hash if session key didn't work or isn't available
-            if (!masterKey) {
-                try {
-                    addSystemMessage(`[CRYPTO] FALLBACK: Attempting to decrypt master key with namespace hash for ${namespaceId}`);
-                    
-                    // Debug logging
-                    if (window.DebugService && window.DebugService.debugLog) {
-                        window.DebugService.debugLog('crypto', `🔓 Decrypting master key for ${namespaceId} using namespace hash (fallback)`);
-                    }
-                    
-                    masterKey = EncryptionService.decrypt(encryptedMasterKey, namespaceHash);
-                    if (masterKey) {
-                        decryptionMethod = 'NAMESPACE_HASH';
-                    }
-                } catch (e) {
-                    addSystemMessage(`[CRYPTO] ERROR: Failed to decrypt master key with both session key and namespace hash`);
-                    return null;
-                }
-            }
-            
-            // Add a success message if available
-            if (masterKey) {
-                const method = decryptionMethod === 'SESSION_KEY' ? 'session key' : 'namespace hash';
-                addSystemMessage(`[CRYPTO] Successfully decrypted master key for ${namespaceId} using ${method}`);
-            }
-            
-            // Set the flag if we used the namespace hash as fallback
-            state.usingFallbackForMasterKey = (decryptionMethod === 'NAMESPACE_HASH');
-            
-            return masterKey;
+            // No other scenarios should reach here
+            addSystemMessage(`[CRYPTO] No master key available - unexpected state`);
+            return null;
         } catch (error) {
             console.error('Failed to get master key:', error);
             return null;
@@ -358,43 +245,30 @@ window.NamespaceService = (function() {
     }
     
     /**
-     * Try to decrypt namespace with different keys
+     * Try to decrypt namespace with session key
      * @param {string} encryptedData - The encrypted namespace data
      * @param {string} targetHash - The target namespace hash
      * @param {string} sessionKey - The session key (if available)
      * @returns {Object|null} Object with decryptedHash and decryptionMethod if successful
      */
     function tryDecryptNamespace(encryptedData, targetHash, sessionKey) {
-        // First try with session key if available
-        if (sessionKey) {
-            try {
-                // Debug logging
-                if (window.DebugService && window.DebugService.debugLog) {
-                    window.DebugService.debugLog('crypto', `🔓 Attempting to decrypt namespace hash using session key`);
-                }
-                
-                const decryptedHash = EncryptionService.decrypt(encryptedData, sessionKey);
-                if (decryptedHash === targetHash) {
-                    return { decryptedHash, decryptionMethod: 'SESSION_KEY' };
-                }
-            } catch (e) {
-                // Session key didn't work, will try namespace hash next
-            }
+        // Only try with session key, no fallback
+        if (!sessionKey) {
+            return null;
         }
         
-        // Try with namespace hash
         try {
             // Debug logging
             if (window.DebugService && window.DebugService.debugLog) {
-                window.DebugService.debugLog('crypto', `🔓 Attempting to decrypt namespace hash using namespace hash (fallback)`);
+                window.DebugService.debugLog('crypto', `🔓 Attempting to decrypt namespace hash using session key`);
             }
             
-            const decryptedHash = EncryptionService.decrypt(encryptedData, targetHash);
+            const decryptedHash = EncryptionService.decrypt(encryptedData, sessionKey);
             if (decryptedHash === targetHash) {
-                return { decryptedHash, decryptionMethod: 'NAMESPACE_HASH' };
+                return { decryptedHash, decryptionMethod: 'SESSION_KEY' };
             }
         } catch (e) {
-            // Namespace hash didn't work either
+            // Session key didn't work
         }
         
         return null;
@@ -458,11 +332,11 @@ window.NamespaceService = (function() {
             return tempResult;
         }
         // If we already have a namespace, return it
-        if (state.current.namespaceId && state.current.namespaceKey && state.current.namespaceHash) {
+        if (state.current.namespaceId && state.current.masterKey && state.current.namespaceHash) {
             const result = {
                 namespaceId: state.current.namespaceId,
                 namespaceHash: state.current.namespaceHash,
-                masterKey: state.current.namespaceKey
+                masterKey: state.current.masterKey
             };
             // Cache the result
             namespaceCache.data = result;
@@ -482,58 +356,63 @@ window.NamespaceService = (function() {
             if (sharedLinkNamespace) {
                 addSystemMessage(`[CRYPTO] Using shared link namespace: ${sharedLinkNamespace}`);
                 
-                // First check if this namespace already exists with a stored master key
-                const existingMasterKey = getMasterKey(sharedLinkNamespace, sharedLinkNamespace);
+                // For shared links, the master key should come from the share link payload
+                // Store in all caches for redundancy
+                if (window._sharedLinkMasterKey) {
+                    // Store in all locations for redundancy
+                    sharedLinkMasterKeyCache = window._sharedLinkMasterKey;
+                    state.current.sharedLinkMasterKey = window._sharedLinkMasterKey;
+                    addSystemMessage(`[CRYPTO] Stored master key from share link for namespace ${sharedLinkNamespace}`);
+                }
+                const masterKey = getMasterKey(sharedLinkNamespace, sharedLinkNamespace);
                 
-                if (existingMasterKey) {
-                    // Use existing namespace data
+                if (masterKey) {
+                    // We have the master key (either from memory or was able to decrypt)
                     state.current.namespaceId = sharedLinkNamespace;
                     state.current.namespaceHash = sharedLinkNamespace;
-                    state.current.namespaceKey = existingMasterKey;
-                    state.isReturningToExistingNamespace = true;
+                    state.current.masterKey = masterKey;
                     
-                    addSystemMessage(`[CRYPTO] Loaded existing master key for shared link namespace ${sharedLinkNamespace}`);
-                    addSystemMessage(`[NAMESPACE] Returning to existing namespace - conversation continuity enabled`);
+                    // Check if we have existing data in localStorage for this namespace
+                    // This indicates we're returning to an existing namespace
+                    let hasExistingData = false;
+                    try {
+                        // Check if there's any data with this namespace prefix in localStorage
+                        const namespacePrefix = `${sharedLinkNamespace}_`;
+                        for (let i = 0; i < localStorage.length; i++) {
+                            const key = localStorage.key(i);
+                            if (key && key.startsWith(namespacePrefix)) {
+                                hasExistingData = true;
+                                break;
+                            }
+                        }
+                    } catch (e) {
+                        // If we can't check, assume it's a new namespace
+                    }
+                    
+                    state.isReturningToExistingNamespace = hasExistingData;
+                    
+                    addSystemMessage(`[CRYPTO] Using master key for shared link namespace ${sharedLinkNamespace} (existing: ${hasExistingData})`);
                     
                     return {
                         namespaceId: state.current.namespaceId,
                         namespaceHash: state.current.namespaceHash,
-                        masterKey: state.current.namespaceKey
+                        masterKey: state.current.masterKey
+                    };
+                } else {
+                    // No master key available - this means page was reloaded and we lost the key
+                    // Return null namespace to indicate encryption is not available
+                    addSystemMessage(`[CRYPTO] No master key available for shared link after reload - encryption disabled`);
+                    state.current.namespaceId = sharedLinkNamespace;
+                    state.current.namespaceHash = sharedLinkNamespace;
+                    state.current.masterKey = null;
+                    state.isReturningToExistingNamespace = false;
+                    
+                    return {
+                        namespaceId: state.current.namespaceId,
+                        namespaceHash: state.current.namespaceHash,
+                        masterKey: null
                     };
                 }
-                
-                // No existing namespace, create new one
-                state.current.namespaceId = sharedLinkNamespace;
-                state.current.namespaceHash = sharedLinkNamespace; // Use namespace ID as hash for simplicity
-                state.isReturningToExistingNamespace = false;
-                
-                // For shared links, derive master key deterministically from session key
-                const sessionKey = getSessionKey();
-                console.log(`[NamespaceService] Session key available for ${sharedLinkNamespace}:`, sessionKey ? sessionKey.length + ' chars' : 'none');
-                if (sessionKey) {
-                    try {
-                        state.current.namespaceKey = CryptoUtils.deriveMasterKeyFromSession(sessionKey, sharedLinkNamespace);
-                        addSystemMessage(`[CRYPTO] Derived deterministic master key for shared link namespace ${sharedLinkNamespace}`);
-                        
-                        // Store the namespace data for future tabs
-                        storeNamespaceData(sharedLinkNamespace, sharedLinkNamespace, state.current.namespaceKey);
-                        addSystemMessage(`[CRYPTO] Stored namespace data for future tabs`);
-                    } catch (error) {
-                        console.error(`[NamespaceService] Failed to derive master key:`, error);
-                        addSystemMessage(`[CRYPTO] Failed to derive master key, using random: ${error.message}`);
-                        state.current.namespaceKey = CryptoUtils.generateSecretKey(); // Fallback to random
-                    }
-                } else {
-                    console.log(`[NamespaceService] No session key available, using random master key for ${sharedLinkNamespace}`);
-                    addSystemMessage(`[CRYPTO] No session key available, using random master key for ${sharedLinkNamespace}`);
-                    state.current.namespaceKey = CryptoUtils.generateSecretKey(); // Fallback to random
-                }
-                
-                return {
-                    namespaceId: state.current.namespaceId,
-                    namespaceHash: state.current.namespaceHash,
-                    masterKey: state.current.namespaceKey
-                };
             }
         }
         
@@ -542,10 +421,10 @@ window.NamespaceService = (function() {
             // Use default namespace for sessionStorage
             const defaultNamespace = StorageTypeService.getDefaultNamespace();
             
-            // Generate or restore session key for direct visits FIRST
-            // This ensures data can be decrypted after page reload
-            const sessionKeyStorageKey = `__hacka_re_session_key_${defaultNamespace}`;
-            let sessionKey = sessionStorage.getItem(sessionKeyStorageKey);
+            // For direct visits, we store the master key in plaintext in sessionStorage
+            // This is safe because sessionStorage is ephemeral and allows page reloads
+            const masterKeyStorageKey = `__hacka_re_master_key_${defaultNamespace}`;
+            let storedMasterKey = sessionStorage.getItem(masterKeyStorageKey);
             
             // Session cleanup for sessionStorage mode
             // When using sessionStorage, we need to ensure clean session boundaries.
@@ -554,14 +433,14 @@ window.NamespaceService = (function() {
             // 
             // Note: This cleanup only happens once per page load and only affects
             // sessionStorage when in sessionStorage mode.
-            if (!hasAttemptedSessionCleanup && sessionStorage.length > 0 && !sessionKey) {
-                // Only clear if we don't have a session key (indicating a fresh session)
+            if (!hasAttemptedSessionCleanup && sessionStorage.length > 0 && !storedMasterKey) {
+                // Only clear if we don't have a master key (indicating a fresh session)
                 // Check if there's any encrypted data that would fail to decrypt
                 // We look for base64-encoded strings that are likely encrypted data
                 // rather than normal application state
                 const hasEncryptedData = Object.keys(sessionStorage).some(key => {
-                    // Skip the session key itself and storage type key
-                    if (key.startsWith('__hacka_re_session_key_') || key === '__hacka_re_storage_type__') {
+                    // Skip the master key itself and storage type key
+                    if (key.startsWith('__hacka_re_master_key_') || key === '__hacka_re_storage_type__') {
                         return false;
                     }
                     const value = sessionStorage.getItem(key);
@@ -576,7 +455,7 @@ window.NamespaceService = (function() {
                     const keysToPreserve = [];
                     for (let i = 0; i < sessionStorage.length; i++) {
                         const key = sessionStorage.key(i);
-                        if (key && (key.startsWith('__hacka_re_session_key_') || key === '__hacka_re_storage_type__')) {
+                        if (key && (key.startsWith('__hacka_re_master_key_') || key === '__hacka_re_storage_type__')) {
                             keysToPreserve.push({ key, value: sessionStorage.getItem(key) });
                         }
                     }
@@ -597,30 +476,23 @@ window.NamespaceService = (function() {
             state.current.namespaceHash = defaultNamespace; // Use namespace ID as hash for simplicity
             state.isReturningToExistingNamespace = false;
             
-            // Check if we need to generate a new session key
-            if (!sessionKey) {
-                // Generate a new session key for this browser session
-                sessionKey = CryptoUtils.generateSecretKey();
-                sessionStorage.setItem(sessionKeyStorageKey, sessionKey);
-                addSystemMessage(`[CRYPTO] Generated new session key for direct visit and stored in sessionStorage`);
+            // Check if we need to generate a new master key
+            if (!storedMasterKey) {
+                // Generate a new master key for this browser session
+                state.current.masterKey = CryptoUtils.generateMasterKey();
+                // Store it in plaintext in sessionStorage (safe for ephemeral storage)
+                sessionStorage.setItem(masterKeyStorageKey, state.current.masterKey);
+                addSystemMessage(`[CRYPTO] Generated new master key for direct visit and stored in sessionStorage (plaintext)`);
             } else {
-                addSystemMessage(`[CRYPTO] Restored existing session key from sessionStorage for direct visit`);
-            }
-            
-            // Master key generation for sessionStorage
-            // Now we always have a session key for direct visits
-            try {
-                state.current.namespaceKey = CryptoUtils.deriveMasterKeyFromSession(sessionKey, defaultNamespace);
-                addSystemMessage(`[CRYPTO] Derived deterministic master key for session namespace ${defaultNamespace}`);
-            } catch (error) {
-                addSystemMessage(`[CRYPTO] Failed to derive master key, using random: ${error.message}`);
-                state.current.namespaceKey = CryptoUtils.generateSecretKey(); // Fallback to random
+                // Restore the master key from sessionStorage
+                state.current.masterKey = storedMasterKey;
+                addSystemMessage(`[CRYPTO] Restored existing master key from sessionStorage for direct visit`);
             }
             
             return {
                 namespaceId: state.current.namespaceId,
                 namespaceHash: state.current.namespaceHash,
-                masterKey: state.current.namespaceKey
+                masterKey: state.current.masterKey
             };
         }
         
@@ -639,7 +511,7 @@ window.NamespaceService = (function() {
             if (masterKey) {
                 state.current.namespaceId = firstNamespaceId;
                 state.current.namespaceHash = targetHash;
-                state.current.namespaceKey = masterKey;
+                state.current.masterKey = masterKey;
                 state.isReturningToExistingNamespace = true; // This is an existing namespace
                 
                 addSystemMessage(`[CRYPTO] Successfully loaded existing namespace: ${firstNamespaceId}`);
@@ -651,16 +523,15 @@ window.NamespaceService = (function() {
                 
                 // Derive master key deterministically if session key available
                 const sessionKey = getSessionKey();
-                const defaultMasterKey = sessionKey ? 
-                    CryptoUtils.deriveMasterKeyFromSession(sessionKey, defaultNamespaceId) : 
-                    CryptoUtils.generateSecretKey();
+                // Always generate secure random master key
+                const defaultMasterKey = CryptoUtils.generateMasterKey();
                 
                 state.current.namespaceId = defaultNamespaceId;
                 state.current.namespaceHash = defaultNamespaceHash;
-                state.current.namespaceKey = defaultMasterKey;
+                state.current.masterKey = defaultMasterKey;
                 state.isReturningToExistingNamespace = false;
                 
-                storeNamespaceData(state.current.namespaceId, state.current.namespaceHash, state.current.namespaceKey);
+                storeNamespaceData(state.current.namespaceId, state.current.namespaceHash, state.current.masterKey);
                 addSystemMessage(`[CRYPTO] Created and stored fallback namespace: ${state.current.namespaceId}`);
             }
         } else {
@@ -670,25 +541,22 @@ window.NamespaceService = (function() {
             const defaultNamespaceId = CryptoUtils.generateRandomAlphaNum(8);
             const defaultNamespaceHash = defaultNamespaceId;
             
-            // Derive master key deterministically if session key available
-            const sessionKey = getSessionKey();
-            const defaultMasterKey = sessionKey ? 
-                CryptoUtils.deriveMasterKeyFromSession(sessionKey, defaultNamespaceId) : 
-                CryptoUtils.generateSecretKey();
+            // Always generate secure random master key
+            const defaultMasterKey = CryptoUtils.generateMasterKey();
             
             state.current.namespaceId = defaultNamespaceId;
             state.current.namespaceHash = defaultNamespaceHash;
-            state.current.namespaceKey = defaultMasterKey;
+            state.current.masterKey = defaultMasterKey;
             state.isReturningToExistingNamespace = false;
             
-            storeNamespaceData(state.current.namespaceId, state.current.namespaceHash, state.current.namespaceKey);
+            storeNamespaceData(state.current.namespaceId, state.current.namespaceHash, state.current.masterKey);
             addSystemMessage(`[CRYPTO] Created and stored fallback namespace: ${state.current.namespaceId}`);
         }
         
         return {
             namespaceId: state.current.namespaceId,
             namespaceHash: state.current.namespaceHash,
-            masterKey: state.current.namespaceKey
+            masterKey: state.current.masterKey
         };
     }
     
@@ -702,28 +570,29 @@ window.NamespaceService = (function() {
     }
     
     /**
-     * Get the current namespace key for encryption/decryption
-     * @returns {string} The namespace key
+     * Get the current master key for encryption/decryption
+     * @returns {string} The master key for the current namespace
      */
-    function getNamespaceKey() {
+    function getCurrentMasterKey() {
         // If we're waiting for shared link password, don't provide a key yet
         if (window._waitingForSharedLinkPassword) {
             // Only log once per second to reduce console spam
             const now = Date.now();
             if (!window._lastNamespaceKeyLog || now - window._lastNamespaceKeyLog > 1000) {
-                console.log('[NamespaceService] Cannot provide namespace key - waiting for shared link password');
+                console.log('[NamespaceService] Cannot provide master key - waiting for shared link password');
                 window._lastNamespaceKeyLog = now;
             }
             return null;
         }
-        // For shared links, ensure we wait for proper initialization
+        // For shared links, ensure we have the master key
         if (StorageTypeService && StorageTypeService.isUsingLocalStorage && StorageTypeService.isUsingLocalStorage()) {
             const sharedLinkNamespace = StorageTypeService.getSharedLinkNamespace ? StorageTypeService.getSharedLinkNamespace() : null;
             if (sharedLinkNamespace) {
-                // For shared links, ensure session key is available before proceeding
-                const sessionKey = getSessionKey();
-                if (!sessionKey) {
-                    addSystemMessage(`[CRYPTO] WARNING: No session key available for shared link namespace, returning null`);
+                // For shared links, check if we have the master key available
+                const hasMasterKey = window._sharedLinkMasterKey || sharedLinkMasterKeyCache || state.current.sharedLinkMasterKey;
+                if (!hasMasterKey) {
+                    // This is expected after page reload - shared links lose their master key
+                    addSystemMessage(`[CRYPTO] No master key available for shared link after reload`);
                     return null;
                 }
             }
@@ -744,7 +613,7 @@ window.NamespaceService = (function() {
         // Clear current state to force re-creation
         state.current.namespaceId = null;
         state.current.namespaceHash = null;
-        state.current.namespaceKey = null;
+        state.current.masterKey = null;
         // Don't reset isReturningToExistingNamespace here - let getOrCreateNamespace determine it
         
         // Re-initialize namespace with session key now available
@@ -818,9 +687,9 @@ window.NamespaceService = (function() {
      */
     function resetNamespaceCache() {
         // Store the current namespace before resetting
-        if (state.current.namespaceId && state.current.namespaceKey && state.current.namespaceHash) {
+        if (state.current.namespaceId && state.current.masterKey && state.current.namespaceHash) {
             state.previous.namespaceId = state.current.namespaceId;
-            state.previous.namespaceKey = state.current.namespaceKey;
+            state.previous.masterKey = state.current.masterKey;
             state.previous.namespaceHash = state.current.namespaceHash;
             
             addSystemMessage(`[CRYPTO] Storing previous namespace: ${state.current.namespaceId}`);
@@ -828,7 +697,7 @@ window.NamespaceService = (function() {
         
         // Reset current namespace
         state.current.namespaceId = null;
-        state.current.namespaceKey = null;
+        state.current.masterKey = null;
         state.current.namespaceHash = null;
         state.isReturningToExistingNamespace = false;
         
@@ -857,7 +726,7 @@ window.NamespaceService = (function() {
      * @returns {string|null} The previous namespace key or null if not available
      */
     function getPreviousNamespaceKey() {
-        return state.previous.namespaceKey;
+        return state.previous.masterKey;
     }
     
     /**
@@ -921,13 +790,34 @@ window.NamespaceService = (function() {
         
         return keysToReEncrypt;
     }
-    
     /**
-     * Check if the current master key was decrypted using the fallback namespace hash
-     * @returns {boolean} True if the master key was decrypted using the fallback namespace hash
+     * Ensure the shared link master key is properly cached
+     * This should be called after the shared link password is verified
+     * @returns {boolean} True if master key was successfully cached
      */
-    function isUsingFallbackForMasterKey() {
-        return state.usingFallbackForMasterKey;
+    function ensureSharedLinkMasterKeyCached() {
+        if (!window._sharedLinkMasterKey) {
+            console.log('[NamespaceService] No shared link master key to cache');
+            return false;
+        }
+        
+        console.log('[NamespaceService] Ensuring shared link master key is cached');
+        
+        // Cache the master key in all locations
+        sharedLinkMasterKeyCache = window._sharedLinkMasterKey;
+        state.current.sharedLinkMasterKey = window._sharedLinkMasterKey;
+        
+        // If we're in a shared link namespace, update the current master key
+        if (StorageTypeService && StorageTypeService.isUsingLocalStorage()) {
+            const sharedLinkNamespace = StorageTypeService.getSharedLinkNamespace();
+            if (sharedLinkNamespace && state.current.namespaceId === sharedLinkNamespace) {
+                state.current.masterKey = window._sharedLinkMasterKey;
+                addSystemMessage(`[CRYPTO] Updated namespace with shared link master key`);
+                return true;
+            }
+        }
+        
+        return true;
     }
     
     /**
@@ -995,7 +885,7 @@ window.NamespaceService = (function() {
             // Reset current state to force re-initialization
             state.current = {
                 namespaceId: null,
-                namespaceKey: null,
+                masterKey: null,
                 namespaceHash: null
             };
             
@@ -1044,7 +934,7 @@ window.NamespaceService = (function() {
                 // Set the current namespace
                 state.current.namespaceId = namespaceId;
                 state.current.namespaceHash = targetHash;
-                state.current.namespaceKey = masterKey;
+                state.current.masterKey = masterKey;
                 state.isReturningToExistingNamespace = true; // Switching to existing namespace
                 
                 console.log('Switched to namespace:', namespaceId);
@@ -1073,7 +963,7 @@ window.NamespaceService = (function() {
         NON_NAMESPACED_KEYS: NON_NAMESPACED_KEYS,
         getNamespace: getNamespace,
         getNamespaceId: getNamespaceId,
-        getNamespaceKey: getNamespaceKey,
+        getCurrentMasterKey: getCurrentMasterKey,
         getPreviousNamespace: getPreviousNamespace,
         getPreviousNamespaceId: getPreviousNamespaceId,
         getPreviousNamespaceKey: getPreviousNamespaceKey,
@@ -1083,9 +973,9 @@ window.NamespaceService = (function() {
         getKeysToReEncrypt: getKeysToReEncrypt,
         findExistingNamespace: findExistingNamespace,
         getMasterKey: getMasterKey,
-        isUsingFallbackForMasterKey: isUsingFallbackForMasterKey,
         getAllNamespaceIds: getAllNamespaceIds,
         getNamespaceMetadata: getNamespaceMetadata,
+        ensureSharedLinkMasterKeyCached: ensureSharedLinkMasterKeyCached,
         setCurrentNamespace: setCurrentNamespace,
         reinitializeNamespace: reinitializeNamespace,
         isReturningToExistingNamespace: isReturningToExistingNamespace,

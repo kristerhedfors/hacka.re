@@ -25,7 +25,7 @@ window.CoreStorageService = (function() {
      */
     function getPassphrase() {
         // Use the master key as the passphrase
-        const key = NamespaceService.getNamespaceKey();
+        const key = NamespaceService.getCurrentMasterKey();
         if (!key) {
             // If no key is available, this usually means initialization isn't complete
             // Don't spam the console with errors, just return null
@@ -47,23 +47,6 @@ window.CoreStorageService = (function() {
             // If no passphrase is available, we can't encrypt yet
             if (!passphrase) {
                 return false;
-            }
-            
-            // Check if we're using a master key that was decrypted with the fallback namespace hash
-            if (NamespaceService.isUsingFallbackForMasterKey && 
-                typeof NamespaceService.isUsingFallbackForMasterKey === 'function' && 
-                NamespaceService.isUsingFallbackForMasterKey()) {
-                
-                // Add a warning message if available
-                if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
-                    window.ChatManager.addSystemMessage(`[CRYPTO] WARNING: Encrypting data for key "${key}" using a master key that was decrypted with the fallback namespace hash of GPT title and subtitle`);
-                }
-                
-                // Debug logging disabled
-                // console.log('[CRYPTO DEBUG] Using master key decrypted with fallback namespace hash for encryption:', {
-                //     key: key,
-                //     valueType: typeof value
-                // });
             }
             
             const encryptedValue = EncryptionService.encrypt(value, passphrase);
@@ -181,23 +164,6 @@ window.CoreStorageService = (function() {
                 // For shared links without session keys, we can't decrypt yet
                 // Return null silently to avoid console spam
                 return null;
-            }
-            
-            // Check if we're using a master key that was decrypted with the fallback namespace hash
-            if (NamespaceService.isUsingFallbackForMasterKey && 
-                typeof NamespaceService.isUsingFallbackForMasterKey === 'function' && 
-                NamespaceService.isUsingFallbackForMasterKey()) {
-                
-                // Add a warning message if available
-                if (window.ChatManager && typeof window.ChatManager.addSystemMessage === 'function') {
-                    window.ChatManager.addSystemMessage(`[CRYPTO] WARNING: Decrypting data for key "${key}" using a master key that was decrypted with the fallback namespace hash of GPT title and subtitle`);
-                }
-                
-                // Debug logging disabled
-                // console.log('[CRYPTO DEBUG] Using master key decrypted with fallback namespace hash for decryption:', {
-                //     key: key,
-                //     encryptedValueLength: encryptedValue ? encryptedValue.length : 0
-                // });
             }
             
             // Detect if this might be a cross-storage decryption attempt

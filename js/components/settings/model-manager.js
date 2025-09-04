@@ -84,8 +84,14 @@ window.ModelManager = (function() {
                         currentModel = storedModel;
                         return storedModel;
                     } else {
-                        console.log('Using memory model and updating storage:', currentModel);
-                        StorageService.saveModel(currentModel);
+                        // Check if we can encrypt before trying to save
+                        const namespace = window.NamespaceService?.getNamespace();
+                        if (namespace && namespace.masterKey) {
+                            console.log('Using memory model and updating storage:', currentModel);
+                            StorageService.saveModel(currentModel);
+                        } else {
+                            console.log('Using memory model (storage unavailable due to missing encryption key):', currentModel);
+                        }
                         return currentModel;
                     }
                 }
