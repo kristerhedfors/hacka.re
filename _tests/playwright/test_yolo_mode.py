@@ -37,9 +37,9 @@ def test_yolo_mode_setting(page: Page, serve_hacka_re):
     # Check initial state (should be unchecked)
     expect(yolo_checkbox).not_to_be_checked()
     
-    # Check status text (now prefixed with "Current setting:")
+    # Check status text (shows disabled state)
     yolo_status = page.locator("#yolo-mode-status")
-    expect(yolo_status).to_contain_text("Current setting: Prompt user for every function call")
+    expect(yolo_status).to_contain_text("Disabled: Prompt user for every function call")
     
     screenshot_with_markdown(page, "yolo_mode_setting", {
         "Status": "YOLO mode setting visible",
@@ -138,9 +138,9 @@ def test_yolo_mode_confirm_enable(page: Page, serve_hacka_re):
     # Checkbox should now be checked
     expect(yolo_checkbox).to_be_checked()
     
-    # Status text should update (now prefixed with "Current setting:")
+    # Status text should update (shows enabled state)
     yolo_status = page.locator("#yolo-mode-status")
-    expect(yolo_status).to_contain_text("Current setting: User is NOT prompted")
+    expect(yolo_status).to_contain_text("Enabled: User is NOT prompted")
     
     screenshot_with_markdown(page, "yolo_mode_enabled", {
         "Status": "YOLO mode enabled",
