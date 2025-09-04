@@ -164,6 +164,14 @@ async function ${toolName}(args = {}) {
                     });
                     
                     console.log('[MCPShareLinkUI] Registered tools with FunctionToolsService');
+                    
+                    // Refresh the function list UI to show the new collection (following established pattern)
+                    if (window.functionListRenderer && window.functionListRenderer.renderMainFunctionList) {
+                        setTimeout(() => {
+                            window.functionListRenderer.renderMainFunctionList();
+                            console.log('[MCPShareLinkUI] Refreshed function list UI for Share Link MCP tools');
+                        }, 100);
+                    }
                 }
                 
                 // Auto-enable the Share Link MCP guide prompt
@@ -252,6 +260,14 @@ async function ${toolName}(args = {}) {
                 });
                 
                 console.log('[MCPShareLinkUI] Removed tools from FunctionToolsService');
+                
+                // Refresh the function list UI to reflect removal (following established pattern)
+                if (window.functionListRenderer && window.functionListRenderer.renderMainFunctionList) {
+                    setTimeout(() => {
+                        window.functionListRenderer.renderMainFunctionList();
+                        console.log('[MCPShareLinkUI] Refreshed function list UI after removing Share Link MCP tools');
+                    }, 100);
+                }
             }
             
             // Auto-disable and unregister the Share Link MCP guide prompt
@@ -361,6 +377,14 @@ async function ${toolName}(args = {}) {
                         window.FunctionToolsService.removeJsFunction(tool.function.name);
                     });
                     console.log('[MCPShareLinkUI] Removed tools from FunctionToolsService');
+                    
+                    // Refresh the function list UI to reflect removal (following established pattern)
+                    if (window.functionListRenderer && window.functionListRenderer.renderMainFunctionList) {
+                        setTimeout(() => {
+                            window.functionListRenderer.renderMainFunctionList();
+                            console.log('[MCPShareLinkUI] Refreshed function list UI after reset');
+                        }, 100);
+                    }
                 } catch (error) {
                     console.error('[MCPShareLinkUI] Error removing tools during reset:', error);
                 }
