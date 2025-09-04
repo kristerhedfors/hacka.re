@@ -100,10 +100,19 @@ def test_function_block(page: Page, serve_hacka_re, api_key):
     page.reload()
     dismiss_welcome_modal(page)
     
-    # Disable YOLO mode
+    # Disable YOLO mode (need to open settings first)
+    settings_btn = page.locator("#settings-btn")
+    settings_btn.click()
+    page.wait_for_selector("#settings-modal.active", state="visible", timeout=5000)
+    
     yolo_checkbox = page.locator("#yolo-mode-checkbox")
-    if yolo_checkbox.is_checked():
+    if yolo_checkbox.is_visible() and yolo_checkbox.is_checked():
         yolo_checkbox.click()
+    
+    # Close settings modal
+    close_settings = page.locator("#close-settings-modal")
+    close_settings.click()
+    page.wait_for_timeout(500)
     
     # Clear chat first
     clear_btn = page.locator("#clear-chat-btn")
@@ -147,10 +156,19 @@ def test_execute_with_intercept(page: Page, serve_hacka_re, api_key):
     page.reload()
     dismiss_welcome_modal(page)
     
-    # Disable YOLO mode
+    # Disable YOLO mode (need to open settings first)
+    settings_btn = page.locator("#settings-btn")
+    settings_btn.click()
+    page.wait_for_selector("#settings-modal.active", state="visible", timeout=5000)
+    
     yolo_checkbox = page.locator("#yolo-mode-checkbox")
-    if yolo_checkbox.is_checked():
+    if yolo_checkbox.is_visible() and yolo_checkbox.is_checked():
         yolo_checkbox.click()
+    
+    # Close settings modal
+    close_settings = page.locator("#close-settings-modal")
+    close_settings.click()
+    page.wait_for_timeout(500)
     
     # Clear chat
     clear_btn = page.locator("#clear-chat-btn")
@@ -219,10 +237,19 @@ def test_intercept_with_re_execution(page: Page, serve_hacka_re, api_key):
     page.reload()
     dismiss_welcome_modal(page)
     
-    # Disable YOLO mode
+    # Disable YOLO mode (need to open settings first)
+    settings_btn = page.locator("#settings-btn")
+    settings_btn.click()
+    page.wait_for_selector("#settings-modal.active", state="visible", timeout=5000)
+    
     yolo_checkbox = page.locator("#yolo-mode-checkbox")
-    if yolo_checkbox.is_checked():
+    if yolo_checkbox.is_visible() and yolo_checkbox.is_checked():
         yolo_checkbox.click()
+    
+    # Close settings modal
+    close_settings = page.locator("#close-settings-modal")
+    close_settings.click()
+    page.wait_for_timeout(500)
     
     # Clear chat
     clear_btn = page.locator("#clear-chat-btn")
@@ -314,10 +341,19 @@ def test_parameter_editing(page: Page, serve_hacka_re, api_key):
     page.reload()
     dismiss_welcome_modal(page)
     
-    # Disable YOLO mode
+    # Disable YOLO mode (need to open settings first)
+    settings_btn = page.locator("#settings-btn")
+    settings_btn.click()
+    page.wait_for_selector("#settings-modal.active", state="visible", timeout=5000)
+    
     yolo_checkbox = page.locator("#yolo-mode-checkbox")
-    if yolo_checkbox.is_checked():
+    if yolo_checkbox.is_visible() and yolo_checkbox.is_checked():
         yolo_checkbox.click()
+    
+    # Close settings modal
+    close_settings = page.locator("#close-settings-modal")
+    close_settings.click()
+    page.wait_for_timeout(500)
     
     # Clear chat
     clear_btn = page.locator("#clear-chat-btn")
@@ -369,10 +405,19 @@ def test_restore_original_parameters(page: Page, serve_hacka_re, api_key):
     page.reload()
     dismiss_welcome_modal(page)
     
-    # Disable YOLO mode
+    # Disable YOLO mode (need to open settings first)
+    settings_btn = page.locator("#settings-btn")
+    settings_btn.click()
+    page.wait_for_selector("#settings-modal.active", state="visible", timeout=5000)
+    
     yolo_checkbox = page.locator("#yolo-mode-checkbox")
-    if yolo_checkbox.is_checked():
+    if yolo_checkbox.is_visible() and yolo_checkbox.is_checked():
         yolo_checkbox.click()
+    
+    # Close settings modal
+    close_settings = page.locator("#close-settings-modal")
+    close_settings.click()
+    page.wait_for_timeout(500)
     
     # Send a message that will trigger function call
     chat_input = page.locator("#chat-input")
@@ -418,10 +463,19 @@ def test_session_memory_allow(page: Page, serve_hacka_re, api_key):
     page.reload()
     dismiss_welcome_modal(page)
     
-    # Disable YOLO mode
+    # Disable YOLO mode (need to open settings first)
+    settings_btn = page.locator("#settings-btn")
+    settings_btn.click()
+    page.wait_for_selector("#settings-modal.active", state="visible", timeout=5000)
+    
     yolo_checkbox = page.locator("#yolo-mode-checkbox")
-    if yolo_checkbox.is_checked():
+    if yolo_checkbox.is_visible() and yolo_checkbox.is_checked():
         yolo_checkbox.click()
+    
+    # Close settings modal
+    close_settings = page.locator("#close-settings-modal")
+    close_settings.click()
+    page.wait_for_timeout(500)
     
     # Clear chat
     clear_btn = page.locator("#clear-chat-btn")
@@ -479,10 +533,19 @@ def test_session_memory_block(page: Page, serve_hacka_re, api_key):
     page.reload()
     dismiss_welcome_modal(page)
     
-    # Disable YOLO mode
+    # Disable YOLO mode (need to open settings first)
+    settings_btn = page.locator("#settings-btn")
+    settings_btn.click()
+    page.wait_for_selector("#settings-modal.active", state="visible", timeout=5000)
+    
     yolo_checkbox = page.locator("#yolo-mode-checkbox")
-    if yolo_checkbox.is_checked():
+    if yolo_checkbox.is_visible() and yolo_checkbox.is_checked():
         yolo_checkbox.click()
+    
+    # Close settings modal
+    close_settings = page.locator("#close-settings-modal")
+    close_settings.click()
+    page.wait_for_timeout(500)
     
     # Clear session memory first
     page.evaluate("localStorage.removeItem('function_session_blocked')")
@@ -546,10 +609,19 @@ def test_block_result_in_intercept(page: Page, serve_hacka_re, api_key):
     page.reload()
     dismiss_welcome_modal(page)
     
-    # Disable YOLO mode
+    # Disable YOLO mode (need to open settings first)
+    settings_btn = page.locator("#settings-btn")
+    settings_btn.click()
+    page.wait_for_selector("#settings-modal.active", state="visible", timeout=5000)
+    
     yolo_checkbox = page.locator("#yolo-mode-checkbox")
-    if yolo_checkbox.is_checked():
+    if yolo_checkbox.is_visible() and yolo_checkbox.is_checked():
         yolo_checkbox.click()
+    
+    # Close settings modal
+    close_settings = page.locator("#close-settings-modal")
+    close_settings.click()
+    page.wait_for_timeout(500)
     
     # Clear chat
     clear_btn = page.locator("#clear-chat-btn")
