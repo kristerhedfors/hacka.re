@@ -30,7 +30,7 @@ def test_share_welcome_message_ui(page: Page, serve_hacka_re):
     assert float(opacity) == 0.5, f"Expected opacity 0.5, got {opacity}"
     
     # Check the indentation (margin-left on parent)
-    parent_margin = page.locator(".branding-options").first().evaluate("el => window.getComputedStyle(el).marginLeft")
+    parent_margin = page.locator(".branding-options").first.evaluate("el => window.getComputedStyle(el).marginLeft")
     assert parent_margin == "24px", f"Expected margin-left 24px, got {parent_margin}"
     
     # Verify no redundant "Welcome Message" label exists above the textarea
