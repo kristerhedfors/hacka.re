@@ -42,11 +42,16 @@ window.ModalManager = (function() {
             
             // Update the API key field with masked value if exists
             if (apiKey) {
+                // Show masked API key in the field (show last 4 characters)
+                elements.apiKeyUpdate.value = '•••••••••••••••••••••' + apiKey.slice(-4);
                 elements.apiKeyUpdate.placeholder = '••••••••••••••••••••••••••';
                 
                 // Refresh models list when opening settings
                 fetchAvailableModels();
             } else {
+                // Clear the field if no API key
+                elements.apiKeyUpdate.value = '';
+                elements.apiKeyUpdate.placeholder = 'Enter your API key';
                 populateDefaultModels();
             }
             
