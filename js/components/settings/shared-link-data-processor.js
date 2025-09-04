@@ -253,13 +253,44 @@ function createSharedLinkDataProcessor() {
      * @param {Function} setMessages - Function to set chat messages
      */
     function applyChatMessages(sharedData, addSystemMessage, setMessages, systemMessages = []) {
+        // First ensure the namespace is properly initialized with the master key
+        if (window._sharedLinkMasterKey && window.NamespaceService) {
+            console.log('[SharedLinkDataProcessor] Ensuring namespace is initialized before checking existing data');
+            const namespace = window.NamespaceService.getOrCreateNamespace();
+            console.log('[SharedLinkDataProcessor] Namespace state:', {
+                namespaceId: namespace?.namespaceId,
+                hasMasterKey: !!namespace?.masterKey,
+                masterKeyLength: namespace?.masterKey?.length
+            });
+        }
+        
         // Check if we're returning to an existing namespace
         const isReturningToExisting = window.NamespaceService && 
                                     window.NamespaceService.isReturningToExistingNamespace && 
                                     window.NamespaceService.isReturningToExistingNamespace();
         
-        if (isReturningToExisting) {
-            console.log('[SharedLinkDataProcessor] Returning to existing namespace');
+        console.log('[SharedLinkDataProcessor] isReturningToExisting:', isReturningToExisting);
+        
+        // Also check directly if we have data in localStorage for this namespace
+        // This is a fallback in case isReturningToExisting is not set correctly
+        let hasNamespacedData = false;
+        if (!isReturningToExisting && window.NamespaceService) {
+            const namespace = window.NamespaceService.getNamespace();
+            if (namespace && namespace.namespaceId) {
+                const namespacePrefix = `${namespace.namespaceId}_`;
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith(namespacePrefix)) {
+                        hasNamespacedData = true;
+                        console.log('[SharedLinkDataProcessor] Found existing data with namespace prefix, forcing return to existing');
+                        break;
+                    }
+                }
+            }
+        }
+        
+        if (isReturningToExisting || hasNamespacedData) {
+            console.log('[SharedLinkDataProcessor] Returning to existing namespace (flag:', isReturningToExisting, ', data:', hasNamespacedData, ')');
             
             // Check if there's actual conversation history in localStorage
             let hasLocalConversation = false;
@@ -278,20 +309,70 @@ function createSharedLinkDataProcessor() {
                     addSystemMessage('Returning to existing namespace - loading your conversation history...');
                 }
                 
+                // Ensure the namespace has the master key cached before reloading
+                // This is critical for shared links where the master key comes from the payload
+                if (window._sharedLinkMasterKey) {
+                    console.log('[SharedLinkDataProcessor] Ensuring master key is available for conversation reload');
+                    // Force the namespace service to cache the master key
+                    if (window.NamespaceService && window.NamespaceService.ensureSharedLinkMasterKeyCached) {
+                        const cached = window.NamespaceService.ensureSharedLinkMasterKeyCached();
+                        console.log('[SharedLinkDataProcessor] Master key cached:', cached);
+                        
+                        // Verify the namespace now has the master key
+                        const namespace = window.NamespaceService.getOrCreateNamespace();
+                        console.log('[SharedLinkDataProcessor] Namespace initialized with master key:', !!namespace?.masterKey);
+                    }
+                }
+                
                 // Trigger conversation history reload via chat manager
                 if (window.aiHackare && window.aiHackare.chatManager && 
                     window.aiHackare.chatManager.reloadConversationHistory) {
                     console.log('[SharedLinkDataProcessor] Triggering conversation reload from localStorage');
+                    // Increase delay to ensure master key is properly cached
                     setTimeout(() => {
                         console.log('[SharedLinkDataProcessor] Triggering conversation reload');
                         window.aiHackare.chatManager.reloadConversationHistory();
-                    }, 100);
+                    }, 500); // Increased delay to ensure master key caching
                 }
                 
                 return;
             } else {
                 console.log('[SharedLinkDataProcessor] No localStorage conversation found - using shared data');
                 // Fall through to load shared data below
+            }
+        } else {
+            // Even if not returning to existing, still try to load conversation if we have the master key
+            // This handles the case where the flag might not be set correctly
+            if (window._sharedLinkMasterKey) {
+                console.log('[SharedLinkDataProcessor] Have master key, attempting to load any existing conversation');
+                
+                // Try to load conversation history
+                let existingHistory = null;
+                try {
+                    existingHistory = window.StorageService?.loadChatHistory();
+                } catch (error) {
+                    console.log('[SharedLinkDataProcessor] Could not load history:', error);
+                }
+                
+                if (existingHistory && existingHistory.length > 0) {
+                    console.log('[SharedLinkDataProcessor] Found existing conversation with master key, triggering reload');
+                    
+                    // Ensure master key is cached
+                    if (window.NamespaceService?.ensureSharedLinkMasterKeyCached) {
+                        window.NamespaceService.ensureSharedLinkMasterKeyCached();
+                    }
+                    
+                    // Trigger reload
+                    if (window.aiHackare?.chatManager?.reloadConversationHistory) {
+                        setTimeout(() => {
+                            console.log('[SharedLinkDataProcessor] Reloading conversation from fallback path');
+                            window.aiHackare.chatManager.reloadConversationHistory();
+                        }, 1000);
+                    }
+                    
+                    // Still return early to prevent loading shared data over existing conversation
+                    return;
+                }
             }
         }
         
