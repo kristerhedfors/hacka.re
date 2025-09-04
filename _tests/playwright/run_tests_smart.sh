@@ -101,7 +101,7 @@ run_test_with_retry() {
         fi
         
         # Run test with increased timeout for API key issues
-        python -m pytest "$test_file" $PYTEST_ARGS --browser $BROWSER $HEADLESS \
+        ../../_venv/bin/python -m pytest "$test_file" $PYTEST_ARGS --browser $BROWSER $HEADLESS \
             --timeout 15000 > "test_output_${test_name}.log" 2>&1
         
         if [ $? -eq 0 ]; then

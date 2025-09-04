@@ -35,17 +35,19 @@ echo ""
 # Ensure artifact directories exist
 mkdir -p screenshots screenshots_data console_logs
 
-# Check if virtual environment exists
-if [ ! -d ".venv" ]; then
-    echo "Virtual environment not found. Creating one..."
-    python -m venv .venv
-    source .venv/bin/activate
-    pip install -r requirements.txt
-    playwright install
-else
-    # Activate the virtual environment
-    source .venv/bin/activate
+# Check if virtual environment exists at project root
+# Since we cd to script directory, we need to go up 2 levels to project root
+PROJECT_ROOT="$(cd ../.. && pwd)"
+VENV_PATH="$PROJECT_ROOT/_venv"
+
+if [ ! -d "$VENV_PATH" ]; then
+    echo "Virtual environment not found at $VENV_PATH"
+    echo "Please run setup_environment.sh from project root first"
+    exit 1
 fi
+
+# Use the project's virtual environment Python directly
+PYTHON_CMD="$VENV_PATH/bin/python"
 
 # Parse command line arguments
 PYTEST_ARGS=""
@@ -125,14 +127,13 @@ fi
 echo "Running Core Functionality tests with $BROWSER browser..."
 echo "Test filter: $CORE_TESTS_FILTER"
 echo ""
-eval "python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS -k \"$CORE_TESTS_FILTER\"" | tee test_output.log
+eval "$PYTHON_CMD -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS -k \"$CORE_TESTS_FILTER\"" | tee test_output.log
 
 # Generate test results markdown files
 echo "Generating test results markdown files..."
 ./bundle_test_results.sh
 
-# Deactivate the virtual environment
-deactivate
+# No need to deactivate since we're using direct Python path
 
 # Inform the user about the output files
 echo ""

@@ -116,10 +116,10 @@ fi
 # Run the tests
 if [ -n "$TEST_FILE" ]; then
     echo "Running tests in $TEST_FILE with $BROWSER browser..."
-    eval "python -m pytest $TEST_FILE $PYTEST_ARGS --browser $BROWSER $HEADLESS" | tee test_output.log
+    eval "../../_venv/bin/python -m pytest $TEST_FILE $PYTEST_ARGS --browser $BROWSER $HEADLESS" | tee test_output.log
 else
     echo "Running all tests with $BROWSER browser..."
-    eval "python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS" | tee test_output.log
+    eval "../../_venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS" | tee test_output.log
 fi
 
 # Generate test results markdown files

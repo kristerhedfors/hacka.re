@@ -1,0 +1,22 @@
+/Users/user/dev/hacka.re/_venv/lib/python3.13/site-packages/pytest_asyncio/plugin.py:208: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+============================= test session starts ==============================
+platform darwin -- Python 3.13.7, pytest-8.3.5, pluggy-1.5.0 -- /Users/user/dev/hacka.re/_venv/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/user/dev/hacka.re/_tests/playwright
+configfile: pytest.ini
+plugins: anyio-4.9.0, timeout-2.4.0, playwright-0.7.0, base-url-2.1.0, asyncio-1.0.0
+asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 15 items
+
+_tests/playwright/test_function_modal.py::test_function_modal_basic[chromium] PASSED [  6%]
+_tests/playwright/test_function_modal.py::test_function_modal_elements[chromium] PASSED [ 13%]
+_tests/playwright/test_function_execution_modal.py::test_basic_function_approval[chromium] PASSED [ 20%]
+_tests/playwright/test_function_execution_modal.py::test_function_block[chromium] PASSED [ 26%]
+_tests/playwright/test_function_execution_modal.py::test_execute_with_intercept[chromium] SKIPPED [ 33%]
+_tests/playwright/test_function_execution_modal.py::test_intercept_with_re_execution[chromium] SKIPPED [ 40%]
+_tests/playwright/test_function_execution_modal.py::test_parameter_editing[chromium] PASSED [ 46%]
+_tests/playwright/test_function_execution_modal.py::test_restore_original_parameters[chromium] FAILED [ 53%]
+_tests/playwright/test_function_execution_modal.py::test_session_memory_allow[chromium] 
