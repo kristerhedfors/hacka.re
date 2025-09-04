@@ -165,13 +165,37 @@ window.UIUtils = (function() {
     }
 
     /**
-     * Set up auto-resizing for a textarea
+     * Set up auto-resizing for a textarea with performance optimizations
      * @param {HTMLTextAreaElement} textarea - Textarea element to auto-resize
      */
     function setupTextareaAutoResize(textarea) {
+        // Cache for performance
+        let resizeScheduled = false;
+        const maxHeight = 150; // Match CSS max-height
+        
         textarea.addEventListener('input', () => {
-            textarea.style.height = 'auto';
-            textarea.style.height = (textarea.scrollHeight) + 'px';
+            // Use requestAnimationFrame to batch DOM updates
+            if (!resizeScheduled) {
+                resizeScheduled = true;
+                
+                requestAnimationFrame(() => {
+                    // Reset height to auto to get accurate scrollHeight
+                    textarea.style.height = 'auto';
+                    
+                    // Calculate new height, but respect max-height
+                    const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+                    textarea.style.height = newHeight + 'px';
+                    
+                    // If we've hit max height, ensure overflow is set
+                    if (textarea.scrollHeight > maxHeight) {
+                        textarea.style.overflowY = 'auto';
+                    } else {
+                        textarea.style.overflowY = 'hidden';
+                    }
+                    
+                    resizeScheduled = false;
+                });
+            }
         });
     }
 
