@@ -335,6 +335,63 @@ window.DataService = (function() {
         );
     }
     
+    /**
+     * Save sync variable to encrypted storage
+     * @param {string} key - The sync variable key
+     * @param {any} value - The value to save
+     */
+    function saveSyncVariable(key, value) {
+        const syncKey = `sync_${key}`;
+        CoreStorageService.setValue(syncKey, value);
+    }
+    
+    /**
+     * Get sync variable from encrypted storage
+     * @param {string} key - The sync variable key
+     * @param {any} defaultValue - Default value if not found
+     * @returns {any} The stored value or default value
+     */
+    function getSyncVariable(key, defaultValue = null) {
+        const syncKey = `sync_${key}`;
+        const value = CoreStorageService.getValue(syncKey, syncKey, (val) => saveSyncVariable(key, val));
+        return value !== null ? value : defaultValue;
+    }
+    
+    /**
+     * Remove sync variable from encrypted storage
+     * @param {string} key - The sync variable key
+     */
+    function removeSyncVariable(key) {
+        const syncKey = `sync_${key}`;
+        CoreStorageService.removeValue(syncKey);
+    }
+    
+    /**
+     * Get all sync variables from encrypted storage
+     * @returns {Object} Object containing all sync variables
+     */
+    function getAllSyncVariables() {
+        const allKeys = Object.keys(localStorage);
+        const namespaceData = NamespaceService.getNamespace();
+        const namespaceId = namespaceData.namespaceId || namespaceData;
+        const syncData = {};
+        
+        allKeys.forEach(rawKey => {
+            // Check if this is an encrypted key in our namespace
+            // Keys are stored as hackare_{namespace}_{key} when namespaced
+            if (rawKey.startsWith(`hackare_${namespaceId}_sync_`)) {
+                // Extract the actual sync key name
+                const syncKey = rawKey.replace(`hackare_${namespaceId}_sync_`, '');
+                const value = CoreStorageService.getValue(`sync_${syncKey}`, `sync_${syncKey}`, null);
+                if (value !== null) {
+                    syncData[syncKey] = value;
+                }
+            }
+        });
+        
+        return syncData;
+    }
+    
     // Public API
     return {
         saveApiKey: saveApiKey,
@@ -363,6 +420,10 @@ window.DataService = (function() {
         saveDebugMode: saveDebugMode,
         getDebugMode: getDebugMode,
         saveDebugCategories: saveDebugCategories,
-        getDebugCategories: getDebugCategories
+        getDebugCategories: getDebugCategories,
+        saveSyncVariable: saveSyncVariable,
+        getSyncVariable: getSyncVariable,
+        removeSyncVariable: removeSyncVariable,
+        getAllSyncVariables: getAllSyncVariables
     };
 })();
