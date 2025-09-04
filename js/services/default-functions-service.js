@@ -183,14 +183,32 @@ window.DefaultFunctionsService = (function() {
             setSelectedDefaultFunctionIds(selectedIds);
             result = false;
             
-            // Remove the functions from the function calling system
+            // Remove the functions from enabled default functions storage
             const functionCollection = getDefaultFunctionCollectionById(id);
             if (functionCollection && functionCollection.functions) {
+                // Get current enabled default functions
+                const enabledDefaultFunctions = getEnabledDefaultFunctions();
+                
+                // Also update individual function IDs
+                const selectedIndividualIds = getSelectedIndividualFunctionIds();
+                
                 functionCollection.functions.forEach(func => {
-                    if (window.FunctionToolsService) {
-                        window.FunctionToolsService.removeJsFunction(func.name);
+                    // Remove from enabled default functions
+                    delete enabledDefaultFunctions[func.name];
+                    
+                    // Remove from selected individual IDs
+                    const functionId = `${id}:${func.name}`;
+                    const idx = selectedIndividualIds.indexOf(functionId);
+                    if (idx >= 0) {
+                        selectedIndividualIds.splice(idx, 1);
                     }
                 });
+                
+                // Save all changes
+                setEnabledDefaultFunctions(enabledDefaultFunctions);
+                setSelectedIndividualFunctionIds(selectedIndividualIds);
+                
+                console.log(`Removed ${functionCollection.functions.length} default functions from collection: ${id}`);
             }
         } else if (shouldEnable && index < 0) {
             // Add to selected
@@ -198,38 +216,50 @@ window.DefaultFunctionsService = (function() {
             setSelectedDefaultFunctionIds(selectedIds);
             result = true;
             
-            // Add the functions to the function calling system
+            // Add the functions to the enabled default functions storage
             const functionCollection = getDefaultFunctionCollectionById(id);
             if (functionCollection && functionCollection.functions && window.FunctionToolsService) {
-                // Parse all functions in the collection first
-                const parsedFunctions = [];
+                // Get current enabled default functions
+                const enabledDefaultFunctions = getEnabledDefaultFunctions();
+                
+                // Also update individual function IDs
+                const selectedIndividualIds = getSelectedIndividualFunctionIds();
                 
                 functionCollection.functions.forEach(func => {
                     try {
                         // Generate tool definition for the function
-                        const toolDefinition = window.FunctionToolsParser.ToolDefinitionGenerator.generate(func.name, func.code);
+                        const toolDefinition = window.FunctionToolsParser.ToolDefinitionGenerator.generate(func.code);
                         
-                        parsedFunctions.push({
-                            name: func.name,
-                            code: func.code,
-                            toolDefinition: toolDefinition
-                        });
+                        if (toolDefinition) {
+                            // Store in enabled default functions (same as individual selection)
+                            enabledDefaultFunctions[func.name] = {
+                                code: func.code,
+                                toolDefinition: toolDefinition,
+                                groupId: functionCollection.groupId || functionCollection.id
+                            };
+                            
+                            // Add to selected individual IDs
+                            const functionId = `${id}:${func.name}`;
+                            if (!selectedIndividualIds.includes(functionId)) {
+                                selectedIndividualIds.push(functionId);
+                            }
+                        }
                     } catch (error) {
                         console.error(`Error parsing default function ${func.name}:`, error);
                     }
                 });
                 
-                // Add all functions with the same collection ID
-                parsedFunctions.forEach(parsedFunc => {
-                    window.FunctionToolsService.addJsFunction(
-                        parsedFunc.name,
-                        parsedFunc.code,
-                        parsedFunc.toolDefinition,
-                        functionCollection.groupId || functionCollection.id
-                    );
-                });
+                // Save all changes
+                setEnabledDefaultFunctions(enabledDefaultFunctions);
+                setSelectedIndividualFunctionIds(selectedIndividualIds);
                 
-                console.log(`Added ${parsedFunctions.length} default functions from collection: ${id}`);
+                // Ensure function tools are enabled globally
+                if (!window.FunctionToolsService.isFunctionToolsEnabled()) {
+                    console.log(`Enabling function tools globally for collection: ${id}`);
+                    window.FunctionToolsService.setFunctionToolsEnabled(true);
+                }
+                
+                console.log(`Added ${functionCollection.functions.length} default functions from collection: ${id}`);
             }
         } else if (shouldEnable && index >= 0) {
             // Already selected, just return true
