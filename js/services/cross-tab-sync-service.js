@@ -2,25 +2,25 @@
  * Cross-Tab Synchronization Service
  * 
  * Handles synchronization of conversation data across multiple tabs
- * for the same shared link namespace. Uses localStorage events
- * and a queue system to ensure all tabs stay in sync.
+ * for the same shared link namespace. Uses encrypted storage through
+ * DataService to ensure sync variables are properly namespaced and encrypted.
+ * 
+ * All tabs within the same namespace share the same master key, allowing
+ * them to decrypt and sync encrypted data seamlessly.
  */
 
 window.CrossTabSyncService = (function() {
     let isInitialized = false;
     let syncQueue = [];
     let lastKnownHistoryHash = null;
-    let lastReloadTime = 0; // Track last reload to prevent rapid successive reloads
-    let syncCheckInterval = null;
-    let consecutiveEmptyChecks = 0; // Track empty hash checks to reduce frequency
-    let isReloading = false; // Track if we're currently reloading to prevent loops
+    let lastReloadTime = 0;
+    let isReloading = false;
+    const TAB_ID = Date.now() + '_' + Math.random();
     
     // Constants
-    const SYNC_CHECK_INTERVAL = 5000; // Check every 5 seconds (reduced frequency)
-    const SYNC_TRIGGER_KEY = 'hackare_sync_trigger';     // Properly prefixed
-    const HISTORY_HASH_KEY = 'hackare_history_hash';    // Properly prefixed for cross-tab sync
-    const TAB_HEARTBEAT_KEY = 'hackare_tab_heartbeat';   // For detecting multiple tabs
-    const TAB_ID = Date.now() + '_' + Math.random();     // Unique ID for this tab
+    const SYNC_TRIGGER_KEY = 'sync_trigger';
+    const HISTORY_HASH_KEY = 'history_hash';
+    const TAB_HEARTBEAT_KEY = 'tab_heartbeat';
     
     /**
      * Initialize cross-tab synchronization
@@ -44,62 +44,73 @@ window.CrossTabSyncService = (function() {
         // Listen for storage events from other tabs
         window.addEventListener('storage', handleStorageEvent);
         
-        // Don't start periodic sync check - only respond to explicit events
-        // This prevents self-triggering loops
-        
-        // Initialize history hash but don't update localStorage yet
-        // Wait for content to stabilize
+        // Initialize history hash
         setTimeout(() => {
             lastKnownHistoryHash = getHistoryHash();
             console.log('[CrossTabSync] Initial history hash:', lastKnownHistoryHash);
+            // Store initial hash in encrypted storage
+            DataService.saveSyncVariable(HISTORY_HASH_KEY, {
+                hash: lastKnownHistoryHash,
+                tabId: TAB_ID,
+                timestamp: Date.now()
+            });
         }, 2000);
         
-        console.log('[CrossTabSync] Cross-tab synchronization initialized (event-driven mode only)');
+        console.log('[CrossTabSync] Cross-tab synchronization initialized');
         console.log('[CrossTabSync] Tab ID:', TAB_ID);
+        console.log('[CrossTabSync] Namespace:', NamespaceService.getNamespace());
     }
     
     /**
      * Handle localStorage events from other tabs
+     * Storage events fire when encrypted storage changes in other tabs
      * @param {StorageEvent} event - The storage event
      */
     function handleStorageEvent(event) {
-        // Only handle our sync events
-        if (event.key !== SYNC_TRIGGER_KEY && event.key !== HISTORY_HASH_KEY) {
-            return;
-        }
+        if (!event.key) return;
         
-        // Storage events only fire in OTHER tabs, not the tab that set the value
-        // So this is always from another tab
-        console.log('[CrossTabSync] Storage event from another tab:', event.key);
+        const namespaceData = NamespaceService.getNamespace();
+        const namespaceId = namespaceData.namespaceId || namespaceData;
         
-        if (event.key === SYNC_TRIGGER_KEY) {
-            // Another tab triggered a sync
-            handleSyncTrigger(event.newValue);
-        } else if (event.key === HISTORY_HASH_KEY) {
-            // History hash changed in another tab  
-            handleHistoryHashChange(event.newValue);
+        // Check if this is an encrypted sync variable for our namespace
+        // Keys are stored as hackare_{namespace}_{key} when namespaced
+        const syncTriggerKey = `hackare_${namespaceId}_sync_${SYNC_TRIGGER_KEY}`;
+        const historyHashKey = `hackare_${namespaceId}_sync_${HISTORY_HASH_KEY}`;
+        
+        if (event.key === syncTriggerKey) {
+            // Another tab triggered a sync - get the decrypted value
+            const triggerData = DataService.getSyncVariable(SYNC_TRIGGER_KEY);
+            if (triggerData) {
+                handleSyncTrigger(triggerData);
+            }
+        } else if (event.key === historyHashKey) {
+            // History hash changed in another tab - get the decrypted value
+            const hashData = DataService.getSyncVariable(HISTORY_HASH_KEY);
+            if (hashData) {
+                handleHistoryHashChange(hashData);
+            }
         }
     }
     
     /**
      * Handle sync trigger from another tab
-     * @param {string} triggerData - JSON string with sync information
+     * @param {Object} triggerData - Sync trigger data
      */
     function handleSyncTrigger(triggerData) {
         if (!triggerData) return;
         
         try {
-            const data = JSON.parse(triggerData);
-            const { type, timestamp, namespaceId, tabId } = data;
+            const { type, timestamp, namespaceId, tabId } = triggerData;
             
-            // Ignore our own events (shouldn't happen but extra safety)
+            // Ignore our own events
             if (tabId === TAB_ID) {
                 console.log('[CrossTabSync] Ignoring our own sync trigger');
                 return;
             }
             
-            // Only sync if it's for our namespace
-            const currentNamespace = NamespaceService ? NamespaceService.getNamespaceId() : null;
+            // Namespace check is redundant since we're using namespaced storage,
+            // but keep for extra safety
+            const currentNamespace = NamespaceService.getNamespaceId();
             if (namespaceId && currentNamespace && namespaceId !== currentNamespace) {
                 console.log('[CrossTabSync] Ignoring sync for different namespace:', namespaceId);
                 return;
@@ -125,60 +136,43 @@ window.CrossTabSyncService = (function() {
     
     /**
      * Handle history hash change from another tab
-     * @param {string} newHash - New history hash
+     * @param {Object} hashData - Hash data object
      */
-    function handleHistoryHashChange(newHash) {
-        // Parse the hash data if it's JSON
-        let hashData = newHash;
-        let sourceTabId = null;
+    function handleHistoryHashChange(hashData) {
+        if (!hashData) return;
         
-        try {
-            const parsed = JSON.parse(newHash);
-            if (parsed.hash && parsed.tabId) {
-                hashData = parsed.hash;
-                sourceTabId = parsed.tabId;
-                
-                // Ignore our own hash updates
-                if (sourceTabId === TAB_ID) {
-                    console.log('[CrossTabSync] Ignoring our own hash update');
-                    return;
-                }
-            }
-        } catch (e) {
-            // Not JSON, use as-is
-        }
+        const { hash, tabId, timestamp } = hashData;
         
-        // Ignore empty or error hashes to prevent infinite loops
-        if (!hashData || hashData === 'empty' || hashData === 'error' || hashData === 'reloading') {
+        // Ignore our own hash updates
+        if (tabId === TAB_ID) {
+            console.log('[CrossTabSync] Ignoring our own hash update');
             return;
         }
         
-        // Don't process hash changes if we're already reloading
+        // Ignore empty or error hashes
+        if (!hash || hash === 'empty' || hash === 'error' || hash === 'reloading') {
+            return;
+        }
+        
+        // Don't process if we're already reloading
         if (isReloading) {
             console.log('[CrossTabSync] Already reloading - ignoring hash change');
             return;
         }
         
-        // Additional check: ignore undefined role changes which indicate unstable state
-        if (hashData.includes('undefined')) {
-            return;
-        }
-        
         // Check if this is actually a different hash
-        if (hashData !== lastKnownHistoryHash) {
-            console.log('[CrossTabSync] History changed in tab:', sourceTabId || 'unknown');
+        if (hash !== lastKnownHistoryHash) {
+            console.log('[CrossTabSync] History changed in tab:', tabId);
             
-            // Additional check to prevent rapid successive reloads
+            // Prevent rapid successive reloads
             const now = Date.now();
-            if (now - lastReloadTime < 5000) { // Prevent reloads within 5 seconds
+            if (now - lastReloadTime < 5000) {
                 console.log('[CrossTabSync] Skipping reload - too soon since last reload');
                 return;
             }
             
-            lastKnownHistoryHash = hashData;
+            lastKnownHistoryHash = hash;
             lastReloadTime = now;
-            
-            // Set reloading flag to prevent concurrent reloads
             isReloading = true;
             
             // Reload conversation history
@@ -197,79 +191,6 @@ window.CrossTabSyncService = (function() {
             } else {
                 isReloading = false;
             }
-        }
-    }
-    
-    /**
-     * Start periodic sync checking
-     */
-    function startSyncCheck() {
-        if (syncCheckInterval) {
-            clearInterval(syncCheckInterval);
-        }
-        
-        // Disable periodic checking entirely - only respond to explicit storage events
-        // This prevents the infinite loops caused by self-triggering updates
-        console.log('[CrossTabSync] Cross-tab sync will only respond to storage events from other tabs');
-        
-        // syncCheckInterval = setInterval(() => {
-        //     checkForUpdates();
-        // }, SYNC_CHECK_INTERVAL);
-        
-        // console.log('[CrossTabSync] Started periodic sync check (every', SYNC_CHECK_INTERVAL, 'ms)');
-    }
-    
-    /**
-     * Stop periodic sync checking
-     */
-    function stopSyncCheck() {
-        if (syncCheckInterval) {
-            clearInterval(syncCheckInterval);
-            syncCheckInterval = null;
-            console.log('[CrossTabSync] Stopped periodic sync check');
-        }
-    }
-    
-    /**
-     * Check for conversation updates
-     */
-    function checkForUpdates() {
-        try {
-            // Skip updates if we're processing shared links or reloading to prevent interference
-            if (window._waitingForSharedLinkPassword || window._processingSharedLink || isReloading) {
-                console.log('[CrossTabSync] Skipping update check - processing in progress');
-                return;
-            }
-            
-            // Get current history hash
-            const currentHistoryHash = getHistoryHash();
-            
-            // Track consecutive empty checks to reduce logging noise
-            if (currentHistoryHash === 'empty') {
-                consecutiveEmptyChecks++;
-                if (consecutiveEmptyChecks > 3) {
-                    // After 3 consecutive empty checks, reduce logging frequency
-                    return;
-                }
-            } else {
-                consecutiveEmptyChecks = 0;
-            }
-            
-            // Compare with last known hash - but don't update if we just set it
-            if (currentHistoryHash !== lastKnownHistoryHash) {
-                // Only trigger cross-tab updates if there's actually another tab listening
-                // Skip localStorage updates to prevent self-triggering events in single tab scenarios
-                if (currentHistoryHash !== 'empty' && currentHistoryHash !== 'error' && 
-                    lastKnownHistoryHash !== 'empty' && lastKnownHistoryHash !== 'error') {
-                    console.log('[CrossTabSync] History changed locally - hash:', currentHistoryHash);
-                }
-                lastKnownHistoryHash = currentHistoryHash;
-                // Don't call updateHistoryHash() here to prevent localStorage events in single tab
-                // updateHistoryHash();
-            }
-            
-        } catch (error) {
-            console.error('[CrossTabSync] Error checking for updates:', error);
         }
     }
     
@@ -322,7 +243,8 @@ window.CrossTabSyncService = (function() {
     }
     
     /**
-     * Trigger sync for other tabs
+     * Trigger sync for other tabs in the same namespace
+     * Uses encrypted storage so only tabs with the same master key can read it
      * @param {string} type - Type of sync event
      * @param {Object} data - Additional data for the sync
      */
@@ -332,25 +254,24 @@ window.CrossTabSyncService = (function() {
         }
         
         try {
-            const currentNamespace = NamespaceService ? NamespaceService.getNamespaceId() : null;
+            const currentNamespace = NamespaceService.getNamespaceId();
             
             const triggerData = {
                 type,
                 timestamp: Date.now(),
                 namespaceId: currentNamespace,
-                tabId: TAB_ID,  // Include our tab ID
+                tabId: TAB_ID,
                 ...data
             };
             
             console.log('[CrossTabSync] Triggering sync for other tabs:', type);
             
-            // Use localStorage for cross-tab communication
-            // Storage events only fire in OTHER tabs, not this one
-            localStorage.setItem(SYNC_TRIGGER_KEY, JSON.stringify(triggerData));
+            // Save to encrypted storage - this will trigger storage events in other tabs
+            DataService.saveSyncVariable(SYNC_TRIGGER_KEY, triggerData);
             
-            // Remove the trigger after a brief moment to allow other tabs to process it
+            // Remove the trigger after a brief moment
             setTimeout(() => {
-                localStorage.removeItem(SYNC_TRIGGER_KEY);
+                DataService.removeSyncVariable(SYNC_TRIGGER_KEY);
             }, 100);
             
         } catch (error) {
@@ -364,7 +285,6 @@ window.CrossTabSyncService = (function() {
      */
     function getHistoryHash() {
         try {
-            // Don't generate hash during reload to prevent inconsistencies
             if (isReloading) {
                 return lastKnownHistoryHash || 'reloading';
             }
@@ -374,19 +294,17 @@ window.CrossTabSyncService = (function() {
                 return 'empty';
             }
             
-            // Create a stable hash based on message count and content (not timestamps)
             const messageCount = history.length;
             if (messageCount === 0) {
                 return 'empty';
             }
             
-            // Use content hash instead of timestamp to avoid constant changes
+            // Create stable hash based on content
             const lastMessage = history[history.length - 1];
             const lastContent = lastMessage && lastMessage.content ? lastMessage.content : '';
             const lastRole = lastMessage && lastMessage.role ? lastMessage.role : 'unknown';
             
-            // Create a more stable hash that only changes when actual content changes
-            // Use a simple checksum of content instead of content itself to avoid issues
+            // Simple checksum for stability
             let contentChecksum = 0;
             for (let i = 0; i < lastContent.length; i++) {
                 contentChecksum += lastContent.charCodeAt(i);
@@ -400,20 +318,20 @@ window.CrossTabSyncService = (function() {
     }
     
     /**
-     * Update the stored history hash - USING PROPER HACKARE_ PREFIXED KEY
-     * Note: Cross-tab sync requires direct localStorage access for storage events to work
+     * Update the stored history hash in encrypted storage
+     * Only tabs with the same master key can read this
      */
     function updateHistoryHash() {
         try {
             const currentHash = getHistoryHash();
-            // Include tab ID with the hash to identify source
-            const hashData = JSON.stringify({
+            
+            // Save to encrypted storage with metadata
+            DataService.saveSyncVariable(HISTORY_HASH_KEY, {
                 hash: currentHash,
                 tabId: TAB_ID,
                 timestamp: Date.now()
             });
-            // Use direct localStorage with proper hackare_ prefix for cross-tab sync
-            localStorage.setItem(HISTORY_HASH_KEY, hashData);
+            
             lastKnownHistoryHash = currentHash;
         } catch (error) {
             console.error('[CrossTabSync] Error updating history hash:', error);
@@ -424,10 +342,9 @@ window.CrossTabSyncService = (function() {
      * Notify that conversation history was updated
      */
     function notifyHistoryUpdate() {
-        // Only update if we have meaningful changes and aren't reloading
         if (!isReloading && isInitialized) {
             const currentHash = getHistoryHash();
-            // Only notify if the hash actually changed
+            
             if (currentHash !== lastKnownHistoryHash && currentHash !== 'empty' && currentHash !== 'error') {
                 console.log('[CrossTabSync] Notifying history update:', currentHash);
                 updateHistoryHash();
@@ -440,16 +357,33 @@ window.CrossTabSyncService = (function() {
      * Notify that a message was added
      */
     function notifyMessageAdded() {
-        // Only update if we have meaningful changes and aren't reloading
         if (!isReloading && isInitialized) {
             const currentHash = getHistoryHash();
-            // Only notify if the hash actually changed
+            
             if (currentHash !== lastKnownHistoryHash && currentHash !== 'empty' && currentHash !== 'error') {
                 console.log('[CrossTabSync] Notifying message added:', currentHash);
                 updateHistoryHash();
                 triggerSync('message_added');
             }
         }
+    }
+    
+    /**
+     * Get sync status for debugging
+     * @returns {Object} Current sync status
+     */
+    function getSyncStatus() {
+        const allSyncVars = DataService.getAllSyncVariables();
+        
+        return {
+            initialized: isInitialized,
+            tabId: TAB_ID,
+            namespace: NamespaceService.getNamespace(),
+            lastKnownHash: lastKnownHistoryHash,
+            isReloading: isReloading,
+            syncVariables: allSyncVars,
+            queueLength: syncQueue.length
+        };
     }
     
     /**
@@ -463,11 +397,10 @@ window.CrossTabSyncService = (function() {
         console.log('[CrossTabSync] Destroying cross-tab sync service');
         
         window.removeEventListener('storage', handleStorageEvent);
-        stopSyncCheck();
         
-        // Clear any remaining data
+        // Clear sync variables for this tab
         try {
-            localStorage.removeItem(SYNC_TRIGGER_KEY);
+            DataService.removeSyncVariable(SYNC_TRIGGER_KEY);
         } catch (error) {
             // Ignore errors when cleaning up
         }
@@ -482,21 +415,24 @@ window.CrossTabSyncService = (function() {
         triggerSync,
         notifyHistoryUpdate,
         notifyMessageAdded,
+        getSyncStatus,
         isInitialized: () => isInitialized
     };
 })();
 
 // Auto-initialize when DOM is ready and other services are loaded
 document.addEventListener('DOMContentLoaded', function() {
-    // Wait for other services to be ready
+    // Wait for required services to be ready
     setTimeout(() => {
-        if (window.StorageTypeService && window.NamespaceService && window.StorageService) {
+        if (window.StorageTypeService && window.NamespaceService && window.DataService) {
             window.CrossTabSyncService.init();
         } else {
             console.log('[CrossTabSync] Required services not ready, will try again...');
             // Try again after a longer delay
             setTimeout(() => {
-                window.CrossTabSyncService.init();
+                if (window.StorageTypeService && window.NamespaceService && window.DataService) {
+                    window.CrossTabSyncService.init();
+                }
             }, 2000);
         }
     }, 1000);
