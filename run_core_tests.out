@@ -17,18 +17,10 @@ Port: 8000
 Project Root: /Users/user/dev/hacka.re
 ==================================================
 Checking for existing HTTP server processes on port 8000...
-Found existing processes: 67924
-Killing existing processes...
-Processes killed.
+No existing processes found on port 8000.
 Changing to project root directory: /Users/user/dev/hacka.re
 Starting Python HTTP server on port 8000...
-Server started successfully with PID: 80057
-Server is now running at http://localhost:8000
-Server PID saved to: /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt
-==================================================
-Server is ready. You can now run your tests.
-To stop the server, run: kill -9 $(cat /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt)
-==================================================
+Failed to start server.
 Running Core Functionality tests with chromium browser...
 Test filter: test_page or test_api or test_chat or test_welcome_modal
 
@@ -44,7 +36,7 @@ configfile: pytest.ini
 testpaths: .
 plugins: anyio-4.9.0, timeout-2.4.0, playwright-0.7.0, base-url-2.1.0, asyncio-1.0.0
 asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
-collecting ... collected 950 items / 912 deselected / 38 selected
+collecting ... collected 970 items / 932 deselected / 38 selected
 
 shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_info[chromium0] PASSED [  2%]
 shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_plan_details[chromium0] PASSED [  5%]
@@ -56,23 +48,4 @@ test_api_key_persistence_debug.py::test_api_key_persistence_scenario_1_basic[chr
 test_api_key_persistence_debug.py::test_api_key_persistence_scenario_2_retry_helper[chromium0] PASSED [ 21%]
 test_api_key_persistence_debug.py::test_api_key_persistence_scenario_3_multiple_attempts[chromium0] PASSED [ 23%]
 test_api_key_persistence_debug.py::test_api_key_persistence_scenario_4_timing_analysis[chromium0] PASSED [ 26%]
-test_chat.py::test_chat_message_send_receive[chromium0] PASSED           [ 28%]
-test_chat_no_mock.py::test_chat_message_send_receive[chromium0] SKIPPED  [ 31%]
-test_page.py::test_page_loads[chromium0] PASSED                          [ 34%]
-test_page.py::test_chat_interface_elements[chromium0] PASSED             [ 36%]
-test_stop_generation_simple.py::test_chat_manager_stop_logic[chromium0] PASSED [ 39%]
-test_welcome_modal_new_logic.py::test_welcome_modal_shows_for_first_time_user[chromium0] PASSED [ 42%]
-test_welcome_modal_new_logic.py::test_welcome_modal_hidden_for_returning_user[chromium0] PASSED [ 44%]
-test_welcome_modal_new_logic.py::test_welcome_modal_disabled_with_url_param[chromium0] PASSED [ 47%]
-test_welcome_modal_new_logic.py::test_no_auto_settings_after_welcome[chromium0] PASSED [ 50%]
-shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_info[chromium1] PASSED [ 52%]
-shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_plan_details[chromium1] PASSED [ 55%]
-test_api.py::test_api_key_configuration[chromium1] PASSED                [ 57%]
-test_api.py::test_model_selection[chromium1] PASSED                      [ 60%]
-test_api_key_detection_simple.py::test_api_key_detection_simple[chromium1] PASSED [ 63%]
-test_api_key_enter.py::test_api_key_modal_enter_key[chromium1] PASSED    [ 65%]
-test_api_key_persistence_debug.py::test_api_key_persistence_scenario_1_basic[chromium1] PASSED [ 68%]
-test_api_key_persistence_debug.py::test_api_key_persistence_scenario_2_retry_helper[chromium1] PASSED [ 71%]
-test_api_key_persistence_debug.py::test_api_key_persistence_scenario_3_multiple_attempts[chromium1] PASSED [ 73%]
-test_api_key_persistence_debug.py::test_api_key_persistence_scenario_4_timing_analysis[chromium1] PASSED [ 76%]
-test_chat.py::test_chat_message_send_receive[chromium1] 
+test_chat.py::test_chat_message_send_receive[chromium0] 

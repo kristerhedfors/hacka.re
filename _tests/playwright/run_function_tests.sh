@@ -110,7 +110,7 @@ fi
 echo "Running Function tests with $BROWSER browser..."
 echo "Test filter: $FUNCTION_TESTS_FILTER"
 echo ""
-eval "python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS -k \"$FUNCTION_TESTS_FILTER\"" | tee test_output.log
+eval "../../_venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS -k \"$FUNCTION_TESTS_FILTER\"" | tee test_output.log
 
 # Generate test results markdown files
 echo "Generating test results markdown files..."

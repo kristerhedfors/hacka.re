@@ -96,7 +96,7 @@ echo "Output file: $OUTPUT_FILE"
 echo ""
 
 # Build pytest command
-PYTEST_CMD="_venv/bin/python -m pytest _tests/playwright/test_all_models_function_calling.py"
+PYTEST_CMD="_venv/bin/../../_venv/bin/python -m pytest _tests/playwright/test_all_models_function_calling.py"
 
 # Add provider filter if specified
 if [ ! -z "$PROVIDER" ]; then
