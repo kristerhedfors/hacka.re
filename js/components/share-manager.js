@@ -125,15 +125,26 @@ window.ShareManager = (function() {
          * Initialize the share manager
          */
         function init() {
-            // For shared links, try to restore session key from sessionStorage
-            const storageKey = getSessionKeyStorageKey();
-            if (storageKey) {
-                const storedKey = sessionStorage.getItem(storageKey);
-                if (storedKey) {
-                    sessionKey = storedKey;
-                    console.log(`[ShareManager] Restored session key from sessionStorage for cross-tab consistency: ${storageKey}`);
+            // NOTE: We no longer restore passwords from sessionStorage for security reasons.
+            // Passwords should only exist in memory during the current page lifetime.
+            // After a page refresh, a new random password will be generated for the Share Modal.
+            // The derived master key is what allows decryption to continue working after refresh.
+            
+            // Check if there's a temporary password from early shared link verification
+            if (window._tempSharedLinkPassword) {
+                sessionKey = window._tempSharedLinkPassword;
+                console.log('[ShareManager] Retrieved temporary password from early verification');
+                // Clear the temporary storage
+                delete window._tempSharedLinkPassword;
+                
+                // Now that we have the password, reinitialize the namespace with the correct key
+                if (window.NamespaceService && window.NamespaceService.reinitializeNamespace) {
+                    console.log('[ShareManager] Triggering namespace reinitialization with correct session key');
+                    window.NamespaceService.reinitializeNamespace();
                 }
             }
+            
+            console.log('[ShareManager] Initialized without restoring password from storage (security enhancement)');
         }
         
         /**
@@ -1449,15 +1460,9 @@ window.ShareManager = (function() {
          * @returns {string} Session key
          */
         function getSessionKey() {
-            // For shared links, try to get session key from sessionStorage first
-            const storageKey = getSessionKeyStorageKey();
-            if (storageKey) {
-                const storedKey = sessionStorage.getItem(storageKey);
-                if (storedKey) {
-                    sessionKey = storedKey; // Sync local variable
-                    return storedKey;
-                }
-            }
+            // NOTE: We no longer retrieve passwords from sessionStorage for security.
+            // The password only exists in memory during the current page lifetime.
+            // After a page refresh, this will return null unless a new password has been generated.
             return sessionKey;
         }
         
@@ -1466,23 +1471,11 @@ window.ShareManager = (function() {
          * @param {string} key - Session key
          */
         function setSessionKey(key) {
-            // For shared links, check if a session key already exists in sessionStorage
-            const storageKey = getSessionKeyStorageKey();
-            if (storageKey && key) {
-                const existingKey = sessionStorage.getItem(storageKey);
-                if (existingKey && existingKey !== key) {
-                    // Another tab already set a different session key - use the existing one for consistency
-                    console.log(`[ShareManager] Session key already exists in sessionStorage - using existing key for cross-tab consistency`);
-                    sessionKey = existingKey;
-                    return;
-                }
-                
-                // Either no existing key or same key - safe to set
-                sessionStorage.setItem(storageKey, key);
-                console.log(`[ShareManager] Stored session key in sessionStorage for cross-tab access: ${storageKey}`);
-            }
-            
+            // NOTE: We no longer store passwords in sessionStorage for security.
+            // The password only exists in memory during the current page lifetime.
+            // This prevents passwords from being persisted to disk or visible in dev tools.
             sessionKey = key;
+            console.log('[ShareManager] Session key set in memory only (not persisted for security)');
         }
         
         /**

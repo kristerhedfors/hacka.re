@@ -18,16 +18,10 @@ async function handleEarlySharedLinkPassword() {
     // Use the encrypted data stored by the critical early script
     const encryptedData = window._sharedLinkEncryptedData;
     
-    if (encryptedData && window.CryptoUtils) {
-        const linkHash = window.CryptoUtils.hashString(encryptedData);
-        const storageKey = `__hacka_re_session_key_${linkHash.substring(0, 16)}`;
-        const existingKey = sessionStorage.getItem(storageKey);
-        
-        if (existingKey) {
-            console.log('[App] Found existing session key in sessionStorage - no password prompt needed');
-            return; // We already have the password
-        }
-    }
+    // NOTE: We no longer check for stored passwords in sessionStorage for security reasons.
+    // Passwords should never be persisted. After a page refresh, users will need to re-enter
+    // the password to access shared link content. The derived master key allows existing
+    // decrypted data to continue working after refresh.
     
     // We need to prompt for password
     console.log('[App] Creating password modal...');
@@ -85,13 +79,10 @@ async function handleEarlySharedLinkPassword() {
             try {
                 const sharedData = await window.LinkSharingService.extractSharedApiKey(password);
                 if (sharedData) {
-                    // Success! Store the session key
-                    if (encryptedData && window.CryptoUtils) {
-                        const linkHash = window.CryptoUtils.hashString(encryptedData);
-                        const storageKey = `__hacka_re_session_key_${linkHash.substring(0, 16)}`;
-                        sessionStorage.setItem(storageKey, password);
-                        console.log('[App] Password verified and session key stored');
-                    }
+                    // Success! Password is verified but NOT stored for security reasons.
+                    // Store password temporarily in memory for ShareManager to use
+                    // This will be picked up when ShareManager initializes
+                    window._tempSharedLinkPassword = password;
                     
                     // Clear the waiting flag to allow namespace creation
                     window._waitingForSharedLinkPassword = false;
@@ -102,11 +93,9 @@ async function handleEarlySharedLinkPassword() {
                     // Set flag to prevent namespace delayed reload during shared link processing
                     window._sharedLinkProcessed = true;
                     
-                    // Force namespace re-initialization now that we have the session key
-                    if (window.NamespaceService && window.NamespaceService.reinitializeNamespace) {
-                        window.NamespaceService.reinitializeNamespace();
-                        console.log('[App] Namespace re-initialized with session key');
-                    }
+                    // DON'T reinitialize namespace here - it needs to wait for ShareManager
+                    // The namespace will be properly initialized when ShareManager picks up the password
+                    console.log('[App] Password verified and stored temporarily - waiting for ShareManager initialization');
                     
                     // Note: Deferred welcome message will be displayed after chat history loads
                     // to prevent it being overwritten by chat container clearing

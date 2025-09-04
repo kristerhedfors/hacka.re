@@ -211,11 +211,23 @@ window.LinkSharingService = (function() {
             window.DebugService.debugLog('crypto', `🔐 Compressing and encrypting custom shareable link payload with ${payloadKeys.length} components: ${payloadKeys.join(', ')}`);
         }
         
-        // Compress the payload first (now async)
-        const compressedPayload = await CompressionUtils.compressPayload(finalPayload);
+        // Generate a strong master key for this share link
+        // This is the ONLY place where master keys are generated for shared links
+        const masterKeyBytes = nacl.randomBytes(32);
+        const masterKeyHex = Array.from(masterKeyBytes)
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
         
-        // Encrypt the compressed payload directly
-        // Since compression is always used, we don't need a wrapper object
+        // Create wrapper with master key and encrypted data
+        const sharePayload = {
+            masterKey: masterKeyHex,
+            data: finalPayload
+        };
+        
+        // Compress the entire payload including master key
+        const compressedPayload = await CompressionUtils.compressPayload(sharePayload);
+        
+        // Encrypt with password (password only decrypts the link, master key decrypts the data)
         const encryptedData = CryptoUtils.encryptData(compressedPayload, password);
         
         // Create URL with hash fragment
@@ -320,11 +332,11 @@ window.LinkSharingService = (function() {
                 }
                 
                 // Handle decompression
-                let data;
+                let decompressedData;
                 if (decryptedData._compressed === true && decryptedData.data) {
                     // Old format with wrapper object - decompress the data
                     try {
-                        data = await CompressionUtils.decompressPayload(decryptedData.data);
+                        decompressedData = await CompressionUtils.decompressPayload(decryptedData.data);
                     } catch (decompressError) {
                         console.error('Decompression failed:', decompressError);
                         return null;
@@ -332,14 +344,31 @@ window.LinkSharingService = (function() {
                 } else if (typeof decryptedData === 'string') {
                     // New format - compressed data directly (string)
                     try {
-                        data = await CompressionUtils.decompressPayload(decryptedData);
+                        decompressedData = await CompressionUtils.decompressPayload(decryptedData);
                     } catch (decompressError) {
                         console.error('Decompression failed:', decompressError);
                         return null;
                     }
                 } else {
                     // Fallback for very old uncompressed format (shouldn't happen)
-                    data = decryptedData;
+                    decompressedData = decryptedData;
+                }
+                
+                // Check if this is the new format with master key
+                let data;
+                let masterKey = null;
+                if (decompressedData && decompressedData.masterKey && decompressedData.data) {
+                    // New secure format with master key
+                    masterKey = decompressedData.masterKey;
+                    data = decompressedData.data;
+                    
+                    // Store the master key temporarily in memory (NEVER to disk)
+                    window._sharedLinkMasterKey = masterKey;
+                    console.log('[LinkSharing] Master key extracted from share link (stored in memory only)');
+                } else {
+                    // Legacy format without master key (for backwards compatibility)
+                    data = decompressedData;
+                    console.warn('[LinkSharing] Legacy share link format without master key - less secure');
                 }
                 
                 // Check if the decrypted data contains at least one valid field
