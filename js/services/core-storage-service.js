@@ -4,19 +4,21 @@
  */
 
 window.CoreStorageService = (function() {
-    // Keys that should not be encrypted
+    // ONLY these two keys are stored unencrypted
     const NON_ENCRYPTED_KEYS = [
-        NamespaceService.BASE_STORAGE_KEYS.TITLE,
-        NamespaceService.BASE_STORAGE_KEYS.SUBTITLE
+        '_hacka_re_master_key_default_session',
+        '__hacka_re_storage_type__'
     ];
     
     /**
-     * Check if a key should be encrypted
+     * Check if a key should be encrypted - EVERYTHING except master key variables
      * @param {string} key - The key to check
-     * @returns {boolean} True if the key should be encrypted
+     * @returns {boolean} True if the key should be encrypted (almost always true)
      */
     function shouldEncrypt(key) {
-        return !NON_ENCRYPTED_KEYS.includes(key);
+        // Strip any prefixes to get the base key for comparison
+        const baseKey = key.replace(/^hackare_[^_]+_/, '');
+        return !NON_ENCRYPTED_KEYS.includes(key) && !NON_ENCRYPTED_KEYS.includes(baseKey);
     }
     
     /**
