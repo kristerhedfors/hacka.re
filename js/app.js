@@ -93,6 +93,12 @@ async function handleEarlySharedLinkPassword() {
                     // Set flag to prevent namespace delayed reload during shared link processing
                     window._sharedLinkProcessed = true;
                     
+                    // CRITICAL: Immediately cache the master key if available
+                    if (window._sharedLinkMasterKey && window.NamespaceService && window.NamespaceService.ensureSharedLinkMasterKeyCached) {
+                        console.log('[App] Immediately caching shared link master key after password verification');
+                        window.NamespaceService.ensureSharedLinkMasterKeyCached();
+                    }
+                    
                     // DON'T reinitialize namespace here - it needs to wait for ShareManager
                     // The namespace will be properly initialized when ShareManager picks up the password
                     console.log('[App] Password verified and stored temporarily - waiting for ShareManager initialization');

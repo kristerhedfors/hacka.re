@@ -77,7 +77,8 @@ window.NamespaceService = (function() {
         current: {
             namespaceId: null,
             masterKey: null,
-            namespaceHash: null
+            namespaceHash: null,
+            isSharedLink: false  // Track if this namespace is from a shared link
         },
         // Flag to track if we're returning to an existing namespace vs creating new
         isReturningToExistingNamespace: false
@@ -188,13 +189,16 @@ window.NamespaceService = (function() {
     function getMasterKey(namespaceId, namespaceHash) {
         try {
             // For shared links, use the master key from memory only (check all caches)
-            const sharedLinkMasterKey = window._sharedLinkMasterKey || sharedLinkMasterKeyCache || state.current.sharedLinkMasterKey;
+            const sharedLinkMasterKey = window._sharedLinkMasterKey || sharedLinkMasterKeyCache || (state.current.isSharedLink ? state.current.masterKey : null);
             if (sharedLinkMasterKey) {
                 addSystemMessage(`[CRYPTO] Using master key from share link (memory only)`);
                 // Update all caches to ensure consistency
                 if (!window._sharedLinkMasterKey) window._sharedLinkMasterKey = sharedLinkMasterKey;
                 if (!sharedLinkMasterKeyCache) sharedLinkMasterKeyCache = sharedLinkMasterKey;
-                if (!state.current.sharedLinkMasterKey) state.current.sharedLinkMasterKey = sharedLinkMasterKey;
+                // If this is a shared link namespace, ensure the master key is set
+                if (state.current.isSharedLink && !state.current.masterKey) {
+                    state.current.masterKey = sharedLinkMasterKey;
+                }
                 return sharedLinkMasterKey;
             }
             
@@ -361,7 +365,8 @@ window.NamespaceService = (function() {
                 if (window._sharedLinkMasterKey) {
                     // Store in all locations for redundancy
                     sharedLinkMasterKeyCache = window._sharedLinkMasterKey;
-                    state.current.sharedLinkMasterKey = window._sharedLinkMasterKey;
+                    state.current.masterKey = window._sharedLinkMasterKey;
+                    state.current.isSharedLink = true;
                     addSystemMessage(`[CRYPTO] Stored master key from share link for namespace ${sharedLinkNamespace}`);
                 }
                 const masterKey = getMasterKey(sharedLinkNamespace, sharedLinkNamespace);
@@ -589,8 +594,11 @@ window.NamespaceService = (function() {
             const sharedLinkNamespace = StorageTypeService.getSharedLinkNamespace ? StorageTypeService.getSharedLinkNamespace() : null;
             if (sharedLinkNamespace) {
                 // For shared links, check if we have the master key available
-                const hasMasterKey = window._sharedLinkMasterKey || sharedLinkMasterKeyCache || state.current.sharedLinkMasterKey;
-                if (!hasMasterKey) {
+                const masterKey = window._sharedLinkMasterKey || sharedLinkMasterKeyCache || state.current.masterKey;
+                if (masterKey) {
+                    // Return the master key directly for shared links
+                    return masterKey;
+                } else {
                     // This is expected after page reload - shared links lose their master key
                     addSystemMessage(`[CRYPTO] No master key available for shared link after reload`);
                     return null;
@@ -610,10 +618,15 @@ window.NamespaceService = (function() {
         // Store the namespace ID to check if it exists after re-initialization
         const previousNamespaceId = state.current.namespaceId;
         
+        // Preserve the master key and shared link flag if they exist
+        const preservedMasterKey = state.current.masterKey;
+        const preservedIsSharedLink = state.current.isSharedLink;
+        
         // Clear current state to force re-creation
         state.current.namespaceId = null;
         state.current.namespaceHash = null;
-        state.current.masterKey = null;
+        state.current.masterKey = preservedMasterKey; // Preserve the master key
+        state.current.isSharedLink = preservedIsSharedLink; // Preserve the shared link flag
         // Don't reset isReturningToExistingNamespace here - let getOrCreateNamespace determine it
         
         // Re-initialize namespace with session key now available
@@ -678,7 +691,13 @@ window.NamespaceService = (function() {
      * @returns {string} The namespace ID
      */
     function getNamespace() {
-        return getNamespaceId();
+        // Return the full namespace object including the master key
+        const namespace = getOrCreateNamespace();
+        return {
+            namespaceId: namespace.namespaceId,
+            masterKey: namespace.masterKey,
+            namespaceHash: namespace.namespaceHash
+        };
     }
     
     // State management methods
@@ -695,10 +714,15 @@ window.NamespaceService = (function() {
             addSystemMessage(`[CRYPTO] Storing previous namespace: ${state.current.namespaceId}`);
         }
         
+        // Preserve the master key and shared link flag if they exist and we're in a shared link
+        const preservedMasterKey = state.current.isSharedLink ? state.current.masterKey : null;
+        const preservedIsSharedLink = state.current.isSharedLink;
+        
         // Reset current namespace
         state.current.namespaceId = null;
-        state.current.masterKey = null;
+        state.current.masterKey = preservedMasterKey; // Preserve if shared link
         state.current.namespaceHash = null;
+        state.current.isSharedLink = preservedIsSharedLink; // Preserve the shared link flag
         state.isReturningToExistingNamespace = false;
         
         addSystemMessage(`[CRYPTO] Namespace cache reset, will create or find namespace on next access`);
@@ -805,17 +829,24 @@ window.NamespaceService = (function() {
         
         // Cache the master key in all locations
         sharedLinkMasterKeyCache = window._sharedLinkMasterKey;
-        state.current.sharedLinkMasterKey = window._sharedLinkMasterKey;
         
         // If we're in a shared link namespace, update the current master key
         if (StorageTypeService && StorageTypeService.isUsingLocalStorage()) {
             const sharedLinkNamespace = StorageTypeService.getSharedLinkNamespace();
-            if (sharedLinkNamespace && state.current.namespaceId === sharedLinkNamespace) {
+            if (sharedLinkNamespace) {
+                // Always set the namespace ID and master key together
+                state.current.namespaceId = sharedLinkNamespace;
+                state.current.namespaceHash = sharedLinkNamespace;
                 state.current.masterKey = window._sharedLinkMasterKey;
-                addSystemMessage(`[CRYPTO] Updated namespace with shared link master key`);
+                state.current.isSharedLink = true;
+                addSystemMessage(`[CRYPTO] Updated namespace ${sharedLinkNamespace} with shared link master key`);
                 return true;
             }
         }
+        
+        // Even if not in the namespace yet, mark as shared link and set master key
+        state.current.masterKey = window._sharedLinkMasterKey;
+        state.current.isSharedLink = true;
         
         return true;
     }
@@ -882,11 +913,16 @@ window.NamespaceService = (function() {
      */
     function setCurrentNamespace(namespaceId) {
         try {
+            // Preserve the master key and shared link flag if they exist
+            const preservedMasterKey = state.current.isSharedLink ? state.current.masterKey : null;
+            const preservedIsSharedLink = state.current.isSharedLink;
+            
             // Reset current state to force re-initialization
             state.current = {
                 namespaceId: null,
-                masterKey: null,
-                namespaceHash: null
+                masterKey: preservedMasterKey,
+                namespaceHash: null,
+                isSharedLink: preservedIsSharedLink
             };
             
             // Try to load the specified namespace

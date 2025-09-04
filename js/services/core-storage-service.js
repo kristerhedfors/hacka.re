@@ -25,7 +25,13 @@ window.CoreStorageService = (function() {
      */
     function getPassphrase() {
         // Use the master key as the passphrase
-        const key = NamespaceService.getCurrentMasterKey();
+        let key = NamespaceService.getCurrentMasterKey();
+        
+        // Fallback: For shared links, also check the global master key caches
+        if (!key && window._sharedLinkMasterKey) {
+            key = window._sharedLinkMasterKey;
+        }
+        
         if (!key) {
             // If no key is available, this usually means initialization isn't complete
             // Don't spam the console with errors, just return null
