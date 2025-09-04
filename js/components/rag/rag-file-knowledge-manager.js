@@ -244,8 +244,11 @@ window.RAGFileKnowledgeManager = (function() {
      * @returns {Array} Selected file IDs
      */
     function getSelectedFiles() {
-        const stored = localStorage.getItem('ragSelectedFiles');
-        return stored ? JSON.parse(stored) : [];
+        // Use CoreStorageService for encrypted storage
+        if (window.CoreStorageService) {
+            return window.CoreStorageService.getValue('rag_selected_files') || [];
+        }
+        return [];
     }
 
     /**
@@ -263,7 +266,9 @@ window.RAGFileKnowledgeManager = (function() {
      * @returns {string} Index status
      */
     function getFileIndexStatus(fileId) {
-        const indexedFiles = JSON.parse(localStorage.getItem('ragIndexedFiles') || '{}');
+        // Use CoreStorageService for encrypted storage
+        const indexedFiles = window.CoreStorageService ? 
+            window.CoreStorageService.getValue('rag_indexed_files') || {} : {};
         return indexedFiles[fileId] ? 'indexed' : 'not-indexed';
     }
 
@@ -331,10 +336,13 @@ window.RAGFileKnowledgeManager = (function() {
         const updatedSelected = selectedFiles.filter(id => id !== fileId);
         localStorage.setItem('ragSelectedFiles', JSON.stringify(updatedSelected));
         
-        // Remove from indexed files
-        const indexedFiles = JSON.parse(localStorage.getItem('ragIndexedFiles') || '{}');
+        // Remove from indexed files using CoreStorageService
+        const indexedFiles = window.CoreStorageService ? 
+            window.CoreStorageService.getValue('rag_indexed_files') || {} : {};
         delete indexedFiles[fileId];
-        localStorage.setItem('ragIndexedFiles', JSON.stringify(indexedFiles));
+        if (window.CoreStorageService) {
+            window.CoreStorageService.setValue('rag_indexed_files', indexedFiles);
+        }
         
         showSuccess('File removed from knowledge base');
         loadFiles();
