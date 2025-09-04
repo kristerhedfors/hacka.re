@@ -89,7 +89,7 @@ for TEST_FILE in $SHARING_TESTS; do
     echo "File: $TEST_FILE"
     echo "----------------------------------------"
     
-    python -m pytest "$TEST_FILE" $PYTEST_ARGS --browser $BROWSER $HEADLESS 2>&1 | tee -a "sharing_test_${TEST_NAME}.log"
+    ../../_venv/bin/python -m pytest "$TEST_FILE" $PYTEST_ARGS --browser $BROWSER $HEADLESS 2>&1 | tee -a "sharing_test_${TEST_NAME}.log"
     
     EXIT_CODE=${PIPESTATUS[0]}
     TOTAL_TESTS=$((TOTAL_TESTS + 1))
@@ -118,7 +118,7 @@ echo "Testing: Sharing functionality in other tests"
 echo "----------------------------------------"
 
 SHARING_FILTER="test_sharing or test_share or link_sharing or share_modal or encrypted_sharing"
-python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS -k "$SHARING_FILTER" 2>&1 | tee -a sharing_test_combined.log
+_venv/bin/../../_venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS -k "$SHARING_FILTER" 2>&1 | tee -a sharing_test_combined.log
 
 if [ ${PIPESTATUS[0]} -eq 0 ]; then
     echo "✅ Combined sharing tests: PASSED"

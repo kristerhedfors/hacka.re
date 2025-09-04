@@ -64,6 +64,19 @@ function createSharedLinkDataProcessor() {
             systemPrompt: false
         };
         
+        // CRITICAL: Ensure namespace is initialized with master key before saving
+        if (window.NamespaceService) {
+            // Ensure the master key is cached before trying to save encrypted data
+            if (window._sharedLinkMasterKey) {
+                window.NamespaceService.ensureSharedLinkMasterKeyCached();
+            }
+            // Get the namespace to ensure it's initialized
+            const namespace = window.NamespaceService.getNamespace();
+            if (!namespace || !namespace.masterKey) {
+                console.warn('[SharedLink] Namespace not properly initialized with master key, encryption may fail');
+            }
+        }
+        
         // Save the shared API key
         if (sharedData.apiKey) {
             if (DataService && typeof DataService.saveApiKey === 'function') {
@@ -256,7 +269,7 @@ function createSharedLinkDataProcessor() {
         // First ensure the namespace is properly initialized with the master key
         if (window._sharedLinkMasterKey && window.NamespaceService) {
             console.log('[SharedLinkDataProcessor] Ensuring namespace is initialized before checking existing data');
-            const namespace = window.NamespaceService.getOrCreateNamespace();
+            const namespace = window.NamespaceService.getNamespace();
             console.log('[SharedLinkDataProcessor] Namespace state:', {
                 namespaceId: namespace?.namespaceId,
                 hasMasterKey: !!namespace?.masterKey,
@@ -319,7 +332,7 @@ function createSharedLinkDataProcessor() {
                         console.log('[SharedLinkDataProcessor] Master key cached:', cached);
                         
                         // Verify the namespace now has the master key
-                        const namespace = window.NamespaceService.getOrCreateNamespace();
+                        const namespace = window.NamespaceService.getNamespace();
                         console.log('[SharedLinkDataProcessor] Namespace initialized with master key:', !!namespace?.masterKey);
                     }
                 }

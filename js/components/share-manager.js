@@ -137,7 +137,13 @@ window.ShareManager = (function() {
                 // Clear the temporary storage
                 delete window._tempSharedLinkPassword;
                 
-                // Now that we have the password, reinitialize the namespace with the correct key
+                // Now that we have the password, ensure the master key is cached FIRST
+                if (window._sharedLinkMasterKey && window.NamespaceService && window.NamespaceService.ensureSharedLinkMasterKeyCached) {
+                    console.log('[ShareManager] Ensuring shared link master key is cached before namespace initialization');
+                    window.NamespaceService.ensureSharedLinkMasterKeyCached();
+                }
+                
+                // Then reinitialize the namespace with the correct key
                 if (window.NamespaceService && window.NamespaceService.reinitializeNamespace) {
                     console.log('[ShareManager] Triggering namespace reinitialization with correct session key');
                     window.NamespaceService.reinitializeNamespace();

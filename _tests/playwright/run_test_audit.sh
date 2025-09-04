@@ -69,7 +69,7 @@ for TEST_FILE in $TEST_FILES; do
     echo -n "Testing $TEST_NAME... "
     
     # Run test (without timeout for macOS compatibility)
-    python -m pytest "$TEST_FILE" --browser chromium --headed --tb=short > "test_status/${TEST_NAME}_output.log" 2>&1
+    ../../_venv/bin/python -m pytest "$TEST_FILE" --browser chromium --headed --tb=short > "test_status/${TEST_NAME}_output.log" 2>&1
     EXIT_CODE=$?
     
     if [ $EXIT_CODE -eq 0 ]; then
