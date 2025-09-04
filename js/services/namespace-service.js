@@ -589,14 +589,25 @@ window.NamespaceService = (function() {
             }
             return null;
         }
-        // For shared links, ensure we have the master key
+        
+        // For shared links, always check all master key sources
+        // This is critical for cross-tab sync where state might be inconsistent
         if (StorageTypeService && StorageTypeService.isUsingLocalStorage && StorageTypeService.isUsingLocalStorage()) {
             const sharedLinkNamespace = StorageTypeService.getSharedLinkNamespace ? StorageTypeService.getSharedLinkNamespace() : null;
             if (sharedLinkNamespace) {
-                // For shared links, check if we have the master key available
+                // For shared links, check ALL sources for the master key
+                // Priority order: global window key > cached key > state key
                 const masterKey = window._sharedLinkMasterKey || sharedLinkMasterKeyCache || state.current.masterKey;
+                
+                // If we have a master key but state doesn't, update state
+                // This handles cases where state was reset but we still have the key cached
+                if (masterKey && !state.current.masterKey) {
+                    state.current.masterKey = masterKey;
+                    state.current.isSharedLink = true;
+                    console.log('[NamespaceService] Restored master key to state from cache');
+                }
+                
                 if (masterKey) {
-                    // Return the master key directly for shared links
                     return masterKey;
                 } else {
                     // This is expected after page reload - shared links lose their master key
@@ -714,9 +725,18 @@ window.NamespaceService = (function() {
             addSystemMessage(`[CRYPTO] Storing previous namespace: ${state.current.namespaceId}`);
         }
         
-        // Preserve the master key and shared link flag if they exist and we're in a shared link
-        const preservedMasterKey = state.current.isSharedLink ? state.current.masterKey : null;
-        const preservedIsSharedLink = state.current.isSharedLink;
+        // Preserve the master key for shared links
+        // Check both the isSharedLink flag AND if we're actually in a shared link context
+        const isInSharedLink = state.current.isSharedLink || 
+                               (StorageTypeService && StorageTypeService.isUsingLocalStorage && 
+                                StorageTypeService.isUsingLocalStorage() && 
+                                StorageTypeService.getSharedLinkNamespace && 
+                                StorageTypeService.getSharedLinkNamespace());
+        
+        // Preserve master key from any available source if we're in a shared link
+        const preservedMasterKey = isInSharedLink ? 
+            (state.current.masterKey || window._sharedLinkMasterKey || sharedLinkMasterKeyCache) : null;
+        const preservedIsSharedLink = isInSharedLink;
         
         // Reset current namespace
         state.current.namespaceId = null;

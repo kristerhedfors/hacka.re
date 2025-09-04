@@ -191,14 +191,19 @@ def main():
         print(f"TAB2 namespace initialized: {state2['hasMasterKey']}")
         print(f"TAB1 API key preserved: {bool(api_key_value1)}")
         
-        print("\nPress Ctrl+C to close browser...")
-        try:
-            while True:
-                time.sleep(1)
-        except KeyboardInterrupt:
-            print("\nClosing...")
+        print("\nTest complete! Browser will stay open for 10 seconds...")
+        print("(Close the browser manually or wait)")
         
-        browser.close()
+        # Only wait 10 seconds then exit
+        for i in range(10):
+            if not browser.is_connected():
+                print("Browser was closed manually")
+                break
+            time.sleep(1)
+        
+        if browser.is_connected():
+            browser.close()
+            print("Browser closed automatically after 10 seconds")
 
 if __name__ == "__main__":
     main()
