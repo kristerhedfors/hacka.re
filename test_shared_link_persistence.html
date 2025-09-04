@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Shared Link Persistence</title>
+    <style>
+        body {
+            font-family: monospace;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #444;
+            border-radius: 5px;
+            background: #2a2a2a;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            margin: 5px 0;
+        }
+        .success { background: #2d5016; color: #8bc34a; }
+        .error { background: #5d1f1f; color: #f44336; }
+        .info { background: #1f3d5d; color: #2196F3; }
+        .warning { background: #5d4f1f; color: #ff9800; }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #45a049; }
+        pre {
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            background: #1a1a1a;
+            border-left: 3px solid #444;
+        }
+        .log-entry.crypto { border-left-color: #2196F3; }
+        .log-entry.storage { border-left-color: #4CAF50; }
+        .log-entry.namespace { border-left-color: #ff9800; }
+    </style>
+</head>
+<body>
+    <h1>Test Shared Link Persistence</h1>
+    
+    <div class="test-section">
+        <h2>Test Steps</h2>
+        <ol>
+            <li>Open hacka.re directly (not via shared link)</li>
+            <li>Add some test messages to the conversation</li>
+            <li>Create a shared link with password</li>
+            <li>Open the shared link in a new tab/window</li>
+            <li>Enter the password and verify conversation loads</li>
+            <li>Close the tab and re-open the same shared link</li>
+            <li>Enter the password again - conversation should persist</li>
+        </ol>
+    </div>
+    
+    <div class="test-section">
+        <h2>Manual Testing</h2>
+        <button onclick="testDirectVisit()">1. Test Direct Visit</button>
+        <button onclick="testCreateShareLink()">2. Create Share Link</button>
+        <button onclick="testOpenShareLink()">3. Open Share Link</button>
+        <div id="share-link-output" style="margin-top: 10px;"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Debug Logs</h2>
+        <div id="logs"></div>
+    </div>
+    
+    <script>
+        const logDiv = document.getElementById('logs');
+        const outputDiv = document.getElementById('share-link-output');
+        
+        function log(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function testDirectVisit() {
+            log('Opening hacka.re in new tab for direct visit...', 'info');
+            window.open('http://localhost:8000', '_blank');
+            log('Please add some test messages in the new tab, then come back and create a share link', 'warning');
+        }
+        
+        function testCreateShareLink() {
+            log('To create a share link:', 'info');
+            log('1. Click the Share button in hacka.re', 'info');
+            log('2. Configure share options', 'info');
+            log('3. Set a password (e.g., "test123")', 'info');
+            log('4. Click "Create Share Link"', 'info');
+            log('5. Copy the link and paste it below', 'info');
+            
+            outputDiv.innerHTML = `
+                <input type="text" id="share-link-input" placeholder="Paste share link here" style="width: 100%; padding: 10px; margin: 10px 0;">
+                <button onclick="testShareLink()">Test This Share Link</button>
+            `;
+        }
+        
+        function testShareLink() {
+            const input = document.getElementById('share-link-input');
+            const shareLink = input.value.trim();
+            
+            if (!shareLink) {
+                log('Please paste a share link first', 'error');
+                return;
+            }
+            
+            log('Opening share link in new tab...', 'info');
+            window.open(shareLink, '_blank');
+            
+            log('Test flow:', 'warning');
+            log('1. Enter the password when prompted', 'info');
+            log('2. Verify the conversation loads correctly', 'info');
+            log('3. Close that tab completely', 'info');
+            log('4. Click the button below to re-open the same link', 'info');
+            
+            outputDiv.innerHTML += `
+                <button onclick="window.open('${shareLink}', '_blank')" style="display: block; margin-top: 10px;">
+                    Re-open Same Share Link
+                </button>
+                <div style="margin-top: 10px; padding: 10px; background: #1a1a1a; border-radius: 5px;">
+                    <strong>Expected behavior after re-opening:</strong><br>
+                    - Password prompt appears<br>
+                    - After entering password, previous conversation should load<br>
+                    - Check browser console for detailed crypto logs
+                </div>
+            `;
+        }
+        
+        function testOpenShareLink() {
+            const testLink = prompt('Paste the share link to test:');
+            if (testLink) {
+                log(`Opening share link: ${testLink.substring(0, 50)}...`, 'info');
+                window.open(testLink, '_blank');
+            }
+        }
+        
+        // Initial message
+        log('Test page loaded. Follow the steps above to test shared link persistence.', 'success');
+        log('Make sure the HTTP server is running on port 8000', 'warning');
+    </script>
+</body>
+</html>

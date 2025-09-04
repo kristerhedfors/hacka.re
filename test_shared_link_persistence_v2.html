@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Shared Link Persistence V2</title>
+    <style>
+        body {
+            font-family: monospace;
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #444;
+            border-radius: 5px;
+            background: #2a2a2a;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            margin: 5px 0;
+        }
+        .success { background: #2d5016; color: #8bc34a; }
+        .error { background: #5d1f1f; color: #f44336; }
+        .info { background: #1f3d5d; color: #2196F3; }
+        .warning { background: #5d4f1f; color: #ff9800; }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #45a049; }
+        pre {
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            background: #1a1a1a;
+            border-left: 3px solid #444;
+        }
+        .log-entry.crypto { border-left-color: #2196F3; }
+        .log-entry.storage { border-left-color: #4CAF50; }
+        .log-entry.namespace { border-left-color: #ff9800; }
+        .split-view {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .tab-section {
+            border: 2px solid #555;
+            border-radius: 5px;
+            padding: 15px;
+        }
+        .tab-section.direct { border-color: #4CAF50; }
+        .tab-section.shared { border-color: #2196F3; }
+        h3 { margin-top: 0; }
+        .debug-output {
+            background: #0a0a0a;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        .step-indicator {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background: #444;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            margin-right: 10px;
+        }
+        .step-indicator.active { background: #4CAF50; }
+        .step-indicator.error { background: #f44336; }
+    </style>
+</head>
+<body>
+    <h1>Test Shared Link Persistence V2 - Enhanced Debugging</h1>
+    
+    <div class="test-section">
+        <h2>Critical Fix Summary</h2>
+        <ul>
+            <li><strong>Problem:</strong> Shared links don't preserve conversation on re-open</li>
+            <li><strong>Root Cause:</strong> Master key not properly cached when re-opening shared link</li>
+            <li><strong>Fix Applied:</strong> 
+                <ol>
+                    <li>Enhanced master key caching in namespace-service.js</li>
+                    <li>Fixed isReturningToExistingNamespace detection</li>
+                    <li>Added proper conversation reload trigger</li>
+                </ol>
+            </li>
+        </ul>
+    </div>
+    
+    <div class="test-section split-view">
+        <div class="tab-section direct">
+            <h3>🟢 Tab 1: Direct Visit</h3>
+            <span class="step-indicator" id="step1">1</span>
+            <button onclick="openDirectVisit()">Open Direct Visit</button>
+            <p>Instructions:</p>
+            <ol>
+                <li>Click to open hacka.re directly</li>
+                <li>Add API key</li>
+                <li>Have a conversation (2-3 messages)</li>
+                <li>Create a share link with password</li>
+            </ol>
+            <div class="debug-output" id="direct-debug"></div>
+        </div>
+        
+        <div class="tab-section shared">
+            <h3>🔵 Tab 2: Shared Link</h3>
+            <span class="step-indicator" id="step2">2</span>
+            <input type="text" id="share-link" placeholder="Paste share link here" style="width: 100%; padding: 5px;">
+            <button onclick="testShareLink()">Test Share Link</button>
+            <p>Expected behavior:</p>
+            <ol>
+                <li>Password prompt appears</li>
+                <li>After password, conversation loads</li>
+                <li>Close tab and re-open same link</li>
+                <li>Conversation should persist!</li>
+            </ol>
+            <div class="debug-output" id="shared-debug"></div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Console Log Analysis</h2>
+        <div>
+            <button onclick="analyzeConsole()">Analyze Console Logs</button>
+            <button onclick="clearLogs()">Clear Logs</button>
+        </div>
+        <div id="console-analysis" style="margin-top: 10px;"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Debug Logs</h2>
+        <div id="logs"></div>
+    </div>
+    
+    <script>
+        const logDiv = document.getElementById('logs');
+        const directDebug = document.getElementById('direct-debug');
+        const sharedDebug = document.getElementById('shared-debug');
+        let testState = {
+            directTabOpened: false,
+            shareLinkCreated: false,
+            shareLinkTested: false,
+            shareLinkReopened: false
+        };
+        
+        function log(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            entry.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function updateStep(stepId, status) {
+            const step = document.getElementById(stepId);
+            if (step) {
+                step.classList.remove('active', 'error');
+                if (status === 'active') step.classList.add('active');
+                if (status === 'error') step.classList.add('error');
+            }
+        }
+        
+        function openDirectVisit() {
+            log('Opening hacka.re for direct visit...', 'info');
+            updateStep('step1', 'active');
+            testState.directTabOpened = true;
+            
+            const directTab = window.open('http://localhost:8000', '_blank');
+            
+            directDebug.innerHTML = `
+                <strong>Direct Visit Tab:</strong><br>
+                ✅ Tab opened<br>
+                ⏳ Add API key<br>
+                ⏳ Create conversation<br>
+                ⏳ Generate share link
+            `;
+            
+            log('Direct visit tab opened. Please:', 'warning');
+            log('1. Add your API key', 'info');
+            log('2. Have a conversation (2-3 messages)', 'info');
+            log('3. Click Share button', 'info');
+            log('4. Enable "Include Conversation"', 'info');
+            log('5. Set password (e.g., "test123")', 'info');
+            log('6. Create and copy the share link', 'info');
+        }
+        
+        function testShareLink() {
+            const shareLink = document.getElementById('share-link').value.trim();
+            
+            if (!shareLink) {
+                log('Please paste a share link first', 'error');
+                return;
+            }
+            
+            updateStep('step2', 'active');
+            testState.shareLinkCreated = true;
+            
+            log('Opening share link in new tab...', 'info');
+            const sharedTab = window.open(shareLink, '_blank');
+            
+            sharedDebug.innerHTML = `
+                <strong>Share Link Test:</strong><br>
+                ✅ Link opened<br>
+                ⏳ Enter password<br>
+                ⏳ Verify conversation loads<br>
+                <br>
+                <strong>Key Console Messages to Look For:</strong><br>
+                - [CRYPTO] Using master key from share link<br>
+                - [SharedLinkDataProcessor] isReturningToExisting: true<br>
+                - [ChatManager] Reloading conversation history<br>
+                <br>
+                <button onclick="reopenShareLink('${shareLink}')" style="margin-top: 10px;">
+                    Re-open Same Share Link
+                </button>
+            `;
+            
+            log('Share link opened. Watch for:', 'warning');
+            log('1. Password prompt appears', 'info');
+            log('2. After password, check if conversation loads', 'info');
+            log('3. Check browser console for [CRYPTO] messages', 'info');
+        }
+        
+        function reopenShareLink(shareLink) {
+            updateStep('step2', 'active');
+            testState.shareLinkReopened = true;
+            
+            log('Re-opening same share link...', 'namespace');
+            window.open(shareLink, '_blank');
+            
+            log('CRITICAL TEST: Does conversation load after entering password?', 'crypto');
+            log('Expected: Conversation from localStorage should be restored', 'storage');
+            log('Check console for: isReturningToExisting: true', 'namespace');
+        }
+        
+        function analyzeConsole() {
+            const analysis = document.getElementById('console-analysis');
+            
+            analysis.innerHTML = `
+                <h3>Console Messages to Verify:</h3>
+                <pre>
+✅ Required for Success:
+1. [SharedLinkDataProcessor] Namespace state: {namespaceId: "...", hasMasterKey: true}
+2. [SharedLinkDataProcessor] isReturningToExisting: true
+3. [SharedLinkDataProcessor] Found existing localStorage conversation
+4. [ChatManager] Reloading conversation history
+5. Messages displayed in UI
+
+❌ Failure Indicators:
+1. [SharedLinkDataProcessor] isReturningToExisting: false
+2. No master key available for shared link
+3. Decryption failed messages
+4. Empty conversation after password entry
+
+📝 Debug Tips:
+- Check localStorage in DevTools for namespace-prefixed keys
+- Verify master key is same across opens (64 char hex)
+- Check if conversation data exists with namespace prefix
+</pre>
+            `;
+        }
+        
+        function clearLogs() {
+            logDiv.innerHTML = '';
+            log('Logs cleared', 'success');
+        }
+        
+        // Monitor for share link in clipboard
+        if (navigator.clipboard && navigator.clipboard.readText) {
+            setInterval(async () => {
+                try {
+                    const text = await navigator.clipboard.readText();
+                    if (text && text.includes('#gpt=') && !document.getElementById('share-link').value) {
+                        document.getElementById('share-link').value = text;
+                        log('Share link detected in clipboard!', 'success');
+                    }
+                } catch (e) {
+                    // Clipboard access denied, ignore
+                }
+            }, 2000);
+        }
+        
+        // Initial message
+        log('Test page loaded. Follow the numbered steps above.', 'success');
+        log('Make sure HTTP server is running on port 8000', 'warning');
+        
+        // Add keyboard shortcut for quick testing
+        document.addEventListener('keydown', (e) => {
+            if (e.key === '1' && e.ctrlKey) {
+                openDirectVisit();
+            } else if (e.key === '2' && e.ctrlKey) {
+                testShareLink();
+            }
+        });
+        
+        log('Keyboard shortcuts: Ctrl+1 (Direct Visit), Ctrl+2 (Test Share Link)', 'info');
+    </script>
+</body>
+</html>
