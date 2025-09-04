@@ -256,7 +256,7 @@ function createSharedLinkDataProcessor() {
         // First ensure the namespace is properly initialized with the master key
         if (window._sharedLinkMasterKey && window.NamespaceService) {
             console.log('[SharedLinkDataProcessor] Ensuring namespace is initialized before checking existing data');
-            const namespace = window.NamespaceService.getOrCreateNamespace();
+            const namespace = window.NamespaceService.getNamespace();
             console.log('[SharedLinkDataProcessor] Namespace state:', {
                 namespaceId: namespace?.namespaceId,
                 hasMasterKey: !!namespace?.masterKey,
