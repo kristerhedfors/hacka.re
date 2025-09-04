@@ -306,59 +306,64 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (messageInput) {
         // Debounce function to limit how often the token counter updates
         let debounceTimeout;
-        const debounceDelay = 300; // 300ms delay
+        const debounceDelay = 500; // Increased to 500ms for better performance
         
         // Function to update context usage
         const updateContextUsage = function() {
-            // Get the current model
-            const currentModel = aiHackare.settingsManager.getCurrentModel();
+            // Use requestIdleCallback for non-critical updates if available
+            const doUpdate = () => {
+                // Get the current model
+                const currentModel = aiHackare.settingsManager.getCurrentModel();
+                
+                // Create a temporary messages array with the current input
+                const messages = aiHackare.chatManager.getMessages() || [];
+                
+                // Always create a fresh copy of the messages array
+                const tempMessages = [...messages];
+                
+                // If the input is not empty, add it as a temporary user message
+                if (this.value.trim()) {
+                    tempMessages.push({
+                        role: 'user',
+                        content: this.value
+                    });
+                }
+                
+                // Estimate context usage with the temporary messages
+                const systemPrompt = aiHackare.settingsManager.getSystemPrompt() || '';
+                const usageInfo = UIUtils.estimateContextUsage(
+                    tempMessages, 
+                    ModelInfoService.modelInfo, 
+                    currentModel,
+                    systemPrompt
+                );
+                
+                // Update the context usage display
+                aiHackare.uiManager.updateContextUsage(
+                    usageInfo.percentage, 
+                    usageInfo.estimatedTokens, 
+                    usageInfo.contextSize
+                );
+            };
             
-            // Create a temporary messages array with the current input
-            const messages = aiHackare.chatManager.getMessages() || [];
-            
-            // Always create a fresh copy of the messages array
-            const tempMessages = [...messages];
-            
-            // If the input is not empty, add it as a temporary user message
-            if (this.value.trim()) {
-                tempMessages.push({
-                    role: 'user',
-                    content: this.value
-                });
+            // Use requestIdleCallback if available for better performance
+            if (window.requestIdleCallback) {
+                requestIdleCallback(doUpdate.bind(this), { timeout: 1000 });
+            } else {
+                doUpdate.call(this);
             }
-            
-            // Estimate context usage with the temporary messages
-            const systemPrompt = aiHackare.settingsManager.getSystemPrompt() || '';
-            const usageInfo = UIUtils.estimateContextUsage(
-                tempMessages, 
-                ModelInfoService.modelInfo, 
-                currentModel,
-                systemPrompt
-            );
-            
-            // Update the context usage display
-            aiHackare.uiManager.updateContextUsage(
-                usageInfo.percentage, 
-                usageInfo.estimatedTokens, 
-                usageInfo.contextSize
-            );
         };
         
-        // Add input event listener with debouncing
+        // Add input event listener with improved debouncing
         messageInput.addEventListener('input', function() {
             // Clear any existing timeout
             clearTimeout(debounceTimeout);
             
-            // Set a new timeout
+            // Set a new timeout - always debounce, even for large text
+            // This prevents performance issues during rapid typing or pasting
             debounceTimeout = setTimeout(() => {
                 updateContextUsage.call(this);
             }, debounceDelay);
-            
-            // For large pastes (over 100 chars), update immediately
-            if (this.value.length > 100) {
-                clearTimeout(debounceTimeout);
-                updateContextUsage.call(this);
-            }
         });
     }
 });

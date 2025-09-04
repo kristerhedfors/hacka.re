@@ -101,10 +101,9 @@ window.VoiceControlManager = (function() {
             
             microphoneButton.addEventListener('click', toggleRecording);
             
-            // Add input listener to hide/show microphone based on content
+            // Add optimized event listeners - 'input' covers typing, paste, and programmatic changes
+            // Only need focus/blur for initial state checks
             messageInput.addEventListener('input', handleInputChange);
-            messageInput.addEventListener('keyup', handleInputChange);
-            messageInput.addEventListener('change', handleInputChange);
             messageInput.addEventListener('focus', handleInputChange);
             messageInput.addEventListener('blur', handleInputChange);
             
