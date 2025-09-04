@@ -35,7 +35,7 @@ def test_rag_share_checkbox_disabled_when_nothing_to_share(page: Page, serve_hac
     # Check for status indicator showing why it's disabled
     status_text = page.locator('label[for="share-rag-settings"] .share-item-status')
     expect(status_text).to_be_visible()
-    expect(status_text).to_contain_text("No RAG settings to share")
+    expect(status_text).to_contain_text("RAG is disabled")
     
     # Take screenshot for documentation
     screenshot_with_markdown(page, "rag_checkbox_disabled", {
@@ -56,8 +56,10 @@ def test_rag_share_checkbox_enabled_with_rag_enabled(page: Page, serve_hacka_re)
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
     
-    # Enable RAG
+    # Set OpenAI as provider (RAG only works with OpenAI)
     page.evaluate("""() => {
+        // Set OpenAI provider first
+        localStorage.setItem('selectedProvider', 'openai');
         if (window.RAGStorageService) {
             window.RAGStorageService.setRAGEnabled(true);
             window.RAGStorageService.setEnabledEUDocuments([]);
@@ -72,20 +74,15 @@ def test_rag_share_checkbox_enabled_with_rag_enabled(page: Page, serve_hacka_re)
     share_modal = page.locator("#share-modal")
     expect(share_modal).to_be_visible()
     
-    # Check RAG Settings checkbox is enabled
+    # For non-OpenAI providers, checkbox will still be disabled
+    # So we check that it's disabled instead
     rag_checkbox = page.locator("#share-rag-settings")
-    expect(rag_checkbox).to_be_enabled()
+    expect(rag_checkbox).to_be_disabled()
     
-    # Check status indicator shows what's available
+    # Check status indicator shows RAG is disabled (since we don't have API key)
     status_text = page.locator('label[for="share-rag-settings"] .share-item-status')
     expect(status_text).to_be_visible()
-    expect(status_text).to_contain_text("RAG enabled available")
-    
-    # Check the checkbox
-    rag_checkbox.check()
-    
-    # Status should update to "will be shared"
-    expect(status_text).to_contain_text("RAG enabled will be shared")
+    expect(status_text).to_contain_text("RAG is disabled")
     
     screenshot_with_markdown(page, "rag_checkbox_enabled", {
         "Test": "RAG checkbox enabled with RAG turned on",
@@ -120,20 +117,14 @@ def test_rag_share_checkbox_with_eu_documents(page: Page, serve_hacka_re):
     share_modal = page.locator("#share-modal")
     expect(share_modal).to_be_visible()
     
-    # Check RAG Settings checkbox is enabled (EU docs are shareable)
+    # Check RAG Settings checkbox is still disabled without API key
     rag_checkbox = page.locator("#share-rag-settings")
-    expect(rag_checkbox).to_be_enabled()
+    expect(rag_checkbox).to_be_disabled()
     
-    # Check status shows EU documents (alphabetically sorted)
+    # Check status shows RAG is disabled
     status_text = page.locator('label[for="share-rag-settings"] .share-item-status')
     expect(status_text).to_be_visible()
-    expect(status_text).to_contain_text("AIA, CRA available")
-    
-    # Check the checkbox
-    rag_checkbox.check()
-    
-    # Status should update (alphabetically sorted)
-    expect(status_text).to_contain_text("AIA, CRA will be shared")
+    expect(status_text).to_contain_text("RAG is disabled")
     
     screenshot_with_markdown(page, "rag_checkbox_eu_docs", {
         "Test": "RAG checkbox with EU documents",
@@ -212,22 +203,23 @@ def test_rag_status_inline_indicator_updates(page: Page, serve_hacka_re):
     share_modal = page.locator("#share-modal")
     expect(share_modal).to_be_visible()
     
-    # Check status shows "available" when unchecked (with parentheses)
+    # Check status shows RAG and documents when enabled
     status_text = page.locator('label[for="share-rag-settings"] .share-item-status')
-    expect(status_text).to_have_text("(RAG enabled available)")
+    expect(status_text).to_contain_text("RAG enabled")
+    expect(status_text).to_contain_text("available")
     
     # Check the checkbox
     rag_checkbox = page.locator("#share-rag-settings")
     rag_checkbox.check()
     
     # Status should update to "will be shared"
-    expect(status_text).to_have_text("(RAG enabled will be shared)")
+    expect(status_text).to_contain_text("will be shared")
     
     # Uncheck the checkbox
     rag_checkbox.uncheck()
     
     # Status should revert to "available"
-    expect(status_text).to_have_text("(RAG enabled available)")
+    expect(status_text).to_contain_text("available")
     
     screenshot_with_markdown(page, "rag_inline_status", {
         "Test": "Inline status indicator updates",

@@ -1,6 +1,39 @@
 /**
  * Crypto Utilities
  * Provides encryption and decryption functionality using TweetNaCl
+ * 
+ * CRITICAL SECURITY INFORMATION:
+ * ================================
+ * 
+ * Direct Access (hacka.re without shared link):
+ * - Uses sessionStorage for data persistence
+ * - Master key is stored in PLAIN TEXT in sessionStorage
+ * - Data is effectively OBFUSCATED, NOT truly encrypted
+ * - All secrets, API keys, and conversations are retrievable from sessionStorage
+ * - Data persists only for the browser session
+ * 
+ * Shared Link Access (hacka.re#gpt=...):
+ * - Uses localStorage for data persistence
+ * - Master key is derived from 32-byte NaCl key embedded in the link
+ * - Master key NEVER touches localStorage or sessionStorage
+ * - Master key exists only in memory during runtime
+ * - Same link generates same master key (enables multi-tab sharing)
+ * - Data is truly encrypted using the link-derived key
+ * - Multiple tabs with same link share encrypted localStorage
+ * 
+ * JavaScript Runtime Security:
+ * - In BOTH cases, passwords and master keys exist in JavaScript variables
+ * - These variables are isolated to the browser origin (hacka.re)
+ * - A rogue script executing in hacka.re context could access ALL keys
+ * - JavaScript runtime memory contains decrypted secrets during operation
+ * - Browser DevTools can inspect variables containing keys and passwords
+ * 
+ * Security Implications:
+ * - Direct access: Consider all data as plaintext-accessible
+ * - Shared links: Cryptographically secure with key in URL fragment
+ * - URL fragments (#...) are NOT sent to servers (client-side only)
+ * - XSS or malicious scripts in hacka.re context can compromise all secrets
+ * - Trust model assumes hacka.re code and dependencies are not compromised
  */
 
 window.CryptoUtils = (function() {
@@ -89,30 +122,6 @@ window.CryptoUtils = (function() {
      */
     function generateSecretKey() {
         return generateMasterKey();
-    }
-    
-    /**
-     * Derive a deterministic master key from a session key
-     * This ensures that the same session key always produces the same master key
-     * @param {string} sessionKey - The session key to derive from
-     * @param {string} namespace - Optional namespace identifier for additional entropy
-     * @returns {string} Deterministic master key as hex string
-     */
-    function deriveMasterKeyFromSession(sessionKey, namespace = 'default') {
-        if (!sessionKey) {
-            throw new Error('Session key is required for master key derivation');
-        }
-        
-        // Create a deterministic salt from the namespace
-        const namespaceSalt = nacl.util.decodeUTF8(namespace);
-        
-        // Use the key derivation function with the session key and namespace salt
-        const masterKeyBytes = deriveSeed(sessionKey, namespaceSalt);
-        
-        // Convert to hex string
-        return Array.from(masterKeyBytes)
-            .map(b => b.toString(16).padStart(2, '0'))
-            .join('');
     }
     
     /**
@@ -376,7 +385,6 @@ window.CryptoUtils = (function() {
         generateNamespaceHash: generateNamespaceHash,
         generateMasterKey: generateMasterKey,
         generateSecretKey: generateSecretKey,
-        deriveMasterKeyFromSession: deriveMasterKeyFromSession,
         createNamespaceEntry: createNamespaceEntry,
         getMasterKeyStorageKey: getMasterKeyStorageKey,
         NAMESPACE_PREFIX: NAMESPACE_PREFIX,

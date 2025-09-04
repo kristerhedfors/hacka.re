@@ -49,14 +49,15 @@ function dropdown_test(message) {
     };
 }""")
     
-    # Trigger auto-population
+    # Trigger auto-population and validation
     page.evaluate("document.getElementById('function-code').dispatchEvent(new Event('input'))")
     page.wait_for_timeout(500)
     
-    # Save the function
-    save_btn = page.get_by_role("button", name="Save Functions")
-    save_btn.click()
-    page.wait_for_timeout(1000)
+    # Wait for validation to complete and function to be added
+    validation_result = page.locator("#validation-result")
+    page.wait_for_selector("#validation-result:not(:empty)", timeout=5000)
+    expect(validation_result).to_contain_text("added successfully")
+    page.wait_for_timeout(500)
     
     screenshot_with_markdown(page, "function_saved", {
         "Status": "Function saved for dropdown test",
