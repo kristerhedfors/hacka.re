@@ -11,7 +11,7 @@ def test_share_welcome_message_ui(page: Page, serve_hacka_re):
     dismiss_welcome_modal(page)
     
     # Click the Share button to open modal
-    share_button = page.locator("#share-button")
+    share_button = page.locator("#share-btn")
     share_button.click()
     
     # Wait for modal to be visible

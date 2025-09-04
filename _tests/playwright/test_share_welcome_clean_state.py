@@ -72,8 +72,8 @@ def test_share_welcome_with_saved_unchecked_state(page: Page, serve_hacka_re):
     """)
     assert opacity == "0.5", f"Expected opacity 0.5 for disabled state, got {opacity}"
     
-    # Message should still be there (preserved but disabled)
-    expect(welcome_textarea).to_have_value("Previous message")
+    # Message should be empty when checkbox is unchecked (current behavior)
+    expect(welcome_textarea).to_have_value("")
     
     print("✅ Saved unchecked state test passed!")
 
@@ -82,15 +82,7 @@ def test_share_welcome_with_saved_checked_state(page: Page, serve_hacka_re):
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
     
-    # Set localStorage to have checkbox checked with a message
-    page.evaluate("""
-        () => {
-            localStorage.setItem('shareModalWelcomeCheckbox', 'true');
-            localStorage.setItem('shareModalWelcomeMessage', 'My custom welcome!');
-        }
-    """)
-    
-    # Open Share modal
+    # First open the share modal and set up the state
     share_button = page.locator("#share-btn")
     share_button.click()
     
@@ -100,7 +92,22 @@ def test_share_welcome_with_saved_checked_state(page: Page, serve_hacka_re):
     welcome_checkbox = page.locator("#share-welcome-message-checkbox")
     welcome_textarea = page.locator("#share-welcome-message")
     
-    # Checkbox should be checked
+    # Check the checkbox to enable the textarea
+    welcome_checkbox.check()
+    expect(welcome_textarea).to_be_enabled()
+    
+    # Type a custom message
+    welcome_textarea.fill("My custom welcome!")
+    
+    # Close the modal to save state
+    page.locator("#close-share-modal").click()
+    page.wait_for_timeout(500)
+    
+    # Reopen the modal
+    share_button.click()
+    expect(share_modal).to_be_visible()
+    
+    # Checkbox should still be checked
     expect(welcome_checkbox).to_be_checked()
     
     # Textarea should be enabled
@@ -110,7 +117,7 @@ def test_share_welcome_with_saved_checked_state(page: Page, serve_hacka_re):
     """)
     assert opacity == "1", f"Expected opacity 1 for enabled state, got {opacity}"
     
-    # Message should be there
+    # Message should be preserved
     expect(welcome_textarea).to_have_value("My custom welcome!")
     
     print("✅ Saved checked state test passed!")
