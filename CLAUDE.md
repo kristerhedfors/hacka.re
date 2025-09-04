@@ -619,6 +619,148 @@ The multi-level output capture generates markdown-compatible reports that can be
 - **Wait for specific conditions** rather than arbitrary timeouts when possible
 - **Organize tests by complexity** - core, feature, and API integration categories
 
+### UI Element Identifiers for Testing
+
+**CRITICAL: Use these exact identifiers in tests - these are confirmed working selectors:**
+
+#### Modal Identifiers
+```python
+# Main modal containers
+"#welcome-modal"           # Welcome/onboarding modal
+"#settings-modal"          # Settings configuration modal  
+"#function-modal"          # Function calling modal
+"#prompts-modal"           # Prompts management modal
+"#share-modal"             # Share link modal
+"#rag-modal"               # RAG system modal
+"#function-execution-modal" # Function execution approval modal
+
+# Modal close buttons
+"#close-welcome-modal"     # Close welcome modal
+"#close-settings"          # Close settings modal (NOT #close-settings-modal)
+"#close-function-modal"    # Close function modal
+"#close-prompts-modal"     # Close prompts modal
+"#close-share-modal"       # Close share modal
+"#close-rag-modal"         # Close RAG modal
+```
+
+#### Settings Modal Elements
+```python
+"#api-key-update"          # API key input field (NOT #api-key-input)
+"#base-url-select"         # Provider selection dropdown
+"#model-select"            # Model selection dropdown
+"#yolo-mode-checkbox"      # YOLO mode checkbox (NOT #yolo-mode)
+"#namespace-input"         # Namespace input field
+"#clear-namespace-select"  # Namespace clearing dropdown
+```
+
+#### Chat Interface Elements
+```python
+"#message-input"           # Chat message input (NOT #chat-input)
+"#send-btn"                # Send message button (NOT #send-message-btn)
+"#clear-chat-btn"          # Clear chat button
+"#copy-chat-btn"           # Copy chat button
+".message"                 # All chat message containers
+".message.assistant"       # Assistant messages (NOT .assistant-message)
+".message.user"            # User messages (NOT .user-message)
+".message.system"          # System messages (NOT .system-message)
+".chat-messages"           # Chat messages container
+
+# IMPORTANT: Assistant messages use .message.assistant, not .assistant-message!
+# When a function executes, you typically get 2 assistant messages:
+# 1. Initial response acknowledging the function call
+# 2. Final response with the function result
+```
+
+#### Function Execution Modal Elements
+```python
+# Tabs
+"#exec-request-tab"        # Request parameters tab
+"#exec-result-tab"         # Result viewing tab
+
+# Buttons
+"#exec-execute-btn"        # Execute function button
+"#exec-block-btn"          # Block function button
+"#exec-intercept-btn"      # Execute + Intercept button
+"#exec-restore-btn"        # Restore original parameters
+"#exec-return-btn"         # Return modified result
+"#exec-block-result-btn"   # Block result after execution
+
+# Content areas
+"#exec-function-name"      # Function name display
+"#exec-args-textarea"      # Parameters textarea
+"#exec-result-textarea"    # Result textarea
+"#exec-remember-choice"    # Remember choice checkbox
+```
+
+#### Function Modal Elements
+```python
+"#function-code"           # Function code editor
+"#function-name"           # Function name field (read-only, auto-populated)
+"#function-validate-btn"   # Validate function button
+"#function-list"           # Function list container
+".function-item"           # Individual function items
+".function-item-name"      # Function name in list
+".function-collection-container" # Function collection container
+".function-collection-delete" # Delete collection button (NOT individual delete)
+"#empty-function-state"    # Empty state message
+```
+
+#### Button Identifiers
+```python
+"#settings-btn"            # Open settings button
+"#prompts-btn"             # Open prompts button
+"#share-btn"               # Open share button
+"#function-btn"            # Open function calling button
+"#rag-btn"                 # Open RAG button
+```
+
+**Common Testing Mistakes to Avoid:**
+- ❌ Using `#close-settings-modal` → ✅ Use `#close-settings`
+- ❌ Using `#api-key-input` → ✅ Use `#api-key-update`
+- ❌ Using `#chat-input` → ✅ Use `#message-input`
+- ❌ Using `#send-message-btn` → ✅ Use `#send-btn`
+- ❌ Using `#yolo-mode` → ✅ Use `#yolo-mode-checkbox`
+- ❌ Using `.function-item-delete` → ✅ Use `.function-collection-delete`
+- ❌ Using `.assistant-message` → ✅ Use `.message.assistant`
+- ❌ Setting localStorage directly for encrypted data → ✅ Configure through UI
+- ❌ Looking for `.function-result-icon` → ✅ Check `.message.assistant` count increases
+
+**Testing Function Execution:**
+1. After sending a message that triggers a function call, the execution modal appears
+2. Click `#exec-execute-btn` to approve the function execution
+3. Wait for the modal to close: `page.wait_for_selector("#function-execution-modal", state="hidden")`
+4. **CRITICAL**: Wait for response generation to complete:
+   - The send button (`#send-btn`) gets `data-generating="true"` attribute during generation
+   - The button title changes to "Stop generation" during generation
+   - Wait for generation to complete:
+     ```python
+     page.wait_for_function(
+         """() => {
+             const btn = document.querySelector('#send-btn');
+             return btn && !btn.hasAttribute('data-generating');
+         }""",
+         timeout=30000
+     )
+     ```
+   - This ensures the full response has been generated before checking content
+5. Wait for and check assistant response:
+   ```python
+   # Wait for assistant message content to be visible
+   page.wait_for_selector(".message.assistant .message-content", state="visible", timeout=15000)
+   
+   # Get the assistant response messages
+   assistant_messages = page.locator(".message.assistant .message-content")
+   
+   # Find non-empty assistant response
+   for i in range(assistant_messages.count()):
+       msg_content = assistant_messages.nth(i).text_content()
+       if msg_content and msg_content.strip():
+           actual_response = msg_content.strip()
+           break
+   ```
+6. Assistant messages use `.message.assistant` with content in `.message-content` child element
+7. **Note**: Message content streams in progressively, always wait for `data-generating` to be removed before checking content
+
 ### Security Considerations
 - Never commit API keys or secrets
 - All external libraries hosted locally (no CDN dependencies)
