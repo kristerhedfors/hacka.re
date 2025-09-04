@@ -63,16 +63,10 @@ window.MCPShareLinkUI = (function() {
                     await enableShareLinkMCP();
                 }
             } else {
-                console.warn('[MCPShareLinkUI] CoreStorageService not available, using fallback');
-                // Fallback to localStorage for backward compatibility
-                const savedState = localStorage.getItem('mcp_share_link_enabled');
-                isEnabled = savedState === 'true';
+                console.warn('[MCPShareLinkUI] CoreStorageService not available, cannot load state');
+                // No fallback - encryption is required
+                isEnabled = false;
                 updateUI();
-                
-                if (isEnabled) {
-                    console.log('[MCPShareLinkUI] Share Link MCP was enabled (fallback), re-enabling...');
-                    await enableShareLinkMCP();
-                }
             }
         } catch (error) {
             console.error('[MCPShareLinkUI] Error loading state:', error);
@@ -88,9 +82,8 @@ window.MCPShareLinkUI = (function() {
                 await window.CoreStorageService.setValue('mcp_share_link_enabled', isEnabled.toString());
                 console.log('[MCPShareLinkUI] State saved to encrypted storage:', isEnabled);
             } else {
-                console.warn('[MCPShareLinkUI] CoreStorageService not available, using fallback');
-                // Fallback to localStorage for backward compatibility
-                localStorage.setItem('mcp_share_link_enabled', isEnabled.toString());
+                console.warn('[MCPShareLinkUI] CoreStorageService not available, cannot save state');
+                // No fallback - encryption is required
             }
         } catch (error) {
             console.error('[MCPShareLinkUI] Error saving state:', error);
