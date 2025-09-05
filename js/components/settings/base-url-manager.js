@@ -166,6 +166,10 @@ window.BaseUrlManager = (function() {
             // Map detection results to provider values
             var providerMapping = {
                 'openai': 'openai',
+                'anthropic': 'anthropic',
+                'google': 'google',
+                'mistral': 'mistral',
+                'cohere': 'cohere',
                 'groq': 'groq',
                 'berget': 'berget'
             };

@@ -190,12 +190,20 @@ window.DataService = (function() {
      */
     function getDefaultBaseUrlForProvider(provider) {
         switch (provider) {
+            case 'openai':
+                return 'https://api.openai.com/v1';
+            case 'anthropic':
+                return 'https://api.anthropic.com/v1';
+            case 'google':
+                return 'https://generativelanguage.googleapis.com/v1beta/openai/';
+            case 'mistral':
+                return 'https://api.mistral.ai/v1';
+            case 'cohere':
+                return 'https://api.cohere.ai/v1';
             case 'groq':
                 return 'https://api.groq.com/openai/v1';
             case 'berget':
                 return 'https://api.berget.ai/v1';
-            case 'openai':
-                return 'https://api.openai.com/v1';
             case 'ollama':
                 return 'http://localhost:11434/v1';
             case 'llamafile':
