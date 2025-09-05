@@ -12,6 +12,10 @@
      */
     const DEFAULT_MODELS = {
         openai: 'gpt-5-nano',  // Primary default model for OpenAI
+        anthropic: 'claude-3-5-haiku-latest',  // Default for Anthropic
+        google: 'gemini-2.0-flash-exp',  // Default for Google
+        mistral: 'ministral-3b-2410',  // Default for Mistral AI
+        cohere: 'command-r-plus-08-2024',  // Default for Cohere
         groq: 'moonshotai/kimi-k2-instruct',  // Default for Groq Cloud
         berget: 'mistralai/Magistral-Small-2506',  // Default for Berget
         ollama: 'llama3.2',  // Default for Ollama
@@ -24,6 +28,10 @@
      */
     const FALLBACK_MODELS = {
         openai: ['gpt-5-nano', 'gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'],
+        anthropic: ['claude-opus-4-1', 'claude-opus-4-1-20250805', 'claude-opus-4-0', 'claude-opus-4-20250514', 'claude-sonnet-4-0', 'claude-sonnet-4-20250514', 'claude-3-7-sonnet-latest', 'claude-3-7-sonnet-20250219', 'claude-3-5-haiku-latest', 'claude-3-5-haiku-20241022'],
+        google: ['gemini-2.0-flash-exp', 'gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-1.0-pro'],
+        mistral: ['ministral-3b-2410', 'ministral-8b-2410', 'mistral-large-2411', 'open-mistral-nemo-2407', 'open-codestral-mamba-2407'],
+        cohere: ['command-r-plus-08-2024', 'command-r-08-2024', 'command-r-plus', 'command-r', 'command'],
         groq: ['moonshotai/kimi-k2-instruct', 'llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'mixtral-8x7b-32768'],
         berget: ['mistralai/Magistral-Small-2506', 'llama-3.3-70b', 'gpt-5-nano', 'claude-3-opus-20240229'],
         ollama: ['llama3.2', 'llama3.1', 'llama3', 'mistral'],
@@ -36,6 +44,10 @@
      */
     const COMPATIBLE_MODELS = {
         openai: 'gpt-5-nano',
+        anthropic: 'claude-3-5-haiku-latest',
+        google: 'gemini-2.0-flash-exp',
+        mistral: 'ministral-3b-2410',
+        cohere: 'command-r-plus-08-2024',
         groq: 'llama-3.3-70b-versatile',
         ollama: 'llama3.2',
         berget: 'mistralai/Magistral-Small-2506'
@@ -47,6 +59,10 @@
      */
     const RAG_EXPANSION_MODELS = {
         openai: 'gpt-4.1-mini',  // More capable for generating diverse search terms
+        anthropic: 'claude-3-5-haiku-latest',  // Haiku for fast query expansion
+        google: 'gemini-1.5-flash',  // Flash for quick query generation
+        mistral: 'ministral-8b-2410',  // Ministral for query expansion
+        cohere: 'command-r',  // Command-R for retrieval tasks
         groq: 'openai/gpt-oss-20b',  // 20B model for query expansion on Groq
         berget: 'mistralai/Devstral-Small-2505',  // Devstral for Berget
         ollama: 'llama3.2',  // Default Ollama model

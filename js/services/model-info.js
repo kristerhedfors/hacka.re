@@ -151,7 +151,35 @@ window.ModelInfoService = (function() {
         'gpt-5-nano-transcribe': 25 * 1024 * 1024, // audio input
         'gpt-5-nano-tts': 4096, // text input
         'tts-1': 4096, // text input
-        'tts-1-hd': 4096 // text input
+        'tts-1-hd': 4096, // text input
+        
+        // Anthropic Claude models
+        'claude-opus-4-1': 200000,
+        'claude-opus-4-1-20250805': 200000,
+        'claude-opus-4-0': 200000,
+        'claude-opus-4-20250514': 200000,
+        'claude-sonnet-4-0': 200000,
+        'claude-sonnet-4-20250514': 200000,
+        'claude-3-7-sonnet-latest': 200000,
+        'claude-3-7-sonnet-20250219': 200000,
+        'claude-3-5-haiku-latest': 200000,
+        'claude-3-5-haiku-20241022': 200000,
+        
+        // Google Gemini models
+        'gemini-2.0-flash-exp': 1048576,
+        'gemini-1.5-pro': 2097152,
+        'gemini-1.5-flash': 1048576,
+        'gemini-1.0-pro': 32768,
+        
+        // Mistral models (already included above)
+        // ministral models already listed
+        
+        // Cohere models
+        'command-r-plus-08-2024': 128000,
+        'command-r-08-2024': 128000,
+        'command-r-plus': 128000,
+        'command-r': 128000,
+        'command': 4096
     };
 
     /**

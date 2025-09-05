@@ -14,6 +14,12 @@ window.ApiKeyDetector = (function() {
             providerName: '🇺🇸 OpenAI',
             defaultModel: window.DefaultModelsConfig ? window.DefaultModelsConfig.getDefaultModel('openai') : 'gpt-5-nano'
         },
+        anthropic: {
+            pattern: /^sk-ant-api\d{2}-[A-Za-z0-9\-_]{80,}$/,
+            providerValue: 'anthropic',
+            providerName: '🇺🇸 Anthropic',
+            defaultModel: 'claude-sonnet-4-0'  // Auto-select Claude Sonnet 4
+        },
         groqcloud: {
             pattern: /^gsk_[A-Za-z0-9]{32,}$/,
             providerValue: 'groq',

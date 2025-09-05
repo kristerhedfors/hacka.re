@@ -464,22 +464,26 @@ window.ModelManager = (function() {
             // Get the current provider to determine default models
             const currentProvider = elements.baseUrlSelect ? elements.baseUrlSelect.value : 'openai';
             
-            // Get fallback models from configuration or use defaults
-            const fallbackModels = window.DefaultModelsConfig ? 
-                {
-                    openai: window.DefaultModelsConfig.getFallbackModels('openai'),
-                    groq: window.DefaultModelsConfig.getFallbackModels('groq'),
-                    berget: window.DefaultModelsConfig.getFallbackModels('berget'),
-                    custom: window.DefaultModelsConfig.getFallbackModels('custom')
-                } : {
+            // Get fallback models from configuration
+            let models = [];
+            if (window.DefaultModelsConfig && window.DefaultModelsConfig.getFallbackModels) {
+                models = window.DefaultModelsConfig.getFallbackModels(currentProvider);
+            }
+            
+            // If no models from config, use hardcoded defaults as last resort
+            if (models.length === 0) {
+                const fallbackModels = {
                     openai: ['gpt-5-nano', 'gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'],
+                    anthropic: ['claude-opus-4-1', 'claude-opus-4-1-20250805', 'claude-opus-4-0', 'claude-opus-4-20250514', 'claude-sonnet-4-0', 'claude-sonnet-4-20250514', 'claude-3-7-sonnet-latest', 'claude-3-7-sonnet-20250219', 'claude-3-5-haiku-latest', 'claude-3-5-haiku-20241022'],
+                    google: ['gemini-2.0-flash-exp', 'gemini-1.5-pro', 'gemini-1.5-flash'],
+                    mistral: ['ministral-3b-2410', 'ministral-8b-2410', 'mistral-large-2411'],
+                    cohere: ['command-r-plus-08-2024', 'command-r-08-2024', 'command-r'],
                     groq: ['moonshotai/kimi-k2-instruct', 'llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'mixtral-8x7b-32768'],
                     berget: ['mistralai/Magistral-Small-2506', 'llama-3.3-70b', 'gpt-5-nano', 'claude-3-opus-20240229'],
                     custom: []
                 };
-            
-            // Get models for current provider
-            const models = fallbackModels[currentProvider] || [];
+                models = fallbackModels[currentProvider] || [];
+            }
             
             if (models.length > 0) {
                 // Add a note that these are fallback models
