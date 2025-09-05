@@ -45,10 +45,13 @@ window.FunctionToolsProcessor = (function() {
                 const { name, arguments: argsString } = toolCall.function;
                 Logger.debug(`Tool call ${index} function name: ${name}`);
                 Logger.debug(`Tool call ${index} arguments string: ${argsString}`);
+                console.log('[FunctionToolsProcessor] Raw tool call:', toolCall);
+                console.log('[FunctionToolsProcessor] Raw arguments string:', argsString);
                 
                 this._validateFunctionAvailability(name, addSystemMessage);
                 
                 let args = ArgumentParser.parse(argsString, name);
+                console.log('[FunctionToolsProcessor] Parsed args:', args);
                 
                 // Check if we need to show confirmation modal
                 const shouldConfirm = await this._shouldConfirmExecution(name, args, addSystemMessage);

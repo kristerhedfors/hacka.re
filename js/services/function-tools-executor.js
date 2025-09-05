@@ -178,6 +178,7 @@ window.FunctionToolsExecutor = (function() {
                 // Include any MCP-related globals that functions might need
                 MCPClientService: window.MCPClientService,
                 MCPManager: window.MCPManager,
+                MCPIntrospectionService: window.MCPIntrospectionService,
                 // Include function tools globals
                 FunctionToolsService: window.FunctionToolsService,
                 args: args
@@ -270,7 +271,8 @@ window.FunctionToolsExecutor = (function() {
                 try {
                     const functionCollections = window.FunctionToolsStorage.getFunctionCollections();
                     const collectionId = functionCollections[name];
-                    isMcpFunction = collectionId === 'mcp_tools_collection';
+                    // MCP functions have collection IDs starting with 'mcp_' or equal to 'mcp_tools_collection'
+                    isMcpFunction = collectionId && (collectionId.startsWith('mcp_') || collectionId === 'mcp_tools_collection');
                 } catch (error) {
                     Logger.debug(`Error checking MCP function collection for ${name}:`, error);
                 }
