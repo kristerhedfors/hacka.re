@@ -709,6 +709,24 @@ async function getCurrentTimeInBerlin() {
                             </div>
                         </div>
                         
+                        <!-- Introspection MCP built-in tool -->
+                        <div id="mcp-introspection-section" class="mcp-built-in-tool">
+                            <div class="mcp-tool-header">
+                                <h4><i class="fas fa-code"></i> Introspection</h4>
+                                <button id="mcp-introspection-enable" class="btn btn-sm btn-primary">Enable</button>
+                            </div>
+                            <div class="mcp-tool-description">
+                                <p>Built-in MCP tool for exploring hacka.re source code and architecture.</p>
+                                <ul class="mcp-tool-features">
+                                    <li>Read source files via HTTP requests</li>
+                                    <li>Find class and function definitions</li>
+                                    <li>Search for code patterns</li>
+                                    <li>Understand component relationships</li>
+                                </ul>
+                                <div id="mcp-introspection-status" class="mcp-tool-status" style="display: none;"></div>
+                            </div>
+                        </div>
+                        
                         <!-- Proxy connection UI will be inserted here by JavaScript -->
                         <div id="mcp-proxy-section-placeholder"></div>
                         
@@ -1313,6 +1331,7 @@ async function getCurrentTimeInBerlin() {
     <script src="js/default-prompts/github-integration-guide.js"></script>
     <script src="js/default-prompts/shodan-integration-guide.js"></script>
     <script src="js/default-prompts/share-link-mcp-guide.js"></script>
+    <script src="js/default-prompts/introspection-mcp-guide.js"></script>
     <!-- Agent Examples Section -->
     <script src="js/default-prompts/agent-examples-section.js"></script>
     <script src="js/default-prompts/agent-planning-specialist.js"></script>
@@ -1385,6 +1404,8 @@ async function getCurrentTimeInBerlin() {
     <script src="js/components/mcp/mcp-modal-renderer.js"></script>
     <script src="js/services/mcp-share-link-service.js"></script>
     <script src="js/components/mcp/mcp-share-link-ui.js"></script>
+    <script src="js/services/mcp-introspection-service.js"></script>
+    <script src="js/components/mcp/mcp-introspection-ui.js"></script>
     <script src="js/components/mcp/mcp-ui-manager.js"></script>
     <script src="js/components/mcp/mcp-proxy-manager.js"></script>
     <script src="js/components/mcp/mcp-command-history.js"></script>
