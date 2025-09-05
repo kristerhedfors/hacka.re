@@ -178,6 +178,7 @@ window.FunctionToolsExecutor = (function() {
                 // Include any MCP-related globals that functions might need
                 MCPClientService: window.MCPClientService,
                 MCPManager: window.MCPManager,
+                MCPIntrospectionService: window.MCPIntrospectionService,
                 // Include function tools globals
                 FunctionToolsService: window.FunctionToolsService,
                 args: args
