@@ -229,7 +229,12 @@ window.MCPIntrospectionService = (function() {
             // Ensure the path doesn't start with / for relative fetch
             const cleanPath = path.startsWith('/') ? path.substring(1) : path;
             
-            const response = await fetch(cleanPath);
+            // Build the full URL using the current origin for reliable fetching
+            const baseUrl = window.location.origin;
+            const fullUrl = `${baseUrl}/${cleanPath}`;
+            console.log('[MCPIntrospectionService] Fetching file from:', fullUrl);
+            
+            const response = await fetch(fullUrl);
             
             if (!response.ok) {
                 return {
@@ -315,7 +320,9 @@ window.MCPIntrospectionService = (function() {
             // Search through JS files
             for (const filePath of jsFiles) {
                 try {
-                    const response = await fetch(filePath);
+                    const cleanPath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
+                    const fullUrl = `${window.location.origin}/${cleanPath}`;
+                    const response = await fetch(fullUrl);
                     if (!response.ok) continue;
                     
                     const content = await response.text();
@@ -408,7 +415,9 @@ window.MCPIntrospectionService = (function() {
                 if (results.length >= maxResults) break;
                 
                 try {
-                    const response = await fetch(filePath);
+                    const cleanPath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
+                    const fullUrl = `${window.location.origin}/${cleanPath}`;
+                    const response = await fetch(fullUrl);
                     if (!response.ok) continue;
                     
                     const content = await response.text();
@@ -489,7 +498,9 @@ window.MCPIntrospectionService = (function() {
             
             for (const path of possiblePaths) {
                 try {
-                    const response = await fetch(path);
+                    const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+                    const fullUrl = `${window.location.origin}/${cleanPath}`;
+                    const response = await fetch(fullUrl);
                     if (!response.ok) continue;
                     
                     const content = await response.text();
