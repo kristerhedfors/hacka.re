@@ -17,7 +17,7 @@ Port: 8000
 Project Root: /Users/user/dev/hacka.re
 ==================================================
 Checking for existing HTTP server processes on port 8000...
-Found existing processes: 67034
+Found existing processes: 72263
 Killing existing processes...
 Processes killed.
 Changing to project root directory: /Users/user/dev/hacka.re
@@ -37,7 +37,7 @@ configfile: pytest.ini
 testpaths: .
 plugins: anyio-4.9.0, timeout-2.4.0, playwright-0.7.0, base-url-2.1.0, asyncio-1.0.0
 asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
-collected 1000 items / 938 deselected / 62 selected
+collected 1002 items / 940 deselected / 62 selected
 
 shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_info[chromium0] PASSED [  1%]
 shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_plan_details[chromium0] PASSED [  3%]
@@ -50,36 +50,4 @@ test_api_key_persistence_debug.py::test_api_key_persistence_scenario_2_retry_hel
 test_api_key_persistence_debug.py::test_api_key_persistence_scenario_3_multiple_attempts[chromium0] PASSED [ 14%]
 test_api_key_persistence_debug.py::test_api_key_persistence_scenario_4_timing_analysis[chromium0] PASSED [ 16%]
 test_chat.py::test_chat_message_send_receive[chromium0] PASSED           [ 17%]
-test_chat_input_performance.py::test_chat_input_performance_bottleneck[chromium0] FAILED [ 19%]
-test_chat_input_performance.py::test_identify_specific_bottleneck_handlers[chromium0] FAILED [ 20%]
-test_chat_input_performance_comparison.py::test_performance_improvements[chromium0] FAILED [ 22%]
-test_chat_input_performance_comparison.py::test_large_text_performance[chromium0] FAILED [ 24%]
-test_chat_input_performance_simple.py::test_chat_input_simple_performance[chromium0] FAILED [ 25%]
-test_chat_input_performance_simple.py::test_measure_debounce_performance[chromium0] FAILED [ 27%]
-test_chat_no_mock.py::test_chat_message_send_receive[chromium0] FAILED   [ 29%]
-test_chat_regression.py::test_textarea_basic_functionality[chromium0] FAILED [ 30%]
-test_chat_regression.py::test_height_constraints[chromium0] FAILED       [ 32%]
-test_chat_regression.py::test_context_update_debouncing[chromium0] FAILED [ 33%]
-test_chat_regression.py::test_voice_control_integration[chromium0] FAILED [ 35%]
-test_chat_regression.py::test_mobile_handlers_intact[chromium0] FAILED   [ 37%]
-test_chat_regression.py::test_chat_message_sending[chromium0] FAILED     [ 38%]
-test_page.py::test_page_loads[chromium0] FAILED                          [ 40%]
-test_page.py::test_chat_interface_elements[chromium0] PASSED             [ 41%]
-test_stop_generation_simple.py::test_chat_manager_stop_logic[chromium0] FAILED [ 43%]
-test_welcome_modal_new_logic.py::test_welcome_modal_shows_for_first_time_user[chromium0] PASSED [ 45%]
-test_welcome_modal_new_logic.py::test_welcome_modal_hidden_for_returning_user[chromium0] FAILED [ 46%]
-test_welcome_modal_new_logic.py::test_welcome_modal_disabled_with_url_param[chromium0] FAILED [ 48%]
-test_welcome_modal_new_logic.py::test_no_auto_settings_after_welcome[chromium0] FAILED [ 50%]
-shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_info[chromium1] PASSED [ 51%]
-shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_plan_details[chromium1] ERROR [ 53%]
-test_api.py::test_api_key_configuration[chromium1] FAILED                [ 54%]
-test_api.py::test_model_selection[chromium1] FAILED                      [ 56%]
-test_api_key_detection_simple.py::test_api_key_detection_simple[chromium1] FAILED [ 58%]
-test_api_key_enter.py::test_api_key_modal_enter_key[chromium1] PASSED    [ 59%]
-test_api_key_persistence_debug.py::test_api_key_persistence_scenario_1_basic[chromium1] FAILED [ 61%]
-test_api_key_persistence_debug.py::test_api_key_persistence_scenario_2_retry_helper[chromium1] PASSED [ 62%]
-test_api_key_persistence_debug.py::test_api_key_persistence_scenario_3_multiple_attempts[chromium1] FAILED [ 64%]
-test_api_key_persistence_debug.py::test_api_key_persistence_scenario_4_timing_analysis[chromium1] FAILED [ 66%]
-test_chat.py::test_chat_message_send_receive[chromium1] PASSED           [ 67%]
-test_chat_input_performance.py::test_chat_input_performance_bottleneck[chromium1] FAILED [ 69%]
-test_chat_input_performance.py::test_identify_specific_bottleneck_handlers[chromium1] 
+test_chat_input_performance.py::test_chat_input_performance_bottleneck[chromium0] 
