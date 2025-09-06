@@ -257,6 +257,47 @@ window.CryptoUtils = (function() {
         // Encrypt with secretbox (symmetric encryption)
         const cipher = nacl.secretbox(plain, nonce, key);
         
+        // Debug logging for shared-links category - show encryption details and space consumption
+        if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links')) {
+            const spaceSummary = {
+                'Original JSON size': jsonString.length + ' chars',
+                'UTF-8 encoded size': plain.length + ' bytes',
+                'Salt size': salt.length + ' bytes (fixed)',
+                'Nonce size': nonce.length + ' bytes (fixed)',
+                'Encrypted cipher size': cipher.length + ' bytes',
+                'Total encrypted size': (salt.length + nonce.length + cipher.length) + ' bytes',
+                'Overhead': (salt.length + nonce.length) + ' bytes (salt + nonce)',
+                'Encryption expansion': (cipher.length - plain.length) + ' bytes (cipher vs plain)',
+                'Total expansion': ((salt.length + nonce.length + cipher.length) - plain.length) + ' bytes'
+            };
+            
+            // Create a formatted message showing encryption details
+            const debugMessage = [
+                '🔐 ═══════════════════════════════════════════════════════════════',
+                '🔐 ENCRYPTION PROCESS (TweetNaCl secretbox)',
+                '🔐 ═══════════════════════════════════════════════════════════════',
+                '🔐 Space Consumption Breakdown:',
+                JSON.stringify(spaceSummary, null, 2),
+                '🔐 ───────────────────────────────────────────────────────────────',
+                '🔐 Encryption Details:',
+                `🔐 - Algorithm: NaCl secretbox (XSalsa20-Poly1305)`,
+                `🔐 - Salt: ${SALT_LENGTH} bytes (for key derivation)`,
+                `🔐 - Nonce: ${nacl.secretbox.nonceLength} bytes (for encryption)`,
+                `🔐 - Key derivation: scrypt(password, salt)`,
+                '🔐 ───────────────────────────────────────────────────────────────',
+                '🔐 Final structure: [salt][nonce][cipher] → base64url',
+                '🔐 ═══════════════════════════════════════════════════════════════'
+            ].join('\n');
+            
+            // Log to console
+            console.log('[DEBUG] Encryption Process:', spaceSummary);
+            
+            // Add to chat as a single system message if chat manager is available
+            if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
+                window.aiHackare.chatManager.addSystemMessage(debugMessage, 'debug-message debug-shared-links');
+            }
+        }
+        
         // Combine salt, nonce, and cipher
         const fullMessage = new Uint8Array(
             salt.length + 
