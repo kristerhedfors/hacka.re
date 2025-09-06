@@ -1140,6 +1140,43 @@ function createSharedLinkDataProcessor() {
             displayWelcomeMessage
         });
         
+        // Debug mode logging - display full shared link data structure as pretty JSON
+        if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links')) {
+            // Create a comprehensive debug message with all shared link contents
+            const debugData = {
+                timestamp: new Date().toISOString(),
+                source: 'Shared Link Processing',
+                dataKeys: Object.keys(sharedData || {}),
+                contents: sharedData
+            };
+            
+            // Create a formatted message for display
+            const debugMessage = [
+                '🔗 ═══════════════════════════════════════════════════════════════',
+                '🔗 SHARED LINK DATA STRUCTURE (Debug Mode)',
+                '🔗 ═══════════════════════════════════════════════════════════════',
+                JSON.stringify(debugData, null, 2),
+                '🔗 ═══════════════════════════════════════════════════════════════'
+            ].join('\n');
+            
+            // Log to console
+            console.log('[DEBUG] Shared Link Contents:', debugData);
+            
+            // Add to chat as a system message if chat manager is available
+            if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
+                // Split into lines and add each as a system message with debug styling
+                const lines = debugMessage.split('\n');
+                lines.forEach((line, index) => {
+                    const isLast = index === lines.length - 1;
+                    const className = isLast ? 'debug-message debug-shared-links debug-message-last' : 'debug-message debug-shared-links';
+                    window.aiHackare.chatManager.addSystemMessage(line, className);
+                });
+            } else if (addSystemMessage) {
+                // Fallback to provided addSystemMessage function
+                addSystemMessage(debugMessage);
+            }
+        }
+        
         try {
             // Clean slate if requested (for agent loading)
             if (cleanSlate) {
