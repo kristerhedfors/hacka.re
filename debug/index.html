@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shared Link Decrypt Debugger</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .header p {
+            font-size: 16px;
+            opacity: 0.95;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .card h2 {
+            color: #333;
+            font-size: 20px;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .device-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .device-item {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        
+        .device-item strong {
+            color: #667eea;
+            display: block;
+            margin-bottom: 4px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .test-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 16px 0;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+        }
+        
+        .input-group {
+            margin: 16px 0;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .input-group input,
+        .input-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+            transition: border-color 0.3s ease;
+        }
+        
+        .input-group input:focus,
+        .input-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .input-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        
+        .output-area {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        
+        .output-area:empty::before {
+            content: 'Debug output will appear here...';
+            color: #666;
+            font-style: italic;
+        }
+        
+        .log-entry {
+            margin: 4px 0;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        
+        .log-info {
+            color: #58a6ff;
+        }
+        
+        .log-success {
+            color: #56d364;
+            background: rgba(86, 211, 100, 0.1);
+        }
+        
+        .log-warning {
+            color: #f0ad4e;
+            background: rgba(240, 173, 78, 0.1);
+        }
+        
+        .log-error {
+            color: #f85149;
+            background: rgba(248, 81, 73, 0.1);
+        }
+        
+        .log-debug {
+            color: #a371f7;
+        }
+        
+        .timestamp {
+            color: #8b949e;
+            font-size: 11px;
+            margin-right: 8px;
+        }
+        
+        .clear-btn {
+            float: right;
+            padding: 6px 12px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: -8px;
+        }
+        
+        .test-case {
+            background: #f8f9fa;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 12px 0;
+            border-left: 4px solid #667eea;
+        }
+        
+        .test-case h3 {
+            color: #667eea;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        
+        .test-case p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        .status-success {
+            background: #28a745;
+        }
+        
+        .status-error {
+            background: #dc3545;
+        }
+        
+        .status-warning {
+            background: #ffc107;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        
+        @media (max-width: 600px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            
+            .device-info {
+                grid-template-columns: 1fr;
+            }
+            
+            .test-buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Shared Link Decrypt Debugger</h1>
+            <p>Diagnose and fix shared link decryption issues on iPad and iPhone</p>
+        </div>
+        
+        <div class="card">
+            <h2>📱 Device Information</h2>
+            <div class="device-info" id="deviceInfo"></div>
+        </div>
+        
+        <div class="card">
+            <h2>🧪 Quick Tests</h2>
+            <div class="test-case">
+                <h3>Test 1: Basic Crypto Functions</h3>
+                <p>Test if TweetNaCl crypto library works correctly on this device</p>
+                <div class="test-buttons">
+                    <button class="btn btn-primary" onclick="testBasicCrypto()">Test Basic Crypto</button>
+                    <button class="btn btn-secondary" onclick="testBase64Encoding()">Test Base64</button>
+                    <button class="btn btn-secondary" onclick="testNaClCompat()">Test NaCl Compatibility</button>
+                </div>
+            </div>
+            
+            <div class="test-case">
+                <h3>Test 2: Create & Decrypt Test Link</h3>
+                <p>Generate a test encrypted link and attempt to decrypt it</p>
+                <div class="test-buttons">
+                    <button class="btn btn-success" onclick="createTestLink('simple')">Simple Test Link</button>
+                    <button class="btn btn-success" onclick="createTestLink('complex')">Complex Test Link</button>
+                    <button class="btn btn-success" onclick="createTestLink('compressed')">Compressed Test Link</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>🔍 Debug Your Shared Link</h2>
+            
+            <div class="input-group">
+                <label for="sharedUrl">Paste Full URL (with #gpt=...)</label>
+                <textarea id="sharedUrl" placeholder="https://hacka.re/#gpt=YOUR_ENCRYPTED_DATA_HERE"></textarea>
+            </div>
+            
+            <div class="grid-2">
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Enter decryption password">
+                </div>
+                
+                <div class="input-group">
+                    <label for="debugMode">Debug Mode</label>
+                    <select id="debugMode" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px;">
+                        <option value="full">Full Debug (All Methods)</option>
+                        <option value="urlsafe">URL-Safe Base64 Only</option>
+                        <option value="standard">Standard Base64 Only</option>
+                        <option value="raw">Raw Data Analysis</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="test-buttons">
+                <button class="btn btn-primary" onclick="debugDecrypt()">🔓 Debug Decrypt</button>
+                <button class="btn btn-warning" onclick="analyzeUrl()">📊 Analyze URL Only</button>
+                <button class="btn btn-secondary" onclick="clearInputs()">Clear Inputs</button>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>🔬 Advanced Testing</h2>
+            
+            <div class="input-group">
+                <label for="rawBase64">Test Raw Base64 String</label>
+                <input type="text" id="rawBase64" placeholder="Paste any base64 string to test decoding">
+            </div>
+            
+            <div class="test-buttons">
+                <button class="btn btn-secondary" onclick="testRawBase64()">Test Base64 Decode</button>
+                <button class="btn btn-secondary" onclick="testCharacterEncoding()">Test Character Encoding</button>
+                <button class="btn btn-secondary" onclick="testUrlFragmentHandling()">Test URL Fragment</button>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>📝 Debug Output</h2>
+            <button class="clear-btn" onclick="clearOutput()">Clear</button>
+            <div class="output-area" id="output"></div>
+        </div>
+    </div>
+
+    <!-- Load TweetNaCl -->
+    <script src="../js/lib/nacl.min.js"></script>
+    <script src="../js/lib/nacl-util.min.js"></script>
+    
+    <script>
+        // Logging utility
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toTimeString().split(' ')[0];
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.innerHTML = `<span class="timestamp">[${timestamp}]</span> ${escapeHtml(message)}`;
+            output.appendChild(entry);
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function clearOutput() {
+            document.getElementById('output').innerHTML = '';
+        }
+        
+        function clearInputs() {
+            document.getElementById('sharedUrl').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('rawBase64').value = '';
+        }
+        
+        // Display device information
+        function showDeviceInfo() {
+            const info = {
+                'User Agent': navigator.userAgent,
+                'Platform': navigator.platform,
+                'Vendor': navigator.vendor || 'Unknown',
+                'Language': navigator.language,
+                'Screen': `${screen.width}x${screen.height} @${window.devicePixelRatio}x`,
+                'Touch Points': navigator.maxTouchPoints || 0,
+                'WebKit Version': getWebKitVersion(),
+                'Safari Version': getSafariVersion(),
+                'iOS Device': !!navigator.platform && /iPad|iPhone|iPod/.test(navigator.platform) ? 'Yes' : 'No',
+                'iPad': !!navigator.platform && /iPad/.test(navigator.platform) ? 'Yes' : 'No',
+                'Online': navigator.onLine ? 'Yes' : 'No',
+                'Cookies Enabled': navigator.cookieEnabled ? 'Yes' : 'No'
+            };
+            
+            const container = document.getElementById('deviceInfo');
+            container.innerHTML = Object.entries(info)
+                .map(([key, value]) => `
+                    <div class="device-item">
+                        <strong>${key}</strong>
+                        <div>${value}</div>
+                    </div>
+                `).join('');
+        }
+        
+        function getWebKitVersion() {
+            const match = navigator.userAgent.match(/WebKit\/(\S+)/);
+            return match ? match[1] : 'Unknown';
+        }
+        
+        function getSafariVersion() {
+            const match = navigator.userAgent.match(/Version\/(\S+)/);
+            return match ? match[1] : 'Unknown';
+        }
+        
+        // Test basic crypto functions
+        function testBasicCrypto() {
+            clearOutput();
+            log('Testing basic crypto functions...', 'info');
+            
+            try {
+                // Test nacl availability
+                if (typeof nacl === 'undefined') {
+                    log('❌ NaCl library not loaded!', 'error');
+                    return;
+                }
+                log('✅ NaCl library loaded', 'success');
+                
+                // Test random bytes generation
+                const randomBytes = nacl.randomBytes(32);
+                log(`✅ Random bytes generated: ${randomBytes.length} bytes`, 'success');
+                
+                // Test hashing
+                const testString = 'Hello World';
+                const testBytes = nacl.util.decodeUTF8(testString);
+                const hash = nacl.hash(testBytes);
+                log(`✅ SHA-512 hash works: ${hash.length} bytes`, 'success');
+                
+                // Test secretbox encryption/decryption
+                const key = nacl.randomBytes(32);
+                const nonce = nacl.randomBytes(24);
+                const message = nacl.util.decodeUTF8('Test message');
+                
+                const encrypted = nacl.secretbox(message, nonce, key);
+                log(`✅ Secretbox encryption works: ${encrypted.length} bytes`, 'success');
+                
+                const decrypted = nacl.secretbox.open(encrypted, nonce, key);
+                if (decrypted) {
+                    const decryptedText = nacl.util.encodeUTF8(decrypted);
+                    log(`✅ Secretbox decryption works: "${decryptedText}"`, 'success');
+                } else {
+                    log('❌ Secretbox decryption failed', 'error');
+                }
+                
+                log('\n✅ All basic crypto functions working!', 'success');
+                
+            } catch (error) {
+                log(`❌ Crypto test failed: ${error.message}`, 'error');
+                log(`Stack: ${error.stack}`, 'debug');
+            }
+        }
+        
+        // Test base64 encoding/decoding
+        function testBase64Encoding() {
+            clearOutput();
+            log('Testing base64 encoding/decoding...', 'info');
+            
+            try {
+                // Test standard base64
+                const testData = new Uint8Array([1, 2, 3, 4, 5]);
+                const encoded = nacl.util.encodeBase64(testData);
+                log(`Standard encode: ${encoded}`, 'info');
+                
+                const decoded = nacl.util.decodeBase64(encoded);
+                log(`✅ Standard base64 round-trip successful`, 'success');
+                
+                // Test URL-safe base64
+                const urlSafe = encoded.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+                log(`URL-safe: ${urlSafe}`, 'info');
+                
+                // Test decoding URL-safe
+                const restored = urlSafe.replace(/-/g, '+').replace(/_/g, '/');
+                const padding = restored.length % 4;
+                const padded = restored + (padding === 2 ? '==' : padding === 3 ? '=' : '');
+                
+                const decodedUrlSafe = nacl.util.decodeBase64(padded);
+                log(`✅ URL-safe base64 round-trip successful`, 'success');
+                
+                // Test edge cases
+                const edgeCases = [
+                    'SGVsbG8=',  // "Hello" with padding
+                    'SGVsbG8',   // "Hello" without padding
+                    'AA==',      // Single null byte with padding
+                    'AA',        // Single null byte without padding
+                ];
+                
+                log('\nTesting edge cases:', 'info');
+                for (const testCase of edgeCases) {
+                    try {
+                        const result = nacl.util.decodeBase64(testCase);
+                        log(`✅ Decoded "${testCase}": ${result.length} bytes`, 'success');
+                    } catch (e) {
+                        log(`❌ Failed to decode "${testCase}": ${e.message}`, 'error');
+                    }
+                }
+                
+            } catch (error) {
+                log(`❌ Base64 test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        // Test NaCl compatibility
+        function testNaClCompat() {
+            clearOutput();
+            log('Testing NaCl compatibility and versions...', 'info');
+            
+            try {
+                // Check NaCl properties
+                log(`NaCl version: ${nacl.version || 'Unknown'}`, 'info');
+                log(`NaCl.util available: ${!!nacl.util}`, 'info');
+                log(`NaCl.randomBytes available: ${!!nacl.randomBytes}`, 'info');
+                log(`NaCl.secretbox available: ${!!nacl.secretbox}`, 'info');
+                log(`NaCl.hash available: ${!!nacl.hash}`, 'info');
+                
+                // Test specific functions that might vary
+                log('\nTesting function behaviors:', 'info');
+                
+                // Test if decodeBase64 handles padding correctly
+                const testPadding = ['SGVsbG8=', 'SGVsbG8'];
+                for (const test of testPadding) {
+                    try {
+                        nacl.util.decodeBase64(test);
+                        log(`✅ Accepts base64: "${test}"`, 'success');
+                    } catch (e) {
+                        log(`❌ Rejects base64: "${test}"`, 'error');
+                    }
+                }
+                
+                // Test UTF-8 encoding/decoding
+                const unicodeTest = '👋 Hello 世界';
+                const encoded = nacl.util.decodeUTF8(unicodeTest);
+                const decoded = nacl.util.encodeUTF8(encoded);
+                if (decoded === unicodeTest) {
+                    log(`✅ UTF-8 handling works correctly`, 'success');
+                } else {
+                    log(`❌ UTF-8 handling issue: "${decoded}" !== "${unicodeTest}"`, 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Compatibility test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        // Create test links
+        function createTestLink(type) {
+            clearOutput();
+            log(`Creating ${type} test link...`, 'info');
+            
+            try {
+                let payload;
+                const password = 'test123';
+                
+                switch(type) {
+                    case 'simple':
+                        payload = { apiKey: 'sk-test-key-123' };
+                        break;
+                    case 'complex':
+                        payload = {
+                            apiKey: 'sk-test-key-456',
+                            model: 'gpt-4',
+                            systemPrompt: 'You are a helpful assistant',
+                            messages: [
+                                {role: 'user', content: 'Hello'},
+                                {role: 'assistant', content: 'Hi there!'}
+                            ]
+                        };
+                        break;
+                    case 'compressed':
+                        // Large payload to trigger compression
+                        payload = {
+                            apiKey: 'sk-test-key-789',
+                            model: 'gpt-4',
+                            messages: Array(50).fill({role: 'user', content: 'Test message repeated many times'})
+                        };
+                        break;
+                }
+                
+                log(`Payload size: ${JSON.stringify(payload).length} characters`, 'info');
+                
+                // Encrypt using our function
+                const encrypted = encryptData(payload, password);
+                log(`✅ Encrypted data: ${encrypted.substring(0, 50)}...`, 'success');
+                log(`Encrypted length: ${encrypted.length} characters`, 'info');
+                
+                // Create URL
+                const url = `https://hacka.re/#gpt=${encrypted}`;
+                document.getElementById('sharedUrl').value = url;
+                document.getElementById('password').value = password;
+                
+                log(`\n✅ Test link created! Password: "${password}"`, 'success');
+                log('Click "Debug Decrypt" to test decryption', 'info');
+                
+                // Immediately try to decrypt it
+                log('\nAttempting immediate decryption...', 'info');
+                const decrypted = decryptData(encrypted, password);
+                if (decrypted) {
+                    log('✅ Immediate decryption successful!', 'success');
+                    log(`Decrypted: ${JSON.stringify(decrypted, null, 2)}`, 'debug');
+                } else {
+                    log('❌ Immediate decryption failed!', 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Failed to create test link: ${error.message}`, 'error');
+                log(`Stack: ${error.stack}`, 'debug');
+            }
+        }
+        
+        // Main debug decrypt function
+        function debugDecrypt() {
+            clearOutput();
+            
+            const url = document.getElementById('sharedUrl').value;
+            const password = document.getElementById('password').value;
+            const mode = document.getElementById('debugMode').value;
+            
+            if (!url || !password) {
+                log('❌ Please enter both URL and password', 'error');
+                return;
+            }
+            
+            log(`Starting debug (mode: ${mode})...`, 'info');
+            log(`URL length: ${url.length} characters`, 'debug');
+            
+            try {
+                // Extract encrypted data
+                let encryptedData = null;
+                if (url.includes('#gpt=')) {
+                    encryptedData = url.split('#gpt=')[1];
+                    log('Found #gpt= fragment', 'info');
+                } else if (url.includes('#shared=')) {
+                    encryptedData = url.split('#shared=')[1];
+                    log('Found #shared= fragment', 'info');
+                } else {
+                    log('❌ No encrypted fragment found in URL', 'error');
+                    return;
+                }
+                
+                // Remove any additional URL parameters after the encrypted data
+                if (encryptedData.includes('&')) {
+                    encryptedData = encryptedData.split('&')[0];
+                    log('Removed additional URL parameters', 'warning');
+                }
+                
+                log(`Encrypted data length: ${encryptedData.length}`, 'info');
+                log(`First 50 chars: ${encryptedData.substring(0, 50)}`, 'debug');
+                log(`Last 30 chars: ...${encryptedData.substring(encryptedData.length - 30)}`, 'debug');
+                
+                // Check for common issues
+                analyzeEncryptedData(encryptedData);
+                
+                // Try decryption based on mode
+                if (mode === 'raw') {
+                    analyzeRawData(encryptedData);
+                    return;
+                }
+                
+                let success = false;
+                
+                if (mode === 'full' || mode === 'urlsafe') {
+                    log('\n--- Attempting URL-safe base64 decode ---', 'info');
+                    success = tryDecryptMethod(encryptedData, password, 'urlsafe');
+                }
+                
+                if (!success && (mode === 'full' || mode === 'standard')) {
+                    log('\n--- Attempting standard base64 decode ---', 'info');
+                    success = tryDecryptMethod(encryptedData, password, 'standard');
+                }
+                
+                if (!success && mode === 'full') {
+                    log('\n--- Attempting with fixes ---', 'info');
+                    success = tryDecryptWithFixes(encryptedData, password);
+                }
+                
+                if (!success) {
+                    log('\n❌ All decryption attempts failed', 'error');
+                    log('Possible causes:', 'warning');
+                    log('1. Wrong password', 'warning');
+                    log('2. Corrupted data in URL', 'warning');
+                    log('3. Browser compatibility issue', 'warning');
+                    log('4. Encoding mismatch', 'warning');
+                }
+                
+            } catch (error) {
+                log(`❌ Fatal error: ${error.message}`, 'error');
+                log(`Stack: ${error.stack}`, 'debug');
+            }
+        }
+        
+        // Analyze encrypted data for issues
+        function analyzeEncryptedData(data) {
+            log('\n--- Analyzing encrypted data ---', 'info');
+            
+            // Check for whitespace
+            if (data !== data.trim()) {
+                log('⚠️ Data contains leading/trailing whitespace', 'warning');
+            }
+            
+            // Check for spaces
+            if (data.includes(' ')) {
+                log('⚠️ Data contains spaces', 'warning');
+            }
+            
+            // Check for URL encoding
+            if (data.includes('%')) {
+                log('⚠️ Data contains URL encoding', 'warning');
+                const decoded = decodeURIComponent(data);
+                if (decoded !== data) {
+                    log(`After URL decode: ${decoded.substring(0, 50)}...`, 'debug');
+                }
+            }
+            
+            // Check character set
+            const validBase64 = /^[A-Za-z0-9+/\-_]+=*$/;
+            if (!validBase64.test(data)) {
+                log('⚠️ Data contains non-base64 characters', 'warning');
+                const invalid = [...new Set(data.split('').filter(c => !validBase64.test(c)))];
+                log(`Invalid characters: ${invalid.join(', ')}`, 'debug');
+            }
+            
+            // Check padding
+            const padding = data.length % 4;
+            log(`Length mod 4: ${padding} (padding needed: ${padding > 0 ? 4 - padding : 0})`, 'debug');
+        }
+        
+        // Try a specific decryption method
+        function tryDecryptMethod(encryptedData, password, method) {
+            try {
+                let decodedData;
+                
+                if (method === 'urlsafe') {
+                    decodedData = decodeBase64UrlSafe(encryptedData);
+                    log(`✅ URL-safe decode successful: ${decodedData.length} bytes`, 'success');
+                } else {
+                    decodedData = nacl.util.decodeBase64(encryptedData);
+                    log(`✅ Standard decode successful: ${decodedData.length} bytes`, 'success');
+                }
+                
+                // Try to decrypt
+                const result = attemptDecrypt(decodedData, password);
+                if (result) {
+                    log('✅ Decryption successful!', 'success');
+                    log(`Decrypted data: ${JSON.stringify(result, null, 2)}`, 'success');
+                    return true;
+                } else {
+                    log('❌ Decryption failed (wrong password or corrupted data)', 'error');
+                    return false;
+                }
+                
+            } catch (error) {
+                log(`❌ ${method} method failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        // Try decryption with various fixes
+        function tryDecryptWithFixes(encryptedData, password) {
+            // Try URL decoding first
+            if (encryptedData.includes('%')) {
+                log('Trying with URL decode...', 'info');
+                try {
+                    const decoded = decodeURIComponent(encryptedData);
+                    if (tryDecryptMethod(decoded, password, 'urlsafe')) return true;
+                } catch (e) {}
+            }
+            
+            // Try removing whitespace
+            const trimmed = encryptedData.trim().replace(/\s/g, '');
+            if (trimmed !== encryptedData) {
+                log('Trying with whitespace removed...', 'info');
+                if (tryDecryptMethod(trimmed, password, 'urlsafe')) return true;
+            }
+            
+            // Try adding padding
+            log('Trying with manual padding...', 'info');
+            let padded = encryptedData;
+            while (padded.length % 4 !== 0) {
+                padded += '=';
+            }
+            if (tryDecryptMethod(padded, password, 'standard')) return true;
+            
+            return false;
+        }
+        
+        // Analyze URL
+        function analyzeUrl() {
+            clearOutput();
+            const url = document.getElementById('sharedUrl').value;
+            
+            if (!url) {
+                log('❌ Please enter a URL', 'error');
+                return;
+            }
+            
+            log('Analyzing URL structure...', 'info');
+            
+            try {
+                const urlObj = new URL(url);
+                log(`Protocol: ${urlObj.protocol}`, 'info');
+                log(`Host: ${urlObj.host}`, 'info');
+                log(`Pathname: ${urlObj.pathname}`, 'info');
+                log(`Hash: ${urlObj.hash.substring(0, 50)}...`, 'info');
+                log(`Hash length: ${urlObj.hash.length}`, 'info');
+                
+                if (urlObj.hash.includes('#gpt=')) {
+                    const data = urlObj.hash.split('#gpt=')[1];
+                    analyzeEncryptedData(data);
+                }
+            } catch (error) {
+                log(`❌ Invalid URL: ${error.message}`, 'error');
+            }
+        }
+        
+        // Test raw base64
+        function testRawBase64() {
+            clearOutput();
+            const input = document.getElementById('rawBase64').value;
+            
+            if (!input) {
+                log('❌ Please enter a base64 string', 'error');
+                return;
+            }
+            
+            log(`Testing base64: ${input.substring(0, 50)}...`, 'info');
+            analyzeEncryptedData(input);
+            
+            // Try different decoding methods
+            const methods = [
+                { name: 'Standard', fn: () => nacl.util.decodeBase64(input) },
+                { name: 'URL-safe', fn: () => decodeBase64UrlSafe(input) },
+                { name: 'With padding', fn: () => {
+                    let padded = input;
+                    while (padded.length % 4) padded += '=';
+                    return nacl.util.decodeBase64(padded);
+                }},
+                { name: 'URL-safe to standard', fn: () => {
+                    const std = input.replace(/-/g, '+').replace(/_/g, '/');
+                    return nacl.util.decodeBase64(std);
+                }}
+            ];
+            
+            for (const method of methods) {
+                try {
+                    const result = method.fn();
+                    log(`✅ ${method.name}: ${result.length} bytes`, 'success');
+                } catch (e) {
+                    log(`❌ ${method.name}: ${e.message}`, 'error');
+                }
+            }
+        }
+        
+        // Test character encoding
+        function testCharacterEncoding() {
+            clearOutput();
+            log('Testing character encoding...', 'info');
+            
+            const tests = [
+                'Hello World',
+                '👋 Emoji test',
+                'Special chars: @#$%^&*()',
+                'Newline\ntest',
+                'Tab\ttest',
+                'Quote"test',
+                "Single'quote"
+            ];
+            
+            for (const test of tests) {
+                try {
+                    const bytes = nacl.util.decodeUTF8(test);
+                    const restored = nacl.util.encodeUTF8(bytes);
+                    if (restored === test) {
+                        log(`✅ "${test}"`, 'success');
+                    } else {
+                        log(`❌ "${test}" -> "${restored}"`, 'error');
+                    }
+                } catch (e) {
+                    log(`❌ Failed on "${test}": ${e.message}`, 'error');
+                }
+            }
+        }
+        
+        // Test URL fragment handling
+        function testUrlFragmentHandling() {
+            clearOutput();
+            log('Testing URL fragment handling...', 'info');
+            
+            // Test if fragment is preserved
+            const testData = 'test-data-123_456+789/abc==';
+            window.location.hash = `gpt=${testData}`;
+            
+            const retrieved = window.location.hash;
+            log(`Set: #gpt=${testData}`, 'info');
+            log(`Got: ${retrieved}`, 'info');
+            
+            if (retrieved === `#gpt=${testData}`) {
+                log('✅ Fragment preserved exactly', 'success');
+            } else {
+                log('⚠️ Fragment was modified', 'warning');
+            }
+            
+            // Clear hash
+            window.location.hash = '';
+        }
+        
+        // Analyze raw data
+        function analyzeRawData(data) {
+            log('\n--- Raw data analysis ---', 'info');
+            
+            // Character frequency
+            const freq = {};
+            for (const char of data) {
+                freq[char] = (freq[char] || 0) + 1;
+            }
+            
+            log('Character frequency:', 'debug');
+            const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 10);
+            for (const [char, count] of sorted) {
+                log(`  "${char}": ${count}`, 'debug');
+            }
+            
+            // Check for patterns
+            if (data.includes('==')) log('Contains padding characters (==)', 'info');
+            if (data.includes('=')) log(`Padding count: ${(data.match(/=/g) || []).length}`, 'info');
+            
+            // Entropy estimate
+            const entropy = -Object.values(freq).reduce((sum, count) => {
+                const p = count / data.length;
+                return sum + p * Math.log2(p);
+            }, 0);
+            log(`Entropy: ${entropy.toFixed(2)} bits per character`, 'info');
+        }
+        
+        // Helper functions
+        function decodeBase64UrlSafe(urlSafeBase64) {
+            const sanitized = urlSafeBase64.replace(/[\s\n\r]/g, '');
+            let base64 = sanitized
+                .replace(/-/g, '+')
+                .replace(/_/g, '/');
+            
+            const padding = base64.length % 4;
+            if (padding === 1) {
+                throw new Error('Invalid base64 string length (mod 4 = 1)');
+            } else if (padding === 2) {
+                base64 += '==';
+            } else if (padding === 3) {
+                base64 += '=';
+            }
+            
+            return nacl.util.decodeBase64(base64);
+        }
+        
+        function deriveSeed(password, salt) {
+            const passwordBytes = nacl.util.decodeUTF8(password);
+            let processedPasswordBytes = passwordBytes;
+            if (passwordBytes.length > 32) {
+                processedPasswordBytes = nacl.hash(passwordBytes).slice(0, 32);
+            }
+            
+            const combined = new Uint8Array(processedPasswordBytes.length + salt.length);
+            combined.set(processedPasswordBytes);
+            combined.set(salt, processedPasswordBytes.length);
+            
+            let key = combined;
+            for (let i = 0; i < 10000; i++) {
+                key = nacl.hash(key).slice(0, 32);
+            }
+            
+            return key;
+        }
+        
+        function attemptDecrypt(data, password) {
+            try {
+                const SALT_LENGTH = 16;
+                
+                if (data.length < SALT_LENGTH + nacl.secretbox.nonceLength + 1) {
+                    log(`Data too short: ${data.length} bytes`, 'error');
+                    return null;
+                }
+                
+                let offset = 0;
+                const salt = data.slice(offset, offset + SALT_LENGTH);
+                offset += SALT_LENGTH;
+                
+                const nonce = data.slice(offset, offset + nacl.secretbox.nonceLength);
+                offset += nacl.secretbox.nonceLength;
+                
+                const cipher = data.slice(offset);
+                
+                log(`Components: salt=${salt.length}B, nonce=${nonce.length}B, cipher=${cipher.length}B`, 'debug');
+                
+                const key = deriveSeed(password, salt);
+                const plain = nacl.secretbox.open(cipher, nonce, key);
+                
+                if (!plain) {
+                    return null;
+                }
+                
+                const plainText = nacl.util.encodeUTF8(plain);
+                return JSON.parse(plainText);
+                
+            } catch (error) {
+                log(`Decrypt error: ${error.message}`, 'debug');
+                return null;
+            }
+        }
+        
+        function encryptData(payloadObj, password) {
+            const jsonString = JSON.stringify(payloadObj);
+            const plain = nacl.util.decodeUTF8(jsonString);
+            
+            const salt = nacl.randomBytes(16);
+            const key = deriveSeed(password, salt);
+            const nonce = nacl.randomBytes(nacl.secretbox.nonceLength);
+            const cipher = nacl.secretbox(plain, nonce, key);
+            
+            const fullMessage = new Uint8Array(salt.length + nonce.length + cipher.length);
+            let offset = 0;
+            fullMessage.set(salt, offset);
+            offset += salt.length;
+            fullMessage.set(nonce, offset);
+            offset += nonce.length;
+            fullMessage.set(cipher, offset);
+            
+            const standardBase64 = nacl.util.encodeBase64(fullMessage);
+            return standardBase64
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=/g, '');
+        }
+        
+        function decryptData(encryptedData, password) {
+            try {
+                const data = decodeBase64UrlSafe(encryptedData);
+                return attemptDecrypt(data, password);
+            } catch (e) {
+                try {
+                    const data = nacl.util.decodeBase64(encryptedData);
+                    return attemptDecrypt(data, password);
+                } catch (e2) {
+                    return null;
+                }
+            }
+        }
+        
+        // Initialize
+        showDeviceInfo();
+        log('Debugger ready. Select a test or paste your shared link.', 'info');
+    </script>
+</body>
+</html>
