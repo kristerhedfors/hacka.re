@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cross-Device Crypto Compatibility Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            font-size: 24px;
+            margin-top: 0;
+        }
+        h2 {
+            color: #666;
+            font-size: 18px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        textarea, input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #007aff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:active {
+            background: #0051a8;
+        }
+        .output {
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 11px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .warning { color: #ffc107; }
+        .info { color: #17a2b8; }
+        .fingerprint {
+            background: #e3f2fd;
+            border: 2px solid #2196f3;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: monospace;
+        }
+        .test-vector {
+            background: #f0f0f0;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .device-info {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔬 Cross-Device Crypto Compatibility Test</h1>
+        
+        <div class="device-info" id="deviceInfo"></div>
+        
+        <h2>Step 1: Generate Device Fingerprint</h2>
+        <p>This creates a unique crypto fingerprint for your device's JavaScript implementation:</p>
+        <button onclick="generateFingerprint()">Generate Fingerprint</button>
+        <div class="fingerprint" id="fingerprint"></div>
+        
+        <h2>Step 2: Test Standard Vectors</h2>
+        <p>These are known test vectors that should produce identical results on all devices:</p>
+        <button onclick="testStandardVectors()">Run Standard Tests</button>
+        <div id="standardResults" class="output"></div>
+        
+        <h2>Step 3: Create Test Data on THIS Device</h2>
+        <p>Generate encrypted data using this device's implementation:</p>
+        <button onclick="createTestData()">Create Test Data</button>
+        <textarea id="testDataOutput" rows="8" readonly placeholder="Test data will appear here..."></textarea>
+        
+        <h2>Step 4: Test Data from ANOTHER Device</h2>
+        <p>Paste test data created on another device to see if it decrypts here:</p>
+        <textarea id="testDataInput" rows="8" placeholder="Paste test data from another device here..."></textarea>
+        <button onclick="testExternalData()">Test External Data</button>
+        <div id="externalResults" class="output"></div>
+        
+        <h2>Step 5: Byte-Level Comparison</h2>
+        <button onclick="runByteLevelTests()">Run Byte-Level Tests</button>
+        <div id="byteLevelResults" class="output"></div>
+    </div>
+
+    <!-- Load TweetNaCl -->
+    <script src="../lib/tweetnacl/nacl-fast.min.js"></script>
+    <script src="../lib/tweetnacl/nacl-util.min.js"></script>
+    
+    <script>
+        // Device info
+        function showDeviceInfo() {
+            const info = {
+                'User Agent': navigator.userAgent.substring(0, 100) + '...',
+                'Platform': navigator.platform,
+                'Language': navigator.language,
+                'Screen': `${screen.width}x${screen.height}`,
+                'iOS': /iPad|iPhone|iPod/.test(navigator.platform) ? 'Yes' : 'No',
+                'Safari Version': navigator.userAgent.match(/Version\/(\S+)/) ? RegExp.$1 : 'N/A'
+            };
+            
+            document.getElementById('deviceInfo').innerHTML = 
+                '<strong>Device Info:</strong><br>' +
+                Object.entries(info).map(([k, v]) => `${k}: ${v}`).join('<br>');
+        }
+        
+        // Generate device fingerprint
+        function generateFingerprint() {
+            const output = document.getElementById('fingerprint');
+            output.innerHTML = '<strong>Generating fingerprint...</strong><br><br>';
+            
+            const results = {};
+            
+            // Test 1: Basic operations
+            const testBytes = new Uint8Array([1, 2, 3, 4, 5]);
+            results.base64Standard = nacl.util.encodeBase64(testBytes);
+            
+            // Test 2: UTF-8 encoding
+            const testString = 'Hello 世界 👋';
+            const utf8Bytes = nacl.util.decodeUTF8(testString);
+            results.utf8Length = utf8Bytes.length;
+            results.utf8Base64 = nacl.util.encodeBase64(utf8Bytes);
+            
+            // Test 3: Hash consistency
+            const hashInput = nacl.util.decodeUTF8('test');
+            const hash = nacl.hash(hashInput);
+            results.hashFirst8 = Array.from(hash.slice(0, 8)).map(b => b.toString(16).padStart(2, '0')).join('');
+            
+            // Test 4: Random generation (seed-based for consistency)
+            const seed = new Uint8Array(32);
+            for (let i = 0; i < 32; i++) seed[i] = i;
+            const keyPair = nacl.box.keyPair.fromSecretKey(seed);
+            results.pubKeyFirst8 = Array.from(keyPair.publicKey.slice(0, 8)).map(b => b.toString(16).padStart(2, '0')).join('');
+            
+            // Test 5: Secretbox with known key/nonce
+            const key = new Uint8Array(32);
+            const nonce = new Uint8Array(24);
+            for (let i = 0; i < 32; i++) key[i] = i;
+            for (let i = 0; i < 24; i++) nonce[i] = i;
+            const message = nacl.util.decodeUTF8('test message');
+            const encrypted = nacl.secretbox(message, nonce, key);
+            results.encryptedLength = encrypted.length;
+            results.encryptedFirst8 = Array.from(encrypted.slice(0, 8)).map(b => b.toString(16).padStart(2, '0')).join('');
+            
+            // Test 6: Number handling
+            results.maxSafeInt = Number.MAX_SAFE_INTEGER;
+            results.floatPrecision = 0.1 + 0.2;
+            
+            // Display fingerprint
+            output.innerHTML = '<strong>Device Crypto Fingerprint:</strong><br><br>';
+            for (const [key, value] of Object.entries(results)) {
+                output.innerHTML += `${key}: <span style="color: #2196f3; font-weight: bold;">${value}</span><br>`;
+            }
+            
+            // Create copyable fingerprint
+            const fingerprintString = JSON.stringify(results, null, 2);
+            output.innerHTML += `<br><textarea rows="10" style="width: 100%; margin-top: 10px;" readonly>${fingerprintString}</textarea>`;
+            output.innerHTML += '<br><strong>Compare this fingerprint with other devices to find differences!</strong>';
+        }
+        
+        // Test standard vectors
+        function testStandardVectors() {
+            const output = document.getElementById('standardResults');
+            output.innerHTML = '';
+            
+            const vectors = [
+                {
+                    name: 'Base64 padding handling',
+                    tests: [
+                        { input: 'SGVsbG8=', expected: 'Hello' },
+                        { input: 'SGVsbG8', expected: 'Hello' },
+                        { input: 'AA==', expected: '\x00' },
+                        { input: 'AA', expected: '\x00' }
+                    ],
+                    test: (input) => {
+                        try {
+                            const decoded = nacl.util.decodeBase64(input);
+                            return nacl.util.encodeUTF8(decoded);
+                        } catch (e) {
+                            return 'ERROR: ' + e.message;
+                        }
+                    }
+                },
+                {
+                    name: 'UTF-8 special characters',
+                    tests: [
+                        { input: '😀', expected: 4 },
+                        { input: '世', expected: 3 },
+                        { input: '©', expected: 2 }
+                    ],
+                    test: (input) => nacl.util.decodeUTF8(input).length
+                },
+                {
+                    name: 'Integer overflow behavior',
+                    tests: [
+                        { input: Number.MAX_SAFE_INTEGER + 1, expected: Number.MAX_SAFE_INTEGER + 1 },
+                        { input: Number.MAX_SAFE_INTEGER + 2, expected: Number.MAX_SAFE_INTEGER + 2 }
+                    ],
+                    test: (input) => input
+                }
+            ];
+            
+            for (const vector of vectors) {
+                output.innerHTML += `<strong>${vector.name}:</strong><br>`;
+                for (const test of vector.tests) {
+                    const result = vector.test(test.input);
+                    const passed = result === test.expected;
+                    const status = passed ? '✅' : '❌';
+                    const color = passed ? 'green' : 'red';
+                    output.innerHTML += `  ${status} Input: ${JSON.stringify(test.input)} → Result: ${JSON.stringify(result)} <span style="color: ${color}">${passed ? 'PASS' : 'FAIL'}</span><br>`;
+                }
+                output.innerHTML += '<br>';
+            }
+        }
+        
+        // Create test data
+        function createTestData() {
+            const testPayload = {
+                message: 'Cross-device test',
+                timestamp: Date.now(),
+                device: navigator.platform,
+                random: Math.random()
+            };
+            
+            const password = 'test123';
+            
+            // Our encryption process
+            const jsonString = JSON.stringify(testPayload);
+            const plainBytes = nacl.util.decodeUTF8(jsonString);
+            
+            // Use fixed salt and nonce for reproducibility
+            const salt = new Uint8Array(16);
+            const nonce = new Uint8Array(24);
+            for (let i = 0; i < 16; i++) salt[i] = i * 2;
+            for (let i = 0; i < 24; i++) nonce[i] = i * 3;
+            
+            // Derive key
+            const key = deriveKey(password, salt);
+            
+            // Encrypt
+            const cipher = nacl.secretbox(plainBytes, nonce, key);
+            
+            // Combine
+            const combined = new Uint8Array(salt.length + nonce.length + cipher.length);
+            combined.set(salt, 0);
+            combined.set(nonce, salt.length);
+            combined.set(cipher, salt.length + nonce.length);
+            
+            // Encode
+            const encoded = nacl.util.encodeBase64(combined);
+            const urlSafe = encoded.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+            
+            // Create test data object
+            const testData = {
+                encrypted: urlSafe,
+                password: password,
+                payload: testPayload,
+                device: {
+                    platform: navigator.platform,
+                    userAgent: navigator.userAgent.substring(0, 50),
+                    timestamp: new Date().toISOString()
+                },
+                debug: {
+                    saltHex: Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join(''),
+                    nonceHex: Array.from(nonce).map(b => b.toString(16).padStart(2, '0')).join(''),
+                    keyFirst8Hex: Array.from(key.slice(0, 8)).map(b => b.toString(16).padStart(2, '0')).join(''),
+                    cipherLength: cipher.length,
+                    combinedLength: combined.length,
+                    base64Length: encoded.length,
+                    urlSafeLength: urlSafe.length
+                }
+            };
+            
+            document.getElementById('testDataOutput').value = JSON.stringify(testData, null, 2);
+        }
+        
+        // Test external data
+        function testExternalData() {
+            const output = document.getElementById('externalResults');
+            output.innerHTML = '';
+            
+            try {
+                const testDataStr = document.getElementById('testDataInput').value;
+                if (!testDataStr) {
+                    output.innerHTML = '<span class="error">Please paste test data</span>';
+                    return;
+                }
+                
+                const testData = JSON.parse(testDataStr);
+                output.innerHTML += `<strong>Testing data from: ${testData.device.platform}</strong><br><br>`;
+                
+                // Try to decrypt
+                const encrypted = testData.encrypted;
+                const password = testData.password;
+                
+                output.innerHTML += `Encrypted length: ${encrypted.length}<br>`;
+                output.innerHTML += `Password: ${password}<br><br>`;
+                
+                // Try URL-safe decode
+                try {
+                    const standardBase64 = encrypted.replace(/-/g, '+').replace(/_/g, '/');
+                    let padded = standardBase64;
+                    while (padded.length % 4) padded += '=';
+                    
+                    output.innerHTML += `After padding: ${padded.length} chars<br>`;
+                    
+                    const combined = nacl.util.decodeBase64(padded);
+                    output.innerHTML += `<span class="success">✅ Base64 decode successful: ${combined.length} bytes</span><br><br>`;
+                    
+                    // Extract components
+                    const salt = combined.slice(0, 16);
+                    const nonce = combined.slice(16, 40);
+                    const cipher = combined.slice(40);
+                    
+                    output.innerHTML += `Salt: ${Array.from(salt.slice(0, 8)).map(b => b.toString(16).padStart(2, '0')).join('')}...<br>`;
+                    output.innerHTML += `Nonce: ${Array.from(nonce.slice(0, 8)).map(b => b.toString(16).padStart(2, '0')).join('')}...<br>`;
+                    output.innerHTML += `Cipher length: ${cipher.length} bytes<br><br>`;
+                    
+                    // Compare with debug info
+                    if (testData.debug) {
+                        const ourSaltHex = Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join('');
+                        const ourNonceHex = Array.from(nonce).map(b => b.toString(16).padStart(2, '0')).join('');
+                        
+                        if (ourSaltHex === testData.debug.saltHex) {
+                            output.innerHTML += '<span class="success">✅ Salt matches</span><br>';
+                        } else {
+                            output.innerHTML += '<span class="error">❌ Salt mismatch!</span><br>';
+                            output.innerHTML += `Expected: ${testData.debug.saltHex}<br>`;
+                            output.innerHTML += `Got: ${ourSaltHex}<br>`;
+                        }
+                        
+                        if (ourNonceHex === testData.debug.nonceHex) {
+                            output.innerHTML += '<span class="success">✅ Nonce matches</span><br>';
+                        } else {
+                            output.innerHTML += '<span class="error">❌ Nonce mismatch!</span><br>';
+                        }
+                    }
+                    
+                    // Derive key and decrypt
+                    const key = deriveKey(password, salt);
+                    output.innerHTML += `<br>Key (first 8): ${Array.from(key.slice(0, 8)).map(b => b.toString(16).padStart(2, '0')).join('')}<br>`;
+                    
+                    if (testData.debug && testData.debug.keyFirst8Hex) {
+                        const ourKeyHex = Array.from(key.slice(0, 8)).map(b => b.toString(16).padStart(2, '0')).join('');
+                        if (ourKeyHex === testData.debug.keyFirst8Hex) {
+                            output.innerHTML += '<span class="success">✅ Key derivation matches</span><br>';
+                        } else {
+                            output.innerHTML += '<span class="error">❌ Key derivation differs!</span><br>';
+                            output.innerHTML += `Expected: ${testData.debug.keyFirst8Hex}<br>`;
+                            output.innerHTML += `Got: ${ourKeyHex}<br>`;
+                            output.innerHTML += '<strong>THIS IS THE PROBLEM - Key derivation is different!</strong><br>';
+                        }
+                    }
+                    
+                    const decrypted = nacl.secretbox.open(cipher, nonce, key);
+                    
+                    if (decrypted) {
+                        const plainText = nacl.util.encodeUTF8(decrypted);
+                        const payload = JSON.parse(plainText);
+                        output.innerHTML += '<br><span class="success">✅ DECRYPTION SUCCESSFUL!</span><br>';
+                        output.innerHTML += `Message: ${payload.message}<br>`;
+                        output.innerHTML += `From device: ${payload.device}<br>`;
+                    } else {
+                        output.innerHTML += '<br><span class="error">❌ DECRYPTION FAILED!</span><br>';
+                        output.innerHTML += 'secretbox.open returned null - wrong key or corrupted data<br>';
+                    }
+                    
+                } catch (e) {
+                    output.innerHTML += `<span class="error">❌ Error: ${e.message}</span><br>`;
+                    output.innerHTML += `Stack: ${e.stack}<br>`;
+                }
+                
+            } catch (e) {
+                output.innerHTML = `<span class="error">Error parsing test data: ${e.message}</span>`;
+            }
+        }
+        
+        // Byte-level tests
+        function runByteLevelTests() {
+            const output = document.getElementById('byteLevelResults');
+            output.innerHTML = '<strong>Running byte-level compatibility tests...</strong><br><br>';
+            
+            // Test 1: Uint8Array behavior
+            const arr1 = new Uint8Array([255, 256, -1]);
+            output.innerHTML += `Uint8Array overflow: [255, 256, -1] → [${arr1[0]}, ${arr1[1]}, ${arr1[2]}]<br>`;
+            
+            // Test 2: String.charCodeAt vs codePointAt
+            const emoji = '😀';
+            output.innerHTML += `Emoji charCodeAt(0): ${emoji.charCodeAt(0)}<br>`;
+            output.innerHTML += `Emoji codePointAt(0): ${emoji.codePointAt(0)}<br>`;
+            
+            // Test 3: TextEncoder comparison (if available)
+            if (typeof TextEncoder !== 'undefined') {
+                const encoder = new TextEncoder();
+                const testStr = 'Hello 世界';
+                const encoded = encoder.encode(testStr);
+                const naclEncoded = nacl.util.decodeUTF8(testStr);
+                output.innerHTML += `<br>TextEncoder vs nacl.util for "${testStr}":<br>`;
+                output.innerHTML += `TextEncoder length: ${encoded.length}<br>`;
+                output.innerHTML += `nacl.util length: ${naclEncoded.length}<br>`;
+                output.innerHTML += `Match: ${encoded.length === naclEncoded.length ? '✅' : '❌'}<br>`;
+            }
+            
+            // Test 4: Bitwise operations
+            output.innerHTML += `<br>Bitwise operations:<br>`;
+            output.innerHTML += `255 << 8: ${255 << 8}<br>`;
+            output.innerHTML += `255 << 24: ${255 << 24}<br>`;
+            output.innerHTML += `255 << 32: ${255 << 32} (should be 255 due to 32-bit limit)<br>`;
+            
+            // Test 5: Float precision
+            output.innerHTML += `<br>Float precision:<br>`;
+            output.innerHTML += `0.1 + 0.2 = ${0.1 + 0.2}<br>`;
+            output.innerHTML += `0.1 + 0.2 === 0.3: ${0.1 + 0.2 === 0.3}<br>`;
+        }
+        
+        // Key derivation (matching crypto-utils.js)
+        function deriveKey(password, salt) {
+            const passwordBytes = nacl.util.decodeUTF8(password);
+            let processedPasswordBytes = passwordBytes;
+            
+            if (passwordBytes.length > 32) {
+                processedPasswordBytes = nacl.hash(passwordBytes).slice(0, 32);
+            }
+            
+            const combined = new Uint8Array(processedPasswordBytes.length + salt.length);
+            combined.set(processedPasswordBytes);
+            combined.set(salt, processedPasswordBytes.length);
+            
+            let key = combined;
+            for (let i = 0; i < 10000; i++) {
+                key = nacl.hash(key).slice(0, 32);
+            }
+            
+            return key;
+        }
+        
+        // Initialize
+        showDeviceInfo();
+        
+        // Check nacl availability
+        if (typeof nacl === 'undefined') {
+            document.body.innerHTML = '<div style="color: red; padding: 20px;"><h1>ERROR: NaCl library not loaded!</h1><p>Please refresh the page.</p></div>';
+        }
+    </script>
+</body>
+</html>
