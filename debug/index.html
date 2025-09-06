@@ -393,10 +393,18 @@
     </div>
 
     <!-- Load TweetNaCl -->
-    <script src="../js/lib/nacl.min.js"></script>
-    <script src="../js/lib/nacl-util.min.js"></script>
+    <script src="../lib/tweetnacl/nacl-fast.min.js"></script>
+    <script src="../lib/tweetnacl/nacl-util.min.js"></script>
     
     <script>
+        // Check if nacl loaded properly
+        window.addEventListener('load', function() {
+            if (typeof nacl === 'undefined') {
+                alert('Critical Error: NaCl crypto library failed to load. Please refresh the page.');
+                document.getElementById('output').innerHTML = '<div class="log-error">FATAL: NaCl library not loaded. Cannot perform encryption/decryption.</div>';
+            }
+        });
+        
         // Logging utility
         function log(message, type = 'info') {
             const output = document.getElementById('output');
