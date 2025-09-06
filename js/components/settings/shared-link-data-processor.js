@@ -1162,15 +1162,10 @@ function createSharedLinkDataProcessor() {
             // Log to console
             console.log('[DEBUG] Shared Link Contents:', debugData);
             
-            // Add to chat as a system message if chat manager is available
+            // Add to chat as a single system message if chat manager is available
             if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
-                // Split into lines and add each as a system message with debug styling
-                const lines = debugMessage.split('\n');
-                lines.forEach((line, index) => {
-                    const isLast = index === lines.length - 1;
-                    const className = isLast ? 'debug-message debug-shared-links debug-message-last' : 'debug-message debug-shared-links';
-                    window.aiHackare.chatManager.addSystemMessage(line, className);
-                });
+                // Add the entire debug message as a single system message with debug styling
+                window.aiHackare.chatManager.addSystemMessage(debugMessage, 'debug-message debug-shared-links');
             } else if (addSystemMessage) {
                 // Fallback to provided addSystemMessage function
                 addSystemMessage(debugMessage);
