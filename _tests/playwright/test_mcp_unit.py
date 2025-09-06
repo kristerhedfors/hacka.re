@@ -20,9 +20,20 @@ def test_mcp_manager_initialization(page: Page, serve_hacka_re):
     mcp_modal = page.locator("#mcp-servers-modal")
     expect(mcp_modal).to_be_visible()
     
+    # Expand Advanced section to reveal proxy controls
+    advanced_header = page.locator(".mcp-advanced-header")
+    expect(advanced_header).to_be_visible()
+    advanced_header.click()
+    
+    # Wait for advanced section to expand
+    page.wait_for_selector(".mcp-advanced-list", state="visible", timeout=5000)
+    
+    # Wait for dynamic proxy elements to be created
+    page.wait_for_selector("#test-proxy-btn", state="visible", timeout=5000)
+    
     # Check required UI elements
     expect(page.locator("#test-proxy-btn")).to_be_visible()
-    expect(page.locator("#mcp-server-url")).to_be_visible()
+    expect(page.locator("#mcp-proxy-url")).to_be_visible()
     expect(page.locator("#proxy-status")).to_be_visible()
     
     screenshot_with_markdown(page, "mcp_manager_init", {
@@ -39,6 +50,13 @@ def test_mcp_proxy_connection_states_mocked(page: Page, serve_hacka_re):
     dismiss_welcome_modal(page)
     # Open MCP modal
     page.locator("#mcp-servers-btn").click()
+    
+    # Expand Advanced section
+    advanced_header = page.locator(".mcp-advanced-header")
+    advanced_header.click()
+    
+    # Wait for advanced section to expand and proxy elements to be created
+    page.wait_for_selector("#proxy-status", state="visible", timeout=5000)
     
     # Test disconnected state
     proxy_status = page.locator("#proxy-status")
@@ -68,6 +86,13 @@ def test_mcp_server_form_validation(page: Page, serve_hacka_re):
     dismiss_welcome_modal(page)
     # Open MCP modal
     page.locator("#mcp-servers-btn").click()
+    
+    # Expand Advanced section to reveal form
+    advanced_header = page.locator(".mcp-advanced-header")
+    advanced_header.click()
+    
+    # Wait for advanced section to expand
+    page.wait_for_selector(".mcp-advanced-list", state="visible", timeout=5000)
     
     # Test form elements
     url_input = page.locator("#mcp-server-url")
@@ -104,12 +129,20 @@ def test_mcp_modal_ui_interactions(page: Page, serve_hacka_re):
     modal = page.locator("#mcp-servers-modal")
     expect(modal).to_be_visible()
     
+    # Check Quick Connectors placeholder is visible (outside Advanced section)
+    expect(page.locator("#mcp-quick-connectors-placeholder")).to_be_visible()
+    
+    # Expand Advanced section
+    advanced_header = page.locator(".mcp-advanced-header")
+    advanced_header.click()
+    
+    # Wait for advanced section to expand and proxy elements to be created
+    page.wait_for_selector("#test-proxy-btn", state="visible", timeout=5000)
+    
     # Test all key UI elements exist
     expect(page.locator("#test-proxy-btn")).to_be_visible()
     expect(page.locator("#proxy-status")).to_be_visible()
-    expect(page.locator("#mcp-server-url")).to_be_visible()
-    # mcp-servers-list removed - test Quick Connectors instead
-    expect(page.locator("#mcp-quick-connectors-placeholder")).to_be_visible()
+    expect(page.locator("#mcp-proxy-url")).to_be_visible()
     
     # Test modal close
     close_btn = page.locator("#close-mcp-servers-modal")
@@ -133,6 +166,13 @@ def test_mcp_proxy_button_interaction(page: Page, serve_hacka_re):
     dismiss_welcome_modal(page)
     # Open MCP modal
     page.locator("#mcp-servers-btn").click()
+    
+    # Expand Advanced section
+    advanced_header = page.locator(".mcp-advanced-header")
+    advanced_header.click()
+    
+    # Wait for advanced section to expand and proxy elements to be created
+    page.wait_for_selector("#test-proxy-btn", state="visible", timeout=5000)
     
     # Test proxy button
     test_proxy_btn = page.locator("#test-proxy-btn")
@@ -165,11 +205,13 @@ def test_mcp_server_list_area(page: Page, serve_hacka_re):
     # Open MCP modal
     page.locator("#mcp-servers-btn").click()
     
-    # Check Quick Connectors area instead of server list
-    quick_connectors = page.locator("#mcp-quick-connectors-placeholder")
-    expect(quick_connectors).to_be_visible()
+    # Wait for modal to be visible
+    page.wait_for_selector("#mcp-servers-modal", state="visible", timeout=5000)
     
-    # Advanced section should be present at the bottom
+    # Check Quick Connectors placeholder exists
+    expect(page.locator("#mcp-quick-connectors-placeholder")).to_be_visible()
+    
+    # Check Advanced section exists
     advanced_section = page.locator(".mcp-advanced-section")
     expect(advanced_section).to_be_visible()
     

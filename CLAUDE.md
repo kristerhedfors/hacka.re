@@ -633,6 +633,7 @@ The multi-level output capture generates markdown-compatible reports that can be
 "#share-modal"             # Share link modal
 "#rag-modal"               # RAG system modal
 "#function-execution-modal" # Function execution approval modal
+"#mcp-servers-modal"       # MCP servers configuration modal
 
 # Modal close buttons
 "#close-welcome-modal"     # Close welcome modal
@@ -641,6 +642,36 @@ The multi-level output capture generates markdown-compatible reports that can be
 "#close-prompts-modal"     # Close prompts modal
 "#close-share-modal"       # Close share modal
 "#close-rag-modal"         # Close RAG modal
+"#close-mcp-servers-modal" # Close MCP servers modal
+```
+
+#### MCP Modal Elements
+```python
+"#mcp-servers-btn"         # Open MCP servers modal button
+"#mcp-servers-modal"       # MCP servers modal container
+"#close-mcp-servers-modal" # Close MCP modal button
+"#mcp-servers-info-icon"   # MCP info icon
+
+# MCP Proxy Connection (dynamically created)
+"#mcp-proxy-placeholder"   # Placeholder for proxy section
+"#mcp-proxy-url"          # Proxy URL input field (created dynamically)
+"#test-proxy-btn"         # Test connection button (created dynamically)
+"#proxy-status"           # Proxy connection status (created dynamically)
+"#server-instructions"    # Server instructions section (created dynamically)
+
+# MCP Server Form
+"#mcp-server-url"         # Server URL input field
+"#mcp-server-list"        # List of connected servers
+"#mcp-quick-connectors-placeholder" # Quick connectors section
+
+# MCP Configuration Options
+"#mcp-share-link-enable"  # Enable share link button
+"#mcp-introspection-enable" # Enable introspection button
+"#mcp-oauth-config-btn"   # Configure OAuth button
+
+# Input Mode Radio Buttons
+'input[name="input-mode"][value="command"]' # Simple command mode
+'input[name="input-mode"][value="json"]'    # JSON config mode
 ```
 
 #### Settings Modal Elements
@@ -712,6 +743,7 @@ The multi-level output capture generates markdown-compatible reports that can be
 "#share-btn"               # Open share button
 "#function-btn"            # Open function calling button
 "#rag-btn"                 # Open RAG button
+"#mcp-servers-btn"         # Open MCP servers button
 ```
 
 **Common Testing Mistakes to Avoid:**
