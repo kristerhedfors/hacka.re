@@ -123,3 +123,27 @@ server_pid.txt
 **/server_pid.txt
 **/.server.pid
 **/.server.log
+
+# Test HTML files in root
+test-*.html
+test_*.html
+debug*.html
+mobile-debug.html
+
+# Local Claude settings
+.claude/settings.local.json
+
+# Test status directory
+_tests/playwright/test_status/
+
+# Debug console JSON files
+*console*.json
+debug*.json
+
+# Screenshot directories (anywhere in the project)
+**/screenshots/
+**/screenshots_data/
+
+# Console log files
+**/console_logs*.json
+**/*console*.json
