@@ -217,14 +217,21 @@ window.CryptoUtils = (function() {
      * @returns {Uint8Array} Decoded data
      */
     function decodeBase64UrlSafe(urlSafeBase64) {
+        // Sanitize input - remove any whitespace or non-base64 characters
+        // This handles cases where the URL fragment might have been corrupted
+        const sanitized = urlSafeBase64.replace(/[\s\n\r]/g, '');
+        
         // Convert URL-safe base64 to standard base64
-        let base64 = urlSafeBase64
+        let base64 = sanitized
             .replace(/-/g, '+')  // Replace - with +
             .replace(/_/g, '/'); // Replace _ with /
         
         // Add padding if needed
         const padding = base64.length % 4;
-        if (padding === 2) {
+        if (padding === 1) {
+            // Invalid base64 - padding of 1 is not possible
+            throw new Error('Invalid base64 string length');
+        } else if (padding === 2) {
             base64 += '==';
         } else if (padding === 3) {
             base64 += '=';
@@ -284,9 +291,22 @@ window.CryptoUtils = (function() {
      * @returns {*} Decrypted data or null if decryption fails
      */
     function decryptData(encryptedData, password) {
+        // Sanitize the encrypted data first - remove any potential URL encoding artifacts
+        // This handles cases where the browser might have modified the fragment
+        const sanitizedData = encryptedData
+            .replace(/%2B/g, '+')  // URL decode + if needed
+            .replace(/%2F/g, '/')  // URL decode / if needed
+            .replace(/%3D/g, '=')  // URL decode = if needed
+            .trim();  // Remove any leading/trailing whitespace
+        
         try {
             // Convert from URL-safe base64 directly to Uint8Array
-            const data = decodeBase64UrlSafe(encryptedData);
+            const data = decodeBase64UrlSafe(sanitizedData);
+            
+            // Validate data length
+            if (data.length < SALT_LENGTH + nacl.secretbox.nonceLength + 1) {
+                throw new Error('Encrypted data too short');
+            }
             
             // Extract components
             let offset = 0;
@@ -327,7 +347,17 @@ window.CryptoUtils = (function() {
             // Decryption failed - this could be due to URL-safe conversion or actual decryption failure
             // Try with the original data as standard base64 for backward compatibility
             try {
-                const data = nacl.util.decodeBase64(encryptedData);
+                // Also sanitize for standard base64 attempt
+                const standardBase64 = sanitizedData
+                    .replace(/-/g, '+')  // Convert URL-safe to standard
+                    .replace(/_/g, '/'); // Convert URL-safe to standard
+                
+                const data = nacl.util.decodeBase64(standardBase64);
+                
+                // Validate data length
+                if (data.length < SALT_LENGTH + nacl.secretbox.nonceLength + 1) {
+                    throw new Error('Encrypted data too short');
+                }
                 
                 // Extract components
                 let offset = 0;

@@ -327,7 +327,12 @@ window.LinkSharingService = (function() {
                 const decryptedData = CryptoUtils.decryptData(encryptedData, password);
                 
                 if (!decryptedData) {
-                    console.error('Decryption failed or returned null');
+                    console.error('Decryption failed or returned null', {
+                        encryptedDataLength: encryptedData ? encryptedData.length : 0,
+                        encryptedDataSample: encryptedData ? encryptedData.substring(0, 50) + '...' : 'null',
+                        userAgent: navigator.userAgent,
+                        platform: navigator.platform
+                    });
                     return null;
                 }
                 
