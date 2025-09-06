@@ -1823,6 +1823,16 @@ main {
     padding-bottom: 0.5rem;
 }
 
+/* Debug messages for shared-links should preserve JSON formatting */
+.debug-shared-links .message-content {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: 'Courier New', Consolas, Monaco, monospace;
+    font-size: 0.9em;
+    line-height: 1.4;
+    overflow-x: auto;
+}
+
 .message-content {
     padding: 1rem;
     border-radius: var(--border-radius);

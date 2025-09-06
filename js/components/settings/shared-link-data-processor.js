@@ -1140,6 +1140,38 @@ function createSharedLinkDataProcessor() {
             displayWelcomeMessage
         });
         
+        // Debug mode logging - display full shared link data structure as pretty JSON
+        if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links')) {
+            // Create a comprehensive debug message with all shared link contents
+            const debugData = {
+                timestamp: new Date().toISOString(),
+                source: 'Shared Link Processing',
+                dataKeys: Object.keys(sharedData || {}),
+                contents: sharedData
+            };
+            
+            // Create a formatted message for display
+            const debugMessage = [
+                '🔗 ═══════════════════════════════════════════════════════════════',
+                '🔗 SHARED LINK DATA STRUCTURE (Debug Mode)',
+                '🔗 ═══════════════════════════════════════════════════════════════',
+                JSON.stringify(debugData, null, 2),
+                '🔗 ═══════════════════════════════════════════════════════════════'
+            ].join('\n');
+            
+            // Log to console
+            console.log('[DEBUG] Shared Link Contents:', debugData);
+            
+            // Add to chat as a single system message if chat manager is available
+            if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
+                // Add the entire debug message as a single system message with debug styling
+                window.aiHackare.chatManager.addSystemMessage(debugMessage, 'debug-message debug-shared-links');
+            } else if (addSystemMessage) {
+                // Fallback to provided addSystemMessage function
+                addSystemMessage(debugMessage);
+            }
+        }
+        
         try {
             // Clean slate if requested (for agent loading)
             if (cleanSlate) {

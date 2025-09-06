@@ -211,6 +211,45 @@ window.LinkSharingService = (function() {
             window.DebugService.debugLog('crypto', `🔐 Compressing and encrypting custom shareable link payload with ${payloadKeys.length} components: ${payloadKeys.join(', ')}`);
         }
         
+        // Enhanced debug logging for shared-links category - show full JSON structure
+        if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links')) {
+            // Create a comprehensive debug message with all shared link contents
+            const debugData = {
+                timestamp: new Date().toISOString(),
+                source: 'Share Link Generation',
+                action: 'Creating new share link',
+                dataKeys: Object.keys(finalPayload || {}),
+                statistics: {
+                    totalKeys: Object.keys(finalPayload || {}).length,
+                    hasApiKey: !!finalPayload.apiKey,
+                    hasPrompts: !!(finalPayload.prompts && finalPayload.prompts.length > 0),
+                    hasFunctions: !!(finalPayload.functions && Object.keys(finalPayload.functions).length > 0),
+                    hasMessages: !!(finalPayload.messages && finalPayload.messages.length > 0),
+                    hasMCP: !!finalPayload.mcpConnections,
+                    hasWelcomeMessage: !!finalPayload.welcomeMessage
+                },
+                contents: finalPayload
+            };
+            
+            // Create a formatted message for display
+            const debugMessage = [
+                '🔗 ═══════════════════════════════════════════════════════════════',
+                '🔗 SHARE LINK GENERATION - DATA STRUCTURE (Debug Mode)',
+                '🔗 ═══════════════════════════════════════════════════════════════',
+                JSON.stringify(debugData, null, 2),
+                '🔗 ═══════════════════════════════════════════════════════════════'
+            ].join('\n');
+            
+            // Log to console
+            console.log('[DEBUG] Share Link Generation Contents:', debugData);
+            
+            // Add to chat as a single system message if chat manager is available
+            if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
+                // Add the entire debug message as a single system message with debug styling
+                window.aiHackare.chatManager.addSystemMessage(debugMessage, 'debug-message debug-shared-links');
+            }
+        }
+        
         // Generate a strong master key for this share link
         // This is the ONLY place where master keys are generated for shared links
         const masterKeyBytes = nacl.randomBytes(32);
