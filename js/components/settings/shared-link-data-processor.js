@@ -431,18 +431,22 @@ function createSharedLinkDataProcessor() {
             defaultSelectedCount: 0
         };
         
-        // If there are shared prompts, save them
+        // If there are shared prompts, save them and automatically select all of them
         if (sharedData.prompts && Array.isArray(sharedData.prompts)) {
+            const sharedPromptIds = [];
             sharedData.prompts.forEach(prompt => {
                 PromptsService.savePrompt(prompt);
+                if (prompt.id) {
+                    sharedPromptIds.push(prompt.id);
+                }
             });
             promptsSummary.promptCount = sharedData.prompts.length;
-        }
-        
-        // If there are shared selected prompt IDs, save them
-        if (sharedData.selectedPromptIds && Array.isArray(sharedData.selectedPromptIds)) {
-            PromptsService.setSelectedPromptIds(sharedData.selectedPromptIds);
-            promptsSummary.selectedCount = sharedData.selectedPromptIds.length;
+            
+            // Automatically select all shared prompts
+            if (sharedPromptIds.length > 0) {
+                PromptsService.setSelectedPromptIds(sharedPromptIds);
+                promptsSummary.selectedCount = sharedPromptIds.length;
+            }
         }
         
         // Apply shared default prompt selections (or reset to default if not present)
@@ -462,7 +466,8 @@ function createSharedLinkDataProcessor() {
         }
         
         // Apply all selected prompts (both user and default) as system prompt
-        if ((sharedData.selectedPromptIds && sharedData.selectedPromptIds.length > 0) || 
+        // All shared prompts are automatically selected
+        if ((sharedData.prompts && sharedData.prompts.length > 0) ||
             (sharedData.selectedDefaultPromptIds && sharedData.selectedDefaultPromptIds.length > 0)) {
             PromptsService.applySelectedPromptsAsSystem();
         }
@@ -551,13 +556,13 @@ function createSharedLinkDataProcessor() {
      */
     function applyFunctions(sharedData, addSystemMessage, systematicActivation = false) {
         const functionCount = sharedData.functions ? Object.keys(sharedData.functions).length : 0;
-        const enabledCount = sharedData.enabledFunctions ? sharedData.enabledFunctions.length : 0;
+        const sharedFunctionNames = [];
         
-        if (functionCount > 0 || enabledCount > 0) {
-            console.log(`Applying ${functionCount} functions with ${enabledCount} enabled`);
+        if (functionCount > 0) {
+            console.log(`Applying ${functionCount} functions (all will be enabled)`);
         }
         
-        // If there are shared functions, save them with collection information
+        // If there are shared functions, save them and automatically enable all of them
         if (sharedData.functions && typeof sharedData.functions === 'object') {
             const functionCollections = sharedData.functionCollections || {};
             const collectionMetadata = sharedData.functionCollectionMetadata || {};
@@ -575,44 +580,27 @@ function createSharedLinkDataProcessor() {
                     collectionId,
                     metadata
                 );
+                
+                // Track the function name for auto-enabling
+                sharedFunctionNames.push(functionName);
             });
             
             // Store summary info instead of adding message
             const collectionCount = Object.keys(collectionMetadata).length;
-        }
-        
-        // Handle function activation based on mode
-        if (sharedData.enabledFunctions && Array.isArray(sharedData.enabledFunctions)) {
-            if (systematicActivation) {
-                // Systematic activation: Only activate/deactivate functions that match the agent's configuration
-                const allFunctions = Object.keys(FunctionToolsService.getJsFunctions());
-                
-                // Disable functions that are not in the enabled list
-                allFunctions.forEach(functionName => {
-                    const shouldBeEnabled = sharedData.enabledFunctions.includes(functionName);
-                    const isCurrentlyEnabled = FunctionToolsService.isJsFunctionEnabled(functionName);
-                    
-                    if (shouldBeEnabled && !isCurrentlyEnabled) {
-                        FunctionToolsService.enableJsFunction(functionName);
-                    } else if (!shouldBeEnabled && isCurrentlyEnabled) {
-                        FunctionToolsService.disableJsFunction(functionName);
-                    }
-                });
-                
-            } else {
-                // Legacy behavior: Disable all, then enable specified ones
-                const allFunctions = Object.keys(FunctionToolsService.getJsFunctions());
-                allFunctions.forEach(functionName => {
-                    FunctionToolsService.disableJsFunction(functionName);
-                });
-                
-                // Then enable only the shared enabled functions
-                sharedData.enabledFunctions.forEach(functionName => {
-                    FunctionToolsService.enableJsFunction(functionName);
-                });
-            }
             
-            // Summary info captured below
+            // Automatically enable all shared functions
+            // First disable all existing functions that are NOT in the shared set
+            const allFunctions = Object.keys(FunctionToolsService.getJsFunctions());
+            allFunctions.forEach(functionName => {
+                if (!sharedFunctionNames.includes(functionName)) {
+                    FunctionToolsService.disableJsFunction(functionName);
+                }
+            });
+            
+            // Then enable all the shared functions
+            sharedFunctionNames.forEach(functionName => {
+                FunctionToolsService.enableJsFunction(functionName);
+            });
         }
         
         // Apply function tools enabled state
@@ -621,9 +609,8 @@ function createSharedLinkDataProcessor() {
             FunctionToolsService.setFunctionToolsEnabled(sharedData.functionToolsEnabled, null); // Don't add message
             functionToolsEnabled = sharedData.functionToolsEnabled;
         } else {
-            // Fallback: Enable function tools if we have functions
-            const hasFunctions = (sharedData.functions && Object.keys(sharedData.functions).length > 0) ||
-                               (sharedData.enabledFunctions && sharedData.enabledFunctions.length > 0);
+            // Enable function tools if we have functions
+            const hasFunctions = sharedData.functions && Object.keys(sharedData.functions).length > 0;
             
             if (hasFunctions && FunctionToolsService && typeof FunctionToolsService.setFunctionToolsEnabled === 'function') {
                 FunctionToolsService.setFunctionToolsEnabled(true, null); // Don't add message
@@ -652,10 +639,10 @@ function createSharedLinkDataProcessor() {
         // Return summary of what was applied
         return {
             functionCount: functionCount,
-            enabledCount: enabledCount,
+            enabledCount: sharedFunctionNames.length,
             collectionCount: sharedData.functionCollectionMetadata ? Object.keys(sharedData.functionCollectionMetadata).length : 0,
             toolsEnabled: functionToolsEnabled,
-            enabledFunctions: sharedData.enabledFunctions || [],
+            enabledFunctions: sharedFunctionNames,
             defaultFunctionCount: (sharedData.selectedDefaultFunctionIds || []).length + (sharedData.selectedDefaultFunctionCollectionIds || []).length,
             selectedDefaultFunctionIds: sharedData.selectedDefaultFunctionIds || [],
             selectedDefaultFunctionCollectionIds: sharedData.selectedDefaultFunctionCollectionIds || []

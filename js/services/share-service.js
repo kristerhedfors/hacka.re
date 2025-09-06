@@ -48,9 +48,7 @@ window.ShareService = (function() {
      * @param {string} [options.welcomeMessage] - Custom welcome message for the share
      * @param {Object} [options.mcpConnections] - MCP connections to share
      * @param {Object} [options.functions] - Functions to share
-     * @param {Array} [options.enabledFunctions] - Enabled function names
      * @param {Array} [options.prompts] - Prompts to share
-     * @param {Array} [options.selectedPromptIds] - Selected prompt IDs
      * @param {boolean} [options.includeBaseUrl] - Whether to include the base URL
      * @param {boolean} [options.includeApiKey] - Whether to include the API key
      * @param {boolean} [options.includeSystemPrompt] - Whether to include the system prompt
@@ -185,13 +183,11 @@ window.ShareService = (function() {
         // Handle function library
         if (options.includeFunctionLibrary) {
             let functions = options.functions;
-            let enabledFunctions = options.enabledFunctions;
             let mcpCollectionIds = []; // Define at the outer scope
             
             // If not provided, try to collect them (excluding MCP functions)
             if (!functions && window.FunctionToolsService) {
                 const allFunctions = window.FunctionToolsService.getJsFunctions();
-                const allEnabledFunctions = window.FunctionToolsService.getEnabledFunctionNames();
                 const allCollections = window.FunctionToolsService.getAllFunctionCollections();
                 const functionCollections = window.FunctionToolsService.getFunctionCollections();
                 
@@ -224,20 +220,12 @@ window.ShareService = (function() {
                 
                 console.log('🔍 ShareService: Functions after filtering:', Object.keys(functions).length);
                 console.log('🚫 ShareService: Excluded MCP functions:', excludedFunctions);
-                
-                // Filter enabled functions to exclude MCP functions
-                enabledFunctions = allEnabledFunctions.filter(funcName => {
-                    const collectionId = functionCollections[funcName];
-                    return !collectionId || !mcpCollectionIds.includes(collectionId);
-                });
-                
-                console.log('🔍 ShareService: Enabled functions after filtering:', enabledFunctions.length);
             }
             
             // Include functions if any exist
             if (functions && Object.keys(functions).length > 0) {
                 payload.functions = functions;
-                payload.enabledFunctions = enabledFunctions || [];
+                // No need for enabledFunctions - all shared functions are enabled by default
                 
                 // Include collection information to preserve function organization
                 if (window.FunctionToolsService) {
@@ -292,20 +280,18 @@ window.ShareService = (function() {
         // Handle prompt library
         if (options.includePromptLibrary) {
             let prompts = options.prompts;
-            let selectedPromptIds = options.selectedPromptIds;
             
             // If not provided, try to collect them (excluding MCP prompts)
             if (!prompts && window.PromptsService) {
                 const allPrompts = window.PromptsService.getPrompts();
                 // Filter out MCP prompts - they should not be shared
                 prompts = allPrompts.filter(prompt => !prompt.isMcpPrompt);
-                selectedPromptIds = window.PromptsService.getSelectedPromptIds();
             }
             
             // Include prompts if any exist
             if (prompts && prompts.length > 0) {
                 payload.prompts = prompts;
-                payload.selectedPromptIds = selectedPromptIds || [];
+                // No need for selectedPromptIds - all shared prompts are selected by default
                 itemsIncluded.push(`✅ PROMPT LIBRARY (${prompts.length} prompts)`);
             }
             

@@ -113,8 +113,7 @@ window.LinkSharingService = (function() {
                 const userPrompts = allPrompts.filter(prompt => !prompt.isMcpPrompt);
                 finalPayload.prompts = userPrompts;
                 
-                const selectedPromptIds = PromptsService.getSelectedPromptIds();
-                finalPayload.selectedPromptIds = selectedPromptIds;
+                // No need to include selectedPromptIds - all shared prompts are selected by default
                 
                 // Get selected default prompts, excluding MCP prompts
                 const selectedDefaultPromptIds = window.DefaultPromptsService ? 
@@ -173,13 +172,7 @@ window.LinkSharingService = (function() {
                 
                 finalPayload.functions = userFunctions;
                 
-                // Filter enabled functions to exclude MCP functions
-                const allEnabledFunctions = FunctionToolsService.getEnabledFunctionNames();
-                const enabledFunctions = allEnabledFunctions.filter(funcName => {
-                    const collectionId = functionCollections[funcName];
-                    return !collectionId || !mcpCollectionIds.includes(collectionId);
-                });
-                finalPayload.enabledFunctions = enabledFunctions;
+                // No need to include enabledFunctions - all shared functions are enabled by default
                 
                 // Add default function selections if available (legacy support)
                 if (window.DefaultFunctionsService) {
@@ -318,14 +311,14 @@ window.LinkSharingService = (function() {
         // Prompt configuration
         if (config.prompts) {
             if (config.prompts.library) payload.prompts = config.prompts.library;
-            if (config.prompts.selectedIds) payload.selectedPromptIds = config.prompts.selectedIds;
+            // No need for selectedIds - all shared prompts are selected by default
             if (config.prompts.selectedDefaultIds) payload.selectedDefaultPromptIds = config.prompts.selectedDefaultIds;
         }
         
         // Function configuration
         if (config.functions) {
             if (config.functions.library) payload.functions = config.functions.library;
-            if (config.functions.enabled) payload.enabledFunctions = config.functions.enabled;
+            // No need for enabled - all shared functions are enabled by default
             
             // Include default function selections (by reference only)
             if (config.functions.selectedDefaultFunctionCollectionIds) payload.selectedDefaultFunctionCollectionIds = config.functions.selectedDefaultFunctionCollectionIds;
@@ -359,7 +352,7 @@ window.LinkSharingService = (function() {
     /**
      * Extract and decrypt shared data from the URL
      * @param {string} password - The password to use for decryption
-     * @returns {Object} Object containing the decrypted data (apiKey, systemPrompt, messages, prompts, selectedPromptIds, etc.)
+     * @returns {Object} Object containing the decrypted data (apiKey, systemPrompt, messages, prompts, functions, etc.)
      */
     async function extractSharedApiKey(password) {
         try {
@@ -462,11 +455,6 @@ window.LinkSharingService = (function() {
                     console.log('DEBUG: Full decrypted data structure:', JSON.stringify(data, null, 2));
                 }
                 
-                if (data.selectedPromptIds) {
-                    result.selectedPromptIds = data.selectedPromptIds;
-                    console.log('Extracted selected prompt IDs from shared link:', data.selectedPromptIds);
-                }
-                
                 // Include selected default prompt IDs if present
                 if (data.selectedDefaultPromptIds) {
                     result.selectedDefaultPromptIds = data.selectedDefaultPromptIds;
@@ -477,11 +465,6 @@ window.LinkSharingService = (function() {
                 if (data.functions) {
                     result.functions = data.functions;
                     console.log('Extracted functions from shared link:', Object.keys(data.functions));
-                }
-                
-                if (data.enabledFunctions) {
-                    result.enabledFunctions = data.enabledFunctions;
-                    console.log('Extracted enabled function names from shared link:', data.enabledFunctions);
                 }
                 
                 // Include function collections if present
