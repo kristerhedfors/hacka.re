@@ -24,7 +24,7 @@ window.FunctionToolsRegistry = (function() {
             
             // Generate a collection ID if not provided
             if (!collectionId) {
-                collectionId = 'collection_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                collectionId = 'collection_' + Math.random().toString(36).substr(2, 9);
             }
             
             // Get current state

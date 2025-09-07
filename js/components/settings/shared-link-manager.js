@@ -242,7 +242,15 @@ window.SharedLinkManager = (function() {
                     pendingSharedModel: pendingSharedModel
                 });
             } catch (error) {
+                console.error('[SharedLink] Error in tryAutoDecrypt:', error);
                 console.log('Current session key did not work for this shared link, prompting for password');
+                
+                // If we successfully extracted data but processing failed, store it for later
+                if (sharedData) {
+                    console.log('[SharedLink] Data was extracted but processing failed, storing for retry');
+                    window._pendingSharedData = sharedData;
+                }
+                
                 return null;
             }
         }

@@ -111,6 +111,31 @@ window.SettingsInitialization = (function() {
                         console.log('[Settings Init] Shared data processed successfully');
                     } else {
                         console.warn('[Settings Init] Early password verification completed but no shared data could be processed');
+                        
+                        // Check if we have pending shared data that was extracted but not processed
+                        if (window._pendingSharedData) {
+                            console.log('[Settings Init] Found pending shared data, attempting to process it now');
+                            try {
+                                const processedModel = window.SharedLinkDataProcessor ? 
+                                    await window.SharedLinkDataProcessor.processSharedData(
+                                        window._pendingSharedData, 
+                                        { 
+                                            addSystemMessage, 
+                                            setMessages: state.setMessages, 
+                                            displayWelcomeMessage: true 
+                                        }
+                                    ) : null;
+                                
+                                if (processedModel) {
+                                    processSharedModel(processedModel, componentManagers, state, updateModelInfoDisplay);
+                                }
+                                
+                                console.log('[Settings Init] Successfully processed pending shared data');
+                                delete window._pendingSharedData; // Clean up
+                            } catch (retryError) {
+                                console.error('[Settings Init] Failed to process pending shared data:', retryError);
+                            }
+                        }
                     }
                 } catch (error) {
                     console.error('[Settings Init] Error processing early verified shared data:', error);

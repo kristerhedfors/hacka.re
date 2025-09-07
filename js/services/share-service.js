@@ -212,7 +212,10 @@ window.ShareService = (function() {
                     const collectionId = functionCollections[funcName];
                     // Only include if not in an MCP collection
                     if (!collectionId || !mcpCollectionIds.includes(collectionId)) {
-                        functions[funcName] = funcSpec;
+                        // Only include the code, not the toolDefinition (it can be rebuilt from code)
+                        functions[funcName] = {
+                            code: funcSpec.code
+                        };
                     } else {
                         excludedFunctions.push(`${funcName} (collection: ${collectionId})`);
                     }
@@ -228,32 +231,42 @@ window.ShareService = (function() {
                 // No need for enabledFunctions - all shared functions are enabled by default
                 
                 // Include collection information to preserve function organization
+                // Map function names to collection names for grouping
                 if (window.FunctionToolsService) {
                     const functionCollections = window.FunctionToolsService.getFunctionCollections();
                     const allCollections = window.FunctionToolsService.getAllFunctionCollections();
                     
-                    // Build collection metadata for non-MCP functions
-                    const relevantCollections = {};
-                    const relevantMetadata = {};
+                    // Build function-to-collection-name mapping
+                    const functionToCollectionName = {};
                     
                     Object.keys(functions).forEach(funcName => {
                         const collectionId = functionCollections[funcName];
                         if (collectionId && !mcpCollectionIds.includes(collectionId)) {
-                            relevantCollections[funcName] = collectionId;
+                            // Get the actual collection name from metadata
+                            let collectionName = funcName; // Default to function name if no metadata
                             
-                            // Add collection metadata if not already added
-                            if (!relevantMetadata[collectionId] && allCollections[collectionId]) {
-                                relevantMetadata[collectionId] = allCollections[collectionId].metadata;
+                            if (allCollections[collectionId] && allCollections[collectionId].metadata && allCollections[collectionId].metadata.name) {
+                                // Use the actual collection name from metadata
+                                collectionName = allCollections[collectionId].metadata.name;
+                            } else if (allCollections[collectionId] && allCollections[collectionId].functions && allCollections[collectionId].functions.length > 1) {
+                                // If no metadata name but multiple functions, generate a name from function list
+                                const funcList = allCollections[collectionId].functions;
+                                if (funcList.length === 2) {
+                                    collectionName = funcList.join(' & ');
+                                } else {
+                                    collectionName = funcList[0] + ' & ' + (funcList.length - 1) + ' more';
+                                }
                             }
+                            
+                            functionToCollectionName[funcName] = collectionName;
                         }
                     });
                     
-                    // Add collection data to payload
-                    if (Object.keys(relevantCollections).length > 0) {
-                        payload.functionCollections = relevantCollections;
-                        payload.functionCollectionMetadata = relevantMetadata;
-                        const uniqueCollections = new Set(Object.values(relevantCollections)).size;
-                        console.log(`🔍 ShareService: Including collection info for ${uniqueCollections} collections`);
+                    // Add collection data to payload if any exist
+                    if (Object.keys(functionToCollectionName).length > 0) {
+                        payload.functionCollections = functionToCollectionName;
+                        const uniqueCollections = new Set(Object.values(functionToCollectionName)).size;
+                        console.log(`🔍 ShareService: Including collection info for ${uniqueCollections} collections with proper names`);
                     }
                 }
                 

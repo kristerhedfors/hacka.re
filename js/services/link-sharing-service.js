@@ -166,7 +166,10 @@ window.LinkSharingService = (function() {
                     const collectionId = functionCollections[funcName];
                     // Only include if not in an MCP collection
                     if (!collectionId || !mcpCollectionIds.includes(collectionId)) {
-                        userFunctions[funcName] = funcSpec;
+                        // Only include the code, not the toolDefinition (it can be rebuilt from code)
+                        userFunctions[funcName] = {
+                            code: funcSpec.code
+                        };
                     }
                 });
                 
@@ -473,11 +476,8 @@ window.LinkSharingService = (function() {
                     console.log('Extracted function collections from shared link:', Object.keys(data.functionCollections).length, 'mappings');
                 }
                 
-                // Include function collection metadata if present
-                if (data.functionCollectionMetadata) {
-                    result.functionCollectionMetadata = data.functionCollectionMetadata;
-                    console.log('Extracted function collection metadata from shared link:', Object.keys(data.functionCollectionMetadata));
-                }
+                // Note: functionCollectionMetadata is no longer included in share links
+                // We use simplified function-to-collection-name mapping instead
                 
                 // Include default function selections if present (by reference)
                 if (data.selectedDefaultFunctionCollectionIds) {
