@@ -147,3 +147,5 @@ debug*.json
 # Console log files
 **/console_logs*.json
 **/*console*.json
+# Ignore all .out files (test output with potential secrets)
+*.out
