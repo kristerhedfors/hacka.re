@@ -45,19 +45,26 @@ class TestShodanKernelWorkflow:
         yolo_checkbox = page.locator("#yolo-mode")
         expect(yolo_checkbox).to_be_visible()
         
-        # Force click to enable if not already enabled
-        try:
-            if not yolo_checkbox.is_checked():
-                yolo_checkbox.click(force=True)
+        # Properly enable YOLO mode with dialog handling
+        if not yolo_checkbox.is_checked():
+            # Set up dialog handler to accept the YOLO mode confirmation
+            def handle_yolo_dialog(dialog):
+                print(f"YOLO confirmation dialog: '{dialog.message[:50]}...'")
+                dialog.accept()  # Accept the YOLO mode warning
+            
+            page.on("dialog", handle_yolo_dialog)
+            
+            print("Enabling YOLO mode with dialog handler...")
+            yolo_checkbox.click()
+            time.sleep(2)  # Wait for dialog processing
+            
+            # Verify YOLO mode is actually enabled
+            if yolo_checkbox.is_checked():
                 print("✅ YOLO mode enabled - functions will execute automatically")
-                time.sleep(1)  # Give it time to process
             else:
-                print("✅ YOLO mode already enabled")
-        except Exception as e:
-            print(f"⚠️ YOLO mode toggle issue: {e}")
-            # Try force click anyway
-            yolo_checkbox.click(force=True)
-            print("✅ YOLO mode clicked (forced)")
+                print("❌ YOLO mode failed to enable")
+        else:
+            print("✅ YOLO mode already enabled")
         
         # Close settings
         close_settings = page.locator("#close-settings")

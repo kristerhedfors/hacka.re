@@ -733,11 +733,24 @@ def enable_yolo_mode(page: Page):
     # Wait for modal
     page.wait_for_selector("#settings-modal", state="visible", timeout=5000)
     
-    # Enable YOLO mode checkbox
+    # Enable YOLO mode checkbox with dialog handling
     yolo_checkbox = page.locator("#yolo-mode")
     if not yolo_checkbox.is_checked():
-        yolo_checkbox.check()
-        print("✅ YOLO mode enabled")
+        # CRITICAL: Handle the confirmation dialog that appears when enabling YOLO mode
+        def handle_yolo_dialog(dialog):
+            print(f"YOLO confirmation dialog appeared: {dialog.type}")
+            dialog.accept()  # Accept the warning about function execution
+        
+        page.on("dialog", handle_yolo_dialog)
+        
+        yolo_checkbox.click()  # Use click() not check() to trigger dialog
+        time.sleep(2)  # Wait for dialog processing
+        
+        # Verify it's actually enabled
+        if yolo_checkbox.is_checked():
+            print("✅ YOLO mode enabled - functions will execute automatically")
+        else:
+            print("❌ YOLO mode failed to enable")
     else:
         print("✅ YOLO mode already enabled")
     
@@ -746,6 +759,12 @@ def enable_yolo_mode(page: Page):
     close_btn.click()
     page.wait_for_selector("#settings-modal", state="hidden", timeout=5000)
 ```
+
+**CRITICAL NOTES:**
+- **MUST handle confirmation dialog**: YOLO mode shows a warning dialog that must be accepted
+- **Use `click()` not `check()`**: The `check()` method may not trigger the required change event
+- **Dialog handling is essential**: Without accepting the dialog, YOLO mode remains disabled
+- **Verify enablement**: Always check that `yolo_checkbox.is_checked()` returns `true` after the operation
 
 **YOLO Mode Benefits:**
 - ✅ No function execution approval modals
