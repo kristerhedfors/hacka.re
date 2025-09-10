@@ -162,7 +162,33 @@ window.ApiStreamProcessor = (function() {
                 }
                 
                 if (funcDelta.arguments !== undefined) {
-                    toolCall.function.arguments += funcDelta.arguments;
+                    // Prevent specific Gmail-style argument duplication patterns
+                    const existingArgs = toolCall.function.arguments;
+                    const deltaArgs = funcDelta.arguments;
+                    
+                    // Check for exact duplication patterns like Gmail MCP exhibits
+                    if (existingArgs.length > 0 && deltaArgs.length > 0) {
+                        // Detect if the delta would create a pattern like: existing + existing
+                        // or if the delta starts with a complete JSON that matches what we already have
+                        const wouldCreateExactDuplication = (
+                            existingArgs === deltaArgs ||  // Exact same content
+                            (existingArgs.includes('{"') && deltaArgs.includes('{"') && existingArgs.includes(deltaArgs.trim())) ||  // JSON duplication
+                            deltaArgs.startsWith(existingArgs)  // Delta starts with existing content
+                        );
+                        
+                        if (wouldCreateExactDuplication) {
+                            console.warn(`[StreamProcessor] Argument duplication prevented for ${toolCall.function.name}:`, {
+                                existing: existingArgs.substring(0, 100) + '...',
+                                delta: deltaArgs.substring(0, 100) + '...',
+                                reason: 'Exact duplication pattern detected',
+                                skipped: true
+                            });
+                            // Skip this delta to prevent duplication
+                            continue;
+                        }
+                    }
+                    
+                    toolCall.function.arguments += deltaArgs;
                 }
             }
         }
