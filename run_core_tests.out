@@ -17,9 +17,7 @@ Port: 8000
 Project Root: /Users/user/dev/hacka.re
 ==================================================
 Checking for existing HTTP server processes on port 8000...
-Found existing processes: 72263
-Killing existing processes...
-Processes killed.
+No existing processes found on port 8000.
 Changing to project root directory: /Users/user/dev/hacka.re
 Starting Python HTTP server on port 8000...
 Failed to start server.
@@ -39,15 +37,15 @@ plugins: anyio-4.9.0, timeout-2.4.0, playwright-0.7.0, base-url-2.1.0, asyncio-1
 asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
 collected 1002 items / 940 deselected / 62 selected
 
-shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_info[chromium0] PASSED [  1%]
-shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_plan_details[chromium0] PASSED [  3%]
-test_api.py::test_api_key_configuration[chromium0] PASSED                [  4%]
-test_api.py::test_model_selection[chromium0] PASSED                      [  6%]
+shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_info[chromium0] SKIPPED [  1%]
+shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_plan_details[chromium0] SKIPPED [  3%]
+test_api.py::test_api_key_configuration[chromium0] SKIPPED (API key ...) [  4%]
+test_api.py::test_model_selection[chromium0] SKIPPED (API key is req...) [  6%]
 test_api_key_detection_simple.py::test_api_key_detection_simple[chromium0] PASSED [  8%]
 test_api_key_enter.py::test_api_key_modal_enter_key[chromium0] PASSED    [  9%]
-test_api_key_persistence_debug.py::test_api_key_persistence_scenario_1_basic[chromium0] PASSED [ 11%]
+test_api_key_persistence_debug.py::test_api_key_persistence_scenario_1_basic[chromium0] FAILED [ 11%]
 test_api_key_persistence_debug.py::test_api_key_persistence_scenario_2_retry_helper[chromium0] PASSED [ 12%]
-test_api_key_persistence_debug.py::test_api_key_persistence_scenario_3_multiple_attempts[chromium0] PASSED [ 14%]
-test_api_key_persistence_debug.py::test_api_key_persistence_scenario_4_timing_analysis[chromium0] PASSED [ 16%]
-test_chat.py::test_chat_message_send_receive[chromium0] PASSED           [ 17%]
+test_api_key_persistence_debug.py::test_api_key_persistence_scenario_3_multiple_attempts[chromium0] FAILED [ 14%]
+test_api_key_persistence_debug.py::test_api_key_persistence_scenario_4_timing_analysis[chromium0] FAILED [ 16%]
+test_chat.py::test_chat_message_send_receive[chromium0] SKIPPED (API...) [ 17%]
 test_chat_input_performance.py::test_chat_input_performance_bottleneck[chromium0] 

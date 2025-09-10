@@ -285,7 +285,6 @@ You have access to powerful tools for exploring the hacka.re codebase. These too
 - function-calling.js - Function calling guide
 - function-library.js - Function library info
 - hacka-re-project.js - Project overview
-- interpretability-urgency.js - Interpretability essay
 - owasp-llm-top10.js - OWASP security guide
 
 ### Utility Files (js/utils/):
