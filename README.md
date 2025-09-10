@@ -222,7 +222,6 @@ hacka.re features 14 specialized modal windows, each serving a distinct purpose:
 **Purpose**: System prompt management and library
 - **Default Prompts Library**
   - README.md - this file
-  - The urgency of interpretability
   - OWASP Top 10 for LLM Applications
 - **Custom Prompts**
   - Create new prompts

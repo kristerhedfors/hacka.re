@@ -25,17 +25,12 @@ function initializeDefaultPrompts() {
         DEFAULT_PROMPTS.push(window.HackaReProjectPrompt);
     }
     
-    // 2. The urgency of interpretability
-    if (window.InterpretabilityUrgencyPrompt) {
-        DEFAULT_PROMPTS.push(window.InterpretabilityUrgencyPrompt);
-    }
-    
-    // 3. OWASP Top 10 for LLM Applications
+    // 2. OWASP Top 10 for LLM Applications
     if (window.OwaspLlmTop10Prompt) {
         DEFAULT_PROMPTS.push(window.OwaspLlmTop10Prompt);
     }
     
-    // 4. LLM Security Literacy
+    // 3. LLM Security Literacy
     if (window.LlmSecurityLiteracyPrompt) {
         DEFAULT_PROMPTS.push(window.LlmSecurityLiteracyPrompt);
     }
