@@ -592,12 +592,22 @@ function createSharedLinkDataProcessor() {
                 
                 // Get or create collection ID for this collection name
                 let collectionId = null;
+                let collectionMetadata = null;
                 if (collectionName) {
                     if (!collectionNameToId[collectionName]) {
                         // Use simple collection ID without timestamp
-                        collectionNameToId[collectionName] = `collection_${collectionName}`;
+                        // Generate a short random ID to avoid conflicts
+                        const randomId = Math.random().toString(36).substr(2, 9);
+                        collectionNameToId[collectionName] = `collection_${randomId}`;
                     }
                     collectionId = collectionNameToId[collectionName];
+                    
+                    // Create metadata with the actual collection name
+                    collectionMetadata = {
+                        name: collectionName,
+                        createdAt: new Date().toISOString(),
+                        source: 'shared-link'
+                    };
                 }
                 
                 // Rebuild toolDefinition from code if not present (new behavior)
@@ -610,14 +620,13 @@ function createSharedLinkDataProcessor() {
                     }
                 }
                 
-                // Add function with collection information
-                // No metadata since we don't include it in share links anymore
+                // Add function with collection information and metadata
                 FunctionToolsService.addJsFunction(
                     functionName,
                     functionData.code,
                     toolDefinition,
                     collectionId,
-                    null // No metadata
+                    collectionMetadata // Pass the metadata with collection name
                 );
                 
                 // Track the function name for auto-enabling
