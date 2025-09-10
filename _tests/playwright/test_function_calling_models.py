@@ -12,7 +12,7 @@ import os
 import time
 import json
 from playwright.sync_api import Page, expect
-from test_utils import dismiss_welcome_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown, enable_yolo_mode
 
 # List of Groq models to test (only chat models that might support function calling)
 GROQ_MODELS = [
@@ -368,6 +368,9 @@ def test_groq_function_calling(page: Page, serve_hacka_re, groq_api_key, model):
     
     if not selected_model:
         pytest.skip(f"Model {model} not available on Groq")
+    
+    # Enable YOLO mode to auto-execute functions without modal confirmation
+    enable_yolo_mode(page)
     
     # Test simple function
     print(f"\n--- Testing simple function with {model} ---")
