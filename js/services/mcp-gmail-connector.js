@@ -53,7 +53,7 @@
                             query: { type: 'string', description: 'Gmail search query (e.g., "is:unread")' },
                             maxResults: { type: 'number', default: 10, maximum: 100 },
                             labelIds: { type: 'array', items: { type: 'string' } },
-                            format: { type: 'string', enum: ['minimal', 'metadata', 'full'], default: 'metadata' },
+                            format: { type: 'string', description: 'Format: minimal, metadata, or full (default: metadata)' },
                             pageToken: { type: 'string', description: 'Token for pagination' }
                         }
                     }
@@ -64,7 +64,7 @@
                         type: 'object',
                         properties: {
                             messageId: { type: 'string', description: 'Gmail message ID' },
-                            format: { type: 'string', enum: ['minimal', 'metadata', 'full'], default: 'full' }
+                            format: { type: 'string', description: 'Format: minimal, metadata, or full (default: full)' }
                         },
                         required: ['messageId']
                     }
@@ -81,7 +81,7 @@
                             before: { type: 'string', description: 'Date in YYYY/MM/DD format' },
                             hasAttachment: { type: 'boolean', description: 'Has attachments' },
                             maxResults: { type: 'number', default: 10, maximum: 100 },
-                            format: { type: 'string', enum: ['minimal', 'metadata', 'full'], default: 'metadata' }
+                            format: { type: 'string', description: 'Format: minimal, metadata, or full (default: metadata)' }
                         }
                     }
                 },
@@ -103,7 +103,7 @@
                         type: 'object',
                         properties: {
                             threadId: { type: 'string', description: 'Gmail thread ID' },
-                            format: { type: 'string', enum: ['minimal', 'metadata', 'full'], default: 'metadata' }
+                            format: { type: 'string', description: 'Format: minimal, metadata, or full (default: metadata)' }
                         },
                         required: ['threadId']
                     }

@@ -166,31 +166,8 @@ window.ApiStreamProcessor = (function() {
                     const existingArgs = toolCall.function.arguments;
                     const deltaArgs = funcDelta.arguments;
                     
-                    // Check for Gmail MCP-style argument duplication patterns
-                    if (existingArgs.length > 0 && deltaArgs.length > 0) {
-                        // Detect various duplication patterns:
-                        const wouldCreateDuplication = (
-                            existingArgs === deltaArgs ||  // Exact same content
-                            deltaArgs.startsWith(existingArgs) ||  // Delta starts with existing content
-                            (existingArgs.includes('{"') && deltaArgs.includes('{"') && existingArgs.includes(deltaArgs.trim())) ||  // JSON duplication
-                            // Gmail-specific pattern: {"query": "value", "maxResults": N{"query": "value", "maxResults": N}
-                            (existingArgs.includes('"query":') && deltaArgs.includes('"query":') && 
-                             existingArgs.includes('"maxResults":') && deltaArgs.includes('"maxResults":')) ||
-                            // Pattern where the result would contain the existing args embedded in the middle
-                            (existingArgs + deltaArgs).includes(existingArgs + existingArgs)
-                        );
-                        
-                        if (wouldCreateDuplication) {
-                            console.warn(`[StreamProcessor] Argument duplication prevented for ${toolCall.function.name}:`, {
-                                existing: existingArgs.substring(0, 150) + '...',
-                                delta: deltaArgs.substring(0, 150) + '...',
-                                reason: 'Gmail-style duplication pattern detected',
-                                skipped: true
-                            });
-                            // Skip this delta to prevent duplication
-                            continue;
-                        }
-                    }
+                    // Basic argument accumulation - no special processing needed
+                    // Higher-level fixes in tool definitions prevent malformed JSON
                     
                     toolCall.function.arguments += deltaArgs;
                 }
