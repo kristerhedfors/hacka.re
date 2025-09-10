@@ -200,7 +200,6 @@ window.MCPIntrospectionService = (function() {
         'js/default-prompts/github-integration-guide.js',
         'js/default-prompts/gmail-integration-guide.js',
         'js/default-prompts/hacka-re-project.js',
-        'js/default-prompts/interpretability-urgency.js',
         'js/default-prompts/owasp-llm-top10.js',
         'js/default-prompts/share-link-mcp-guide.js',
         'js/default-prompts/shodan-integration-guide.js'
