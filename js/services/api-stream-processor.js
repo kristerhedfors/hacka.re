@@ -166,21 +166,25 @@ window.ApiStreamProcessor = (function() {
                     const existingArgs = toolCall.function.arguments;
                     const deltaArgs = funcDelta.arguments;
                     
-                    // Check for exact duplication patterns like Gmail MCP exhibits
+                    // Check for Gmail MCP-style argument duplication patterns
                     if (existingArgs.length > 0 && deltaArgs.length > 0) {
-                        // Detect if the delta would create a pattern like: existing + existing
-                        // or if the delta starts with a complete JSON that matches what we already have
-                        const wouldCreateExactDuplication = (
+                        // Detect various duplication patterns:
+                        const wouldCreateDuplication = (
                             existingArgs === deltaArgs ||  // Exact same content
+                            deltaArgs.startsWith(existingArgs) ||  // Delta starts with existing content
                             (existingArgs.includes('{"') && deltaArgs.includes('{"') && existingArgs.includes(deltaArgs.trim())) ||  // JSON duplication
-                            deltaArgs.startsWith(existingArgs)  // Delta starts with existing content
+                            // Gmail-specific pattern: {"query": "value", "maxResults": N{"query": "value", "maxResults": N}
+                            (existingArgs.includes('"query":') && deltaArgs.includes('"query":') && 
+                             existingArgs.includes('"maxResults":') && deltaArgs.includes('"maxResults":')) ||
+                            // Pattern where the result would contain the existing args embedded in the middle
+                            (existingArgs + deltaArgs).includes(existingArgs + existingArgs)
                         );
                         
-                        if (wouldCreateExactDuplication) {
+                        if (wouldCreateDuplication) {
                             console.warn(`[StreamProcessor] Argument duplication prevented for ${toolCall.function.name}:`, {
-                                existing: existingArgs.substring(0, 100) + '...',
-                                delta: deltaArgs.substring(0, 100) + '...',
-                                reason: 'Exact duplication pattern detected',
+                                existing: existingArgs.substring(0, 150) + '...',
+                                delta: deltaArgs.substring(0, 150) + '...',
+                                reason: 'Gmail-style duplication pattern detected',
                                 skipped: true
                             });
                             // Skip this delta to prevent duplication
