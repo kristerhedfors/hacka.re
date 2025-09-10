@@ -12,7 +12,7 @@ import os
 import time
 import json
 from playwright.sync_api import Page, expect
-from test_utils import dismiss_welcome_modal, screenshot_with_markdown
+from test_utils import dismiss_welcome_modal, screenshot_with_markdown, enable_yolo_mode
 
 # List of Groq models to test (only chat models that might support function calling)
 GROQ_MODELS = [
@@ -142,17 +142,11 @@ def configure_provider_and_model(page, provider, model, api_key):
         )
         reload_button.click(timeout=5000)
     except Exception as e:
-        print(f"Reload button not enabled, trying to save settings first: {e}")
-        # Sometimes we need to save the API key first
-        close_button = page.locator("#close-settings")
-        if save_button.is_visible():
-            save_button.click(force=True)
-            # Re-open settings
-            settings_button = page.locator("#settings-btn")
-            settings_button.click(timeout=2000)
-            page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
-            # Now try reload again
-            reload_button.click(timeout=5000)
+        print(f"Reload button not enabled immediately: {e}")
+        # API key auto-saves, just wait a bit for it to register
+        page.wait_for_timeout(1000)
+        # Try reload again
+        reload_button.click(timeout=5000)
     
     # Wait for models to load
     try:
@@ -217,12 +211,12 @@ def configure_provider_and_model(page, provider, model, api_key):
             print(f"✓ Selected first available model: {first_model}")
             selected_model = first_model
     
-    # Save settings
+    # Close settings modal (settings auto-save)
     close_button = page.locator("#close-settings")
-    save_button.click(force=True)
+    close_button.click(force=True)
     
     # Wait for modal to close
-    page.wait_for_selector("#settings-modal", state="hidden", timeout=2000)
+    page.wait_for_selector("#settings-modal", state="hidden", timeout=5000)
     
     # Check for any system messages
     check_system_messages(page)
@@ -267,8 +261,8 @@ def add_function(page, function_code, function_name):
     expect(function_modal).not_to_be_visible()
 
 
-def test_function_invocation(page, prompt, expected_function_name, timeout=30000):
-    """Test function invocation through chat."""
+def verify_function_invocation(page, prompt, expected_function_name, timeout=30000):
+    """Helper to verify function invocation through chat."""
     print(f"Testing prompt: {prompt}")
     
     # Send message
@@ -375,11 +369,14 @@ def test_groq_function_calling(page: Page, serve_hacka_re, groq_api_key, model):
     if not selected_model:
         pytest.skip(f"Model {model} not available on Groq")
     
+    # Enable YOLO mode to auto-execute functions without modal confirmation
+    enable_yolo_mode(page)
+    
     # Test simple function
     print(f"\n--- Testing simple function with {model} ---")
     add_function(page, SIMPLE_FUNCTION_CODE, "getCurrentTime")
     
-    result = test_function_invocation(
+    result = verify_function_invocation(
         page,
         "What time is it? Please call the getCurrentTime function",
         "getCurrentTime"
@@ -424,7 +421,7 @@ def test_openai_function_calling(page: Page, serve_hacka_re, api_key, model):
     print(f"\n--- Testing simple function with {model} ---")
     add_function(page, SIMPLE_FUNCTION_CODE, "getCurrentTime")
     
-    result = test_function_invocation(
+    result = verify_function_invocation(
         page,
         "What time is it? Please call the getCurrentTime function",
         "getCurrentTime"
@@ -471,7 +468,7 @@ def test_groq_complex_function(page: Page, serve_hacka_re, groq_api_key):
     print(f"\n--- Testing Shodan hostinfo with {best_model} ---")
     add_function(page, SHODAN_FUNCTION_CODE, "hostinfo")
     
-    result = test_function_invocation(
+    result = verify_function_invocation(
         page,
         "Can you look up information about IP address 8.8.8.8 using the hostinfo function?",
         "hostinfo",
@@ -517,7 +514,7 @@ def test_berget_function_calling(page: Page, serve_hacka_re, berget_api_key, mod
     print(f"\n--- Testing simple function with {model} ---")
     add_function(page, SIMPLE_FUNCTION_CODE, "getCurrentTime")
     
-    result = test_function_invocation(
+    result = verify_function_invocation(
         page,
         "What time is it? Please call the getCurrentTime function",
         "getCurrentTime"
@@ -564,7 +561,7 @@ def test_openai_complex_function(page: Page, serve_hacka_re, api_key):
     print(f"\n--- Testing Shodan hostinfo with {model} ---")
     add_function(page, SHODAN_FUNCTION_CODE, "hostinfo")
     
-    result = test_function_invocation(
+    result = verify_function_invocation(
         page,
         "Can you look up information about IP address 8.8.8.8 using the hostinfo function?",
         "hostinfo",

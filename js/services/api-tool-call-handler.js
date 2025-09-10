@@ -118,6 +118,9 @@ window.ApiToolCallHandler = (function() {
             }
             
             try {
+                // Tool definitions now prevent malformed JSON at source
+                // No service-specific argument fixing needed
+                
                 const args = JSON.parse(toolCall.function.arguments);
                 const originalArgs = JSON.parse(JSON.stringify(args));
                 
@@ -149,7 +152,38 @@ window.ApiToolCallHandler = (function() {
                 
                 return toolCall;
             } catch (e) {
-                console.error(`[ToolCallHandler] Error fixing tool call arguments:`, e);
+                console.error(`[ToolCallHandler] Error fixing tool call arguments for ${toolCall.function?.name}:`, e);
+                console.error(`[ToolCallHandler] Problematic arguments string:`, toolCall.function?.arguments);
+                console.error(`[ToolCallHandler] Arguments length:`, toolCall.function?.arguments?.length);
+                
+                // Last resort fix ONLY for Gmail to avoid breaking other MCPs
+                if (toolCall.function?.name?.startsWith('gmail_') && toolCall.function?.arguments) {
+                    try {
+                        let lastResortFix = toolCall.function.arguments;
+                        
+                        // For Gmail only: Remove any duplicate JSON objects (keep the last valid one)
+                        const jsonObjects = lastResortFix.match(/\{[^{}]*\}/g);
+                        if (jsonObjects && jsonObjects.length > 1) {
+                            console.log(`[ToolCallHandler] Gmail last resort: Found ${jsonObjects.length} JSON objects, trying last one`);
+                            lastResortFix = jsonObjects[jsonObjects.length - 1];
+                        }
+                        
+                        // Test if this fixes the issue
+                        JSON.parse(lastResortFix);
+                        console.log(`[ToolCallHandler] Gmail last resort fix successful:`, lastResortFix);
+                        
+                        return {
+                            ...toolCall,
+                            function: {
+                                ...toolCall.function,
+                                arguments: lastResortFix
+                            }
+                        };
+                    } catch (lastResortError) {
+                        console.error(`[ToolCallHandler] Gmail last resort fix also failed:`, lastResortError);
+                    }
+                }
+                
                 return toolCall;
             }
         });

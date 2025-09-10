@@ -113,8 +113,7 @@ window.LinkSharingService = (function() {
                 const userPrompts = allPrompts.filter(prompt => !prompt.isMcpPrompt);
                 finalPayload.prompts = userPrompts;
                 
-                const selectedPromptIds = PromptsService.getSelectedPromptIds();
-                finalPayload.selectedPromptIds = selectedPromptIds;
+                // No need to include selectedPromptIds - all shared prompts are selected by default
                 
                 // Get selected default prompts, excluding MCP prompts
                 const selectedDefaultPromptIds = window.DefaultPromptsService ? 
@@ -167,19 +166,16 @@ window.LinkSharingService = (function() {
                     const collectionId = functionCollections[funcName];
                     // Only include if not in an MCP collection
                     if (!collectionId || !mcpCollectionIds.includes(collectionId)) {
-                        userFunctions[funcName] = funcSpec;
+                        // Only include the code, not the toolDefinition (it can be rebuilt from code)
+                        userFunctions[funcName] = {
+                            code: funcSpec.code
+                        };
                     }
                 });
                 
                 finalPayload.functions = userFunctions;
                 
-                // Filter enabled functions to exclude MCP functions
-                const allEnabledFunctions = FunctionToolsService.getEnabledFunctionNames();
-                const enabledFunctions = allEnabledFunctions.filter(funcName => {
-                    const collectionId = functionCollections[funcName];
-                    return !collectionId || !mcpCollectionIds.includes(collectionId);
-                });
-                finalPayload.enabledFunctions = enabledFunctions;
+                // No need to include enabledFunctions - all shared functions are enabled by default
                 
                 // Add default function selections if available (legacy support)
                 if (window.DefaultFunctionsService) {
@@ -211,45 +207,6 @@ window.LinkSharingService = (function() {
             window.DebugService.debugLog('crypto', `🔐 Compressing and encrypting custom shareable link payload with ${payloadKeys.length} components: ${payloadKeys.join(', ')}`);
         }
         
-        // Enhanced debug logging for shared-links category - show full JSON structure
-        if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links')) {
-            // Create a comprehensive debug message with all shared link contents
-            const debugData = {
-                timestamp: new Date().toISOString(),
-                source: 'Share Link Generation',
-                action: 'Creating new share link',
-                dataKeys: Object.keys(finalPayload || {}),
-                statistics: {
-                    totalKeys: Object.keys(finalPayload || {}).length,
-                    hasApiKey: !!finalPayload.apiKey,
-                    hasPrompts: !!(finalPayload.prompts && finalPayload.prompts.length > 0),
-                    hasFunctions: !!(finalPayload.functions && Object.keys(finalPayload.functions).length > 0),
-                    hasMessages: !!(finalPayload.messages && finalPayload.messages.length > 0),
-                    hasMCP: !!finalPayload.mcpConnections,
-                    hasWelcomeMessage: !!finalPayload.welcomeMessage
-                },
-                contents: finalPayload
-            };
-            
-            // Create a formatted message for display
-            const debugMessage = [
-                '🔗 ═══════════════════════════════════════════════════════════════',
-                '🔗 SHARE LINK GENERATION - DATA STRUCTURE (Debug Mode)',
-                '🔗 ═══════════════════════════════════════════════════════════════',
-                JSON.stringify(debugData, null, 2),
-                '🔗 ═══════════════════════════════════════════════════════════════'
-            ].join('\n');
-            
-            // Log to console
-            console.log('[DEBUG] Share Link Generation Contents:', debugData);
-            
-            // Add to chat as a single system message if chat manager is available
-            if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
-                // Add the entire debug message as a single system message with debug styling
-                window.aiHackare.chatManager.addSystemMessage(debugMessage, 'debug-message debug-shared-links');
-            }
-        }
-        
         // Generate a strong master key for this share link
         // This is the ONLY place where master keys are generated for shared links
         const masterKeyBytes = nacl.randomBytes(32);
@@ -263,6 +220,32 @@ window.LinkSharingService = (function() {
             data: finalPayload
         };
         
+        // Debug logging for shared-links category - show EXACT payload that will be encrypted
+        if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links')) {
+            // Create a formatted message showing the exact payload
+            const debugMessage = [
+                '🔗 ═══════════════════════════════════════════════════════════════',
+                '🔗 EXACT SHARED LINK PAYLOAD (before compression & encryption)',
+                '🔗 ═══════════════════════════════════════════════════════════════',
+                JSON.stringify(sharePayload, null, 2),
+                '🔗 ═══════════════════════════════════════════════════════════════',
+                '🔗 Note: This payload will be compressed, then encrypted with:',
+                '🔗 - Salt (random, added during encryption)',
+                '🔗 - Nonce (random, added during encryption)',
+                '🔗 - Password-derived key',
+                '🔗 ═══════════════════════════════════════════════════════════════'
+            ].join('\n');
+            
+            // Log to console
+            console.log('[DEBUG] Exact Shared Link Payload:', sharePayload);
+            
+            // Add to chat as a single system message if chat manager is available
+            if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
+                // Add the entire debug message as a single system message with debug styling
+                window.aiHackare.chatManager.addSystemMessage(debugMessage, 'debug-message debug-shared-links');
+            }
+        }
+        
         // Compress the entire payload including master key
         const compressedPayload = await CompressionUtils.compressPayload(sharePayload);
         
@@ -271,7 +254,44 @@ window.LinkSharingService = (function() {
         
         // Create URL with hash fragment
         const baseUrl = _location.href.split('#')[0];
-        return `${baseUrl}#gpt=${encryptedData}`;
+        const finalUrl = `${baseUrl}#gpt=${encryptedData}`;
+        
+        // Final size summary debug logging for shared-links category
+        if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links')) {
+            const sizeSummary = {
+                'Base URL length': baseUrl.length + ' chars',
+                'Encrypted data (base64)': encryptedData.length + ' chars',
+                'Hash fragment overhead': 5 + ' chars (#gpt=)',
+                'Total URL length': finalUrl.length + ' chars',
+                'URL-safe for sharing': finalUrl.length < 2000 ? 'Yes ✓' : 'Warning: May be too long for some platforms'
+            };
+            
+            // Create a formatted message
+            const debugMessage = [
+                '📏 ═══════════════════════════════════════════════════════════════',
+                '📏 FINAL SHARE LINK SIZE',
+                '📏 ═══════════════════════════════════════════════════════════════',
+                JSON.stringify(sizeSummary, null, 2),
+                '📏 ───────────────────────────────────────────────────────────────',
+                '📏 Size limits by platform:',
+                '📏 - Browser URL bar: ~2,000 chars (varies)',
+                '📏 - Twitter/X: 280 chars (need URL shortener)',
+                '📏 - Discord: 2,000 chars',
+                '📏 - Email: ~2,000 chars (safe)',
+                '📏 - SMS: 160 chars (need URL shortener)',
+                '📏 ═══════════════════════════════════════════════════════════════'
+            ].join('\n');
+            
+            // Log to console
+            console.log('[DEBUG] Final Share Link Size:', sizeSummary);
+            
+            // Add to chat as a single system message if chat manager is available
+            if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
+                window.aiHackare.chatManager.addSystemMessage(debugMessage, 'debug-message debug-shared-links');
+            }
+        }
+        
+        return finalUrl;
     }
     
     /**
@@ -294,14 +314,14 @@ window.LinkSharingService = (function() {
         // Prompt configuration
         if (config.prompts) {
             if (config.prompts.library) payload.prompts = config.prompts.library;
-            if (config.prompts.selectedIds) payload.selectedPromptIds = config.prompts.selectedIds;
+            // No need for selectedIds - all shared prompts are selected by default
             if (config.prompts.selectedDefaultIds) payload.selectedDefaultPromptIds = config.prompts.selectedDefaultIds;
         }
         
         // Function configuration
         if (config.functions) {
             if (config.functions.library) payload.functions = config.functions.library;
-            if (config.functions.enabled) payload.enabledFunctions = config.functions.enabled;
+            // No need for enabled - all shared functions are enabled by default
             
             // Include default function selections (by reference only)
             if (config.functions.selectedDefaultFunctionCollectionIds) payload.selectedDefaultFunctionCollectionIds = config.functions.selectedDefaultFunctionCollectionIds;
@@ -335,7 +355,7 @@ window.LinkSharingService = (function() {
     /**
      * Extract and decrypt shared data from the URL
      * @param {string} password - The password to use for decryption
-     * @returns {Object} Object containing the decrypted data (apiKey, systemPrompt, messages, prompts, selectedPromptIds, etc.)
+     * @returns {Object} Object containing the decrypted data (apiKey, systemPrompt, messages, prompts, functions, etc.)
      */
     async function extractSharedApiKey(password) {
         try {
@@ -438,11 +458,6 @@ window.LinkSharingService = (function() {
                     console.log('DEBUG: Full decrypted data structure:', JSON.stringify(data, null, 2));
                 }
                 
-                if (data.selectedPromptIds) {
-                    result.selectedPromptIds = data.selectedPromptIds;
-                    console.log('Extracted selected prompt IDs from shared link:', data.selectedPromptIds);
-                }
-                
                 // Include selected default prompt IDs if present
                 if (data.selectedDefaultPromptIds) {
                     result.selectedDefaultPromptIds = data.selectedDefaultPromptIds;
@@ -455,22 +470,14 @@ window.LinkSharingService = (function() {
                     console.log('Extracted functions from shared link:', Object.keys(data.functions));
                 }
                 
-                if (data.enabledFunctions) {
-                    result.enabledFunctions = data.enabledFunctions;
-                    console.log('Extracted enabled function names from shared link:', data.enabledFunctions);
-                }
-                
                 // Include function collections if present
                 if (data.functionCollections) {
                     result.functionCollections = data.functionCollections;
                     console.log('Extracted function collections from shared link:', Object.keys(data.functionCollections).length, 'mappings');
                 }
                 
-                // Include function collection metadata if present
-                if (data.functionCollectionMetadata) {
-                    result.functionCollectionMetadata = data.functionCollectionMetadata;
-                    console.log('Extracted function collection metadata from shared link:', Object.keys(data.functionCollectionMetadata));
-                }
+                // Note: functionCollectionMetadata is no longer included in share links
+                // We use simplified function-to-collection-name mapping instead
                 
                 // Include default function selections if present (by reference)
                 if (data.selectedDefaultFunctionCollectionIds) {

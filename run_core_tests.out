@@ -22,30 +22,3 @@ Changing to project root directory: /Users/user/dev/hacka.re
 Starting Python HTTP server on port 8000...
 Failed to start server.
 Running Core Functionality tests with chromium browser...
-Test filter: test_page or test_api or test_chat or test_welcome_modal
-
-/Users/user/dev/hacka.re/_venv/lib/python3.13/site-packages/pytest_asyncio/plugin.py:208: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
-The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
-
-  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
-============================= test session starts ==============================
-platform darwin -- Python 3.13.7, pytest-8.3.5, pluggy-1.5.0
-rootdir: /Users/user/dev/hacka.re/_tests/playwright
-configfile: pytest.ini
-testpaths: .
-plugins: anyio-4.9.0, timeout-2.4.0, playwright-0.7.0, base-url-2.1.0, asyncio-1.0.0
-asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
-collected 1002 items / 940 deselected / 62 selected
-
-shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_info[chromium0] SKIPPED [  1%]
-shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_plan_details[chromium0] SKIPPED [  3%]
-test_api.py::test_api_key_configuration[chromium0] SKIPPED (API key ...) [  4%]
-test_api.py::test_model_selection[chromium0] SKIPPED (API key is req...) [  6%]
-test_api_key_detection_simple.py::test_api_key_detection_simple[chromium0] PASSED [  8%]
-test_api_key_enter.py::test_api_key_modal_enter_key[chromium0] PASSED    [  9%]
-test_api_key_persistence_debug.py::test_api_key_persistence_scenario_1_basic[chromium0] FAILED [ 11%]
-test_api_key_persistence_debug.py::test_api_key_persistence_scenario_2_retry_helper[chromium0] PASSED [ 12%]
-test_api_key_persistence_debug.py::test_api_key_persistence_scenario_3_multiple_attempts[chromium0] FAILED [ 14%]
-test_api_key_persistence_debug.py::test_api_key_persistence_scenario_4_timing_analysis[chromium0] FAILED [ 16%]
-test_chat.py::test_chat_message_send_receive[chromium0] SKIPPED (API...) [ 17%]
-test_chat_input_performance.py::test_chat_input_performance_bottleneck[chromium0] 

@@ -431,18 +431,22 @@ function createSharedLinkDataProcessor() {
             defaultSelectedCount: 0
         };
         
-        // If there are shared prompts, save them
+        // If there are shared prompts, save them and automatically select all of them
         if (sharedData.prompts && Array.isArray(sharedData.prompts)) {
+            const sharedPromptIds = [];
             sharedData.prompts.forEach(prompt => {
                 PromptsService.savePrompt(prompt);
+                if (prompt.id) {
+                    sharedPromptIds.push(prompt.id);
+                }
             });
             promptsSummary.promptCount = sharedData.prompts.length;
-        }
-        
-        // If there are shared selected prompt IDs, save them
-        if (sharedData.selectedPromptIds && Array.isArray(sharedData.selectedPromptIds)) {
-            PromptsService.setSelectedPromptIds(sharedData.selectedPromptIds);
-            promptsSummary.selectedCount = sharedData.selectedPromptIds.length;
+            
+            // Automatically select all shared prompts
+            if (sharedPromptIds.length > 0) {
+                PromptsService.setSelectedPromptIds(sharedPromptIds);
+                promptsSummary.selectedCount = sharedPromptIds.length;
+            }
         }
         
         // Apply shared default prompt selections (or reset to default if not present)
@@ -462,7 +466,8 @@ function createSharedLinkDataProcessor() {
         }
         
         // Apply all selected prompts (both user and default) as system prompt
-        if ((sharedData.selectedPromptIds && sharedData.selectedPromptIds.length > 0) || 
+        // All shared prompts are automatically selected
+        if ((sharedData.prompts && sharedData.prompts.length > 0) ||
             (sharedData.selectedDefaultPromptIds && sharedData.selectedDefaultPromptIds.length > 0)) {
             PromptsService.applySelectedPromptsAsSystem();
         }
@@ -551,68 +556,100 @@ function createSharedLinkDataProcessor() {
      */
     function applyFunctions(sharedData, addSystemMessage, systematicActivation = false) {
         const functionCount = sharedData.functions ? Object.keys(sharedData.functions).length : 0;
-        const enabledCount = sharedData.enabledFunctions ? sharedData.enabledFunctions.length : 0;
+        const sharedFunctionNames = [];
         
-        if (functionCount > 0 || enabledCount > 0) {
-            console.log(`Applying ${functionCount} functions with ${enabledCount} enabled`);
+        if (functionCount > 0) {
+            console.log(`[SharedLink] Applying ${functionCount} functions (all will be enabled)`);
         }
         
-        // If there are shared functions, save them with collection information
+        // Check if FunctionToolsService is available
+        if (!window.FunctionToolsService) {
+            console.warn('[SharedLink] FunctionToolsService not available, cannot apply functions');
+            return {
+                functionCount: 0,
+                enabledCount: 0,
+                collectionCount: 0,
+                toolsEnabled: false,
+                enabledFunctions: [],
+                defaultFunctionCount: 0,
+                selectedDefaultFunctionIds: [],
+                selectedDefaultFunctionCollectionIds: []
+            };
+        }
+        
+        // If there are shared functions, save them and automatically enable all of them
         if (sharedData.functions && typeof sharedData.functions === 'object') {
             const functionCollections = sharedData.functionCollections || {};
-            const collectionMetadata = sharedData.functionCollectionMetadata || {};
+            
+            // Create a map of collection names to collection IDs
+            // This ensures functions in the same collection get the same ID
+            const collectionNameToId = {};
             
             Object.keys(sharedData.functions).forEach(functionName => {
                 const functionData = sharedData.functions[functionName];
-                const collectionId = functionCollections[functionName];
-                const metadata = collectionId ? collectionMetadata[collectionId] : null;
+                // Get collection name from mapping
+                const collectionName = functionCollections[functionName];
                 
-                // Add function with preserved collection information
+                // Get or create collection ID for this collection name
+                let collectionId = null;
+                let collectionMetadata = null;
+                if (collectionName) {
+                    if (!collectionNameToId[collectionName]) {
+                        // Use simple collection ID without timestamp
+                        // Generate a short random ID to avoid conflicts
+                        const randomId = Math.random().toString(36).substr(2, 9);
+                        collectionNameToId[collectionName] = `collection_${randomId}`;
+                    }
+                    collectionId = collectionNameToId[collectionName];
+                    
+                    // Create metadata with the actual collection name
+                    collectionMetadata = {
+                        name: collectionName,
+                        createdAt: new Date().toISOString(),
+                        source: 'shared-link'
+                    };
+                }
+                
+                // Rebuild toolDefinition from code if not present (new behavior)
+                let toolDefinition = functionData.toolDefinition;
+                if (!toolDefinition && functionData.code) {
+                    toolDefinition = FunctionToolsService.generateToolDefinition(functionData.code);
+                    if (!toolDefinition) {
+                        console.warn(`[SharedLink] Could not generate tool definition for function: ${functionName}`);
+                        return; // Skip this function if we can't generate a tool definition
+                    }
+                }
+                
+                // Add function with collection information and metadata
                 FunctionToolsService.addJsFunction(
                     functionName,
                     functionData.code,
-                    functionData.toolDefinition,
+                    toolDefinition,
                     collectionId,
-                    metadata
+                    collectionMetadata // Pass the metadata with collection name
                 );
+                
+                // Track the function name for auto-enabling
+                sharedFunctionNames.push(functionName);
             });
             
-            // Store summary info instead of adding message
-            const collectionCount = Object.keys(collectionMetadata).length;
-        }
-        
-        // Handle function activation based on mode
-        if (sharedData.enabledFunctions && Array.isArray(sharedData.enabledFunctions)) {
-            if (systematicActivation) {
-                // Systematic activation: Only activate/deactivate functions that match the agent's configuration
-                const allFunctions = Object.keys(FunctionToolsService.getJsFunctions());
-                
-                // Disable functions that are not in the enabled list
-                allFunctions.forEach(functionName => {
-                    const shouldBeEnabled = sharedData.enabledFunctions.includes(functionName);
-                    const isCurrentlyEnabled = FunctionToolsService.isJsFunctionEnabled(functionName);
-                    
-                    if (shouldBeEnabled && !isCurrentlyEnabled) {
-                        FunctionToolsService.enableJsFunction(functionName);
-                    } else if (!shouldBeEnabled && isCurrentlyEnabled) {
-                        FunctionToolsService.disableJsFunction(functionName);
-                    }
-                });
-                
-            } else {
-                // Legacy behavior: Disable all, then enable specified ones
-                const allFunctions = Object.keys(FunctionToolsService.getJsFunctions());
-                allFunctions.forEach(functionName => {
-                    FunctionToolsService.disableJsFunction(functionName);
-                });
-                
-                // Then enable only the shared enabled functions
-                sharedData.enabledFunctions.forEach(functionName => {
-                    FunctionToolsService.enableJsFunction(functionName);
-                });
-            }
+            // Store summary info
+            const uniqueCollections = new Set(Object.values(functionCollections));
+            const collectionCount = uniqueCollections.size;
             
-            // Summary info captured below
+            // Automatically enable all shared functions
+            // First disable all existing functions that are NOT in the shared set
+            const allFunctions = Object.keys(FunctionToolsService.getJsFunctions());
+            allFunctions.forEach(functionName => {
+                if (!sharedFunctionNames.includes(functionName)) {
+                    FunctionToolsService.disableJsFunction(functionName);
+                }
+            });
+            
+            // Then enable all the shared functions
+            sharedFunctionNames.forEach(functionName => {
+                FunctionToolsService.enableJsFunction(functionName);
+            });
         }
         
         // Apply function tools enabled state
@@ -621,9 +658,8 @@ function createSharedLinkDataProcessor() {
             FunctionToolsService.setFunctionToolsEnabled(sharedData.functionToolsEnabled, null); // Don't add message
             functionToolsEnabled = sharedData.functionToolsEnabled;
         } else {
-            // Fallback: Enable function tools if we have functions
-            const hasFunctions = (sharedData.functions && Object.keys(sharedData.functions).length > 0) ||
-                               (sharedData.enabledFunctions && sharedData.enabledFunctions.length > 0);
+            // Enable function tools if we have functions
+            const hasFunctions = sharedData.functions && Object.keys(sharedData.functions).length > 0;
             
             if (hasFunctions && FunctionToolsService && typeof FunctionToolsService.setFunctionToolsEnabled === 'function') {
                 FunctionToolsService.setFunctionToolsEnabled(true, null); // Don't add message
@@ -652,10 +688,10 @@ function createSharedLinkDataProcessor() {
         // Return summary of what was applied
         return {
             functionCount: functionCount,
-            enabledCount: enabledCount,
-            collectionCount: sharedData.functionCollectionMetadata ? Object.keys(sharedData.functionCollectionMetadata).length : 0,
+            enabledCount: sharedFunctionNames.length,
+            collectionCount: sharedData.functionCollections ? new Set(Object.values(sharedData.functionCollections)).size : 0,
             toolsEnabled: functionToolsEnabled,
-            enabledFunctions: sharedData.enabledFunctions || [],
+            enabledFunctions: sharedFunctionNames,
             defaultFunctionCount: (sharedData.selectedDefaultFunctionIds || []).length + (sharedData.selectedDefaultFunctionCollectionIds || []).length,
             selectedDefaultFunctionIds: sharedData.selectedDefaultFunctionIds || [],
             selectedDefaultFunctionCollectionIds: sharedData.selectedDefaultFunctionCollectionIds || []
@@ -1184,8 +1220,11 @@ function createSharedLinkDataProcessor() {
             
             // Analyze and store what options were included in the shared data
             const sharedLinkOptions = analyzeSharedDataOptions(sharedData);
-            if (window.aiHackare && window.aiHackare.shareManager) {
+            if (window.aiHackare && window.aiHackare.shareManager && typeof window.aiHackare.shareManager.setSharedLinkOptions === 'function') {
                 window.aiHackare.shareManager.setSharedLinkOptions(sharedLinkOptions);
+            } else {
+                console.log('[SharedLink] ShareManager not available yet, storing options for later');
+                window._pendingSharedLinkOptions = sharedLinkOptions;
             }
             
             // Collect system messages to display before conversation history
@@ -1283,10 +1322,14 @@ function createSharedLinkDataProcessor() {
             
             // Apply other configurations and collect summaries
             console.log('🔧 processSharedData: Applying prompts and functions');
+            console.log('[SharedLink] About to apply prompts...');
             const promptsSummary = applyPrompts(sharedData, null); // Don't add individual messages
+            console.log('[SharedLink] Prompts applied:', promptsSummary);
             
             // Use systematic activation for agent loading when cleanSlate is true
+            console.log('[SharedLink] About to apply functions...');
             const functionsSummary = applyFunctions(sharedData, null, cleanSlate); // Don't add individual messages
+            console.log('[SharedLink] Functions applied:', functionsSummary);
             
             console.log('🔧 processSharedData: Applying MCP connections');
             const mcpSummary = await applyMcpConnections(sharedData, null); // Don't add individual messages

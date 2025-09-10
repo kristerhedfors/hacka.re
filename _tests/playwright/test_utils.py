@@ -623,3 +623,92 @@ def set_test_provider_in_storage(page):
     
     print(f"Set test provider in localStorage: {provider} with model {model}")
     return provider
+
+def setup_console_logging(page, console_messages_list):
+    """Setup console message capture for debugging"""
+    def log_console_message(msg):
+        timestamp = time.strftime("%H:%M:%S.%f")[:-3]
+        console_messages_list.append({
+            'timestamp': timestamp,
+            'type': msg.type,
+            'text': msg.text,
+            'location': msg.location if hasattr(msg, 'location') else None
+        })
+        print(f"[{timestamp}] Console {msg.type.upper()}: {msg.text}")
+    page.on("console", log_console_message)
+
+def configure_api_key_via_ui(page, provider):
+    """Configure API key through the UI for a specific provider"""
+    # Map provider to API key from environment
+    api_keys = {
+        "openai": os.getenv("OPENAI_API_KEY", ""),
+        "groq": os.getenv("GROQ_API_KEY", ""),
+        "berget": os.getenv("BERGET_API_KEY", "")
+    }
+    
+    api_key = api_keys.get(provider, "")
+    if not api_key:
+        raise ValueError(f"No API key found for provider: {provider}")
+    
+    # Open settings modal
+    settings_btn = page.locator("#settings-btn")
+    expect(settings_btn).to_be_visible()
+    settings_btn.click()
+    
+    # Wait for modal to be visible
+    page.wait_for_selector("#settings-modal", state="visible", timeout=5000)
+    
+    # Set API key
+    api_key_input = page.locator("#api-key-update")
+    expect(api_key_input).to_be_visible()
+    api_key_input.fill(api_key)
+    
+    # Close settings modal
+    close_btn = page.locator("#close-settings")
+    if close_btn.count() > 0:
+        close_btn.click()
+    
+    # Wait for modal to close
+    page.wait_for_selector("#settings-modal", state="hidden", timeout=5000)
+
+def select_provider_and_model(page, provider, model):
+    """Select provider and model through the UI"""
+    # Open settings modal
+    settings_btn = page.locator("#settings-btn")
+    expect(settings_btn).to_be_visible()
+    settings_btn.click()
+    
+    # Wait for modal to be visible
+    page.wait_for_selector("#settings-modal", state="visible", timeout=5000)
+    
+    # Select provider
+    provider_select = page.locator("#base-url-select")
+    expect(provider_select).to_be_visible()
+    provider_select.select_option(provider)
+    
+    # Wait for model dropdown to update
+    page.wait_for_timeout(1000)
+    
+    # Select model
+    model_select = page.locator("#model-select")
+    expect(model_select).to_be_visible()
+    model_select.select_option(model)
+    
+    # Close settings modal
+    close_btn = page.locator("#close-settings")
+    if close_btn.count() > 0:
+        close_btn.click()
+    
+    # Wait for modal to close
+    page.wait_for_selector("#settings-modal", state="hidden", timeout=5000)
+
+def wait_for_generation_complete(page, timeout=30000):
+    """Wait for message generation to complete"""
+    # Wait for the send button to no longer have data-generating attribute
+    page.wait_for_function(
+        """() => {
+            const btn = document.querySelector('#send-btn');
+            return btn && !btn.hasAttribute('data-generating');
+        }""",
+        timeout=timeout
+    )

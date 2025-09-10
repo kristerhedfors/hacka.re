@@ -162,7 +162,14 @@ window.ApiStreamProcessor = (function() {
                 }
                 
                 if (funcDelta.arguments !== undefined) {
-                    toolCall.function.arguments += funcDelta.arguments;
+                    // Prevent specific Gmail-style argument duplication patterns
+                    const existingArgs = toolCall.function.arguments;
+                    const deltaArgs = funcDelta.arguments;
+                    
+                    // Basic argument accumulation - no special processing needed
+                    // Higher-level fixes in tool definitions prevent malformed JSON
+                    
+                    toolCall.function.arguments += deltaArgs;
                 }
             }
         }

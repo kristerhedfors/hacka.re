@@ -172,6 +172,8 @@
 
             const connected = connector.isConnected();
             this.perfLogger.log(`executeServiceTool ${serviceKey}:${toolName} - connected: ${connected}`);
+            console.log(`[MCPServiceManager] executeServiceTool params:`, params);
+            console.log(`[MCPServiceManager] params type:`, typeof params);
             
             if (!connected) {
                 this.perfLogger.log(`Connection state:`, connector.connection);

@@ -619,6 +619,44 @@ window.CompressionUtils = (function() {
                 `🗜️ Compression: ${originalSize} → ${compressedSize} chars (${reduction}% reduction)`);
         }
         
+        // Enhanced debug logging for shared-links category
+        if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links')) {
+            const originalJson = JSON.stringify(payload);
+            const mappedJson = json;
+            
+            const compressionSummary = {
+                'Original JSON size': originalJson.length + ' chars',
+                'After key mapping': mappedJson.length + ' chars',
+                'Key mapping savings': (originalJson.length - mappedJson.length) + ' chars',
+                'After LZ compression': compressed.length + ' chars',
+                'Total compression ratio': ((compressed.length / originalJson.length) * 100).toFixed(1) + '%',
+                'Total savings': (originalJson.length - compressed.length) + ' chars'
+            };
+            
+            // Create a formatted message
+            const debugMessage = [
+                '🗜️ ═══════════════════════════════════════════════════════════════',
+                '🗜️ COMPRESSION PROCESS (Key mapping + LZ-String)',
+                '🗜️ ═══════════════════════════════════════════════════════════════',
+                '🗜️ Compression Breakdown:',
+                JSON.stringify(compressionSummary, null, 2),
+                '🗜️ ───────────────────────────────────────────────────────────────',
+                '🗜️ Process:',
+                '🗜️ 1. Key mapping: Long keys → short keys',
+                '🗜️ 2. LZ-String: URI-safe compression',
+                '🗜️ 3. Result: Compressed string ready for encryption',
+                '🗜️ ═══════════════════════════════════════════════════════════════'
+            ].join('\n');
+            
+            // Log to console
+            console.log('[DEBUG] Compression Process:', compressionSummary);
+            
+            // Add to chat as a single system message if chat manager is available
+            if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
+                window.aiHackare.chatManager.addSystemMessage(debugMessage, 'debug-message debug-shared-links');
+            }
+        }
+        
         return compressed;
     }
 

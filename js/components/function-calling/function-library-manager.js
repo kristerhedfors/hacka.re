@@ -78,7 +78,7 @@ window.FunctionLibraryManager = (function() {
         // Generate a unique collection ID for this set of functions (or use existing one if editing)
         let collectionMetadata = null;
         if (!collectionId) {
-            collectionId = 'collection_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            collectionId = 'collection_' + Math.random().toString(36).substr(2, 9);
             
             // Auto-generate collection name based on function names
             let collectionName = 'Untitled Collection'; // Default fallback

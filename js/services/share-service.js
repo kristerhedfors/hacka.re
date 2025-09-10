@@ -48,9 +48,7 @@ window.ShareService = (function() {
      * @param {string} [options.welcomeMessage] - Custom welcome message for the share
      * @param {Object} [options.mcpConnections] - MCP connections to share
      * @param {Object} [options.functions] - Functions to share
-     * @param {Array} [options.enabledFunctions] - Enabled function names
      * @param {Array} [options.prompts] - Prompts to share
-     * @param {Array} [options.selectedPromptIds] - Selected prompt IDs
      * @param {boolean} [options.includeBaseUrl] - Whether to include the base URL
      * @param {boolean} [options.includeApiKey] - Whether to include the API key
      * @param {boolean} [options.includeSystemPrompt] - Whether to include the system prompt
@@ -185,13 +183,11 @@ window.ShareService = (function() {
         // Handle function library
         if (options.includeFunctionLibrary) {
             let functions = options.functions;
-            let enabledFunctions = options.enabledFunctions;
             let mcpCollectionIds = []; // Define at the outer scope
             
             // If not provided, try to collect them (excluding MCP functions)
             if (!functions && window.FunctionToolsService) {
                 const allFunctions = window.FunctionToolsService.getJsFunctions();
-                const allEnabledFunctions = window.FunctionToolsService.getEnabledFunctionNames();
                 const allCollections = window.FunctionToolsService.getAllFunctionCollections();
                 const functionCollections = window.FunctionToolsService.getFunctionCollections();
                 
@@ -216,7 +212,10 @@ window.ShareService = (function() {
                     const collectionId = functionCollections[funcName];
                     // Only include if not in an MCP collection
                     if (!collectionId || !mcpCollectionIds.includes(collectionId)) {
-                        functions[funcName] = funcSpec;
+                        // Only include the code, not the toolDefinition (it can be rebuilt from code)
+                        functions[funcName] = {
+                            code: funcSpec.code
+                        };
                     } else {
                         excludedFunctions.push(`${funcName} (collection: ${collectionId})`);
                     }
@@ -224,48 +223,50 @@ window.ShareService = (function() {
                 
                 console.log('🔍 ShareService: Functions after filtering:', Object.keys(functions).length);
                 console.log('🚫 ShareService: Excluded MCP functions:', excludedFunctions);
-                
-                // Filter enabled functions to exclude MCP functions
-                enabledFunctions = allEnabledFunctions.filter(funcName => {
-                    const collectionId = functionCollections[funcName];
-                    return !collectionId || !mcpCollectionIds.includes(collectionId);
-                });
-                
-                console.log('🔍 ShareService: Enabled functions after filtering:', enabledFunctions.length);
             }
             
             // Include functions if any exist
             if (functions && Object.keys(functions).length > 0) {
                 payload.functions = functions;
-                payload.enabledFunctions = enabledFunctions || [];
+                // No need for enabledFunctions - all shared functions are enabled by default
                 
                 // Include collection information to preserve function organization
+                // Map function names to collection names for grouping
                 if (window.FunctionToolsService) {
                     const functionCollections = window.FunctionToolsService.getFunctionCollections();
                     const allCollections = window.FunctionToolsService.getAllFunctionCollections();
                     
-                    // Build collection metadata for non-MCP functions
-                    const relevantCollections = {};
-                    const relevantMetadata = {};
+                    // Build function-to-collection-name mapping
+                    const functionToCollectionName = {};
                     
                     Object.keys(functions).forEach(funcName => {
                         const collectionId = functionCollections[funcName];
                         if (collectionId && !mcpCollectionIds.includes(collectionId)) {
-                            relevantCollections[funcName] = collectionId;
+                            // Get the actual collection name from metadata
+                            let collectionName = funcName; // Default to function name if no metadata
                             
-                            // Add collection metadata if not already added
-                            if (!relevantMetadata[collectionId] && allCollections[collectionId]) {
-                                relevantMetadata[collectionId] = allCollections[collectionId].metadata;
+                            if (allCollections[collectionId] && allCollections[collectionId].metadata && allCollections[collectionId].metadata.name) {
+                                // Use the actual collection name from metadata
+                                collectionName = allCollections[collectionId].metadata.name;
+                            } else if (allCollections[collectionId] && allCollections[collectionId].functions && allCollections[collectionId].functions.length > 1) {
+                                // If no metadata name but multiple functions, generate a name from function list
+                                const funcList = allCollections[collectionId].functions;
+                                if (funcList.length === 2) {
+                                    collectionName = funcList.join(' & ');
+                                } else {
+                                    collectionName = funcList[0] + ' & ' + (funcList.length - 1) + ' more';
+                                }
                             }
+                            
+                            functionToCollectionName[funcName] = collectionName;
                         }
                     });
                     
-                    // Add collection data to payload
-                    if (Object.keys(relevantCollections).length > 0) {
-                        payload.functionCollections = relevantCollections;
-                        payload.functionCollectionMetadata = relevantMetadata;
-                        const uniqueCollections = new Set(Object.values(relevantCollections)).size;
-                        console.log(`🔍 ShareService: Including collection info for ${uniqueCollections} collections`);
+                    // Add collection data to payload if any exist
+                    if (Object.keys(functionToCollectionName).length > 0) {
+                        payload.functionCollections = functionToCollectionName;
+                        const uniqueCollections = new Set(Object.values(functionToCollectionName)).size;
+                        console.log(`🔍 ShareService: Including collection info for ${uniqueCollections} collections with proper names`);
                     }
                 }
                 
@@ -292,20 +293,18 @@ window.ShareService = (function() {
         // Handle prompt library
         if (options.includePromptLibrary) {
             let prompts = options.prompts;
-            let selectedPromptIds = options.selectedPromptIds;
             
             // If not provided, try to collect them (excluding MCP prompts)
             if (!prompts && window.PromptsService) {
                 const allPrompts = window.PromptsService.getPrompts();
                 // Filter out MCP prompts - they should not be shared
                 prompts = allPrompts.filter(prompt => !prompt.isMcpPrompt);
-                selectedPromptIds = window.PromptsService.getSelectedPromptIds();
             }
             
             // Include prompts if any exist
             if (prompts && prompts.length > 0) {
                 payload.prompts = prompts;
-                payload.selectedPromptIds = selectedPromptIds || [];
+                // No need for selectedPromptIds - all shared prompts are selected by default
                 itemsIncluded.push(`✅ PROMPT LIBRARY (${prompts.length} prompts)`);
             }
             

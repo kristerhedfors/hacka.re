@@ -21,13 +21,14 @@ deactivate
 ```
 
 **CRITICAL: Python Usage Rules:**
-- **ALWAYS USE**: `python3` for any direct python commands (NEVER `python`)
-- **ALWAYS USE**: `_venv/bin/python` (project root virtual environment) for testing
-- **NEVER USE**: System python, homebrew python, or any other python
-- **Virtual environment path**: `/Users/user/dev/hacka.re/_venv/bin/python`
-- **From _tests/playwright/ directory**: `../../_venv/bin/python`
-- **Direct pytest usage**: `../../_venv/bin/python -m pytest test_file.py -v -s`
-- **CRITICAL**: Any subprocess calls, fixtures, or scripts must use `python3`, never `python`
+- **ALWAYS USE**: `_venv/bin/python` - This is the ONLY Python environment for this project
+- **Virtual environment location**: `_venv/` in project root (NOT .venv, NOT _env, ONLY _venv)
+- **Absolute path**: `/Users/user/dev/hacka.re/_venv/bin/python`
+- **From project root**: `_venv/bin/python`
+- **From _tests/playwright/**: `../../_venv/bin/python`
+- **Running tests**: `_venv/bin/python -m pytest _tests/playwright/test_file.py -v -s`
+- **NEVER USE**: System python, homebrew python, .venv, or any other python installation
+- **CRITICAL**: The virtual environment is `_venv` - memorize this, it's the ONLY correct path
 
 **Important Environment Notes:**
 - The setup script creates a virtual environment at `_venv/` in the project root
@@ -305,6 +306,33 @@ Refactored from monolithic ~800-line service into focused modules with clear dep
 - OpenAI, Groq, Ollama, custom endpoints
 - Real-time context window visualization
 - Token counting and usage tracking
+
+### MCP (Model Context Protocol) Connectors
+Built-in MCP servers for external service integration:
+
+**GitHub MCP** (PAT Authentication):
+- Modal ID: `#service-pat-input-modal`
+- Input ID: `#pat-input`
+- Placeholder: "Enter your GitHub personal access token"
+- Connect button: First Connect button (index 0)
+- Functions: `github_list_repos`, `github_get_repo`, `github_list_issues`, etc.
+
+**Gmail MCP** (OAuth Authentication):
+- Uses OAuth flow with Google credentials
+- Connect button: Second Connect button (index 1)  
+- Functions: `gmail_list_messages`, `gmail_get_message`, `gmail_search_messages`, etc.
+- Note: Requires Google Cloud Project setup with Gmail API enabled
+
+**Shodan MCP** (API Key Authentication):
+- Modal ID: `#service-apikey-input-modal`
+- Input placeholder: Contains "Shodan API key"
+- Connect button: Third Connect button (index 2)
+- Functions: `shodan_dns_resolve`, `shodan_host_info`, etc.
+
+**Known Issues:**
+- Gmail MCP may show JSON parsing errors in console during argument fixing phase
+- These errors are cosmetic and don't affect function execution
+- Fixed with enhanced error handling in `api-tool-call-handler.js`
 
 ## Playwright Testing Infrastructure
 
@@ -664,6 +692,27 @@ The multi-level output capture generates markdown-compatible reports that can be
 "#mcp-server-list"        # List of connected servers
 "#mcp-quick-connectors-placeholder" # Quick connectors section
 
+# MCP Quick Connectors (from screenshots)
+".quick-connector-card"    # Individual service connector cards
+"button:has-text('Connect')" # Connect buttons for each service (GitHub, Gmail, Shodan)
+# Note: Shodan is the 3rd Connect button in the Quick Connect section
+
+# Shodan MCP Connection Flow
+# 1. Click MCP servers button: "#mcp-servers-btn"
+# 2. Find Shodan Connect button: Third "button:has-text('Connect')" in Quick Connect section
+# 3. Shodan API Key Setup modal appears with title "Shodan API Key Setup"
+# 4. Fill input: "input[placeholder*='Shodan API key']" 
+# 5. Click: "button:has-text('🔗 Connect')" (Connect button with link emoji)
+# 6. Connection completes and modal closes
+
+# Shodan API Key Modal Elements  
+"#service-apikey-input-modal"           # The actual modal container ID
+"text=Shodan API Key Setup"              # Modal title to verify correct modal
+"input[placeholder*='Shodan API key']"   # API key input field
+"#service-apikey-input-modal button:has-text('🔗 Connect')"  # Connect button (scoped to modal)
+"#service-apikey-input-modal button:has-text('Cancel')"      # Cancel button (scoped to modal)
+# Note: Use force=True for clicks to avoid pointer interception issues
+
 # MCP Configuration Options
 "#mcp-share-link-enable"  # Enable share link button
 "#mcp-introspection-enable" # Enable introspection button
@@ -679,9 +728,99 @@ The multi-level output capture generates markdown-compatible reports that can be
 "#api-key-update"          # API key input field (NOT #api-key-input)
 "#base-url-select"         # Provider selection dropdown
 "#model-select"            # Model selection dropdown
-"#yolo-mode-checkbox"      # YOLO mode checkbox (NOT #yolo-mode)
+"#yolo-mode"               # YOLO mode checkbox (NOT #yolo-mode-checkbox)
 "#namespace-input"         # Namespace input field
 "#clear-namespace-select"  # Namespace clearing dropdown
+```
+
+#### YOLO Mode Configuration
+**CRITICAL for MCP and Function Calling Tests**: YOLO mode enables automatic function execution without approval modals.
+
+**YOLO Mode Text Pattern in Settings:**
+- Text: "YOLO mode ⚠️(Disabled: Prompt user for every function call)"
+- Subtext: "Manage function approval memory"
+- Checkbox ID: `#yolo-mode`
+- Location: Settings modal → System Prompt section
+
+**When to Use YOLO Mode:**
+- All MCP function calling tests
+- Multi-function workflows 
+- Automated testing scenarios
+- When function execution modal interrupts test flow
+
+**How to Enable YOLO Mode:**
+```python
+def enable_yolo_mode(page: Page):
+    """Enable YOLO mode for automatic function execution"""
+    # Open settings modal
+    settings_btn = page.locator("#settings-btn")
+    expect(settings_btn).to_be_visible()
+    settings_btn.click()
+    
+    # Wait for modal
+    page.wait_for_selector("#settings-modal", state="visible", timeout=5000)
+    
+    # Enable YOLO mode checkbox with dialog handling
+    yolo_checkbox = page.locator("#yolo-mode")
+    if not yolo_checkbox.is_checked():
+        # CRITICAL: Handle the confirmation dialog that appears when enabling YOLO mode
+        def handle_yolo_dialog(dialog):
+            print(f"YOLO confirmation dialog appeared: {dialog.type}")
+            dialog.accept()  # Accept the warning about function execution
+        
+        page.on("dialog", handle_yolo_dialog)
+        
+        yolo_checkbox.click()  # Use click() not check() to trigger dialog
+        time.sleep(2)  # Wait for dialog processing
+        
+        # Verify it's actually enabled
+        if yolo_checkbox.is_checked():
+            print("✅ YOLO mode enabled - functions will execute automatically")
+        else:
+            print("❌ YOLO mode failed to enable")
+    else:
+        print("✅ YOLO mode already enabled")
+    
+    # Close settings
+    close_btn = page.locator("#close-settings")
+    close_btn.click()
+    page.wait_for_selector("#settings-modal", state="hidden", timeout=5000)
+```
+
+**CRITICAL NOTES:**
+- **MUST handle confirmation dialog**: YOLO mode shows a warning dialog that must be accepted
+- **Use `click()` not `check()`**: The `check()` method may not trigger the required change event
+- **Dialog handling is essential**: Without accepting the dialog, YOLO mode remains disabled
+- **Verify enablement**: Always check that `yolo_checkbox.is_checked()` returns `true` after the operation
+
+**YOLO Mode Benefits:**
+- ✅ No function execution approval modals
+- ✅ Seamless multi-function workflows
+- ✅ Faster test execution
+- ✅ Better for complex MCP scenarios
+- ✅ Allows AI to chain multiple function calls
+
+**YOLO Mode Testing Pattern:**
+```python
+def test_with_yolo_mode(page: Page, serve_hacka_re):
+    # Setup
+    page.goto(serve_hacka_re)
+    dismiss_welcome_modal(page)
+    
+    # Configure API and provider first
+    configure_api_settings(page)
+    
+    # Enable YOLO mode BEFORE connecting MCP
+    enable_yolo_mode(page)
+    
+    # Connect MCP services
+    connect_mcp_service(page)
+    
+    # Send message - functions execute automatically
+    send_message(page, "Use MCP service to...")
+    
+    # Wait for complete response (no manual approval needed)
+    wait_for_response_complete(page)
 ```
 
 #### Chat Interface Elements

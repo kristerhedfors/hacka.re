@@ -311,6 +311,8 @@
          * Execute Shodan tool
          */
         async executeTool(toolName, params) {
+            console.log('[ShodanConnector] executeTool called with:', { toolName, params, paramsType: typeof params });
+            
             if (!this.connection || !this.connection.apiKey) {
                 throw new Error('Shodan not connected');
             }
@@ -323,6 +325,7 @@
 
             switch (baseTool) {
                 case 'host_info':
+                    console.log('[ShodanConnector] host_info params:', params);
                     this.validateIP(params.ip);
                     url = `${this.config.apiBaseUrl}/shodan/host/${params.ip}?key=${encodeURIComponent(apiKey)}`;
                     if (params.history) url += '&history=true';
@@ -357,8 +360,26 @@
                     break;
 
                 case 'dns_domain':
+                    console.log('[ShodanConnector] dns_domain params:', params);
+                    console.log('[ShodanConnector] params.domain type:', typeof params.domain);
+                    console.log('[ShodanConnector] params.domain value:', params.domain);
+                    
+                    // Check if params.domain exists and is a string
                     if (!params.domain) throw new Error('Domain is required');
-                    url = `${this.config.apiBaseUrl}/dns/domain/${encodeURIComponent(params.domain)}?key=${encodeURIComponent(apiKey)}`;
+                    
+                    // Extract the actual domain string if it's somehow nested
+                    let domainValue = params.domain;
+                    if (typeof domainValue === 'object') {
+                        console.error('[ShodanConnector] params.domain is an object, not a string!', domainValue);
+                        // Try to extract a string value
+                        if (domainValue.domain) {
+                            domainValue = domainValue.domain;
+                        } else {
+                            throw new Error('Invalid domain parameter - expected string, got object');
+                        }
+                    }
+                    
+                    url = `${this.config.apiBaseUrl}/dns/domain/${encodeURIComponent(domainValue)}?key=${encodeURIComponent(apiKey)}`;
                     if (params.history) url += '&history=true';
                     if (params.type) url += `&type=${params.type}`;
                     if (params.page) url += `&page=${params.page}`;
@@ -366,7 +387,29 @@
 
                 case 'dns_resolve':
                     if (!params.hostnames) throw new Error('Hostnames are required');
-                    url = `${this.config.apiBaseUrl}/dns/resolve?key=${encodeURIComponent(apiKey)}&hostnames=${encodeURIComponent(params.hostnames)}`;
+                    // Debug log to see what we're receiving
+                    console.log('[ShodanConnector] dns_resolve params:', params);
+                    console.log('[ShodanConnector] params.hostnames type:', typeof params.hostnames);
+                    console.log('[ShodanConnector] params.hostnames value:', params.hostnames);
+                    
+                    // Check if hostnames is actually a string
+                    let hostnamesValue = params.hostnames;
+                    if (typeof hostnamesValue === 'object' && hostnamesValue !== null) {
+                        console.error('[ShodanConnector] params.hostnames is an object!', hostnamesValue);
+                        // If it's an object, try to extract a string value
+                        if (hostnamesValue.hostnames) {
+                            hostnamesValue = hostnamesValue.hostnames;
+                        } else if (Array.isArray(hostnamesValue)) {
+                            hostnamesValue = hostnamesValue.join(',');
+                        } else {
+                            // Last resort - convert to string
+                            hostnamesValue = String(hostnamesValue);
+                        }
+                    }
+                    
+                    console.log('[ShodanConnector] Final hostnames value:', hostnamesValue);
+                    url = `${this.config.apiBaseUrl}/dns/resolve?key=${encodeURIComponent(apiKey)}&hostnames=${encodeURIComponent(hostnamesValue)}`;
+                    console.log('[ShodanConnector] Final URL:', url);
                     break;
 
                 case 'dns_reverse':
@@ -422,9 +465,20 @@
             }
 
             try {
+                console.log(`[ShodanConnector] Making API request to: ${url}`);
+                console.log(`[ShodanConnector] Request options:`, requestOptions);
                 const response = await this.makeApiRequest(url, requestOptions);
+                console.log(`[ShodanConnector] API response received:`, response);
                 return this.formatResponse(baseTool, response, params);
             } catch (error) {
+                console.error(`[ShodanConnector] API request failed:`, error);
+                console.error(`[ShodanConnector] Error details:`, {
+                    message: error.message,
+                    stack: error.stack,
+                    url: url,
+                    toolName: toolName
+                });
+                
                 // Enhanced error handling for Shodan-specific errors
                 if (error.message.includes('401')) {
                     throw new Error('Invalid Shodan API key. Please check your API key.');

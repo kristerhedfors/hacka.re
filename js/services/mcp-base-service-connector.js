@@ -159,16 +159,23 @@
             // Remove service prefix from tool name for execution
             const baseToolName = toolName.replace(`${this.serviceKey}_`, '');
 
-            return `async function ${functionName}(${paramNames.join(', ')}) {
+            const functionCode = `async function ${functionName}(${paramNames.join(', ')}) {
                 try {
                     const mcpServiceManager = window.mcpServiceManager;
                     const params = {${paramNames.map(name => `${name}: ${name}`).join(', ')}};
+                    console.log('[MCP Function] Called ${functionName} with params:', params);
+                    console.log('[MCP Function] Individual param values:', {${paramNames.map(name => `${name}: typeof ${name} === 'object' ? JSON.stringify(${name}) : ${name}`).join(', ')}});
                     const result = await mcpServiceManager.executeServiceTool('${this.serviceKey}', '${baseToolName}', params);
+                    console.log('[MCP Function] Result from ${functionName}:', result);
                     return { success: true, result: result };
                 } catch (error) {
+                    console.error('[MCP Function] Error in ${functionName}:', error);
                     return { success: false, error: error.message };
                 }
             }`;
+            
+            console.log(`[BaseServiceConnector] Generated function for ${functionName}:`, functionCode);
+            return functionCode;
         }
 
         /**
