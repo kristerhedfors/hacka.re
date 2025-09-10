@@ -28,7 +28,7 @@ def shodan_api_key():
     return api_key
 
 
-def test_shodan_final_validation(page: Page, serve_hacka_re, shodan_api_key):
+def test_shodan_final_validation(page: Page, serve_hacka_re, shodan_api_key, api_key):
     """Final validation of Shodan integration"""
     
     # Capture console messages
@@ -43,6 +43,18 @@ def test_shodan_final_validation(page: Page, serve_hacka_re, shodan_api_key):
     
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
+    
+    # Configure OpenAI API key first to avoid the LLM API key modal
+    settings_btn = page.locator("#settings-btn")
+    settings_btn.click()
+    page.wait_for_selector("#settings-modal.active", state="visible", timeout=2000)
+    
+    api_key_input = page.locator("#api-key-update")
+    api_key_input.fill(api_key)
+    
+    close_settings = page.locator("#close-settings")
+    close_settings.click()
+    page.wait_for_selector("#settings-modal", state="hidden", timeout=2000)
     print("=== STEP 2: Connect to Shodan ===")
     
     # Open MCP modal
