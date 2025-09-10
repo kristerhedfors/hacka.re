@@ -701,9 +701,80 @@ The multi-level output capture generates markdown-compatible reports that can be
 "#api-key-update"          # API key input field (NOT #api-key-input)
 "#base-url-select"         # Provider selection dropdown
 "#model-select"            # Model selection dropdown
-"#yolo-mode-checkbox"      # YOLO mode checkbox (NOT #yolo-mode)
+"#yolo-mode"               # YOLO mode checkbox (NOT #yolo-mode-checkbox)
 "#namespace-input"         # Namespace input field
 "#clear-namespace-select"  # Namespace clearing dropdown
+```
+
+#### YOLO Mode Configuration
+**CRITICAL for MCP and Function Calling Tests**: YOLO mode enables automatic function execution without approval modals.
+
+**YOLO Mode Text Pattern in Settings:**
+- Text: "YOLO mode ⚠️(Disabled: Prompt user for every function call)"
+- Subtext: "Manage function approval memory"
+- Checkbox ID: `#yolo-mode`
+- Location: Settings modal → System Prompt section
+
+**When to Use YOLO Mode:**
+- All MCP function calling tests
+- Multi-function workflows 
+- Automated testing scenarios
+- When function execution modal interrupts test flow
+
+**How to Enable YOLO Mode:**
+```python
+def enable_yolo_mode(page: Page):
+    """Enable YOLO mode for automatic function execution"""
+    # Open settings modal
+    settings_btn = page.locator("#settings-btn")
+    expect(settings_btn).to_be_visible()
+    settings_btn.click()
+    
+    # Wait for modal
+    page.wait_for_selector("#settings-modal", state="visible", timeout=5000)
+    
+    # Enable YOLO mode checkbox
+    yolo_checkbox = page.locator("#yolo-mode")
+    if not yolo_checkbox.is_checked():
+        yolo_checkbox.check()
+        print("✅ YOLO mode enabled")
+    else:
+        print("✅ YOLO mode already enabled")
+    
+    # Close settings
+    close_btn = page.locator("#close-settings")
+    close_btn.click()
+    page.wait_for_selector("#settings-modal", state="hidden", timeout=5000)
+```
+
+**YOLO Mode Benefits:**
+- ✅ No function execution approval modals
+- ✅ Seamless multi-function workflows
+- ✅ Faster test execution
+- ✅ Better for complex MCP scenarios
+- ✅ Allows AI to chain multiple function calls
+
+**YOLO Mode Testing Pattern:**
+```python
+def test_with_yolo_mode(page: Page, serve_hacka_re):
+    # Setup
+    page.goto(serve_hacka_re)
+    dismiss_welcome_modal(page)
+    
+    # Configure API and provider first
+    configure_api_settings(page)
+    
+    # Enable YOLO mode BEFORE connecting MCP
+    enable_yolo_mode(page)
+    
+    # Connect MCP services
+    connect_mcp_service(page)
+    
+    # Send message - functions execute automatically
+    send_message(page, "Use MCP service to...")
+    
+    # Wait for complete response (no manual approval needed)
+    wait_for_response_complete(page)
 ```
 
 #### Chat Interface Elements

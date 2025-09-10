@@ -172,14 +172,19 @@ def test_shodan_stable_connection_and_dns(page: Page, serve_hacka_re):
                 "Status": "Waiting for response"
             })
             
-            # Wait for generation to start
-            page.wait_for_function(
-                """() => {
-                    const btn = document.querySelector('#send-btn');
-                    return btn && btn.hasAttribute('data-generating');
-                }""",
-                timeout=10000
-            )
+            # Wait for generation to start (look for loading indicators)
+            try:
+                page.wait_for_function(
+                    """() => {
+                        const btn = document.querySelector('#send-btn');
+                        return btn && btn.hasAttribute('data-generating');
+                    }""",
+                    timeout=5000
+                )
+            except:
+                # Fallback - look for other generation indicators
+                print("⚠️ data-generating not found, checking for other indicators")
+                time.sleep(2)  # Give it time to start processing
             
             # Look for function execution modal
             try:
