@@ -665,6 +665,27 @@ The multi-level output capture generates markdown-compatible reports that can be
 "#mcp-server-list"        # List of connected servers
 "#mcp-quick-connectors-placeholder" # Quick connectors section
 
+# MCP Quick Connectors (from screenshots)
+".quick-connector-card"    # Individual service connector cards
+"button:has-text('Connect')" # Connect buttons for each service (GitHub, Gmail, Shodan)
+# Note: Shodan is the 3rd Connect button in the Quick Connect section
+
+# Shodan MCP Connection Flow
+# 1. Click MCP servers button: "#mcp-servers-btn"
+# 2. Find Shodan Connect button: Third "button:has-text('Connect')" in Quick Connect section
+# 3. Shodan API Key Setup modal appears with title "Shodan API Key Setup"
+# 4. Fill input: "input[placeholder*='Shodan API key']" 
+# 5. Click: "button:has-text('🔗 Connect')" (Connect button with link emoji)
+# 6. Connection completes and modal closes
+
+# Shodan API Key Modal Elements  
+"#service-apikey-input-modal"           # The actual modal container ID
+"text=Shodan API Key Setup"              # Modal title to verify correct modal
+"input[placeholder*='Shodan API key']"   # API key input field
+"#service-apikey-input-modal button:has-text('🔗 Connect')"  # Connect button (scoped to modal)
+"#service-apikey-input-modal button:has-text('Cancel')"      # Cancel button (scoped to modal)
+# Note: Use force=True for clicks to avoid pointer interception issues
+
 # MCP Configuration Options
 "#mcp-share-link-enable"  # Enable share link button
 "#mcp-introspection-enable" # Enable introspection button
