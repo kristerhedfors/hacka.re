@@ -35,6 +35,11 @@ function initializeDefaultPrompts() {
         DEFAULT_PROMPTS.push(window.OwaspLlmTop10Prompt);
     }
     
+    // 4. LLM Security Literacy
+    if (window.LlmSecurityLiteracyPrompt) {
+        DEFAULT_PROMPTS.push(window.LlmSecurityLiteracyPrompt);
+    }
+    
     console.log(`Loaded ${DEFAULT_PROMPTS.length} default prompts for RAG functionality`);
     console.log("Default prompts loaded:", DEFAULT_PROMPTS.map(p => p.name));
 }
