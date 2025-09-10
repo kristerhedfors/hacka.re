@@ -266,8 +266,8 @@ def add_test_function(page):
     expect(function_modal).not_to_be_visible()
 
 
-def test_function_invocation_format(page, prompt):
-    """Test function invocation and analyze response format."""
+def verify_function_invocation_format(page, prompt):
+    """Helper to verify function invocation and analyze response format."""
     # Send message
     message_input = page.locator("#message-input")
     message_input.fill(prompt)
@@ -352,7 +352,7 @@ def test_model_function_format(page: Page, serve_hacka_re, api_key, groq_api_key
     
     # Test with explicit function call request
     print(f"\nTesting {provider}/{model}:")
-    result = test_function_invocation_format(
+    result = verify_function_invocation_format(
         page,
         'Please call the echo function with the message "Hello test"'
     )
@@ -413,7 +413,7 @@ def test_format_summary(page: Page, serve_hacka_re, api_key, groq_api_key, berge
                 
                 if selected:
                     add_test_function(page)
-                    result = test_function_invocation_format(
+                    result = verify_function_invocation_format(
                         page,
                         'Please call the echo function with the message "Hello test"'
                     )

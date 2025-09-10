@@ -21,13 +21,14 @@ deactivate
 ```
 
 **CRITICAL: Python Usage Rules:**
-- **ALWAYS USE**: `python3` for any direct python commands (NEVER `python`)
-- **ALWAYS USE**: `_venv/bin/python` (project root virtual environment) for testing
-- **NEVER USE**: System python, homebrew python, or any other python
-- **Virtual environment path**: `/Users/user/dev/hacka.re/_venv/bin/python`
-- **From _tests/playwright/ directory**: `../../_venv/bin/python`
-- **Direct pytest usage**: `../../_venv/bin/python -m pytest test_file.py -v -s`
-- **CRITICAL**: Any subprocess calls, fixtures, or scripts must use `python3`, never `python`
+- **ALWAYS USE**: `_venv/bin/python` - This is the ONLY Python environment for this project
+- **Virtual environment location**: `_venv/` in project root (NOT .venv, NOT _env, ONLY _venv)
+- **Absolute path**: `/Users/user/dev/hacka.re/_venv/bin/python`
+- **From project root**: `_venv/bin/python`
+- **From _tests/playwright/**: `../../_venv/bin/python`
+- **Running tests**: `_venv/bin/python -m pytest _tests/playwright/test_file.py -v -s`
+- **NEVER USE**: System python, homebrew python, .venv, or any other python installation
+- **CRITICAL**: The virtual environment is `_venv` - memorize this, it's the ONLY correct path
 
 **Important Environment Notes:**
 - The setup script creates a virtual environment at `_venv/` in the project root
