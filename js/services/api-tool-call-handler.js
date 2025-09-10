@@ -118,6 +118,47 @@ window.ApiToolCallHandler = (function() {
             }
             
             try {
+                // Gmail-specific fix: Handle Gmail MCP argument duplication issue
+                // ONLY applies to Gmail functions to avoid breaking GitHub/Shodan
+                if (toolCall.function.name.startsWith('gmail_') && 
+                    (toolCall.function.arguments.includes('{"query": "is:') || 
+                     toolCall.function.arguments.includes('"maxResults": 5{"'))) {
+                    
+                    console.warn(`[ToolCallHandler] Gmail-specific argument duplication detected:`, toolCall.function.arguments);
+                    
+                    let fixedArgs = toolCall.function.arguments;
+                    
+                    // Gmail-specific pattern: {"query": "is:important, "maxResults": 5{"query": "is:important", "maxResults": 5}
+                    // Extract the last complete JSON object which is usually correct
+                    const jsonPattern = /\{[^{}]*"query":\s*"[^"]*",\s*"maxResults":\s*\d+\}/g;
+                    const matches = fixedArgs.match(jsonPattern);
+                    
+                    if (matches && matches.length > 1) {
+                        // Use the last (usually correct) JSON object
+                        fixedArgs = matches[matches.length - 1];
+                        console.log(`[ToolCallHandler] Gmail fix: extracted last JSON object:`, fixedArgs);
+                    } else {
+                        // Try to clean up the malformed JSON
+                        // Pattern: {"query": "is:important, "maxResults": 5{...}
+                        // Fix by finding the duplicated content and removing the first part
+                        const duplicatePattern = /^(.+?)\{(.+)\}(.+\{.+\})$/;
+                        const match = fixedArgs.match(duplicatePattern);
+                        if (match) {
+                            fixedArgs = match[3]; // Take the last JSON object
+                            console.log(`[ToolCallHandler] Gmail fix: cleaned duplicate pattern:`, fixedArgs);
+                        }
+                    }
+                    
+                    // Update the tool call with fixed arguments (Gmail only)
+                    toolCall = {
+                        ...toolCall,
+                        function: {
+                            ...toolCall.function,
+                            arguments: fixedArgs
+                        }
+                    };
+                }
+                
                 const args = JSON.parse(toolCall.function.arguments);
                 const originalArgs = JSON.parse(JSON.stringify(args));
                 
@@ -149,7 +190,38 @@ window.ApiToolCallHandler = (function() {
                 
                 return toolCall;
             } catch (e) {
-                console.error(`[ToolCallHandler] Error fixing tool call arguments:`, e);
+                console.error(`[ToolCallHandler] Error fixing tool call arguments for ${toolCall.function?.name}:`, e);
+                console.error(`[ToolCallHandler] Problematic arguments string:`, toolCall.function?.arguments);
+                console.error(`[ToolCallHandler] Arguments length:`, toolCall.function?.arguments?.length);
+                
+                // Last resort fix ONLY for Gmail to avoid breaking other MCPs
+                if (toolCall.function?.name?.startsWith('gmail_') && toolCall.function?.arguments) {
+                    try {
+                        let lastResortFix = toolCall.function.arguments;
+                        
+                        // For Gmail only: Remove any duplicate JSON objects (keep the last valid one)
+                        const jsonObjects = lastResortFix.match(/\{[^{}]*\}/g);
+                        if (jsonObjects && jsonObjects.length > 1) {
+                            console.log(`[ToolCallHandler] Gmail last resort: Found ${jsonObjects.length} JSON objects, trying last one`);
+                            lastResortFix = jsonObjects[jsonObjects.length - 1];
+                        }
+                        
+                        // Test if this fixes the issue
+                        JSON.parse(lastResortFix);
+                        console.log(`[ToolCallHandler] Gmail last resort fix successful:`, lastResortFix);
+                        
+                        return {
+                            ...toolCall,
+                            function: {
+                                ...toolCall.function,
+                                arguments: lastResortFix
+                            }
+                        };
+                    } catch (lastResortError) {
+                        console.error(`[ToolCallHandler] Gmail last resort fix also failed:`, lastResortError);
+                    }
+                }
+                
                 return toolCall;
             }
         });

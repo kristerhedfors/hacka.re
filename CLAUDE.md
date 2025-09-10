@@ -307,6 +307,33 @@ Refactored from monolithic ~800-line service into focused modules with clear dep
 - Real-time context window visualization
 - Token counting and usage tracking
 
+### MCP (Model Context Protocol) Connectors
+Built-in MCP servers for external service integration:
+
+**GitHub MCP** (PAT Authentication):
+- Modal ID: `#service-pat-input-modal`
+- Input ID: `#pat-input`
+- Placeholder: "Enter your GitHub personal access token"
+- Connect button: First Connect button (index 0)
+- Functions: `github_list_repos`, `github_get_repo`, `github_list_issues`, etc.
+
+**Gmail MCP** (OAuth Authentication):
+- Uses OAuth flow with Google credentials
+- Connect button: Second Connect button (index 1)  
+- Functions: `gmail_list_messages`, `gmail_get_message`, `gmail_search_messages`, etc.
+- Note: Requires Google Cloud Project setup with Gmail API enabled
+
+**Shodan MCP** (API Key Authentication):
+- Modal ID: `#service-apikey-input-modal`
+- Input placeholder: Contains "Shodan API key"
+- Connect button: Third Connect button (index 2)
+- Functions: `shodan_dns_resolve`, `shodan_host_info`, etc.
+
+**Known Issues:**
+- Gmail MCP may show JSON parsing errors in console during argument fixing phase
+- These errors are cosmetic and don't affect function execution
+- Fixed with enhanced error handling in `api-tool-call-handler.js`
+
 ## Playwright Testing Infrastructure
 
 ### Test Philosophy
