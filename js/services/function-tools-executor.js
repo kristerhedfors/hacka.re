@@ -308,14 +308,24 @@ window.FunctionToolsExecutor = (function() {
                 return `return ${isAsync ? 'await ' : ''}${actualFunctionName}();`;
             }
             
-            // For MCP functions, spread the args object to match function parameters
+            // For MCP functions, handle special case where function takes 'args' directly
             if (isMcpFunction) {
-                Logger.debug(`Generating MCP function call - spreading args to match parameters`);
+                Logger.debug(`Generating MCP function call - checking parameter pattern`);
                 Logger.debug(`Raw parameter string: "${paramsString}"`);
                 // Extract parameter names from the function signature
                 const params = paramsString.split(',').map(p => p.trim()).filter(p => p);
                 Logger.debug(`Extracted params from signature:`, params);
-                // Generate code that extracts each parameter from args
+                
+                // Check if the function signature just uses 'args' as parameter
+                // This is common for MCP functions that expect the entire args object
+                if (params.length === 1 && params[0] === 'args') {
+                    Logger.debug(`MCP function uses 'args' parameter directly - passing entire args object`);
+                    const callCode = `return ${isAsync ? 'await ' : ''}${actualFunctionName}(args);`;
+                    Logger.debug(`Final call code: ${callCode}`);
+                    return callCode;
+                }
+                
+                // Otherwise, extract individual parameters from args
                 const paramValues = params.map(param => `args['${param}']`).join(', ');
                 Logger.debug(`Generated param values code: ${paramValues}`);
                 const callCode = `return ${isAsync ? 'await ' : ''}${actualFunctionName}(${paramValues});`;
