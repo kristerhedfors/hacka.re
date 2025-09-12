@@ -34,6 +34,30 @@ echo "Copying essential files..."
 cp index.html "$TEMP_DIR/"
 cp LICENSE "$TEMP_DIR/"
 
+# Copy favicon for browser tab icon
+if [ -f favicon.svg ]; then
+    cp favicon.svg "$TEMP_DIR/"
+    echo "Copied favicon.svg"
+else
+    echo "Warning: favicon.svg not found"
+fi
+
+# Copy README for documentation
+if [ -f README.md ]; then
+    cp README.md "$TEMP_DIR/"
+    echo "Copied README.md"
+else
+    echo "Warning: README.md not found"
+fi
+
+# Copy images directory (needed for MCP connector icons)
+if [ -d images ]; then
+    cp -r images "$TEMP_DIR/"
+    echo "Copied images directory"
+else
+    echo "Warning: images directory not found"
+fi
+
 # Copy entire js directory with all its subdirectories
 echo "Copying JavaScript files..."
 cp -r js "$TEMP_DIR/"
