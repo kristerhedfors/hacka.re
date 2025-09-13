@@ -241,7 +241,7 @@ def test_voice_control_integration(page: Page, serve_hacka_re):
     settings_button.click()
     page.wait_for_selector("#settings-modal.active", state="visible")
     
-    voice_checkbox = page.locator("#voice-control-checkbox")
+    voice_checkbox = page.locator("#voice-control")
     if not voice_checkbox.is_checked():
         voice_checkbox.click()
     

@@ -82,11 +82,15 @@ htmlcov/
 .tox/
 .nox/
 .hypothesis/
-.venv/
+
+# Virtual environments - each component has its own
+.venv/                    # Project root scripts environment
+_tests/playwright/.venv/  # Playwright tests environment
+hackare/.venv/           # hackare CLI environment
+_venv/                   # Old environment (to be removed)
 venv/
 ENV/
 env/
-_tests/playwright/.venv/
 
 # Misc
 .tmp/

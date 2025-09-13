@@ -35,10 +35,8 @@ echo ""
 # Ensure artifact directories exist
 mkdir -p screenshots screenshots_data console_logs
 
-# Check if virtual environment exists at project root
-# Since we cd to script directory, we need to go up 2 levels to project root
-PROJECT_ROOT="$(cd ../.. && pwd)"
-VENV_PATH="$PROJECT_ROOT/_venv"
+# Check if virtual environment exists in the playwright tests directory
+VENV_PATH="$(pwd)/.venv"
 
 if [ ! -d "$VENV_PATH" ]; then
     echo "Virtual environment not found at $VENV_PATH"
@@ -46,7 +44,7 @@ if [ ! -d "$VENV_PATH" ]; then
     exit 1
 fi
 
-# Use the project's virtual environment Python directly
+# Use the playwright test virtual environment Python directly
 PYTHON_CMD="$VENV_PATH/bin/python"
 
 # Parse command line arguments

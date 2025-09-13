@@ -1,0 +1,58 @@
+{
+  "timestamp": "2025-09-13 23:13:28",
+  "results": [
+    {
+      "scenario": "Small text (10 chars)",
+      "textLength": 10,
+      "typingTime": 41.44670901587233,
+      "expectedMaxTime": 50,
+      "passed": true,
+      "totalEvents": 0,
+      "eventHandlers": [],
+      "bottlenecks": [],
+      "textareaStyle": {
+        "height": "48px",
+        "scrollHeight": 48,
+        "clientHeight": 48,
+        "overflow": "auto hidden",
+        "resize": "none"
+      }
+    },
+    {
+      "scenario": "Medium text (50 chars)",
+      "textLength": 50,
+      "typingTime": 54.546208993997425,
+      "expectedMaxTime": 100,
+      "passed": true,
+      "totalEvents": 0,
+      "eventHandlers": [],
+      "bottlenecks": [],
+      "textareaStyle": {
+        "height": "48px",
+        "scrollHeight": 48,
+        "clientHeight": 48,
+        "overflow": "auto hidden",
+        "resize": "none"
+      }
+    },
+    {
+      "scenario": "Large text (100 chars)",
+      "textLength": 100,
+      "typingTime": 71.43887499114498,
+      "expectedMaxTime": 200,
+      "passed": true,
+      "totalEvents": 0,
+      "eventHandlers": [],
+      "bottlenecks": [],
+      "textareaStyle": {
+        "height": "48px",
+        "scrollHeight": 48,
+        "clientHeight": 48,
+        "overflow": "auto hidden",
+        "resize": "none"
+      }
+    }
+  ],
+  "degradation_found": false,
+  "main_bottlenecks": {}
+}

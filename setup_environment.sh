@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# setup_environment.sh - Unified Python Environment Setup for hacka.re
-# This script sets up a complete Python environment for testing and development
+# setup_environment.sh - Master Setup Script for hacka.re Python Environments
+# This script guides you through setting up the appropriate Python environments
 
 set -e  # Exit on any error
 
@@ -44,7 +44,13 @@ version_ge() {
     printf '%s\n%s\n' "$2" "$1" | sort -V -C
 }
 
-print_status "Starting hacka.re Python environment setup..."
+print_status "hacka.re Environment Setup Guide"
+echo
+print_status "This project uses separate Python environments for different components:"
+echo "  • Project scripts: .venv/ (in project root)"
+echo "  • Playwright tests: _tests/playwright/.venv/"
+echo "  • hackare CLI: hackare/.venv/"
+echo
 
 # Check if we're in the correct directory
 if [[ ! -f "index.html" ]] || [[ ! -d "js" ]]; then
@@ -53,153 +59,127 @@ if [[ ! -f "index.html" ]] || [[ ! -d "js" ]]; then
     exit 1
 fi
 
+# Offer setup options
+print_status "What would you like to set up?"
+echo "  1) All environments (recommended for first-time setup)"
+echo "  2) Project scripts environment only (.venv/)"
+echo "  3) Playwright tests environment only (_tests/playwright/.venv/)"
+echo "  4) hackare CLI environment only (hackare/.venv/)"
+echo
+read -p "Enter your choice (1-4): " choice
+
 # Check Python installation
 print_status "Checking Python installation..."
 
 if ! command_exists python3; then
     print_error "Python 3 is not installed or not in PATH"
-    print_error "Please install Python 3.11 or later"
+    print_error "Please install Python 3.8 or later"
     exit 1
 fi
 
 PYTHON_VERSION=$(get_python_version)
-if ! version_ge "$PYTHON_VERSION" "3.11"; then
-    print_error "Python 3.11 or later is required (found: $PYTHON_VERSION)"
+if ! version_ge "$PYTHON_VERSION" "3.8"; then
+    print_error "Python 3.8 or later is required (found: $PYTHON_VERSION)"
     print_error "Please upgrade your Python installation"
     exit 1
 fi
 
 print_success "Python $PYTHON_VERSION found"
 
-# Check if virtual environment exists
-VENV_DIR="_venv"
-if [[ -d "$VENV_DIR" ]]; then
-    print_status "Virtual environment already exists at $VENV_DIR"
-else
-    print_status "Creating virtual environment at $VENV_DIR..."
-    python3 -m venv "$VENV_DIR"
-    print_success "Virtual environment created"
+# Function to setup project scripts environment
+setup_scripts_env() {
+    print_status "Setting up project scripts environment..."
+    if [[ -x "./setup_scripts_env.sh" ]]; then
+        ./setup_scripts_env.sh
+    else
+        print_error "setup_scripts_env.sh not found or not executable"
+        return 1
+    fi
+}
+
+# Function to setup Playwright tests environment
+setup_playwright_env() {
+    print_status "Setting up Playwright tests environment..."
+    if [[ -x "_tests/playwright/setup_environment.sh" ]]; then
+        _tests/playwright/setup_environment.sh
+    else
+        print_error "_tests/playwright/setup_environment.sh not found or not executable"
+        return 1
+    fi
+}
+
+# Function to setup hackare CLI environment
+setup_hackare_env() {
+    print_status "Setting up hackare CLI environment..."
+    if [[ -x "hackare/setup_environment.sh" ]]; then
+        hackare/setup_environment.sh
+    else
+        print_error "hackare/setup_environment.sh not found or not executable"
+        return 1
+    fi
+}
+
+# Execute based on user choice
+case $choice in
+    1)
+        print_status "Setting up all environments..."
+        setup_scripts_env
+        echo
+        setup_playwright_env
+        echo
+        setup_hackare_env
+        ;;
+    2)
+        setup_scripts_env
+        ;;
+    3)
+        setup_playwright_env
+        ;;
+    4)
+        setup_hackare_env
+        ;;
+    *)
+        print_error "Invalid choice. Please run the script again and select 1-4."
+        exit 1
+        ;;
+esac
+
+# Check for old _venv directory
+if [[ -d "_venv" ]]; then
+    print_warning "Found old _venv directory from previous setup."
+    print_warning "This is no longer used. Each component now has its own .venv/"
+    print_status "You can remove it with: rm -rf _venv"
+    echo
 fi
-
-# Activate virtual environment
-print_status "Activating virtual environment..."
-source "$VENV_DIR/bin/activate"
-
-# Verify we're in the virtual environment
-if [[ "$VIRTUAL_ENV" != *"$VENV_DIR"* ]]; then
-    print_error "Failed to activate virtual environment"
-    exit 1
-fi
-
-print_success "Virtual environment activated: $VIRTUAL_ENV"
-
-# Upgrade pip
-print_status "Upgrading pip..."
-python -m pip install --upgrade pip
-
-# Install requirements
-print_status "Installing Python packages from requirements.txt..."
-if [[ -f "requirements.txt" ]]; then
-    pip install -r requirements.txt
-    print_success "Python packages installed successfully"
-else
-    print_error "requirements.txt not found"
-    exit 1
-fi
-
-# Install Playwright browsers
-print_status "Installing Playwright browsers..."
-playwright install
-
-# Verify Playwright installation
-if playwright --help >/dev/null 2>&1; then
-    print_success "Playwright browsers installed successfully"
-else
-    print_warning "Playwright installation may have issues"
-fi
-
-# Create .env.example if it doesn't exist
-if [[ ! -f ".env.example" ]]; then
-    print_status "Creating .env.example template..."
-    cat > .env.example << 'EOF'
-# OpenAI API Configuration
-OPENAI_API_KEY=your_api_key_here
-OPENAI_API_MODEL=o4-mini
-OPENAI_API_BASE=https://api.openai.com/v1
-
-EOF
-    print_success "Created .env.example template"
-fi
-
-# Check if .env file exists in playwright directory
-PLAYWRIGHT_ENV="_tests/playwright/.env"
-if [[ ! -f "$PLAYWRIGHT_ENV" ]]; then
-    print_warning "No .env file found at $PLAYWRIGHT_ENV"
-    print_status "Creating template .env file for Playwright tests..."
-    mkdir -p "_tests/playwright"
-    cp ".env.example" "$PLAYWRIGHT_ENV"
-    print_warning "Please edit $PLAYWRIGHT_ENV and add your API key"
-fi
-
-# Verify installation by running a simple test
-print_status "Verifying installation..."
-
-# Test Python imports
-python -c "
-import playwright
-import pytest
-import jsbeautifier
-import pandas
-import matplotlib
-print('✓ All core packages imported successfully')
-" 2>/dev/null && print_success "Python package verification passed" || print_warning "Some Python packages may have import issues"
-
-# Test Playwright
-python -c "
-from playwright.sync_api import sync_playwright
-with sync_playwright() as p:
-    browser = p.chromium.launch(headless=True)
-    browser.close()
-print('✓ Playwright browser test passed')
-" 2>/dev/null && print_success "Playwright verification passed" || print_warning "Playwright browser test failed"
 
 # Display summary
 echo
 print_success "=== Environment Setup Complete ==="
 echo
-print_status "Virtual environment: $VIRTUAL_ENV"
-print_status "Python version: $(python --version)"
-print_status "Pip version: $(pip --version | cut -d' ' -f2)"
-echo
-print_status "Installed packages:"
-pip list | grep -E "(playwright|pytest|jsbeautifier|pandas|matplotlib)" || true
+print_status "Environment locations:"
+echo "  • Project scripts: .venv/"
+echo "  • Playwright tests: _tests/playwright/.venv/"
+echo "  • hackare CLI: hackare/.venv/"
 echo
 
 print_status "=== Next Steps ==="
-echo "1. To activate the environment in a new terminal:"
-echo "   source _venv/bin/activate"
 echo
-echo "2. Configure your API key in:"
-echo "   $PLAYWRIGHT_ENV"
+echo "For project scripts:"
+echo "  source .venv/bin/activate"
+echo "  python scripts/generate_embeddings.py"
 echo
-echo "3. Run Playwright tests:"
-echo "   cd _tests/playwright && ./run_core_tests.sh"
+echo "For Playwright tests:"
+echo "  source _tests/playwright/.venv/bin/activate"
+echo "  cd _tests/playwright && python -m pytest test_*.py -v"
 echo
-echo "4. Run the hacka.re verifier:"
-echo "   python run_verifier.py"
+echo "For hackare CLI:"
+echo "  source hackare/.venv/bin/activate"
+echo "  hackare --help"
 echo
-echo "5. To deactivate the environment:"
-echo "   deactivate"
+echo "Remember to configure .env files in each directory:"
+echo "  • .env (for scripts)"
+echo "  • _tests/playwright/.env (for tests)"
+echo "  • hackare/.env (for CLI)"
 echo
-
-# Check if we should stay in the virtual environment
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    # Script was executed, not sourced
-    print_status "Environment setup complete. Virtual environment will be deactivated."
-    print_status "Run 'source _venv/bin/activate' to reactivate it."
-else
-    # Script was sourced
-    print_status "Environment setup complete and activated in current shell."
-fi
 
 print_success "Setup completed successfully!"
