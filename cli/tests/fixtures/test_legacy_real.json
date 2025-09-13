@@ -1,0 +1,12 @@
+{
+  "url": "https://hacka.re/#gpt=9VSdyn1wUCtpDfHhTYjqk8c85CkqsMDWQVOeblZb3rnTwgbfdh4JF4F43ue_TZdrUCARTTEIeibFC0rAAcTiGSj9b4afzmOQz4gc2UsoxSau0Cf43KoRCZuvkISzQ-kXBNLTq0Bkf6Pq19um7qVSl-AgmN1zLsjJI26VllNGqGCFNLGzs4hR8H8RNBkLKgV4fEk7YzgZlaGmID1LKaWMim4tNZWe4LjOgCemgE9dmtDjYF0sTeiuxPqaebV8cymNfn5HuqNWq5b5S4zRq2VNkDRCCdhfrMWmmsj6fg5z7e5Jsh2fXAdNJJ6A2jQ",
+  "password": "test123",
+  "expected": {
+    "apiKey": "sk-test-fake123456789012345678901234567890",
+    "baseUrl": "https://api.openai.com/v1",
+    "model": "gpt-4",
+    "ragEnabled": false,
+    "ragEUDocuments": []
+  },
+  "note": "Test fixture for legacy format (compressed and double-encoded) - sanitized"
+}
