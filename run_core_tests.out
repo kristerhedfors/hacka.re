@@ -108,7 +108,7 @@ test_debug_utils.py:25
     class TestDebugger:
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-==== 56 passed, 2 skipped, 1004 deselected, 6 warnings in 273.28s (0:04:33) ====
+==== 56 passed, 2 skipped, 1004 deselected, 6 warnings in 270.93s (0:04:30) ====
 Generating test results markdown files...
 No arguments provided. Using default files.
 Processing default files...

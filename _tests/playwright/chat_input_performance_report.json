@@ -1,10 +1,10 @@
 {
-  "timestamp": "2025-09-13 23:13:28",
+  "timestamp": "2025-09-13 23:41:19",
   "results": [
     {
       "scenario": "Small text (10 chars)",
       "textLength": 10,
-      "typingTime": 41.44670901587233,
+      "typingTime": 39.50258300756104,
       "expectedMaxTime": 50,
       "passed": true,
       "totalEvents": 0,
@@ -21,7 +21,7 @@
     {
       "scenario": "Medium text (50 chars)",
       "textLength": 50,
-      "typingTime": 54.546208993997425,
+      "typingTime": 53.35470900172368,
       "expectedMaxTime": 100,
       "passed": true,
       "totalEvents": 0,
@@ -38,7 +38,7 @@
     {
       "scenario": "Large text (100 chars)",
       "textLength": 100,
-      "typingTime": 71.43887499114498,
+      "typingTime": 73.11720799771138,
       "expectedMaxTime": 200,
       "passed": true,
       "totalEvents": 0,

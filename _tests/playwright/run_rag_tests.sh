@@ -164,7 +164,7 @@ if [[ "$TEST_CATEGORY" == "all" || "$TEST_CATEGORY" == "indexing" || "$TEST_CATE
     echo ""
 fi
 
-eval "../../_venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS -k \"$RAG_TESTS_FILTER\"" | tee test_output.log
+eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS -k \"$RAG_TESTS_FILTER\"" | tee test_output.log
 
 # Generate test results markdown files
 echo "Generating test results markdown files..."

@@ -44,13 +44,17 @@ Files: `.server.pid` (process ID), `.server.log` (logs). URL: `http://localhost:
 
 **Running Tests:**
 ```bash
-# From project root:
+# From project root (ALWAYS run from here):
 _tests/playwright/.venv/bin/python -m pytest _tests/playwright/test_*.py -v
 
-# Using scripts:
-_tests/playwright/run_core_tests.sh      # Basic UI, API, chat
+# Using scripts (fixed to use correct .venv path):
+_tests/playwright/run_core_tests.sh      # Basic UI, API, chat (56 tests)
 _tests/playwright/run_feature_tests.sh   # Function calling, MCP, sharing
 _tests/playwright/run_tests.sh          # All 377+ tests
+
+# With manual server control:
+./scripts/start_server.sh                # Start server first
+_tests/playwright/run_core_tests.sh --skip-server  # Run tests
 ```
 
 **Timeout Management (377+ tests total):**
@@ -220,6 +224,7 @@ json.dump(console_messages, open("debug.json", 'w'))
 - `#api-key-update` (NOT #api-key-input)
 - `#base-url-select`, `#model-select`
 - `#yolo-mode` (NOT #yolo-mode-checkbox)
+- `#voice-control` (NOT #voice-control-checkbox)
 - `#namespace-input`, `#clear-namespace-select`
 
 **YOLO Mode** (auto-execute functions):
@@ -250,6 +255,14 @@ def enable_yolo_mode(page):
 **Function Modal:**
 - `#function-code`, `#function-name` (auto-populated), `#function-validate-btn`
 - `.function-item`, `.function-collection-delete` (NOT individual delete)
+- `#function-editor-form button[type='submit']` (submit button)
+
+**Prompts Modal:**
+- `.default-prompts-header` (click to expand/collapse)
+- `.default-prompts-list` (container for default prompts)
+- `.default-prompt-item` (individual prompt items)
+- Default prompts include: "README.md", "Function library" (with lowercase 'l')
+- `.prompt-item-checkbox`, `.prompt-item-info` (prompt item controls)
 
 **Main Buttons:**
 `#settings-btn`, `#prompts-btn`, `#share-btn`, `#function-btn`, `#rag-btn`, `#mcp-servers-btn`
@@ -257,7 +270,9 @@ def enable_yolo_mode(page):
 **Common Mistakes:**
 - Use `#close-settings` NOT `#close-settings-modal`
 - Use `#api-key-update` NOT `#api-key-input`
+- Use `#voice-control` NOT `#voice-control-checkbox`
 - Use `.message.assistant` NOT `.assistant-message`
+- Default prompt "Function library" has lowercase 'l', not "Function Library"
 - Configure through UI, not localStorage directly
 
 **Testing Function Execution:**

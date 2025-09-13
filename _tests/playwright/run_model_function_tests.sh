@@ -100,7 +100,7 @@ echo "Running function calling tests across models..."
 echo "========================================="
 
 # Build the pytest command
-PYTEST_CMD="_venv/bin/../../_venv/bin/python -m pytest _tests/playwright/test_function_calling_models.py"
+PYTEST_CMD="_venv/bin/.venv/bin/python -m pytest _tests/playwright/test_function_calling_models.py"
 
 # Add test selection based on type
 if [ "$TEST_TYPE" == "groq" ]; then
