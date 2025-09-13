@@ -17,7 +17,8 @@ import (
 
 func main() {
 	// Define flags
-	dryRun := flag.Bool("dry-run", false, "Decrypt configuration and output as JSON without launching UI")
+	jsonDump := flag.Bool("json-dump", false, "Decrypt configuration and output as JSON without launching UI")
+	view := flag.Bool("view", false, "Decrypt configuration and output as JSON without launching UI (alias for --json-dump)")
 	help := flag.Bool("help", false, "Show help message")
 	h := flag.Bool("h", false, "Show help message")
 	
@@ -25,7 +26,8 @@ func main() {
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS] [URL|FRAGMENT|DATA]\n\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "Options:\n")
-		fmt.Fprintf(os.Stderr, "  --dry-run    Decrypt configuration and output as JSON\n")
+		fmt.Fprintf(os.Stderr, "  --json-dump  Decrypt configuration and output as JSON\n")
+		fmt.Fprintf(os.Stderr, "  --view       Same as --json-dump\n")
 		fmt.Fprintf(os.Stderr, "  --help, -h   Show this help message\n\n")
 		fmt.Fprintf(os.Stderr, "Arguments:\n")
 		fmt.Fprintf(os.Stderr, "  URL          Full hacka.re URL (https://hacka.re/#gpt=...)\n")
@@ -34,7 +36,8 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Examples:\n")
 		fmt.Fprintf(os.Stderr, "  %s                                    # Launch settings modal\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  %s \"gpt=eyJlbmM...\"                   # Load from fragment\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "  %s --dry-run \"eyJlbmM...\"             # Decrypt and output JSON\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  %s --json-dump \"eyJlbmM...\"           # Decrypt and output JSON\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  %s --view \"eyJlbmM...\"                # Same as --json-dump\n", os.Args[0])
 	}
 	
 	flag.Parse()
@@ -45,19 +48,22 @@ func main() {
 		os.Exit(0)
 	}
 	
+	// Check if either json-dump or view flag is set
+	shouldDumpJSON := *jsonDump || *view
+	
 	// Get non-flag arguments
 	args := flag.Args()
 	
 	// Check if we have a URL/fragment argument
 	if len(args) > 0 {
 		// Parse the URL/fragment argument
-		if *dryRun {
-			handleDryRun(args[0])
+		if shouldDumpJSON {
+			handleJSONDump(args[0])
 		} else {
 			handleURLArgument(args[0])
 		}
-	} else if *dryRun {
-		fmt.Fprintf(os.Stderr, "Error: --dry-run requires a URL, fragment, or encrypted data argument\n")
+	} else if shouldDumpJSON {
+		fmt.Fprintf(os.Stderr, "Error: --json-dump/--view requires a URL, fragment, or encrypted data argument\n")
 		os.Exit(1)
 	} else {
 		// No arguments - show settings modal
@@ -65,8 +71,8 @@ func main() {
 	}
 }
 
-// handleDryRun processes a URL/fragment and outputs JSON to stdout
-func handleDryRun(arg string) {
+// handleJSONDump processes a URL/fragment and outputs JSON to stdout
+func handleJSONDump(arg string) {
 	// Ask for password (to stderr so it doesn't interfere with JSON output)
 	fmt.Fprint(os.Stderr, "Enter password: ")
 	

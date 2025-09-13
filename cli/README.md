@@ -60,19 +60,22 @@ Load configuration from a shared hacka.re link (three formats supported):
 
 You'll be prompted for the password to decrypt the configuration.
 
-### Dry Run Mode
+### View/JSON Dump Mode
 
 Decrypt and output configuration as JSON without launching the UI:
 
 ```bash
-# Output decrypted configuration to stdout
-./hacka.re --dry-run "eyJlbmM..."
+# Output decrypted configuration to stdout (using --json-dump)
+./hacka.re --json-dump "eyJlbmM..."
+
+# Same functionality using --view (shorter alias)
+./hacka.re --view "gpt=..."
 
 # Pipe to jq for processing
-./hacka.re --dry-run "gpt=..." | jq '.apiKey'
+./hacka.re --view "gpt=..." | jq '.apiKey'
 
 # Save to file
-./hacka.re --dry-run "https://hacka.re/#gpt=..." > config.json
+./hacka.re --json-dump "https://hacka.re/#gpt=..." > config.json
 ```
 
 This is useful for:
