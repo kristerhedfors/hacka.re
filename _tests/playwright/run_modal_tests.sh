@@ -109,7 +109,7 @@ for GROUP in "${MODAL_TEST_GROUPS[@]}"; do
             echo "Note: This test requires API key configuration"
         fi
         
-        ../../_venv/bin/python -m pytest "$FILE" $PYTEST_ARGS --browser $BROWSER $HEADLESS 2>&1 | tee -a "modal_test_${FILE}.log"
+        .venv/bin/python -m pytest "$FILE" $PYTEST_ARGS --browser $BROWSER $HEADLESS 2>&1 | tee -a "modal_test_${FILE}.log"
         
         EXIT_CODE=${PIPESTATUS[0]}
         TOTAL_TESTS=$((TOTAL_TESTS + 1))

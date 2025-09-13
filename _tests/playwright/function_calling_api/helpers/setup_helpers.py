@@ -44,13 +44,10 @@ def configure_api_key_and_model(page, api_key):
     import os
     # Add the _tests/playwright directory to path to import from the main conftest
     playwright_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    if playwright_dir not in sys.path:
-        sys.path.insert(0, playwright_dir)
+    sys.path.insert(0, playwright_dir)
     
     # Import from the main conftest, not from subdirectories
-    import conftest
-    ACTIVE_TEST_CONFIG = conftest.ACTIVE_TEST_CONFIG
-    TEST_PROVIDER = conftest.TEST_PROVIDER
+    from conftest import ACTIVE_TEST_CONFIG, TEST_PROVIDER
     
     # Select the configured provider
     base_url_select = page.locator("#base-url-select")

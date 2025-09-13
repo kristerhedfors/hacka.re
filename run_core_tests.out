@@ -11,14 +11,116 @@
 💡 TIP: Run ./show_test_artifacts.sh to see all artifacts
 ======================================
 
-Starting HTTP server for tests...
-===== Starting HTTP Server for hacka.re Tests =====
-Port: 8000
-Project Root: /Users/user/dev/hacka.re
-==================================================
-Checking for existing HTTP server processes on port 8000...
-No existing processes found on port 8000.
-Changing to project root directory: /Users/user/dev/hacka.re
-Starting Python HTTP server on port 8000...
-Failed to start server.
 Running Core Functionality tests with chromium browser...
+Test filter: test_page or test_api or test_chat or test_welcome_modal
+
+============================= test session starts ==============================
+platform darwin -- Python 3.13.7, pytest-8.4.2, pluggy-1.6.0
+rootdir: /Users/user/dev/hacka.re/_tests/playwright
+configfile: pytest.ini
+testpaths: .
+plugins: asyncio-0.26.0, base-url-2.1.0, playwright-0.7.1
+asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 1062 items / 1004 deselected / 58 selected
+
+shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_info[chromium0] PASSED [  1%]
+shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_plan_details[chromium0] PASSED [  3%]
+test_api.py::test_api_key_configuration[chromium0] PASSED                [  5%]
+test_api.py::test_model_selection[chromium0] PASSED                      [  6%]
+test_api_key_detection_simple.py::test_api_key_detection_simple[chromium0] PASSED [  8%]
+test_api_key_enter.py::test_api_key_modal_enter_key[chromium0] PASSED    [ 10%]
+test_api_key_persistence_debug.py::test_api_key_persistence_scenario_1_basic[chromium0] PASSED [ 12%]
+test_api_key_persistence_debug.py::test_api_key_persistence_scenario_2_retry_helper[chromium0] PASSED [ 13%]
+test_api_key_persistence_debug.py::test_api_key_persistence_scenario_3_multiple_attempts[chromium0] PASSED [ 15%]
+test_api_key_persistence_debug.py::test_api_key_persistence_scenario_4_timing_analysis[chromium0] PASSED [ 17%]
+test_chat.py::test_chat_message_send_receive[chromium0] PASSED           [ 18%]
+test_chat_input_performance.py::test_chat_input_performance_bottleneck[chromium0] PASSED [ 20%]
+test_chat_input_performance.py::test_identify_specific_bottleneck_handlers[chromium0] PASSED [ 22%]
+test_chat_input_performance_simple.py::test_chat_input_simple_performance[chromium0] PASSED [ 24%]
+test_chat_input_performance_simple.py::test_measure_debounce_performance[chromium0] PASSED [ 25%]
+test_chat_no_mock.py::test_chat_message_send_receive[chromium0] SKIPPED  [ 27%]
+test_chat_regression.py::test_textarea_basic_functionality[chromium0] PASSED [ 29%]
+test_chat_regression.py::test_height_constraints[chromium0] PASSED       [ 31%]
+test_chat_regression.py::test_context_update_debouncing[chromium0] PASSED [ 32%]
+test_chat_regression.py::test_voice_control_integration[chromium0] PASSED [ 34%]
+test_chat_regression.py::test_mobile_handlers_intact[chromium0] PASSED   [ 36%]
+test_chat_regression.py::test_chat_message_sending[chromium0] PASSED     [ 37%]
+test_page.py::test_page_loads[chromium0] PASSED                          [ 39%]
+test_page.py::test_chat_interface_elements[chromium0] PASSED             [ 41%]
+test_stop_generation_simple.py::test_chat_manager_stop_logic[chromium0] PASSED [ 43%]
+test_welcome_modal_new_logic.py::test_welcome_modal_shows_for_first_time_user[chromium0] PASSED [ 44%]
+test_welcome_modal_new_logic.py::test_welcome_modal_hidden_for_returning_user[chromium0] PASSED [ 46%]
+test_welcome_modal_new_logic.py::test_welcome_modal_disabled_with_url_param[chromium0] PASSED [ 48%]
+test_welcome_modal_new_logic.py::test_no_auto_settings_after_welcome[chromium0] PASSED [ 50%]
+shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_info[chromium1] PASSED [ 51%]
+shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_plan_details[chromium1] PASSED [ 53%]
+test_api.py::test_api_key_configuration[chromium1] PASSED                [ 55%]
+test_api.py::test_model_selection[chromium1] PASSED                      [ 56%]
+test_api_key_detection_simple.py::test_api_key_detection_simple[chromium1] PASSED [ 58%]
+test_api_key_enter.py::test_api_key_modal_enter_key[chromium1] PASSED    [ 60%]
+test_api_key_persistence_debug.py::test_api_key_persistence_scenario_1_basic[chromium1] PASSED [ 62%]
+test_api_key_persistence_debug.py::test_api_key_persistence_scenario_2_retry_helper[chromium1] PASSED [ 63%]
+test_api_key_persistence_debug.py::test_api_key_persistence_scenario_3_multiple_attempts[chromium1] PASSED [ 65%]
+test_api_key_persistence_debug.py::test_api_key_persistence_scenario_4_timing_analysis[chromium1] PASSED [ 67%]
+test_chat.py::test_chat_message_send_receive[chromium1] PASSED           [ 68%]
+test_chat_input_performance.py::test_chat_input_performance_bottleneck[chromium1] PASSED [ 70%]
+test_chat_input_performance.py::test_identify_specific_bottleneck_handlers[chromium1] PASSED [ 72%]
+test_chat_input_performance_simple.py::test_chat_input_simple_performance[chromium1] PASSED [ 74%]
+test_chat_input_performance_simple.py::test_measure_debounce_performance[chromium1] PASSED [ 75%]
+test_chat_no_mock.py::test_chat_message_send_receive[chromium1] SKIPPED  [ 77%]
+test_chat_regression.py::test_textarea_basic_functionality[chromium1] PASSED [ 79%]
+test_chat_regression.py::test_height_constraints[chromium1] PASSED       [ 81%]
+test_chat_regression.py::test_context_update_debouncing[chromium1] PASSED [ 82%]
+test_chat_regression.py::test_voice_control_integration[chromium1] PASSED [ 84%]
+test_chat_regression.py::test_mobile_handlers_intact[chromium1] PASSED   [ 86%]
+test_chat_regression.py::test_chat_message_sending[chromium1] PASSED     [ 87%]
+test_page.py::test_page_loads[chromium1] PASSED                          [ 89%]
+test_page.py::test_chat_interface_elements[chromium1] PASSED             [ 91%]
+test_stop_generation_simple.py::test_chat_manager_stop_logic[chromium1] PASSED [ 93%]
+test_welcome_modal_new_logic.py::test_welcome_modal_shows_for_first_time_user[chromium1] PASSED [ 94%]
+test_welcome_modal_new_logic.py::test_welcome_modal_hidden_for_returning_user[chromium1] PASSED [ 96%]
+test_welcome_modal_new_logic.py::test_welcome_modal_disabled_with_url_param[chromium1] PASSED [ 98%]
+test_welcome_modal_new_logic.py::test_no_auto_settings_after_welcome[chromium1] PASSED [100%]
+
+=============================== warnings summary ===============================
+test_complete_mcp_share_flow.py:8
+  /Users/user/dev/hacka.re/_tests/playwright/test_complete_mcp_share_flow.py:8: PytestUnknownMarkWarning: Unknown pytest.mark.feature_test - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.feature_test
+
+test_cross_tab_loop_fix.py:8
+  /Users/user/dev/hacka.re/_tests/playwright/test_cross_tab_loop_fix.py:8: PytestUnknownMarkWarning: Unknown pytest.mark.feature_test - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.feature_test
+
+test_cross_tab_sync_optimization.py:7
+  /Users/user/dev/hacka.re/_tests/playwright/test_cross_tab_sync_optimization.py:7: PytestUnknownMarkWarning: Unknown pytest.mark.feature_test - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.feature_test
+
+test_cross_tab_sync_optimization.py:59
+  /Users/user/dev/hacka.re/_tests/playwright/test_cross_tab_sync_optimization.py:59: PytestUnknownMarkWarning: Unknown pytest.mark.feature_test - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.feature_test
+
+test_debug_utils.py:25
+  /Users/user/dev/hacka.re/_tests/playwright/test_debug_utils.py:25: PytestCollectionWarning: cannot collect test class 'TestDebugger' because it has a __init__ constructor (from: test_debug_utils.py)
+    class TestDebugger:
+
+test_debug_utils.py:25
+  /Users/user/dev/hacka.re/_tests/playwright/test_debug_utils.py:25: PytestCollectionWarning: cannot collect test class 'TestDebugger' because it has a __init__ constructor (from: test_example_with_debugging.py)
+    class TestDebugger:
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+==== 56 passed, 2 skipped, 1004 deselected, 6 warnings in 270.93s (0:04:30) ====
+Generating test results markdown files...
+No arguments provided. Using default files.
+Processing default files...
+Generating markdown report for 'test_output.log' -> 'test_results.md'...
+Markdown report generated: test_results.md
+You can view it with: glow -p test_results.md
+Warning: Input log file 'run_tests.out' not found. Proceeding without test output.
+Generating markdown report for 'run_tests.out' -> 'run_tests.out_bundle.md'...
+Markdown report generated: run_tests.out_bundle.md
+You can view it with: glow -p run_tests.out_bundle.md
+
+All core test output, including any Ctrl+C interruptions, has been captured to run_core_tests.out
+A bundled markdown report has been generated at run_tests.out_bundle.md
+You can view the markdown report with: glow -p run_tests.out_bundle.md
+These files can be used by the coding assistant LLM to analyze test results

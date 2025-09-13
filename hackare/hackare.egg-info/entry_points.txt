@@ -1,0 +1,2 @@
+[console_scripts]
+hackare = hackare.cli:main

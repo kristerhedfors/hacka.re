@@ -1,0 +1,13 @@
+README.md
+pyproject.toml
+setup.py
+hackare.egg-info/PKG-INFO
+hackare.egg-info/SOURCES.txt
+hackare.egg-info/dependency_links.txt
+hackare.egg-info/entry_points.txt
+hackare.egg-info/requires.txt
+hackare.egg-info/top_level.txt
+templates/__init__.py
+tests/__init__.py
+tests/test_cli.py
+tests/test_core.py

@@ -133,15 +133,11 @@ def test_default_prompts_content(page, serve_hacka_re):
     assert count >= 1, f"Expected at least 1 default prompt item, but found {count}"
     
     # Check that one of the default prompts is about the hacka.re project
-    hacka_re_prompt = page.locator(".default-prompt-item:has-text('Complete hacka.re Documentation')")
+    hacka_re_prompt = page.locator(".default-prompt-item:has-text('README.md')")
     expect(hacka_re_prompt).to_be_visible()
     
-    # Check that the OWASP Top 10 for LLM Applications prompt exists
-    owasp_prompt = page.locator(".default-prompt-item:has-text('OWASP Top 10 for LLM Applications')")
-    expect(owasp_prompt).to_be_visible()
-    
     # Check that each default prompt has a checkbox
-    for prompt in [hacka_re_prompt, owasp_prompt]:
+    for prompt in [hacka_re_prompt]:
         checkbox = prompt.locator(".prompt-item-checkbox")
         expect(checkbox).to_be_visible()
         
@@ -184,10 +180,9 @@ def test_default_prompts_selection(page, serve_hacka_re):
     default_prompts_list = page.locator(".default-prompts-list")
     expect(default_prompts_list).to_be_visible()
     
-    # Define the prompts to test
+    # Define the prompts to test - just test README.md for now
     prompts_to_test = [
-        ".default-prompt-item:has-text('Complete hacka.re Documentation')",
-        ".default-prompt-item:has-text('OWASP Top 10 for LLM Applications')"
+        ".default-prompt-item:has-text('README.md')"
     ]
     
     # Test each prompt

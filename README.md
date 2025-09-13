@@ -883,14 +883,14 @@ hacka.re/
 ./setup_environment.sh
 
 # This will:
-# - Create Python virtual environment at _venv/
+# - Create Python virtual environment at .venv/
 # - Install all dependencies
 # - Install Playwright browsers
 # - Create .env configuration
 # - Verify installation
 
 # Activate environment
-source _venv/bin/activate
+source .venv/bin/activate
 
 # Start development server
 ./scripts/start_server.sh
@@ -1071,16 +1071,16 @@ _tests/playwright/run_tests.sh
 
 ```bash
 # Run specific file
-_venv/bin/python -m pytest _tests/playwright/test_modals.py -v
+_tests/playwright/.venv/bin/python -m pytest _tests/playwright/test_modals.py -v
 
 # Run specific test
-_venv/bin/python -m pytest _tests/playwright/test_modals.py::test_share_modal -v
+_tests/playwright/.venv/bin/python -m pytest _tests/playwright/test_modals.py::test_share_modal -v
 
 # Run with filter
-_venv/bin/python -m pytest _tests/playwright/ -k "modal" -v
+_tests/playwright/.venv/bin/python -m pytest _tests/playwright/ -k "modal" -v
 
 # Run with timeout
-_venv/bin/python -m pytest _tests/playwright/ --timeout=600 -v
+_tests/playwright/.venv/bin/python -m pytest _tests/playwright/ --timeout=600 -v
 ```
 
 ### Test Categories
