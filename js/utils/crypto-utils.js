@@ -171,7 +171,94 @@ window.CryptoUtils = (function() {
     }
     
     /**
-     * Derive a 32-byte seed from password + salt
+     * HMAC-SHA512 implementation using TweetNaCl
+     * @param {Uint8Array} key - The key for HMAC
+     * @param {Uint8Array} message - The message to authenticate
+     * @returns {Uint8Array} HMAC-SHA512 output (64 bytes)
+     */
+    function hmacSHA512(key, message) {
+        const BLOCK_SIZE = 128; // SHA-512 block size is 128 bytes
+        const OPAD = 0x5c;
+        const IPAD = 0x36;
+        
+        // If key is longer than block size, hash it
+        let processedKey = key;
+        if (key.length > BLOCK_SIZE) {
+            processedKey = nacl.hash(key); // SHA-512 hash
+        }
+        
+        // Pad key to block size
+        const paddedKey = new Uint8Array(BLOCK_SIZE);
+        paddedKey.set(processedKey);
+        
+        // Create inner and outer padded keys
+        const innerPadded = new Uint8Array(BLOCK_SIZE);
+        const outerPadded = new Uint8Array(BLOCK_SIZE);
+        
+        for (let i = 0; i < BLOCK_SIZE; i++) {
+            innerPadded[i] = paddedKey[i] ^ IPAD;
+            outerPadded[i] = paddedKey[i] ^ OPAD;
+        }
+        
+        // Inner hash: H(K XOR ipad, message)
+        const innerMessage = new Uint8Array(BLOCK_SIZE + message.length);
+        innerMessage.set(innerPadded);
+        innerMessage.set(message, BLOCK_SIZE);
+        const innerHash = nacl.hash(innerMessage); // SHA-512
+        
+        // Outer hash: H(K XOR opad, inner_hash)
+        const outerMessage = new Uint8Array(BLOCK_SIZE + innerHash.length);
+        outerMessage.set(outerPadded);
+        outerMessage.set(innerHash, BLOCK_SIZE);
+        const outerHash = nacl.hash(outerMessage); // SHA-512
+        
+        return outerHash;
+    }
+    
+    /**
+     * PBKDF2-HMAC-SHA512 implementation
+     * @param {Uint8Array} password - The password bytes
+     * @param {Uint8Array} salt - The salt bytes
+     * @param {number} iterations - Number of iterations
+     * @param {number} keyLength - Desired key length in bytes
+     * @returns {Uint8Array} Derived key
+     */
+    function pbkdf2(password, salt, iterations, keyLength) {
+        const hashLength = 64; // SHA-512 produces 64 bytes
+        const numBlocks = Math.ceil(keyLength / hashLength);
+        const derivedKey = new Uint8Array(numBlocks * hashLength);
+        
+        for (let blockNum = 1; blockNum <= numBlocks; blockNum++) {
+            // Create salt + block number (big-endian)
+            const blockSalt = new Uint8Array(salt.length + 4);
+            blockSalt.set(salt);
+            blockSalt[salt.length] = (blockNum >>> 24) & 0xff;
+            blockSalt[salt.length + 1] = (blockNum >>> 16) & 0xff;
+            blockSalt[salt.length + 2] = (blockNum >>> 8) & 0xff;
+            blockSalt[salt.length + 3] = blockNum & 0xff;
+            
+            // First iteration
+            let u = hmacSHA512(password, blockSalt);
+            let block = new Uint8Array(u);
+            
+            // Remaining iterations
+            for (let i = 1; i < iterations; i++) {
+                u = hmacSHA512(password, u);
+                for (let j = 0; j < hashLength; j++) {
+                    block[j] ^= u[j];
+                }
+            }
+            
+            // Copy block to derived key
+            derivedKey.set(block, (blockNum - 1) * hashLength);
+        }
+        
+        // Return only the requested key length
+        return derivedKey.slice(0, keyLength);
+    }
+    
+    /**
+     * Derive a 32-byte seed from password + salt using PBKDF2-HMAC-SHA512
      * @param {string} password - The password to derive the key from
      * @param {Uint8Array} salt - The salt to use for key derivation
      * @returns {Uint8Array} Derived key
@@ -180,29 +267,12 @@ window.CryptoUtils = (function() {
         // Convert password to Uint8Array
         const passwordBytes = nacl.util.decodeUTF8(password);
         
-        // For long passwords, hash them down if they're longer than 32 bytes
-        let processedPasswordBytes = passwordBytes;
-        if (passwordBytes.length > 32) {
-            processedPasswordBytes = nacl.hash(passwordBytes).slice(0, KEY_LENGTH);
-        }
-        
-        // Combine password and salt
-        const combined = new Uint8Array(processedPasswordBytes.length + salt.length);
-        combined.set(processedPasswordBytes);
-        combined.set(salt, processedPasswordBytes.length);
-        
-        // Perform multiple iterations of hashing to derive the key
-        let key = combined;
-        for (let i = 0; i < KEY_ITERATIONS; i++) {
-            // Use TweetNaCl's hash function (SHA-512)
-            key = nacl.hash(key).slice(0, KEY_LENGTH);
-        }
-        
-        return key;
+        // Use PBKDF2-HMAC-SHA512 with 10000 iterations
+        return pbkdf2(passwordBytes, salt, KEY_ITERATIONS, KEY_LENGTH);
     }
     
     /**
-     * Derive a master key from password + salt + nonce seed
+     * Derive a master key from password + salt + nonce seed using PBKDF2-HMAC-SHA512
      * This is used for shared links to derive a master key without transmitting it
      * @param {string} password - The password used for the shared link
      * @param {Uint8Array} salt - The salt from the encrypted blob
@@ -213,27 +283,17 @@ window.CryptoUtils = (function() {
         // Convert password to Uint8Array
         const passwordBytes = nacl.util.decodeUTF8(password);
         
-        // For long passwords, hash them down if they're longer than 32 bytes
-        let processedPasswordBytes = passwordBytes;
-        if (passwordBytes.length > 32) {
-            processedPasswordBytes = nacl.hash(passwordBytes).slice(0, KEY_LENGTH);
-        }
+        // Combine salt and nonce seed to create a unique salt for master key derivation
+        // This ensures the master key is different from the decryption key
+        const masterSalt = new Uint8Array(salt.length + nonceSeed.length);
+        masterSalt.set(salt);
+        masterSalt.set(nonceSeed, salt.length);
         
-        // Combine password, salt, and nonce seed for master key derivation
-        // This creates a different input than deriveSeed, so we get a different key
-        const combined = new Uint8Array(processedPasswordBytes.length + salt.length + nonceSeed.length);
-        combined.set(processedPasswordBytes);
-        combined.set(salt, processedPasswordBytes.length);
-        combined.set(nonceSeed, processedPasswordBytes.length + salt.length);
-        
-        // Use same 10,000 iterations as deriveSeed for consistency
-        let key = combined;
-        for (let i = 0; i < KEY_ITERATIONS; i++) {
-            key = nacl.hash(key).slice(0, KEY_LENGTH);
-        }
+        // Use PBKDF2-HMAC-SHA512 with 10000 iterations
+        const derivedKey = pbkdf2(passwordBytes, masterSalt, KEY_ITERATIONS, KEY_LENGTH);
         
         // Convert to hex string (matching current master key format)
-        return Array.from(key)
+        return Array.from(derivedKey)
             .map(b => b.toString(16).padStart(2, '0'))
             .join('');
     }
@@ -375,7 +435,7 @@ window.CryptoUtils = (function() {
                 `🔐 - Salt: 10 bytes (80 bits)`,
                 `🔐 - Nonce seed: 10 bytes (80 bits, expanded to 24)`,
                 `🔐 - Algorithm: XSalsa20-Poly1305`,
-                `🔐 - Key derivation: SHA-512 iteration, ${KEY_ITERATIONS} rounds`,
+                `🔐 - Key derivation: PBKDF2-HMAC-SHA512, ${KEY_ITERATIONS} iterations`,
                 '🔐 ───────────────────────────────────────────────────────────────',
                 `🔐 Binary structure: [salt(10)] + [nonce_seed(10)] + [cipher(${cipher.length})]`,
                 `🔐 Total binary: ${rawBinarySize} bytes`,
