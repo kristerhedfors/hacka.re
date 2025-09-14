@@ -11,6 +11,18 @@
 💡 TIP: Run ./show_test_artifacts.sh to see all artifacts
 ======================================
 
+Starting HTTP server for tests...
+===== Starting HTTP Server for hacka.re Tests =====
+Port: 8000
+Project Root: /Users/user/dev/hacka.re
+==================================================
+Checking for existing HTTP server processes on port 8000...
+Found existing processes: 68657
+Killing existing processes...
+Processes killed.
+Changing to project root directory: /Users/user/dev/hacka.re
+Starting Python HTTP server on port 8000...
+Failed to start server.
 Running Core Functionality tests with chromium browser in batches...
 Test filter: test_page or test_api or test_chat or test_welcome_modal
 
@@ -28,7 +40,7 @@ test_page.py::test_chat_interface_elements[chromium0] PASSED             [ 50%]
 test_page.py::test_page_loads[chromium1] PASSED                          [ 75%]
 test_page.py::test_chat_interface_elements[chromium1] PASSED             [100%]
 
-============================== 4 passed in 6.73s ===============================
+============================== 4 passed in 5.84s ===============================
 \n=== Batch 2: API Tests ===
 ============================= test session starts ==============================
 platform darwin -- Python 3.13.7, pytest-8.4.2, pluggy-1.6.0
@@ -43,7 +55,7 @@ test_api.py::test_model_selection[chromium0] PASSED                      [ 50%]
 test_api.py::test_api_key_configuration[chromium1] PASSED                [ 75%]
 test_api.py::test_model_selection[chromium1] PASSED                      [100%]
 
-============================== 4 passed in 17.60s ==============================
+============================== 4 passed in 17.72s ==============================
 \n=== Batch 3: Chat Tests ===
 ============================= test session starts ==============================
 platform darwin -- Python 3.13.7, pytest-8.4.2, pluggy-1.6.0
@@ -56,7 +68,7 @@ collected 2 items
 test_chat.py::test_chat_message_send_receive[chromium0] PASSED           [ 50%]
 test_chat.py::test_chat_message_send_receive[chromium1] PASSED           [100%]
 
-============================== 2 passed in 23.39s ==============================
+============================== 2 passed in 22.57s ==============================
 \n=== Batch 4: Welcome Modal Tests ===
 ============================= test session starts ==============================
 platform darwin -- Python 3.13.7, pytest-8.4.2, pluggy-1.6.0
@@ -82,3 +94,10 @@ All core test output, including any Ctrl+C interruptions, has been captured to r
 A bundled markdown report has been generated at run_tests.out_bundle.md
 You can view the markdown report with: glow -p run_tests.out_bundle.md
 These files can be used by the coding assistant LLM to analyze test results
+Stopping HTTP server...
+===== Stopping HTTP Server for hacka.re Tests =====
+PID file not found: /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt
+Checking for any HTTP server processes on port 8000...
+No existing processes found on port 8000.
+==================================================
+Server stopped.

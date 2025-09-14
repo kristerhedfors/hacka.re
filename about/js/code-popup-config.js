@@ -205,16 +205,16 @@ window.CryptoUtils = (function() {
     const MASTER_KEY_PREFIX = 'hackare_master_key_';
     
     /**
-     * Generate a SHA-256 hash of a string
+     * Generate SHA-512 hash of input
      * @param {string} input - The string to hash
      * @returns {string} Hex string of the hash
      */
-    function sha256(input) {
+    function sha512(input) {
         // Convert input string to Uint8Array
         const inputBytes = nacl.util.decodeUTF8(input);
         
-        // Use TweetNaCl's hash function (SHA-512) and take first 32 bytes (256 bits)
-        const hashBytes = nacl.hash(inputBytes).slice(0, 32);
+        // Use TweetNaCl's hash function (SHA-512)
+        const hashBytes = nacl.hash(inputBytes);
         
         // Convert to hex string
         return Array.from(hashBytes)
