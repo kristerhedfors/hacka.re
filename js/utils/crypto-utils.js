@@ -14,7 +14,7 @@
  * 
  * Shared Link Access (hacka.re#gpt=...):
  * - Uses localStorage for data persistence
- * - Master key is derived from 32-byte NaCl key embedded in the link
+ * - Master key is derived from password + salt + nonce (not transmitted)
  * - Master key NEVER touches localStorage or sessionStorage
  * - Master key exists only in memory during runtime
  * - Same link generates same master key (enables multi-tab sharing)

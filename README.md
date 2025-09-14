@@ -572,29 +572,110 @@ hacka.re uses **TweetNaCl.js** for cryptographic operations:
 - **Nonce Size**: 192 bits (24 bytes)
 - **Authentication**: Integrated Poly1305 MAC
 
-#### Key Derivation
-- **Method**: SHA-512 based PBKDF
-- **Iterations**: 10,000 rounds
-- **Salt**: 128 bits (16 bytes)
-- **Output**: 256 bits (32 bytes)
+#### Key Derivation Architecture
 
-#### Encryption Process
+The system uses **two distinct keys** derived from the same password:
+
+1. **Decryption Key**: For decrypting the shared payload
+   - Derived from: `password + salt`
+   - Used for: Decrypting the compressed share data
+
+2. **Master Key**: For localStorage encryption
+   - Derived from: `password + salt + nonce`
+   - Used for: Encrypting/decrypting data in localStorage
+   - Never transmitted in share links (derived implicitly)
+
+##### Key Derivation Method
+- **Algorithm**: Iterative SHA-512 (computational irreducibility)
+- **Iterations**: 8,192 rounds
+- **Salt**: 80 bits (10 bytes)
+- **Nonce**: 80 bits (10 bytes, expanded to 192 bits via SHA-512)
+- **Entropy Preservation**: Full 512 bits maintained during iterations
+
+##### Key Derivation Implementation
+
 ```javascript
-// 1. Generate random salt
-const salt = crypto.getRandomValues(new Uint8Array(16));
+// Decryption Key: 8192 rounds of SHA512(previous + salt)
+function deriveDecryptionKey(password, salt) {
+    let result = nacl.util.decodeUTF8(password);
+    for (let i = 0; i < 8192; i++) {
+        const input = concat(result, salt);
+        result = nacl.hash(input); // Keep all 64 bytes
+    }
+    return result.slice(0, 32); // Final truncation to 256 bits
+}
 
-// 2. Derive key from password
-const key = deriveKey(password, salt, 10000);
-
-// 3. Generate nonce
-const nonce = crypto.getRandomValues(new Uint8Array(24));
-
-// 4. Encrypt data
-const encrypted = nacl.secretbox(data, nonce, key);
-
-// 5. Store salt + nonce + encrypted
-const stored = concat(salt, nonce, encrypted);
+// Master Key: 8192 rounds of SHA512(previous + salt + nonce)
+function deriveMasterKey(password, salt, nonce) {
+    let result = nacl.util.decodeUTF8(password);
+    for (let i = 0; i < 8192; i++) {
+        const input = concat(result, salt, nonce);
+        result = nacl.hash(input); // Keep all 64 bytes
+    }
+    return result.slice(0, 32); // Final truncation to 256 bits
+}
 ```
+
+#### Share Link Encryption Structure
+
+Share links use a compact binary format:
+
+```
+[salt(10 bytes)] + [nonce(10 bytes)] + [ciphertext(variable)]
+```
+
+Total overhead: Only 20 bytes for crypto parameters
+
+##### Encryption Process
+```javascript
+// 1. Generate crypto parameters
+const salt = nacl.randomBytes(10);       // 80 bits
+const nonce = nacl.randomBytes(10);      // 80 bits (stored)
+
+// 2. Derive decryption key
+const key = deriveDecryptionKey(password, salt);
+
+// 3. Expand nonce for NaCl (requires 24 bytes)
+const expandedNonce = nacl.hash(nonce).slice(0, 24);
+
+// 4. Encrypt with secretbox (symmetric encryption)
+const cipher = nacl.secretbox(data, expandedNonce, key);
+
+// 5. Combine components
+const shareData = concat(salt, nonce, cipher);
+
+// 6. Encode as URL-safe base64
+const shareLink = encodeBase64UrlSafe(shareData);
+```
+
+##### Decryption & Master Key Derivation
+```javascript
+// 1. Extract components from share link
+const data = decodeBase64UrlSafe(shareLink);
+const salt = data.slice(0, 10);
+const nonce = data.slice(10, 20);
+const cipher = data.slice(20);
+
+// 2. Derive decryption key
+const key = deriveDecryptionKey(password, salt);
+
+// 3. Expand nonce and decrypt
+const expandedNonce = nacl.hash(nonce).slice(0, 24);
+const decrypted = nacl.secretbox.open(cipher, expandedNonce, key);
+
+// 4. Derive master key for localStorage (never transmitted)
+const masterKey = deriveMasterKey(password, salt, nonce);
+// This master key is used for all localStorage operations
+```
+
+#### Security Properties
+
+- **No Master Key Transmission**: Master key is derived client-side from visible parameters
+- **Computational Irreducibility**: 8,192 SHA-512 iterations provide time-based security
+- **Entropy Preservation**: Full 512-bit state maintained during key derivation
+- **Compact Format**: Only 20 bytes overhead for crypto parameters
+- **Forward Secrecy**: Each share link has unique salt/nonce combination
+- **Deterministic**: Same password + salt + nonce always produces same keys
 
 ### Storage Security
 

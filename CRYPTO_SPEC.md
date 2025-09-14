@@ -44,10 +44,12 @@ The system uses TweetNaCl.js for cryptographic operations, providing high-securi
 
 ### Key Derivation
 
-- **Algorithm**: Custom key derivation based on multiple iterations of SHA-512
-- **Iterations**: 10,000 rounds
-- **Salt Size**: 128 bits (16 bytes)
+- **Algorithm**: Iterative SHA-512 (computational irreducibility)
+- **Iterations**: 8,192 rounds
+- **Salt Size**: 80 bits (10 bytes)
+- **Nonce Size**: 80 bits (10 bytes, expanded to 192 bits via SHA-512)
 - **Output Size**: 256 bits (32 bytes)
+- **Entropy Preservation**: Full 512 bits maintained during iterations
 
 ### Random Number Generation
 
@@ -288,11 +290,11 @@ localStorage
 1. Determine if the key should be encrypted (based on NON_ENCRYPTED_KEYS list)
 2. If encryption is needed:
    - Get the master key for the current namespace
-   - Generate a random salt (16 bytes)
-   - Derive an encryption key from the master key and salt
-   - Generate a random nonce (24 bytes)
+   - Generate a random salt (10 bytes)
+   - Generate a random nonce (10 bytes, expanded to 24 bytes via SHA-512)
+   - Derive an encryption key using 8,192 rounds of SHA-512
    - Convert data to JSON string and then to Uint8Array
-   - Encrypt data using XSalsa20-Poly1305 with the derived key and nonce
+   - Encrypt data using XSalsa20-Poly1305 with the derived key and expanded nonce
    - Combine salt + nonce + ciphertext into a single message
    - Encode as Base64 and store in localStorage
 
@@ -351,19 +353,25 @@ When accessing data, the system:
 
 ### Share Link Generation
 
-1. User selects what to share (API key, system prompt, model, conversation)
-2. User provides a session key (password) for encryption
-3. Data is encrypted using the session key
-4. Encrypted data is added to URL fragment (after #)
-5. URL is shared with recipient
+1. User selects what to share (API key, system prompt, model, conversation, functions)
+2. User provides a password for encryption
+3. System generates random salt (10 bytes) and nonce (10 bytes)
+4. Decryption key is derived from password + salt (8,192 SHA-512 iterations)
+5. Data is compressed and encrypted using XSalsa20-Poly1305
+6. Binary structure `[salt][nonce][ciphertext]` is Base64-encoded
+7. Encrypted data is added to URL fragment (after `#gpt=`)
+8. URL is shared with recipient
 
 ### Share Link Decryption
 
 1. System detects encrypted data in URL fragment
-2. User is prompted for the session key
-3. System attempts to decrypt using the provided key
-4. If successful, the decrypted data is applied to the current session
-5. If title/subtitle are included, they're applied first to ensure proper namespacing
+2. User is prompted for the password
+3. System extracts salt and nonce from the encrypted blob
+4. Decryption key is derived from password + salt
+5. Master key is derived from password + salt + nonce (for localStorage)
+6. Data is decrypted and decompressed
+7. If successful, the decrypted data is applied to the current session
+8. Master key is stored in memory only (never persisted)
 
 ## Security Considerations
 
@@ -371,10 +379,11 @@ When accessing data, the system:
 
 - **Zero server-side storage**: All data remains in the browser
 - **Encryption**: XSalsa20-Poly1305 authenticated encryption
-- **Key derivation**: Multiple iterations of SHA-512 with salt
+- **Key derivation**: 8,192 iterations of SHA-512 with salt and nonce
 - **Namespace isolation**: Different GPTs have separate encryption contexts
-- **Master key system**: Adds an additional layer of security
-- **Session key option**: Further strengthens security when available
+- **Dual-key system**: Separate keys for decryption and localStorage
+- **No master key transmission**: Master key derived implicitly from visible parameters
+- **Computational irreducibility**: Time-based security through iterative hashing
 
 ### Limitations
 

@@ -86,28 +86,41 @@ https://hacka.re/#gpt=<encrypted-base64-data>
 ## Encryption Details
 
 ### Algorithm: TweetNaCl (NaCl secretbox)
-- **Symmetric encryption**: Same password encrypts/decrypts
-- **Key Derivation**: PBKDF with 10,000 iterations of SHA-512
+- **Symmetric encryption**: XSalsa20-Poly1305 authenticated encryption
+- **Key Derivation**: Iterative SHA-512 (computational irreducibility)
 - **Structure**: 
   ```
-  [16-byte salt][24-byte nonce][encrypted payload]
+  [10-byte salt][10-byte nonce][encrypted payload]
   ```
-- **Encoding**: Base64 for URL safety
+- **Encoding**: Base64 URL-safe encoding
+
+### Dual-Key Architecture
+1. **Decryption Key**: Derived from `password + salt`
+   - Used to decrypt the shared payload
+   - 8,192 rounds of SHA-512 iteration
+   
+2. **Master Key**: Derived from `password + salt + nonce`
+   - Used for localStorage encryption
+   - Never transmitted in the share link
+   - Derived implicitly on the receiving end
 
 ### Encryption Process
 1. User provides or generates password (12 alphanumeric characters)
-2. Payload serialized to JSON
-3. Salt generated (16 random bytes)
-4. Key derived from password + salt (10,000 iterations)
-5. Nonce generated (24 random bytes)
-6. Data encrypted with secretbox
-7. Components concatenated and Base64 encoded
+2. Payload compressed and serialized to JSON
+3. Salt generated (10 random bytes)
+4. Nonce generated (10 random bytes)
+5. Decryption key derived: 8,192 iterations of SHA-512(previous + salt)
+6. Nonce expanded to 24 bytes via single SHA-512 hash
+7. Data encrypted with XSalsa20-Poly1305
+8. Binary structure `[salt][nonce][ciphertext]` Base64-encoded
 
 ### Security Considerations
 - Password never included in URL
+- Master key never transmitted (derived from visible parameters)
 - Each link has unique salt and nonce
-- 10,000 iteration key derivation prevents brute force
-- TweetNaCl provides authenticated encryption
+- 8,192 iterations provide time-based security
+- Full 512-bit entropy preserved during key derivation
+- Authenticated encryption prevents tampering
 
 ## Data Payload Structure
 
@@ -145,7 +158,7 @@ https://hacka.re/#gpt=<encrypted-base64-data>
 ### Data Size Considerations
 - URLs have practical length limits (~2000 characters)
 - Base64 encoding adds ~33% overhead
-- Encryption adds ~100 bytes overhead
+- Encryption adds only 20 bytes overhead (salt + nonce)
 - UI shows real-time link length estimation
 
 ## Share Flow

@@ -15,35 +15,37 @@ describe('CryptoUtils', function(it, beforeEach, afterEach) {
         testData = { foo: 'bar', num: 123 };
     });
     
-    it('should derive a seed from password and salt', function(assert, assertEqual) {
-        const seed = CryptoUtils.deriveSeed(testPassword, testSalt);
+    it('should derive a decryption key from password and salt', function(assert, assertEqual) {
+        const key = CryptoUtils.deriveDecryptionKey(testPassword, testSalt);
         
-        // Verify the seed is a Uint8Array of the correct length
-        assert(seed instanceof Uint8Array, 'Seed should be a Uint8Array');
-        assertEqual(seed.length, 32, 'Seed should be 32 bytes long');
+        // Verify the key is a Uint8Array of the correct length
+        assert(key instanceof Uint8Array, 'Key should be a Uint8Array');
+        assertEqual(key.length, 32, 'Key should be 32 bytes long');
         
-        // Verify the seed is deterministic (same password + salt = same seed)
-        const seed2 = CryptoUtils.deriveSeed(testPassword, testSalt);
-        assert(seed.every((val, i) => val === seed2[i]), 'Seed should be deterministic');
+        // Verify the key is deterministic (same password + salt = same key)
+        const key2 = CryptoUtils.deriveDecryptionKey(testPassword, testSalt);
+        assert(key.every((val, i) => val === key2[i]), 'Key should be deterministic');
         
-        // Verify different passwords produce different seeds
-        const differentSeed = CryptoUtils.deriveSeed('different-password', testSalt);
-        assert(!seed.every((val, i) => val === differentSeed[i]), 'Different passwords should produce different seeds');
+        // Verify different passwords produce different keys
+        const differentKey = CryptoUtils.deriveDecryptionKey('different-password', testSalt);
+        assert(!key.every((val, i) => val === differentKey[i]), 'Different passwords should produce different keys');
     });
     
-    it('should generate a key pair from a seed', function(assert, assertEqual) {
-        const keyPair = CryptoUtils.getKeyPair(testPassword, testSalt);
+    it('should derive a master key from password, salt, and nonce', function(assert, assertEqual) {
+        const testNonce = new Uint8Array(10).fill(2); // Fixed nonce for deterministic tests
+        const masterKey = CryptoUtils.deriveMasterKey(testPassword, testSalt, testNonce);
         
-        // Verify the key pair has the correct properties
-        assert(keyPair.publicKey instanceof Uint8Array, 'Public key should be a Uint8Array');
-        assert(keyPair.secretKey instanceof Uint8Array, 'Secret key should be a Uint8Array');
-        assertEqual(keyPair.publicKey.length, nacl.box.publicKeyLength, 'Public key should have the correct length');
-        assertEqual(keyPair.secretKey.length, nacl.box.secretKeyLength, 'Secret key should have the correct length');
+        // Verify the master key is a hex string of the correct length
+        assert(typeof masterKey === 'string', 'Master key should be a string');
+        assertEqual(masterKey.length, 64, 'Master key should be 64 hex characters (32 bytes)');
         
-        // Verify the key pair is deterministic (same password + salt = same key pair)
-        const keyPair2 = CryptoUtils.getKeyPair(testPassword, testSalt);
-        assert(keyPair.publicKey.every((val, i) => val === keyPair2.publicKey[i]), 'Public key should be deterministic');
-        assert(keyPair.secretKey.every((val, i) => val === keyPair2.secretKey[i]), 'Secret key should be deterministic');
+        // Verify the master key is deterministic
+        const masterKey2 = CryptoUtils.deriveMasterKey(testPassword, testSalt, testNonce);
+        assertEqual(masterKey, masterKey2, 'Master key should be deterministic');
+        
+        // Verify different inputs produce different master keys
+        const differentMasterKey = CryptoUtils.deriveMasterKey('different-password', testSalt, testNonce);
+        assert(masterKey !== differentMasterKey, 'Different passwords should produce different master keys');
     });
     
     it('should encrypt and decrypt data correctly', function(assert, assertEqual, assertDeepEqual) {
