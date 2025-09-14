@@ -522,25 +522,25 @@ function createSharedLinkDataProcessor() {
             }
         }
         
-        // Apply enabled EU documents
-        if (sharedData.ragEUDocuments && Array.isArray(sharedData.ragEUDocuments) && window.RAGStorageService) {
-            window.RAGStorageService.setEnabledEUDocuments(sharedData.ragEUDocuments);
+        // Apply enabled documents
+        if (sharedData.ragDocuments && Array.isArray(sharedData.ragDocuments) && window.RAGStorageService) {
+            window.RAGStorageService.setEnabledEUDocuments(sharedData.ragDocuments);
             
             // Update checkbox UI for each document
             ['cra', 'aia', 'dora'].forEach(docId => {
                 const checkbox = document.getElementById(`rag-doc-${docId}`);
                 if (checkbox) {
-                    checkbox.checked = sharedData.ragEUDocuments.includes(docId);
+                    checkbox.checked = sharedData.ragDocuments.includes(docId);
                 }
             });
             
-            if (sharedData.ragEUDocuments.length > 0) {
+            if (sharedData.ragDocuments.length > 0) {
                 const docNames = {
                     'cra': 'CRA',
                     'aia': 'AIA',
                     'dora': 'DORA'
                 };
-                ragSummary.documents = sharedData.ragEUDocuments.map(id => docNames[id] || id);
+                ragSummary.documents = sharedData.ragDocuments.map(id => docNames[id] || id);
             }
         }
         

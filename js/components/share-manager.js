@@ -1249,14 +1249,14 @@ window.ShareManager = (function() {
             
             // Collect RAG settings if checkbox is checked
             let ragEnabled = undefined;
-            let ragEUDocuments = undefined;
+            let ragDocuments = undefined;
             if (elements.shareRagSettingsCheckbox && elements.shareRagSettingsCheckbox.checked) {
                 console.log('🔍 ShareManager: Collecting RAG settings...');
                 if (window.RAGStorageService) {
                     ragEnabled = window.RAGStorageService.isRAGEnabled();
-                    ragEUDocuments = window.RAGStorageService.getEnabledEUDocuments();
+                    ragDocuments = window.RAGStorageService.getEnabledEUDocuments();
                     console.log('🔍 ShareManager: RAG enabled:', ragEnabled);
-                    console.log('🔍 ShareManager: EU documents enabled:', ragEUDocuments);
+                    console.log('🔍 ShareManager: Documents enabled:', ragDocuments);
                 }
             }
             
@@ -1324,8 +1324,8 @@ window.ShareManager = (function() {
                 if (ragEnabled !== undefined) {
                     options.ragEnabled = ragEnabled;
                 }
-                if (ragEUDocuments !== undefined) {
-                    options.ragEUDocuments = ragEUDocuments;
+                if (ragDocuments !== undefined) {
+                    options.ragDocuments = ragDocuments;
                 }
             }
             

@@ -74,15 +74,14 @@ def test_rag_share_checkbox_enabled_with_rag_enabled(page: Page, serve_hacka_re)
     share_modal = page.locator("#share-modal")
     expect(share_modal).to_be_visible()
     
-    # For non-OpenAI providers, checkbox will still be disabled
-    # So we check that it's disabled instead
+    # RAG is enabled but no documents are selected, so checkbox should be disabled
     rag_checkbox = page.locator("#share-rag-settings")
     expect(rag_checkbox).to_be_disabled()
     
-    # Check status indicator shows RAG is disabled (since we don't have API key)
+    # Check status indicator shows no documents are selected
     status_text = page.locator('label[for="share-rag-settings"] .share-item-status')
     expect(status_text).to_be_visible()
-    expect(status_text).to_contain_text("RAG is disabled")
+    expect(status_text).to_contain_text("No documents selected")
     
     screenshot_with_markdown(page, "rag_checkbox_enabled", {
         "Test": "RAG checkbox enabled with RAG turned on",
