@@ -154,3 +154,9 @@ debug*.html
 
 # Ignore all .out files (test output with potential secrets)
 *.out
+
+# Go binaries
+cli/hacka.re
+cli/hacka.re.exe
+cli/test_*
+!cli/test_*.go
