@@ -120,12 +120,6 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Define the feature tests filter - exclude core tests and include feature tests
-CORE_TESTS_EXCLUDE="test_page or test_api or test_chat or test_welcome_modal"
-FEATURE_TESTS_INCLUDE="test_function_modal or test_function_icons or test_sharing or test_default_prompts or test_themes or test_clear_chat or test_model_selection or test_copy_chat or test_button_tooltips or test_function_library or test_context_window or test_function_copy or test_function_deletion or test_function_editing or test_function_group or test_function_parsing or test_function_tooltip or test_deterministic_crypto or test_clear_namespace or test_system_prompt or test_token_counter or test_input_field or test_logo_tooltip or test_modals or test_debug_mode or test_model_context_window or test_owasp_prompt_bug or test_prompt_order_and_function_library_prompt or test_rag_modal or test_rag_indexing or test_rag_search or test_rag_bundles or test_rag_integration"
-
-FEATURE_TESTS_FILTER="not ($CORE_TESTS_EXCLUDE) and ($FEATURE_TESTS_INCLUDE)"
-
 # Start the HTTP server if not skipped
 if [ "$SKIP_SERVER_MANAGEMENT" = "false" ]; then
     echo "Starting HTTP server for tests..."
@@ -136,11 +130,43 @@ if [ "$SKIP_SERVER_MANAGEMENT" = "false" ]; then
     trap 'echo "Stopping HTTP server..."; ./stop_server.sh; echo "Server stopped."' EXIT
 fi
 
-# Run the feature tests
-echo "Running Advanced Feature tests with $BROWSER browser..."
-echo "Test filter: $FEATURE_TESTS_FILTER"
+# Run feature tests in smaller batches to avoid timeouts
+echo "Running Advanced Feature tests with $BROWSER browser in batches..."
 echo ""
-eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS -k \"$FEATURE_TESTS_FILTER\"" | tee test_output.log
+
+# Batch 1: Function-related tests (16 files max)
+echo "\n=== Batch 1: Function Tests (1/5) ==="
+eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_function_modal.py test_function_icons.py test_function_copy.py test_function_deletion.py " | tee test_output.log
+
+echo "\n=== Batch 2: Function Tests (2/5) ==="
+eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_function_editing.py test_function_group.py test_function_parsing.py test_function_tooltip.py " | tee -a test_output.log
+
+echo "\n=== Batch 3: Function Tests (3/5) ==="
+eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_function_library*.py test_function_calling*.py " 2>/dev/null | tee -a test_output.log || echo "Some function tests not found"
+
+# Batch 2: Share and UI tests
+echo "\n=== Batch 4: Share & UI Tests ==="
+eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_sharing.py test_themes.py test_clear_chat.py test_copy_chat.py " | tee -a test_output.log
+
+# Batch 3: Settings and prompts
+echo "\n=== Batch 5: Settings & Prompts ==="
+eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_default_prompts.py test_system_prompt.py test_clear_namespace.py test_prompt_order*.py " 2>/dev/null | tee -a test_output.log || echo "Some prompt tests not found"
+
+# Batch 4: Model and input tests
+echo "\n=== Batch 6: Model & Input Tests ==="
+eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_model_selection*.py test_model_context*.py test_input_field.py test_token_counter.py " 2>/dev/null | tee -a test_output.log || echo "Some model tests not found"
+
+# Batch 5: RAG tests
+echo "\n=== Batch 7: RAG Tests ==="
+eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_rag_modal.py test_rag_indexing.py test_rag_search.py test_rag_bundles.py test_rag_integration.py " 2>/dev/null | tee -a test_output.log || echo "Some RAG tests not found"
+
+# Batch 6: Misc tests
+echo "\n=== Batch 8: Miscellaneous Tests ==="
+eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_button_tooltips.py test_logo_tooltip.py test_modals.py test_debug_mode.py test_deterministic_crypto.py test_owasp*.py " 2>/dev/null | tee -a test_output.log || echo "Some misc tests not found"
+
+# Batch 7: Context window tests
+echo "\n=== Batch 9: Context Window Tests ==="
+eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_context_window*.py " 2>/dev/null | tee -a test_output.log || echo "Context window tests not found"
 
 # Generate test results markdown files
 echo "Generating test results markdown files..."

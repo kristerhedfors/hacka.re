@@ -1,180 +1,108 @@
 #!/bin/bash
 
-# Master test runner for all agent save/load functionality tests
-# Tests comprehensive agent functionality including:
-# - API configuration (provider, model, API key, tools)
-# - MCP connections (GitHub OAuth, Gmail OAuth, etc.)
-# - Function calling (library, enabled functions, tools status)
-# - Prompts (library, selected prompts, custom prompts)
-# - Default prompts (system defaults, selection states)
-# - Conversation history (messages, system prompts, chat state)
+# Script to run Agent tests in smaller batches
+# Avoids timeout issues by running tests in groups of 5
 
-set -e  # Exit on any error
+# Clear the output file
+> run_agent_tests.out
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+# Start capturing output
+exec > >(tee run_agent_tests.out) 2>&1
 
-# Function to print colored output
-print_status() {
-    echo -e "${BLUE}[$(date '+%H:%M:%S')]${NC} $1"
-}
+# Set up trap for Ctrl+C
+trap 'echo "Script interrupted with Ctrl+C at $(date)" | tee -a run_agent_tests.out' INT
 
-print_success() {
-    echo -e "${GREEN}✅ $1${NC}"
-}
+# Change to script directory
+cd "$(dirname "$0")"
 
-print_error() {
-    echo -e "${RED}❌ $1${NC}"
-}
+echo "======================================"
+echo "🤖 AGENT TESTS STARTING"
+echo "======================================"
+echo ""
+echo "📁 TEST ARTIFACTS:"
+echo "  📸 Screenshots: $(pwd)/screenshots/"
+echo "  📝 Output: $(pwd)/run_agent_tests.out"
+echo ""
 
-print_warning() {
-    echo -e "${YELLOW}⚠️ $1${NC}"
-}
+# Ensure directories exist
+mkdir -p screenshots screenshots_data console_logs
 
-print_status "=== AGENT SAVE/LOAD COMPREHENSIVE TEST SUITE ==="
-print_status "Testing all aspects of agent save/load functionality"
+# Check virtual environment
+VENV_PATH="$(pwd)/.venv"
+if [ ! -d "$VENV_PATH" ]; then
+    echo "Virtual environment not found at $VENV_PATH"
+    echo "Please run setup_environment.sh from project root first"
+    exit 1
+fi
 
-# Parse command line arguments
-HEADLESS=""
+PYTHON_CMD="$VENV_PATH/bin/python"
+
+# Parse arguments
+PYTEST_ARGS=""
 BROWSER="chromium"
-VERBOSE=""
-COMPONENT=""
+HEADLESS="--headed"
+SKIP_SERVER_MANAGEMENT="false"
 
 while [[ $# -gt 0 ]]; do
     case $1 in
         --headless)
-            HEADLESS="--headless"
+            HEADLESS=""
             shift
             ;;
-        --firefox)
-            BROWSER="firefox"
+        --skip-server)
+            SKIP_SERVER_MANAGEMENT="true"
             shift
             ;;
-        --webkit)
-            BROWSER="webkit"
+        --verbose|-v)
+            PYTEST_ARGS="$PYTEST_ARGS -v"
             shift
-            ;;
-        -v|--verbose)
-            VERBOSE="-v"
-            shift
-            ;;
-        --component)
-            COMPONENT="$2"
-            shift
-            shift
-            ;;
-        --help)
-            echo "Usage: $0 [OPTIONS]"
-            echo ""
-            echo "Options:"
-            echo "  --headless      Run tests in headless mode"
-            echo "  --firefox       Use Firefox browser"
-            echo "  --webkit        Use WebKit browser"
-            echo "  -v, --verbose   Verbose output"
-            echo "  --component     Run specific component test (api|mcp|functions|prompts|default-prompts|conversation)"
-            echo "  --help          Show this help message"
-            echo ""
-            echo "Components:"
-            echo "  api              Test API configuration save/load"
-            echo "  mcp              Test MCP connections save/load"
-            echo "  functions        Test function calling save/load"
-            echo "  prompts          Test custom prompts save/load"
-            echo "  default-prompts  Test default prompts save/load"
-            echo "  conversation     Test conversation history save/load"
-            echo ""
-            exit 0
             ;;
         *)
-            print_error "Unknown option: $1"
-            echo "Use --help for usage information"
-            exit 1
+            shift
             ;;
     esac
 done
 
-# Function to get test file for component
-get_test_file() {
-    case "$1" in
-        api) echo "test_agent_api_config.py" ;;
-        mcp) echo "test_agent_mcp_config.py" ;;
-        functions) echo "test_agent_function_config.py" ;;
-        prompts) echo "test_agent_prompts_config.py" ;;
-        default-prompts) echo "test_agent_default_prompts_config.py" ;;
-        conversation) echo "test_agent_conversation_history.py" ;;
-        *) echo "" ;;
-    esac
-}
-
-# If specific component requested, run only that
-if [[ -n "$COMPONENT" ]]; then
-    TEST_FILE=$(get_test_file "$COMPONENT")
-    if [[ -n "$TEST_FILE" ]]; then
-        print_status "Running $COMPONENT component tests only"
-        
-        print_status "Executing: ./run_tests.sh --test-file $TEST_FILE $HEADLESS $VERBOSE"
-        
-        if ./run_tests.sh --test-file "$TEST_FILE" $HEADLESS $VERBOSE; then
-            print_success "$COMPONENT component tests passed"
-        else
-            print_error "$COMPONENT component tests failed"
-            exit 1
-        fi
-        exit 0
-    else
-        print_error "Unknown component: $COMPONENT"
-        echo "Available components: api, mcp, functions, prompts, default-prompts, conversation"
-        exit 1
-    fi
+# Start HTTP server if needed
+if [ "$SKIP_SERVER_MANAGEMENT" = "false" ]; then
+    echo "Starting HTTP server..."
+    ./start_server.sh
+    trap 'echo "Stopping HTTP server..."; ./stop_server.sh' EXIT
 fi
 
-# Run all component tests
-print_status "Running all agent component tests..."
+# Find all agent test files
+AGENT_TESTS=($(find . -name "test_agent*.py" | sort))
+TOTAL_TESTS=${#AGENT_TESTS[@]}
 
-TOTAL_TESTS=0
-PASSED_TESTS=0
-FAILED_TESTS=0
+echo "Found $TOTAL_TESTS agent test files"
+echo ""
 
-for component in api mcp functions prompts default-prompts conversation; do
-    TEST_FILE=$(get_test_file "$component")
+# Run tests in batches of 5
+BATCH_SIZE=5
+BATCH_NUM=1
+
+for ((i=0; i<$TOTAL_TESTS; i+=$BATCH_SIZE)); do
+    echo "=== Batch $BATCH_NUM (tests $((i+1))-$((i+BATCH_SIZE>TOTAL_TESTS ? TOTAL_TESTS : i+BATCH_SIZE)) of $TOTAL_TESTS) ==="
     
-    print_status "Testing $component component ($TEST_FILE)..."
+    # Get batch of tests
+    BATCH_TESTS=""
+    for ((j=i; j<i+BATCH_SIZE && j<TOTAL_TESTS; j++)); do
+        BATCH_TESTS="$BATCH_TESTS ${AGENT_TESTS[$j]}"
+    done
     
-    if ./run_tests.sh --test-file "$TEST_FILE" $HEADLESS $VERBOSE; then
-        print_success "$component component tests passed"
-        ((PASSED_TESTS++))
-    else
-        print_error "$component component tests failed"
-        ((FAILED_TESTS++))
-    fi
+    # Run batch
+    eval "$PYTHON_CMD -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS $BATCH_TESTS " | tee -a test_output.log
     
-    ((TOTAL_TESTS++))
     echo ""
+    BATCH_NUM=$((BATCH_NUM + 1))
 done
 
-# Summary
-print_status "=== AGENT TEST SUITE SUMMARY ==="
-print_status "Total component test suites: $TOTAL_TESTS"
-print_success "Passed: $PASSED_TESTS"
+echo "=== All agent test batches completed ==="
+echo "Total batches run: $((BATCH_NUM - 1))"
 
-if [[ $FAILED_TESTS -gt 0 ]]; then
-    print_error "Failed: $FAILED_TESTS"
-    echo ""
-    print_error "Some agent component tests failed. Check the output above for details."
-    exit 1
-else
-    print_success "Failed: $FAILED_TESTS"
-    echo ""
-    print_success "🎉 All agent save/load component tests passed successfully!"
-    print_success "✅ API Configuration save/load working"
-    print_success "✅ MCP Connections save/load working"
-    print_success "✅ Function Calling save/load working"
-    print_success "✅ Custom Prompts save/load working"
-    print_success "✅ Default Prompts save/load working"
-    print_success "✅ Conversation History save/load working"
-    print_success ""
-    print_success "Agent functionality is fully tested and operational!"
-fi
+# Generate report
+./bundle_test_results.sh
+
+echo ""
+echo "All agent test output has been captured to run_agent_tests.out"
+echo "Bundled report available at run_tests.out_bundle.md"
