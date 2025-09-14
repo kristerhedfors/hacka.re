@@ -21,8 +21,13 @@ type EnhancedSettingsModal struct {
 	editing       bool
 	fields        []EnhancedField
 	modelList     []*models.ModelMetadata
+	filteredList  []*models.ModelMetadata
 	modelDropdown bool
 	dropdownIdx   int
+	filterText    string
+	// Expandable menu states
+	expandedField int // -1 means none expanded, otherwise the field index
+	expandedChoice int // 0 for No, 1 for Yes
 }
 
 // EnhancedField represents a settings field with enhanced features
@@ -33,6 +38,11 @@ type EnhancedField struct {
 	Options     []string // For select fields
 	Editable    bool
 	Refreshable bool // Can be refreshed from API
+	// For expandable yes/no fields
+	Expandable  bool
+	Info        string // Main info text
+	YesBrief    string // Brief yes description (few words)
+	NoBrief     string // Brief no description (few words)
 }
 
 // ShowEnhancedSettings displays the enhanced settings modal
@@ -56,6 +66,7 @@ func ShowEnhancedSettings(cfg *config.Config) error {
 		apiClient:     api.NewClient(cfg),
 		modelRegistry: models.NewModelRegistry(),
 		fields:        buildEnhancedFields(cfg),
+		expandedField: -1, // No field expanded initially
 	}
 
 	// Load model list for current provider
@@ -113,22 +124,34 @@ func buildEnhancedFields(cfg *config.Config) []EnhancedField {
 			Editable: true,
 		},
 		{
-			Label:    "Stream Response",
-			Value:    boolToString(cfg.StreamResponse),
-			Type:     FieldBool,
-			Editable: true,
+			Label:       "Stream Response",
+			Value:       boolToString(cfg.StreamResponse),
+			Type:        FieldBool,
+			Editable:    true,
+			Expandable:  true,
+			Info:        "Stream Response controls how AI responses are delivered. When enabled, text appears word-by-word. When disabled, waits for complete response.",
+			YesBrief:    "Show words as they arrive",
+			NoBrief:     "Wait for complete response",
 		},
 		{
-			Label:    "YOLO Mode",
-			Value:    boolToString(cfg.YoloMode),
-			Type:     FieldBool,
-			Editable: true,
+			Label:       "YOLO Mode",
+			Value:       boolToString(cfg.YoloMode),
+			Type:        FieldBool,
+			Editable:    true,
+			Expandable:  true,
+			Info:        "⚠️ YOLO Mode controls function execution approval. When enabled, functions execute WITHOUT confirmation. When disabled, you approve each call.",
+			YesBrief:    "Auto-execute (no confirmation)",
+			NoBrief:     "Require approval for each call",
 		},
 		{
-			Label:    "Voice Control",
-			Value:    boolToString(cfg.VoiceControl),
-			Type:     FieldBool,
-			Editable: true,
+			Label:       "Voice Control",
+			Value:       boolToString(cfg.VoiceControl),
+			Type:        FieldBool,
+			Editable:    true,
+			Expandable:  true,
+			Info:        "Voice Control enables speech-to-text using the Whisper API. When enabled, a microphone button appears for voice input. Requires microphone permissions and a Whisper-compatible API endpoint.",
+			YesBrief:    "Enable microphone input",
+			NoBrief:     "Text input only",
 		},
 	}
 
@@ -139,6 +162,8 @@ func buildEnhancedFields(cfg *config.Config) []EnhancedField {
 func (m *EnhancedSettingsModal) loadModelsForProvider() {
 	provider := models.ModelProvider(m.config.Provider)
 	m.modelList = m.modelRegistry.GetProviderModels(provider)
+	m.filteredList = m.modelList // Initially show all models
+	m.filterText = "" // Reset filter
 	
 	// Update model field options
 	if len(m.fields) > 3 {
@@ -167,14 +192,14 @@ func (m *EnhancedSettingsModal) run() {
 		ev := m.screen.PollEvent()
 		switch ev := ev.(type) {
 		case *tcell.EventKey:
+			// Handle key event first
 			m.handleKeyEvent(ev)
+			// Only check for exit if we should (not when closing submenus)
+			if m.shouldExit(ev) {
+				return
+			}
 		case *tcell.EventResize:
 			m.screen.Sync()
-		}
-		
-		// Check if we should exit
-		if m.shouldExit(ev) {
-			return
 		}
 	}
 }
@@ -185,24 +210,35 @@ func (m *EnhancedSettingsModal) handleKeyEvent(ev *tcell.EventKey) {
 	case tcell.KeyEscape:
 		if m.modelDropdown {
 			m.modelDropdown = false
+			m.filterText = "" // Clear filter on escape
+			m.filteredList = m.modelList // Reset to full list
+		} else if m.expandedField >= 0 {
+			m.expandedField = -1 // Close expandable menu only
 		} else if m.editing {
 			m.editing = false
 		}
+		// Don't handle ESC further when in submenus
 		
 	case tcell.KeyUp:
 		if m.modelDropdown {
 			if m.dropdownIdx > 0 {
 				m.dropdownIdx--
 			}
+		} else if m.expandedField >= 0 {
+			// Toggle between Yes and No
+			m.expandedChoice = 1 - m.expandedChoice
 		} else if !m.editing && m.selected > 0 {
 			m.selected--
 		}
 		
 	case tcell.KeyDown:
 		if m.modelDropdown {
-			if m.dropdownIdx < len(m.modelList)-1 {
+			if m.dropdownIdx < len(m.filteredList)-1 {
 				m.dropdownIdx++
 			}
+		} else if m.expandedField >= 0 {
+			// Toggle between Yes and No
+			m.expandedChoice = 1 - m.expandedChoice
 		} else if !m.editing && m.selected < len(m.fields)-1 {
 			m.selected++
 		}
@@ -210,20 +246,48 @@ func (m *EnhancedSettingsModal) handleKeyEvent(ev *tcell.EventKey) {
 	case tcell.KeyEnter:
 		if m.modelDropdown {
 			// Select model from dropdown
-			if m.dropdownIdx < len(m.modelList) {
-				selectedModel := m.modelList[m.dropdownIdx]
+			if m.dropdownIdx < len(m.filteredList) {
+				selectedModel := m.filteredList[m.dropdownIdx]
 				m.config.Model = selectedModel.ID
 				m.fields[3].Value = selectedModel.ID
 				m.modelDropdown = false
-				
-				// Show model info
-				m.showModelInfo(selectedModel)
+				m.filterText = "" // Clear filter
+				m.filteredList = m.modelList // Reset list
 			}
+		} else if m.expandedField >= 0 {
+			// Apply yes/no selection
+			field := &m.fields[m.expandedField]
+			if m.expandedChoice == 1 {
+				field.Value = "Yes"
+			} else {
+				field.Value = "No"
+			}
+			// Update config based on field
+			switch m.expandedField {
+			case 7: // Stream Response
+				m.config.StreamResponse = (m.expandedChoice == 1)
+			case 8: // YOLO Mode
+				m.config.YoloMode = (m.expandedChoice == 1)
+			case 9: // Voice Control
+				m.config.VoiceControl = (m.expandedChoice == 1)
+			}
+			m.expandedField = -1 // Close menu
 		} else if m.selected == 3 && !m.editing {
 			// Open model dropdown
 			m.modelDropdown = true
+			m.filteredList = m.modelList
+			m.filterText = ""
 			m.dropdownIdx = m.findModelIndex(m.config.Model)
-		} else if !m.editing && m.fields[m.selected].Editable {
+		} else if m.fields[m.selected].Expandable && !m.editing {
+			// Open expandable menu
+			m.expandedField = m.selected
+			// Set initial choice based on current value
+			if m.fields[m.selected].Value == "Yes" {
+				m.expandedChoice = 1
+			} else {
+				m.expandedChoice = 0
+			}
+		} else if !m.editing && m.fields[m.selected].Editable && !m.fields[m.selected].Expandable {
 			m.editing = true
 		} else if m.editing {
 			m.applyFieldEdit()
@@ -254,12 +318,20 @@ func (m *EnhancedSettingsModal) handleKeyEvent(ev *tcell.EventKey) {
 		// Quit without saving (handled by shouldExit)
 		
 	case tcell.KeyRune:
-		if m.editing {
+		if m.modelDropdown {
+			// Add character to filter
+			m.filterText += string(ev.Rune())
+			m.applyFilter()
+		} else if m.editing {
 			m.handleTextInput(ev.Rune())
 		}
 		
 	case tcell.KeyBackspace, tcell.KeyBackspace2:
-		if m.editing && len(m.fields[m.selected].Value) > 0 {
+		if m.modelDropdown && len(m.filterText) > 0 {
+			// Remove character from filter
+			m.filterText = m.filterText[:len(m.filterText)-1]
+			m.applyFilter()
+		} else if m.editing && len(m.fields[m.selected].Value) > 0 {
 			field := &m.fields[m.selected]
 			field.Value = field.Value[:len(field.Value)-1]
 		}
@@ -324,6 +396,8 @@ func (m *EnhancedSettingsModal) draw() {
 					indicator = " [editing...]"
 				} else if i == 3 {
 					indicator = " [↵ select] [^R refresh]"
+				} else if field.Expandable {
+					indicator = " [↵ expand]"
 				} else {
 					indicator = " [↵ edit]"
 				}
@@ -338,6 +412,11 @@ func (m *EnhancedSettingsModal) draw() {
 	if m.modelDropdown {
 		m.drawModelDropdown()
 	}
+	
+	// Draw expandable menu if active
+	if m.expandedField >= 0 {
+		m.drawExpandableMenu()
+	}
 
 	// Draw help text
 	helpY := h - 3
@@ -347,7 +426,7 @@ func (m *EnhancedSettingsModal) draw() {
 
 // drawModelDropdown draws the model selection dropdown
 func (m *EnhancedSettingsModal) drawModelDropdown() {
-	w, _ := m.screen.Size()
+	w, h := m.screen.Size()
 	
 	// Calculate dropdown position
 	dropdownX := 25
@@ -356,7 +435,7 @@ func (m *EnhancedSettingsModal) drawModelDropdown() {
 	if dropdownW > 80 {
 		dropdownW = 80
 	}
-	dropdownH := len(m.modelList) + 2
+	dropdownH := len(m.filteredList) + 3 // Extra line for filter
 	if dropdownH > 20 {
 		dropdownH = 20
 	}
@@ -364,23 +443,33 @@ func (m *EnhancedSettingsModal) drawModelDropdown() {
 	// Draw dropdown border
 	m.drawBorder(dropdownX, dropdownY, dropdownW, dropdownH)
 	
-	// Draw dropdown title
-	title := " Select Model "
-	m.drawText(dropdownX+(dropdownW-len(title))/2, dropdownY, title, tcell.StyleDefault)
+	// Draw dropdown title with filter
+	if m.filterText != "" {
+		title := fmt.Sprintf(" Filter: %s ", m.filterText)
+		m.drawText(dropdownX+2, dropdownY, title, tcell.StyleDefault.Bold(true))
+	} else {
+		title := " Select Model (type to filter) "
+		m.drawText(dropdownX+(dropdownW-len(title))/2, dropdownY, title, tcell.StyleDefault)
+	}
+	
+	// Show result count
+	countText := fmt.Sprintf("(%d models)", len(m.filteredList))
+	m.drawText(dropdownX+dropdownW-len(countText)-2, dropdownY, countText, tcell.StyleDefault.Dim(true))
 	
 	// Draw model list
 	startIdx := 0
-	if m.dropdownIdx >= dropdownH-3 {
-		startIdx = m.dropdownIdx - (dropdownH - 4)
+	if m.dropdownIdx >= dropdownH-4 {
+		startIdx = m.dropdownIdx - (dropdownH - 5)
 	}
 	
-	for i := 0; i < dropdownH-2 && startIdx+i < len(m.modelList); i++ {
-		model := m.modelList[startIdx+i]
-		style := tcell.StyleDefault
+	listHeight := dropdownH - 3
+	for i := 0; i < listHeight && startIdx+i < len(m.filteredList); i++ {
+		model := m.filteredList[startIdx+i]
+		isSelected := startIdx+i == m.dropdownIdx
 		
-		if startIdx+i == m.dropdownIdx {
-			style = style.Background(tcell.ColorDarkBlue)
-		}
+		// Draw the model name with highlighting
+		y := dropdownY + 2 + i
+		x := dropdownX + 2
 		
 		// Format model entry
 		entry := fmt.Sprintf("%-30s", model.Name)
@@ -398,7 +487,16 @@ func (m *EnhancedSettingsModal) drawModelDropdown() {
 			entry = entry[:maxLen-3] + "..."
 		}
 		
-		m.drawText(dropdownX+2, dropdownY+1+i, entry, style)
+		// Draw with highlighting for filter matches
+		if m.filterText != "" && !isSelected {
+			m.drawTextWithHighlight(x, y, entry, m.filterText, tcell.StyleDefault)
+		} else {
+			style := tcell.StyleDefault
+			if isSelected {
+				style = style.Background(tcell.ColorDarkBlue)
+			}
+			m.drawText(x, y, entry, style)
+		}
 		
 		// Show category badge
 		if model.Category != "production" {
@@ -409,71 +507,23 @@ func (m *EnhancedSettingsModal) drawModelDropdown() {
 			} else if model.Category == "legacy" {
 				badgeStyle = badgeStyle.Foreground(tcell.ColorRed)
 			}
-			m.drawText(dropdownX+dropdownW-len(badge)-2, dropdownY+1+i, badge, badgeStyle)
+			m.drawText(dropdownX+dropdownW-len(badge)-2, y, badge, badgeStyle)
 		}
 	}
 	
 	// Show scrollbar if needed
-	if len(m.modelList) > dropdownH-2 {
-		scrollPos := (m.dropdownIdx * (dropdownH - 3)) / len(m.modelList)
-		m.screen.SetContent(dropdownX+dropdownW-2, dropdownY+1+scrollPos, '▓', nil, tcell.StyleDefault)
+	if len(m.filteredList) > listHeight {
+		scrollPos := (m.dropdownIdx * (listHeight - 1)) / len(m.filteredList)
+		m.screen.SetContent(dropdownX+dropdownW-2, dropdownY+2+scrollPos, '▓', nil, tcell.StyleDefault)
+	}
+	
+	// Draw model info popup (positioned to not cover current selection)
+	if m.dropdownIdx < len(m.filteredList) {
+		selectedModel := m.filteredList[m.dropdownIdx]
+		m.drawModelInfoPopup(selectedModel, dropdownX, dropdownY, dropdownH, w, h)
 	}
 }
 
-// showModelInfo displays information about the selected model
-func (m *EnhancedSettingsModal) showModelInfo(model *models.ModelMetadata) {
-	w, h := m.screen.Size()
-	
-	// Create info box
-	infoW := 60
-	infoH := 10
-	infoX := (w - infoW) / 2
-	infoY := (h - infoH) / 2
-	
-	// Clear area and draw border
-	for y := infoY; y < infoY+infoH; y++ {
-		for x := infoX; x < infoX+infoW; x++ {
-			m.screen.SetContent(x, y, ' ', nil, tcell.StyleDefault)
-		}
-	}
-	m.drawBorder(infoX, infoY, infoW, infoH)
-	
-	// Draw title
-	title := fmt.Sprintf(" %s ", model.Name)
-	m.drawText(infoX+(infoW-len(title))/2, infoY, title, tcell.StyleDefault.Bold(true))
-	
-	// Draw model info
-	info := []string{
-		fmt.Sprintf("ID: %s", model.ID),
-		fmt.Sprintf("Context: %d tokens", model.ContextWindow),
-		fmt.Sprintf("Max Output: %d tokens", model.MaxTokens),
-		fmt.Sprintf("Category: %s", model.Category),
-		fmt.Sprintf("Owner: %s", model.OwnedBy),
-	}
-	
-	if len(model.Description) > 0 {
-		info = append(info, fmt.Sprintf("Info: %s", model.Description))
-	}
-	
-	if len(model.Capabilities) > 0 {
-		info = append(info, fmt.Sprintf("Features: %s", strings.Join(model.Capabilities, ", ")))
-	}
-	
-	for i, line := range info {
-		if i < infoH-2 {
-			m.drawText(infoX+2, infoY+1+i, line, tcell.StyleDefault)
-		}
-	}
-	
-	m.screen.Show()
-	
-	// Wait for key press
-	ev := m.screen.PollEvent()
-	if _, ok := ev.(*tcell.EventKey); ok {
-		// Redraw main screen
-		m.draw()
-	}
-}
 
 // refreshModelList refreshes the model list from the API
 func (m *EnhancedSettingsModal) refreshModelList() {
@@ -547,9 +597,211 @@ func (m *EnhancedSettingsModal) testConnection() {
 
 // Helper methods
 
+// applyFilter filters the model list based on the filter text
+func (m *EnhancedSettingsModal) applyFilter() {
+	if m.filterText == "" {
+		m.filteredList = m.modelList
+		m.dropdownIdx = 0
+		return
+	}
+	
+	filter := strings.ToLower(m.filterText)
+	m.filteredList = []*models.ModelMetadata{}
+	
+	for _, model := range m.modelList {
+		if strings.Contains(strings.ToLower(model.ID), filter) ||
+		   strings.Contains(strings.ToLower(model.Name), filter) ||
+		   strings.Contains(strings.ToLower(model.Description), filter) {
+			m.filteredList = append(m.filteredList, model)
+		}
+	}
+	
+	// Reset index if out of bounds
+	if m.dropdownIdx >= len(m.filteredList) {
+		m.dropdownIdx = 0
+	}
+}
+
+// drawModelInfoPopup draws a compact model info popup
+func (m *EnhancedSettingsModal) drawModelInfoPopup(model *models.ModelMetadata, dropX, dropY, dropH, screenW, screenH int) {
+	// Calculate popup position - try to position it where it won't cover the selection
+	infoW := 60
+	infoH := 10
+	
+	// Position popup to the left of dropdown if there's space, otherwise to the right
+	var infoX int
+	if dropX > infoW + 2 {
+		// Place to the left
+		infoX = dropX - infoW - 2
+	} else {
+		// Place to the right
+		infoX = dropX + 82 // After dropdown width
+		if infoX + infoW > screenW {
+			infoX = screenW - infoW - 2
+		}
+	}
+	
+	// Position vertically - try to align with current selection
+	selectionY := dropY + 2 + (m.dropdownIdx % (dropH - 3))
+	infoY := selectionY - 2
+	
+	// Ensure popup stays on screen
+	if infoY < 2 {
+		infoY = 2
+	}
+	if infoY + infoH > screenH - 2 {
+		infoY = screenH - infoH - 2
+	}
+	
+	// Clear area and draw border
+	for y := infoY; y < infoY+infoH; y++ {
+		for x := infoX; x < infoX+infoW; x++ {
+			m.screen.SetContent(x, y, ' ', nil, tcell.StyleDefault.Background(tcell.ColorBlack))
+		}
+	}
+	m.drawBorder(infoX, infoY, infoW, infoH)
+	
+	// Draw title
+	title := fmt.Sprintf(" %s ", model.Name)
+	m.drawText(infoX+(infoW-len(title))/2, infoY, title, tcell.StyleDefault.Bold(true))
+	
+	// Draw compact info
+	info := []string{
+		fmt.Sprintf("ID: %s", model.ID),
+		fmt.Sprintf("Context: %s", formatNumber(model.ContextWindow)),
+		fmt.Sprintf("Max Output: %s", formatNumber(model.MaxTokens)),
+		fmt.Sprintf("Category: %s", model.Category),
+		fmt.Sprintf("Owner: %s", model.OwnedBy),
+	}
+	
+	if len(model.Description) > 0 {
+		desc := model.Description
+		if len(desc) > infoW-6 {
+			desc = desc[:infoW-9] + "..."
+		}
+		info = append(info, fmt.Sprintf("Info: %s", desc))
+	}
+	
+	if len(model.Capabilities) > 0 {
+		caps := strings.Join(model.Capabilities, ", ")
+		if len(caps) > infoW-12 {
+			caps = caps[:infoW-15] + "..."
+		}
+		info = append(info, fmt.Sprintf("Features: %s", caps))
+	}
+	
+	for i, line := range info {
+		if i < infoH-2 {
+			if len(line) > infoW-4 {
+				line = line[:infoW-7] + "..."
+			}
+			m.drawText(infoX+2, infoY+1+i, line, tcell.StyleDefault)
+		}
+	}
+}
+
+// drawTextWithHighlight draws text with highlighted search matches
+func (m *EnhancedSettingsModal) drawTextWithHighlight(x, y int, text, filter string, baseStyle tcell.Style) {
+	if filter == "" {
+		m.drawText(x, y, text, baseStyle)
+		return
+	}
+	
+	lowerText := strings.ToLower(text)
+	lowerFilter := strings.ToLower(filter)
+	highlightStyle := baseStyle.Background(tcell.ColorYellow).Foreground(tcell.ColorBlack)
+	
+	pos := 0
+	for pos < len(text) {
+		idx := strings.Index(lowerText[pos:], lowerFilter)
+		if idx == -1 {
+			// Draw rest of text normally
+			for i, r := range text[pos:] {
+				m.screen.SetContent(x+pos+i, y, r, nil, baseStyle)
+			}
+			break
+		}
+		
+		// Draw text before match
+		for i, r := range text[pos : pos+idx] {
+			m.screen.SetContent(x+pos+i, y, r, nil, baseStyle)
+		}
+		
+		// Draw matched text with highlight
+		for i, r := range text[pos+idx : pos+idx+len(filter)] {
+			m.screen.SetContent(x+pos+idx+i, y, r, nil, highlightStyle)
+		}
+		
+		pos += idx + len(filter)
+	}
+}
+
+// formatNumber formats a number with thousands separators
+func formatNumber(n int) string {
+	if n == 0 {
+		return "0"
+	}
+	
+	// Convert to string and add commas
+	s := fmt.Sprintf("%d", n)
+	result := ""
+	for i, r := range s {
+		if i > 0 && (len(s)-i)%3 == 0 {
+			result += ","
+		}
+		result += string(r)
+	}
+	
+	// Also show in K/M notation for large numbers
+	if n >= 1000000 {
+		return fmt.Sprintf("%s (%.1fM)", result, float64(n)/1000000)
+	} else if n >= 1000 {
+		return fmt.Sprintf("%s (%.0fK)", result, float64(n)/1000)
+	}
+	
+	return result
+}
+
+// wordWrap wraps text to fit within the given width
+func wordWrap(text string, width int) []string {
+	words := strings.Fields(text)
+	if len(words) == 0 {
+		return []string{}
+	}
+	
+	var lines []string
+	currentLine := ""
+	
+	for _, word := range words {
+		if currentLine == "" {
+			currentLine = word
+		} else if len(currentLine)+1+len(word) <= width {
+			currentLine += " " + word
+		} else {
+			lines = append(lines, currentLine)
+			currentLine = word
+		}
+	}
+	
+	if currentLine != "" {
+		lines = append(lines, currentLine)
+	}
+	
+	return lines
+}
+
 func (m *EnhancedSettingsModal) findModelIndex(modelID string) int {
+	for i, model := range m.filteredList {
+		if model.ID == modelID {
+			return i
+		}
+	}
+	// If not in filtered list, check full list
 	for i, model := range m.modelList {
 		if model.ID == modelID {
+			// Reset filter to show this model
+			m.filterText = ""
+			m.filteredList = m.modelList
 			return i
 		}
 	}
@@ -641,10 +893,85 @@ func (m *EnhancedSettingsModal) saveConfig() {
 	m.screen.PollEvent() // Wait for key
 }
 
+// drawExpandableMenu draws the expandable yes/no menu with information
+func (m *EnhancedSettingsModal) drawExpandableMenu() {
+	w, h := m.screen.Size()
+	field := m.fields[m.expandedField]
+	
+	// Calculate menu dimensions
+	menuW := 70
+	menuH := 12  // Smaller height for simpler layout
+	menuX := (w - menuW) / 2
+	menuY := (h - menuH) / 2
+	
+	// Clear area and draw border
+	for y := menuY; y < menuY+menuH; y++ {
+		for x := menuX; x < menuX+menuW; x++ {
+			m.screen.SetContent(x, y, ' ', nil, tcell.StyleDefault.Background(tcell.ColorBlack))
+		}
+	}
+	m.drawBorder(menuX, menuY, menuW, menuH)
+	
+	// Draw title
+	title := fmt.Sprintf(" %s ", field.Label)
+	m.drawText(menuX+(menuW-len(title))/2, menuY, title, tcell.StyleDefault.Bold(true))
+	
+	// Draw info text (wrapped to fit)
+	infoLines := wordWrap(field.Info, menuW-6)
+	infoY := menuY + 2
+	for i, line := range infoLines {
+		if i < 3 {  // Show up to 3 lines of info
+			m.drawText(menuX+3, infoY+i, line, tcell.StyleDefault)
+		}
+	}
+	
+	// Draw separator line
+	sepY := infoY + len(infoLines)
+	if len(infoLines) > 3 {
+		sepY = infoY + 3
+	}
+	for x := menuX+3; x < menuX+menuW-3; x++ {
+		m.screen.SetContent(x, sepY, '─', nil, tcell.StyleDefault.Dim(true))
+	}
+	
+	// Draw Yes option
+	yesY := sepY + 2
+	yesStyle := tcell.StyleDefault
+	yesBriefStyle := tcell.StyleDefault.Dim(true)
+	if m.expandedChoice == 1 {
+		yesStyle = yesStyle.Background(tcell.ColorDarkGreen).Bold(true)
+		yesBriefStyle = tcell.StyleDefault.Background(tcell.ColorDarkGreen)
+	}
+	m.drawText(menuX+5, yesY, "[ ] Yes", yesStyle)
+	if m.expandedChoice == 1 {
+		m.screen.SetContent(menuX+6, yesY, '●', nil, yesStyle)  // Filled circle when selected
+	}
+	m.drawText(menuX+14, yesY, "- "+field.YesBrief, yesBriefStyle)
+	
+	// Draw No option
+	noY := yesY + 1
+	noStyle := tcell.StyleDefault
+	noBriefStyle := tcell.StyleDefault.Dim(true)
+	if m.expandedChoice == 0 {
+		noStyle = noStyle.Background(tcell.ColorDarkRed).Bold(true)
+		noBriefStyle = tcell.StyleDefault.Background(tcell.ColorDarkRed)
+	}
+	m.drawText(menuX+5, noY, "[ ] No", noStyle)
+	if m.expandedChoice == 0 {
+		m.screen.SetContent(menuX+6, noY, '●', nil, noStyle)  // Filled circle when selected
+	}
+	m.drawText(menuX+14, noY, "- "+field.NoBrief, noBriefStyle)
+	
+	// Draw help text
+	helpText := "↑↓ Select | ↵ Apply | ESC Cancel"
+	m.drawText(menuX+(menuW-len(helpText))/2, menuY+menuH-2, helpText, tcell.StyleDefault.Dim(true))
+}
+
 func (m *EnhancedSettingsModal) shouldExit(ev tcell.Event) bool {
 	if key, ok := ev.(*tcell.EventKey); ok {
+		// Only exit settings modal if ESC is pressed and no submenu is open
 		return key.Key() == tcell.KeyCtrlQ || 
-		       (key.Key() == tcell.KeyEscape && !m.editing && !m.modelDropdown)
+		       (key.Key() == tcell.KeyEscape && !m.editing && !m.modelDropdown && m.expandedField < 0)
 	}
 	return false
 }
