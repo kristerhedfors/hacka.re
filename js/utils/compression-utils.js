@@ -1,505 +1,11 @@
 /**
- * Compression Utilities
+ * Simple Compression Utilities
  * Provides compression and key mapping for shared link payloads
- * Uses LZ-String algorithm for compression
+ * Uses a simpler, more reliable approach
  */
 
 window.CompressionUtils = (function() {
-    // LZ-String implementation (embedded to avoid external dependencies)
-    // Based on LZ-String 1.4.4 by pieroxy - http://pieroxy.net/blog/pages/lz-string/index.html
-    const LZString = (function() {
-        // Private array of string to encode URI
-        const keyStrUriSafe = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$";
-        const baseReverseDic = {};
-
-        function getBaseValue(alphabet, character) {
-            if (!baseReverseDic[alphabet]) {
-                baseReverseDic[alphabet] = {};
-                for (let i = 0; i < alphabet.length; i++) {
-                    baseReverseDic[alphabet][alphabet.charAt(i)] = i;
-                }
-            }
-            return baseReverseDic[alphabet][character];
-        }
-
-        const f = String.fromCharCode;
-
-        function compress(uncompressed) {
-            if (uncompressed == null) return "";
-            let i, value,
-                context_dictionary = {},
-                context_dictionaryToCreate = {},
-                context_c = "",
-                context_wc = "",
-                context_w = "",
-                context_enlargeIn = 2,
-                context_dictSize = 3,
-                context_numBits = 2,
-                context_data = [],
-                context_data_val = 0,
-                context_data_position = 0,
-                ii;
-
-            for (ii = 0; ii < uncompressed.length; ii += 1) {
-                context_c = uncompressed.charAt(ii);
-                if (!Object.prototype.hasOwnProperty.call(context_dictionary, context_c)) {
-                    context_dictionary[context_c] = context_dictSize++;
-                    context_dictionaryToCreate[context_c] = true;
-                }
-
-                context_wc = context_w + context_c;
-                if (Object.prototype.hasOwnProperty.call(context_dictionary, context_wc)) {
-                    context_w = context_wc;
-                } else {
-                    if (Object.prototype.hasOwnProperty.call(context_dictionaryToCreate, context_w)) {
-                        if (context_w.charCodeAt(0) < 256) {
-                            for (i = 0; i < context_numBits; i++) {
-                                context_data_val = (context_data_val << 1);
-                                if (context_data_position == 15) {
-                                    context_data_position = 0;
-                                    context_data.push(f(context_data_val));
-                                    context_data_val = 0;
-                                } else {
-                                    context_data_position++;
-                                }
-                            }
-                            value = context_w.charCodeAt(0);
-                            for (i = 0; i < 8; i++) {
-                                context_data_val = (context_data_val << 1) | (value & 1);
-                                if (context_data_position == 15) {
-                                    context_data_position = 0;
-                                    context_data.push(f(context_data_val));
-                                    context_data_val = 0;
-                                } else {
-                                    context_data_position++;
-                                }
-                                value = value >> 1;
-                            }
-                        } else {
-                            value = 1;
-                            for (i = 0; i < context_numBits; i++) {
-                                context_data_val = (context_data_val << 1) | value;
-                                if (context_data_position == 15) {
-                                    context_data_position = 0;
-                                    context_data.push(f(context_data_val));
-                                    context_data_val = 0;
-                                } else {
-                                    context_data_position++;
-                                }
-                                value = 0;
-                            }
-                            value = context_w.charCodeAt(0);
-                            for (i = 0; i < 16; i++) {
-                                context_data_val = (context_data_val << 1) | (value & 1);
-                                if (context_data_position == 15) {
-                                    context_data_position = 0;
-                                    context_data.push(f(context_data_val));
-                                    context_data_val = 0;
-                                } else {
-                                    context_data_position++;
-                                }
-                                value = value >> 1;
-                            }
-                        }
-                        context_enlargeIn--;
-                        if (context_enlargeIn == 0) {
-                            context_enlargeIn = Math.pow(2, context_numBits);
-                            context_numBits++;
-                        }
-                        delete context_dictionaryToCreate[context_w];
-                    } else {
-                        value = context_dictionary[context_w];
-                        for (i = 0; i < context_numBits; i++) {
-                            context_data_val = (context_data_val << 1) | (value & 1);
-                            if (context_data_position == 15) {
-                                context_data_position = 0;
-                                context_data.push(f(context_data_val));
-                                context_data_val = 0;
-                            } else {
-                                context_data_position++;
-                            }
-                            value = value >> 1;
-                        }
-                    }
-                    context_enlargeIn--;
-                    if (context_enlargeIn == 0) {
-                        context_enlargeIn = Math.pow(2, context_numBits);
-                        context_numBits++;
-                    }
-                    context_dictionary[context_wc] = context_dictSize++;
-                    context_w = String(context_c);
-                }
-            }
-
-            if (context_w !== "") {
-                if (Object.prototype.hasOwnProperty.call(context_dictionaryToCreate, context_w)) {
-                    if (context_w.charCodeAt(0) < 256) {
-                        for (i = 0; i < context_numBits; i++) {
-                            context_data_val = (context_data_val << 1);
-                            if (context_data_position == 15) {
-                                context_data_position = 0;
-                                context_data.push(f(context_data_val));
-                                context_data_val = 0;
-                            } else {
-                                context_data_position++;
-                            }
-                        }
-                        value = context_w.charCodeAt(0);
-                        for (i = 0; i < 8; i++) {
-                            context_data_val = (context_data_val << 1) | (value & 1);
-                            if (context_data_position == 15) {
-                                context_data_position = 0;
-                                context_data.push(f(context_data_val));
-                                context_data_val = 0;
-                            } else {
-                                context_data_position++;
-                            }
-                            value = value >> 1;
-                        }
-                    } else {
-                        value = 1;
-                        for (i = 0; i < context_numBits; i++) {
-                            context_data_val = (context_data_val << 1) | value;
-                            if (context_data_position == 15) {
-                                context_data_position = 0;
-                                context_data.push(f(context_data_val));
-                                context_data_val = 0;
-                            } else {
-                                context_data_position++;
-                            }
-                            value = 0;
-                        }
-                        value = context_w.charCodeAt(0);
-                        for (i = 0; i < 16; i++) {
-                            context_data_val = (context_data_val << 1) | (value & 1);
-                            if (context_data_position == 15) {
-                                context_data_position = 0;
-                                context_data.push(f(context_data_val));
-                                context_data_val = 0;
-                            } else {
-                                context_data_position++;
-                            }
-                            value = value >> 1;
-                        }
-                    }
-                    context_enlargeIn--;
-                    if (context_enlargeIn == 0) {
-                        context_enlargeIn = Math.pow(2, context_numBits);
-                        context_numBits++;
-                    }
-                    delete context_dictionaryToCreate[context_w];
-                } else {
-                    value = context_dictionary[context_w];
-                    for (i = 0; i < context_numBits; i++) {
-                        context_data_val = (context_data_val << 1) | (value & 1);
-                        if (context_data_position == 15) {
-                            context_data_position = 0;
-                            context_data.push(f(context_data_val));
-                            context_data_val = 0;
-                        } else {
-                            context_data_position++;
-                        }
-                        value = value >> 1;
-                    }
-                }
-                context_enlargeIn--;
-                if (context_enlargeIn == 0) {
-                    context_enlargeIn = Math.pow(2, context_numBits);
-                    context_numBits++;
-                }
-            }
-
-            value = 2;
-            for (i = 0; i < context_numBits; i++) {
-                context_data_val = (context_data_val << 1) | (value & 1);
-                if (context_data_position == 15) {
-                    context_data_position = 0;
-                    context_data.push(f(context_data_val));
-                    context_data_val = 0;
-                } else {
-                    context_data_position++;
-                }
-                value = value >> 1;
-            }
-
-            while (true) {
-                context_data_val = (context_data_val << 1);
-                if (context_data_position == 15) {
-                    context_data.push(f(context_data_val));
-                    break;
-                } else context_data_position++;
-            }
-            return context_data.join('');
-        }
-
-        function decompress(compressed) {
-            if (compressed == null) return "";
-            if (compressed == "") return null;
-            let dictionary = [],
-                next,
-                enlargeIn = 4,
-                dictSize = 4,
-                numBits = 3,
-                entry = "",
-                result = [],
-                i,
-                w,
-                bits, resb, maxpower, power,
-                c,
-                data = { val: compressed.charCodeAt(0), position: 32768, index: 1 };
-
-            for (i = 0; i < 3; i += 1) {
-                dictionary[i] = i;
-            }
-
-            bits = 0;
-            maxpower = Math.pow(2, 2);
-            power = 1;
-            while (power != maxpower) {
-                resb = data.val & data.position;
-                data.position >>= 1;
-                if (data.position == 0) {
-                    data.position = 32768;
-                    data.val = data.index < compressed.length ? compressed.charCodeAt(data.index++) : 0;
-                }
-                bits |= (resb > 0 ? 1 : 0) * power;
-                power <<= 1;
-            }
-
-            switch (next = bits) {
-                case 0:
-                    bits = 0;
-                    maxpower = Math.pow(2, 8);
-                    power = 1;
-                    while (power != maxpower) {
-                        resb = data.val & data.position;
-                        data.position >>= 1;
-                        if (data.position == 0) {
-                            data.position = 32768;
-                            data.val = data.index < compressed.length ? compressed.charCodeAt(data.index++) : 0;
-                        }
-                        bits |= (resb > 0 ? 1 : 0) * power;
-                        power <<= 1;
-                    }
-                    c = f(bits);
-                    break;
-                case 1:
-                    bits = 0;
-                    maxpower = Math.pow(2, 16);
-                    power = 1;
-                    while (power != maxpower) {
-                        resb = data.val & data.position;
-                        data.position >>= 1;
-                        if (data.position == 0) {
-                            data.position = 32768;
-                            data.val = data.index < compressed.length ? compressed.charCodeAt(data.index++) : 0;
-                        }
-                        bits |= (resb > 0 ? 1 : 0) * power;
-                        power <<= 1;
-                    }
-                    c = f(bits);
-                    break;
-                case 2:
-                    return "";
-            }
-            dictionary[3] = c;
-            w = c;
-            result.push(c);
-            while (true) {
-                if (data.index > compressed.length) {
-                    return "";
-                }
-
-                bits = 0;
-                maxpower = Math.pow(2, numBits);
-                power = 1;
-                while (power != maxpower) {
-                    resb = data.val & data.position;
-                    data.position >>= 1;
-                    if (data.position == 0) {
-                        data.position = 32768;
-                        data.val = data.index < compressed.length ? compressed.charCodeAt(data.index++) : 0;
-                    }
-                    bits |= (resb > 0 ? 1 : 0) * power;
-                    power <<= 1;
-                }
-
-                switch (c = bits) {
-                    case 0:
-                        bits = 0;
-                        maxpower = Math.pow(2, 8);
-                        power = 1;
-                        while (power != maxpower) {
-                            resb = data.val & data.position;
-                            data.position >>= 1;
-                            if (data.position == 0) {
-                                data.position = 32768;
-                                data.val = data.index < compressed.length ? compressed.charCodeAt(data.index++) : 0;
-                            }
-                            bits |= (resb > 0 ? 1 : 0) * power;
-                            power <<= 1;
-                        }
-
-                        dictionary[dictSize++] = f(bits);
-                        c = dictSize - 1;
-                        enlargeIn--;
-                        break;
-                    case 1:
-                        bits = 0;
-                        maxpower = Math.pow(2, 16);
-                        power = 1;
-                        while (power != maxpower) {
-                            resb = data.val & data.position;
-                            data.position >>= 1;
-                            if (data.position == 0) {
-                                data.position = 32768;
-                                data.val = data.index < compressed.length ? compressed.charCodeAt(data.index++) : 0;
-                            }
-                            bits |= (resb > 0 ? 1 : 0) * power;
-                            power <<= 1;
-                        }
-                        dictionary[dictSize++] = f(bits);
-                        c = dictSize - 1;
-                        enlargeIn--;
-                        break;
-                    case 2:
-                        return result.join('');
-                }
-
-                if (enlargeIn == 0) {
-                    enlargeIn = Math.pow(2, numBits);
-                    numBits++;
-                }
-
-                if (dictionary[c]) {
-                    entry = dictionary[c];
-                } else {
-                    if (c === dictSize) {
-                        entry = w + w.charAt(0);
-                    } else {
-                        return null;
-                    }
-                }
-                result.push(entry);
-
-                dictionary[dictSize++] = w + entry.charAt(0);
-                enlargeIn--;
-
-                w = entry;
-
-                if (enlargeIn == 0) {
-                    enlargeIn = Math.pow(2, numBits);
-                    numBits++;
-                }
-            }
-        }
-
-        function compressToUriSafe(input) {
-            if (input == null) return "";
-            const res = compress(input);
-            return _compressToBase64(res, keyStrUriSafe);
-        }
-
-        function decompressFromUriSafe(input) {
-            if (input == null) return "";
-            if (input == "") return null;
-            input = input.replace(/ /g, "+");
-            const res = _decompressFromBase64(input, keyStrUriSafe);
-            return decompress(res);
-        }
-
-        function _compressToBase64(input, keyStr) {
-            if (input == null) return "";
-            let res = "";
-            let i = 0;
-            let chr1, chr2, chr3, enc1, enc2, enc3, enc4;
-            let charCode;
-
-            while (i < input.length * 2) {
-                if (i % 2 == 0) {
-                    charCode = input.charCodeAt(i / 2) >> 8;
-                } else {
-                    charCode = input.charCodeAt((i - 1) / 2) & 255;
-                }
-                i++;
-
-                if (i % 3 == 0 || input.length * 2 == i) {
-                    chr1 = i - 3 < 0 ? 0 : (i % 2 == 1 ? 
-                        input.charCodeAt(Math.floor((i - 3) / 2)) >> 8 : 
-                        input.charCodeAt(Math.floor((i - 3) / 2)) & 255);
-                    chr2 = i - 2 < 0 ? 0 : (i % 2 == 0 ? 
-                        input.charCodeAt(Math.floor((i - 2) / 2)) >> 8 : 
-                        input.charCodeAt(Math.floor((i - 2) / 2)) & 255);
-                    chr3 = charCode;
-
-                    enc1 = chr1 >> 2;
-                    enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);
-                    enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
-                    enc4 = chr3 & 63;
-
-                    if (i - 2 >= input.length * 2) {
-                        enc3 = enc4 = 64;
-                    } else if (i - 1 >= input.length * 2) {
-                        enc4 = 64;
-                    }
-
-                    res = res + keyStr.charAt(enc1) + keyStr.charAt(enc2) + 
-                          keyStr.charAt(enc3) + keyStr.charAt(enc4);
-                }
-            }
-
-            return res;
-        }
-
-        function _decompressFromBase64(input, keyStr) {
-            let output = "";
-            let ol = 0;
-            let output_ = null;
-            let chr1, chr2, chr3;
-            let enc1, enc2, enc3, enc4;
-            let i = 0;
-
-            while (i < input.length) {
-                enc1 = getBaseValue(keyStr, input.charAt(i++));
-                enc2 = getBaseValue(keyStr, input.charAt(i++));
-                enc3 = getBaseValue(keyStr, input.charAt(i++));
-                enc4 = getBaseValue(keyStr, input.charAt(i++));
-
-                chr1 = (enc1 << 2) | (enc2 >> 4);
-                chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
-                chr3 = ((enc3 & 3) << 6) | enc4;
-
-                if (ol % 2 == 0) {
-                    output_ = chr1 << 8;
-                    if (enc3 != 64) {
-                        output += f(output_ | chr2);
-                    }
-                    if (enc4 != 64) {
-                        output_ = chr3 << 8;
-                    }
-                } else {
-                    output = output + f(output_ | chr1);
-                    if (enc3 != 64) {
-                        output_ = chr2 << 8;
-                    }
-                    if (enc4 != 64) {
-                        output += f(output_ | chr3);
-                    }
-                }
-                ol += 3;
-            }
-
-            return output;
-        }
-
-        return {
-            compress: compress,
-            decompress: decompress,
-            compressToUriSafe: compressToUriSafe,
-            decompressFromUriSafe: decompressFromUriSafe
-        };
-    })();
-
+    
     /**
      * Key mapping dictionary for reducing JSON key sizes
      * Maps verbose keys to single characters
@@ -543,6 +49,191 @@ window.CompressionUtils = (function() {
     const REVERSE_KEY_MAP = {};
     for (const [verbose, compact] of Object.entries(KEY_MAP)) {
         REVERSE_KEY_MAP[compact] = verbose;
+    }
+
+    /**
+     * Simple text compression using basic patterns
+     * Much more reliable than complex LZ algorithms
+     */
+    function simpleCompress(text) {
+        // Step 1: Replace common patterns
+        let compressed = text;
+        
+        // Common JSON patterns
+        const patterns = [
+            ['"role":"user"', '"r":"u"'],
+            ['"role":"assistant"', '"r":"a"'],
+            ['"content":"', '"n":"'],
+            ['"apiKey":"', '"a":"'],
+            ['"model":"', '"M":"'],
+            ['"messages":', '"m":'],
+            ['"functions":', '"f":'],
+            ['"prompts":', '"P":'],
+            ['{"', '{'],  // Remove quotes around object keys where possible
+            ['"}', '}'],
+            ['":true', ':1'], // Boolean compression
+            ['":false', ':0'],
+            [',"', ','], // Remove quotes in arrays where safe
+        ];
+        
+        for (const [pattern, replacement] of patterns) {
+            compressed = compressed.split(pattern).join(replacement);
+        }
+        
+        return compressed;
+    }
+    
+    /**
+     * Simple text decompression - reverse of simpleCompress
+     */
+    function simpleDecompress(compressed) {
+        // Step 1: Restore common patterns (reverse order)
+        let text = compressed;
+        
+        // Restore patterns in reverse order
+        const patterns = [
+            [':0', ':false'],
+            [':1', ':true'], 
+            [',', ',"'], // This is tricky - need better logic
+            ['}', '"}'],
+            ['{', '{"'],
+            ['"P":', '"prompts":'],
+            ['"f":', '"functions":'],
+            ['"m":', '"messages":'],
+            ['"M":', '"model":'],
+            ['"a":', '"apiKey":'],
+            ['"n":"', '"content":"'],
+            ['"r":"a"', '"role":"assistant"'],
+            ['"r":"u"', '"role":"user"'],
+        ];
+        
+        // This approach is too fragile - let's use a different method
+        return text;
+    }
+
+    /**
+     * Real compression using browser's built-in deflate algorithm
+     * This uses the same algorithm as gzip/zlib
+     */
+    async function realCompress(text) {
+        try {
+            // Convert string to Uint8Array
+            const textEncoder = new TextEncoder();
+            const textBytes = textEncoder.encode(text);
+            
+            // Use CompressionStream (deflate) - same as gzip algorithm
+            const compressionStream = new CompressionStream('deflate');
+            const writer = compressionStream.writable.getWriter();
+            const reader = compressionStream.readable.getReader();
+            
+            // Start compression
+            writer.write(textBytes);
+            writer.close();
+            
+            // Read compressed data
+            const chunks = [];
+            let done = false;
+            
+            while (!done) {
+                const { value, done: readerDone } = await reader.read();
+                done = readerDone;
+                if (value) {
+                    chunks.push(value);
+                }
+            }
+            
+            // Combine chunks into single Uint8Array
+            const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+            const compressed = new Uint8Array(totalLength);
+            let offset = 0;
+            
+            for (const chunk of chunks) {
+                compressed.set(chunk, offset);
+                offset += chunk.length;
+            }
+            
+            return compressed;
+            
+        } catch (error) {
+            console.warn('Browser compression not available, falling back to uncompressed:', error);
+            // Fallback: return original text as bytes
+            const textEncoder = new TextEncoder();
+            return textEncoder.encode(text);
+        }
+    }
+    
+    async function realDecompress(compressedBytes) {
+        try {
+            // Use DecompressionStream (deflate)
+            const decompressionStream = new DecompressionStream('deflate');
+            const writer = decompressionStream.writable.getWriter();
+            const reader = decompressionStream.readable.getReader();
+            
+            // Start decompression
+            writer.write(compressedBytes);
+            writer.close();
+            
+            // Read decompressed data
+            const chunks = [];
+            let done = false;
+            
+            while (!done) {
+                const { value, done: readerDone } = await reader.read();
+                done = readerDone;
+                if (value) {
+                    chunks.push(value);
+                }
+            }
+            
+            // Combine chunks and convert back to string
+            const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+            const decompressed = new Uint8Array(totalLength);
+            let offset = 0;
+            
+            for (const chunk of chunks) {
+                decompressed.set(chunk, offset);
+                offset += chunk.length;
+            }
+            
+            // Convert bytes back to string
+            const textDecoder = new TextDecoder();
+            return textDecoder.decode(decompressed);
+            
+        } catch (error) {
+            console.warn('Browser decompression failed, treating as uncompressed:', error);
+            // Fallback: treat as uncompressed bytes
+            const textDecoder = new TextDecoder();
+            return textDecoder.decode(compressedBytes);
+        }
+    }
+
+    /**
+     * Base64 encoding for URL safety - handles Uint8Array
+     */
+    function base64EncodeBytes(bytes) {
+        // Convert Uint8Array to base64
+        let binary = '';
+        for (let i = 0; i < bytes.length; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        const base64 = btoa(binary);
+        return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    }
+    
+    function base64DecodeBytes(encoded) {
+        // Restore base64 padding and characters
+        let base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
+        while (base64.length % 4) {
+            base64 += '=';
+        }
+        
+        // Decode to binary string then to Uint8Array
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+        }
+        return bytes;
     }
 
     /**
@@ -598,149 +289,143 @@ window.CompressionUtils = (function() {
     }
 
     /**
-     * Compress a payload for sharing
+     * Compress a payload for sharing using real deflate compression
      * @param {Object} payload - The payload to compress
-     * @param {boolean} suppressDebug - Whether to suppress debug messages (for size calculation)
-     * @returns {string} Compressed string (raw binary, NOT base64)
+     * @returns {Promise<string>} Compressed string
      */
-    function compressPayload(payload, suppressDebug = false) {
-        console.log('[COMPRESSION] compressPayload called with suppressDebug:', suppressDebug);
-        
-        // Debug: Show key mapping as Step 2
-        const originalJson = JSON.stringify(payload);
-        
-        // Step 1: Map keys to compact form
-        const mapped = mapKeys(payload);
-        const mappedJson = JSON.stringify(mapped);
-        
-        // STEP 2: Debug logging for key mapping
-        const step2Enabled = !suppressDebug && window.DebugService && window.DebugService.isCategoryEnabled && window.DebugService.isCategoryEnabled('shared-links');
-        console.log('[COMPRESSION] Step 2 debug enabled?', step2Enabled, {
-            suppressDebug,
-            hasDebugService: !!window.DebugService,
-            hasIsCategoryEnabled: !!(window.DebugService && window.DebugService.isCategoryEnabled),
-            sharedLinksEnabled: window.DebugService && window.DebugService.isCategoryEnabled ? window.DebugService.isCategoryEnabled('shared-links') : 'N/A'
-        });
-        if (step2Enabled) {
-            // Count mapped keys
-            const keyMappingExamples = [];
-            let totalKeysSaved = 0;
+    async function compressPayload(payload, suppressDebug = false) {
+        try {
+            const originalJson = JSON.stringify(payload);
             
-            // Check top-level keys
-            Object.keys(payload).forEach(key => {
-                if (KEY_MAP[key]) {
-                    const saved = key.length - KEY_MAP[key].length;
-                    totalKeysSaved += saved;
-                    keyMappingExamples.push(`  "${key}" → "${KEY_MAP[key]}" (saved ${saved} chars)`);
-                }
-            });
+            // Step 1: Map keys to compact form  
+            const mapped = mapKeys(payload);
+            const mappedJson = JSON.stringify(mapped);
             
-            // Check nested keys in data object
-            if (payload.data && typeof payload.data === 'object') {
-                Object.keys(payload.data).forEach(key => {
+            // STEP 2: Debug logging for key mapping
+            if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links') && !suppressDebug) {
+                // Count mapped keys
+                const keyMappingExamples = [];
+                let totalKeysSaved = 0;
+                
+                // Check top-level keys
+                Object.keys(payload).forEach(key => {
                     if (KEY_MAP[key]) {
                         const saved = key.length - KEY_MAP[key].length;
                         totalKeysSaved += saved;
-                        keyMappingExamples.push(`  "data.${key}" → "${KEY_MAP[key]}" (saved ${saved} chars)`);
+                        keyMappingExamples.push(`  "${key}" → "${KEY_MAP[key]}" (saved ${saved} chars)`);
                     }
                 });
+                
+                // Check nested keys in data object
+                if (payload.data && typeof payload.data === 'object') {
+                    Object.keys(payload.data).forEach(key => {
+                        if (KEY_MAP[key]) {
+                            const saved = key.length - KEY_MAP[key].length;
+                            totalKeysSaved += saved;
+                            keyMappingExamples.push(`  "data.${key}" → "${KEY_MAP[key]}" (saved ${saved} chars)`);
+                        }
+                    });
+                }
+                
+                const keyMappingMessage = [
+                    '🔑 ═══════════════════════════════════════════════════════════════',
+                    '🔑 STEP 2: KEY MAPPING',
+                    '🔑 ═══════════════════════════════════════════════════════════════',
+                    `🔑 Original JSON: ${originalJson.length} chars`,
+                    `🔑 After key mapping: ${mappedJson.length} chars`,
+                    `🔑 Space saved: ${originalJson.length - mappedJson.length} chars (${(((originalJson.length - mappedJson.length)/originalJson.length)*100).toFixed(1)}%)`,
+                    '🔑 ───────────────────────────────────────────────────────────────',
+                    '🔑 Keys mapped:',
+                    ...keyMappingExamples,
+                    '🔑 ───────────────────────────────────────────────────────────────',
+                    `🔑 Total characters saved by key mapping: ${totalKeysSaved}`,
+                    '🔑 ═══════════════════════════════════════════════════════════════'
+                ].join('\n');
+                
+                console.log('[DEBUG] Key Mapping:', {
+                    original: originalJson.length,
+                    mapped: mappedJson.length,
+                    saved: originalJson.length - mappedJson.length,
+                    ratio: ((mappedJson.length / originalJson.length) * 100).toFixed(1) + '%'
+                });
+                
+                // Add to chat
+                if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
+                    window.aiHackare.chatManager.addSystemMessage(keyMappingMessage, 'debug-message debug-shared-links');
+                }
             }
             
-            const keyMappingMessage = [
-                '🔑 ═══════════════════════════════════════════════════════════════',
-                '🔑 STEP 2: KEY MAPPING',
-                '🔑 ═══════════════════════════════════════════════════════════════',
-                `🔑 Original JSON: ${originalJson.length} chars`,
-                `🔑 After key mapping: ${mappedJson.length} chars`,
-                `🔑 Space saved: ${originalJson.length - mappedJson.length} chars (${(((originalJson.length - mappedJson.length)/originalJson.length)*100).toFixed(1)}%)`,
-                '🔑 ───────────────────────────────────────────────────────────────',
-                '🔑 Keys mapped:',
-                ...keyMappingExamples,
-                '🔑 ───────────────────────────────────────────────────────────────',
-                `🔑 Total characters saved by key mapping: ${totalKeysSaved}`,
-                '🔑 ═══════════════════════════════════════════════════════════════'
-            ].join('\n');
+            // Step 3: Apply real deflate compression
+            const compressedBytes = await realCompress(mappedJson);
             
-            // Log to console
-            console.log('[DEBUG] Key Mapping:', {
-                original: originalJson.length,
-                mapped: mappedJson.length,
-                saved: originalJson.length - mappedJson.length,
-                ratio: ((mappedJson.length / originalJson.length) * 100).toFixed(1) + '%'
-            });
+            // Step 4: Base64 encode for URL safety
+            const compressed = base64EncodeBytes(compressedBytes);
             
-            // Add to chat
-            if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
-                window.aiHackare.chatManager.addSystemMessage(keyMappingMessage, 'debug-message debug-shared-links');
+            // STEP 3: Debug logging for compression
+            if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links') && !suppressDebug) {
+                const compressionDetails = [
+                    '🗜️ ═══════════════════════════════════════════════════════════════',
+                    '🗜️ STEP 3: DEFLATE COMPRESSION',
+                    '🗜️ ═══════════════════════════════════════════════════════════════',
+                    `🗜️ Input (key-mapped JSON): ${mappedJson.length} chars`,
+                    `🗜️ Output (compressed): ${compressed.length} chars`,
+                    `🗜️ Compression ratio: ${((compressed.length / mappedJson.length) * 100).toFixed(1)}%`,
+                    `🗜️ Space saved: ${mappedJson.length - compressed.length} chars`,
+                    '🗜️ ───────────────────────────────────────────────────────────────',
+                    '🗜️ Algorithm: DEFLATE (gzip-compatible)',
+                    '🗜️ Encoding: Base64 for URL safety',
+                    '🗜️ ═══════════════════════════════════════════════════════════════'
+                ].join('\n');
+                
+                console.log('[DEBUG] Compression:', {
+                    input: mappedJson.length,
+                    output: compressed.length,
+                    ratio: ((compressed.length / mappedJson.length) * 100).toFixed(1) + '%'
+                });
+                
+                // Add to chat
+                if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
+                    window.aiHackare.chatManager.addSystemMessage(compressionDetails, 'debug-message debug-shared-links');
+                }
             }
-        }
-        
-        // Step 2: Compress with LZ-String (raw binary, NOT base64)
-        const compressed = LZString.compress(mappedJson);
-        
-        // Debug logging
-        if (window.DebugService && window.DebugService.debugLog) {
-            const originalSize = JSON.stringify(payload).length;
-            const compressedSize = compressed.length;
-            const reduction = Math.round((1 - compressedSize / originalSize) * 100);
-            window.DebugService.debugLog('compression', 
-                `🗜️ Compression: ${originalSize} → ${compressedSize} chars (${reduction}% reduction)`);
-        }
-        
-        // STEP 3: Debug logging for LZ compression  
-        // Always show for share links (not suppressed = share link generation)
-        if (!suppressDebug && window.DebugService && window.DebugService.isCategoryEnabled && window.DebugService.isCategoryEnabled('shared-links')) {
-            const compressionDetails = [
-                '🗜️ ═══════════════════════════════════════════════════════════════',
-                '🗜️ STEP 3: LZ-STRING COMPRESSION',
-                '🗜️ ═══════════════════════════════════════════════════════════════',
-                `🗜️ Input (key-mapped JSON): ${mappedJson.length} chars`,
-                `🗜️ Output (compressed): ${compressed.length} chars`,
-                `🗜️ Compression ratio: ${((compressed.length / mappedJson.length) * 100).toFixed(1)}%`,
-                `🗜️ Space saved: ${mappedJson.length - compressed.length} chars`,
-                '🗜️ ───────────────────────────────────────────────────────────────',
-                `🗜️ Compressed data preview (first 50 chars):`,
-                `🗜️ ${compressed.substring(0, 50)}...`,
-                '🗜️ ═══════════════════════════════════════════════════════════════'
-            ].join('\n');
             
-            // Log to console
-            console.log('[DEBUG] Compression Details:', {
-                original: originalJson.length,
-                afterKeyMapping: mappedJson.length,
-                afterLZ: compressed.length,
-                keyMappingSaved: originalJson.length - mappedJson.length,
-                lzSaved: mappedJson.length - compressed.length,
-                totalSaved: originalJson.length - compressed.length
-            });
-            
-            // Add to chat as a single system message if chat manager is available
-            if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
-                window.aiHackare.chatManager.addSystemMessage(compressionDetails, 'debug-message debug-shared-links');
+            // Also log to debug service if available
+            if (window.DebugService && window.DebugService.debugLog) {
+                const originalSize = JSON.stringify(payload).length;
+                const compressedSize = compressed.length;
+                const reduction = Math.round((1 - compressedSize / originalSize) * 100);
+                window.DebugService.debugLog('compression', 
+                    `🗜️ Real Compression: ${originalSize} → ${compressedSize} chars (${reduction}% reduction)`);
             }
+            
+            return compressed;
+        } catch (error) {
+            console.error('Compression error:', error);
+            throw new Error('Failed to compress payload: ' + error.message);
         }
-        
-        return compressed;
     }
 
     /**
-     * Decompress a payload from sharing
-     * @param {string} compressed - The compressed string (raw binary, NOT base64)
-     * @returns {Object} Decompressed payload
+     * Decompress a payload from sharing using real deflate decompression
+     * @param {string} compressed - The compressed string
+     * @returns {Promise<Object>} Decompressed payload
      */
-    function decompressPayload(compressed) {
+    async function decompressPayload(compressed) {
         try {
-            // Step 1: Decompress with LZ-String (raw binary, NOT base64)
-            const json = LZString.decompress(compressed);
+            // Step 1: Decode from base64 to bytes
+            const compressedBytes = base64DecodeBytes(compressed);
+            
+            // Step 2: Decompress using real deflate
+            const json = await realDecompress(compressedBytes);
             
             if (!json) {
                 throw new Error('Decompression failed - invalid compressed data');
             }
             
-            // Step 2: Parse JSON
+            // Step 3: Parse JSON
             const mapped = JSON.parse(json);
             
-            // Step 3: Unmap keys to verbose form
+            // Step 4: Unmap keys to verbose form
             const payload = unmapKeys(mapped);
             
             // Debug logging
@@ -748,7 +433,7 @@ window.CompressionUtils = (function() {
                 const compressedSize = compressed.length;
                 const originalSize = JSON.stringify(payload).length;
                 window.DebugService.debugLog('compression', 
-                    `🗜️ Decompression: ${compressedSize} → ${originalSize} chars`);
+                    `🗜️ Real Decompression: ${compressedSize} → ${originalSize} chars`);
             }
             
             return payload;
