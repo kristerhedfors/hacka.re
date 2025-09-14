@@ -209,18 +209,9 @@ window.LinkSharingService = (function() {
             window.DebugService.debugLog('crypto', `🔐 Compressing and encrypting custom shareable link payload with ${payloadKeys.length} components: ${payloadKeys.join(', ')}`);
         }
         
-        // Generate a strong master key for this share link
-        // This is the ONLY place where master keys are generated for shared links
-        const masterKeyBytes = nacl.randomBytes(32);
-        const masterKeyHex = Array.from(masterKeyBytes)
-            .map(b => b.toString(16).padStart(2, '0'))
-            .join('');
-        
-        // Create wrapper with master key and encrypted data
-        const sharePayload = {
-            masterKey: masterKeyHex,
-            data: finalPayload
-        };
+        // No longer generate master key - it will be derived from password + salt + nonce
+        // Use the payload directly without wrapper
+        const sharePayload = finalPayload;
         
         // STEP 1: Log original payload
         if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links') && !suppressDebug) {
@@ -416,6 +407,17 @@ window.LinkSharingService = (function() {
                     window.DebugService.debugLog('crypto', `🔓 Decrypting and decompressing shared link data from URL hash fragment`);
                 }
                 
+                // NEW: Derive master key from password + salt + nonce BEFORE decryption
+                // Extract salt and nonce from the encrypted blob (they're unencrypted)
+                const encryptedBytes = CryptoUtils.decodeBase64UrlSafe(encryptedData);
+                const salt = encryptedBytes.slice(0, 10); // First 10 bytes
+                const nonceSeed = encryptedBytes.slice(10, 20); // Next 10 bytes
+                
+                // Derive the master key for localStorage operations
+                const derivedMasterKey = CryptoUtils.deriveMasterKey(password, salt, nonceSeed);
+                window._sharedLinkMasterKey = derivedMasterKey;
+                console.log('[LinkSharing] Master key derived from share link parameters (stored in memory only)');
+                
                 // Decrypt the data
                 const decryptedData = CryptoUtils.decryptData(encryptedData, password);
                 
@@ -447,22 +449,10 @@ window.LinkSharingService = (function() {
                     decompressedData = decryptedData;
                 }
                 
-                // Check if this is the new format with master key
-                let data;
-                let masterKey = null;
-                if (decompressedData && decompressedData.masterKey && decompressedData.data) {
-                    // New secure format with master key
-                    masterKey = decompressedData.masterKey;
-                    data = decompressedData.data;
-                    
-                    // Store the master key temporarily in memory (NEVER to disk)
-                    window._sharedLinkMasterKey = masterKey;
-                    console.log('[LinkSharing] Master key extracted from share link (stored in memory only)');
-                } else {
-                    // Legacy format without master key (for backwards compatibility)
-                    data = decompressedData;
-                    console.warn('[LinkSharing] Legacy share link format without master key - less secure');
-                }
+                // No more checking for old format - master key is always derived
+                // The decompressed data is the actual payload, no wrapper
+                let data = decompressedData;
+                console.log('[LinkSharing] Using derived master key from share link parameters');
                 
                 // Check if the decrypted data contains at least one valid field
                 // We no longer require apiKey to be present, allowing sharing of just conversation or model

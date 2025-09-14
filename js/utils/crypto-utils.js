@@ -202,6 +202,43 @@ window.CryptoUtils = (function() {
     }
     
     /**
+     * Derive a master key from password + salt + nonce seed
+     * This is used for shared links to derive a master key without transmitting it
+     * @param {string} password - The password used for the shared link
+     * @param {Uint8Array} salt - The salt from the encrypted blob
+     * @param {Uint8Array} nonceSeed - The nonce seed from the encrypted blob
+     * @returns {string} Hex string of the derived master key
+     */
+    function deriveMasterKey(password, salt, nonceSeed) {
+        // Convert password to Uint8Array
+        const passwordBytes = nacl.util.decodeUTF8(password);
+        
+        // For long passwords, hash them down if they're longer than 32 bytes
+        let processedPasswordBytes = passwordBytes;
+        if (passwordBytes.length > 32) {
+            processedPasswordBytes = nacl.hash(passwordBytes).slice(0, KEY_LENGTH);
+        }
+        
+        // Combine password, salt, and nonce seed for master key derivation
+        // This creates a different input than deriveSeed, so we get a different key
+        const combined = new Uint8Array(processedPasswordBytes.length + salt.length + nonceSeed.length);
+        combined.set(processedPasswordBytes);
+        combined.set(salt, processedPasswordBytes.length);
+        combined.set(nonceSeed, processedPasswordBytes.length + salt.length);
+        
+        // Use same 10,000 iterations as deriveSeed for consistency
+        let key = combined;
+        for (let i = 0; i < KEY_ITERATIONS; i++) {
+            key = nacl.hash(key).slice(0, KEY_LENGTH);
+        }
+        
+        // Convert to hex string (matching current master key format)
+        return Array.from(key)
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
+    }
+    
+    /**
      * Generate a key pair from a seed
      * @param {string} password - The password to derive the seed from
      * @param {Uint8Array} salt - The salt to use for seed derivation
@@ -338,7 +375,7 @@ window.CryptoUtils = (function() {
                 `🔐 - Salt: 10 bytes (80 bits)`,
                 `🔐 - Nonce seed: 10 bytes (80 bits, expanded to 24)`,
                 `🔐 - Algorithm: XSalsa20-Poly1305`,
-                `🔐 - Key derivation: PBKDF2, ${KEY_ITERATIONS} iterations`,
+                `🔐 - Key derivation: SHA-512 iteration, ${KEY_ITERATIONS} rounds`,
                 '🔐 ───────────────────────────────────────────────────────────────',
                 `🔐 Binary structure: [salt(10)] + [nonce_seed(10)] + [cipher(${cipher.length})]`,
                 `🔐 Total binary: ${rawBinarySize} bytes`,
@@ -464,6 +501,7 @@ window.CryptoUtils = (function() {
     // Public API
     return {
         deriveSeed: deriveSeed,
+        deriveMasterKey: deriveMasterKey,  // New function for deriving master key from share link params
         getKeyPair: getKeyPair,
         encryptData: encryptData,
         encryptShareLink: encryptShareLink,  // New dedicated function for share links
