@@ -415,10 +415,22 @@ window.LinkSharingService = (function() {
                 const salt = encryptedBytes.slice(0, 10); // First 10 bytes
                 const nonce = encryptedBytes.slice(10, 20); // Next 10 bytes
                 
-                // Derive the master key for localStorage operations
+                // Derive the decryption key and master key
+                const decryptionKey = CryptoUtils.deriveDecryptionKey(password, salt);
                 const derivedMasterKey = CryptoUtils.deriveMasterKey(password, salt, nonce);
                 window._sharedLinkMasterKey = derivedMasterKey;
                 console.log('[LinkSharing] Master key derived from share link parameters (stored in memory only)');
+                
+                // Derive the namespace hash from decryptionKey + masterKey + nonce
+                const namespaceHash = CryptoUtils.deriveNamespaceHash(decryptionKey, derivedMasterKey, nonce);
+                const namespace = namespaceHash.substring(0, 8);
+                
+                // Cache the namespace in StorageTypeService
+                if (window.StorageTypeService && window.StorageTypeService.setCachedNamespaceHash) {
+                    window.StorageTypeService.setCachedNamespaceHash(namespace);
+                }
+                window._sharedLinkNamespace = namespace;
+                console.log('[LinkSharing] Namespace derived from keys:', namespace);
                 
                 // Decrypt the data
                 const decryptedData = CryptoUtils.decryptData(encryptedData, password);

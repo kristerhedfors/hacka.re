@@ -28,6 +28,9 @@ window.StorageTypeService = (function() {
     let storageType = null;
     let initialStorageType = null; // Store original decision
     let isInitialized = false;
+    
+    // Cache for the derived namespace hash
+    let cachedNamespaceHash = null;
     let wasInitiallySharedLink = false; // Remember original context
     
     // Key to store the storage type decision across page navigations
@@ -147,21 +150,34 @@ window.StorageTypeService = (function() {
     }
     
     /**
-     * Get namespace for shared links (based on hash of encrypted blob)
+     * Get namespace for shared links (based on hash of keys and nonce)
      * 
-     * For shared links, the namespace is derived from the encrypted data in the URL.
+     * For shared links, the namespace is derived from the decryption key, master key, and nonce.
      * This ensures that the same shared link always produces the same namespace,
      * allowing users to return to their conversations.
      * 
-     * The namespace is the first 8 characters of the SHA-256 hash of the encrypted blob.
+     * The namespace is the first 8 characters of sha512(decryptionKey+masterKey+nonce).
      * 
-     * @returns {string|null} Namespace derived from hash, or null if no shared link
+     * @returns {string|null} Namespace derived from keys, or null if no shared link
      */
     function getSharedLinkNamespace() {
         if (!hasSharedLink()) {
             return null;
         }
         
+        // If we have a cached namespace, return it
+        if (cachedNamespaceHash) {
+            return cachedNamespaceHash;
+        }
+        
+        // Check if namespace was computed and stored by link-sharing-service
+        if (window._sharedLinkNamespace) {
+            cachedNamespaceHash = window._sharedLinkNamespace;
+            return cachedNamespaceHash;
+        }
+        
+        // Fallback: use hash of encrypted blob (old method) until keys are available
+        // This will be replaced once link-sharing-service computes the proper namespace
         const hash = window.location.hash;
         let encryptedData = null;
         
@@ -175,9 +191,20 @@ window.StorageTypeService = (function() {
             return null;
         }
         
-        // Create namespace from first 8 characters of hash of encrypted blob
+        // Temporary fallback - will be overridden when keys are available
+        console.log('[StorageTypeService] Using temporary namespace from encrypted blob hash (will be replaced)');
         const dataHash = CryptoUtils.hashString(encryptedData);
         return dataHash.substring(0, 8);
+    }
+    
+    /**
+     * Set the cached namespace hash (called by link-sharing-service after deriving keys)
+     * @param {string} namespaceHash - The derived namespace hash
+     */
+    function setCachedNamespaceHash(namespaceHash) {
+        cachedNamespaceHash = namespaceHash;
+        window._sharedLinkNamespace = namespaceHash;
+        console.log('[StorageTypeService] Namespace hash cached:', namespaceHash);
     }
     
     /**
@@ -237,6 +264,7 @@ window.StorageTypeService = (function() {
         isUsingLocalStorage,
         isUsingSessionStorage,
         getSharedLinkNamespace,
+        setCachedNamespaceHash,
         getDefaultNamespace,
         getNamespace,
         // Testing methods
