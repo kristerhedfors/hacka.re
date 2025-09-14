@@ -47,16 +47,16 @@ window.CryptoUtils = (function() {
     const MASTER_KEY_PREFIX = 'hackare_master_key_';
     
     /**
-     * Generate a SHA-256 hash of a string
+     * Generate SHA-512 hash of input
      * @param {string} input - The string to hash
      * @returns {string} Hex string of the hash
      */
-    function sha256(input) {
+    function sha512(input) {
         // Convert input string to Uint8Array
         const inputBytes = nacl.util.decodeUTF8(input);
         
-        // Use TweetNaCl's hash function (SHA-512) and take first 32 bytes (256 bits)
-        const hashBytes = nacl.hash(inputBytes).slice(0, 32);
+        // Use TweetNaCl's hash function (SHA-512)
+        const hashBytes = nacl.hash(inputBytes);
         
         // Convert to hex string
         return Array.from(hashBytes)
@@ -65,12 +65,12 @@ window.CryptoUtils = (function() {
     }
     
     /**
-     * Generate a hash of a string (alias for sha256)
+     * Generate a hash of a string (alias for sha512)
      * @param {string} input - The string to hash
      * @returns {string} Hex string of the hash
      */
     function hashString(input) {
-        return sha256(input);
+        return sha512(input);
     }
     
     /**
@@ -93,14 +93,14 @@ window.CryptoUtils = (function() {
     }
     
     /**
-     * Generate a namespace hash from title and subtitle
+     * Generate namespace hash from title and subtitle
      * @param {string} title - The title
      * @param {string} subtitle - The subtitle
-     * @returns {string} SHA-256 hash of combined title and subtitle
+     * @returns {string} SHA-512 hash of combined title and subtitle
      */
     function generateNamespaceHash(title, subtitle) {
         const combined = `${title}${subtitle}`;
-        return sha256(combined);
+        return sha512(combined);
     }
     
     /**
@@ -220,6 +220,41 @@ window.CryptoUtils = (function() {
         // Only slice to 32 bytes at the very end, then convert to hex
         const finalKey = result.slice(0, KEY_LENGTH);
         return Array.from(finalKey)
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
+    }
+    
+    /**
+     * Derive namespace hash from decryption key, master key, and nonce
+     * Uses SHA-512 hash of concatenated keys and nonce
+     * @param {Uint8Array} decryptionKey - The decryption key (32 bytes)
+     * @param {string} masterKeyHex - The master key as hex string
+     * @param {Uint8Array} nonce - The nonce (10 bytes)
+     * @returns {string} Hex string of the namespace hash (full SHA-512)
+     */
+    function deriveNamespaceHash(decryptionKey, masterKeyHex, nonce) {
+        // Convert master key from hex to bytes
+        const masterKeyBytes = new Uint8Array(masterKeyHex.length / 2);
+        for (let i = 0; i < masterKeyHex.length; i += 2) {
+            masterKeyBytes[i / 2] = parseInt(masterKeyHex.substr(i, 2), 16);
+        }
+        
+        // Combine decryptionKey + masterKey + nonce
+        const combined = new Uint8Array(
+            decryptionKey.length + masterKeyBytes.length + nonce.length
+        );
+        let offset = 0;
+        combined.set(decryptionKey, offset);
+        offset += decryptionKey.length;
+        combined.set(masterKeyBytes, offset);
+        offset += masterKeyBytes.length;
+        combined.set(nonce, offset);
+        
+        // Hash with SHA-512
+        const hashBytes = nacl.hash(combined);
+        
+        // Return as hex string
+        return Array.from(hashBytes)
             .map(b => b.toString(16).padStart(2, '0'))
             .join('');
     }
@@ -482,12 +517,13 @@ window.CryptoUtils = (function() {
     return {
         deriveDecryptionKey: deriveDecryptionKey,
         deriveMasterKey: deriveMasterKey,
+        deriveNamespaceHash: deriveNamespaceHash,
         encryptData: encryptData,
         encryptShareLink: encryptShareLink,  // New dedicated function for share links
         decryptData: decryptData,
         encodeBase64UrlSafe: encodeBase64UrlSafe,
         decodeBase64UrlSafe: decodeBase64UrlSafe,
-        sha256: sha256,
+        sha512: sha512,
         hashString: hashString,
         generateRandomAlphaNum: generateRandomAlphaNum,
         generateNamespaceHash: generateNamespaceHash,
