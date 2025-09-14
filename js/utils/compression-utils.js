@@ -493,6 +493,8 @@ window.CompressionUtils = (function() {
         }
 
         return {
+            compress: compress,
+            decompress: decompress,
             compressToUriSafe: compressToUriSafe,
             decompressFromUriSafe: decompressFromUriSafe
         };
@@ -598,7 +600,7 @@ window.CompressionUtils = (function() {
     /**
      * Compress a payload for sharing
      * @param {Object} payload - The payload to compress
-     * @returns {string} Compressed string
+     * @returns {string} Compressed string (raw binary, NOT base64)
      */
     function compressPayload(payload) {
         // Step 1: Map keys to compact form
@@ -607,8 +609,8 @@ window.CompressionUtils = (function() {
         // Step 2: Convert to JSON
         const json = JSON.stringify(mapped);
         
-        // Step 3: Compress with LZ-String
-        const compressed = LZString.compressToUriSafe(json);
+        // Step 3: Compress with LZ-String (raw binary, NOT base64)
+        const compressed = LZString.compress(json);
         
         // Debug logging
         if (window.DebugService && window.DebugService.debugLog) {
@@ -624,36 +626,73 @@ window.CompressionUtils = (function() {
             const originalJson = JSON.stringify(payload);
             const mappedJson = json;
             
-            const compressionSummary = {
-                'Original JSON size': originalJson.length + ' chars',
-                'After key mapping': mappedJson.length + ' chars',
-                'Key mapping savings': (originalJson.length - mappedJson.length) + ' chars',
-                'After LZ compression': compressed.length + ' chars',
-                'Total compression ratio': ((compressed.length / originalJson.length) * 100).toFixed(1) + '%',
-                'Total savings': (originalJson.length - compressed.length) + ' chars'
-            };
+            // Show key mapping examples - check what keys are actually present
+            const keyMappingExamples = [];
+            const mappedKeysCount = {};
             
-            // Create a formatted message
-            const debugMessage = [
+            // Count how many keys were actually mapped
+            Object.keys(payload).forEach(key => {
+                if (KEY_MAP[key]) {
+                    keyMappingExamples.push(`  "${key}" → "${KEY_MAP[key]}"`);
+                    mappedKeysCount[key] = KEY_MAP[key];
+                }
+            });
+            
+            // Also check nested objects (like in data field)
+            if (payload.data && typeof payload.data === 'object') {
+                Object.keys(payload.data).forEach(key => {
+                    if (KEY_MAP[key]) {
+                        keyMappingExamples.push(`  "data.${key}" → "${KEY_MAP[key]}"`);
+                        mappedKeysCount[`data.${key}`] = KEY_MAP[key];
+                    }
+                });
+            }
+            
+            if (keyMappingExamples.length === 0) {
+                keyMappingExamples.push('  (No mappable keys found in payload)');
+            }
+            
+            const compressionDetails = [
                 '🗜️ ═══════════════════════════════════════════════════════════════',
-                '🗜️ COMPRESSION PROCESS (Key mapping + LZ-String)',
+                '🗜️ COMPRESSION DETAILS (Inside CompressionUtils)',
                 '🗜️ ═══════════════════════════════════════════════════════════════',
-                '🗜️ Compression Breakdown:',
-                JSON.stringify(compressionSummary, null, 2),
+                '🗜️ Step 2.1: KEY MAPPING',
                 '🗜️ ───────────────────────────────────────────────────────────────',
-                '🗜️ Process:',
-                '🗜️ 1. Key mapping: Long keys → short keys',
-                '🗜️ 2. LZ-String: URI-safe compression',
-                '🗜️ 3. Result: Compressed string ready for encryption',
+                `🗜️ Original JSON: ${originalJson.length} chars`,
+                `🗜️ After key mapping: ${mappedJson.length} chars`,
+                `🗜️ Key mapping saved: ${originalJson.length - mappedJson.length} chars (${(((originalJson.length - mappedJson.length)/originalJson.length)*100).toFixed(1)}%)`,
+                '🗜️ ───────────────────────────────────────────────────────────────',
+                '🗜️ Key mappings applied:',
+                ...keyMappingExamples,
+                '🗜️ ───────────────────────────────────────────────────────────────',
+                '🗜️ Step 2.2: LZ-STRING COMPRESSION',
+                '🗜️ ───────────────────────────────────────────────────────────────',
+                `🗜️ Input to LZ: ${mappedJson.length} chars`,
+                `🗜️ Output from LZ: ${compressed.length} chars`,
+                `🗜️ LZ compression ratio: ${((compressed.length / mappedJson.length) * 100).toFixed(1)}%`,
+                `🗜️ LZ saved: ${mappedJson.length - compressed.length} chars`,
+                '🗜️ ───────────────────────────────────────────────────────────────',
+                '🗜️ OVERALL COMPRESSION:',
+                `🗜️ Original: ${originalJson.length} chars`,
+                `🗜️ Final: ${compressed.length} chars`,
+                `🗜️ Total ratio: ${((compressed.length / originalJson.length) * 100).toFixed(1)}%`,
+                `🗜️ Total saved: ${originalJson.length - compressed.length} chars`,
                 '🗜️ ═══════════════════════════════════════════════════════════════'
             ].join('\n');
             
             // Log to console
-            console.log('[DEBUG] Compression Process:', compressionSummary);
+            console.log('[DEBUG] Compression Details:', {
+                original: originalJson.length,
+                afterKeyMapping: mappedJson.length,
+                afterLZ: compressed.length,
+                keyMappingSaved: originalJson.length - mappedJson.length,
+                lzSaved: mappedJson.length - compressed.length,
+                totalSaved: originalJson.length - compressed.length
+            });
             
             // Add to chat as a single system message if chat manager is available
             if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
-                window.aiHackare.chatManager.addSystemMessage(debugMessage, 'debug-message debug-shared-links');
+                window.aiHackare.chatManager.addSystemMessage(compressionDetails, 'debug-message debug-shared-links');
             }
         }
         
@@ -662,13 +701,13 @@ window.CompressionUtils = (function() {
 
     /**
      * Decompress a payload from sharing
-     * @param {string} compressed - The compressed string
+     * @param {string} compressed - The compressed string (raw binary, NOT base64)
      * @returns {Object} Decompressed payload
      */
     function decompressPayload(compressed) {
         try {
-            // Step 1: Decompress with LZ-String
-            const json = LZString.decompressFromUriSafe(compressed);
+            // Step 1: Decompress with LZ-String (raw binary, NOT base64)
+            const json = LZString.decompress(compressed);
             
             if (!json) {
                 throw new Error('Decompression failed - invalid compressed data');

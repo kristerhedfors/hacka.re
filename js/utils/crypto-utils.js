@@ -274,43 +274,64 @@ window.CryptoUtils = (function() {
         
         // Debug logging for shared-links category - show encryption details and space consumption
         if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links')) {
-            const spaceSummary = {
-                'Original JSON size': jsonString.length + ' chars',
-                'UTF-8 encoded size': plain.length + ' bytes',
-                'Salt size': salt.length + ' bytes (80 bits)',
-                'Nonce seed size': nonceSeed.length + ' bytes (80 bits)',
-                'Expanded nonce size': nonce.length + ' bytes (for NaCl)',
-                'Encrypted cipher size': cipher.length + ' bytes',
-                'Total stored size': (salt.length + nonceSeed.length + cipher.length) + ' bytes',
-                'Overhead': (salt.length + nonceSeed.length) + ' bytes (salt + nonce seed)',
-                'Encryption expansion': (cipher.length - plain.length) + ' bytes (cipher vs plain)',
-                'Total expansion': ((salt.length + nonceSeed.length + cipher.length) - plain.length) + ' bytes'
-            };
+            // Calculate base64 expansion
+            const rawBinarySize = salt.length + nonceSeed.length + cipher.length;
+            const base64Size = Math.ceil(rawBinarySize * 4 / 3);
             
-            // Create a formatted message showing encryption details
-            const debugMessage = [
+            const encryptionDetails = [
                 '🔐 ═══════════════════════════════════════════════════════════════',
-                '🔐 ENCRYPTION PROCESS (TweetNaCl secretbox)',
+                '🔐 ENCRYPTION DETAILS (Inside CryptoUtils)',
                 '🔐 ═══════════════════════════════════════════════════════════════',
-                '🔐 Space Consumption Breakdown:',
-                JSON.stringify(spaceSummary, null, 2),
+                '🔐 Step 3.1: PREPARING DATA',
                 '🔐 ───────────────────────────────────────────────────────────────',
-                '🔐 Encryption Details:',
-                `🔐 - Algorithm: NaCl secretbox (XSalsa20-Poly1305)`,
-                `🔐 - Salt: ${SALT_LENGTH} bytes (80 bits, for key derivation)`,
-                `🔐 - Nonce seed: ${NONCE_SEED_LENGTH} bytes (80 bits, expanded to ${NONCE_LENGTH})`,
-                `🔐 - Key derivation: PBKDF2(password, salt, ${KEY_ITERATIONS} iterations)`,
+                `🔐 Input (compressed string): ${jsonString.length} chars`,
+                `🔐 UTF-8 encoded: ${plain.length} bytes`,
                 '🔐 ───────────────────────────────────────────────────────────────',
-                '🔐 Final structure: [salt(10)][nonce_seed(10)][cipher] → base64url',
+                '🔐 Step 3.2: GENERATING CRYPTO MATERIAL',
+                '🔐 ───────────────────────────────────────────────────────────────',
+                `🔐 Salt: ${salt.length} bytes (80 bits) - for key derivation`,
+                `🔐 Nonce seed: ${nonceSeed.length} bytes (80 bits) - for encryption`,
+                `🔐 Expanded nonce: ${nonce.length} bytes (192 bits) - NaCl requirement`,
+                `🔐 Key derivation: PBKDF2 with ${KEY_ITERATIONS} iterations`,
+                '🔐 ───────────────────────────────────────────────────────────────',
+                '🔐 Step 3.3: ENCRYPTION (NaCl secretbox)',
+                '🔐 ───────────────────────────────────────────────────────────────',
+                `🔐 Algorithm: XSalsa20-Poly1305 (authenticated encryption)`,
+                `🔐 Plain text: ${plain.length} bytes`,
+                `🔐 Cipher text: ${cipher.length} bytes`,
+                `🔐 Auth tag overhead: ${cipher.length - plain.length} bytes (Poly1305)`,
+                '🔐 ───────────────────────────────────────────────────────────────',
+                '🔐 Step 3.4: BINARY STRUCTURE',
+                '🔐 ───────────────────────────────────────────────────────────────',
+                `🔐 [salt(${salt.length})] + [nonce_seed(${nonceSeed.length})] + [cipher(${cipher.length})]`,
+                `🔐 Total binary: ${rawBinarySize} bytes`,
+                `🔐 Crypto overhead: ${salt.length + nonceSeed.length} bytes (salt + nonce seed)`,
+                '🔐 ───────────────────────────────────────────────────────────────',
+                '🔐 Step 3.5: BASE64 ENCODING',
+                '🔐 ───────────────────────────────────────────────────────────────',
+                `🔐 Binary size: ${rawBinarySize} bytes`,
+                `🔐 Base64 size: ~${base64Size} chars (4/3 expansion)`,
+                `🔐 URL-safe: yes (using - and _ instead of + and /)`,
                 '🔐 ═══════════════════════════════════════════════════════════════'
             ].join('\n');
             
             // Log to console
-            console.log('[DEBUG] Encryption Process:', spaceSummary);
+            console.log('[DEBUG] Encryption Details:', {
+                input: jsonString.length,
+                utf8: plain.length,
+                salt: salt.length,
+                nonceSeed: nonceSeed.length,
+                expandedNonce: nonce.length,
+                cipher: cipher.length,
+                authTagOverhead: cipher.length - plain.length,
+                totalBinary: rawBinarySize,
+                cryptoOverhead: salt.length + nonceSeed.length,
+                estimatedBase64: base64Size
+            });
             
             // Add to chat as a single system message if chat manager is available
             if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
-                window.aiHackare.chatManager.addSystemMessage(debugMessage, 'debug-message debug-shared-links');
+                window.aiHackare.chatManager.addSystemMessage(encryptionDetails, 'debug-message debug-shared-links');
             }
         }
         
