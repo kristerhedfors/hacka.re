@@ -622,7 +622,8 @@ window.CompressionUtils = (function() {
         }
         
         // Enhanced debug logging for shared-links category
-        if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links')) {
+        // Only show for actual share links (>200 chars), not config values
+        if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links') && JSON.stringify(payload).length > 200) {
             const originalJson = JSON.stringify(payload);
             const mappedJson = json;
             

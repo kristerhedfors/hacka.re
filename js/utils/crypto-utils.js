@@ -273,7 +273,8 @@ window.CryptoUtils = (function() {
         const cipher = nacl.secretbox(plain, nonce, key);
         
         // Debug logging for shared-links category - show encryption details and space consumption
-        if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links')) {
+        // Only show detailed debug for share link payloads (>200 chars), not for small config values
+        if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links') && jsonString.length > 200) {
             // Calculate base64 expansion
             const rawBinarySize = salt.length + nonceSeed.length + cipher.length;
             const base64Size = Math.ceil(rawBinarySize * 4 / 3);
