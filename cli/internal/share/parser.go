@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hacka-re/cli/internal/compression"
 	"github.com/hacka-re/cli/internal/crypto"
 )
 
@@ -58,9 +59,53 @@ func ParseURL(input string, password string) (*SharedConfig, error) {
 			return nil, fmt.Errorf("failed to decrypt configuration: %w", err)
 		}
 		
-		// Parse JSON
+		// The decrypted data might be compressed or a direct JSON string
+		plainStr := string(plainData)
+		
+		// Check if it's a JSON string (starts with ") - this means it's compressed
+		if len(plainStr) > 0 && plainStr[0] == '"' {
+			// It's a JSON string containing compressed data, unmarshal to get the actual string
+			var compressedStr string
+			if err := json.Unmarshal(plainData, &compressedStr); err != nil {
+				return nil, fmt.Errorf("failed to unmarshal compressed data: %w", err)
+			}
+			
+			// Decompress the payload
+			decompressed, err := compression.DecompressPayload(compressedStr)
+			if err != nil {
+				return nil, fmt.Errorf("failed to decompress payload: %w", err)
+			}
+			
+			// Convert map to SharedConfig
+			jsonBytes, err := json.Marshal(decompressed)
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal decompressed data: %w", err)
+			}
+			
+			var config SharedConfig
+			if err := json.Unmarshal(jsonBytes, &config); err != nil {
+				return nil, fmt.Errorf("failed to parse configuration: %w", err)
+			}
+			
+			return &config, nil
+		}
+		
+		// Otherwise try to parse as direct JSON (uncompressed)
 		var config SharedConfig
 		if err := json.Unmarshal(plainData, &config); err != nil {
+			// Maybe it's a string that needs decompression
+			if decompressed, err := compression.DecompressPayload(plainStr); err == nil {
+				// Convert map to SharedConfig
+				jsonBytes, err := json.Marshal(decompressed)
+				if err != nil {
+					return nil, fmt.Errorf("failed to marshal decompressed data: %w", err)
+				}
+				
+				if err := json.Unmarshal(jsonBytes, &config); err != nil {
+					return nil, fmt.Errorf("failed to parse configuration: %w", err)
+				}
+				return &config, nil
+			}
 			return nil, fmt.Errorf("failed to parse configuration: %w", err)
 		}
 		
