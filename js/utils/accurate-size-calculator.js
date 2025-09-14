@@ -57,7 +57,9 @@ window.AccurateSizeCalculator = (function() {
             }
             
             // Generate the actual compressed link to get exact size
+            // Add flag to suppress debug output for size calculation
             if (window.ShareService && window.ShareService.createShareLink) {
+                options.suppressDebug = true; // Don't show debug messages for size calculation
                 const actualLink = await window.ShareService.createShareLink(options);
                 return actualLink.length;
             } else {

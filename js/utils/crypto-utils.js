@@ -248,17 +248,19 @@ window.CryptoUtils = (function() {
     }
     
     /**
-     * Encrypt data with a password
+     * Encrypt data with a password (for storage - NO DEBUG OUTPUT)
      * @param {*} payloadObj - The data to encrypt (can be any JSON-serializable value)
      * @param {string} password - The password to use for encryption
+     * @param {boolean} suppressDebug - Ignored (kept for backward compatibility)
      * @returns {string} URL-safe base64-encoded encrypted data
      */
-    function encryptData(payloadObj, password) {
+    function encryptData(payloadObj, password, suppressDebug = false) {
         // Convert to JSON string
         const jsonString = JSON.stringify(payloadObj);
         if (!jsonString) {
             throw new Error('Failed to stringify payload object');
         }
+        
         const plain = nacl.util.decodeUTF8(jsonString);
         
         // Generate salt and derive key
@@ -272,51 +274,77 @@ window.CryptoUtils = (function() {
         // Encrypt with secretbox (symmetric encryption)
         const cipher = nacl.secretbox(plain, nonce, key);
         
-        // Debug logging for shared-links category - show encryption details and space consumption
-        // Only show detailed debug for share link payloads (>200 chars), not for small config values
-        if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links') && jsonString.length > 200) {
-            // Calculate base64 expansion
+        // Combine salt, nonce seed, and cipher
+        const fullMessage = new Uint8Array(
+            salt.length + 
+            nonceSeed.length + 
+            cipher.length
+        );
+        
+        let offset = 0;
+        fullMessage.set(salt, offset);
+        offset += salt.length;
+        
+        fullMessage.set(nonceSeed, offset);
+        offset += nonceSeed.length;
+        
+        fullMessage.set(cipher, offset);
+        
+        // Convert directly to URL-safe base64 - NO DEBUG OUTPUT
+        return encodeBase64UrlSafe(fullMessage);
+    }
+    
+    /**
+     * Encrypt share link data with a password (WITH DEBUG OUTPUT FOR STEPS 4 & 5)
+     * @param {string} compressedData - The compressed data to encrypt (always a string for share links)
+     * @param {string} password - The password to use for encryption
+     * @param {boolean} suppressDebug - Whether to suppress debug messages (for size calculation)
+     * @returns {string} URL-safe base64-encoded encrypted data
+     */
+    function encryptShareLink(compressedData, password, suppressDebug = false) {
+        // Share links always receive compressed strings
+        if (typeof compressedData !== 'string') {
+            throw new Error('Share link encryption expects compressed string data');
+        }
+        
+        // Convert to JSON string (the compressed data is already a string, so we're just wrapping it)
+        const jsonString = JSON.stringify(compressedData);
+        const plain = nacl.util.decodeUTF8(jsonString);
+        
+        // Generate salt and derive key
+        const salt = nacl.randomBytes(SALT_LENGTH);
+        const key = deriveSeed(password, salt);
+        
+        // Generate nonce seed and expand to full nonce
+        const nonceSeed = nacl.randomBytes(NONCE_SEED_LENGTH);
+        const nonce = expandNonceSeed(nonceSeed);
+        
+        // Encrypt with secretbox (symmetric encryption)
+        const cipher = nacl.secretbox(plain, nonce, key);
+        
+        // STEP 4: Show encryption debug
+        if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links') && !suppressDebug) {
             const rawBinarySize = salt.length + nonceSeed.length + cipher.length;
-            const base64Size = Math.ceil(rawBinarySize * 4 / 3);
             
             const encryptionDetails = [
                 '🔐 ═══════════════════════════════════════════════════════════════',
-                '🔐 ENCRYPTION DETAILS (Inside CryptoUtils)',
+                '🔐 STEP 4: ENCRYPTION (NaCl secretbox)',
                 '🔐 ═══════════════════════════════════════════════════════════════',
-                '🔐 Step 3.1: PREPARING DATA',
+                `🔐 Input (compressed): ${jsonString.length} chars`,
+                `🔐 Cipher output: ${cipher.length} bytes`,
+                `🔐 Auth tag overhead: ${cipher.length - plain.length} bytes`,
                 '🔐 ───────────────────────────────────────────────────────────────',
-                `🔐 Input (compressed string): ${jsonString.length} chars`,
-                `🔐 UTF-8 encoded: ${plain.length} bytes`,
+                '🔐 Crypto parameters:',
+                `🔐 - Salt: 10 bytes (80 bits)`,
+                `🔐 - Nonce seed: 10 bytes (80 bits, expanded to 24)`,
+                `🔐 - Algorithm: XSalsa20-Poly1305`,
+                `🔐 - Key derivation: PBKDF2, ${KEY_ITERATIONS} iterations`,
                 '🔐 ───────────────────────────────────────────────────────────────',
-                '🔐 Step 3.2: GENERATING CRYPTO MATERIAL',
-                '🔐 ───────────────────────────────────────────────────────────────',
-                `🔐 Salt: ${salt.length} bytes (80 bits) - for key derivation`,
-                `🔐 Nonce seed: ${nonceSeed.length} bytes (80 bits) - for encryption`,
-                `🔐 Expanded nonce: ${nonce.length} bytes (192 bits) - NaCl requirement`,
-                `🔐 Key derivation: PBKDF2 with ${KEY_ITERATIONS} iterations`,
-                '🔐 ───────────────────────────────────────────────────────────────',
-                '🔐 Step 3.3: ENCRYPTION (NaCl secretbox)',
-                '🔐 ───────────────────────────────────────────────────────────────',
-                `🔐 Algorithm: XSalsa20-Poly1305 (authenticated encryption)`,
-                `🔐 Plain text: ${plain.length} bytes`,
-                `🔐 Cipher text: ${cipher.length} bytes`,
-                `🔐 Auth tag overhead: ${cipher.length - plain.length} bytes (Poly1305)`,
-                '🔐 ───────────────────────────────────────────────────────────────',
-                '🔐 Step 3.4: BINARY STRUCTURE',
-                '🔐 ───────────────────────────────────────────────────────────────',
-                `🔐 [salt(${salt.length})] + [nonce_seed(${nonceSeed.length})] + [cipher(${cipher.length})]`,
+                `🔐 Binary structure: [salt(10)] + [nonce_seed(10)] + [cipher(${cipher.length})]`,
                 `🔐 Total binary: ${rawBinarySize} bytes`,
-                `🔐 Crypto overhead: ${salt.length + nonceSeed.length} bytes (salt + nonce seed)`,
-                '🔐 ───────────────────────────────────────────────────────────────',
-                '🔐 Step 3.5: BASE64 ENCODING',
-                '🔐 ───────────────────────────────────────────────────────────────',
-                `🔐 Binary size: ${rawBinarySize} bytes`,
-                `🔐 Base64 size: ~${base64Size} chars (4/3 expansion)`,
-                `🔐 URL-safe: yes (using - and _ instead of + and /)`,
                 '🔐 ═══════════════════════════════════════════════════════════════'
             ].join('\n');
             
-            // Log to console
             console.log('[DEBUG] Encryption Details:', {
                 input: jsonString.length,
                 utf8: plain.length,
@@ -326,8 +354,7 @@ window.CryptoUtils = (function() {
                 cipher: cipher.length,
                 authTagOverhead: cipher.length - plain.length,
                 totalBinary: rawBinarySize,
-                cryptoOverhead: salt.length + nonceSeed.length,
-                estimatedBase64: base64Size
+                cryptoOverhead: salt.length + nonceSeed.length
             });
             
             // Add to chat as a single system message if chat manager is available
@@ -353,7 +380,35 @@ window.CryptoUtils = (function() {
         fullMessage.set(cipher, offset);
         
         // Convert directly to URL-safe base64
-        return encodeBase64UrlSafe(fullMessage);
+        const base64Result = encodeBase64UrlSafe(fullMessage);
+        
+        // STEP 5: Show base64 encoding debug
+        if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links') && !suppressDebug) {
+            const base64Message = [
+                '📦 ═══════════════════════════════════════════════════════════════',
+                '📦 STEP 5: BASE64 ENCODING',
+                '📦 ═══════════════════════════════════════════════════════════════',
+                `📦 Binary input: ${fullMessage.length} bytes`,
+                `📦 Base64 output: ${base64Result.length} chars`,
+                `📦 Expansion ratio: ${((base64Result.length / fullMessage.length) * 100).toFixed(1)}%`,
+                `📦 Overhead: ${base64Result.length - fullMessage.length} chars`,
+                '📦 ───────────────────────────────────────────────────────────────',
+                '📦 Encoding: URL-safe (using - and _ instead of + and /)',
+                '📦 ═══════════════════════════════════════════════════════════════'
+            ].join('\n');
+            
+            console.log('[DEBUG] Base64 Encoding:', {
+                binarySize: fullMessage.length,
+                base64Size: base64Result.length,
+                expansion: ((base64Result.length / fullMessage.length) * 100).toFixed(1) + '%'
+            });
+            
+            if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
+                window.aiHackare.chatManager.addSystemMessage(base64Message, 'debug-message debug-shared-links');
+            }
+        }
+        
+        return base64Result;
     }
     
     /**
@@ -364,108 +419,45 @@ window.CryptoUtils = (function() {
      */
     function decryptData(encryptedData, password) {
         try {
-            // Convert from URL-safe base64 directly to Uint8Array
+            // Convert from URL-safe base64 to Uint8Array
             const data = decodeBase64UrlSafe(encryptedData);
             
-            // Detect format based on total size
-            // New format: salt(10) + nonceSeed(10) + cipher
-            // Legacy format: salt(16) + nonce(24) + cipher
-            
-            let salt, nonce, cipher;
-            
-            // Try new format first (10+10)
-            if (data.length >= (SALT_LENGTH + NONCE_SEED_LENGTH + 16)) {
-                // Assume new format
-                let offset = 0;
-                salt = data.slice(offset, offset + SALT_LENGTH);
-                offset += SALT_LENGTH;
-                
-                const nonceSeed = data.slice(offset, offset + NONCE_SEED_LENGTH);
-                offset += NONCE_SEED_LENGTH;
-                
-                cipher = data.slice(offset);
-                
-                // Expand nonce seed to full nonce
-                nonce = expandNonceSeed(nonceSeed);
-                
-                // Try to decrypt with new format
-                const key = deriveSeed(password, salt);
-                const plain = nacl.secretbox.open(cipher, nonce, key);
-                
-                if (plain) {
-                    // Success with new format
-                    const plainText = nacl.util.encodeUTF8(plain);
-                    try {
-                        return JSON.parse(plainText);
-                    } catch (jsonError) {
-                        return null;
-                    }
-                }
+            // Current format: salt(10) + nonceSeed(10) + cipher
+            if (data.length < (SALT_LENGTH + NONCE_SEED_LENGTH + 16)) {
+                return null; // Too small to be valid
             }
             
-            // If new format failed or size doesn't match, try legacy format (16+24)
-            if (data.length >= (LEGACY_SALT_LENGTH + NONCE_LENGTH + 16)) {
-                let offset = 0;
-                salt = data.slice(offset, offset + LEGACY_SALT_LENGTH);
-                offset += LEGACY_SALT_LENGTH;
-                
-                nonce = data.slice(offset, offset + NONCE_LENGTH);
-                offset += NONCE_LENGTH;
-                
-                cipher = data.slice(offset);
-                
-                // Derive key from password and salt
-                const key = deriveSeed(password, salt);
-                
-                // Decrypt with secretbox
-                const plain = nacl.secretbox.open(cipher, nonce, key);
-                
-                if (plain) {
-                    // Success with legacy format
-                    const plainText = nacl.util.encodeUTF8(plain);
-                    try {
-                        return JSON.parse(plainText);
-                    } catch (jsonError) {
-                        return null;
-                    }
-                }
+            // Extract components
+            let offset = 0;
+            const salt = data.slice(offset, offset + SALT_LENGTH);
+            offset += SALT_LENGTH;
+            
+            const nonceSeed = data.slice(offset, offset + NONCE_SEED_LENGTH);
+            offset += NONCE_SEED_LENGTH;
+            
+            const cipher = data.slice(offset);
+            
+            // Expand nonce seed to full nonce
+            const nonce = expandNonceSeed(nonceSeed);
+            
+            // Derive key and decrypt
+            const key = deriveSeed(password, salt);
+            const plain = nacl.secretbox.open(cipher, nonce, key);
+            
+            if (!plain) {
+                return null; // Decryption failed
             }
             
-            return null; // Neither format worked
+            // Convert to string and parse JSON
+            const plainText = nacl.util.encodeUTF8(plain);
+            try {
+                return JSON.parse(plainText);
+            } catch (jsonError) {
+                return null; // Invalid JSON
+            }
             
         } catch (error) {
-            // Decryption failed - try with standard base64 for backward compatibility
-            try {
-                const data = nacl.util.decodeBase64(encryptedData);
-                
-                // Try legacy format with standard base64
-                if (data.length >= (LEGACY_SALT_LENGTH + NONCE_LENGTH + 16)) {
-                    let offset = 0;
-                    const salt = data.slice(offset, offset + LEGACY_SALT_LENGTH);
-                    offset += LEGACY_SALT_LENGTH;
-                    
-                    const nonce = data.slice(offset, offset + NONCE_LENGTH);
-                    offset += NONCE_LENGTH;
-                    
-                    const cipher = data.slice(offset);
-                    
-                    const key = deriveSeed(password, salt);
-                    const plain = nacl.secretbox.open(cipher, nonce, key);
-                    
-                    if (plain) {
-                        const plainText = nacl.util.encodeUTF8(plain);
-                        try {
-                            return JSON.parse(plainText);
-                        } catch (jsonError) {
-                            return null;
-                        }
-                    }
-                }
-                
-                return null;
-            } catch (backwardCompatError) {
-                return null;
-            }
+            return null; // Any error means decryption failed
         }
     }
     
@@ -474,6 +466,7 @@ window.CryptoUtils = (function() {
         deriveSeed: deriveSeed,
         getKeyPair: getKeyPair,
         encryptData: encryptData,
+        encryptShareLink: encryptShareLink,  // New dedicated function for share links
         decryptData: decryptData,
         encodeBase64UrlSafe: encodeBase64UrlSafe,
         decodeBase64UrlSafe: decodeBase64UrlSafe,

@@ -293,21 +293,103 @@ window.CompressionUtils = (function() {
      * @param {Object} payload - The payload to compress
      * @returns {Promise<string>} Compressed string
      */
-    async function compressPayload(payload) {
+    async function compressPayload(payload, suppressDebug = false) {
         try {
-            // Step 1: Map keys to compact form
-            const mapped = mapKeys(payload);
+            const originalJson = JSON.stringify(payload);
             
-            // Step 2: Convert to JSON
-            const json = JSON.stringify(mapped);
+            // Step 1: Map keys to compact form  
+            const mapped = mapKeys(payload);
+            const mappedJson = JSON.stringify(mapped);
+            
+            // STEP 2: Debug logging for key mapping
+            if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links') && !suppressDebug) {
+                // Count mapped keys
+                const keyMappingExamples = [];
+                let totalKeysSaved = 0;
+                
+                // Check top-level keys
+                Object.keys(payload).forEach(key => {
+                    if (KEY_MAP[key]) {
+                        const saved = key.length - KEY_MAP[key].length;
+                        totalKeysSaved += saved;
+                        keyMappingExamples.push(`  "${key}" → "${KEY_MAP[key]}" (saved ${saved} chars)`);
+                    }
+                });
+                
+                // Check nested keys in data object
+                if (payload.data && typeof payload.data === 'object') {
+                    Object.keys(payload.data).forEach(key => {
+                        if (KEY_MAP[key]) {
+                            const saved = key.length - KEY_MAP[key].length;
+                            totalKeysSaved += saved;
+                            keyMappingExamples.push(`  "data.${key}" → "${KEY_MAP[key]}" (saved ${saved} chars)`);
+                        }
+                    });
+                }
+                
+                const keyMappingMessage = [
+                    '🔑 ═══════════════════════════════════════════════════════════════',
+                    '🔑 STEP 2: KEY MAPPING',
+                    '🔑 ═══════════════════════════════════════════════════════════════',
+                    `🔑 Original JSON: ${originalJson.length} chars`,
+                    `🔑 After key mapping: ${mappedJson.length} chars`,
+                    `🔑 Space saved: ${originalJson.length - mappedJson.length} chars (${(((originalJson.length - mappedJson.length)/originalJson.length)*100).toFixed(1)}%)`,
+                    '🔑 ───────────────────────────────────────────────────────────────',
+                    '🔑 Keys mapped:',
+                    ...keyMappingExamples,
+                    '🔑 ───────────────────────────────────────────────────────────────',
+                    `🔑 Total characters saved by key mapping: ${totalKeysSaved}`,
+                    '🔑 ═══════════════════════════════════════════════════════════════'
+                ].join('\n');
+                
+                console.log('[DEBUG] Key Mapping:', {
+                    original: originalJson.length,
+                    mapped: mappedJson.length,
+                    saved: originalJson.length - mappedJson.length,
+                    ratio: ((mappedJson.length / originalJson.length) * 100).toFixed(1) + '%'
+                });
+                
+                // Add to chat
+                if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
+                    window.aiHackare.chatManager.addSystemMessage(keyMappingMessage, 'debug-message debug-shared-links');
+                }
+            }
             
             // Step 3: Apply real deflate compression
-            const compressedBytes = await realCompress(json);
+            const compressedBytes = await realCompress(mappedJson);
             
             // Step 4: Base64 encode for URL safety
             const compressed = base64EncodeBytes(compressedBytes);
             
-            // Debug logging
+            // STEP 3: Debug logging for compression
+            if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links') && !suppressDebug) {
+                const compressionDetails = [
+                    '🗜️ ═══════════════════════════════════════════════════════════════',
+                    '🗜️ STEP 3: DEFLATE COMPRESSION',
+                    '🗜️ ═══════════════════════════════════════════════════════════════',
+                    `🗜️ Input (key-mapped JSON): ${mappedJson.length} chars`,
+                    `🗜️ Output (compressed): ${compressed.length} chars`,
+                    `🗜️ Compression ratio: ${((compressed.length / mappedJson.length) * 100).toFixed(1)}%`,
+                    `🗜️ Space saved: ${mappedJson.length - compressed.length} chars`,
+                    '🗜️ ───────────────────────────────────────────────────────────────',
+                    '🗜️ Algorithm: DEFLATE (gzip-compatible)',
+                    '🗜️ Encoding: Base64 for URL safety',
+                    '🗜️ ═══════════════════════════════════════════════════════════════'
+                ].join('\n');
+                
+                console.log('[DEBUG] Compression:', {
+                    input: mappedJson.length,
+                    output: compressed.length,
+                    ratio: ((compressed.length / mappedJson.length) * 100).toFixed(1) + '%'
+                });
+                
+                // Add to chat
+                if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
+                    window.aiHackare.chatManager.addSystemMessage(compressionDetails, 'debug-message debug-shared-links');
+                }
+            }
+            
+            // Also log to debug service if available
             if (window.DebugService && window.DebugService.debugLog) {
                 const originalSize = JSON.stringify(payload).length;
                 const compressedSize = compressed.length;

@@ -600,17 +600,83 @@ window.CompressionUtils = (function() {
     /**
      * Compress a payload for sharing
      * @param {Object} payload - The payload to compress
+     * @param {boolean} suppressDebug - Whether to suppress debug messages (for size calculation)
      * @returns {string} Compressed string (raw binary, NOT base64)
      */
-    function compressPayload(payload) {
+    function compressPayload(payload, suppressDebug = false) {
+        console.log('[COMPRESSION] compressPayload called with suppressDebug:', suppressDebug);
+        
+        // Debug: Show key mapping as Step 2
+        const originalJson = JSON.stringify(payload);
+        
         // Step 1: Map keys to compact form
         const mapped = mapKeys(payload);
+        const mappedJson = JSON.stringify(mapped);
         
-        // Step 2: Convert to JSON
-        const json = JSON.stringify(mapped);
+        // STEP 2: Debug logging for key mapping
+        const step2Enabled = !suppressDebug && window.DebugService && window.DebugService.isCategoryEnabled && window.DebugService.isCategoryEnabled('shared-links');
+        console.log('[COMPRESSION] Step 2 debug enabled?', step2Enabled, {
+            suppressDebug,
+            hasDebugService: !!window.DebugService,
+            hasIsCategoryEnabled: !!(window.DebugService && window.DebugService.isCategoryEnabled),
+            sharedLinksEnabled: window.DebugService && window.DebugService.isCategoryEnabled ? window.DebugService.isCategoryEnabled('shared-links') : 'N/A'
+        });
+        if (step2Enabled) {
+            // Count mapped keys
+            const keyMappingExamples = [];
+            let totalKeysSaved = 0;
+            
+            // Check top-level keys
+            Object.keys(payload).forEach(key => {
+                if (KEY_MAP[key]) {
+                    const saved = key.length - KEY_MAP[key].length;
+                    totalKeysSaved += saved;
+                    keyMappingExamples.push(`  "${key}" → "${KEY_MAP[key]}" (saved ${saved} chars)`);
+                }
+            });
+            
+            // Check nested keys in data object
+            if (payload.data && typeof payload.data === 'object') {
+                Object.keys(payload.data).forEach(key => {
+                    if (KEY_MAP[key]) {
+                        const saved = key.length - KEY_MAP[key].length;
+                        totalKeysSaved += saved;
+                        keyMappingExamples.push(`  "data.${key}" → "${KEY_MAP[key]}" (saved ${saved} chars)`);
+                    }
+                });
+            }
+            
+            const keyMappingMessage = [
+                '🔑 ═══════════════════════════════════════════════════════════════',
+                '🔑 STEP 2: KEY MAPPING',
+                '🔑 ═══════════════════════════════════════════════════════════════',
+                `🔑 Original JSON: ${originalJson.length} chars`,
+                `🔑 After key mapping: ${mappedJson.length} chars`,
+                `🔑 Space saved: ${originalJson.length - mappedJson.length} chars (${(((originalJson.length - mappedJson.length)/originalJson.length)*100).toFixed(1)}%)`,
+                '🔑 ───────────────────────────────────────────────────────────────',
+                '🔑 Keys mapped:',
+                ...keyMappingExamples,
+                '🔑 ───────────────────────────────────────────────────────────────',
+                `🔑 Total characters saved by key mapping: ${totalKeysSaved}`,
+                '🔑 ═══════════════════════════════════════════════════════════════'
+            ].join('\n');
+            
+            // Log to console
+            console.log('[DEBUG] Key Mapping:', {
+                original: originalJson.length,
+                mapped: mappedJson.length,
+                saved: originalJson.length - mappedJson.length,
+                ratio: ((mappedJson.length / originalJson.length) * 100).toFixed(1) + '%'
+            });
+            
+            // Add to chat
+            if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
+                window.aiHackare.chatManager.addSystemMessage(keyMappingMessage, 'debug-message debug-shared-links');
+            }
+        }
         
-        // Step 3: Compress with LZ-String (raw binary, NOT base64)
-        const compressed = LZString.compress(json);
+        // Step 2: Compress with LZ-String (raw binary, NOT base64)
+        const compressed = LZString.compress(mappedJson);
         
         // Debug logging
         if (window.DebugService && window.DebugService.debugLog) {
@@ -621,63 +687,20 @@ window.CompressionUtils = (function() {
                 `🗜️ Compression: ${originalSize} → ${compressedSize} chars (${reduction}% reduction)`);
         }
         
-        // Enhanced debug logging for shared-links category
-        // Only show for actual share links (>200 chars), not config values
-        if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links') && JSON.stringify(payload).length > 200) {
-            const originalJson = JSON.stringify(payload);
-            const mappedJson = json;
-            
-            // Show key mapping examples - check what keys are actually present
-            const keyMappingExamples = [];
-            const mappedKeysCount = {};
-            
-            // Count how many keys were actually mapped
-            Object.keys(payload).forEach(key => {
-                if (KEY_MAP[key]) {
-                    keyMappingExamples.push(`  "${key}" → "${KEY_MAP[key]}"`);
-                    mappedKeysCount[key] = KEY_MAP[key];
-                }
-            });
-            
-            // Also check nested objects (like in data field)
-            if (payload.data && typeof payload.data === 'object') {
-                Object.keys(payload.data).forEach(key => {
-                    if (KEY_MAP[key]) {
-                        keyMappingExamples.push(`  "data.${key}" → "${KEY_MAP[key]}"`);
-                        mappedKeysCount[`data.${key}`] = KEY_MAP[key];
-                    }
-                });
-            }
-            
-            if (keyMappingExamples.length === 0) {
-                keyMappingExamples.push('  (No mappable keys found in payload)');
-            }
-            
+        // STEP 3: Debug logging for LZ compression  
+        // Always show for share links (not suppressed = share link generation)
+        if (!suppressDebug && window.DebugService && window.DebugService.isCategoryEnabled && window.DebugService.isCategoryEnabled('shared-links')) {
             const compressionDetails = [
                 '🗜️ ═══════════════════════════════════════════════════════════════',
-                '🗜️ COMPRESSION DETAILS (Inside CompressionUtils)',
+                '🗜️ STEP 3: LZ-STRING COMPRESSION',
                 '🗜️ ═══════════════════════════════════════════════════════════════',
-                '🗜️ Step 2.1: KEY MAPPING',
+                `🗜️ Input (key-mapped JSON): ${mappedJson.length} chars`,
+                `🗜️ Output (compressed): ${compressed.length} chars`,
+                `🗜️ Compression ratio: ${((compressed.length / mappedJson.length) * 100).toFixed(1)}%`,
+                `🗜️ Space saved: ${mappedJson.length - compressed.length} chars`,
                 '🗜️ ───────────────────────────────────────────────────────────────',
-                `🗜️ Original JSON: ${originalJson.length} chars`,
-                `🗜️ After key mapping: ${mappedJson.length} chars`,
-                `🗜️ Key mapping saved: ${originalJson.length - mappedJson.length} chars (${(((originalJson.length - mappedJson.length)/originalJson.length)*100).toFixed(1)}%)`,
-                '🗜️ ───────────────────────────────────────────────────────────────',
-                '🗜️ Key mappings applied:',
-                ...keyMappingExamples,
-                '🗜️ ───────────────────────────────────────────────────────────────',
-                '🗜️ Step 2.2: LZ-STRING COMPRESSION',
-                '🗜️ ───────────────────────────────────────────────────────────────',
-                `🗜️ Input to LZ: ${mappedJson.length} chars`,
-                `🗜️ Output from LZ: ${compressed.length} chars`,
-                `🗜️ LZ compression ratio: ${((compressed.length / mappedJson.length) * 100).toFixed(1)}%`,
-                `🗜️ LZ saved: ${mappedJson.length - compressed.length} chars`,
-                '🗜️ ───────────────────────────────────────────────────────────────',
-                '🗜️ OVERALL COMPRESSION:',
-                `🗜️ Original: ${originalJson.length} chars`,
-                `🗜️ Final: ${compressed.length} chars`,
-                `🗜️ Total ratio: ${((compressed.length / originalJson.length) * 100).toFixed(1)}%`,
-                `🗜️ Total saved: ${originalJson.length - compressed.length} chars`,
+                `🗜️ Compressed data preview (first 50 chars):`,
+                `🗜️ ${compressed.substring(0, 50)}...`,
                 '🗜️ ═══════════════════════════════════════════════════════════════'
             ].join('\n');
             

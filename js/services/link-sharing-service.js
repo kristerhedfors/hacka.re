@@ -64,6 +64,8 @@ window.LinkSharingService = (function() {
      * @returns {string} Shareable URL with #gpt= fragment
      */
     async function createCustomShareableLink(payload, password, options = {}) {
+        // Check if debug should be suppressed (e.g., for size calculation)
+        const suppressDebug = options.suppressDebug || false;
         let finalPayload;
         
         // If no payload provided, collect current configuration
@@ -220,9 +222,8 @@ window.LinkSharingService = (function() {
             data: finalPayload
         };
         
-        // Debug logging for shared-links category - show complete transformation pipeline
-        if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links')) {
-            // Step 1: Original payload (showing pretty for debug, but using minified for processing)
+        // STEP 1: Log original payload
+        if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links') && !suppressDebug) {
             const minifiedJson = JSON.stringify(sharePayload);
             const prettyJson = JSON.stringify(sharePayload, null, 2);
             
@@ -239,105 +240,63 @@ window.LinkSharingService = (function() {
                 '📋 ═══════════════════════════════════════════════════════════════'
             ].join('\n');
             
-            console.log('[DEBUG] Step 1 - Original Payload:', sharePayload);
-            
+            // Add Step 1 to chat immediately
             if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
                 window.aiHackare.chatManager.addSystemMessage(step1Message, 'debug-message debug-shared-links');
             }
+            console.log('[DEBUG] Step 1 - Original Payload:', sharePayload);
         }
         
-        // Compress the entire payload including master key
-        const compressedPayload = await CompressionUtils.compressPayload(sharePayload);
+        // STEPS 2 & 3: Compress (key mapping + LZ compression)
+        const compressedPayload = await CompressionUtils.compressPayload(sharePayload, suppressDebug);
         
-        // Step 2 debug: After compression
-        if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links')) {
+        // Console log compression result
+        if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links') && !suppressDebug) {
             const minifiedJson = JSON.stringify(sharePayload);
-            const step2Message = [
-                '🗜️ ═══════════════════════════════════════════════════════════════',
-                '🗜️ STEP 2: AFTER COMPRESSION (Key mapping + LZ-String)',
-                '🗜️ ═══════════════════════════════════════════════════════════════',
-                `🗜️ Input (minified JSON): ${minifiedJson.length} chars`,
-                `🗜️ Output (compressed): ${compressedPayload.length} chars`,
-                `🗜️ Compression ratio: ${((compressedPayload.length / minifiedJson.length) * 100).toFixed(1)}%`,
-                `🗜️ Space saved: ${minifiedJson.length - compressedPayload.length} chars`,
-                '🗜️ ───────────────────────────────────────────────────────────────',
-                `🗜️ Compressed data preview (first 100 chars):`,
-                `🗜️ ${compressedPayload.substring(0, 100)}...`,
-                '🗜️ ═══════════════════════════════════════════════════════════════'
-            ].join('\n');
-            
-            console.log('[DEBUG] Step 2 - After Compression:', {
+            console.log('[DEBUG] After Compression (Steps 2+3):', {
                 inputSize: minifiedJson.length,
                 outputSize: compressedPayload.length,
                 ratio: ((compressedPayload.length / minifiedJson.length) * 100).toFixed(1) + '%'
             });
-            
-            if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
-                window.aiHackare.chatManager.addSystemMessage(step2Message, 'debug-message debug-shared-links');
-            }
         }
         
-        // Encrypt with password (password only decrypts the link, master key decrypts the data)
-        const encryptedData = CryptoUtils.encryptData(compressedPayload, password);
+        // STEPS 4 & 5: Encrypt and Base64 encode (using dedicated share link function)
+        const encryptedData = CryptoUtils.encryptShareLink(compressedPayload, password, suppressDebug);
         
-        // Step 3 debug: After encryption and base64
-        if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links')) {
-            // The encryptedData is already base64 encoded by CryptoUtils
-            const step3Message = [
-                '🔐 ═══════════════════════════════════════════════════════════════',
-                '🔐 STEP 3: AFTER ENCRYPTION + BASE64',
-                '🔐 ═══════════════════════════════════════════════════════════════',
-                `🔐 Compressed input: ${compressedPayload.length} chars`,
-                `🔐 Encrypted + base64: ${encryptedData.length} chars`,
-                `🔐 Encryption overhead: ${encryptedData.length - compressedPayload.length} chars`,
-                '🔐 ───────────────────────────────────────────────────────────────',
-                '🔐 Encryption components:',
-                `🔐 - Salt: 10 bytes (80 bits)`,
-                `🔐 - Nonce seed: 10 bytes (80 bits)`,
-                `🔐 - Cipher: ~${compressedPayload.length} bytes`,
-                `🔐 - Total raw: ~${20 + compressedPayload.length} bytes`,
-                `🔐 - Base64 expansion: ~33% (${Math.ceil((20 + compressedPayload.length) * 4/3)} chars)`,
-                '🔐 ───────────────────────────────────────────────────────────────',
-                `🔐 Encrypted data preview (first 100 chars):`,
-                `🔐 ${encryptedData.substring(0, 100)}...`,
-                '🔐 ═══════════════════════════════════════════════════════════════'
-            ].join('\n');
-            
-            console.log('[DEBUG] Step 3 - After Encryption:', {
+        // Console log encryption result
+        if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links') && !suppressDebug) {
+            console.log('[DEBUG] After Encryption + Base64 (Steps 4+5):', {
                 compressedSize: compressedPayload.length,
                 encryptedSize: encryptedData.length,
                 overhead: encryptedData.length - compressedPayload.length
             });
-            
-            if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
-                window.aiHackare.chatManager.addSystemMessage(step3Message, 'debug-message debug-shared-links');
-            }
         }
         
-        // Create URL with hash fragment
+        // STEP 6: Create final URL
         const baseUrl = _location.href.split('#')[0];
         const finalUrl = `${baseUrl}#gpt=${encryptedData}`;
         
-        // Step 4: Final URL
-        if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links')) {
+        // Log Step 6
+        if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links') && !suppressDebug) {
             const minifiedJson = JSON.stringify(sharePayload);
             
-            const step4Message = [
+            const step6Message = [
                 '🔗 ═══════════════════════════════════════════════════════════════',
-                '🔗 STEP 4: FINAL SHARE LINK',
+                '🔗 STEP 6: FINAL SHARE LINK',
                 '🔗 ═══════════════════════════════════════════════════════════════',
                 `🔗 Base URL: ${baseUrl} (${baseUrl.length} chars)`,
                 `🔗 Hash fragment: #gpt=${encryptedData.substring(0, 50)}...`,
                 `🔗 Total URL length: ${finalUrl.length} chars`,
                 '🔗 ───────────────────────────────────────────────────────────────',
                 '🔗 COMPLETE TRANSFORMATION PIPELINE:',
-                `🔗 1. Original (minified) JSON: ${minifiedJson.length} chars`,
-                `🔗 2. After key mapping + compression: ${compressedPayload.length} chars (${((compressedPayload.length/minifiedJson.length)*100).toFixed(1)}%)`,
-                `🔗 3. After encryption + base64: ${encryptedData.length} chars (${((encryptedData.length/compressedPayload.length)*100).toFixed(1)}%)`,
-                `🔗 4. Final URL: ${finalUrl.length} chars`,
+                `🔗 1. Original JSON: ${minifiedJson.length} chars`,
+                `🔗 2. Key mapping: Reduced by key replacements`,
+                `🔗 3. LZ compression: Further reduction`,
+                `🔗 4. Encryption: Added auth tag (16 bytes)`,
+                `🔗 5. Base64: ~33% expansion`,
+                `🔗 6. Final URL: ${finalUrl.length} chars`,
                 '🔗 ───────────────────────────────────────────────────────────────',
-                `🔗 Total transformation: ${minifiedJson.length} → ${finalUrl.length} chars`,
-                `🔗 Overall ratio: ${((finalUrl.length/minifiedJson.length)*100).toFixed(1)}%`,
+                `🔗 Total: ${minifiedJson.length} → ${finalUrl.length} chars (${((finalUrl.length/minifiedJson.length)*100).toFixed(1)}%)`,
                 '🔗 ───────────────────────────────────────────────────────────────',
                 '🔗 Platform compatibility:',
                 `🔗 ✅ Browser URL bar: ${finalUrl.length < 2000 ? 'Yes' : 'No'} (limit ~2000)`,
@@ -348,7 +307,7 @@ window.LinkSharingService = (function() {
                 '🔗 ═══════════════════════════════════════════════════════════════'
             ].join('\n');
             
-            console.log('[DEBUG] Step 4 - Final URL:', {
+            console.log('[DEBUG] Step 6 - Final URL:', {
                 baseUrl: baseUrl,
                 hashLength: encryptedData.length,
                 totalLength: finalUrl.length,
@@ -362,7 +321,7 @@ window.LinkSharingService = (function() {
             });
             
             if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
-                window.aiHackare.chatManager.addSystemMessage(step4Message, 'debug-message debug-shared-links');
+                window.aiHackare.chatManager.addSystemMessage(step6Message, 'debug-message debug-shared-links');
             }
         }
         
