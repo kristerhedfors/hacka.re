@@ -2,6 +2,9 @@
 
 Guidance for Claude Code (claude.ai/code) when working with this repository.
 
+## CRITICAL: Working Directory Management
+**ALWAYS run `pwd` as the FIRST command when starting any task that involves file system operations or relative paths.** The working directory may not be where you expect, especially after context switches or when working with subprojects.
+
 ## Project Overview
 
 hacka.re - Privacy-focused, serverless chat interface for OpenAI-compatible APIs. Pure HTML/CSS/ES6 JavaScript, entirely client-side, no backend/build system/TypeScript.
