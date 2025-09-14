@@ -17,43 +17,86 @@ Port: 8000
 Project Root: /Users/user/dev/hacka.re
 ==================================================
 Checking for existing HTTP server processes on port 8000...
-Found existing processes: 34324
+Found existing processes: 61362
 Killing existing processes...
 Processes killed.
 Changing to project root directory: /Users/user/dev/hacka.re
 Starting Python HTTP server on port 8000...
 Failed to start server.
-Running Core Functionality tests with chromium browser...
+Running Core Functionality tests with chromium browser in batches...
 Test filter: test_page or test_api or test_chat or test_welcome_modal
 
+\n=== Batch 1: Page Tests ===
 ============================= test session starts ==============================
 platform darwin -- Python 3.13.7, pytest-8.4.2, pluggy-1.6.0
 rootdir: /Users/user/dev/hacka.re/_tests/playwright
 configfile: pytest.ini
-testpaths: .
 plugins: asyncio-0.26.0, base-url-2.1.0, playwright-0.7.1
 asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
-collected 1068 items / 1010 deselected / 58 selected
+collected 4 items
 
-shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_info[chromium0] PASSED [  1%]
-shodan/test_shodan_account_apis.py::TestShodanAPIInfo::test_api_plan_details[chromium0] PASSED [  3%]
-test_api.py::test_api_key_configuration[chromium0] PASSED                [  5%]
-test_api.py::test_model_selection[chromium0] PASSED                      [  6%]
-test_api_key_detection_simple.py::test_api_key_detection_simple[chromium0] PASSED [  8%]
-test_api_key_enter.py::test_api_key_modal_enter_key[chromium0] PASSED    [ 10%]
-test_api_key_persistence_debug.py::test_api_key_persistence_scenario_1_basic[chromium0] PASSED [ 12%]
-test_api_key_persistence_debug.py::test_api_key_persistence_scenario_2_retry_helper[chromium0] PASSED [ 13%]
-test_api_key_persistence_debug.py::test_api_key_persistence_scenario_3_multiple_attempts[chromium0] PASSED [ 15%]
-test_api_key_persistence_debug.py::test_api_key_persistence_scenario_4_timing_analysis[chromium0] PASSED [ 17%]
-test_chat.py::test_chat_message_send_receive[chromium0] PASSED           [ 18%]
-test_chat_input_performance.py::test_chat_input_performance_bottleneck[chromium0] PASSED [ 20%]
-test_chat_input_performance.py::test_identify_specific_bottleneck_handlers[chromium0] PASSED [ 22%]
-test_chat_input_performance_simple.py::test_chat_input_simple_performance[chromium0] PASSED [ 24%]
-test_chat_input_performance_simple.py::test_measure_debounce_performance[chromium0] PASSED [ 25%]
-test_chat_no_mock.py::test_chat_message_send_receive[chromium0] SKIPPED  [ 27%]
-test_chat_regression.py::test_textarea_basic_functionality[chromium0] PASSED [ 29%]
-test_chat_regression.py::test_height_constraints[chromium0] PASSED       [ 31%]
-test_chat_regression.py::test_context_update_debouncing[chromium0] PASSED [ 32%]
-test_chat_regression.py::test_voice_control_integration[chromium0] PASSED [ 34%]
-test_chat_regression.py::test_mobile_handlers_intact[chromium0] PASSED   [ 36%]
-test_chat_regression.py::test_chat_message_sending[chromium0] 
+test_page.py::test_page_loads[chromium0] PASSED                          [ 25%]
+test_page.py::test_chat_interface_elements[chromium0] PASSED             [ 50%]
+test_page.py::test_page_loads[chromium1] PASSED                          [ 75%]
+test_page.py::test_chat_interface_elements[chromium1] PASSED             [100%]
+
+============================== 4 passed in 11.44s ==============================
+\n=== Batch 2: API Tests ===
+============================= test session starts ==============================
+platform darwin -- Python 3.13.7, pytest-8.4.2, pluggy-1.6.0
+rootdir: /Users/user/dev/hacka.re/_tests/playwright
+configfile: pytest.ini
+plugins: asyncio-0.26.0, base-url-2.1.0, playwright-0.7.1
+asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 4 items
+
+test_api.py::test_api_key_configuration[chromium0] PASSED                [ 25%]
+test_api.py::test_model_selection[chromium0] PASSED                      [ 50%]
+test_api.py::test_api_key_configuration[chromium1] PASSED                [ 75%]
+test_api.py::test_model_selection[chromium1] PASSED                      [100%]
+
+============================== 4 passed in 30.87s ==============================
+\n=== Batch 3: Chat Tests ===
+============================= test session starts ==============================
+platform darwin -- Python 3.13.7, pytest-8.4.2, pluggy-1.6.0
+rootdir: /Users/user/dev/hacka.re/_tests/playwright
+configfile: pytest.ini
+plugins: asyncio-0.26.0, base-url-2.1.0, playwright-0.7.1
+asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 2 items
+
+test_chat.py::test_chat_message_send_receive[chromium0] PASSED           [ 50%]
+test_chat.py::test_chat_message_send_receive[chromium1] PASSED           [100%]
+
+============================== 2 passed in 31.68s ==============================
+\n=== Batch 4: Welcome Modal Tests ===
+============================= test session starts ==============================
+platform darwin -- Python 3.13.7, pytest-8.4.2, pluggy-1.6.0
+rootdir: /Users/user/dev/hacka.re/_tests/playwright
+configfile: pytest.ini
+plugins: asyncio-0.26.0, base-url-2.1.0, playwright-0.7.1
+asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 0 items
+
+============================ no tests ran in 0.01s =============================
+Generating test results markdown files...
+No arguments provided. Using default files.
+Processing default files...
+Generating markdown report for 'test_output.log' -> 'test_results.md'...
+Markdown report generated: test_results.md
+You can view it with: glow -p test_results.md
+Warning: Input log file 'run_tests.out' not found. Proceeding without test output.
+Generating markdown report for 'run_tests.out' -> 'run_tests.out_bundle.md'...
+Markdown report generated: run_tests.out_bundle.md
+You can view it with: glow -p run_tests.out_bundle.md
+
+All core test output, including any Ctrl+C interruptions, has been captured to run_core_tests.out
+A bundled markdown report has been generated at run_tests.out_bundle.md
+You can view the markdown report with: glow -p run_tests.out_bundle.md
+These files can be used by the coding assistant LLM to analyze test results
+Stopping HTTP server...
+===== Stopping HTTP Server for hacka.re Tests =====
+Server process with PID 37085 is not running.
+Removed PID file: /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt
+==================================================
+Server stopped.

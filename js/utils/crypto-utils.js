@@ -39,11 +39,10 @@
 window.CryptoUtils = (function() {
     // Constants
     const SALT_LENGTH = 10; // 10 bytes for salt (80 bits)
-    const NONCE_SEED_LENGTH = 10; // 10 bytes for nonce seed (80 bits)
-    const NONCE_LENGTH = nacl.box.nonceLength; // 24 bytes - required by NaCl
-    const LEGACY_SALT_LENGTH = 16; // Legacy 16 bytes for backward compatibility
-    const KEY_LENGTH = 32; // seed and secretKey length
-    const KEY_ITERATIONS = 10000; // Number of iterations for key derivation
+    const NONCE_LENGTH_STORED = 10; // 10 bytes for nonce stored in encrypted blob
+    const NONCE_LENGTH_EXPANDED = 24; // 24 bytes required by NaCl after expansion
+    const KEY_LENGTH = 32; // Final key length in bytes
+    const KEY_ITERATIONS = 8192; // Number of iterations for key derivation (power of 2 for efficiency)
     const NAMESPACE_PREFIX = 'hackare_namespace_';
     const MASTER_KEY_PREFIX = 'hackare_master_key_';
     
@@ -159,155 +158,72 @@ window.CryptoUtils = (function() {
     }
     
     /**
-     * Expand a 10-byte nonce seed to a 24-byte nonce
-     * @param {Uint8Array} nonceSeed - The 10-byte seed to expand
-     * @returns {Uint8Array} 24-byte nonce for NaCl
-     */
-    function expandNonceSeed(nonceSeed) {
-        // Use SHA-512 hash to expand 10 bytes to 64 bytes
-        const expanded = nacl.hash(nonceSeed);
-        // Take first 24 bytes as nonce
-        return expanded.slice(0, NONCE_LENGTH);
-    }
-    
-    /**
-     * HMAC-SHA512 implementation using TweetNaCl
-     * @param {Uint8Array} key - The key for HMAC
-     * @param {Uint8Array} message - The message to authenticate
-     * @returns {Uint8Array} HMAC-SHA512 output (64 bytes)
-     */
-    function hmacSHA512(key, message) {
-        const BLOCK_SIZE = 128; // SHA-512 block size is 128 bytes
-        const OPAD = 0x5c;
-        const IPAD = 0x36;
-        
-        // If key is longer than block size, hash it
-        let processedKey = key;
-        if (key.length > BLOCK_SIZE) {
-            processedKey = nacl.hash(key); // SHA-512 hash
-        }
-        
-        // Pad key to block size
-        const paddedKey = new Uint8Array(BLOCK_SIZE);
-        paddedKey.set(processedKey);
-        
-        // Create inner and outer padded keys
-        const innerPadded = new Uint8Array(BLOCK_SIZE);
-        const outerPadded = new Uint8Array(BLOCK_SIZE);
-        
-        for (let i = 0; i < BLOCK_SIZE; i++) {
-            innerPadded[i] = paddedKey[i] ^ IPAD;
-            outerPadded[i] = paddedKey[i] ^ OPAD;
-        }
-        
-        // Inner hash: H(K XOR ipad, message)
-        const innerMessage = new Uint8Array(BLOCK_SIZE + message.length);
-        innerMessage.set(innerPadded);
-        innerMessage.set(message, BLOCK_SIZE);
-        const innerHash = nacl.hash(innerMessage); // SHA-512
-        
-        // Outer hash: H(K XOR opad, inner_hash)
-        const outerMessage = new Uint8Array(BLOCK_SIZE + innerHash.length);
-        outerMessage.set(outerPadded);
-        outerMessage.set(innerHash, BLOCK_SIZE);
-        const outerHash = nacl.hash(outerMessage); // SHA-512
-        
-        return outerHash;
-    }
-    
-    /**
-     * PBKDF2-HMAC-SHA512 implementation
-     * @param {Uint8Array} password - The password bytes
-     * @param {Uint8Array} salt - The salt bytes
-     * @param {number} iterations - Number of iterations
-     * @param {number} keyLength - Desired key length in bytes
-     * @returns {Uint8Array} Derived key
-     */
-    function pbkdf2(password, salt, iterations, keyLength) {
-        const hashLength = 64; // SHA-512 produces 64 bytes
-        const numBlocks = Math.ceil(keyLength / hashLength);
-        const derivedKey = new Uint8Array(numBlocks * hashLength);
-        
-        for (let blockNum = 1; blockNum <= numBlocks; blockNum++) {
-            // Create salt + block number (big-endian)
-            const blockSalt = new Uint8Array(salt.length + 4);
-            blockSalt.set(salt);
-            blockSalt[salt.length] = (blockNum >>> 24) & 0xff;
-            blockSalt[salt.length + 1] = (blockNum >>> 16) & 0xff;
-            blockSalt[salt.length + 2] = (blockNum >>> 8) & 0xff;
-            blockSalt[salt.length + 3] = blockNum & 0xff;
-            
-            // First iteration
-            let u = hmacSHA512(password, blockSalt);
-            let block = new Uint8Array(u);
-            
-            // Remaining iterations
-            for (let i = 1; i < iterations; i++) {
-                u = hmacSHA512(password, u);
-                for (let j = 0; j < hashLength; j++) {
-                    block[j] ^= u[j];
-                }
-            }
-            
-            // Copy block to derived key
-            derivedKey.set(block, (blockNum - 1) * hashLength);
-        }
-        
-        // Return only the requested key length
-        return derivedKey.slice(0, keyLength);
-    }
-    
-    /**
-     * Derive a 32-byte seed from password + salt using PBKDF2-HMAC-SHA512
+     * Derive decryption key from password + salt using iterative SHA-512
+     * Algorithm: 8192 rounds of SHA512(previous_result + salt)
+     * Keeps all 64 bytes on each iteration, only slices at the end
      * @param {string} password - The password to derive the key from
      * @param {Uint8Array} salt - The salt to use for key derivation
-     * @returns {Uint8Array} Derived key
+     * @returns {Uint8Array} Derived key (32 bytes)
      */
-    function deriveSeed(password, salt) {
+    function deriveDecryptionKey(password, salt) {
         // Convert password to Uint8Array
         const passwordBytes = nacl.util.decodeUTF8(password);
         
-        // Use PBKDF2-HMAC-SHA512 with 10000 iterations
-        return pbkdf2(passwordBytes, salt, KEY_ITERATIONS, KEY_LENGTH);
+        // Start with password
+        let result = passwordBytes;
+        
+        // 8192 iterations of: result = SHA512(result + salt)
+        // Keep ALL 64 bytes on each iteration for maximum entropy
+        for (let i = 0; i < KEY_ITERATIONS; i++) {
+            // Combine current result with salt
+            const input = new Uint8Array(result.length + salt.length);
+            input.set(result);
+            input.set(salt, result.length);
+            
+            // Hash it - keep ALL 64 bytes for next iteration
+            result = nacl.hash(input); // SHA-512 produces 64 bytes
+        }
+        
+        // Only slice to 32 bytes at the very end
+        return result.slice(0, KEY_LENGTH);
     }
     
     /**
-     * Derive a master key from password + salt + nonce seed using PBKDF2-HMAC-SHA512
-     * This is used for shared links to derive a master key without transmitting it
+     * Derive a master key from password + salt + nonce using iterative SHA-512
+     * Algorithm: 8192 rounds of SHA512(previous_result + salt + nonce)
+     * Keeps all 64 bytes on each iteration, only slices at the end
      * @param {string} password - The password used for the shared link
-     * @param {Uint8Array} salt - The salt from the encrypted blob
-     * @param {Uint8Array} nonceSeed - The nonce seed from the encrypted blob
+     * @param {Uint8Array} salt - The salt from the encrypted blob (10 bytes)
+     * @param {Uint8Array} nonce - The nonce from the encrypted blob (10 bytes)
      * @returns {string} Hex string of the derived master key
      */
-    function deriveMasterKey(password, salt, nonceSeed) {
+    function deriveMasterKey(password, salt, nonce) {
         // Convert password to Uint8Array
         const passwordBytes = nacl.util.decodeUTF8(password);
         
-        // Combine salt and nonce seed to create a unique salt for master key derivation
-        // This ensures the master key is different from the decryption key
-        const masterSalt = new Uint8Array(salt.length + nonceSeed.length);
-        masterSalt.set(salt);
-        masterSalt.set(nonceSeed, salt.length);
+        // Start with password
+        let result = passwordBytes;
         
-        // Use PBKDF2-HMAC-SHA512 with 10000 iterations
-        const derivedKey = pbkdf2(passwordBytes, masterSalt, KEY_ITERATIONS, KEY_LENGTH);
+        // 8192 iterations of: result = SHA512(result + salt + nonce)
+        // Keep ALL 64 bytes on each iteration for maximum entropy
+        for (let i = 0; i < KEY_ITERATIONS; i++) {
+            // Combine current result with salt AND nonce
+            const input = new Uint8Array(result.length + salt.length + nonce.length);
+            input.set(result);
+            input.set(salt, result.length);
+            input.set(nonce, result.length + salt.length);
+            
+            // Hash it - keep ALL 64 bytes for next iteration
+            result = nacl.hash(input); // SHA-512 produces 64 bytes
+        }
         
-        // Convert to hex string (matching current master key format)
-        return Array.from(derivedKey)
+        // Only slice to 32 bytes at the very end, then convert to hex
+        const finalKey = result.slice(0, KEY_LENGTH);
+        return Array.from(finalKey)
             .map(b => b.toString(16).padStart(2, '0'))
             .join('');
     }
     
-    /**
-     * Generate a key pair from a seed
-     * @param {string} password - The password to derive the seed from
-     * @param {Uint8Array} salt - The salt to use for seed derivation
-     * @returns {Object} Object containing publicKey and secretKey
-     */
-    function getKeyPair(password, salt) {
-        const seed = deriveSeed(password, salt);
-        return nacl.box.keyPair.fromSecretKey(seed);
-    }
     
     /**
      * URL-safe base64 encode (directly from Uint8Array)
@@ -360,21 +276,23 @@ window.CryptoUtils = (function() {
         
         const plain = nacl.util.decodeUTF8(jsonString);
         
-        // Generate salt and derive key
+        // Generate salt (10 bytes) and nonce (10 bytes)
         const salt = nacl.randomBytes(SALT_LENGTH);
-        const key = deriveSeed(password, salt);
+        const nonce = nacl.randomBytes(NONCE_LENGTH_STORED);
         
-        // Generate nonce seed and expand to full nonce
-        const nonceSeed = nacl.randomBytes(NONCE_SEED_LENGTH);
-        const nonce = expandNonceSeed(nonceSeed);
+        // Derive decryption key: 8192 rounds of SHA512(previous + salt)
+        const key = deriveDecryptionKey(password, salt);
+        
+        // Expand nonce to 24 bytes with single SHA-512
+        const expandedNonce = nacl.hash(nonce).slice(0, NONCE_LENGTH_EXPANDED);
         
         // Encrypt with secretbox (symmetric encryption)
-        const cipher = nacl.secretbox(plain, nonce, key);
+        const cipher = nacl.secretbox(plain, expandedNonce, key);
         
-        // Combine salt, nonce seed, and cipher
+        // Combine salt, nonce, and cipher
         const fullMessage = new Uint8Array(
             salt.length + 
-            nonceSeed.length + 
+            nonce.length + 
             cipher.length
         );
         
@@ -382,8 +300,8 @@ window.CryptoUtils = (function() {
         fullMessage.set(salt, offset);
         offset += salt.length;
         
-        fullMessage.set(nonceSeed, offset);
-        offset += nonceSeed.length;
+        fullMessage.set(nonce, offset);
+        offset += nonce.length;
         
         fullMessage.set(cipher, offset);
         
@@ -408,20 +326,22 @@ window.CryptoUtils = (function() {
         const jsonString = JSON.stringify(compressedData);
         const plain = nacl.util.decodeUTF8(jsonString);
         
-        // Generate salt and derive key
+        // Generate salt (10 bytes) and nonce (10 bytes)
         const salt = nacl.randomBytes(SALT_LENGTH);
-        const key = deriveSeed(password, salt);
+        const nonce = nacl.randomBytes(NONCE_LENGTH_STORED);
         
-        // Generate nonce seed and expand to full nonce
-        const nonceSeed = nacl.randomBytes(NONCE_SEED_LENGTH);
-        const nonce = expandNonceSeed(nonceSeed);
+        // Derive decryption key: 8192 rounds of SHA512(previous + salt)
+        const key = deriveDecryptionKey(password, salt);
+        
+        // Expand nonce to 24 bytes with single SHA-512
+        const expandedNonce = nacl.hash(nonce).slice(0, NONCE_LENGTH_EXPANDED);
         
         // Encrypt with secretbox (symmetric encryption)
-        const cipher = nacl.secretbox(plain, nonce, key);
+        const cipher = nacl.secretbox(plain, expandedNonce, key);
         
         // STEP 4: Show encryption debug
         if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links') && !suppressDebug) {
-            const rawBinarySize = salt.length + nonceSeed.length + cipher.length;
+            const rawBinarySize = salt.length + nonce.length + cipher.length;
             
             const encryptionDetails = [
                 '🔐 ═══════════════════════════════════════════════════════════════',
@@ -433,11 +353,11 @@ window.CryptoUtils = (function() {
                 '🔐 ───────────────────────────────────────────────────────────────',
                 '🔐 Crypto parameters:',
                 `🔐 - Salt: 10 bytes (80 bits)`,
-                `🔐 - Nonce seed: 10 bytes (80 bits, expanded to 24)`,
+                `🔐 - Nonce: 10 bytes (80 bits, expanded to 24)`,
                 `🔐 - Algorithm: XSalsa20-Poly1305`,
-                `🔐 - Key derivation: PBKDF2-HMAC-SHA512, ${KEY_ITERATIONS} iterations`,
+                `🔐 - Key derivation: SHA-512 iterative, ${KEY_ITERATIONS} rounds`,
                 '🔐 ───────────────────────────────────────────────────────────────',
-                `🔐 Binary structure: [salt(10)] + [nonce_seed(10)] + [cipher(${cipher.length})]`,
+                `🔐 Binary structure: [salt(10)] + [nonce(10)] + [cipher(${cipher.length})]`,
                 `🔐 Total binary: ${rawBinarySize} bytes`,
                 '🔐 ═══════════════════════════════════════════════════════════════'
             ].join('\n');
@@ -446,12 +366,12 @@ window.CryptoUtils = (function() {
                 input: jsonString.length,
                 utf8: plain.length,
                 salt: salt.length,
-                nonceSeed: nonceSeed.length,
-                expandedNonce: nonce.length,
+                nonce: nonce.length,
+                expandedNonce: expandedNonce.length,
                 cipher: cipher.length,
                 authTagOverhead: cipher.length - plain.length,
                 totalBinary: rawBinarySize,
-                cryptoOverhead: salt.length + nonceSeed.length
+                cryptoOverhead: salt.length + nonce.length
             });
             
             // Add to chat as a single system message if chat manager is available
@@ -460,10 +380,10 @@ window.CryptoUtils = (function() {
             }
         }
         
-        // Combine salt, nonce seed, and cipher
+        // Combine salt, nonce, and cipher
         const fullMessage = new Uint8Array(
             salt.length + 
-            nonceSeed.length + 
+            nonce.length + 
             cipher.length
         );
         
@@ -471,8 +391,8 @@ window.CryptoUtils = (function() {
         fullMessage.set(salt, offset);
         offset += salt.length;
         
-        fullMessage.set(nonceSeed, offset);
-        offset += nonceSeed.length;
+        fullMessage.set(nonce, offset);
+        offset += nonce.length;
         
         fullMessage.set(cipher, offset);
         
@@ -519,8 +439,8 @@ window.CryptoUtils = (function() {
             // Convert from URL-safe base64 to Uint8Array
             const data = decodeBase64UrlSafe(encryptedData);
             
-            // Current format: salt(10) + nonceSeed(10) + cipher
-            if (data.length < (SALT_LENGTH + NONCE_SEED_LENGTH + 16)) {
+            // Current format: salt(10) + nonce(10) + cipher
+            if (data.length < (SALT_LENGTH + NONCE_LENGTH_STORED + 16)) {
                 return null; // Too small to be valid
             }
             
@@ -529,17 +449,17 @@ window.CryptoUtils = (function() {
             const salt = data.slice(offset, offset + SALT_LENGTH);
             offset += SALT_LENGTH;
             
-            const nonceSeed = data.slice(offset, offset + NONCE_SEED_LENGTH);
-            offset += NONCE_SEED_LENGTH;
+            const nonce = data.slice(offset, offset + NONCE_LENGTH_STORED);
+            offset += NONCE_LENGTH_STORED;
             
             const cipher = data.slice(offset);
             
-            // Expand nonce seed to full nonce
-            const nonce = expandNonceSeed(nonceSeed);
+            // Expand nonce to 24 bytes with single SHA-512
+            const expandedNonce = nacl.hash(nonce).slice(0, NONCE_LENGTH_EXPANDED);
             
-            // Derive key and decrypt
-            const key = deriveSeed(password, salt);
-            const plain = nacl.secretbox.open(cipher, nonce, key);
+            // Derive decryption key: 8192 rounds of SHA512(previous + salt)
+            const key = deriveDecryptionKey(password, salt);
+            const plain = nacl.secretbox.open(cipher, expandedNonce, key);
             
             if (!plain) {
                 return null; // Decryption failed
@@ -560,9 +480,8 @@ window.CryptoUtils = (function() {
     
     // Public API
     return {
-        deriveSeed: deriveSeed,
-        deriveMasterKey: deriveMasterKey,  // New function for deriving master key from share link params
-        getKeyPair: getKeyPair,
+        deriveDecryptionKey: deriveDecryptionKey,
+        deriveMasterKey: deriveMasterKey,
         encryptData: encryptData,
         encryptShareLink: encryptShareLink,  // New dedicated function for share links
         decryptData: decryptData,
@@ -577,9 +496,6 @@ window.CryptoUtils = (function() {
         createNamespaceEntry: createNamespaceEntry,
         getMasterKeyStorageKey: getMasterKeyStorageKey,
         NAMESPACE_PREFIX: NAMESPACE_PREFIX,
-        MASTER_KEY_PREFIX: MASTER_KEY_PREFIX,
-        // Expose for testing only
-        hmacSHA512: hmacSHA512,
-        pbkdf2: pbkdf2
+        MASTER_KEY_PREFIX: MASTER_KEY_PREFIX
     };
 })();

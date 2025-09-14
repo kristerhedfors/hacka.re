@@ -411,10 +411,10 @@ window.LinkSharingService = (function() {
                 // Extract salt and nonce from the encrypted blob (they're unencrypted)
                 const encryptedBytes = CryptoUtils.decodeBase64UrlSafe(encryptedData);
                 const salt = encryptedBytes.slice(0, 10); // First 10 bytes
-                const nonceSeed = encryptedBytes.slice(10, 20); // Next 10 bytes
+                const nonce = encryptedBytes.slice(10, 20); // Next 10 bytes
                 
                 // Derive the master key for localStorage operations
-                const derivedMasterKey = CryptoUtils.deriveMasterKey(password, salt, nonceSeed);
+                const derivedMasterKey = CryptoUtils.deriveMasterKey(password, salt, nonce);
                 window._sharedLinkMasterKey = derivedMasterKey;
                 console.log('[LinkSharing] Master key derived from share link parameters (stored in memory only)');
                 
