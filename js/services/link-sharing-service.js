@@ -130,16 +130,18 @@ window.LinkSharingService = (function() {
                 }
             }
             
-            // Add RAG settings if available
-            if (window.RAGStorageService) {
+            // Add RAG settings if explicitly requested
+            if (options.includeRagSettings && window.RAGStorageService) {
                 // Include RAG enabled state
                 const ragEnabled = window.RAGStorageService.isRAGEnabled();
                 finalPayload.ragEnabled = ragEnabled;
                 
-                // Include enabled EU document IDs
-                const enabledEUDocuments = window.RAGStorageService.getEnabledEUDocuments();
-                if (enabledEUDocuments && enabledEUDocuments.length > 0) {
-                    finalPayload.ragDocuments = enabledEUDocuments;
+                // Only include documents if RAG is enabled
+                if (ragEnabled) {
+                    const enabledEUDocuments = window.RAGStorageService.getEnabledEUDocuments();
+                    if (enabledEUDocuments && enabledEUDocuments.length > 0) {
+                        finalPayload.ragDocuments = enabledEUDocuments;
+                    }
                 }
             }
             

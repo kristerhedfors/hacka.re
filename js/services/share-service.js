@@ -370,7 +370,8 @@ window.ShareService = (function() {
         const shareableLink = await LinkSharingService.createCustomShareableLink(payload, options.password, {
             includePromptLibrary: options.includePromptLibrary,
             includeFunctionLibrary: options.includeFunctionLibrary,
-            includeMcpConnections: options.includeMcpConnections
+            includeMcpConnections: options.includeMcpConnections,
+            includeRagSettings: options.includeRagSettings
         });
         
         console.log('🔗 ShareService: Generated link length:', shareableLink.length, 'characters');
