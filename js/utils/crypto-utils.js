@@ -577,6 +577,9 @@ window.CryptoUtils = (function() {
         createNamespaceEntry: createNamespaceEntry,
         getMasterKeyStorageKey: getMasterKeyStorageKey,
         NAMESPACE_PREFIX: NAMESPACE_PREFIX,
-        MASTER_KEY_PREFIX: MASTER_KEY_PREFIX
+        MASTER_KEY_PREFIX: MASTER_KEY_PREFIX,
+        // Expose for testing only
+        hmacSHA512: hmacSHA512,
+        pbkdf2: pbkdf2
     };
 })();
