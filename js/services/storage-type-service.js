@@ -158,7 +158,7 @@ window.StorageTypeService = (function() {
      * 
      * The namespace is the first 8 characters of sha512(decryptionKey+masterKey+nonce).
      * 
-     * @returns {string|null} Namespace derived from keys, or null if no shared link
+     * @returns {string|null} Namespace derived from keys, or null if no shared link or keys not available
      */
     function getSharedLinkNamespace() {
         if (!hasSharedLink()) {
@@ -176,25 +176,8 @@ window.StorageTypeService = (function() {
             return cachedNamespaceHash;
         }
         
-        // Fallback: use hash of encrypted blob (old method) until keys are available
-        // This will be replaced once link-sharing-service computes the proper namespace
-        const hash = window.location.hash;
-        let encryptedData = null;
-        
-        if (hash.includes('#gpt=')) {
-            encryptedData = hash.split('#gpt=')[1];
-        } else if (hash.includes('#shared=')) {
-            encryptedData = hash.split('#shared=')[1];
-        }
-        
-        if (!encryptedData) {
-            return null;
-        }
-        
-        // Temporary fallback - will be overridden when keys are available
-        console.log('[StorageTypeService] Using temporary namespace from encrypted blob hash (will be replaced)');
-        const dataHash = CryptoUtils.hashString(encryptedData);
-        return dataHash.substring(0, 8);
+        // No namespace available until keys are derived
+        return null;
     }
     
     /**
