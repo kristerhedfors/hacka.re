@@ -38,8 +38,10 @@
 
 window.CryptoUtils = (function() {
     // Constants
-    const SALT_LENGTH = 16; // 16 bytes for salt
-    const NONCE_LENGTH = nacl.box.nonceLength;
+    const SALT_LENGTH = 10; // 10 bytes for salt (80 bits)
+    const NONCE_SEED_LENGTH = 10; // 10 bytes for nonce seed (80 bits)
+    const NONCE_LENGTH = nacl.box.nonceLength; // 24 bytes - required by NaCl
+    const LEGACY_SALT_LENGTH = 16; // Legacy 16 bytes for backward compatibility
     const KEY_LENGTH = 32; // seed and secretKey length
     const KEY_ITERATIONS = 10000; // Number of iterations for key derivation
     const NAMESPACE_PREFIX = 'hackare_namespace_';
@@ -157,6 +159,18 @@ window.CryptoUtils = (function() {
     }
     
     /**
+     * Expand a 10-byte nonce seed to a 24-byte nonce
+     * @param {Uint8Array} nonceSeed - The 10-byte seed to expand
+     * @returns {Uint8Array} 24-byte nonce for NaCl
+     */
+    function expandNonceSeed(nonceSeed) {
+        // Use SHA-512 hash to expand 10 bytes to 64 bytes
+        const expanded = nacl.hash(nonceSeed);
+        // Take first 24 bytes as nonce
+        return expanded.slice(0, NONCE_LENGTH);
+    }
+    
+    /**
      * Derive a 32-byte seed from password + salt
      * @param {string} password - The password to derive the key from
      * @param {Uint8Array} salt - The salt to use for key derivation
@@ -251,8 +265,9 @@ window.CryptoUtils = (function() {
         const salt = nacl.randomBytes(SALT_LENGTH);
         const key = deriveSeed(password, salt);
         
-        // Generate nonce for secretbox
-        const nonce = nacl.randomBytes(nacl.secretbox.nonceLength);
+        // Generate nonce seed and expand to full nonce
+        const nonceSeed = nacl.randomBytes(NONCE_SEED_LENGTH);
+        const nonce = expandNonceSeed(nonceSeed);
         
         // Encrypt with secretbox (symmetric encryption)
         const cipher = nacl.secretbox(plain, nonce, key);
@@ -262,13 +277,14 @@ window.CryptoUtils = (function() {
             const spaceSummary = {
                 'Original JSON size': jsonString.length + ' chars',
                 'UTF-8 encoded size': plain.length + ' bytes',
-                'Salt size': salt.length + ' bytes (fixed)',
-                'Nonce size': nonce.length + ' bytes (fixed)',
+                'Salt size': salt.length + ' bytes (80 bits)',
+                'Nonce seed size': nonceSeed.length + ' bytes (80 bits)',
+                'Expanded nonce size': nonce.length + ' bytes (for NaCl)',
                 'Encrypted cipher size': cipher.length + ' bytes',
-                'Total encrypted size': (salt.length + nonce.length + cipher.length) + ' bytes',
-                'Overhead': (salt.length + nonce.length) + ' bytes (salt + nonce)',
+                'Total stored size': (salt.length + nonceSeed.length + cipher.length) + ' bytes',
+                'Overhead': (salt.length + nonceSeed.length) + ' bytes (salt + nonce seed)',
                 'Encryption expansion': (cipher.length - plain.length) + ' bytes (cipher vs plain)',
-                'Total expansion': ((salt.length + nonce.length + cipher.length) - plain.length) + ' bytes'
+                'Total expansion': ((salt.length + nonceSeed.length + cipher.length) - plain.length) + ' bytes'
             };
             
             // Create a formatted message showing encryption details
@@ -281,11 +297,11 @@ window.CryptoUtils = (function() {
                 '🔐 ───────────────────────────────────────────────────────────────',
                 '🔐 Encryption Details:',
                 `🔐 - Algorithm: NaCl secretbox (XSalsa20-Poly1305)`,
-                `🔐 - Salt: ${SALT_LENGTH} bytes (for key derivation)`,
-                `🔐 - Nonce: ${nacl.secretbox.nonceLength} bytes (for encryption)`,
-                `🔐 - Key derivation: scrypt(password, salt)`,
+                `🔐 - Salt: ${SALT_LENGTH} bytes (80 bits, for key derivation)`,
+                `🔐 - Nonce seed: ${NONCE_SEED_LENGTH} bytes (80 bits, expanded to ${NONCE_LENGTH})`,
+                `🔐 - Key derivation: PBKDF2(password, salt, ${KEY_ITERATIONS} iterations)`,
                 '🔐 ───────────────────────────────────────────────────────────────',
-                '🔐 Final structure: [salt][nonce][cipher] → base64url',
+                '🔐 Final structure: [salt(10)][nonce_seed(10)][cipher] → base64url',
                 '🔐 ═══════════════════════════════════════════════════════════════'
             ].join('\n');
             
@@ -298,10 +314,10 @@ window.CryptoUtils = (function() {
             }
         }
         
-        // Combine salt, nonce, and cipher
+        // Combine salt, nonce seed, and cipher
         const fullMessage = new Uint8Array(
             salt.length + 
-            nonce.length + 
+            nonceSeed.length + 
             cipher.length
         );
         
@@ -309,8 +325,8 @@ window.CryptoUtils = (function() {
         fullMessage.set(salt, offset);
         offset += salt.length;
         
-        fullMessage.set(nonce, offset);
-        offset += nonce.length;
+        fullMessage.set(nonceSeed, offset);
+        offset += nonceSeed.length;
         
         fullMessage.set(cipher, offset);
         
@@ -329,84 +345,103 @@ window.CryptoUtils = (function() {
             // Convert from URL-safe base64 directly to Uint8Array
             const data = decodeBase64UrlSafe(encryptedData);
             
-            // Extract components
-            let offset = 0;
-            const salt = data.slice(offset, offset + SALT_LENGTH);
-            offset += SALT_LENGTH;
+            // Detect format based on total size
+            // New format: salt(10) + nonceSeed(10) + cipher
+            // Legacy format: salt(16) + nonce(24) + cipher
             
-            const nonce = data.slice(offset, offset + nacl.secretbox.nonceLength);
-            offset += nacl.secretbox.nonceLength;
+            let salt, nonce, cipher;
             
-            const cipher = data.slice(offset);
-            
-            // Derive key from password and salt
-            const key = deriveSeed(password, salt);
-            
-            // Decrypt with secretbox
-            const plain = nacl.secretbox.open(
-                cipher,
-                nonce,
-                key
-            );
-            
-            if (!plain) {
-                return null; // Decryption failed
-            }
-            
-            // Convert from Uint8Array to string, then parse JSON
-            const plainText = nacl.util.encodeUTF8(plain);
-            
-            try {
-                // Parse JSON
-                const result = JSON.parse(plainText);
-                return result;
-            } catch (jsonError) {
-                // JSON parsing failed
-                return null;
-            }
-        } catch (error) {
-            // Decryption failed - this could be due to URL-safe conversion or actual decryption failure
-            // Try with the original data as standard base64 for backward compatibility
-            try {
-                const data = nacl.util.decodeBase64(encryptedData);
-                
-                // Extract components
+            // Try new format first (10+10)
+            if (data.length >= (SALT_LENGTH + NONCE_SEED_LENGTH + 16)) {
+                // Assume new format
                 let offset = 0;
-                const salt = data.slice(offset, offset + SALT_LENGTH);
+                salt = data.slice(offset, offset + SALT_LENGTH);
                 offset += SALT_LENGTH;
                 
-                const nonce = data.slice(offset, offset + nacl.secretbox.nonceLength);
-                offset += nacl.secretbox.nonceLength;
+                const nonceSeed = data.slice(offset, offset + NONCE_SEED_LENGTH);
+                offset += NONCE_SEED_LENGTH;
                 
-                const cipher = data.slice(offset);
+                cipher = data.slice(offset);
+                
+                // Expand nonce seed to full nonce
+                nonce = expandNonceSeed(nonceSeed);
+                
+                // Try to decrypt with new format
+                const key = deriveSeed(password, salt);
+                const plain = nacl.secretbox.open(cipher, nonce, key);
+                
+                if (plain) {
+                    // Success with new format
+                    const plainText = nacl.util.encodeUTF8(plain);
+                    try {
+                        return JSON.parse(plainText);
+                    } catch (jsonError) {
+                        return null;
+                    }
+                }
+            }
+            
+            // If new format failed or size doesn't match, try legacy format (16+24)
+            if (data.length >= (LEGACY_SALT_LENGTH + NONCE_LENGTH + 16)) {
+                let offset = 0;
+                salt = data.slice(offset, offset + LEGACY_SALT_LENGTH);
+                offset += LEGACY_SALT_LENGTH;
+                
+                nonce = data.slice(offset, offset + NONCE_LENGTH);
+                offset += NONCE_LENGTH;
+                
+                cipher = data.slice(offset);
                 
                 // Derive key from password and salt
                 const key = deriveSeed(password, salt);
                 
                 // Decrypt with secretbox
-                const plain = nacl.secretbox.open(
-                    cipher,
-                    nonce,
-                    key
-                );
+                const plain = nacl.secretbox.open(cipher, nonce, key);
                 
-                if (!plain) {
-                    return null; // Decryption failed
+                if (plain) {
+                    // Success with legacy format
+                    const plainText = nacl.util.encodeUTF8(plain);
+                    try {
+                        return JSON.parse(plainText);
+                    } catch (jsonError) {
+                        return null;
+                    }
+                }
+            }
+            
+            return null; // Neither format worked
+            
+        } catch (error) {
+            // Decryption failed - try with standard base64 for backward compatibility
+            try {
+                const data = nacl.util.decodeBase64(encryptedData);
+                
+                // Try legacy format with standard base64
+                if (data.length >= (LEGACY_SALT_LENGTH + NONCE_LENGTH + 16)) {
+                    let offset = 0;
+                    const salt = data.slice(offset, offset + LEGACY_SALT_LENGTH);
+                    offset += LEGACY_SALT_LENGTH;
+                    
+                    const nonce = data.slice(offset, offset + NONCE_LENGTH);
+                    offset += NONCE_LENGTH;
+                    
+                    const cipher = data.slice(offset);
+                    
+                    const key = deriveSeed(password, salt);
+                    const plain = nacl.secretbox.open(cipher, nonce, key);
+                    
+                    if (plain) {
+                        const plainText = nacl.util.encodeUTF8(plain);
+                        try {
+                            return JSON.parse(plainText);
+                        } catch (jsonError) {
+                            return null;
+                        }
+                    }
                 }
                 
-                // Convert from Uint8Array to string, then parse JSON
-                const plainText = nacl.util.encodeUTF8(plain);
-                
-                try {
-                    // Parse JSON
-                    const result = JSON.parse(plainText);
-                    return result;
-                } catch (jsonError) {
-                    // JSON parsing failed
-                    return null;
-                }
+                return null;
             } catch (backwardCompatError) {
-                // Both attempts failed
                 return null;
             }
         }
