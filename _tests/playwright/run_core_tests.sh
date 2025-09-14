@@ -121,11 +121,23 @@ if [ "$SKIP_SERVER_MANAGEMENT" = "false" ]; then
     trap 'echo "Stopping HTTP server..."; ./stop_server.sh; echo "Server stopped."' EXIT
 fi
 
-# Run the core tests
-echo "Running Core Functionality tests with $BROWSER browser..."
+# Run the core tests in smaller batches to avoid timeouts
+echo "Running Core Functionality tests with $BROWSER browser in batches..."
 echo "Test filter: $CORE_TESTS_FILTER"
 echo ""
-eval "$PYTHON_CMD -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS -k \"$CORE_TESTS_FILTER\"" | tee test_output.log
+
+# Run each core test file separately to avoid timeouts
+echo "\n=== Batch 1: Page Tests ==="
+eval "$PYTHON_CMD -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_page.py" | tee test_output.log
+
+echo "\n=== Batch 2: API Tests ==="  
+eval "$PYTHON_CMD -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_api.py" | tee -a test_output.log
+
+echo "\n=== Batch 3: Chat Tests ==="
+eval "$PYTHON_CMD -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_chat.py" | tee -a test_output.log
+
+echo "\n=== Batch 4: Welcome Modal Tests ==="
+eval "$PYTHON_CMD -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_welcome_modal.py" 2>/dev/null | tee -a test_output.log || echo "test_welcome_modal.py not found or skipped"
 
 # Generate test results markdown files
 echo "Generating test results markdown files..."

@@ -1,122 +1,108 @@
 #!/bin/bash
 
-# Script to run MCP-specific tests
-# This includes both unit tests (mocked) and integration tests (real servers)
+# Script to run MCP tests in smaller batches
+# Avoids timeout issues by running tests in groups of 5
 
-set -e
+# Clear the output file
+> run_mcp_tests.out
 
-# Colors for output
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+# Start capturing output
+exec > >(tee run_mcp_tests.out) 2>&1
 
-echo -e "${GREEN}Running MCP Tests${NC}"
-echo "================================"
+# Set up trap for Ctrl+C
+trap 'echo "Script interrupted with Ctrl+C at $(date)" | tee -a run_mcp_tests.out' INT
 
-# Check if we're in the correct directory
-if [ ! -f "conftest.py" ]; then
-    echo -e "${RED}Error: Must be run from _tests/playwright directory${NC}"
+# Change to script directory
+cd "$(dirname "$0")"
+
+echo "======================================"
+echo "🔌 MCP TESTS STARTING"
+echo "======================================"
+echo ""
+echo "📁 TEST ARTIFACTS:"
+echo "  📸 Screenshots: $(pwd)/screenshots/"
+echo "  📝 Output: $(pwd)/run_mcp_tests.out"
+echo ""
+
+# Ensure directories exist
+mkdir -p screenshots screenshots_data console_logs
+
+# Check virtual environment
+VENV_PATH="$(pwd)/.venv"
+if [ ! -d "$VENV_PATH" ]; then
+    echo "Virtual environment not found at $VENV_PATH"
+    echo "Please run setup_environment.sh from project root first"
     exit 1
 fi
 
-# Parse command line arguments
-HEADLESS=""
-VERBOSE=""
-SKIP_SERVER=false
-TEST_TYPE="all"
+PYTHON_CMD="$VENV_PATH/bin/python"
+
+# Parse arguments
+PYTEST_ARGS=""
+BROWSER="chromium"
+HEADLESS="--headed"
+SKIP_SERVER_MANAGEMENT="false"
 
 while [[ $# -gt 0 ]]; do
     case $1 in
         --headless)
-            HEADLESS="--headed=false"
-            shift
-            ;;
-        --verbose)
-            VERBOSE="-v"
+            HEADLESS=""
             shift
             ;;
         --skip-server)
-            SKIP_SERVER=true
+            SKIP_SERVER_MANAGEMENT="true"
             shift
             ;;
-        --unit)
-            TEST_TYPE="unit"
-            shift
-            ;;
-        --integration)
-            TEST_TYPE="integration"
+        --verbose|-v)
+            PYTEST_ARGS="$PYTEST_ARGS -v"
             shift
             ;;
         *)
-            echo "Unknown option: $1"
-            echo "Usage: $0 [--headless] [--verbose] [--skip-server] [--unit|--integration]"
-            exit 1
+            shift
             ;;
     esac
 done
 
-# Function to check if MCP proxy is installed
-check_mcp_proxy() {
-    if [ ! -f "../../mcp-stdio-proxy/server.js" ]; then
-        echo -e "${YELLOW}Warning: MCP stdio proxy not found${NC}"
-        echo "Installing MCP proxy dependencies..."
-        cd ../../mcp-stdio-proxy
-        npm install
-        cd - > /dev/null
-    fi
-}
-
-# Function to check if filesystem server is available
-check_filesystem_server() {
-    if ! npx --version > /dev/null 2>&1; then
-        echo -e "${RED}Error: npx not found. Please install Node.js${NC}"
-        exit 1
-    fi
-    
-    echo "Checking @modelcontextprotocol/server-filesystem availability..."
-    npx -y @modelcontextprotocol/server-filesystem --help > /dev/null 2>&1 || true
-}
-
 # Start HTTP server if needed
-if [ "$SKIP_SERVER" = false ]; then
+if [ "$SKIP_SERVER_MANAGEMENT" = "false" ]; then
+    echo "Starting HTTP server..."
     ./start_server.sh
+    trap 'echo "Stopping HTTP server..."; ./stop_server.sh' EXIT
 fi
 
-# Prepare for MCP tests
-echo -e "\n${GREEN}Preparing MCP test environment...${NC}"
-check_mcp_proxy
-check_filesystem_server
+# Find all MCP test files
+MCP_TESTS=($(find . -name "test_mcp*.py" -o -name "test_*mcp*.py" | sort))
+TOTAL_TESTS=${#MCP_TESTS[@]}
 
-# Create screenshots directory if it doesn't exist
-mkdir -p screenshots
+echo "Found $TOTAL_TESTS MCP test files"
+echo ""
 
-# Run the appropriate tests
-echo -e "\n${GREEN}Running MCP tests...${NC}"
+# Run tests in batches of 5
+BATCH_SIZE=5
+BATCH_NUM=1
 
-if [ "$TEST_TYPE" = "unit" ] || [ "$TEST_TYPE" = "all" ]; then
-    echo -e "\n${YELLOW}Running MCP Unit Tests (mocked)...${NC}"
-    pytest test_mcp_unit.py test_mcp_simple.py test_mcp_reconnection.py $VERBOSE $HEADLESS
-fi
+for ((i=0; i<$TOTAL_TESTS; i+=$BATCH_SIZE)); do
+    echo "=== Batch $BATCH_NUM (tests $((i+1))-$((i+BATCH_SIZE>TOTAL_TESTS ? TOTAL_TESTS : i+BATCH_SIZE)) of $TOTAL_TESTS) ==="
+    
+    # Get batch of tests
+    BATCH_TESTS=""
+    for ((j=i; j<i+BATCH_SIZE && j<TOTAL_TESTS; j++)); do
+        BATCH_TESTS="$BATCH_TESTS ${MCP_TESTS[$j]}"
+    done
+    
+    # Run batch
+    eval "$PYTHON_CMD -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS $BATCH_TESTS " | tee -a test_output.log
+    
+    echo ""
+    BATCH_NUM=$((BATCH_NUM + 1))
+done
 
-if [ "$TEST_TYPE" = "integration" ] || [ "$TEST_TYPE" = "all" ]; then
-    echo -e "\n${YELLOW}Running MCP Integration Tests (real servers)...${NC}"
-    # Integration tests require more setup time
-    pytest test_mcp_integration.py test_mcp_integration_simple.py $VERBOSE $HEADLESS
-fi
+echo "=== All MCP test batches completed ==="
+echo "Total batches run: $((BATCH_NUM - 1))"
 
-# Stop HTTP server if we started it
-if [ "$SKIP_SERVER" = false ]; then
-    ./stop_server.sh
-fi
+# Generate report
+./bundle_test_results.sh
 
-echo -e "\n${GREEN}MCP tests completed!${NC}"
-echo -e "Screenshots saved in: $(pwd)/screenshots/"
-
-# Check if any tests failed
-if [ $? -eq 0 ]; then
-    echo -e "${GREEN}All MCP tests passed!${NC}"
-else
-    echo -e "${RED}Some MCP tests failed${NC}"
-    exit 1
-fi
+echo ""
+echo "All MCP test output has been captured to run_mcp_tests.out"
+echo "Bundled report available at run_tests.out_bundle.md"

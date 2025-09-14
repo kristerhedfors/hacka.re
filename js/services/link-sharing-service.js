@@ -64,6 +64,8 @@ window.LinkSharingService = (function() {
      * @returns {string} Shareable URL with #gpt= fragment
      */
     async function createCustomShareableLink(payload, password, options = {}) {
+        // Check if debug should be suppressed (e.g., for size calculation)
+        const suppressDebug = options.suppressDebug || false;
         let finalPayload;
         
         // If no payload provided, collect current configuration
@@ -207,87 +209,110 @@ window.LinkSharingService = (function() {
             window.DebugService.debugLog('crypto', `🔐 Compressing and encrypting custom shareable link payload with ${payloadKeys.length} components: ${payloadKeys.join(', ')}`);
         }
         
-        // Generate a strong master key for this share link
-        // This is the ONLY place where master keys are generated for shared links
-        const masterKeyBytes = nacl.randomBytes(32);
-        const masterKeyHex = Array.from(masterKeyBytes)
-            .map(b => b.toString(16).padStart(2, '0'))
-            .join('');
+        // No longer generate master key - it will be derived from password + salt + nonce
+        // Use the payload directly without wrapper
+        const sharePayload = finalPayload;
         
-        // Create wrapper with master key and encrypted data
-        const sharePayload = {
-            masterKey: masterKeyHex,
-            data: finalPayload
-        };
-        
-        // Debug logging for shared-links category - show EXACT payload that will be encrypted
-        if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links')) {
-            // Create a formatted message showing the exact payload
-            const debugMessage = [
-                '🔗 ═══════════════════════════════════════════════════════════════',
-                '🔗 EXACT SHARED LINK PAYLOAD (before compression & encryption)',
-                '🔗 ═══════════════════════════════════════════════════════════════',
-                JSON.stringify(sharePayload, null, 2),
-                '🔗 ═══════════════════════════════════════════════════════════════',
-                '🔗 Note: This payload will be compressed, then encrypted with:',
-                '🔗 - Salt (random, added during encryption)',
-                '🔗 - Nonce (random, added during encryption)',
-                '🔗 - Password-derived key',
-                '🔗 ═══════════════════════════════════════════════════════════════'
+        // STEP 1: Log original payload
+        if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links') && !suppressDebug) {
+            const minifiedJson = JSON.stringify(sharePayload);
+            const prettyJson = JSON.stringify(sharePayload, null, 2);
+            
+            const step1Message = [
+                '📋 ═══════════════════════════════════════════════════════════════',
+                '📋 STEP 1: ORIGINAL PAYLOAD',
+                '📋 ═══════════════════════════════════════════════════════════════',
+                '📋 Actual input size (minified): ' + minifiedJson.length + ' chars',
+                '📋 ───────────────────────────────────────────────────────────────',
+                '📋 Payload structure (prettified for debug only):',
+                prettyJson,
+                '📋 ───────────────────────────────────────────────────────────────',
+                `📋 Note: Processing uses minified JSON (${minifiedJson.length} chars)`,
+                '📋 ═══════════════════════════════════════════════════════════════'
             ].join('\n');
             
-            // Log to console
-            console.log('[DEBUG] Exact Shared Link Payload:', sharePayload);
-            
-            // Add to chat as a single system message if chat manager is available
+            // Add Step 1 to chat immediately
             if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
-                // Add the entire debug message as a single system message with debug styling
-                window.aiHackare.chatManager.addSystemMessage(debugMessage, 'debug-message debug-shared-links');
+                window.aiHackare.chatManager.addSystemMessage(step1Message, 'debug-message debug-shared-links');
             }
+            console.log('[DEBUG] Step 1 - Original Payload:', sharePayload);
         }
         
-        // Compress the entire payload including master key
-        const compressedPayload = await CompressionUtils.compressPayload(sharePayload);
+        // STEPS 2 & 3: Compress (key mapping + LZ compression)
+        const compressedPayload = await CompressionUtils.compressPayload(sharePayload, suppressDebug);
         
-        // Encrypt with password (password only decrypts the link, master key decrypts the data)
-        const encryptedData = CryptoUtils.encryptData(compressedPayload, password);
+        // Console log compression result
+        if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links') && !suppressDebug) {
+            const minifiedJson = JSON.stringify(sharePayload);
+            console.log('[DEBUG] After Compression (Steps 2+3):', {
+                inputSize: minifiedJson.length,
+                outputSize: compressedPayload.length,
+                ratio: ((compressedPayload.length / minifiedJson.length) * 100).toFixed(1) + '%'
+            });
+        }
         
-        // Create URL with hash fragment
+        // STEPS 4 & 5: Encrypt and Base64 encode (using dedicated share link function)
+        const encryptedData = CryptoUtils.encryptShareLink(compressedPayload, password, suppressDebug);
+        
+        // Console log encryption result
+        if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links') && !suppressDebug) {
+            console.log('[DEBUG] After Encryption + Base64 (Steps 4+5):', {
+                compressedSize: compressedPayload.length,
+                encryptedSize: encryptedData.length,
+                overhead: encryptedData.length - compressedPayload.length
+            });
+        }
+        
+        // STEP 6: Create final URL
         const baseUrl = _location.href.split('#')[0];
         const finalUrl = `${baseUrl}#gpt=${encryptedData}`;
         
-        // Final size summary debug logging for shared-links category
-        if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links')) {
-            const sizeSummary = {
-                'Base URL length': baseUrl.length + ' chars',
-                'Encrypted data (base64)': encryptedData.length + ' chars',
-                'Hash fragment overhead': 5 + ' chars (#gpt=)',
-                'Total URL length': finalUrl.length + ' chars',
-                'URL-safe for sharing': finalUrl.length < 2000 ? 'Yes ✓' : 'Warning: May be too long for some platforms'
-            };
+        // Log Step 6
+        if (window.DebugService && window.DebugService.isCategoryEnabled('shared-links') && !suppressDebug) {
+            const minifiedJson = JSON.stringify(sharePayload);
             
-            // Create a formatted message
-            const debugMessage = [
-                '📏 ═══════════════════════════════════════════════════════════════',
-                '📏 FINAL SHARE LINK SIZE',
-                '📏 ═══════════════════════════════════════════════════════════════',
-                JSON.stringify(sizeSummary, null, 2),
-                '📏 ───────────────────────────────────────────────────────────────',
-                '📏 Size limits by platform:',
-                '📏 - Browser URL bar: ~2,000 chars (varies)',
-                '📏 - Twitter/X: 280 chars (need URL shortener)',
-                '📏 - Discord: 2,000 chars',
-                '📏 - Email: ~2,000 chars (safe)',
-                '📏 - SMS: 160 chars (need URL shortener)',
-                '📏 ═══════════════════════════════════════════════════════════════'
+            const step6Message = [
+                '🔗 ═══════════════════════════════════════════════════════════════',
+                '🔗 STEP 6: FINAL SHARE LINK',
+                '🔗 ═══════════════════════════════════════════════════════════════',
+                `🔗 Base URL: ${baseUrl} (${baseUrl.length} chars)`,
+                `🔗 Hash fragment: #gpt=${encryptedData.substring(0, 50)}...`,
+                `🔗 Total URL length: ${finalUrl.length} chars`,
+                '🔗 ───────────────────────────────────────────────────────────────',
+                '🔗 COMPLETE TRANSFORMATION PIPELINE:',
+                `🔗 1. Original JSON: ${minifiedJson.length} chars`,
+                `🔗 2. Key mapping: Reduced by key replacements`,
+                `🔗 3. LZ compression: Further reduction`,
+                `🔗 4. Encryption: Added auth tag (16 bytes)`,
+                `🔗 5. Base64: ~33% expansion`,
+                `🔗 6. Final URL: ${finalUrl.length} chars`,
+                '🔗 ───────────────────────────────────────────────────────────────',
+                `🔗 Total: ${minifiedJson.length} → ${finalUrl.length} chars (${((finalUrl.length/minifiedJson.length)*100).toFixed(1)}%)`,
+                '🔗 ───────────────────────────────────────────────────────────────',
+                '🔗 Platform compatibility:',
+                `🔗 ✅ Browser URL bar: ${finalUrl.length < 2000 ? 'Yes' : 'No'} (limit ~2000)`,
+                `🔗 ✅ Discord: ${finalUrl.length < 2000 ? 'Yes' : 'No'} (limit 2000)`,
+                `🔗 ✅ Email: ${finalUrl.length < 2000 ? 'Yes' : 'No'} (limit ~2000)`,
+                `🔗 ❌ Twitter/X: ${finalUrl.length < 280 ? 'Yes' : 'Need URL shortener'} (limit 280)`,
+                `🔗 ❌ SMS: ${finalUrl.length < 160 ? 'Yes' : 'Need URL shortener'} (limit 160)`,
+                '🔗 ═══════════════════════════════════════════════════════════════'
             ].join('\n');
             
-            // Log to console
-            console.log('[DEBUG] Final Share Link Size:', sizeSummary);
+            console.log('[DEBUG] Step 6 - Final URL:', {
+                baseUrl: baseUrl,
+                hashLength: encryptedData.length,
+                totalLength: finalUrl.length,
+                platformCompatibility: {
+                    browser: finalUrl.length < 2000,
+                    discord: finalUrl.length < 2000,
+                    email: finalUrl.length < 2000,
+                    twitter: finalUrl.length < 280,
+                    sms: finalUrl.length < 160
+                }
+            });
             
-            // Add to chat as a single system message if chat manager is available
             if (window.aiHackare && window.aiHackare.chatManager && window.aiHackare.chatManager.addSystemMessage) {
-                window.aiHackare.chatManager.addSystemMessage(debugMessage, 'debug-message debug-shared-links');
+                window.aiHackare.chatManager.addSystemMessage(step6Message, 'debug-message debug-shared-links');
             }
         }
         
@@ -382,6 +407,17 @@ window.LinkSharingService = (function() {
                     window.DebugService.debugLog('crypto', `🔓 Decrypting and decompressing shared link data from URL hash fragment`);
                 }
                 
+                // NEW: Derive master key from password + salt + nonce BEFORE decryption
+                // Extract salt and nonce from the encrypted blob (they're unencrypted)
+                const encryptedBytes = CryptoUtils.decodeBase64UrlSafe(encryptedData);
+                const salt = encryptedBytes.slice(0, 10); // First 10 bytes
+                const nonce = encryptedBytes.slice(10, 20); // Next 10 bytes
+                
+                // Derive the master key for localStorage operations
+                const derivedMasterKey = CryptoUtils.deriveMasterKey(password, salt, nonce);
+                window._sharedLinkMasterKey = derivedMasterKey;
+                console.log('[LinkSharing] Master key derived from share link parameters (stored in memory only)');
+                
                 // Decrypt the data
                 const decryptedData = CryptoUtils.decryptData(encryptedData, password);
                 
@@ -413,22 +449,10 @@ window.LinkSharingService = (function() {
                     decompressedData = decryptedData;
                 }
                 
-                // Check if this is the new format with master key
-                let data;
-                let masterKey = null;
-                if (decompressedData && decompressedData.masterKey && decompressedData.data) {
-                    // New secure format with master key
-                    masterKey = decompressedData.masterKey;
-                    data = decompressedData.data;
-                    
-                    // Store the master key temporarily in memory (NEVER to disk)
-                    window._sharedLinkMasterKey = masterKey;
-                    console.log('[LinkSharing] Master key extracted from share link (stored in memory only)');
-                } else {
-                    // Legacy format without master key (for backwards compatibility)
-                    data = decompressedData;
-                    console.warn('[LinkSharing] Legacy share link format without master key - less secure');
-                }
+                // No more checking for old format - master key is always derived
+                // The decompressed data is the actual payload, no wrapper
+                let data = decompressedData;
+                console.log('[LinkSharing] Using derived master key from share link parameters');
                 
                 // Check if the decrypted data contains at least one valid field
                 // We no longer require apiKey to be present, allowing sharing of just conversation or model

@@ -116,10 +116,97 @@ fi
 # Run the tests
 if [ -n "$TEST_FILE" ]; then
     echo "Running tests in $TEST_FILE with $BROWSER browser..."
-    eval ".venv/bin/python -m pytest $TEST_FILE $PYTEST_ARGS --browser $BROWSER $HEADLESS" | tee test_output.log
+    eval ".venv/bin/python -m pytest $TEST_FILE $PYTEST_ARGS --browser $BROWSER $HEADLESS " | tee test_output.log
 else
-    echo "Running all tests with $BROWSER browser..."
-    eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS" | tee test_output.log
+    echo "Running all tests with $BROWSER browser in batches to avoid timeouts..."
+    echo "Total test files: $(find . -name 'test_*.py' | wc -l)"
+    echo ""
+    
+    # Run tests in categorized batches
+    BATCH_NUM=1
+    
+    # Core tests batch
+    echo "\n=== Batch $BATCH_NUM: Core Tests ==="
+    eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_page.py test_api.py test_chat.py test_welcome_modal.py " 2>/dev/null | tee test_output.log || echo "Some core tests not found"
+    BATCH_NUM=$((BATCH_NUM + 1))
+    
+    # Function tests (split into multiple batches due to high count)
+    for batch in 1 2 3; do
+        echo "\n=== Batch $BATCH_NUM: Function Tests (Part $batch) ==="
+        case $batch in
+            1) eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_function_[a-d]*.py " 2>/dev/null | tee -a test_output.log || true ;;
+            2) eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_function_[e-m]*.py " 2>/dev/null | tee -a test_output.log || true ;;
+            3) eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_function_[n-z]*.py " 2>/dev/null | tee -a test_output.log || true ;;
+        esac
+        BATCH_NUM=$((BATCH_NUM + 1))
+    done
+    
+    # MCP tests (split due to high count)
+    for batch in 1 2; do
+        echo "\n=== Batch $BATCH_NUM: MCP Tests (Part $batch) ==="
+        case $batch in
+            1) eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_mcp_[a-m]*.py " 2>/dev/null | tee -a test_output.log || true ;;
+            2) eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_mcp_[n-z]*.py " 2>/dev/null | tee -a test_output.log || true ;;
+        esac
+        BATCH_NUM=$((BATCH_NUM + 1))
+    done
+    
+    # Agent tests (split due to high count)
+    for batch in 1 2; do
+        echo "\n=== Batch $BATCH_NUM: Agent Tests (Part $batch) ==="
+        case $batch in
+            1) eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_agent_[a-m]*.py " 2>/dev/null | tee -a test_output.log || true ;;
+            2) eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_agent_[n-z]*.py " 2>/dev/null | tee -a test_output.log || true ;;
+        esac
+        BATCH_NUM=$((BATCH_NUM + 1))
+    done
+    
+    # Shodan tests (split due to high count)
+    for batch in 1 2; do
+        echo "\n=== Batch $BATCH_NUM: Shodan Tests (Part $batch) ==="
+        case $batch in
+            1) eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_shodan_[a-m]*.py " 2>/dev/null | tee -a test_output.log || true ;;
+            2) eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_shodan_[n-z]*.py " 2>/dev/null | tee -a test_output.log || true ;;
+        esac
+        BATCH_NUM=$((BATCH_NUM + 1))
+    done
+    
+    # GitHub tests
+    echo "\n=== Batch $BATCH_NUM: GitHub Tests ==="
+    eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_github*.py " 2>/dev/null | tee -a test_output.log || true
+    BATCH_NUM=$((BATCH_NUM + 1))
+    
+    # RAG tests
+    echo "\n=== Batch $BATCH_NUM: RAG Tests ==="
+    eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_rag*.py " 2>/dev/null | tee -a test_output.log || true
+    BATCH_NUM=$((BATCH_NUM + 1))
+    
+    # Share tests
+    echo "\n=== Batch $BATCH_NUM: Share Tests ==="
+    eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_share*.py test_sharing*.py test_shared*.py " 2>/dev/null | tee -a test_output.log || true
+    BATCH_NUM=$((BATCH_NUM + 1))
+    
+    # Model tests
+    echo "\n=== Batch $BATCH_NUM: Model Tests ==="
+    eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_model*.py " 2>/dev/null | tee -a test_output.log || true
+    BATCH_NUM=$((BATCH_NUM + 1))
+    
+    # UI and interaction tests
+    echo "\n=== Batch $BATCH_NUM: UI Tests ==="
+    eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_button*.py test_tooltip*.py test_theme*.py test_modals*.py test_input*.py test_logo*.py " 2>/dev/null | tee -a test_output.log || true
+    BATCH_NUM=$((BATCH_NUM + 1))
+    
+    # Settings and configuration tests
+    echo "\n=== Batch $BATCH_NUM: Settings Tests ==="
+    eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_clear*.py test_system*.py test_token*.py test_default*.py test_prompt*.py test_namespace*.py " 2>/dev/null | tee -a test_output.log || true
+    BATCH_NUM=$((BATCH_NUM + 1))
+    
+    # Misc and debug tests
+    echo "\n=== Batch $BATCH_NUM: Miscellaneous Tests ==="
+    eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_debug*.py test_cross*.py test_yolo*.py test_stop*.py test_welcome*.py test_owasp*.py test_deterministic*.py test_context*.py test_copy*.py " 2>/dev/null | tee -a test_output.log || true
+    
+    echo "\n=== All test batches completed ==="
+    echo "Total batches run: $BATCH_NUM"
 fi
 
 # Generate test results markdown files

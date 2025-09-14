@@ -99,24 +99,32 @@ env/
 .history/
 .sass-cache/
 
-# Playwright test files
-_tests/playwright/*.out
-_tests/playwright/*.log
-_tests/playwright/screenshots/
-_tests/playwright/screenshots_data/
-_tests/playwright/videos/
-_tests/playwright/test_runs/
-_tests/playwright/**/*.png
-# Keep documentation files tracked
-!_tests/playwright/*README*.md
+# Playwright test files and output
+_tests/**/*.out
+_tests/**/*.log
+_tests/**/*.json
+_tests/**/screenshots/
+_tests/**/screenshots_data/
+_tests/**/console_logs/
+_tests/**/videos/
+_tests/**/test_runs/
+_tests/**/*.png
+_tests/**/test_output.*
+_tests/**/test_results.*
+_tests/**/*_bundle.md
+# Keep documentation and configuration files tracked
+!_tests/**/*README*.md
+!_tests/**/package.json
+!_tests/**/requirements.txt
+!_tests/**/pytest.ini
+!_tests/**/conftest.py
 
 # Screenshot files that may be created in wrong location
 screenshots/
 screenshots_data/
+console_logs/
 
-# Project root test files
-run_tests.out
-run_tests.out_bundle.md
+# Project root test files  
 test_results.md
 
 # MCP client plugin example (detached reference)
@@ -140,16 +148,9 @@ mobile-debug.html
 # Test status directory
 _tests/playwright/test_status/
 
-# Debug console JSON files
-*console*.json
+# Debug files
 debug*.json
+debug*.html
 
-# Screenshot directories (anywhere in the project)
-**/screenshots/
-**/screenshots_data/
-
-# Console log files
-**/console_logs*.json
-**/*console*.json
 # Ignore all .out files (test output with potential secrets)
 *.out

@@ -61,14 +61,19 @@ window.ShareService = (function() {
      * @returns {Promise<string>} Shareable URL
      */
     async function createShareLink(options = {}) {
-        console.log('🔗 SHARE LINK CREATION STARTED 🔗');
-        console.log('📋 ShareService: Input options:', JSON.stringify(options, null, 2));
+        // Don't log if this is just for size calculation
+        if (!options.suppressDebug) {
+            console.log('🔗 SHARE LINK CREATION STARTED 🔗');
+            console.log('📋 ShareService: Input options:', JSON.stringify(options, null, 2));
+        }
         
         // If no password provided, return just the hacka.re app URL
         if (!options.password) {
             // Always return the hacka.re app URL, NOT the API endpoint URL
             const hackareUrl = window.location.href.split('#')[0];
-            console.log('🔗 ShareService: No password provided, returning hacka.re app URL:', hackareUrl);
+            if (!options.suppressDebug) {
+                console.log('🔗 ShareService: No password provided, returning hacka.re app URL:', hackareUrl);
+            }
             return hackareUrl;
         }
         

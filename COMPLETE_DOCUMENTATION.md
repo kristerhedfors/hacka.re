@@ -129,7 +129,7 @@ The application uses **TweetNaCl.js** for cryptographic operations, providing hi
 - **Symmetric Encryption**: XSalsa20-Poly1305 (TweetNaCl's secretbox)
 - **Key Size**: 256 bits (32 bytes)
 - **Nonce Size**: 192 bits (24 bytes)
-- **Key Derivation**: Custom derivation based on 10,000 iterations of SHA-512
+- **Key Derivation**: 8,192 iterations of SHA-512 (computational irreducibility)
 
 ### Storage Type Determination
 
