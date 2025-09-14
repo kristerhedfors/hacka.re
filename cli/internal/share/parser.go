@@ -23,7 +23,7 @@ type SharedConfig struct {
 	DefaultFunctions map[string]bool        `json:"defaultFunctions,omitempty"`
 	Prompts          []Prompt               `json:"prompts,omitempty"`
 	RAGEnabled       bool                   `json:"ragEnabled,omitempty"`
-	RAGDocuments     []string               `json:"ragEUDocuments,omitempty"`
+	RAGDocuments     []string               `json:"ragDocuments,omitempty"`
 	CustomData       map[string]interface{} `json:"customData,omitempty"`
 }
 

@@ -333,12 +333,12 @@ window.ShareService = (function() {
             if (options.ragEnabled !== undefined) {
                 payload.ragEnabled = options.ragEnabled;
                 itemsIncluded.push(`✅ RAG ENABLED: ${options.ragEnabled}`);
-            }
-            
-            // Include enabled EU documents if any
-            if (options.ragEUDocuments && options.ragEUDocuments.length > 0) {
-                payload.ragEUDocuments = options.ragEUDocuments;
-                itemsIncluded.push(`✅ RAG EU DOCUMENTS (${options.ragEUDocuments.length} documents: ${options.ragEUDocuments.join(', ')})`);
+                
+                // Only include documents if RAG is actually enabled
+                if (options.ragEnabled && options.ragDocuments && options.ragDocuments.length > 0) {
+                    payload.ragDocuments = options.ragDocuments;
+                    itemsIncluded.push(`✅ RAG DOCUMENTS (${options.ragDocuments.length} documents: ${options.ragDocuments.join(', ')})`);
+                }
             }
         }
         

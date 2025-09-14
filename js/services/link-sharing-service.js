@@ -139,7 +139,7 @@ window.LinkSharingService = (function() {
                 // Include enabled EU document IDs
                 const enabledEUDocuments = window.RAGStorageService.getEnabledEUDocuments();
                 if (enabledEUDocuments && enabledEUDocuments.length > 0) {
-                    finalPayload.ragEUDocuments = enabledEUDocuments;
+                    finalPayload.ragDocuments = enabledEUDocuments;
                 }
             }
             
@@ -458,7 +458,7 @@ window.LinkSharingService = (function() {
                 // We no longer require apiKey to be present, allowing sharing of just conversation or model
                 if (!data.apiKey && !data.messages && !data.model && !data.systemPrompt && !data.prompts && 
                     !data.functions && !data.selectedDefaultFunctionIds && !data.selectedDefaultFunctionCollectionIds && 
-                    !data.mcpConnections && !data.welcomeMessage && !data.ragEnabled && !data.ragEUDocuments) {
+                    !data.mcpConnections && !data.welcomeMessage && !data.ragEnabled && !data.ragDocuments) {
                     console.error('Decrypted data does not contain any valid fields');
                     return null;
                 }
@@ -539,9 +539,9 @@ window.LinkSharingService = (function() {
                     console.log('Extracted RAG enabled state from shared link:', data.ragEnabled);
                 }
                 
-                if (data.ragEUDocuments) {
-                    result.ragEUDocuments = data.ragEUDocuments;
-                    console.log('Extracted RAG EU documents from shared link:', data.ragEUDocuments);
+                if (data.ragDocuments) {
+                    result.ragDocuments = data.ragDocuments;
+                    console.log('Extracted RAG documents from shared link:', data.ragDocuments);
                 }
                 
                 return result;

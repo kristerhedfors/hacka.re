@@ -6,7 +6,7 @@
     "baseUrl": "https://api.openai.com/v1",
     "model": "gpt-4",
     "ragEnabled": false,
-    "ragEUDocuments": []
+    "ragDocuments": []
   },
   "note": "Test fixture for legacy format (compressed and double-encoded) - sanitized"
 }
