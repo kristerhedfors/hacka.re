@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -16,8 +17,9 @@ import (
 
 // Client represents an OpenAI-compatible API client
 type Client struct {
-	config     *config.Config
-	httpClient *http.Client
+	config          *config.Config
+	httpClient      *http.Client
+	modelCompat     *ModelCompatibility
 }
 
 // NewClient creates a new API client
@@ -27,6 +29,7 @@ func NewClient(cfg *config.Config) *Client {
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
+		modelCompat: NewModelCompatibility(),
 	}
 }
 
@@ -38,11 +41,12 @@ type Message struct {
 
 // ChatRequest represents a chat completion request
 type ChatRequest struct {
-	Model       string    `json:"model"`
-	Messages    []Message `json:"messages"`
-	MaxTokens   int       `json:"max_tokens,omitempty"`
-	Temperature float64   `json:"temperature,omitempty"`
-	Stream      bool      `json:"stream,omitempty"`
+	Model               string    `json:"model"`
+	Messages            []Message `json:"messages"`
+	MaxTokens           int       `json:"max_tokens,omitempty"`
+	MaxCompletionTokens int       `json:"max_completion_tokens,omitempty"`
+	Temperature         float64   `json:"temperature,omitempty"`
+	Stream              bool      `json:"stream,omitempty"`
 }
 
 // ChatResponse represents a chat completion response
@@ -77,14 +81,31 @@ type StreamCallback func(chunk string) error
 
 // SendChatCompletion sends a chat completion request
 func (c *Client) SendChatCompletion(messages []Message, streamCallback StreamCallback) (*ChatResponse, error) {
-	request := ChatRequest{
-		Model:       c.config.Model,
-		Messages:    messages,
-		MaxTokens:   c.config.MaxTokens,
-		Temperature: c.config.Temperature,
-		Stream:      c.config.StreamResponse && streamCallback != nil,
-	}
+	// Build request with model-appropriate parameters
+	request := c.modelCompat.BuildCompatibleRequest(
+		c.config.Model,
+		messages,
+		c.config.MaxTokens,
+		c.config.Temperature,
+		c.config.StreamResponse && streamCallback != nil,
+	)
 
+	// First attempt
+	response, err := c.sendRequestWithRetry(request, messages, streamCallback)
+	if err != nil {
+		// Try to fix the request based on the error
+		if fixedRequest, canRetry := c.modelCompat.HandleAPIError(err, request); canRetry {
+			// Log the retry attempt
+			fmt.Fprintf(os.Stderr, "\n[Retrying with adjusted parameters...]\n")
+			return c.sendRequestWithRetry(*fixedRequest, messages, streamCallback)
+		}
+	}
+	
+	return response, err
+}
+
+// sendRequestWithRetry sends the actual request
+func (c *Client) sendRequestWithRetry(request ChatRequest, messages []Message, streamCallback StreamCallback) (*ChatResponse, error) {
 	// Marshal request
 	body, err := json.Marshal(request)
 	if err != nil {
@@ -254,4 +275,9 @@ func (c *Client) TestConnection() error {
 
 	_, err := c.SendChatCompletion(messages, nil)
 	return err
+}
+
+// GetModelInfo returns information about the current model's capabilities
+func (c *Client) GetModelInfo() string {
+	return c.modelCompat.GetModelInfo(c.config.Model)
 }
