@@ -175,7 +175,7 @@ func handleURLArgument(arg string) {
 
 	switch choice {
 	case "1":
-		ui.ShowSettings(cfg)
+		ui.ShowEnhancedSettings(cfg)
 	case "2":
 		// Start chat session with loaded config
 		if err := chat.StartChat(cfg); err != nil {
@@ -201,8 +201,8 @@ func showSettingsModal() {
 		cfg = config.NewConfig()
 	}
 
-	// Show the settings UI
-	ui.ShowSettings(cfg)
+	// Show the enhanced settings UI with model dropdown
+	ui.ShowEnhancedSettings(cfg)
 }
 
 // getPassword securely reads a password from stdin
@@ -403,7 +403,7 @@ func startChatSession(args []string) {
 			cfg = config.NewConfig()
 			
 			// Show settings UI first
-			ui.ShowSettings(cfg)
+			ui.ShowEnhancedSettings(cfg)
 			
 			// Ask if they want to continue to chat
 			fmt.Print("\nConfiguration saved. Start chat session? (y/n): ")
