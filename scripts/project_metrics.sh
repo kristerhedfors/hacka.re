@@ -57,6 +57,7 @@ EXCLUDE_DIRS=(
     "ENV"
     "env"
     "_venv"
+    "*/.venv"
     "_tests/venv"
     "_tests/playwright/.venv"
     "_tests/playwright/screenshots"
@@ -71,7 +72,7 @@ EXCLUDE_DIRS=(
 )
 
 # Additional find exclusions for patterns that need special handling
-ADDITIONAL_EXCLUSIONS="-not -path \"*/__pycache__/*\" -not -path \"*/.pytest_cache/*\""
+ADDITIONAL_EXCLUSIONS="-not -path \"*/__pycache__/*\" -not -path \"*/.pytest_cache/*\" -not -path \"*/.venv/*\" -not -path \"*/_venv/*\""
 
 # Build the find exclusion string
 build_exclusions() {
@@ -144,7 +145,7 @@ echo -e "${BLUE}FILE COUNTS BY TYPE${NC}"
 echo -e "--------------------------------"
 
 # Define file extensions to analyze
-extensions=("js" "html" "css" "py" "sh" "md" "json" "yml" "yaml")
+extensions=("js" "html" "css" "py" "go" "sh" "md" "json" "yml" "yaml")
 
 # Count and display files by extension
 for ext in "${extensions[@]}"; do
@@ -239,9 +240,21 @@ if [ "$py_files" -gt 0 ]; then
     echo ""
 fi
 
+# Show TEN largest Go files (refactoring focus)
+go_files=$(count_files_by_extension "go")
+if [ "$go_files" -gt 0 ]; then
+    echo -e "${YELLOW}TEN Largest Go files (tertiary refactoring targets):${NC}"
+    largest_files_by_extension "go" 10 | while read line_count file_path; do
+        if [ -n "$line_count" ] && [ "$line_count" -gt 0 ]; then
+            echo -e "  $(format_number $line_count) lines: $file_path"
+        fi
+    done
+    echo ""
+fi
+
 # Show aggregate metrics for other file types (no individual file listing)
 for ext in "${extensions[@]}"; do
-    if [ "$ext" != "js" ] && [ "$ext" != "py" ]; then
+    if [ "$ext" != "js" ] && [ "$ext" != "py" ] && [ "$ext" != "go" ]; then
         files=$(count_files_by_extension "$ext")
         if [ "$files" -gt 0 ]; then
             lines=$(count_lines_by_extension "$ext")
