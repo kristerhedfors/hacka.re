@@ -175,7 +175,7 @@ func handleURLArgument(arg string) {
 
 	switch choice {
 	case "1":
-		ui.ShowEnhancedSettings(cfg)
+		ui.ShowMainMenu(cfg)  // Use main menu instead of direct settings
 	case "2":
 		// Start chat session with loaded config
 		if err := chat.StartChat(cfg); err != nil {
@@ -192,7 +192,7 @@ func handleURLArgument(arg string) {
 	}
 }
 
-// showSettingsModal displays the settings modal when no arguments are provided
+// showSettingsModal displays the main menu when no arguments are provided
 func showSettingsModal() {
 	// Load existing configuration or create new
 	cfg, err := config.LoadFromFile(config.GetConfigPath())
@@ -201,8 +201,8 @@ func showSettingsModal() {
 		cfg = config.NewConfig()
 	}
 
-	// Show the enhanced settings UI with model dropdown
-	ui.ShowEnhancedSettings(cfg)
+	// Show the main menu (which includes settings option)
+	ui.ShowMainMenu(cfg)
 }
 
 // getPassword securely reads a password from stdin
@@ -403,7 +403,7 @@ func startChatSession(args []string) {
 			cfg = config.NewConfig()
 			
 			// Show settings UI first
-			ui.ShowEnhancedSettings(cfg)
+			ui.ShowSettings(cfg)
 			
 			// Ask if they want to continue to chat
 			fmt.Print("\nConfiguration saved. Start chat session? (y/n): ")

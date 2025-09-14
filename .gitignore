@@ -160,3 +160,7 @@ cli/hacka.re
 cli/hacka.re.exe
 cli/test_*
 !cli/test_*.go
+
+# CLI test logs and debugging
+cli/testlogs/
+cli/debug/
