@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hacka-re/cli/internal/compression"
 	"github.com/hacka-re/cli/internal/crypto"
 )
 
@@ -49,7 +50,69 @@ func ParseURL(input string, password string) (*SharedConfig, error) {
 	// Normalize input - handle various formats
 	normalized := normalizeInput(input)
 	
-	// Extract encrypted data from URL
+	// Try new format first (direct base64 encrypted data)
+	encryptedData, err := crypto.ParseShareLinkURL(normalized)
+	if err == nil {
+		// Decrypt using new format
+		plainData, err := crypto.DecryptShareLink(encryptedData, password)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decrypt configuration: %w", err)
+		}
+		
+		// The decrypted data might be compressed or a direct JSON string
+		plainStr := string(plainData)
+		
+		// Check if it's a JSON string (starts with ") - this means it's compressed
+		if len(plainStr) > 0 && plainStr[0] == '"' {
+			// It's a JSON string containing compressed data, unmarshal to get the actual string
+			var compressedStr string
+			if err := json.Unmarshal(plainData, &compressedStr); err != nil {
+				return nil, fmt.Errorf("failed to unmarshal compressed data: %w", err)
+			}
+			
+			// Decompress the payload
+			decompressed, err := compression.DecompressPayload(compressedStr)
+			if err != nil {
+				return nil, fmt.Errorf("failed to decompress payload: %w", err)
+			}
+			
+			// Convert map to SharedConfig
+			jsonBytes, err := json.Marshal(decompressed)
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal decompressed data: %w", err)
+			}
+			
+			var config SharedConfig
+			if err := json.Unmarshal(jsonBytes, &config); err != nil {
+				return nil, fmt.Errorf("failed to parse configuration: %w", err)
+			}
+			
+			return &config, nil
+		}
+		
+		// Otherwise try to parse as direct JSON (uncompressed)
+		var config SharedConfig
+		if err := json.Unmarshal(plainData, &config); err != nil {
+			// Maybe it's a string that needs decompression
+			if decompressed, err := compression.DecompressPayload(plainStr); err == nil {
+				// Convert map to SharedConfig
+				jsonBytes, err := json.Marshal(decompressed)
+				if err != nil {
+					return nil, fmt.Errorf("failed to marshal decompressed data: %w", err)
+				}
+				
+				if err := json.Unmarshal(jsonBytes, &config); err != nil {
+					return nil, fmt.Errorf("failed to parse configuration: %w", err)
+				}
+				return &config, nil
+			}
+			return nil, fmt.Errorf("failed to parse configuration: %w", err)
+		}
+		
+		return &config, nil
+	}
+	
+	// Fall back to old format (JSON structure with enc, salt, nonce)
 	encData, err := crypto.ParseShareableURL(normalized)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse URL: %w", err)
@@ -64,21 +127,22 @@ func ParseURL(input string, password string) (*SharedConfig, error) {
 	return &config, nil
 }
 
-// CreateShareableURL creates a shareable URL from configuration
+// CreateShareableURL creates a shareable URL from configuration (new format)
 func CreateShareableURL(config *SharedConfig, password string, baseURL string) (string, error) {
-	// Encrypt the configuration
-	encData, err := crypto.EncryptJSON(config, password)
+	// Convert configuration to JSON
+	jsonData, err := json.Marshal(config)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal configuration: %w", err)
+	}
+	
+	// Encrypt using new format
+	encryptedData, err := crypto.EncryptShareLink(jsonData, password)
 	if err != nil {
 		return "", fmt.Errorf("failed to encrypt configuration: %w", err)
 	}
 
-	// Generate the shareable URL
-	url, err := crypto.GenerateShareableURL(baseURL, encData)
-	if err != nil {
-		return "", fmt.Errorf("failed to generate URL: %w", err)
-	}
-
-	return url, nil
+	// Create the URL with fragment
+	return fmt.Sprintf("%s#gpt=%s", baseURL, encryptedData), nil
 }
 
 // normalizeInput converts various input formats to a full URL
@@ -211,4 +275,37 @@ func FromJSON(jsonStr string) (*SharedConfig, error) {
 		return nil, err
 	}
 	return &config, nil
+}
+
+// DeriveNamespaceFromURL derives the namespace hash from a share link URL
+func DeriveNamespaceFromURL(url string, password string) (string, string, error) {
+	// Normalize input
+	normalized := normalizeInput(url)
+	
+	// Extract encrypted data
+	encryptedData, err := crypto.ParseShareLinkURL(normalized)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to parse URL: %w", err)
+	}
+	
+	// Extract salt and nonce
+	salt, nonce, err := crypto.ExtractSaltAndNonce(encryptedData)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to extract salt and nonce: %w", err)
+	}
+	
+	// Derive the decryption key and master key
+	decryptionKey := crypto.DeriveKey(password, salt)
+	masterKey := crypto.DeriveMasterKey(password, salt, nonce)
+	
+	// Derive the namespace hash
+	namespaceHash := crypto.DeriveNamespaceHash(decryptionKey, masterKey, nonce)
+	
+	// Return the first 8 characters as the namespace and the master key
+	namespace := namespaceHash
+	if len(namespaceHash) > 8 {
+		namespace = namespaceHash[:8]
+	}
+	
+	return namespace, masterKey, nil
 }
