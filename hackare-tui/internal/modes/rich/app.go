@@ -16,7 +16,7 @@ type App struct {
 	eventBus *core.EventBus
 
 	mainMenu      *FilterableMenu
-	settingsModal *SettingsModal
+	settingsModal *SettingsModalV2
 	currentPanel  Panel
 	running       bool
 	needsRedraw   bool
@@ -85,7 +85,7 @@ func (a *App) createMainMenu() {
 	a.mainMenu.SetInfoPanel(true, infoWidth)
 
 	// Add menu items
-	a.mainMenu.AddItem(&MenuItem{
+	a.mainMenu.AddItem(&BasicMenuItem{
 		Number:      0,
 		Title:       "Open Settings",
 		Description: "Configure API settings, models, and features",
@@ -106,7 +106,7 @@ Settings are saved locally and can be shared via encrypted links.`,
 		},
 	})
 
-	a.mainMenu.AddItem(&MenuItem{
+	a.mainMenu.AddItem(&BasicMenuItem{
 		Number:      1,
 		Title:       "Start Chat",
 		Description: "Begin an interactive chat session",
@@ -127,7 +127,7 @@ The chat interface supports both simple messages and complex conversations with 
 		},
 	})
 
-	a.mainMenu.AddItem(&MenuItem{
+	a.mainMenu.AddItem(&BasicMenuItem{
 		Number:      2,
 		Title:       "Manage Prompts",
 		Description: "Create and manage system prompts",
@@ -147,7 +147,7 @@ System prompts help customize the AI's responses for specific use cases.`,
 		},
 	})
 
-	a.mainMenu.AddItem(&MenuItem{
+	a.mainMenu.AddItem(&BasicMenuItem{
 		Number:      3,
 		Title:       "Functions",
 		Description: "Manage callable functions",
@@ -167,7 +167,7 @@ Functions extend the AI's capabilities with custom code execution.`,
 		},
 	})
 
-	a.mainMenu.AddItem(&MenuItem{
+	a.mainMenu.AddItem(&BasicMenuItem{
 		Number:      4,
 		Title:       "MCP Servers",
 		Description: "Configure MCP server connections",
@@ -187,7 +187,7 @@ MCP enables the AI to interact with external services and tools.`,
 		},
 	})
 
-	a.mainMenu.AddItem(&MenuItem{
+	a.mainMenu.AddItem(&BasicMenuItem{
 		Number:      5,
 		Title:       "RAG Configuration",
 		Description: "Set up Retrieval-Augmented Generation",
@@ -207,7 +207,7 @@ RAG allows the AI to reference your specific documents and data.`,
 		},
 	})
 
-	a.mainMenu.AddItem(&MenuItem{
+	a.mainMenu.AddItem(&BasicMenuItem{
 		Number:      6,
 		Title:       "Share Configuration",
 		Description: "Generate a shareable configuration link",
@@ -226,7 +226,7 @@ Share links allow you to transfer settings between devices securely.`,
 		},
 	})
 
-	a.mainMenu.AddItem(&MenuItem{
+	a.mainMenu.AddItem(&BasicMenuItem{
 		Number:      7,
 		Title:       "Switch to Socket Mode",
 		Description: "Use simple terminal mode",
@@ -247,7 +247,7 @@ Useful for SSH, telnet, or serial connections.`,
 		},
 	})
 
-	a.mainMenu.AddItem(&MenuItem{
+	a.mainMenu.AddItem(&BasicMenuItem{
 		Number:      8,
 		Title:       "About",
 		Description: "About hacka.re Terminal UI",
@@ -269,7 +269,7 @@ Built with Go, tcell, and love.`,
 		},
 	})
 
-	a.mainMenu.AddItem(&MenuItem{
+	a.mainMenu.AddItem(&BasicMenuItem{
 		Number:      9,
 		Title:       "Exit",
 		Description: "Exit the application",
@@ -334,10 +334,13 @@ func (a *App) handleKeyEvent(ev *tcell.EventKey) {
 		item, exit := a.mainMenu.HandleInput(ev)
 		if exit {
 			a.running = false
-		} else if item != nil && item.Handler != nil {
-			if err := item.Handler(); err != nil {
-				if err.Error() == "switching to socket mode" {
-					a.running = false
+		} else if item != nil {
+			// Check if it's a BasicMenuItem with a handler
+			if basicItem, ok := item.(*BasicMenuItem); ok && basicItem.Handler != nil {
+				if err := basicItem.Handler(); err != nil {
+					if err.Error() == "switching to socket mode" {
+						a.running = false
+					}
 				}
 			}
 		}
@@ -440,8 +443,8 @@ func (a *App) subscribeToEvents() {
 
 // Panel handler methods
 func (a *App) showSettings() error {
-	// Create settings modal
-	a.settingsModal = NewSettingsModal(a.screen, a.config)
+	// Create settings modal with filterable menu
+	a.settingsModal = NewSettingsModalV2(a.screen, a.config)
 
 	// Set callbacks
 	a.settingsModal.onSave = func(cfg *core.Config) error {

@@ -8,8 +8,19 @@ import (
 	"github.com/gdamore/tcell/v2"
 )
 
-// MenuItem represents a selectable menu item
-type MenuItem struct {
+// MenuItem represents a selectable menu item interface
+type MenuItem interface {
+	GetID() string
+	GetNumber() int
+	GetTitle() string
+	GetDescription() string
+	GetInfo() string
+	GetCategory() string
+	IsEnabled() bool
+}
+
+// BasicMenuItem is a basic implementation of MenuItem
+type BasicMenuItem struct {
 	ID          string
 	Number      int
 	Title       string
@@ -20,11 +31,19 @@ type MenuItem struct {
 	Handler     func() error
 }
 
+func (m *BasicMenuItem) GetID() string          { return m.ID }
+func (m *BasicMenuItem) GetNumber() int         { return m.Number }
+func (m *BasicMenuItem) GetTitle() string       { return m.Title }
+func (m *BasicMenuItem) GetDescription() string { return m.Description }
+func (m *BasicMenuItem) GetInfo() string        { return m.Info }
+func (m *BasicMenuItem) GetCategory() string    { return m.Category }
+func (m *BasicMenuItem) IsEnabled() bool        { return m.Enabled }
+
 // FilterableMenu provides a searchable menu with arrow navigation and info panel
 type FilterableMenu struct {
 	screen        tcell.Screen
-	items         []*MenuItem
-	filteredItems []*MenuItem
+	items         []MenuItem
+	filteredItems []MenuItem
 	selectedIndex int
 	filterText    string
 
@@ -49,8 +68,8 @@ func NewFilterableMenu(screen tcell.Screen, title string) *FilterableMenu {
 	return &FilterableMenu{
 		screen:        screen,
 		title:         title,
-		items:         make([]*MenuItem, 0),
-		filteredItems: make([]*MenuItem, 0),
+		items:         make([]MenuItem, 0),
+		filteredItems: make([]MenuItem, 0),
 		selectedIndex: 0,
 		filterText:    "",
 		width:         50,
@@ -69,7 +88,7 @@ func NewFilterableMenu(screen tcell.Screen, title string) *FilterableMenu {
 }
 
 // AddItem adds a menu item
-func (m *FilterableMenu) AddItem(item *MenuItem) {
+func (m *FilterableMenu) AddItem(item MenuItem) {
 	m.items = append(m.items, item)
 	m.applyFilter()
 }
@@ -188,15 +207,15 @@ func (m *FilterableMenu) drawItems() {
 
 		// Determine style
 		style := m.normalStyle
-		if !item.Enabled {
+		if !item.IsEnabled() {
 			style = m.disabledStyle
 		} else if i+scrollStart == m.selectedIndex {
 			style = m.selectedStyle
 		}
 
 		// Format item text
-		prefix := fmt.Sprintf("%d. ", item.Number)
-		text := prefix + item.Title
+		prefix := fmt.Sprintf("%d. ", item.GetNumber())
+		text := prefix + item.GetTitle()
 
 		// Truncate if too long
 		maxLen := m.width - 4
@@ -234,7 +253,7 @@ func (m *FilterableMenu) drawInfoPanel() {
 	infoX := m.x + m.width + 2
 
 	// Draw title
-	title := fmt.Sprintf(" Info: %s ", item.Title)
+	title := fmt.Sprintf(" Info: %s ", item.GetTitle())
 	if len(title) > m.infoWidth-2 {
 		title = title[:m.infoWidth-5] + "... "
 	}
@@ -251,16 +270,16 @@ func (m *FilterableMenu) drawInfoPanel() {
 	maxLines := m.height - 5
 
 	// Wrap text
-	lines := m.wrapText(item.Info, m.infoWidth-4)
+	lines := m.wrapText(item.GetInfo(), m.infoWidth-4)
 
 	for i := 0; i < maxLines && i < len(lines); i++ {
 		m.drawText(infoX+2, startY+i, lines[i], m.infoStyle)
 	}
 
 	// Show description if room
-	if len(lines) < maxLines-2 && item.Description != "" {
+	if len(lines) < maxLines-2 && item.GetDescription() != "" {
 		m.drawText(infoX+2, startY+len(lines)+1, "Description:", m.normalStyle)
-		descLines := m.wrapText(item.Description, m.infoWidth-4)
+		descLines := m.wrapText(item.GetDescription(), m.infoWidth-4)
 		for i, line := range descLines {
 			if startY+len(lines)+2+i >= m.y+m.height-1 {
 				break
@@ -284,7 +303,7 @@ func (m *FilterableMenu) drawInstructions() {
 }
 
 // HandleInput processes keyboard input
-func (m *FilterableMenu) HandleInput(ev *tcell.EventKey) (*MenuItem, bool) {
+func (m *FilterableMenu) HandleInput(ev *tcell.EventKey) (MenuItem, bool) {
 	switch ev.Key() {
 	case tcell.KeyEscape:
 		if m.filterText != "" {
@@ -299,7 +318,7 @@ func (m *FilterableMenu) HandleInput(ev *tcell.EventKey) (*MenuItem, bool) {
 	case tcell.KeyEnter:
 		if m.selectedIndex < len(m.filteredItems) {
 			item := m.filteredItems[m.selectedIndex]
-			if item.Enabled {
+			if item.IsEnabled() {
 				return item, false
 			}
 		}
@@ -327,7 +346,7 @@ func (m *FilterableMenu) HandleInput(ev *tcell.EventKey) (*MenuItem, bool) {
 		if unicode.IsDigit(r) && m.filterText == "" {
 			num := int(r - '0')
 			for i, item := range m.filteredItems {
-				if item.Number == num && item.Enabled {
+				if item.GetNumber() == num && item.IsEnabled() {
 					m.selectedIndex = i
 					return item, false
 				}
@@ -344,7 +363,7 @@ func (m *FilterableMenu) HandleInput(ev *tcell.EventKey) (*MenuItem, bool) {
 
 // applyFilter filters items based on current filter text
 func (m *FilterableMenu) applyFilter() {
-	m.filteredItems = make([]*MenuItem, 0)
+	m.filteredItems = make([]MenuItem, 0)
 
 	if m.filterText == "" {
 		// No filter, show all items
@@ -353,8 +372,8 @@ func (m *FilterableMenu) applyFilter() {
 		// Filter items
 		filter := strings.ToLower(m.filterText)
 		for _, item := range m.items {
-			if strings.Contains(strings.ToLower(item.Title), filter) ||
-			   strings.Contains(strings.ToLower(item.Description), filter) {
+			if strings.Contains(strings.ToLower(item.GetTitle()), filter) ||
+			   strings.Contains(strings.ToLower(item.GetDescription()), filter) {
 				m.filteredItems = append(m.filteredItems, item)
 			}
 		}
