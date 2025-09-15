@@ -106,8 +106,8 @@ class SpeedrunVisualizer:
 
             # Browse command tests
             ("Browse Help", [str(self.cli_path), "browse", "--help"], 2),
-            ("Browse NoOpen", [str(self.cli_path), "browse", "--no-browser", "-p", "9991"], 3),
-            ("Browse Port", [str(self.cli_path), "browse", "-p", "9992", "--no-browser"], 3),
+            ("Serve NoOpen", [str(self.cli_path), "serve", "-p", "9991"], 3),
+            ("Serve Port Test", [str(self.cli_path), "serve", "-p", "9992"], 3),
 
             # Serve command tests
             ("Serve Help", [str(self.cli_path), "serve", "--help"], 2),
@@ -119,8 +119,8 @@ class SpeedrunVisualizer:
             ("Chat Help", [str(self.cli_path), "chat", "--help"], 2),
 
             # Port configuration tests
-            ("Port Short", [str(self.cli_path), "serve", "-p", "8888", "--no-browser"], 3),
-            ("Port Long", [str(self.cli_path), "serve", "--port", "8889", "--no-browser"], 3),
+            ("Port Short", [str(self.cli_path), "serve", "-p", "8888"], 3),
+            ("Port Long", [str(self.cli_path), "serve", "--port", "8889"], 3),
 
             # Session/Link tests (if environment configured)
             ("Session Help", [str(self.cli_path), "browse", "--help"], 2),

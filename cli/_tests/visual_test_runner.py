@@ -108,7 +108,7 @@ class VisualTestRunner:
 
         # Test server startup (with immediate kill)
         console.print("\n  🌐 Testing server startup...")
-        result = self.run_command_with_terminal([str(self.cli_path), "browse", "--no-browser", "-p", "9999"], timeout=2)
+        result = self.run_command_with_terminal([str(self.cli_path), "serve", "-p", "9999"], timeout=2)
         results['startup'] = result
         self._display_terminal_output(result)
 
