@@ -25,10 +25,10 @@ func BrowseCommand(args []string) {
 	browseFlags := flag.NewFlagSet("browse", flag.ExitOnError)
 	
 	// Define flags
-	port := browseFlags.Int("port", 0, "Port to serve on (default: 8080 or HACKARE_BROWSE_PORT)")
+	port := browseFlags.Int("port", 0, "Port to serve on (default: 8080 or HACKARE_WEB_PORT)")
 	portShort := browseFlags.Int("p", 0, "Port to serve on (short form)")
 	host := browseFlags.String("host", "localhost", "Host to bind to")
-	noBrowser := browseFlags.Bool("no-browser", false, "Don't open browser automatically")
+	// Removed --no-browser flag as we have 'serve' command for that
 	help := browseFlags.Bool("help", false, "Show help message")
 	helpShort := browseFlags.Bool("h", false, "Show help message (short form)")
 	
@@ -39,20 +39,18 @@ func BrowseCommand(args []string) {
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		fmt.Fprintf(os.Stderr, "  -p, --port PORT       Port to serve on (default: 8080)\n")
 		fmt.Fprintf(os.Stderr, "  --host HOST           Host to bind to (default: localhost)\n")
-		fmt.Fprintf(os.Stderr, "  --no-browser          Don't open browser automatically\n")
 		fmt.Fprintf(os.Stderr, "  -h, --help            Show this help message\n\n")
 		fmt.Fprintf(os.Stderr, "Arguments:\n")
 		fmt.Fprintf(os.Stderr, "  URL          Full hacka.re URL to load configuration from\n")
 		fmt.Fprintf(os.Stderr, "  FRAGMENT     Fragment with prefix (gpt=...)\n")
 		fmt.Fprintf(os.Stderr, "  DATA         Just the encrypted data (eyJlbmM...)\n\n")
 		fmt.Fprintf(os.Stderr, "Environment Variables:\n")
-		fmt.Fprintf(os.Stderr, "  HACKARE_BROWSE_PORT   Default port if not specified via flag\n\n")
+		fmt.Fprintf(os.Stderr, "  HACKARE_WEB_PORT   Default port if not specified via flag\n\n")
 		fmt.Fprintf(os.Stderr, "Examples:\n")
 		fmt.Fprintf(os.Stderr, "  %s browse                              # Start on port 8080\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  %s browse -p 3000                      # Start on port 3000\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  %s browse \"gpt=eyJlbmM...\"            # Load config and browse\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "  %s browse --no-browser                 # Don't open browser\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "  HACKARE_BROWSE_PORT=9000 %s browse    # Use env var\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  HACKARE_WEB_PORT=9000 %s browse    # Use env var\n", os.Args[0])
 	}
 	
 	// Parse flags
@@ -154,24 +152,19 @@ func BrowseCommand(args []string) {
 	// Give server a moment to start
 	time.Sleep(100 * time.Millisecond)
 	
-	// Open browser if not disabled
-	if !*noBrowser {
-		browserURL := server.GetURL()
-		
-		// Append fragment if we have a shared configuration
-		if sharedConfigFragment != "" {
-			browserURL = browserURL + "/#" + sharedConfigFragment
-		}
-		
-		if err := openBrowser(browserURL); err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: Could not open browser automatically: %v\n", err)
-			fmt.Printf("Please open your browser and navigate to: %s\n", browserURL)
-		} else {
-			fmt.Printf("Opening browser at: %s\n", browserURL)
-		}
-	} else if sharedConfigFragment != "" {
-		// If browser is disabled but we have a config, show the URL with fragment
-		fmt.Printf("Web server started at: %s/#%s\n", server.GetURL(), sharedConfigFragment)
+	// Always open browser (use 'serve' command if you don't want browser)
+	browserURL := server.GetURL()
+	
+	// Append fragment if we have a shared configuration
+	if sharedConfigFragment != "" {
+		browserURL = browserURL + "/#" + sharedConfigFragment
+	}
+	
+	if err := openBrowser(browserURL); err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: Could not open browser automatically: %v\n", err)
+		fmt.Printf("Please open your browser and navigate to: %s\n", browserURL)
+	} else {
+		fmt.Printf("Opening browser at: %s\n", browserURL)
 	}
 	
 	// Wait for interrupt or server error

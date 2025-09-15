@@ -75,7 +75,7 @@ class TestCliZipServing:
         
         # Start server
         self.server_process = subprocess.Popen(
-            [self.cli_path, "browse", "-p", str(self.test_port), "--no-browser"],
+            [self.cli_path, "serve", "-p", str(self.test_port)],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True
@@ -179,7 +179,7 @@ class TestCliZipServing:
         
         # Start server
         self.server_process = subprocess.Popen(
-            [self.cli_path, "browse", "-p", str(self.test_port), "--no-browser"],
+            [self.cli_path, "serve", "-p", str(self.test_port)],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True

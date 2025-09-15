@@ -31,9 +31,9 @@ class TestCliPortConfiguration:
         """Test that default port is 8080"""
         print("\n=== Testing default port 8080 ===")
         
-        # Start browse without port specification
+        # Start serve without port specification (browse always opens browser)
         process = subprocess.Popen(
-            [self.cli_path, "browse", "--no-browser"],
+            [self.cli_path, "serve"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True
@@ -56,9 +56,9 @@ class TestCliPortConfiguration:
         
         test_port = 9882
         
-        # Test with browse
+        # Test with serve (browse always opens browser)
         process = subprocess.Popen(
-            [self.cli_path, "browse", "-p", str(test_port), "--no-browser"],
+            [self.cli_path, "serve", "-p", str(test_port)],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True
@@ -104,11 +104,11 @@ class TestCliPortConfiguration:
         
         env_port = 9884
         env = os.environ.copy()
-        env["HACKARE_BROWSE_PORT"] = str(env_port)
+        env["HACKARE_WEB_PORT"] = str(env_port)
         
-        # Start with env var
+        # Start with env var using serve (browse always opens browser)
         process = subprocess.Popen(
-            [self.cli_path, "browse", "--no-browser"],
+            [self.cli_path, "serve"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -132,7 +132,7 @@ class TestCliPortConfiguration:
         env_port = 9885
         flag_port = 9886
         env = os.environ.copy()
-        env["HACKARE_BROWSE_PORT"] = str(env_port)
+        env["HACKARE_WEB_PORT"] = str(env_port)
         
         # Start with both env and flag
         process = subprocess.Popen(
@@ -205,7 +205,7 @@ class TestCliPortConfiguration:
         
         # Try to start second server on same port
         process2 = subprocess.Popen(
-            [self.cli_path, "browse", "-p", str(test_port), "--no-browser"],
+            [self.cli_path, "serve", "-p", str(test_port)],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True
