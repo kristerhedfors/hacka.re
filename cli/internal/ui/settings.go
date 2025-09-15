@@ -70,6 +70,12 @@ func ShowSettings(cfg *config.Config) error {
 	s.SetStyle(tcell.StyleDefault.Background(tcell.ColorReset).Foreground(tcell.ColorReset))
 	s.Clear()
 
+	// Clear any pending events from initialization
+	s.Sync()
+	for s.HasPendingEvent() {
+		s.PollEvent()
+	}
+
 	modal := &SettingsModal{
 		screen:        s,
 		config:        cfg,
@@ -281,11 +287,18 @@ func (m *SettingsModal) run() bool {
 		m.screen.Show()
 
 		ev := m.screen.PollEvent()
+
+		// Log every event we receive
+		log.Debug("[EVENT] Received event type: %T", ev)
+
 		switch ev := ev.(type) {
 		case *tcell.EventKey:
+			// Log detailed key info
+			log.Debug("[KEY] Key=%v, Rune=%c, Modifiers=%v", ev.Key(), ev.Rune(), ev.Modifiers())
+
 			// Handle key event and check if it was handled
 			handled := m.handleKeyEvent(ev)
-			log.Debug("Key event handled=%v", handled)
+			log.Debug("[KEY] Event handled=%v, selected=%d", handled, m.selected)
 			
 			// If the key was handled, don't check for exit
 			// This prevents ESC from exiting when it closes a submenu
@@ -314,8 +327,13 @@ func (m *SettingsModal) handleKeyEvent(ev *tcell.EventKey) bool {
 	log := logger.Get()
 	log.KeyEvent(fmt.Sprintf("%v", ev.Key()), fmt.Sprintf("%v", ev.Modifiers()), m.getContext())
 
+	// Debug state
+	log.Debug("[STATE] modelDropdown=%v, modelMenu=%v, selected=%d, editing=%v, expanded=%d",
+		m.modelDropdown, m.modelMenu != nil, m.selected, m.editing, m.expandedField)
+
 	// If model dropdown is active, let it handle input first
 	if m.modelDropdown && m.modelMenu != nil {
+		log.Debug("[MODEL-DROPDOWN] Active, handling key: %v", ev.Key())
 		selected, escaped := m.modelMenu.HandleInput(ev)
 		if escaped {
 			log.MenuAction("modelDropdown", "close", "ESC pressed")
@@ -331,7 +349,17 @@ func (m *SettingsModal) handleKeyEvent(ev *tcell.EventKey) bool {
 			}
 			return true
 		}
-		return true // Menu handled the input
+		// For arrow keys and other navigation, the dropdown menu handles them internally
+		// but we still need to redraw, so don't consume the event
+		if ev.Key() == tcell.KeyUp || ev.Key() == tcell.KeyDown {
+			log.Debug("[MODEL-DROPDOWN] Arrow key handled by dropdown menu")
+			return true // Menu handled the navigation
+		}
+		// For other keys like typing for filter, let the menu handle it
+		return true
+	} else if m.modelDropdown {
+		log.Debug("[MODEL-DROPDOWN] ERROR: dropdown is true but menu is nil!")
+		m.modelDropdown = false
 	}
 
 	switch ev.Key() {
@@ -354,28 +382,42 @@ func (m *SettingsModal) handleKeyEvent(ev *tcell.EventKey) bool {
 		return false
 		
 	case tcell.KeyUp:
+		log.Debug("[ARROW-UP] Current: selected=%d, editing=%v, expanded=%d", m.selected, m.editing, m.expandedField)
 		if m.expandedField >= 0 {
 			// Toggle between Yes and No
 			oldChoice := m.expandedChoice
 			m.expandedChoice = 1 - m.expandedChoice
 			log.MenuAction("expandableMenu", "toggle", fmt.Sprintf("%d -> %d", oldChoice, m.expandedChoice))
+			log.Debug("[ARROW-UP] Toggled expandable choice")
+			return true
 		} else if !m.editing && m.selected > 0 {
+			oldSelected := m.selected
 			m.selected--
-			log.Debug("Field selection: up to %d", m.selected)
+			log.Debug("[ARROW-UP] Moving selection: %d -> %d", oldSelected, m.selected)
+			return true
+		} else {
+			log.Debug("[ARROW-UP] No action: editing=%v, selected=%d", m.editing, m.selected)
+			return false // Don't consume event if we didn't handle it
 		}
-		return true
-		
+
 	case tcell.KeyDown:
+		log.Debug("[ARROW-DOWN] Current: selected=%d, editing=%v, expanded=%d, total_fields=%d", m.selected, m.editing, m.expandedField, len(m.fields))
 		if m.expandedField >= 0 {
 			// Toggle between Yes and No
 			oldChoice := m.expandedChoice
 			m.expandedChoice = 1 - m.expandedChoice
 			log.MenuAction("expandableMenu", "toggle", fmt.Sprintf("%d -> %d", oldChoice, m.expandedChoice))
+			log.Debug("[ARROW-DOWN] Toggled expandable choice")
+			return true
 		} else if !m.editing && m.selected < len(m.fields)-1 {
+			oldSelected := m.selected
 			m.selected++
-			log.Debug("Field selection: down to %d", m.selected)
+			log.Debug("[ARROW-DOWN] Moving selection: %d -> %d", oldSelected, m.selected)
+			return true
+		} else {
+			log.Debug("[ARROW-DOWN] No action: editing=%v, selected=%d, max=%d", m.editing, m.selected, len(m.fields)-1)
+			return false // Don't consume event if we didn't handle it
 		}
-		return true
 		
 	case tcell.KeyEnter:
 		if m.expandedField >= 0 {
@@ -672,16 +714,76 @@ func formatNumber(n int) string {
 	return result
 }
 
-// wordWrap wraps text to fit within the given width
+// wordWrap wraps text to fit within the given width while preserving line breaks and bullet points
 func wordWrap(text string, width int) []string {
+	if width <= 0 {
+		return []string{}
+	}
+
+	// Split by newlines first to preserve intentional line breaks
+	paragraphs := strings.Split(text, "\n")
+	var allLines []string
+
+	for _, paragraph := range paragraphs {
+		// Check if this is a bullet point or list item
+		isBullet := strings.HasPrefix(strings.TrimSpace(paragraph), "•") ||
+			strings.HasPrefix(strings.TrimSpace(paragraph), "-") ||
+			strings.HasPrefix(strings.TrimSpace(paragraph), "*")
+
+		// Handle empty lines
+		if strings.TrimSpace(paragraph) == "" {
+			allLines = append(allLines, "")
+			continue
+		}
+
+		// For bullet points, preserve the bullet and wrap the rest
+		if isBullet {
+			// Find the bullet prefix
+			trimmed := strings.TrimSpace(paragraph)
+			bulletIdx := strings.IndexAny(trimmed, "•-*")
+			if bulletIdx >= 0 && bulletIdx < len(trimmed)-1 {
+				prefix := trimmed[:bulletIdx+1] + " "
+				content := strings.TrimSpace(trimmed[bulletIdx+1:])
+
+				// Wrap the content part
+				wrappedContent := wrapSingleLine(content, width-len(prefix))
+				if len(wrappedContent) > 0 {
+					// First line with bullet
+					allLines = append(allLines, prefix+wrappedContent[0])
+					// Subsequent lines with indentation
+					for i := 1; i < len(wrappedContent); i++ {
+						allLines = append(allLines, strings.Repeat(" ", len(prefix))+wrappedContent[i])
+					}
+				} else {
+					allLines = append(allLines, prefix)
+				}
+			} else {
+				// Fallback for malformed bullets
+				allLines = append(allLines, wrapSingleLine(paragraph, width)...)
+			}
+		} else {
+			// Regular paragraph
+			allLines = append(allLines, wrapSingleLine(paragraph, width)...)
+		}
+	}
+
+	return allLines
+}
+
+// wrapSingleLine wraps a single line of text to fit within the given width
+func wrapSingleLine(text string, width int) []string {
+	if width <= 0 {
+		return []string{text}
+	}
+
 	words := strings.Fields(text)
 	if len(words) == 0 {
 		return []string{}
 	}
-	
+
 	var lines []string
 	currentLine := ""
-	
+
 	for _, word := range words {
 		if currentLine == "" {
 			currentLine = word
@@ -692,11 +794,11 @@ func wordWrap(text string, width int) []string {
 			currentLine = word
 		}
 	}
-	
+
 	if currentLine != "" {
 		lines = append(lines, currentLine)
 	}
-	
+
 	return lines
 }
 

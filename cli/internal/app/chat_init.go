@@ -10,11 +10,11 @@ import (
 
 // StartChatInterface starts the enhanced chat interface with all modal handlers configured
 func StartChatInterface(cfg *config.Config) error {
-	// Create the enhanced chat
-	enhancedChat := chat.NewEnhancedChat(cfg)
+	// Create the terminal chat with proper input handling
+	terminalChat := chat.NewTerminalChat(cfg)
 
 	// Set up modal handlers
-	enhancedChat.SetModalHandlers(chat.ModalHandlers{
+	terminalChat.SetModalHandlers(chat.ModalHandlers{
 		OpenSettings: func(cfg *config.Config) error {
 			// Clear screen for modal
 			fmt.Print("\033[2J\033[H")
@@ -68,5 +68,5 @@ func StartChatInterface(cfg *config.Config) error {
 	})
 
 	// Run the chat interface
-	return enhancedChat.Run()
+	return terminalChat.Run()
 }

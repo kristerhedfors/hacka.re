@@ -65,8 +65,8 @@ func NewFilterableMenu(screen tcell.Screen, title string, items []MenuItem) *Fil
 		items:         items,
 		filteredItems: make([]MenuItem, len(items)),
 		showInfo:      true,
-		infoWidth:     40,
-		width:         60,
+		infoWidth:     60,  // Increased from 40 to 60 for better readability
+		width:         40,  // Reduced from 60 to 40 to be more compact
 		height:        20,
 	}
 	copy(menu.filteredItems, items)
@@ -549,23 +549,9 @@ func (m *FilterableMenu) drawTextWithHighlight(x, y int, text, filter string, ba
 
 // drawHelp draws help text at the bottom
 func (m *FilterableMenu) drawHelp() {
-	var helpText string
-	if m.isFiltering {
-		if m.isNumberMode {
-			helpText = "Type number to select | ↵ Confirm | ESC Clear filter | Backspace Delete"
-		} else {
-			helpText = "Type to filter | ↵ Select | ESC Clear | Numbers for direct selection"
-		}
-	} else {
-		helpText = "↑↓ Navigate | ↵ Select | Type to filter | Numbers for quick select | ESC Exit"
-	}
-
-	helpX := m.x + (m.width-len(helpText))/2
-	helpY := m.y + m.height - 2
-
-	for i, r := range helpText {
-		m.screen.SetContent(helpX+i, helpY, r, nil, tcell.StyleDefault.Dim(true))
-	}
+	// Help text is now shown in the footer status line
+	// Remove the redundant help text that was overlapping
+	// The footer already shows the key bindings contextually
 }
 
 // GetSelectedItem returns the currently selected item

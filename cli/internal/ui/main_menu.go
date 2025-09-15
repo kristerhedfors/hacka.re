@@ -41,9 +41,9 @@ func ShowMainMenu(cfg *config.Config) error {
 
 	// Configure menu display
 	w, h := s.Size()
-	menu.menu.SetDimensions(60, 20)
+	menu.menu.SetDimensions(40, 20)  // Narrower menu (was 60)
 	menu.menu.SetPosition((w-100)/2, (h-20)/2)
-	menu.menu.SetInfoPanel(true, 40)
+	menu.menu.SetInfoPanel(true, 60)  // Wider info panel (was 40)
 
 	menu.run()
 	return nil
@@ -87,11 +87,29 @@ func (m *MainMenu) getMenuOptions() []MenuOption {
 			Description: "Configure API settings, models, and features",
 			Info:        "Access the settings menu to configure:\n\n• API Provider (OpenAI, Groq, Ollama, etc.)\n• API Key and authentication\n• Model selection\n• Temperature and token limits\n• System prompts\n• Stream mode, YOLO mode, Voice control\n\nSettings are saved locally and can be shared via encrypted links.",
 			Action: func(cfg *config.Config) bool {
-				// Show settings - it returns to this menu on ESC
-				if err := ShowSettings(cfg); err != nil {
+				// Use the new FilterableMenu-based settings
+				if err := ShowSettingsV2(cfg); err != nil {
 					log := logger.Get()
 					log.Error("Error showing settings: %v", err)
 				}
+
+				// After settings closes, we need to re-sync the screen
+				// because ShowSettingsV2 created and destroyed its own screen
+				m.screen.Sync()
+
+				// Clear any pending events that might have leaked from settings
+				for m.screen.HasPendingEvent() {
+					m.screen.PollEvent()
+				}
+
+				// Reset the menu to clear any state
+				m.menu.Reset()
+
+				// Clear and redraw to ensure clean state
+				m.screen.Clear()
+				m.draw()
+				m.screen.Show()
+
 				return true // Continue showing menu after settings closes
 			},
 		},
