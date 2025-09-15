@@ -1,1 +1,58 @@
+# Go binaries
+hacka.re
+hacka.re.exe
+hacka.re-*
+
+# Build artifacts
 internal/web/hacka.re-release.zip
+*.o
+*.a
+*.so
+
+# Test output
+_tests/.venv/
+_tests/__pycache__/
+_tests/*.pyc
+_tests/.pytest_cache/
+_tests/screenshots/
+_tests/screenshots_data/
+_tests/test_results/daily/*.json
+_tests/test_results/daily/*.log
+_tests/test_results/daily/*.md
+_tests/test_results/daily/*.gz
+_tests/test_results/comparison/archive/
+# Keep the structure and documentation
+!_tests/test_results/README.md
+!_tests/test_results/comparison/latest_vs_previous.md
+
+# Legacy test directories (to be removed)
+_tests/cli_test_results/
+
+# Server files
+_tests/.server.pid
+_tests/.server.log
+_tests/server_pid.txt
+
+# Environment files
+_tests/.env
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*~
+
+# Keep important documentation
+!CLAUDE.md
+!README.md
+!_tests/docs/
+!_tests/*.sh

@@ -65,7 +65,7 @@ Start a local web server to use the full hacka.re web interface:
 ./hacka.re browse --no-browser
 
 # Use environment variable for port
-HACKARE_BROWSE_PORT=8888 ./hacka.re browse
+HACKARE_WEB_PORT=8888 ./hacka.re browse
 ```
 
 ### Chat Command (Terminal Chat)
