@@ -165,3 +165,7 @@ cli/test_*
 cli/testlogs/
 cli/debug/
 cli/_tests/test_results.json
+cli/_tests/__pycache__/
+cli/_tests/.pytest_cache/
+cli/_tests/cli_test_results/
+cli/internal/web/*.zip
