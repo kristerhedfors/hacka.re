@@ -12,11 +12,13 @@ import (
 
 // Logger provides debug logging functionality
 type Logger struct {
-	file     *os.File
-	logger   *log.Logger
-	mu       sync.Mutex
-	enabled  bool
-	logLevel LogLevel
+	file        *os.File
+	logger      *log.Logger
+	mu          sync.Mutex
+	enabled     bool
+	logLevel    LogLevel
+	stderrAlso  bool     // Also output to stderr
+	logPath     string   // Path to the log file
 }
 
 // LogLevel represents the severity of a log message
@@ -52,7 +54,7 @@ func Initialize(logDir string, enabled bool) error {
 		// Create log file with timestamp
 		timestamp := time.Now().Format("2006-01-02_15-04-05")
 		logPath := filepath.Join(logDir, fmt.Sprintf("debug_%s.log", timestamp))
-		
+
 		file, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 		if err != nil {
 			initErr = err
@@ -64,12 +66,48 @@ func Initialize(logDir string, enabled bool) error {
 			logger:   log.New(file, "", 0),
 			enabled:  true,
 			logLevel: DEBUG,
+			logPath:  logPath,
 		}
 
 		instance.Info("=== Logger initialized ===")
 		instance.Info("Log file: %s", logPath)
 	})
-	
+
+	return initErr
+}
+
+// InitializeWithPath sets up the logger with a specific file path
+func InitializeWithPath(logPath string, enabled bool) error {
+	var initErr error
+	once.Do(func() {
+		if !enabled {
+			instance = &Logger{enabled: false}
+			return
+		}
+
+		// Ensure directory exists
+		dir := filepath.Dir(logPath)
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			initErr = err
+			return
+		}
+
+		// Open or create the log file (append mode to keep history)
+		file, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+		if err != nil {
+			initErr = err
+			return
+		}
+
+		instance = &Logger{
+			file:     file,
+			logger:   log.New(file, "", 0),
+			enabled:  true,
+			logLevel: DEBUG,
+			logPath:  logPath,
+		}
+	})
+
 	return initErr
 }
 
@@ -80,6 +118,20 @@ func Get() *Logger {
 		return &Logger{enabled: false}
 	}
 	return instance
+}
+
+// EnableStderr enables or disables output to stderr
+func (l *Logger) EnableStderr(enable bool) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.stderrAlso = enable
+}
+
+// GetLogPath returns the path to the current log file
+func (l *Logger) GetLogPath() string {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.logPath
 }
 
 // Close closes the log file
@@ -120,9 +172,23 @@ func (l *Logger) log(level LogLevel, format string, args ...interface{}) {
 
 	// Format message
 	msg := fmt.Sprintf(format, args...)
-	
-	// Write to log
-	l.logger.Printf("[%s] %s [%s:%d] %s", timestamp, levelStr, file, line, msg)
+
+	// Format full log line with structured format for easy parsing
+	logLine := fmt.Sprintf("[%s] %s [%s:%d] %s", timestamp, levelStr, file, line, msg)
+
+	// Write to log file
+	if l.logger != nil {
+		l.logger.Println(logLine)
+		// Force flush for real-time monitoring
+		if l.file != nil {
+			l.file.Sync()
+		}
+	}
+
+	// Also write to stderr if enabled
+	if l.stderrAlso {
+		fmt.Fprintln(os.Stderr, logLine)
+	}
 }
 
 // Debug logs a debug message

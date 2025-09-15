@@ -25,10 +25,25 @@ func ShowMainMenu(cfg *config.Config) error {
 	s.Clear()
 
 	menu := &MainMenu{
-		screen:   s,
-		config:   cfg,
-		selected: 0,
+		screen: s,
+		config: cfg,
 	}
+
+	// Create menu items
+	options := menu.getMenuOptions()
+	var menuItems []MenuItem
+	for _, opt := range options {
+		optCopy := opt // Important: capture loop variable
+		menuItems = append(menuItems, &MainMenuItem{option: &optCopy})
+	}
+
+	menu.menu = NewFilterableMenu(s, "hacka.re CLI Main Menu", menuItems)
+
+	// Configure menu display
+	w, h := s.Size()
+	menu.menu.SetDimensions(40, 20)  // Narrower menu (was 60)
+	menu.menu.SetPosition((w-100)/2, (h-20)/2)
+	menu.menu.SetInfoPanel(true, 60)  // Wider info panel (was 40)
 
 	menu.run()
 	return nil
@@ -38,37 +53,58 @@ func ShowMainMenu(cfg *config.Config) error {
 type MainMenu struct {
 	screen   tcell.Screen
 	config   *config.Config
-	selected int
+	menu     *FilterableMenu
 }
 
 // MenuOption represents a menu option
 type MenuOption struct {
-	Number      string
+	Number      int
 	Label       string
 	Description string
+	Info        string
 	Action      func(*config.Config) bool // returns true to continue, false to exit menu
 }
+
+// MainMenuItem implements MenuItem for main menu options
+type MainMenuItem struct {
+	option *MenuOption
+}
+
+func (m *MainMenuItem) GetID() string          { return fmt.Sprintf("%d", m.option.Number) }
+func (m *MainMenuItem) GetNumber() int         { return m.option.Number }
+func (m *MainMenuItem) GetTitle() string       { return m.option.Label }
+func (m *MainMenuItem) GetDescription() string { return m.option.Description }
+func (m *MainMenuItem) GetCategory() string    { return "" }
+func (m *MainMenuItem) IsEnabled() bool        { return true }
+func (m *MainMenuItem) GetInfo() string        { return m.option.Info }
 
 // getMenuOptions returns the available menu options
 func (m *MainMenu) getMenuOptions() []MenuOption {
 	return []MenuOption{
 		{
-			Number:      "1",
+			Number:      0,
 			Label:       "Open settings",
 			Description: "Configure API settings, models, and features",
+			Info:        "Access the settings menu to configure:\n\n• API Provider (OpenAI, Groq, Ollama, etc.)\n• API Key and authentication\n• Model selection\n• Temperature and token limits\n• System prompts\n• Stream mode, YOLO mode, Voice control\n\nSettings are saved locally and can be shared via encrypted links.",
 			Action: func(cfg *config.Config) bool {
-				// Show settings - it returns to this menu on ESC
-				if err := ShowSettings(cfg); err != nil {
+				// Use the working version with proper event handling
+				if err := ShowSettingsV2Working(cfg); err != nil {
 					log := logger.Get()
 					log.Error("Error showing settings: %v", err)
 				}
+
+				// ShowSettingsV2Working uses its own screen, so we just need to
+				// ensure our screen is synced after it returns
+				m.screen.Sync()
+
 				return true // Continue showing menu after settings closes
 			},
 		},
 		{
-			Number:      "2",
+			Number:      1,
 			Label:       "Start chat session",
 			Description: "Begin an interactive chat with the AI",
+			Info:        "Start an interactive terminal chat session with the configured AI model.\n\nFeatures:\n• Real-time streaming responses\n• Multi-line input support\n• Command history\n• Session persistence\n\nRequires valid API configuration.",
 			Action: func(cfg *config.Config) bool {
 				// Validate configuration
 				if cfg.APIKey == "" || cfg.BaseURL == "" {
@@ -87,9 +123,10 @@ func (m *MainMenu) getMenuOptions() []MenuOption {
 			},
 		},
 		{
-			Number:      "3",
+			Number:      2,
 			Label:       "Save configuration",
 			Description: "Save current settings to file",
+			Info:        "Save your current configuration to a local file.\n\nThe configuration file stores:\n• API credentials (encrypted)\n• Selected provider and model\n• Chat preferences\n• Custom settings\n\nConfiguration is saved to:\n~/.config/hacka.re/config.json",
 			Action: func(cfg *config.Config) bool {
 				configPath := config.GetConfigPath()
 				if err := cfg.SaveToFile(configPath); err != nil {
@@ -103,9 +140,10 @@ func (m *MainMenu) getMenuOptions() []MenuOption {
 			},
 		},
 		{
-			Number:      "4",
+			Number:      3,
 			Label:       "Generate share link",
 			Description: "Create a shareable URL with encrypted configuration",
+			Info:        "Generate an encrypted share link containing your current configuration.\n\nShare links:\n• Contain encrypted settings\n• Do not expose API keys\n• Can be shared safely\n• Work across devices\n\nNote: This feature is coming soon!",
 			Action: func(cfg *config.Config) bool {
 				// TODO: Implement share link generation
 				m.drawError("Share link generation not yet implemented in TUI")
@@ -115,9 +153,10 @@ func (m *MainMenu) getMenuOptions() []MenuOption {
 			},
 		},
 		{
-			Number:      "5",
+			Number:      4,
 			Label:       "Exit",
 			Description: "Quit the application",
+			Info:        "Exit the hacka.re CLI.\n\nYour configuration is automatically saved and will be restored next time you run the application.",
 			Action: func(cfg *config.Config) bool {
 				return false // Exit menu
 			},
@@ -129,79 +168,56 @@ func (m *MainMenu) getMenuOptions() []MenuOption {
 func (m *MainMenu) run() {
 	log := logger.Get()
 	log.Info("Main menu opened")
-	
-	for {
-		m.draw()
-		m.screen.Show()
 
+	// Initial draw
+	m.draw()
+	m.screen.Show()
+
+	for {
 		ev := m.screen.PollEvent()
 		switch ev := ev.(type) {
 		case *tcell.EventKey:
-			handled := m.handleKeyEvent(ev)
-			if !handled {
-				return // Exit menu
+			selected, escaped := m.menu.HandleInput(ev)
+			if escaped {
+				log.Info("Exiting main menu")
+				return
+			} else if selected != nil {
+				// Execute the selected action
+				if menuItem, ok := selected.(*MainMenuItem); ok {
+					log.Info("Menu option selected: %d - %s", menuItem.option.Number, menuItem.option.Label)
+					continueMenu := menuItem.option.Action(m.config)
+					if !continueMenu {
+						return
+					}
+					// Reset menu after action
+					m.menu.Reset()
+				}
 			}
 		case *tcell.EventResize:
-			m.screen.Sync()
+			w, h := m.screen.Size()
+			m.menu.SetPosition((w-100)/2, (h-20)/2)
 		}
-	}
-}
 
-// handleKeyEvent handles keyboard input
-func (m *MainMenu) handleKeyEvent(ev *tcell.EventKey) bool {
-	log := logger.Get()
-	options := m.getMenuOptions()
-	
-	switch ev.Key() {
-	case tcell.KeyUp:
-		if m.selected > 0 {
-			m.selected--
-			log.Debug("Menu selection up: %d", m.selected)
-		}
-		
-	case tcell.KeyDown:
-		if m.selected < len(options)-1 {
-			m.selected++
-			log.Debug("Menu selection down: %d", m.selected)
-		}
-		
-	case tcell.KeyEnter:
-		option := options[m.selected]
-		log.Info("Menu option selected: %s - %s", option.Number, option.Label)
-		// Execute action and check if we should continue
-		return option.Action(m.config)
-		
-	case tcell.KeyRune:
-		// Handle number key selection
-		r := ev.Rune()
-		if r >= '1' && r <= '5' {
-			idx := int(r - '1')
-			if idx < len(options) {
-				m.selected = idx
-				log.Info("Menu option selected by number: %s", options[idx].Label)
-				return options[idx].Action(m.config)
-			}
-		}
-		
-	case tcell.KeyEscape, tcell.KeyCtrlQ:
-		log.Info("Exiting main menu")
-		return false // Exit menu
+		// Redraw after handling any event
+		m.draw()
+		m.screen.Show()
 	}
-	
-	return true // Continue menu
 }
 
 // draw renders the main menu
 func (m *MainMenu) draw() {
 	m.screen.Clear()
 	w, h := m.screen.Size()
-	
+
 	// Draw header
 	m.drawHeader(w)
-	
-	// Draw menu options
-	m.drawMenuOptions(w, h)
-	
+
+	// Draw the filterable menu
+	m.menu.Draw()
+
+	// Draw config status
+	m.drawConfigStatus(w, h-8)
+
 	// Draw footer
 	m.drawFooter(w, h)
 }
@@ -222,61 +238,44 @@ func (m *MainMenu) drawHeader(w int) {
 	}
 }
 
-// drawMenuOptions draws the menu options
-func (m *MainMenu) drawMenuOptions(w, h int) {
-	options := m.getMenuOptions()
-	startY := 8
-	
-	for i, opt := range options {
-		y := startY + i*3
-		
-		// Highlight selected option
-		style := tcell.StyleDefault
-		if i == m.selected {
-			style = style.Background(tcell.ColorDarkBlue)
-		}
-		
-		// Draw option number and label
-		optionText := fmt.Sprintf("  %s. %s", opt.Number, opt.Label)
-		m.drawText(10, y, optionText, style.Bold(true))
-		
-		// Draw description
-		descText := fmt.Sprintf("     %s", opt.Description)
-		m.drawText(10, y+1, descText, tcell.StyleDefault.Dim(true))
-	}
-	
-	// Show current configuration status
-	m.drawConfigStatus(w, startY + len(options)*3 + 2)
-}
 
 // drawConfigStatus shows current configuration
 func (m *MainMenu) drawConfigStatus(w, y int) {
 	style := tcell.StyleDefault.Dim(true)
-	
-	m.drawText(10, y, "Current Configuration:", style.Bold(true))
-	
+
+	// Center the status box
+	statusX := (w - 60) / 2
+
+	m.drawText(statusX, y, "Current Configuration:", style.Bold(true))
+
 	if m.config.Provider != "" {
 		info := config.Providers[m.config.Provider]
 		status := fmt.Sprintf("Provider: %s %s", info.Flag, info.Name)
-		m.drawText(12, y+1, status, style)
+		m.drawText(statusX+2, y+1, status, style)
 	}
-	
+
 	if m.config.Model != "" {
 		status := fmt.Sprintf("Model: %s", m.config.Model)
-		m.drawText(12, y+2, status, style)
+		m.drawText(statusX+2, y+2, status, style)
 	}
-	
+
 	if m.config.APIKey != "" {
-		status := "API Key: ****" + m.config.APIKey[len(m.config.APIKey)-4:]
-		m.drawText(12, y+3, status, style)
+		maskedKey := m.config.APIKey
+		if len(maskedKey) > 4 {
+			maskedKey = "****" + maskedKey[len(maskedKey)-4:]
+		} else {
+			maskedKey = "****"
+		}
+		status := "API Key: " + maskedKey
+		m.drawText(statusX+2, y+3, status, style)
 	} else {
-		m.drawText(12, y+3, "API Key: (not set)", style.Foreground(tcell.ColorRed))
+		m.drawText(statusX+2, y+3, "API Key: (not set)", style.Foreground(tcell.ColorRed))
 	}
 }
 
 // drawFooter draws the menu footer
 func (m *MainMenu) drawFooter(w, h int) {
-	help := "↑↓ Navigate | ↵ Select | 1-5 Quick Select | ESC/^Q Exit"
+	help := "Type to filter | Numbers for direct selection | ↵ Select | ESC Exit"
 	m.drawText((w-len(help))/2, h-2, help, tcell.StyleDefault.Dim(true))
 }
 

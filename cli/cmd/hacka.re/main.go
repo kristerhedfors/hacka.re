@@ -8,15 +8,43 @@ import (
 	"os"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/hacka-re/cli/internal/chat"
 	"github.com/hacka-re/cli/internal/config"
+	"github.com/hacka-re/cli/internal/logger"
 	"github.com/hacka-re/cli/internal/share"
 	"github.com/hacka-re/cli/internal/ui"
 	"golang.org/x/term"
 )
 
 func main() {
+	// Initialize logger based on environment variable
+	logLevel := os.Getenv("HACKARE_LOG_LEVEL")
+	if logLevel == "DEBUG" || logLevel == "debug" {
+		// Use FIXED log path for consistent debugging
+		logPath := "/tmp/hacka_debug.log"
+
+		if err := logger.InitializeWithPath(logPath, true); err != nil {
+			// Only show this warning if we can't initialize logging
+			// Don't output during normal operation as it would break the TUI
+			if logLevel == "DEBUG" {
+				// User explicitly wants debug, so warn them
+				fmt.Fprintf(os.Stderr, "Warning: Failed to initialize debug logger: %v\n", err)
+			}
+		}
+		defer logger.Get().Close()
+
+		// DO NOT enable stderr output - it destroys the TUI!
+		// logger.Get().EnableStderr(true) // REMOVED
+
+		// Log session start with clear marker
+		logger.Get().Info("════════════════════════════════════════")
+		logger.Get().Info("NEW SESSION STARTED: %s", time.Now().Format("2006-01-02 15:04:05"))
+		logger.Get().Info("Debug log: %s", logPath)
+		logger.Get().Info("════════════════════════════════════════")
+	}
+
 	// Check if first arg is a subcommand
 	if len(os.Args) > 1 {
 		switch os.Args[1] {
@@ -440,7 +468,7 @@ func startChatSession(args []string) {
 			cfg = config.NewConfig()
 			
 			// Show settings UI first
-			ui.ShowSettings(cfg)
+			ui.ShowSettingsV2Working(cfg)
 			
 			// Ask if they want to continue to chat
 			fmt.Print("\nConfiguration saved. Start chat session? (y/n): ")
