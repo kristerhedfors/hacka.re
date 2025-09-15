@@ -27,7 +27,7 @@ func (s *SettingsMenuItem) GetInfo() string {
 	info := s.field.Description
 
 	// Add current value info
-	info += "\n\nCurrent Value: " + s.formatValue()
+	info += "\n\nCurrent setting: " + s.formatValue()
 
 	// Add type-specific help
 	switch s.field.Type {
@@ -69,9 +69,9 @@ func (s *SettingsMenuItem) formatValue() string {
 		return "(not set)"
 	case FieldTypeBool:
 		if val, ok := s.field.Value.(bool); ok && val {
-			return "Enabled"
+			return "[x] Enabled"
 		}
-		return "Disabled"
+		return "[ ] Disabled"
 	case FieldTypeFloat:
 		if val, ok := s.field.Value.(float64); ok {
 			return fmt.Sprintf("%.2f", val)
@@ -99,6 +99,9 @@ type SettingsModalV2 struct {
 	modified     bool
 	errorMessage string
 
+	// Original state for restore
+	originalValues map[string]interface{}
+
 	// Callbacks
 	onSave   func(*core.Config) error
 	onCancel func()
@@ -107,12 +110,16 @@ type SettingsModalV2 struct {
 // NewSettingsModalV2 creates a new filterable settings modal
 func NewSettingsModalV2(screen tcell.Screen, config *core.ConfigManager) *SettingsModalV2 {
 	sm := &SettingsModalV2{
-		screen: screen,
-		config: config,
+		screen:         screen,
+		config:         config,
+		originalValues: make(map[string]interface{}),
 	}
 
 	// Initialize fields
 	sm.initializeFields()
+
+	// Store original values for restore
+	sm.storeOriginalValues()
 
 	// Create filterable menu
 	sm.menu = NewFilterableMenu(screen, "Settings Configuration")
@@ -344,10 +351,10 @@ func (sm *SettingsModalV2) drawEditOverlay() {
 		sm.drawText(hintX, valueY+2, hint, tcell.StyleDefault.Foreground(tcell.ColorGray))
 
 	case FieldTypeBool:
-		// Show toggle state
+		// Show toggle state centered with 'x'
 		value := "[ ] Disabled"
 		if field.Value.(bool) {
-			value = "[✓] Enabled"
+			value = "[x] Enabled"
 		}
 		valueX := x + (overlayWidth-len(value))/2
 		sm.drawText(valueX, valueY, value, tcell.StyleDefault.Foreground(tcell.ColorGreen))
@@ -388,10 +395,8 @@ func (sm *SettingsModalV2) drawEditOverlay() {
 func (sm *SettingsModalV2) drawBottomInstructions() {
 	x, y, w, h := sm.menu.x, sm.menu.y, sm.menu.width, sm.menu.height
 
-	instructions := " S:Save | ESC:Cancel "
-	if sm.modified {
-		instructions = " S:Save Changes | ESC:Cancel "
-	}
+	// Update instructions to reflect auto-save
+	instructions := " Changes auto-save | Ctrl-R:Restore | ESC:Close "
 
 	instX := x + (w-len(instructions))/2
 	instY := y + h
@@ -438,18 +443,19 @@ func (sm *SettingsModalV2) HandleInput(ev *tcell.EventKey) bool {
 		return sm.handleEditingInput(ev)
 	}
 
-	// Check for save shortcut
-	if ev.Key() == tcell.KeyRune && (ev.Rune() == 's' || ev.Rune() == 'S') {
-		sm.save()
-		return true
+	// Check for restore shortcut (Ctrl-R)
+	if ev.Key() == tcell.KeyCtrlR {
+		sm.restoreOriginalValues()
+		return false
 	}
 
 	// Let the menu handle navigation and filtering
 	item, exit := sm.menu.HandleInput(ev)
 
 	if exit {
+		// Auto-save on exit if modified
 		if sm.modified {
-			// TODO: Show confirmation dialog
+			sm.save()
 		}
 		if sm.onCancel != nil {
 			sm.onCancel()
@@ -547,6 +553,44 @@ func (sm *SettingsModalV2) startEditing(item *SettingsMenuItem) {
 	}
 }
 
+// storeOriginalValues saves the initial state for restore
+func (sm *SettingsModalV2) storeOriginalValues() {
+	for _, field := range sm.fields {
+		// Deep copy the value to avoid reference issues
+		switch v := field.Value.(type) {
+		case string:
+			sm.originalValues[field.Key] = v
+		case bool:
+			sm.originalValues[field.Key] = v
+		case int:
+			sm.originalValues[field.Key] = v
+		case float64:
+			sm.originalValues[field.Key] = v
+		default:
+			sm.originalValues[field.Key] = field.Value
+		}
+	}
+}
+
+// restoreOriginalValues restores all fields to their original values
+func (sm *SettingsModalV2) restoreOriginalValues() {
+	for _, field := range sm.fields {
+		if originalValue, exists := sm.originalValues[field.Key]; exists {
+			field.Value = originalValue
+		}
+	}
+
+	// Reset modified flag
+	sm.modified = false
+	sm.errorMessage = ""
+
+	// Update menu items to reflect restored values
+	sm.updateMenuItems()
+
+	// Auto-save the restored state
+	sm.save()
+}
+
 // confirmEditing saves the edited value
 func (sm *SettingsModalV2) confirmEditing() {
 	field := sm.editingItem.field
@@ -593,6 +637,8 @@ func (sm *SettingsModalV2) confirmEditing() {
 		sm.editingField = false
 		sm.editingItem = nil
 		sm.updateMenuItems()
+		// Auto-save after toggle
+		sm.save()
 		return
 
 	case FieldTypeFloat:
@@ -629,6 +675,9 @@ func (sm *SettingsModalV2) confirmEditing() {
 
 	// Update menu items to reflect changes
 	sm.updateMenuItems()
+
+	// Auto-save after each change
+	sm.save()
 }
 
 // cancelEditing cancels the current edit
