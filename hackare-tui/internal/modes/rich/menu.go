@@ -276,9 +276,9 @@ func (m *FilterableMenu) drawInfoPanel() {
 		m.drawText(infoX+2, startY+i, lines[i], m.infoStyle)
 	}
 
-	// Show description if room
+	// Show current setting if room
 	if len(lines) < maxLines-2 && item.GetDescription() != "" {
-		m.drawText(infoX+2, startY+len(lines)+1, "Description:", m.normalStyle)
+		m.drawText(infoX+2, startY+len(lines)+1, "Current setting:", m.normalStyle)
 		descLines := m.wrapText(item.GetDescription(), m.infoWidth-4)
 		for i, line := range descLines {
 			if startY+len(lines)+2+i >= m.y+m.height-1 {

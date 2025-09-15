@@ -90,10 +90,11 @@ type SettingsModalV2 struct {
 	menu     *FilterableMenu
 
 	// Edit state
-	editingField  bool
-	editBuffer    string
-	dropdownIndex int
-	editingItem   *SettingsMenuItem
+	editingField     bool
+	editBuffer       string
+	dropdownIndex    int
+	editingItem      *SettingsMenuItem
+	dropdownSelector *DropdownSelector
 
 	// UI state
 	modified     bool
@@ -282,8 +283,11 @@ func (sm *SettingsModalV2) getModelOptions(provider string) []string {
 
 // Draw renders the settings modal
 func (sm *SettingsModalV2) Draw() {
-	if sm.editingField {
-		// Draw edit overlay
+	if sm.dropdownSelector != nil {
+		// Draw the dropdown selector
+		sm.dropdownSelector.Draw()
+	} else if sm.editingField {
+		// Draw edit overlay for non-dropdown fields
 		sm.drawEditOverlay()
 	} else {
 		// Draw the filterable menu
@@ -336,20 +340,6 @@ func (sm *SettingsModalV2) drawEditOverlay() {
 	field := sm.editingItem.field
 
 	switch field.Type {
-	case FieldTypeDropdown:
-		// Show dropdown selection
-		options := field.Options
-		if sm.dropdownIndex >= 0 && sm.dropdownIndex < len(options) {
-			value := fmt.Sprintf("< %s >", options[sm.dropdownIndex])
-			valueX := x + (overlayWidth-len(value))/2
-			sm.drawText(valueX, valueY, value, tcell.StyleDefault.Foreground(tcell.ColorGreen))
-		}
-
-		// Show navigation hint
-		hint := "Use ← → to select, Enter to confirm"
-		hintX := x + (overlayWidth-len(hint))/2
-		sm.drawText(hintX, valueY+2, hint, tcell.StyleDefault.Foreground(tcell.ColorGray))
-
 	case FieldTypeBool:
 		// Show toggle state centered with 'x'
 		value := "[ ] Disabled"
@@ -439,6 +429,32 @@ func (sm *SettingsModalV2) drawError() {
 
 // HandleInput processes keyboard input
 func (sm *SettingsModalV2) HandleInput(ev *tcell.EventKey) bool {
+	// Handle dropdown selector if active
+	if sm.dropdownSelector != nil {
+		value, done := sm.dropdownSelector.HandleInput(ev)
+		if done {
+			if value != "" {
+				// Apply the selected value
+				sm.editingItem.field.Value = value
+				sm.modified = true
+
+				// Special handling for provider change
+				if sm.editingItem.field.Key == "provider" {
+					sm.updateModelOptionsForProvider(value)
+				}
+
+				// Update menu items and save
+				sm.updateMenuItems()
+				sm.save()
+			}
+			// Close dropdown
+			sm.dropdownSelector = nil
+			sm.editingField = false
+			sm.editingItem = nil
+		}
+		return false
+	}
+
 	if sm.editingField {
 		return sm.handleEditingInput(ev)
 	}
@@ -486,22 +502,8 @@ func (sm *SettingsModalV2) handleEditingInput(ev *tcell.EventKey) bool {
 		sm.confirmEditing()
 		return false
 
-	case tcell.KeyLeft:
-		if field.Type == FieldTypeDropdown {
-			if sm.dropdownIndex > 0 {
-				sm.dropdownIndex--
-			}
-		}
-
-	case tcell.KeyRight:
-		if field.Type == FieldTypeDropdown {
-			if sm.dropdownIndex < len(field.Options)-1 {
-				sm.dropdownIndex++
-			}
-		}
-
 	case tcell.KeyBackspace, tcell.KeyBackspace2:
-		if field.Type != FieldTypeDropdown && field.Type != FieldTypeBool {
+		if field.Type != FieldTypeBool {
 			if len(sm.editBuffer) > 0 {
 				sm.editBuffer = sm.editBuffer[:len(sm.editBuffer)-1]
 			}
@@ -514,7 +516,7 @@ func (sm *SettingsModalV2) handleEditingInput(ev *tcell.EventKey) bool {
 				field.Value = !field.Value.(bool)
 				sm.modified = true
 			}
-		} else if field.Type != FieldTypeDropdown {
+		} else {
 			sm.editBuffer += string(ev.Rune())
 		}
 	}
@@ -532,14 +534,14 @@ func (sm *SettingsModalV2) startEditing(item *SettingsMenuItem) {
 
 	switch field.Type {
 	case FieldTypeDropdown:
-		// Find current value in options
-		sm.dropdownIndex = 0
-		for i, opt := range field.Options {
-			if opt == field.Value {
-				sm.dropdownIndex = i
-				break
-			}
-		}
+		// Create a dropdown selector for this field
+		currentValue := fmt.Sprintf("%v", field.Value)
+		sm.dropdownSelector = NewDropdownSelector(
+			sm.screen,
+			fmt.Sprintf("Select %s", field.Label),
+			field.Options,
+			currentValue,
+		)
 
 	case FieldTypeBool:
 		// Nothing to prepare
@@ -591,6 +593,28 @@ func (sm *SettingsModalV2) restoreOriginalValues() {
 	sm.save()
 }
 
+// updateModelOptionsForProvider updates model options when provider changes
+func (sm *SettingsModalV2) updateModelOptionsForProvider(provider string) {
+	// Update model field options
+	for _, f := range sm.fields {
+		if f.Key == "model" {
+			f.Options = sm.getModelOptions(provider)
+			// Reset to first option if current model not in new list
+			found := false
+			for _, opt := range f.Options {
+				if opt == f.Value.(string) {
+					found = true
+					break
+				}
+			}
+			if !found && len(f.Options) > 0 {
+				f.Value = f.Options[0]
+			}
+			break
+		}
+	}
+}
+
 // confirmEditing saves the edited value
 func (sm *SettingsModalV2) confirmEditing() {
 	field := sm.editingItem.field
@@ -601,36 +625,9 @@ func (sm *SettingsModalV2) confirmEditing() {
 
 	switch field.Type {
 	case FieldTypeDropdown:
-		newValue = field.Options[sm.dropdownIndex]
-
-		// Special handling for provider change
-		if field.Key == "provider" {
-			// Update model field options
-			for i, f := range sm.fields {
-				if f.Key == "model" {
-					f.Options = sm.getModelOptions(newValue.(string))
-					// Reset to first option if current model not in new list
-					found := false
-					for _, opt := range f.Options {
-						if opt == f.Value.(string) {
-							found = true
-							break
-						}
-					}
-					if !found && len(f.Options) > 0 {
-						f.Value = f.Options[0]
-					}
-
-					// Update the menu item
-					sm.menu.items[i] = &SettingsMenuItem{
-						field:  f,
-						number: i,
-						config: sm.config.Get(),
-					}
-					break
-				}
-			}
-		}
+		// This case is now handled by the dropdown selector
+		// Should not reach here
+		return
 
 	case FieldTypeBool:
 		// Already updated during editing
