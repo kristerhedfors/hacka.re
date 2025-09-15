@@ -9,20 +9,52 @@ Guidance for Claude Code (claude.ai/code) when working with this repository.
 
 hacka.re - Privacy-focused, serverless chat interface for OpenAI-compatible APIs. Pure HTML/CSS/ES6 JavaScript, entirely client-side, no backend/build system/TypeScript.
 
+## Project Structure
+
+**CRITICAL: Understand the folder structure:**
+- **`/Users/user/dev/hacka.re/`** - PROJECT ROOT (web application)
+  - Contains the web app (index.html, js/, css/, etc.)
+  - **`cli/`** subfolder - Go CLI application (separate from web app)
+    - Go program BUT uses Python/Playwright for testing
+    - Has its own test infrastructure
+
 ## Development Commands
 
 ### Environment Setup
 
-Three separate `.venv` environments:
-- **Root `.venv/`** - Utility scripts
-- **`_tests/playwright/.venv/`** - Playwright tests  
-- **`hackare/.venv/`** - CLI application
+Python environments for testing:
+- **Root `.venv/`** - Utility scripts (Python)
+- **`_tests/playwright/.venv/`** - Playwright tests for web app (Python)
+- **`cli/`** subfolder - Go CLI with Python/Playwright tests
 
 ```bash
-./setup_environment.sh  # Master setup for all environments
+./setup_environment.sh  # Master setup for Python environments
 ```
 
 Configure `.env` files from `.env.example` templates in each directory.
+
+### CLI (Go Application with Python/Playwright Tests)
+
+The hacka.re CLI is a **Go program** in the `cli/` subdirectory, but uses **Python/Playwright for testing**:
+
+```bash
+# Build the Go CLI
+cd cli && go build -o hacka.re
+
+# Run Go unit tests
+cd cli && go test ./... -v
+
+# Run Python/Playwright tests for CLI
+cd cli && .venv/bin/python -m pytest tests/ -v
+
+# Or using the test script
+cd cli && ./run_tests.sh
+
+# Run the CLI
+./cli/hacka.re --help
+```
+
+**IMPORTANT:** The CLI has its own Python venv at `cli/.venv/` for Playwright testing of the Go binary!
 
 ### HTTP Server Management
 
