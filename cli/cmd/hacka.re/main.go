@@ -17,39 +17,45 @@ import (
 )
 
 func main() {
-	// Define flags
+	// Check if first arg is a subcommand
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "browse":
+			// Handle browse subcommand
+			BrowseCommand(os.Args[2:])
+			return
+		case "serve":
+			// Handle serve subcommand
+			ServeCommand(os.Args[2:])
+			return
+		case "chat":
+			// Handle chat subcommand
+			ChatCommand(os.Args[2:])
+			return
+		case "help", "-h", "--help":
+			// Show main help with subcommands
+			showMainHelp()
+			return
+		}
+	}
+	
+	// Define flags for main command
 	jsonDump := flag.Bool("json-dump", false, "Decrypt configuration and output as JSON without launching UI")
 	view := flag.Bool("view", false, "Decrypt configuration and output as JSON without launching UI (alias for --json-dump)")
-	chatMode := flag.Bool("chat", false, "Start interactive chat session")
-	c := flag.Bool("c", false, "Start interactive chat session (short for --chat)")
+	// Legacy chat flags for backward compatibility
+	chatMode := flag.Bool("chat", false, "(Deprecated) Use 'hacka.re chat' instead")
+	c := flag.Bool("c", false, "(Deprecated) Use 'hacka.re chat' instead")
 	help := flag.Bool("help", false, "Show help message")
 	h := flag.Bool("h", false, "Show help message")
 	
 	// Custom usage message
-	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS] [URL|FRAGMENT|DATA]\n\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "Options:\n")
-		fmt.Fprintf(os.Stderr, "  --chat, -c   Start interactive chat session\n")
-		fmt.Fprintf(os.Stderr, "  --json-dump  Decrypt configuration and output as JSON\n")
-		fmt.Fprintf(os.Stderr, "  --view       Same as --json-dump\n")
-		fmt.Fprintf(os.Stderr, "  --help, -h   Show this help message\n\n")
-		fmt.Fprintf(os.Stderr, "Arguments:\n")
-		fmt.Fprintf(os.Stderr, "  URL          Full hacka.re URL (https://hacka.re/#gpt=...)\n")
-		fmt.Fprintf(os.Stderr, "  FRAGMENT     Fragment with prefix (gpt=...)\n")
-		fmt.Fprintf(os.Stderr, "  DATA         Just the encrypted data (eyJlbmM...)\n\n")
-		fmt.Fprintf(os.Stderr, "Examples:\n")
-		fmt.Fprintf(os.Stderr, "  %s                                    # Launch settings modal\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "  %s --chat                              # Start chat session\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "  %s \"gpt=eyJlbmM...\"                   # Load from fragment\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "  %s --json-dump \"eyJlbmM...\"           # Decrypt and output JSON\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "  %s --view \"eyJlbmM...\"                # Same as --json-dump\n", os.Args[0])
-	}
+	flag.Usage = showMainHelp
 	
 	flag.Parse()
 	
 	// Show help if requested
 	if *help || *h {
-		flag.Usage()
+		showMainHelp()
 		os.Exit(0)
 	}
 	
@@ -60,9 +66,10 @@ func main() {
 	// Get non-flag arguments
 	args := flag.Args()
 	
-	// Handle chat mode
+	// Handle legacy chat mode flags (redirect to chat subcommand)
 	if shouldStartChat {
-		startChatSession(args)
+		fmt.Fprintf(os.Stderr, "Note: --chat flag is deprecated. Use 'hacka.re chat' instead.\n\n")
+		ChatCommand(args)
 		return
 	}
 	
@@ -81,6 +88,35 @@ func main() {
 		// No arguments - show settings modal
 		showSettingsModal()
 	}
+}
+
+// showMainHelp displays the main help message including subcommands
+func showMainHelp() {
+	fmt.Fprintf(os.Stderr, "hacka.re CLI - serverless agency\n\n")
+	fmt.Fprintf(os.Stderr, "Usage: %s [COMMAND] [OPTIONS] [ARGUMENTS]\n\n", os.Args[0])
+	fmt.Fprintf(os.Stderr, "Commands:\n")
+	fmt.Fprintf(os.Stderr, "  browse       Start web server and open browser\n")
+	fmt.Fprintf(os.Stderr, "  serve        Start web server without opening browser\n")
+	fmt.Fprintf(os.Stderr, "  chat         Start interactive chat session with AI models\n")
+	fmt.Fprintf(os.Stderr, "  (no command) Launch settings or process shared configuration\n\n")
+	fmt.Fprintf(os.Stderr, "Options:\n")
+	fmt.Fprintf(os.Stderr, "  --json-dump  Decrypt configuration and output as JSON\n")
+	fmt.Fprintf(os.Stderr, "  --view       Same as --json-dump\n")
+	fmt.Fprintf(os.Stderr, "  --help, -h   Show this help message\n\n")
+	fmt.Fprintf(os.Stderr, "Arguments (for no command):\n")
+	fmt.Fprintf(os.Stderr, "  URL          Full hacka.re URL (https://hacka.re/#gpt=...)\n")
+	fmt.Fprintf(os.Stderr, "  FRAGMENT     Fragment with prefix (gpt=...)\n")
+	fmt.Fprintf(os.Stderr, "  DATA         Just the encrypted data (eyJlbmM...)\n\n")
+	fmt.Fprintf(os.Stderr, "Examples:\n")
+	fmt.Fprintf(os.Stderr, "  %s browse                              # Start web server and open browser\n", os.Args[0])
+	fmt.Fprintf(os.Stderr, "  %s serve                               # Start web server (no browser)\n", os.Args[0])
+	fmt.Fprintf(os.Stderr, "  %s serve -p 3000                       # Serve on port 3000\n", os.Args[0])
+	fmt.Fprintf(os.Stderr, "  %s serve \"gpt=eyJlbmM...\"             # Serve with shared config\n", os.Args[0])
+	fmt.Fprintf(os.Stderr, "  %s chat                                # Start chat session\n", os.Args[0])
+	fmt.Fprintf(os.Stderr, "  %s chat \"gpt=eyJlbmM...\"              # Chat with shared config\n", os.Args[0])
+	fmt.Fprintf(os.Stderr, "  %s                                     # Launch settings modal\n", os.Args[0])
+	fmt.Fprintf(os.Stderr, "  %s --json-dump \"eyJlbmM...\"           # Decrypt and output JSON\n", os.Args[0])
+	fmt.Fprintf(os.Stderr, "\nRun '%s COMMAND --help' for more information on a command.\n", os.Args[0])
 }
 
 // handleJSONDump processes a URL/fragment and outputs JSON to stdout
@@ -365,7 +401,8 @@ func generateQRCode(cfg *config.Config, password string) {
 	fmt.Println("\nShare this QR code or URL to transfer your configuration.")
 }
 
-// startChatSession starts an interactive chat session
+// startChatSession is deprecated - use ChatCommand instead
+// Kept for backward compatibility with the legacy --chat flag
 func startChatSession(args []string) {
 	var cfg *config.Config
 	
