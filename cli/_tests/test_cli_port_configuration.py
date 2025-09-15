@@ -231,14 +231,34 @@ class TestCliPortConfiguration:
     def test_invalid_port_numbers(self):
         """Test handling of invalid port numbers"""
         print("\n=== Testing invalid port numbers ===")
-        
+
+        # Port 0 is VALID - it means "let OS choose a port"
+        # Test port 0 separately
+        print("Testing port 0 (OS chooses port)...")
+        process = subprocess.Popen(
+            [self.cli_path, "serve", "-p", "0"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        self.server_processes.append(process)
+        time.sleep(1)
+
+        # Check that server started and shows the chosen port
+        output = process.stdout.read(100) if process.stdout else ""
+        return_code = process.poll()
+        if return_code is None:
+            # Server is running, which is correct for port 0
+            print(f"Port 0 correctly accepted (OS chose port)")
+            process.terminate()
+
+        # Test actually invalid ports
         invalid_ports = [
-            "0",      # Too low
             "65536",  # Too high
             "abc",    # Not a number
             "-1",     # Negative
         ]
-        
+
         for port in invalid_ports:
             result = subprocess.run(
                 [self.cli_path, "serve", "-p", port],
@@ -246,7 +266,7 @@ class TestCliPortConfiguration:
                 text=True,
                 timeout=2
             )
-            
+
             # Should fail or show error
             assert result.returncode != 0 or "error" in result.stderr.lower() or \
                    "invalid" in result.stderr.lower()

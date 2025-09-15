@@ -1,0 +1,78 @@
+{
+  "timestamp": "20250915_203336",
+  "total_time": 27.87072515487671,
+  "completed": 10,
+  "failed": 5,
+  "tests": [
+    {
+      "name": "Chat Help",
+      "success": true,
+      "duration": 0.3991081714630127,
+      "command": "/Users/user/dev/hacka.re/cli/hacka.re chat --help",
+      "exit_code": 0
+    },
+    {
+      "name": "Help",
+      "success": true,
+      "duration": 0.4597170352935791,
+      "command": "/Users/user/dev/hacka.re/cli/hacka.re --help",
+      "exit_code": 0
+    },
+    {
+      "name": "Version",
+      "success": false,
+      "duration": 0.4702799320220947,
+      "command": "/Users/user/dev/hacka.re/cli/hacka.re --version",
+      "exit_code": 2
+    },
+    {
+      "name": "Browse Help",
+      "success": true,
+      "duration": 0.4490041732788086,
+      "command": "/Users/user/dev/hacka.re/cli/hacka.re browse --help",
+      "exit_code": 0
+    },
+    {
+      "name": "Browse NoOpen",
+      "success": false,
+      "duration": 0.45336008071899414,
+      "command": "/Users/user/dev/hacka.re/cli/hacka.re browse --no-browser -p 9991",
+      "exit_code": 2
+    },
+    {
+      "name": "Browse Port",
+      "success": false,
+      "duration": 0.45783376693725586,
+      "command": "/Users/user/dev/hacka.re/cli/hacka.re browse -p 9992 --no-browser",
+      "exit_code": 2
+    },
+    {
+      "name": "Serve Help",
+      "success": true,
+      "duration": 0.5369060039520264,
+      "command": "/Users/user/dev/hacka.re/cli/hacka.re serve --help",
+      "exit_code": 0
+    },
+    {
+      "name": "Session Help",
+      "success": true,
+      "duration": 0.4081909656524658,
+      "command": "/Users/user/dev/hacka.re/cli/hacka.re browse --help",
+      "exit_code": 0
+    },
+    {
+      "name": "Port Short",
+      "success": false,
+      "duration": 0.509162187576294,
+      "command": "/Users/user/dev/hacka.re/cli/hacka.re serve -p 8888 --no-browser",
+      "exit_code": 2
+    },
+    {
+      "name": "Port Long",
+      "success": false,
+      "duration": 0.5067489147186279,
+      "command": "/Users/user/dev/hacka.re/cli/hacka.re serve --port 8889 --no-browser",
+      "exit_code": 2
+    }
+  ]
+}
