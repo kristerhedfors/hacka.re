@@ -9,6 +9,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/hacka-re/cli/internal/chat"
 	"github.com/hacka-re/cli/internal/config"
 	"github.com/hacka-re/cli/internal/share"
 	"github.com/hacka-re/cli/internal/ui"
@@ -19,6 +20,8 @@ func main() {
 	// Define flags
 	jsonDump := flag.Bool("json-dump", false, "Decrypt configuration and output as JSON without launching UI")
 	view := flag.Bool("view", false, "Decrypt configuration and output as JSON without launching UI (alias for --json-dump)")
+	chatMode := flag.Bool("chat", false, "Start interactive chat session")
+	c := flag.Bool("c", false, "Start interactive chat session (short for --chat)")
 	help := flag.Bool("help", false, "Show help message")
 	h := flag.Bool("h", false, "Show help message")
 	
@@ -26,6 +29,7 @@ func main() {
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS] [URL|FRAGMENT|DATA]\n\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "Options:\n")
+		fmt.Fprintf(os.Stderr, "  --chat, -c   Start interactive chat session\n")
 		fmt.Fprintf(os.Stderr, "  --json-dump  Decrypt configuration and output as JSON\n")
 		fmt.Fprintf(os.Stderr, "  --view       Same as --json-dump\n")
 		fmt.Fprintf(os.Stderr, "  --help, -h   Show this help message\n\n")
@@ -35,6 +39,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "  DATA         Just the encrypted data (eyJlbmM...)\n\n")
 		fmt.Fprintf(os.Stderr, "Examples:\n")
 		fmt.Fprintf(os.Stderr, "  %s                                    # Launch settings modal\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  %s --chat                              # Start chat session\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  %s \"gpt=eyJlbmM...\"                   # Load from fragment\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  %s --json-dump \"eyJlbmM...\"           # Decrypt and output JSON\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  %s --view \"eyJlbmM...\"                # Same as --json-dump\n", os.Args[0])
@@ -48,11 +53,18 @@ func main() {
 		os.Exit(0)
 	}
 	
-	// Check if either json-dump or view flag is set
+	// Check flags
 	shouldDumpJSON := *jsonDump || *view
+	shouldStartChat := *chatMode || *c
 	
 	// Get non-flag arguments
 	args := flag.Args()
+	
+	// Handle chat mode
+	if shouldStartChat {
+		startChatSession(args)
+		return
+	}
 	
 	// Check if we have a URL/fragment argument
 	if len(args) > 0 {
@@ -163,10 +175,12 @@ func handleURLArgument(arg string) {
 
 	switch choice {
 	case "1":
-		ui.ShowSettings(cfg)
+		ui.ShowMainMenu(cfg)  // Use main menu instead of direct settings
 	case "2":
-		fmt.Println("\nChat interface coming soon...")
-		// TODO: Implement chat interface
+		// Start chat session with loaded config
+		if err := chat.StartChat(cfg); err != nil {
+			fmt.Fprintf(os.Stderr, "Error starting chat: %v\n", err)
+		}
 	case "3":
 		saveConfiguration(cfg)
 	case "4":
@@ -178,7 +192,7 @@ func handleURLArgument(arg string) {
 	}
 }
 
-// showSettingsModal displays the settings modal when no arguments are provided
+// showSettingsModal displays the main menu when no arguments are provided
 func showSettingsModal() {
 	// Load existing configuration or create new
 	cfg, err := config.LoadFromFile(config.GetConfigPath())
@@ -187,8 +201,8 @@ func showSettingsModal() {
 		cfg = config.NewConfig()
 	}
 
-	// Show the settings UI
-	ui.ShowSettings(cfg)
+	// Show the main menu (which includes settings option)
+	ui.ShowMainMenu(cfg)
 }
 
 // getPassword securely reads a password from stdin
@@ -349,4 +363,77 @@ func generateQRCode(cfg *config.Config, password string) {
 	fmt.Println("\n✓ QR code generated successfully!")
 	fmt.Printf("\nShareable URL:\n%s\n", url)
 	fmt.Println("\nShare this QR code or URL to transfer your configuration.")
+}
+
+// startChatSession starts an interactive chat session
+func startChatSession(args []string) {
+	var cfg *config.Config
+	
+	// Check if we have a URL/fragment argument
+	if len(args) > 0 {
+		// Parse the URL to get configuration
+		fmt.Println("Loading configuration from URL...")
+		
+		// Ask for password
+		password, err := getPassword("Enter password for shared configuration: ")
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error reading password: %v\n", err)
+			os.Exit(1)
+		}
+		
+		// Parse the URL
+		sharedConfig, err := share.ParseURL(args[0], password)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error parsing shared configuration: %v\n", err)
+			os.Exit(1)
+		}
+		
+		// Load into config
+		cfg = config.NewConfig()
+		cfg.LoadFromSharedConfig(sharedConfig)
+		
+		fmt.Println("✓ Configuration loaded successfully!")
+	} else {
+		// Try to load existing configuration
+		var err error
+		cfg, err = config.LoadFromFile(config.GetConfigPath())
+		if err != nil {
+			// No existing config, create new one or show settings
+			fmt.Println("No configuration found. Please configure API settings first.")
+			cfg = config.NewConfig()
+			
+			// Show settings UI first
+			ui.ShowSettings(cfg)
+			
+			// Ask if they want to continue to chat
+			fmt.Print("\nConfiguration saved. Start chat session? (y/n): ")
+			reader := bufio.NewReader(os.Stdin)
+			response, _ := reader.ReadString('\n')
+			response = strings.TrimSpace(strings.ToLower(response))
+			
+			if response != "y" && response != "yes" {
+				fmt.Println("Goodbye!")
+				return
+			}
+		}
+	}
+	
+	// Validate configuration before starting chat
+	if cfg.APIKey == "" {
+		fmt.Println("Error: API key is required for chat session")
+		fmt.Println("Please run without --chat flag to configure settings")
+		os.Exit(1)
+	}
+	
+	if cfg.BaseURL == "" {
+		fmt.Println("Error: Base URL is required for chat session")
+		fmt.Println("Please run without --chat flag to configure settings")
+		os.Exit(1)
+	}
+	
+	// Start the chat session
+	if err := chat.StartChat(cfg); err != nil {
+		fmt.Fprintf(os.Stderr, "Error in chat session: %v\n", err)
+		os.Exit(1)
+	}
 }
