@@ -35,26 +35,27 @@ Configure `.env` files from `.env.example` templates in each directory.
 
 ### CLI (Go Application with Python/Playwright Tests)
 
-The hacka.re CLI is a **Go program** in the `cli/` subdirectory, but uses **Python/Playwright for testing**:
+The hacka.re CLI is a **Go program** in the `cli/` subdirectory that **RELIES ENTIRELY on Python/Playwright for testing**:
 
 ```bash
 # Build the Go CLI
 cd cli && go build -o hacka.re
 
-# Run Go unit tests
-cd cli && go test ./... -v
-
-# Run Python/Playwright tests for CLI
+# RUN TESTS - We use Python/Playwright EXCLUSIVELY for testing
+# NOTE: There are NO native Go tests yet - all testing is done via Playwright
 cd cli && .venv/bin/python -m pytest tests/ -v
 
-# Or using the test script
+# Or using the test script (runs the Playwright test suite)
 cd cli && ./run_tests.sh
 
 # Run the CLI
 ./cli/hacka.re --help
 ```
 
-**IMPORTANT:** The CLI has its own Python venv at `cli/.venv/` for Playwright testing of the Go binary!
+**IMPORTANT:**
+- The CLI has its own Python venv at `cli/.venv/` for Playwright testing of the Go binary
+- **NO NATIVE GO TESTS EXIST YET** - `go test` is only used to bootstrap the Playwright test suite
+- All CLI testing is done through the comprehensive Python/Playwright test suite
 
 ### HTTP Server Management
 
