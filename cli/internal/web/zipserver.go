@@ -220,7 +220,7 @@ func getContentType(filename string) string {
 
 // GetPortFromEnv gets the port from environment variable or returns default
 func GetPortFromEnv(defaultPort int) int {
-	if portStr := os.Getenv("HACKARE_BROWSE_PORT"); portStr != "" {
+	if portStr := os.Getenv("HACKARE_WEB_PORT"); portStr != "" {
 		var port int
 		if _, err := fmt.Sscanf(portStr, "%d", &port); err == nil && port > 0 && port < 65536 {
 			return port

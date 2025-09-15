@@ -49,16 +49,15 @@ class TestCliBrowseCommand:
         output = result.stdout + result.stderr
         assert "Start a local web server to browse hacka.re interface" in output
         assert "-p, --port PORT" in output
-        assert "--no-browser" in output
-        assert "HACKARE_BROWSE_PORT" in output
+        assert "HACKARE_WEB_PORT" in output
         
     def test_browse_starts_server(self, page: Page):
         """Test that browse command starts the web server"""
         print("\n=== Testing browse starts server ===")
         
-        # Start server with --no-browser flag
+        # Use serve command to avoid browser launch
         self.server_process = subprocess.Popen(
-            [self.cli_path, "browse", "-p", str(self.test_port), "--no-browser"],
+            [self.cli_path, "serve", "-p", str(self.test_port)],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True
@@ -101,9 +100,9 @@ class TestCliBrowseCommand:
         
         custom_port = 9877
         
-        # Start server
+        # Use serve command to test port without browser
         self.server_process = subprocess.Popen(
-            [self.cli_path, "browse", "--port", str(custom_port), "--no-browser"],
+            [self.cli_path, "serve", "--port", str(custom_port)],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True
@@ -137,16 +136,16 @@ class TestCliBrowseCommand:
         assert "gpt=eyJlbmC" in output or "eyJlbmM" in output
         
     def test_browse_port_environment_variable(self):
-        """Test HACKARE_BROWSE_PORT environment variable"""
-        print("\n=== Testing HACKARE_BROWSE_PORT env var ===")
+        """Test HACKARE_WEB_PORT environment variable"""
+        print("\n=== Testing HACKARE_WEB_PORT env var ===")
         
         env_port = 9878
         env = os.environ.copy()
-        env["HACKARE_BROWSE_PORT"] = str(env_port)
+        env["HACKARE_WEB_PORT"] = str(env_port)
         
-        # Start server with env var
+        # Use serve command with env var
         self.server_process = subprocess.Popen(
-            [self.cli_path, "browse", "--no-browser"],
+            [self.cli_path, "serve"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -168,9 +167,9 @@ class TestCliBrowseCommand:
         """Test that browse serves all static files correctly"""
         print("\n=== Testing browse serves static files ===")
         
-        # Start server
+        # Use serve command for testing static files
         self.server_process = subprocess.Popen(
-            [self.cli_path, "browse", "-p", str(self.test_port), "--no-browser"],
+            [self.cli_path, "serve", "-p", str(self.test_port)],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True

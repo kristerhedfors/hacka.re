@@ -35,7 +35,7 @@ func ServeCommand(args []string) {
 	serveFlags := flag.NewFlagSet("serve", flag.ExitOnError)
 	
 	// Define flags (same as browse but no --no-browser flag)
-	port := serveFlags.Int("port", 0, "Port to serve on (default: 8080 or HACKARE_BROWSE_PORT)")
+	port := serveFlags.Int("port", 0, "Port to serve on (default: 8080 or HACKARE_WEB_PORT)")
 	portShort := serveFlags.Int("p", 0, "Port to serve on (short form)")
 	host := serveFlags.String("host", "localhost", "Host to bind to")
 	verbose := serveFlags.Bool("verbose", false, "Verbose mode - log each request")
@@ -62,7 +62,7 @@ func ServeCommand(args []string) {
 		fmt.Fprintf(os.Stderr, "  FRAGMENT     Fragment with prefix (gpt=...)\n")
 		fmt.Fprintf(os.Stderr, "  DATA         Just the encrypted data (eyJlbmM...)\n\n")
 		fmt.Fprintf(os.Stderr, "Environment Variables:\n")
-		fmt.Fprintf(os.Stderr, "  HACKARE_BROWSE_PORT   Default port if not specified via flag\n\n")
+		fmt.Fprintf(os.Stderr, "  HACKARE_WEB_PORT   Default port if not specified via flag\n\n")
 		fmt.Fprintf(os.Stderr, "Examples:\n")
 		fmt.Fprintf(os.Stderr, "  %s serve                               # Serve web on port 8080\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  %s serve web                           # Explicitly serve web\n", os.Args[0])
