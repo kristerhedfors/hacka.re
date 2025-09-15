@@ -25,6 +25,7 @@ from rich.align import Align
 import pexpect
 import asyncio
 from typing import List, Dict, Optional
+from port_utils import get_random_port, get_multiple_random_ports
 
 console = Console()
 
@@ -41,6 +42,8 @@ class VisualTestRunner:
         self.completed_tests = 0
         self.failed_tests = []
         self.passed_tests = []
+        # Get random ports for testing to avoid conflicts
+        self.test_ports = get_multiple_random_ports(10)
 
     def run_command_with_terminal(self, cmd: List[str], timeout: int = 10) -> Dict:
         """Run command and capture terminal interaction"""
@@ -107,8 +110,8 @@ class VisualTestRunner:
         self._display_terminal_output(result)
 
         # Test server startup (with immediate kill)
-        console.print("\n  🌐 Testing server startup...")
-        result = self.run_command_with_terminal([str(self.cli_path), "serve", "-p", "9999"], timeout=2)
+        console.print(f"\n  🌐 Testing server startup on random port {self.test_ports[0]}...")
+        result = self.run_command_with_terminal([str(self.cli_path), "serve", "-p", str(self.test_ports[0])], timeout=2)
         results['startup'] = result
         self._display_terminal_output(result)
 
@@ -122,14 +125,14 @@ class VisualTestRunner:
         results = {}
 
         # Test verbose mode
-        console.print("  📝 Testing verbose mode (-v)...")
-        result = self.run_command_with_terminal([str(self.cli_path), "serve", "-v", "-p", "9998"], timeout=2)
+        console.print(f"  📝 Testing verbose mode (-v) on port {self.test_ports[1]}...")
+        result = self.run_command_with_terminal([str(self.cli_path), "serve", "-v", "-p", str(self.test_ports[1])], timeout=2)
         results['verbose'] = result
         self._display_terminal_output(result)
 
         # Test very verbose mode
-        console.print("\n  📝📝 Testing very verbose mode (-vv)...")
-        result = self.run_command_with_terminal([str(self.cli_path), "serve", "-vv", "-p", "9997"], timeout=2)
+        console.print(f"\n  📝📝 Testing very verbose mode (-vv) on port {self.test_ports[2]}...")
+        result = self.run_command_with_terminal([str(self.cli_path), "serve", "-vv", "-p", str(self.test_ports[2])], timeout=2)
         results['very_verbose'] = result
         self._display_terminal_output(result)
 
@@ -158,15 +161,16 @@ class VisualTestRunner:
         results = {}
 
         # Test custom port
-        console.print("  🔧 Testing custom port (-p 8888)...")
-        result = self.run_command_with_terminal([str(self.cli_path), "serve", "-p", "8888"], timeout=2)
+        console.print(f"  🔧 Testing custom port (-p {self.test_ports[3]})...")
+        result = self.run_command_with_terminal([str(self.cli_path), "serve", "-p", str(self.test_ports[3])], timeout=2)
         results['custom_port'] = result
         self._display_terminal_output(result)
 
         # Test environment variable
-        console.print("\n  🌍 Testing HACKARE_WEB_PORT environment variable...")
+        port_for_env = self.test_ports[4]
+        console.print(f"\n  🌍 Testing HACKARE_WEB_PORT environment variable with port {port_for_env}...")
         env = os.environ.copy()
-        env['HACKARE_WEB_PORT'] = '7777'
+        env['HACKARE_WEB_PORT'] = str(port_for_env)
 
         try:
             child = pexpect.spawn(str(self.cli_path), ["serve"], timeout=2, encoding='utf-8', env=env)
@@ -184,7 +188,7 @@ class VisualTestRunner:
             child.terminate()
 
             result = {
-                'command': 'HACKARE_WEB_PORT=7777 ./hacka.re serve',
+                'command': f'HACKARE_WEB_PORT={port_for_env} ./hacka.re serve',
                 'output': output,
                 'success': True,
                 'duration': 2,

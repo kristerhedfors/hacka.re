@@ -17,6 +17,7 @@ import asyncio
 import concurrent.futures
 from typing import List, Dict, Tuple
 import signal
+from port_utils import get_random_port, get_multiple_random_ports, is_port_in_use
 
 class SpeedrunVisualizer:
     """Runs tests with ncurses visualization showing multiple terminal windows"""
@@ -30,6 +31,8 @@ class SpeedrunVisualizer:
         self.failed_tests = []
         self.start_time = None
         self.stop_flag = False
+        # Pre-allocate random ports for all tests to avoid conflicts
+        self.test_ports = get_multiple_random_ports(20)
 
     def run_test_async(self, name: str, cmd: List[str], timeout: int = 5) -> Dict:
         """Run a single test and capture output"""
@@ -98,7 +101,8 @@ class SpeedrunVisualizer:
 
         height, width = stdscr.getmaxyx()
 
-        # Define all tests
+        # Define all tests with random ports
+        port_idx = 0
         test_definitions = [
             # Core functionality
             ("Help", [str(self.cli_path), "--help"], 2),
@@ -106,25 +110,32 @@ class SpeedrunVisualizer:
 
             # Browse command tests
             ("Browse Help", [str(self.cli_path), "browse", "--help"], 2),
-            ("Serve NoOpen", [str(self.cli_path), "serve", "-p", "9991"], 3),
-            ("Serve Port Test", [str(self.cli_path), "serve", "-p", "9992"], 3),
+            ("Serve NoOpen", [str(self.cli_path), "serve", "-p", str(self.test_ports[port_idx])], 3),
+            ("Serve Port Test", [str(self.cli_path), "serve", "-p", str(self.test_ports[port_idx+1])], 3),
 
             # Serve command tests
             ("Serve Help", [str(self.cli_path), "serve", "--help"], 2),
-            ("Serve Basic", [str(self.cli_path), "serve", "-p", "9993"], 3),
-            ("Serve Verbose", [str(self.cli_path), "serve", "-v", "-p", "9994"], 3),
-            ("Serve VeryVerbose", [str(self.cli_path), "serve", "-vv", "-p", "9995"], 3),
+            ("Serve Basic", [str(self.cli_path), "serve", "-p", str(self.test_ports[port_idx+2])], 3),
+            ("Serve Verbose", [str(self.cli_path), "serve", "-v", "-p", str(self.test_ports[port_idx+3])], 3),
+            ("Serve VeryVerbose", [str(self.cli_path), "serve", "-vv", "-p", str(self.test_ports[port_idx+4])], 3),
 
             # Chat command tests
             ("Chat Help", [str(self.cli_path), "chat", "--help"], 2),
 
             # Port configuration tests
-            ("Port Short", [str(self.cli_path), "serve", "-p", "8888"], 3),
-            ("Port Long", [str(self.cli_path), "serve", "--port", "8889"], 3),
+            ("Port Short", [str(self.cli_path), "serve", "-p", str(self.test_ports[port_idx+5])], 3),
+            ("Port Long", [str(self.cli_path), "serve", "--port", str(self.test_ports[port_idx+6])], 3),
 
             # Session/Link tests (if environment configured)
             ("Session Help", [str(self.cli_path), "browse", "--help"], 2),
         ]
+
+        # Special test for default port (might be in use)
+        if not is_port_in_use(8080):
+            test_definitions.append(("Default Port 8080", [str(self.cli_path), "serve"], 3))
+        else:
+            # Port 8080 is in use, test that it fails gracefully
+            test_definitions.append(("Default Port Conflict", [str(self.cli_path), "serve"], 1))
 
         # Start all tests in parallel
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:

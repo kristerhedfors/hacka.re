@@ -19,6 +19,7 @@ import tty
 import fcntl
 import struct
 import shutil
+from port_utils import get_random_port
 
 class TerminalRecorder:
     """Records terminal sessions for later playback"""
@@ -212,10 +213,13 @@ def main():
     print("🎬 Terminal Recorder for hacka.re CLI")
     print("=" * 50)
 
+    # Get a random port for testing
+    test_port = get_random_port()
+
     tests = [
         ("help", [str(cli_path), "--help"], 2),
         ("browse_help", [str(cli_path), "browse", "--help"], 2),
-        ("serve_verbose", [str(cli_path), "serve", "-v", "-p", "9999"], 3),
+        ("serve_verbose", [str(cli_path), "serve", "-v", "-p", str(test_port)], 3),
         ("chat_help", [str(cli_path), "chat", "--help"], 2),
     ]
 
