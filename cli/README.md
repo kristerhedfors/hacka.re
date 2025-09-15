@@ -4,11 +4,14 @@ A command-line interface for [hacka.re](https://hacka.re) - the privacy-focused,
 
 ## Features
 
+- 🌐 **Embedded Web Server**: Full hacka.re web interface with single binary (browse command)
+- 💬 **Terminal Chat**: Interactive AI chat sessions directly in the terminal (chat command)
 - 🔐 **Secure Configuration Import**: Parse and decrypt hacka.re shared links with password protection
 - 📺 **ASCII Settings Modal**: Terminal-based UI mimicking the web interface
 - 🔒 **TweetNaCl Encryption**: Industry-standard encryption for configuration sharing
 - 📱 **QR Code Generation**: Share configurations easily via QR codes
-- 🎯 **Minimal Dependencies**: Only essential libraries for maximum portability
+- 📦 **Single Binary**: All assets embedded - no installation or dependencies needed
+- 🎯 **Cross-Platform**: Works on macOS, Linux, and Windows
 - 🚀 **Zero Configuration**: Works with just a hacka.re URL fragment
 
 ## Installation
@@ -17,6 +20,10 @@ A command-line interface for [hacka.re](https://hacka.re) - the privacy-focused,
 
 ```bash
 cd cli
+# Build with embedded web assets (recommended)
+./build-with-assets.sh
+
+# Or build without web assets (smaller binary, no browse command)
 go build -o hacka.re cmd/hacka.re/main.go
 ```
 
@@ -28,6 +35,51 @@ The CLI uses minimal external dependencies:
 - `github.com/skip2/go-qrcode` - QR code generation
 
 ## Usage
+
+### Commands
+
+The CLI uses a subcommand structure for different operations:
+
+```bash
+./hacka.re [COMMAND] [OPTIONS] [ARGUMENTS]
+```
+
+Available commands:
+- `browse` - Start local web server to browse hacka.re interface
+- `chat` - Start interactive chat session with AI models
+- (no command) - Launch settings or process shared configuration
+
+### Browse Command (Web Interface)
+
+Start a local web server to use the full hacka.re web interface:
+
+```bash
+# Start on default port 8080
+./hacka.re browse
+
+# Use custom port
+./hacka.re browse -p 3000
+./hacka.re browse --port 9000
+
+# Don't open browser automatically
+./hacka.re browse --no-browser
+
+# Use environment variable for port
+HACKARE_WEB_PORT=8888 ./hacka.re browse
+```
+
+### Chat Command (Terminal Chat)
+
+Start an interactive chat session in the terminal:
+
+```bash
+# Start with saved configuration
+./hacka.re chat
+
+# Load configuration from shared link
+./hacka.re chat "gpt=eyJlbmM..."
+./hacka.re chat "https://hacka.re/#gpt=eyJlbmM..."
+```
 
 ### Interactive Mode (No Arguments)
 
