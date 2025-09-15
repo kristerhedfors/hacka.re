@@ -256,23 +256,49 @@ class TestCliServeCommand:
         
         # Make multiple concurrent requests
         import concurrent.futures
-        
+
         def make_request(path):
+            """Make a request - should be instant for static files from memory"""
             try:
-                response = requests.get(f"{base_url}{path}", timeout=5)
-                return response.status_code == 200
-            except:
-                return False
-        
-        paths = ["/", "/index.html", "/css/styles.css", "/js/main.js"] * 5
-        
+                # 1 second timeout is MORE than enough for serving from memory
+                response = requests.get(f"{base_url}{path}", timeout=1)
+                if response.status_code == 200:
+                    return (True, response.elapsed.total_seconds())
+                else:
+                    print(f"  Non-200 status for {path}: {response.status_code}")
+                    return (False, 0)
+            except requests.exceptions.RequestException as e:
+                print(f"  Request failed for {path}: {e}")
+                return (False, 0)
+
+        # Test files that definitely exist in the ZIP (use app.js, not main.js)
+        paths = ["/", "/index.html", "/css/styles.css", "/js/app.js"] * 5  # 20 requests total
+
+        # Run concurrent requests - server should handle this easily
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
             results = list(executor.map(make_request, paths))
-        
-        success_rate = sum(results) / len(results) * 100
-        print(f"Success rate: {success_rate}% ({sum(results)}/{len(results)})")
-        
-        assert success_rate >= 95  # Allow for some failures in concurrent scenario
+
+        successes = [r[0] for r in results]
+        response_times = [r[1] for r in results if r[0]]
+
+        success_rate = sum(successes) / len(successes) * 100
+        avg_response_time = sum(response_times) / len(response_times) if response_times else 0
+
+        print(f"Success rate: {success_rate}% ({sum(successes)}/{len(successes)})")
+        print(f"Average response time: {avg_response_time:.3f}s")
+
+        # Check if any failed
+        if success_rate < 100:
+            print("Failed requests:")
+            for i, (path, success) in enumerate(zip(paths, successes)):
+                if not success:
+                    print(f"  Request {i}: {path}")
+
+        # Files from embedded ZIP should ALWAYS be served successfully
+        assert success_rate == 100, f"Server failed to serve static files from memory. Success rate: {success_rate}%"
+
+        # Response should be nearly instant (under 100ms even with concurrency)
+        assert avg_response_time < 0.1, f"Server too slow for memory-served files. Avg: {avg_response_time:.3f}s"
         
         # Test with Playwright
         page.goto(base_url)
