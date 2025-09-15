@@ -78,6 +78,17 @@ func NewConfigManager() (*ConfigManager, error) {
 
 	configPath := filepath.Join(configDir, "config.json")
 
+	return NewConfigManagerWithPath(configPath)
+}
+
+// NewConfigManagerWithPath creates a new configuration manager with custom path
+func NewConfigManagerWithPath(configPath string) (*ConfigManager, error) {
+	// Ensure directory exists
+	dir := filepath.Dir(configPath)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return nil, err
+	}
+
 	cm := &ConfigManager{
 		configPath: configPath,
 		config:     DefaultConfig(),
@@ -120,6 +131,11 @@ func (cm *ConfigManager) Get() *Config {
 func (cm *ConfigManager) Update(updater func(*Config)) error {
 	updater(cm.config)
 	return cm.Save()
+}
+
+// GetConfigPath returns the path to the configuration file
+func (cm *ConfigManager) GetConfigPath() string {
+	return cm.configPath
 }
 
 // Validate checks if the configuration is valid

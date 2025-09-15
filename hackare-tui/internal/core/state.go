@@ -67,6 +67,9 @@ type AppState struct {
 	Connected     bool
 	LastError     error
 	LastActivity  time.Time
+
+	// External callbacks for parent app integration
+	callbacks interface{}
 }
 
 // UIMode represents the current UI mode
@@ -225,6 +228,20 @@ func (s *AppState) GetError() error {
 	err := s.LastError
 	s.LastError = nil
 	return err
+}
+
+// SetCallbacks sets the external callbacks
+func (s *AppState) SetCallbacks(callbacks interface{}) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.callbacks = callbacks
+}
+
+// GetCallbacks returns the external callbacks
+func (s *AppState) GetCallbacks() interface{} {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.callbacks
 }
 
 // generateID generates a unique ID

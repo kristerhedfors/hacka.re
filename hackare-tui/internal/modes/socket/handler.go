@@ -35,6 +35,11 @@ type Handler struct {
 
 // NewHandler creates a new socket mode handler
 func NewHandler(config *core.ConfigManager, state *core.AppState, eventBus *core.EventBus) *Handler {
+	return NewHandlerWithCallbacks(config, state, eventBus, nil)
+}
+
+// NewHandlerWithCallbacks creates a new socket mode handler with external callbacks
+func NewHandlerWithCallbacks(config *core.ConfigManager, state *core.AppState, eventBus *core.EventBus, callbacks interface{}) *Handler {
 	h := &Handler{
 		config:      config,
 		state:       state,
@@ -45,6 +50,11 @@ func NewHandler(config *core.ConfigManager, state *core.AppState, eventBus *core
 		currentLine: make([]rune, 0),
 		prompt:      "> ",
 		stopChan:    make(chan struct{}),
+	}
+
+	// Store callbacks in state if provided
+	if callbacks != nil {
+		state.SetCallbacks(callbacks)
 	}
 
 	h.reader = bufio.NewReader(h.input)

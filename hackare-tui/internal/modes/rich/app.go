@@ -37,6 +37,11 @@ const (
 
 // NewApp creates a new rich TUI application
 func NewApp(config *core.ConfigManager, state *core.AppState, eventBus *core.EventBus) (*App, error) {
+	return NewAppWithCallbacks(config, state, eventBus, nil)
+}
+
+// NewAppWithCallbacks creates a new rich TUI application with external callbacks
+func NewAppWithCallbacks(config *core.ConfigManager, state *core.AppState, eventBus *core.EventBus, callbacks interface{}) (*App, error) {
 	screen, err := tcell.NewScreen()
 	if err != nil {
 		return nil, err
@@ -59,6 +64,11 @@ func NewApp(config *core.ConfigManager, state *core.AppState, eventBus *core.Eve
 		eventBus:     eventBus,
 		currentPanel: PanelMainMenu,
 		needsRedraw:  true,
+	}
+
+	// Store callbacks in state if provided
+	if callbacks != nil {
+		state.SetCallbacks(callbacks)
 	}
 
 	// Create main menu

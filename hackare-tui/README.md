@@ -2,6 +2,8 @@
 
 A reimplemented terminal GUI for the hacka.re CLI with dual-mode support: a resilient socket mode for basic terminals and a rich TUI mode for full-featured terminals.
 
+**Available as both a standalone application and a Go library for integration into other projects.**
+
 ## Features
 
 ### Core Architecture
@@ -26,6 +28,8 @@ A reimplemented terminal GUI for the hacka.re CLI with dual-mode support: a resi
 
 ## Installation
 
+### As a Standalone Application
+
 ```bash
 # Clone the repository
 git clone https://github.com/hacka-re/hackare-tui
@@ -39,7 +43,87 @@ go mod tidy
 go build -o hackare-tui cmd/tui/main.go
 ```
 
+### As a Go Library
+
+```bash
+go get github.com/hacka-re/tui
+```
+
+Add to your Go project:
+```go
+import "github.com/hacka-re/tui/pkg/tui"
+```
+
 ## Usage
+
+### Library Usage
+
+The TUI can be embedded in other applications:
+
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+	"github.com/hacka-re/tui/pkg/tui"
+)
+
+// Your existing config structure
+type MyConfig struct {
+	Provider    string  `json:"provider"`
+	APIKey      string  `json:"api_key"`
+	BaseURL     string  `json:"base_url"`
+	Model       string  `json:"model"`
+	Temperature float64 `json:"temperature"`
+	// ... other fields
+}
+
+// Implement the ExternalConfig interface
+func (c *MyConfig) GetProvider() string      { return c.Provider }
+func (c *MyConfig) GetAPIKey() string        { return c.APIKey }
+func (c *MyConfig) GetBaseURL() string       { return c.BaseURL }
+func (c *MyConfig) GetModel() string         { return c.Model }
+func (c *MyConfig) GetTemperature() float64  { return c.Temperature }
+// ... implement other required methods
+
+func main() {
+	config := &MyConfig{
+		Provider:    "openai",
+		APIKey:      "your-api-key",
+		BaseURL:     "https://api.openai.com/v1",
+		Model:       "gpt-3.5-turbo",
+		Temperature: 0.7,
+	}
+
+	callbacks := &tui.Callbacks{
+		OnStartChat: func(cfg interface{}) error {
+			fmt.Println("Starting chat with config:", cfg)
+			// Start your chat implementation
+			return nil
+		},
+		OnSaveConfig: func(cfg interface{}) error {
+			fmt.Println("Saving config:", cfg)
+			// Save config to your storage
+			return nil
+		},
+		OnExit: func() {
+			fmt.Println("TUI is exiting")
+		},
+	}
+
+	options := &tui.LaunchOptions{
+		Mode:      "auto",        // auto, rich, or socket
+		Config:    config,        // Your configuration
+		Callbacks: callbacks,     // Integration callbacks
+		Debug:     false,         // Debug logging
+	}
+
+	if err := tui.LaunchTUI(options); err != nil {
+		log.Fatalf("Failed to launch TUI: %v", err)
+	}
+}
+```
 
 ### Basic Usage
 
@@ -116,6 +200,66 @@ Current Settings:
 > /help
 Available Commands:
 ...
+```
+
+## Library API
+
+### Core Types
+
+- **`LaunchOptions`** - Configuration for launching the TUI
+- **`Callbacks`** - Integration callbacks for parent application
+- **`ExternalConfig`** - Interface for external configuration
+
+### Callbacks
+
+The `Callbacks` structure allows your application to integrate with TUI actions:
+
+- `OnStartChat(config)` - Called when user wants to start chatting
+- `OnBrowse(config)` - Called when user wants to start web server with browser
+- `OnServe(config)` - Called when user wants to start web server
+- `OnShareLink(config)` - Called when user wants to generate share link
+- `OnSaveConfig(config)` - Called when configuration needs saving
+- `OnLoadConfig()` - Called when configuration needs loading
+- `OnExit()` - Called when TUI is exiting
+
+### Configuration Interface
+
+Implement the `ExternalConfig` interface to provide your configuration:
+
+```go
+type ExternalConfig interface {
+	GetProvider() string
+	GetAPIKey() string
+	GetBaseURL() string
+	GetModel() string
+	GetTemperature() float64
+	GetMaxTokens() int
+	GetStreamMode() bool
+	GetYoloMode() bool
+	GetVoiceControl() bool
+	GetSystemPrompt() string
+	GetNamespace() string
+	GetFunctions() []FunctionDef
+	GetPrompts() []PromptDef
+}
+```
+
+Or use the `CLIConfig` interface for CLI compatibility:
+
+```go
+type CLIConfig interface {
+	GetProvider() string
+	GetAPIKey() string
+	GetBaseURL() string
+	GetModel() string
+	GetTemperature() float64
+	GetMaxTokens() int
+	GetStreamResponse() bool
+	GetYoloMode() bool
+	GetVoiceControl() bool
+	GetSystemPrompt() string
+	GetNamespace() string
+}
 ```
 
 ## Architecture
