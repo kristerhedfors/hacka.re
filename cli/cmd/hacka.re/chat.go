@@ -27,12 +27,20 @@ func ChatCommand(args []string) {
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		fmt.Fprintf(os.Stderr, "  -h, --help            Show this help message\n\n")
 		fmt.Fprintf(os.Stderr, "Arguments:\n")
-		fmt.Fprintf(os.Stderr, "  URL          Full hacka.re URL to load configuration from\n")
+		fmt.Fprintf(os.Stderr, "  URL          Full hacka.re URL to load session from\n")
 		fmt.Fprintf(os.Stderr, "  FRAGMENT     Fragment with prefix (gpt=...)\n")
 		fmt.Fprintf(os.Stderr, "  DATA         Just the encrypted data (eyJlbmM...)\n\n")
+		fmt.Fprintf(os.Stderr, "Environment Variables:\n")
+		fmt.Fprintf(os.Stderr, "  HACKARE_LINK          Session link (synonymous with HACKARE_SESSION/CONFIG)\n")
+		fmt.Fprintf(os.Stderr, "  HACKARE_SESSION       Session link (synonymous with HACKARE_LINK/CONFIG)\n")
+		fmt.Fprintf(os.Stderr, "  HACKARE_CONFIG        Session link (synonymous with HACKARE_LINK/SESSION)\n\n")
+		fmt.Fprintf(os.Stderr, "Note: HACKARE_LINK, HACKARE_SESSION, and HACKARE_CONFIG are synonymous.\n")
+		fmt.Fprintf(os.Stderr, "      They all accept the same formats as command line arguments.\n")
+		fmt.Fprintf(os.Stderr, "      Only ONE should be set - setting multiple will cause an error.\n\n")
 		fmt.Fprintf(os.Stderr, "Examples:\n")
 		fmt.Fprintf(os.Stderr, "  %s chat                                # Start with saved config\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "  %s chat \"gpt=eyJlbmM...\"              # Load config from fragment\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  %s chat \"gpt=eyJlbmM...\"              # Load session from fragment\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  HACKARE_SESSION=\"gpt=...\" %s chat     # Load session from env\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "\nNote: If no configuration exists, you'll be prompted to set it up first.\n")
 	}
 	
@@ -58,31 +66,53 @@ func ChatCommand(args []string) {
 // startChatWithArgs starts a chat session, optionally loading config from URL
 func startChatWithArgs(args []string) {
 	var cfg *config.Config
-	
-	// Check if we have a URL/fragment argument
+
+	// Check for session from environment first, then command line
+	var sessionLink string
+	var sessionSource string
+
+	// Check environment variables for session
+	envSession, err := share.GetSessionFromEnvironment()
+	if err != nil {
+		// Multiple session env vars defined - this is an error
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Determine session source: command line takes precedence over environment
 	if len(args) > 0 {
-		// Parse the URL to get configuration
-		fmt.Println("Loading configuration from URL...")
-		
+		sessionLink = args[0]
+		sessionSource = "command line"
+	} else if envSession != "" {
+		sessionLink = envSession
+		envVar, _ := share.GetEnvironmentSessionSource()
+		sessionSource = fmt.Sprintf("environment variable %s", envVar)
+	}
+
+	// Check if we have a session link to process
+	if sessionLink != "" {
+		// Parse the session link
+		fmt.Printf("Loading session from %s...\n", sessionSource)
+
 		// Ask for password
-		password, err := getPassword("Enter password for shared configuration: ")
+		password, err := getPassword("Enter password for session: ")
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error reading password: %v\n", err)
 			os.Exit(1)
 		}
-		
+
 		// Parse the URL
-		sharedConfig, err := share.ParseURL(args[0], password)
+		sharedConfig, err := share.ParseURL(sessionLink, password)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error parsing shared configuration: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Error parsing session: %v\n", err)
 			os.Exit(1)
 		}
-		
+
 		// Load into config
 		cfg = config.NewConfig()
 		cfg.LoadFromSharedConfig(sharedConfig)
-		
-		fmt.Println("✓ Configuration loaded successfully!")
+
+		fmt.Println("✓ Session loaded successfully!")
 	} else {
 		// Try to load existing configuration
 		var err error

@@ -41,16 +41,23 @@ func BrowseCommand(args []string) {
 		fmt.Fprintf(os.Stderr, "  --host HOST           Host to bind to (default: localhost)\n")
 		fmt.Fprintf(os.Stderr, "  -h, --help            Show this help message\n\n")
 		fmt.Fprintf(os.Stderr, "Arguments:\n")
-		fmt.Fprintf(os.Stderr, "  URL          Full hacka.re URL to load configuration from\n")
+		fmt.Fprintf(os.Stderr, "  URL          Full hacka.re URL to load session from\n")
 		fmt.Fprintf(os.Stderr, "  FRAGMENT     Fragment with prefix (gpt=...)\n")
 		fmt.Fprintf(os.Stderr, "  DATA         Just the encrypted data (eyJlbmM...)\n\n")
 		fmt.Fprintf(os.Stderr, "Environment Variables:\n")
-		fmt.Fprintf(os.Stderr, "  HACKARE_WEB_PORT   Default port if not specified via flag\n\n")
+		fmt.Fprintf(os.Stderr, "  HACKARE_WEB_PORT      Default port if not specified via flag\n")
+		fmt.Fprintf(os.Stderr, "  HACKARE_LINK          Session link (synonymous with HACKARE_SESSION/CONFIG)\n")
+		fmt.Fprintf(os.Stderr, "  HACKARE_SESSION       Session link (synonymous with HACKARE_LINK/CONFIG)\n")
+		fmt.Fprintf(os.Stderr, "  HACKARE_CONFIG        Session link (synonymous with HACKARE_LINK/SESSION)\n\n")
+		fmt.Fprintf(os.Stderr, "Note: HACKARE_LINK, HACKARE_SESSION, and HACKARE_CONFIG are synonymous.\n")
+		fmt.Fprintf(os.Stderr, "      They all accept the same formats as command line arguments.\n")
+		fmt.Fprintf(os.Stderr, "      Only ONE should be set - setting multiple will cause an error.\n\n")
 		fmt.Fprintf(os.Stderr, "Examples:\n")
 		fmt.Fprintf(os.Stderr, "  %s browse                              # Start on port 8080\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  %s browse -p 3000                      # Start on port 3000\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "  %s browse \"gpt=eyJlbmM...\"            # Load config and browse\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "  HACKARE_WEB_PORT=9000 %s browse    # Use env var\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  %s browse \"gpt=eyJlbmM...\"            # Load session and browse\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  HACKARE_WEB_PORT=9000 %s browse        # Use env var for port\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  HACKARE_SESSION=\"gpt=...\" %s browse    # Load session from env\n", os.Args[0])
 	}
 	
 	// Parse flags
@@ -84,34 +91,56 @@ func BrowseCommand(args []string) {
 	
 	// Get non-flag arguments (shared link components)
 	remainingArgs := browseFlags.Args()
-	
-	// Process shared link if provided
-	var sharedConfigFragment string
+
+	// Check for session from environment first, then command line
+	var sessionLink string
+	var sessionSource string
+
+	// Check environment variables for session
+	envSession, err := share.GetSessionFromEnvironment()
+	if err != nil {
+		// Multiple session env vars defined - this is an error
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Determine session source: command line takes precedence over environment
 	if len(remainingArgs) > 0 {
-		// Parse the shared link argument
-		fmt.Println("Processing shared configuration...")
-		
+		sessionLink = remainingArgs[0]
+		sessionSource = "command line"
+	} else if envSession != "" {
+		sessionLink = envSession
+		envVar, _ := share.GetEnvironmentSessionSource()
+		sessionSource = fmt.Sprintf("environment variable %s", envVar)
+	}
+
+	// Process session if provided
+	var sharedConfigFragment string
+	if sessionLink != "" {
+		// Parse the session link
+		fmt.Printf("Processing session from %s...\n", sessionSource)
+
 		// Ask for password
-		password, err := getPasswordBrowse("Enter password for shared configuration: ")
+		password, err := getPasswordBrowse("Enter password for session: ")
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error reading password: %v\n", err)
 			os.Exit(1)
 		}
-		
+
 		// Parse the URL/fragment
-		sharedConfig, err := share.ParseURL(remainingArgs[0], password)
+		sharedConfig, err := share.ParseURL(sessionLink, password)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error parsing shared configuration: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Error parsing session: %v\n", err)
 			fmt.Println("\nThe password may be incorrect or the link may be corrupted.")
 			os.Exit(1)
 		}
-		
+
 		// Validate the configuration
 		if err := share.ValidateConfig(sharedConfig); err != nil {
-			fmt.Fprintf(os.Stderr, "Invalid configuration: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Invalid session configuration: %v\n", err)
 			os.Exit(1)
 		}
-		
+
 		// Create a new shareable URL fragment for the web interface
 		// This will be appended to the URL when opening the browser
 		sharedConfigFragment, err = createFragmentFromConfig(sharedConfig, password)
@@ -119,8 +148,8 @@ func BrowseCommand(args []string) {
 			fmt.Fprintf(os.Stderr, "Error creating fragment: %v\n", err)
 			os.Exit(1)
 		}
-		
-		fmt.Println("✓ Configuration loaded successfully!")
+
+		fmt.Println("✓ Session loaded successfully!")
 		fmt.Println()
 	}
 	

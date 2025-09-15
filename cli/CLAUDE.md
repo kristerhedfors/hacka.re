@@ -67,7 +67,7 @@ source .venv/bin/activate
 # Browse command tests
 pytest test_cli_browse_command.py -v
 
-# Serve command tests  
+# Serve command tests
 pytest test_cli_serve_command.py -v
 
 # Chat command tests
@@ -78,6 +78,9 @@ pytest test_cli_port_configuration.py -v
 
 # Shared links tests
 pytest test_cli_shared_links.py -v
+
+# Session environment variables tests
+pytest test_cli_session_env_vars.py -v
 
 # ZIP serving tests
 pytest test_cli_zip_serving.py -v
@@ -133,11 +136,39 @@ pytest test_cli_browse_command.py::TestCliBrowseCommand::test_browse_help -v
 - Concurrent request handling
 - **Note**: Uses `/js/app.js` not `/js/main.js`
 
-### 6. Shared Links
+### 6. Shared Links / Sessions
 All commands accept three formats:
 - Full URL: `https://hacka.re/#gpt=eyJlbmM...`
 - Fragment: `gpt=eyJlbmM...`
 - Raw data: `eyJlbmM...`
+
+### 7. Session Environment Variables
+**IMPORTANT**: These three environment variables are synonymous and represent a session (a link containing encrypted configuration):
+- `HACKARE_LINK`
+- `HACKARE_SESSION`
+- `HACKARE_CONFIG`
+
+**Key Rules**:
+- All three accept the same formats as command line arguments (URL, fragment, or raw data)
+- They are completely synonymous - use whichever name you prefer
+- **ONLY ONE** should be set at a time - setting multiple will cause an error
+- Command line arguments take precedence over environment variables
+- Internally referred to as "session" (a link containing configuration)
+
+**Usage Examples**:
+```bash
+# Using HACKARE_SESSION with fragment format
+HACKARE_SESSION="gpt=eyJlbmM..." ./hacka.re browse
+
+# Using HACKARE_LINK with full URL
+HACKARE_LINK="https://hacka.re/#gpt=..." ./hacka.re serve
+
+# Using HACKARE_CONFIG with raw data
+HACKARE_CONFIG="eyJlbmM..." ./hacka.re chat
+
+# ERROR: Multiple variables set (will fail)
+HACKARE_LINK="..." HACKARE_SESSION="..." ./hacka.re browse
+```
 
 ## Common Test Commands
 
