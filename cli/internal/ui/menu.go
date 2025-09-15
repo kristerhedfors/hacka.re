@@ -96,6 +96,7 @@ func (m *FilterableMenu) SetInfoPanel(show bool, width int) {
 // Second return value indicates if ESC was pressed
 func (m *FilterableMenu) HandleInput(ev *tcell.EventKey) (MenuItem, bool) {
 	log := logger.Get()
+	log.Debug("[MENU] HandleInput - Key: %v, Rune: %c", ev.Key(), ev.Rune())
 
 	switch ev.Key() {
 	case tcell.KeyEscape:
@@ -111,12 +112,14 @@ func (m *FilterableMenu) HandleInput(ev *tcell.EventKey) (MenuItem, bool) {
 		if m.selectedIdx > 0 {
 			m.selectedIdx--
 			log.Debug("Menu selection up: %d", m.selectedIdx)
+			// Don't draw here - let the main loop handle it
 		}
 
 	case tcell.KeyDown:
 		if m.selectedIdx < len(m.filteredItems)-1 {
 			m.selectedIdx++
 			log.Debug("Menu selection down: %d", m.selectedIdx)
+			// Don't draw here - let the main loop handle it
 		}
 
 	case tcell.KeyEnter:
@@ -348,23 +351,32 @@ func (m *FilterableMenu) drawItems() {
 		y := startY + i
 		x := m.x + 2
 
+		// Check if this item is selected
+		isSelected := (scrollOffset+i == m.selectedIdx)
+
 		// Determine style
 		style := tcell.StyleDefault
-		if scrollOffset+i == m.selectedIdx {
-			style = style.Background(tcell.ColorDarkBlue)
+		if isSelected {
+			// Use BOTH background color AND reverse video for visibility
+			style = style.Background(tcell.ColorDarkBlue).Reverse(true)
 		}
 		if !item.IsEnabled() {
 			style = style.Dim(true)
 		}
 
-		// Format item text
+		// Format item text with selection indicator
 		var itemText string
+		prefix := "  " // Default: two spaces
+		if isSelected {
+			prefix = "> " // Selected: arrow indicator
+		}
+
 		if m.isNumberMode {
 			// In number mode, emphasize the number
-			itemText = fmt.Sprintf("%2d. %s", item.GetNumber(), item.GetTitle())
+			itemText = fmt.Sprintf("%s%d. %s", prefix, item.GetNumber(), item.GetTitle())
 		} else {
 			// In text mode, show normal format
-			itemText = fmt.Sprintf("%2d. %s", item.GetNumber(), item.GetTitle())
+			itemText = fmt.Sprintf("%s%d. %s", prefix, item.GetNumber(), item.GetTitle())
 		}
 
 		// Truncate if too long

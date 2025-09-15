@@ -19,10 +19,14 @@ func StartChatInterface(cfg *config.Config) error {
 			// Clear screen for modal
 			fmt.Print("\033[2J\033[H")
 
-			// Show settings modal - it will return when user presses ESC
-			if err := ui.ShowSettingsForChat(cfg); err != nil {
+			// Show settings modal using the new FilterableMenu version
+			if err := ui.ShowSettingsV2(cfg); err != nil {
 				return err
 			}
+
+			// Always save configuration when exiting settings
+			configPath := config.GetConfigPath()
+			cfg.SaveToFile(configPath)
 
 			// Clear and redraw chat interface
 			fmt.Print("\033[2J\033[H")

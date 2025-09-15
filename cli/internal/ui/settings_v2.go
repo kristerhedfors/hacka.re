@@ -151,11 +151,18 @@ func (m *SettingsModalV2) run() {
 	log := logger.Get()
 	log.Info("Settings modal V2 opened")
 
-	for {
-		m.draw()
-		m.screen.Show()
+	// Initial draw
+	WriteTrace("SETTINGS: Initial draw")
+	m.draw()
+	m.screen.Show()
+	WriteTrace("SETTINGS: Initial draw complete")
 
+	eventCount := 0
+	for {
+		WriteTrace(fmt.Sprintf("POLL: About to call PollEvent (event #%d)", eventCount+1))
 		ev := m.screen.PollEvent()
+		eventCount++
+		WriteTrace(fmt.Sprintf("POLL: Got event #%d: %T", eventCount, ev))
 
 		// Log every event
 		log.Debug("[SETTINGS-V2] Event type: %T", ev)
@@ -169,7 +176,9 @@ func (m *SettingsModalV2) run() {
 				}
 			} else {
 				// Let the menu handle navigation
-				selected, escaped := m.menu.HandleInput(ev)
+				WriteTrace(fmt.Sprintf("SETTINGS: Calling HandleInput for key %v", ev.Key()))
+				selected, escaped := m.menu.HandleInputWithTrace(ev)
+				WriteTrace("SETTINGS: HandleInput returned")
 
 				if escaped {
 					log.Info("ESC pressed - exiting settings")
@@ -213,8 +222,14 @@ func (m *SettingsModalV2) run() {
 		case *tcell.EventResize:
 			w, h := m.screen.Size()
 			m.menu.SetPosition((w-110)/2, (h-20)/2)
-			m.screen.Sync()
 		}
+
+		// Redraw after handling any event
+		WriteTrace("SETTINGS: Starting redraw after event")
+		m.draw()  // Draw the whole modal, not just the menu!
+		WriteTrace("SETTINGS: modal.draw complete, calling Show()")
+		m.screen.Show()
+		WriteTrace("SETTINGS: Show() complete")
 	}
 }
 

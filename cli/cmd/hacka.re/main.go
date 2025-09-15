@@ -468,7 +468,7 @@ func startChatSession(args []string) {
 			cfg = config.NewConfig()
 			
 			// Show settings UI first
-			ui.ShowSettings(cfg)
+			ui.ShowSettingsV2Working(cfg)
 			
 			// Ask if they want to continue to chat
 			fmt.Print("\nConfiguration saved. Start chat session? (y/n): ")

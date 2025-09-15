@@ -87,28 +87,15 @@ func (m *MainMenu) getMenuOptions() []MenuOption {
 			Description: "Configure API settings, models, and features",
 			Info:        "Access the settings menu to configure:\n\n• API Provider (OpenAI, Groq, Ollama, etc.)\n• API Key and authentication\n• Model selection\n• Temperature and token limits\n• System prompts\n• Stream mode, YOLO mode, Voice control\n\nSettings are saved locally and can be shared via encrypted links.",
 			Action: func(cfg *config.Config) bool {
-				// Use the new FilterableMenu-based settings
-				if err := ShowSettingsV2(cfg); err != nil {
+				// Use the working version with proper event handling
+				if err := ShowSettingsV2Working(cfg); err != nil {
 					log := logger.Get()
 					log.Error("Error showing settings: %v", err)
 				}
 
-				// After settings closes, we need to re-sync the screen
-				// because ShowSettingsV2 created and destroyed its own screen
+				// ShowSettingsV2Working uses its own screen, so we just need to
+				// ensure our screen is synced after it returns
 				m.screen.Sync()
-
-				// Clear any pending events that might have leaked from settings
-				for m.screen.HasPendingEvent() {
-					m.screen.PollEvent()
-				}
-
-				// Reset the menu to clear any state
-				m.menu.Reset()
-
-				// Clear and redraw to ensure clean state
-				m.screen.Clear()
-				m.draw()
-				m.screen.Show()
 
 				return true // Continue showing menu after settings closes
 			},
@@ -182,10 +169,11 @@ func (m *MainMenu) run() {
 	log := logger.Get()
 	log.Info("Main menu opened")
 
-	for {
-		m.draw()
-		m.screen.Show()
+	// Initial draw
+	m.draw()
+	m.screen.Show()
 
+	for {
 		ev := m.screen.PollEvent()
 		switch ev := ev.(type) {
 		case *tcell.EventKey:
@@ -208,8 +196,11 @@ func (m *MainMenu) run() {
 		case *tcell.EventResize:
 			w, h := m.screen.Size()
 			m.menu.SetPosition((w-100)/2, (h-20)/2)
-			m.screen.Sync()
 		}
+
+		// Redraw after handling any event
+		m.draw()
+		m.screen.Show()
 	}
 }
 
