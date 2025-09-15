@@ -164,3 +164,4 @@ cli/test_*
 # CLI test logs and debugging
 cli/testlogs/
 cli/debug/
+cli/_tests/test_results.json
