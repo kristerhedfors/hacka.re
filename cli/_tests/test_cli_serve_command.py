@@ -200,21 +200,37 @@ class TestCliServeCommand:
     def test_serve_shows_url(self):
         """Test that serve shows the URL to open"""
         print("\n=== Testing serve shows URL ===")
-        
-        # Start server
+
+        # Start server with a timeout for reading output
         self.server_process = subprocess.Popen(
             [self.cli_path, "serve", "-p", str(self.test_port)],
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
             text=True
         )
-        
-        # Read initial output
-        time.sleep(2)
-        output = self.server_process.stdout.read()
-        
+
+        # Collect output for a short time
+        output_lines = []
+        start_time = time.time()
+
+        while time.time() - start_time < 3:  # Only wait 3 seconds
+            try:
+                # Use non-blocking read
+                import select
+                ready, _, _ = select.select([self.server_process.stdout], [], [], 0.1)
+                if ready:
+                    line = self.server_process.stdout.readline()
+                    if line:
+                        output_lines.append(line)
+                        # Check if we found what we're looking for
+                        if "http://localhost" in line:
+                            break
+            except:
+                break
+
+        output = "".join(output_lines)
         print(f"Serve output:\n{output}")
-        
+
         # Check for URL in output
         assert f"http://localhost:{self.test_port}" in output or \
                f"Web server started at: http://localhost:{self.test_port}" in output

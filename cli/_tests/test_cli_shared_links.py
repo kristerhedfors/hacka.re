@@ -162,9 +162,9 @@ class TestCliSharedLinks:
                 text=True
             )
             
-            # Look for configuration-related text
+            # Look for session-related text (we changed "configuration" to "session")
             output = result.stdout + result.stderr
-            assert "configuration" in output.lower()
+            assert "session" in output.lower()
     
     def test_main_help_shows_examples(self):
         """Test main help shows shared link examples"""

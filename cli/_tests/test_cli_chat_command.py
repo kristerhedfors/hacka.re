@@ -146,8 +146,7 @@ class TestCliChatCommand:
         
         output = result.stdout + result.stderr
         assert "chat" in output
-        assert "Start interactive chat session" in output
-        output = result.stdout + result.stderr
+        assert "Start an interactive chat session" in output
         assert "URL" in output or "FRAGMENT" in output
         assert "gpt=eyJlbmM" in output or "eyJlbmM" in output
     
