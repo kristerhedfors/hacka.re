@@ -1,0 +1,8 @@
+/help
+/status
+Hello, this is a test message
+/settings
+/history
+/clear
+/mode
+/exit
