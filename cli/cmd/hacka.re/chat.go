@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/hacka-re/cli/internal/chat"
+	"github.com/hacka-re/cli/internal/app"
 	"github.com/hacka-re/cli/internal/config"
 	"github.com/hacka-re/cli/internal/share"
 	"github.com/hacka-re/cli/internal/ui"
@@ -150,8 +150,8 @@ func startChatWithArgs(args []string) {
 		os.Exit(1)
 	}
 	
-	// Start the chat session
-	if err := chat.StartChat(cfg); err != nil {
+	// Start the enhanced chat session with slash commands
+	if err := app.StartChatInterface(cfg); err != nil {
 		fmt.Fprintf(os.Stderr, "Error in chat session: %v\n", err)
 		os.Exit(1)
 	}

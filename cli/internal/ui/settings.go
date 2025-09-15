@@ -21,11 +21,8 @@ type SettingsModal struct {
 	selected      int
 	editing       bool
 	fields        []Field
-	modelList     []*models.ModelMetadata
-	filteredList  []*models.ModelMetadata
+	modelMenu     *FilterableMenu // New filterable menu for models
 	modelDropdown bool
-	dropdownIdx   int
-	filterText    string
 	// Expandable menu states
 	expandedField int // -1 means none expanded, otherwise the field index
 	expandedChoice int // 0 for No, 1 for Yes
@@ -174,21 +171,79 @@ func buildFields(cfg *config.Config) []Field {
 	return fields
 }
 
+// ModelMenuItem implements MenuItem for model selection
+type ModelMenuItem struct {
+	model *models.ModelMetadata
+	number int
+}
+
+func (m *ModelMenuItem) GetID() string          { return m.model.ID }
+func (m *ModelMenuItem) GetNumber() int         { return m.number }
+func (m *ModelMenuItem) GetTitle() string       { return m.model.Name }
+func (m *ModelMenuItem) GetDescription() string { return m.model.Description }
+func (m *ModelMenuItem) GetCategory() string    { return m.model.Category }
+func (m *ModelMenuItem) IsEnabled() bool        { return true }
+func (m *ModelMenuItem) GetInfo() string {
+	info := fmt.Sprintf("Model ID: %s\n\n", m.model.ID)
+	if m.model.Description != "" {
+		info += fmt.Sprintf("Description: %s\n\n", m.model.Description)
+	}
+	if m.model.ContextWindow > 0 {
+		info += fmt.Sprintf("Context Window: %s tokens\n", formatNumber(m.model.ContextWindow))
+	}
+	if m.model.MaxTokens > 0 {
+		info += fmt.Sprintf("Max Output: %s tokens\n", formatNumber(m.model.MaxTokens))
+	}
+	if m.model.OwnedBy != "" {
+		info += fmt.Sprintf("\nOwner: %s\n", m.model.OwnedBy)
+	}
+	if len(m.model.Capabilities) > 0 {
+		info += fmt.Sprintf("\nCapabilities: %s", strings.Join(m.model.Capabilities, ", "))
+	}
+	return info
+}
+
 // loadModelsForProvider loads the model list for the current provider
 func (m *SettingsModal) loadModelsForProvider() {
 	provider := models.ModelProvider(m.config.Provider)
-	m.modelList = m.modelRegistry.GetProviderModels(provider)
-	m.filteredList = m.modelList // Initially show all models
-	m.filterText = "" // Reset filter
-	
-	// Update model field options
+	modelList := m.modelRegistry.GetProviderModels(provider)
+
+	// Convert models to menu items
+	var menuItems []MenuItem
+	for i, model := range modelList {
+		menuItems = append(menuItems, &ModelMenuItem{
+			model:  model,
+			number: i,
+		})
+	}
+
+	// Create or update model menu
+	if m.modelMenu == nil {
+		m.modelMenu = NewFilterableMenu(m.screen, "Select Model", menuItems)
+	} else {
+		// Update existing menu with new items
+		m.modelMenu.items = menuItems
+		m.modelMenu.filteredItems = make([]MenuItem, len(menuItems))
+		copy(m.modelMenu.filteredItems, menuItems)
+		m.modelMenu.Reset()
+	}
+
+	// Configure menu display
+	w, h := m.screen.Size()
+	menuW := min(80, w-30)
+	menuH := min(20, h-10)
+	m.modelMenu.SetDimensions(menuW, menuH)
+	m.modelMenu.SetPosition((w-menuW-40)/2, 8) // Position below model field
+	m.modelMenu.SetInfoPanel(true, 40)
+
+	// Update model field options for compatibility
 	if len(m.fields) > 3 {
 		modelOptions := []string{}
-		for _, model := range m.modelList {
+		for _, model := range modelList {
 			modelOptions = append(modelOptions, model.ID)
 		}
 		m.fields[3].Options = modelOptions
-		
+
 		// Set default model if current is empty
 		if m.config.Model == "" {
 			if defaultModel := m.modelRegistry.GetDefaultModel(provider); defaultModel != nil {
@@ -196,7 +251,23 @@ func (m *SettingsModal) loadModelsForProvider() {
 				m.fields[3].Value = defaultModel.ID
 			}
 		}
+
+		// Select current model in menu
+		for i, item := range menuItems {
+			if item.GetID() == m.config.Model {
+				m.modelMenu.SetSelectedIndex(i)
+				break
+			}
+		}
 	}
+}
+
+// Helper function
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 // run runs the main event loop
@@ -242,14 +313,32 @@ func (m *SettingsModal) run() bool {
 func (m *SettingsModal) handleKeyEvent(ev *tcell.EventKey) bool {
 	log := logger.Get()
 	log.KeyEvent(fmt.Sprintf("%v", ev.Key()), fmt.Sprintf("%v", ev.Modifiers()), m.getContext())
-	
+
+	// If model dropdown is active, let it handle input first
+	if m.modelDropdown && m.modelMenu != nil {
+		selected, escaped := m.modelMenu.HandleInput(ev)
+		if escaped {
+			log.MenuAction("modelDropdown", "close", "ESC pressed")
+			m.modelDropdown = false
+			return true
+		} else if selected != nil {
+			// Apply selection
+			if modelItem, ok := selected.(*ModelMenuItem); ok {
+				m.config.Model = modelItem.model.ID
+				m.fields[3].Value = modelItem.model.ID
+				m.modelDropdown = false
+				log.MenuAction("modelDropdown", "select", modelItem.model.ID)
+			}
+			return true
+		}
+		return true // Menu handled the input
+	}
+
 	switch ev.Key() {
 	case tcell.KeyEscape:
 		if m.modelDropdown {
 			log.MenuAction("modelDropdown", "close", "ESC pressed")
 			m.modelDropdown = false
-			m.filterText = "" // Clear filter on escape
-			m.filteredList = m.modelList // Reset to full list
 			return true // Event handled, don't propagate
 		} else if m.expandedField >= 0 {
 			log.MenuAction("expandableMenu", "close", fmt.Sprintf("field=%d", m.expandedField))
@@ -265,12 +354,7 @@ func (m *SettingsModal) handleKeyEvent(ev *tcell.EventKey) bool {
 		return false
 		
 	case tcell.KeyUp:
-		if m.modelDropdown {
-			if m.dropdownIdx > 0 {
-				m.dropdownIdx--
-				log.Debug("Model dropdown: up to index %d", m.dropdownIdx)
-			}
-		} else if m.expandedField >= 0 {
+		if m.expandedField >= 0 {
 			// Toggle between Yes and No
 			oldChoice := m.expandedChoice
 			m.expandedChoice = 1 - m.expandedChoice
@@ -282,12 +366,7 @@ func (m *SettingsModal) handleKeyEvent(ev *tcell.EventKey) bool {
 		return true
 		
 	case tcell.KeyDown:
-		if m.modelDropdown {
-			if m.dropdownIdx < len(m.filteredList)-1 {
-				m.dropdownIdx++
-				log.Debug("Model dropdown: down to index %d", m.dropdownIdx)
-			}
-		} else if m.expandedField >= 0 {
+		if m.expandedField >= 0 {
 			// Toggle between Yes and No
 			oldChoice := m.expandedChoice
 			m.expandedChoice = 1 - m.expandedChoice
@@ -299,18 +378,7 @@ func (m *SettingsModal) handleKeyEvent(ev *tcell.EventKey) bool {
 		return true
 		
 	case tcell.KeyEnter:
-		if m.modelDropdown {
-			// Select model from dropdown
-			if m.dropdownIdx < len(m.filteredList) {
-				selectedModel := m.filteredList[m.dropdownIdx]
-				log.MenuAction("modelDropdown", "select", selectedModel.ID)
-				m.config.Model = selectedModel.ID
-				m.fields[3].Value = selectedModel.ID
-				m.modelDropdown = false
-				m.filterText = "" // Clear filter
-				m.filteredList = m.modelList // Reset list
-			}
-		} else if m.expandedField >= 0 {
+		if m.expandedField >= 0 {
 			// Apply yes/no selection
 			field := &m.fields[m.expandedField]
 			choiceStr := "No"
@@ -335,9 +403,16 @@ func (m *SettingsModal) handleKeyEvent(ev *tcell.EventKey) bool {
 			// Open model dropdown
 			log.MenuAction("modelDropdown", "open", "Enter pressed")
 			m.modelDropdown = true
-			m.filteredList = m.modelList
-			m.filterText = ""
-			m.dropdownIdx = m.findModelIndex(m.config.Model)
+			if m.modelMenu != nil {
+				m.modelMenu.Reset()
+				// Select current model
+				for i, item := range m.modelMenu.items {
+					if item.GetID() == m.config.Model {
+						m.modelMenu.SetSelectedIndex(i)
+						break
+					}
+				}
+			}
 		} else if m.fields[m.selected].Expandable && !m.editing {
 			// Open expandable menu
 			field := m.fields[m.selected]
@@ -393,21 +468,13 @@ func (m *SettingsModal) handleKeyEvent(ev *tcell.EventKey) bool {
 		
 	case tcell.KeyRune:
 		log.Debug("Rune key: %c", ev.Rune())
-		if m.modelDropdown {
-			// Add character to filter
-			m.filterText += string(ev.Rune())
-			m.applyFilter()
-		} else if m.editing {
+		if m.editing {
 			m.handleTextInput(ev.Rune())
 		}
 		return true
-		
+
 	case tcell.KeyBackspace, tcell.KeyBackspace2:
-		if m.modelDropdown && len(m.filterText) > 0 {
-			// Remove character from filter
-			m.filterText = m.filterText[:len(m.filterText)-1]
-			m.applyFilter()
-		} else if m.editing && len(m.fields[m.selected].Value) > 0 {
+		if m.editing && len(m.fields[m.selected].Value) > 0 {
 			field := &m.fields[m.selected]
 			field.Value = field.Value[:len(field.Value)-1]
 		}
@@ -488,8 +555,8 @@ func (m *SettingsModal) draw() {
 	}
 
 	// Draw model dropdown if active
-	if m.modelDropdown {
-		m.drawModelDropdown()
+	if m.modelDropdown && m.modelMenu != nil {
+		m.modelMenu.Draw()
 	}
 	
 	// Draw expandable menu if active
@@ -503,105 +570,6 @@ func (m *SettingsModal) draw() {
 	m.drawText((w-len(help))/2, helpY, help, tcell.StyleDefault.Dim(true))
 }
 
-// drawModelDropdown draws the model selection dropdown
-func (m *SettingsModal) drawModelDropdown() {
-	w, h := m.screen.Size()
-	
-	// Calculate dropdown position
-	dropdownX := 25
-	dropdownY := 5 + 3*2 + 1 // Below model field
-	dropdownW := w - dropdownX - 10
-	if dropdownW > 80 {
-		dropdownW = 80
-	}
-	dropdownH := len(m.filteredList) + 3 // Extra line for filter
-	if dropdownH > 20 {
-		dropdownH = 20
-	}
-	
-	// Draw dropdown border
-	m.drawBorder(dropdownX, dropdownY, dropdownW, dropdownH)
-	
-	// Draw dropdown title with filter
-	if m.filterText != "" {
-		title := fmt.Sprintf(" Filter: %s ", m.filterText)
-		m.drawText(dropdownX+2, dropdownY, title, tcell.StyleDefault.Bold(true))
-	} else {
-		title := " Select Model (type to filter) "
-		m.drawText(dropdownX+(dropdownW-len(title))/2, dropdownY, title, tcell.StyleDefault)
-	}
-	
-	// Show result count
-	countText := fmt.Sprintf("(%d models)", len(m.filteredList))
-	m.drawText(dropdownX+dropdownW-len(countText)-2, dropdownY, countText, tcell.StyleDefault.Dim(true))
-	
-	// Draw model list
-	startIdx := 0
-	if m.dropdownIdx >= dropdownH-4 {
-		startIdx = m.dropdownIdx - (dropdownH - 5)
-	}
-	
-	listHeight := dropdownH - 3
-	for i := 0; i < listHeight && startIdx+i < len(m.filteredList); i++ {
-		model := m.filteredList[startIdx+i]
-		isSelected := startIdx+i == m.dropdownIdx
-		
-		// Draw the model name with highlighting
-		y := dropdownY + 2 + i
-		x := dropdownX + 2
-		
-		// Format model entry
-		entry := fmt.Sprintf("%-30s", model.Name)
-		if len(model.Description) > 0 {
-			desc := model.Description
-			if len(desc) > 40 {
-				desc = desc[:37] + "..."
-			}
-			entry += " - " + desc
-		}
-		
-		// Truncate if too long
-		maxLen := dropdownW - 4
-		if len(entry) > maxLen {
-			entry = entry[:maxLen-3] + "..."
-		}
-		
-		// Draw with highlighting for filter matches
-		if m.filterText != "" && !isSelected {
-			m.drawTextWithHighlight(x, y, entry, m.filterText, tcell.StyleDefault)
-		} else {
-			style := tcell.StyleDefault
-			if isSelected {
-				style = style.Background(tcell.ColorDarkBlue)
-			}
-			m.drawText(x, y, entry, style)
-		}
-		
-		// Show category badge
-		if model.Category != "production" {
-			badge := fmt.Sprintf("[%s]", model.Category)
-			badgeStyle := tcell.StyleDefault.Dim(true)
-			if model.Category == "preview" {
-				badgeStyle = badgeStyle.Foreground(tcell.ColorYellow)
-			} else if model.Category == "legacy" {
-				badgeStyle = badgeStyle.Foreground(tcell.ColorRed)
-			}
-			m.drawText(dropdownX+dropdownW-len(badge)-2, y, badge, badgeStyle)
-		}
-	}
-	
-	// Show scrollbar if needed
-	if len(m.filteredList) > listHeight {
-		scrollPos := (m.dropdownIdx * (listHeight - 1)) / len(m.filteredList)
-		m.screen.SetContent(dropdownX+dropdownW-2, dropdownY+2+scrollPos, '▓', nil, tcell.StyleDefault)
-	}
-	
-	// Draw model info popup (positioned to not cover current selection)
-	if m.dropdownIdx < len(m.filteredList) {
-		selectedModel := m.filteredList[m.dropdownIdx]
-		m.drawModelInfoPopup(selectedModel, dropdownX, dropdownY, dropdownH, w, h)
-	}
-}
 
 
 // refreshModelList refreshes the model list from the API
@@ -676,144 +644,7 @@ func (m *SettingsModal) testConnection() {
 
 // Helper methods
 
-// applyFilter filters the model list based on the filter text
-func (m *SettingsModal) applyFilter() {
-	if m.filterText == "" {
-		m.filteredList = m.modelList
-		m.dropdownIdx = 0
-		return
-	}
-	
-	filter := strings.ToLower(m.filterText)
-	m.filteredList = []*models.ModelMetadata{}
-	
-	for _, model := range m.modelList {
-		if strings.Contains(strings.ToLower(model.ID), filter) ||
-		   strings.Contains(strings.ToLower(model.Name), filter) ||
-		   strings.Contains(strings.ToLower(model.Description), filter) {
-			m.filteredList = append(m.filteredList, model)
-		}
-	}
-	
-	// Reset index if out of bounds
-	if m.dropdownIdx >= len(m.filteredList) {
-		m.dropdownIdx = 0
-	}
-}
 
-// drawModelInfoPopup draws a compact model info popup
-func (m *SettingsModal) drawModelInfoPopup(model *models.ModelMetadata, dropX, dropY, dropH, screenW, screenH int) {
-	// Calculate popup position - try to position it where it won't cover the selection
-	infoW := 60
-	infoH := 10
-	
-	// Position popup to the left of dropdown if there's space, otherwise to the right
-	var infoX int
-	if dropX > infoW + 2 {
-		// Place to the left
-		infoX = dropX - infoW - 2
-	} else {
-		// Place to the right
-		infoX = dropX + 82 // After dropdown width
-		if infoX + infoW > screenW {
-			infoX = screenW - infoW - 2
-		}
-	}
-	
-	// Position vertically - try to align with current selection
-	selectionY := dropY + 2 + (m.dropdownIdx % (dropH - 3))
-	infoY := selectionY - 2
-	
-	// Ensure popup stays on screen
-	if infoY < 2 {
-		infoY = 2
-	}
-	if infoY + infoH > screenH - 2 {
-		infoY = screenH - infoH - 2
-	}
-	
-	// Clear area and draw border
-	for y := infoY; y < infoY+infoH; y++ {
-		for x := infoX; x < infoX+infoW; x++ {
-			m.screen.SetContent(x, y, ' ', nil, tcell.StyleDefault.Background(tcell.ColorBlack))
-		}
-	}
-	m.drawBorder(infoX, infoY, infoW, infoH)
-	
-	// Draw title
-	title := fmt.Sprintf(" %s ", model.Name)
-	m.drawText(infoX+(infoW-len(title))/2, infoY, title, tcell.StyleDefault.Bold(true))
-	
-	// Draw compact info
-	info := []string{
-		fmt.Sprintf("ID: %s", model.ID),
-		fmt.Sprintf("Context: %s", formatNumber(model.ContextWindow)),
-		fmt.Sprintf("Max Output: %s", formatNumber(model.MaxTokens)),
-		fmt.Sprintf("Category: %s", model.Category),
-		fmt.Sprintf("Owner: %s", model.OwnedBy),
-	}
-	
-	if len(model.Description) > 0 {
-		desc := model.Description
-		if len(desc) > infoW-6 {
-			desc = desc[:infoW-9] + "..."
-		}
-		info = append(info, fmt.Sprintf("Info: %s", desc))
-	}
-	
-	if len(model.Capabilities) > 0 {
-		caps := strings.Join(model.Capabilities, ", ")
-		if len(caps) > infoW-12 {
-			caps = caps[:infoW-15] + "..."
-		}
-		info = append(info, fmt.Sprintf("Features: %s", caps))
-	}
-	
-	for i, line := range info {
-		if i < infoH-2 {
-			if len(line) > infoW-4 {
-				line = line[:infoW-7] + "..."
-			}
-			m.drawText(infoX+2, infoY+1+i, line, tcell.StyleDefault)
-		}
-	}
-}
-
-// drawTextWithHighlight draws text with highlighted search matches
-func (m *SettingsModal) drawTextWithHighlight(x, y int, text, filter string, baseStyle tcell.Style) {
-	if filter == "" {
-		m.drawText(x, y, text, baseStyle)
-		return
-	}
-	
-	lowerText := strings.ToLower(text)
-	lowerFilter := strings.ToLower(filter)
-	highlightStyle := baseStyle.Background(tcell.ColorYellow).Foreground(tcell.ColorBlack)
-	
-	pos := 0
-	for pos < len(text) {
-		idx := strings.Index(lowerText[pos:], lowerFilter)
-		if idx == -1 {
-			// Draw rest of text normally
-			for i, r := range text[pos:] {
-				m.screen.SetContent(x+pos+i, y, r, nil, baseStyle)
-			}
-			break
-		}
-		
-		// Draw text before match
-		for i, r := range text[pos : pos+idx] {
-			m.screen.SetContent(x+pos+i, y, r, nil, baseStyle)
-		}
-		
-		// Draw matched text with highlight
-		for i, r := range text[pos+idx : pos+idx+len(filter)] {
-			m.screen.SetContent(x+pos+idx+i, y, r, nil, highlightStyle)
-		}
-		
-		pos += idx + len(filter)
-	}
-}
 
 // formatNumber formats a number with thousands separators
 func formatNumber(n int) string {
@@ -869,23 +700,6 @@ func wordWrap(text string, width int) []string {
 	return lines
 }
 
-func (m *SettingsModal) findModelIndex(modelID string) int {
-	for i, model := range m.filteredList {
-		if model.ID == modelID {
-			return i
-		}
-	}
-	// If not in filtered list, check full list
-	for i, model := range m.modelList {
-		if model.ID == modelID {
-			// Reset filter to show this model
-			m.filterText = ""
-			m.filteredList = m.modelList
-			return i
-		}
-	}
-	return 0
-}
 
 func (m *SettingsModal) cycleOption() {
 	field := &m.fields[m.selected]
