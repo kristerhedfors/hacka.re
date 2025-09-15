@@ -46,10 +46,13 @@ func NewDropdownSelector(screen tcell.Screen, title string, options []string, cu
 	// Create filterable menu
 	ds.menu = NewFilterableMenu(screen, title)
 
-	// Configure menu size and position
+	// Configure menu size and position - ensure we show more options
 	w, h := screen.Size()
 	menuWidth := 40
-	menuHeight := min(15, len(options)+5)
+	// Show at least 10 lines for options, but no more than screen allows
+	minHeight := 12  // This will show about 5-6 options after accounting for borders/filter
+	maxHeight := min(20, h-10)  // Don't exceed screen bounds
+	menuHeight := max(minHeight, min(maxHeight, len(options)+7))
 	infoWidth := 30
 
 	ds.menu.SetDimensions(menuWidth, menuHeight)
@@ -236,4 +239,11 @@ func (ds *DropdownSelector) drawText(x, y int, text string, style tcell.Style) {
 	for i, r := range text {
 		ds.screen.SetContent(x+i, y, r, nil, style)
 	}
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }
