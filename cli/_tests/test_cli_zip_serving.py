@@ -90,9 +90,9 @@ class TestCliZipServing:
             ("/", "text/html", 1000),  # index.html
             ("/index.html", "text/html", 1000),
             ("/css/styles.css", "text/css", 100),
-            ("/js/main.js", "application/javascript", 100),
+            ("/js/app.js", "application/javascript", 100),  # app.js not main.js
             ("/favicon.svg", "image/svg+xml", 10),
-            ("/lib/tweetnacl.min.js", "application/javascript", 100),
+            ("/lib/tweetnacl/nacl-fast.min.js", "application/javascript", 100),  # Correct path
         ]
         
         for path, expected_type, min_size in test_cases:
@@ -162,7 +162,7 @@ class TestCliZipServing:
             except Exception as e:
                 return path, 0, str(e)
         
-        paths = ["/", "/css/styles.css", "/js/main.js", "/favicon.svg"] * 10
+        paths = ["/", "/css/styles.css", "/js/app.js", "/favicon.svg"] * 10
         
         with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
             results = list(executor.map(fetch_file, paths))

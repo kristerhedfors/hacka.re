@@ -186,7 +186,7 @@ class TestCliBrowseCommand:
             ("/", "text/html"),
             ("/index.html", "text/html"),
             ("/css/styles.css", "text/css"),
-            ("/js/main.js", "application/javascript"),
+            ("/js/app.js", "application/javascript"),  # app.js not main.js
             ("/favicon.svg", "image/svg+xml"),
         ]
         
