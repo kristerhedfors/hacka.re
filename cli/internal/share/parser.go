@@ -127,6 +127,17 @@ func ParseURL(input string, password string) (*SharedConfig, error) {
 	return &config, nil
 }
 
+// EncryptConfig encrypts configuration JSON and returns the encrypted data string
+func EncryptConfig(configJSON []byte, password string) (string, error) {
+	// Encrypt using new format
+	encryptedData, err := crypto.EncryptShareLink(configJSON, password)
+	if err != nil {
+		return "", fmt.Errorf("failed to encrypt configuration: %w", err)
+	}
+	
+	return encryptedData, nil
+}
+
 // CreateShareableURL creates a shareable URL from configuration (new format)
 func CreateShareableURL(config *SharedConfig, password string, baseURL string) (string, error) {
 	// Convert configuration to JSON
@@ -135,10 +146,10 @@ func CreateShareableURL(config *SharedConfig, password string, baseURL string) (
 		return "", fmt.Errorf("failed to marshal configuration: %w", err)
 	}
 	
-	// Encrypt using new format
-	encryptedData, err := crypto.EncryptShareLink(jsonData, password)
+	// Use the EncryptConfig function
+	encryptedData, err := EncryptConfig(jsonData, password)
 	if err != nil {
-		return "", fmt.Errorf("failed to encrypt configuration: %w", err)
+		return "", err
 	}
 
 	// Create the URL with fragment
