@@ -54,9 +54,8 @@ func NewAppWithCallbacks(config *core.ConfigManager, state *core.AppState, event
 		return nil, err
 	}
 
-	// Disable mouse support to allow terminal text selection
-	// Mouse events prevent copy-paste in terminal
-	// screen.EnableMouse() // Commented out to allow text selection
+	// Enable mouse support for scrolling
+	screen.EnableMouse()
 
 	// Set default style
 	screen.SetStyle(tcell.StyleDefault.Background(tcell.ColorReset).Foreground(tcell.ColorReset))
@@ -335,7 +334,7 @@ func (a *App) Run() error {
 			a.needsRedraw = true
 
 		case *tcell.EventMouse:
-			// Could handle mouse events here
+			a.handleMouseEvent(ev)
 		}
 	}
 
@@ -559,6 +558,15 @@ func (a *App) generateShareLink() error {
 func (a *App) showAbout() error {
 	// About panel
 	return nil
+}
+
+// handleMouseEvent processes mouse input
+func (a *App) handleMouseEvent(ev *tcell.EventMouse) {
+	if a.currentPanel == PanelChat && a.chatPanel != nil {
+		// Pass mouse events to chat panel
+		a.chatPanel.HandleMouse(ev)
+		a.needsRedraw = true
+	}
 }
 
 // showExitConfirmation displays the exit confirmation dialog

@@ -111,6 +111,48 @@ func (cp *ChatPanel) saveMessagesToState() {
 	}
 }
 
+// HandleMouse processes mouse input for scrolling
+func (cp *ChatPanel) HandleMouse(ev *tcell.EventMouse) {
+	x, y := ev.Position()
+	button := ev.Buttons()
+
+	// Check if mouse is within chat panel bounds
+	if x < cp.x || x >= cp.x+cp.width || y < cp.y || y >= cp.y+cp.height {
+		return
+	}
+
+	// Handle scroll wheel
+	switch button {
+	case tcell.WheelUp:
+		cp.scrollUp(3) // Scroll up 3 lines per wheel notch
+	case tcell.WheelDown:
+		cp.scrollDown(3) // Scroll down 3 lines per wheel notch
+	}
+
+	// Handle click on scroll bar
+	scrollBarX := cp.x + cp.width - 2
+	messageAreaHeight := cp.height - 5
+	scrollBarY := cp.y + 2
+
+	if x == scrollBarX && y >= scrollBarY && y < scrollBarY+messageAreaHeight-2 {
+		// Click on scroll bar - jump to position
+		if button&tcell.Button1 != 0 {
+			// Calculate scroll position based on click
+			relativeY := y - scrollBarY
+			maxScroll := cp.calculateMaxScroll()
+			if messageAreaHeight > 2 {
+				cp.scrollOffset = (relativeY * maxScroll) / (messageAreaHeight - 2)
+				if cp.scrollOffset > maxScroll {
+					cp.scrollOffset = maxScroll
+				}
+				if cp.scrollOffset < 0 {
+					cp.scrollOffset = 0
+				}
+			}
+		}
+	}
+}
+
 // HandleInput processes keyboard input
 func (cp *ChatPanel) HandleInput(ev *tcell.EventKey) bool {
 	switch ev.Key() {
@@ -145,30 +187,66 @@ func (cp *ChatPanel) HandleInput(ev *tcell.EventKey) bool {
 		return false
 
 	case tcell.KeyUp:
-		// Scroll up through messages
-		if cp.scrollOffset > 0 {
-			cp.scrollOffset--
-		}
+		// Scroll up one line
+		cp.scrollUp(1)
 		return false
 
 	case tcell.KeyDown:
-		// Scroll down through messages
-		maxScroll := len(cp.messages) - (cp.height - 5) // Leave room for input area
-		if maxScroll > 0 && cp.scrollOffset < maxScroll {
-			cp.scrollOffset++
-		}
+		// Scroll down one line
+		cp.scrollDown(1)
+		return false
+
+	case tcell.KeyPgUp:
+		// Page up - scroll up by half the visible area
+		visibleLines := cp.height - 5
+		cp.scrollUp(visibleLines / 2)
+		return false
+
+	case tcell.KeyPgDn:
+		// Page down - scroll down by half the visible area
+		visibleLines := cp.height - 5
+		cp.scrollDown(visibleLines / 2)
 		return false
 
 	case tcell.KeyHome:
-		cp.cursorPos = 0
+		// Check if Ctrl is pressed
+		if ev.Modifiers()&tcell.ModCtrl != 0 {
+			// Ctrl+Home - scroll to top of messages
+			cp.scrollOffset = 0
+		} else {
+			// Home - move cursor to beginning of input
+			cp.cursorPos = 0
+		}
 		return false
 
 	case tcell.KeyEnd:
-		cp.cursorPos = len(cp.inputBuffer)
+		// Check if Ctrl is pressed
+		if ev.Modifiers()&tcell.ModCtrl != 0 {
+			// Ctrl+End - scroll to bottom of messages
+			cp.scrollToBottom()
+		} else {
+			// End - move cursor to end of input
+			cp.cursorPos = len(cp.inputBuffer)
+		}
 		return false
 
 	case tcell.KeyRune:
 		r := ev.Rune()
+		// Handle Ctrl+U (scroll up) and Ctrl+D (scroll down) for Unix users
+		if ev.Modifiers()&tcell.ModCtrl != 0 {
+			switch r {
+			case 'u', 'U':
+				// Ctrl+U - scroll up half page
+				visibleLines := cp.height - 5
+				cp.scrollUp(visibleLines / 2)
+				return false
+			case 'd', 'D':
+				// Ctrl+D - scroll down half page
+				visibleLines := cp.height - 5
+				cp.scrollDown(visibleLines / 2)
+				return false
+			}
+		}
 		cp.inputBuffer = cp.inputBuffer[:cp.cursorPos] + string(r) + cp.inputBuffer[cp.cursorPos:]
 		cp.cursorPos++
 		return false
@@ -243,12 +321,46 @@ func (cp *ChatPanel) handleCommand(cmd string) {
 
 // scrollToBottom scrolls to the bottom of the message list
 func (cp *ChatPanel) scrollToBottom() {
-	maxScroll := len(cp.messages) - (cp.height - 5)
-	if maxScroll > 0 {
-		cp.scrollOffset = maxScroll
-	} else {
+	cp.scrollOffset = cp.calculateMaxScroll()
+}
+
+// scrollUp scrolls up by the specified number of lines
+func (cp *ChatPanel) scrollUp(lines int) {
+	cp.scrollOffset -= lines
+	if cp.scrollOffset < 0 {
 		cp.scrollOffset = 0
 	}
+}
+
+// scrollDown scrolls down by the specified number of lines
+func (cp *ChatPanel) scrollDown(lines int) {
+	maxScroll := cp.calculateMaxScroll()
+	cp.scrollOffset += lines
+	if cp.scrollOffset > maxScroll {
+		cp.scrollOffset = maxScroll
+	}
+}
+
+// calculateMaxScroll calculates the maximum scroll offset
+func (cp *ChatPanel) calculateMaxScroll() int {
+	// Calculate total lines needed for all messages
+	totalLines := 0
+	for _, msg := range cp.messages {
+		prefix := fmt.Sprintf("[%s] ", msg.Role)
+		lines := cp.wrapText(prefix+msg.Content, cp.width-4)
+		totalLines += len(lines) + 1 // +1 for spacing between messages
+	}
+
+	// Calculate visible area (leave room for borders and input)
+	visibleLines := cp.height - 5
+
+	// Max scroll is total lines minus visible lines
+	maxScroll := totalLines - visibleLines
+	if maxScroll < 0 {
+		maxScroll = 0
+	}
+
+	return maxScroll
 }
 
 // streamResponse handles streaming response from the API
@@ -349,7 +461,7 @@ func (cp *ChatPanel) Draw() {
 	// Draw border
 	cp.drawBorder()
 
-	// Draw title
+	// Draw title with scroll instructions
 	title := "Chat Interface - ESC to return"
 	if cp.isStreaming {
 		title = "Chat Interface - Streaming... - ESC to return"
@@ -358,6 +470,14 @@ func (cp *ChatPanel) Draw() {
 	style := tcell.StyleDefault.Foreground(tcell.ColorGreen).Bold(true)
 	for i, r := range title {
 		cp.screen.SetContent(titleX+i, cp.y, r, nil, style)
+	}
+
+	// Draw scroll help on the right
+	scrollHelp := "[↑↓/PgUp/PgDn to scroll]"
+	helpX := cp.x + cp.width - len(scrollHelp) - 2
+	helpStyle := tcell.StyleDefault.Foreground(tcell.ColorGray)
+	for i, r := range scrollHelp {
+		cp.screen.SetContent(helpX+i, cp.y, r, nil, helpStyle)
 	}
 
 	// Show API info
@@ -410,18 +530,13 @@ func (cp *ChatPanel) drawMessages() {
 	copy(messagesCopy, cp.messages)
 	cp.streamingMutex.Unlock()
 
-	// Calculate visible messages
-	visibleStart := cp.scrollOffset
-	visibleEnd := visibleStart + messageAreaHeight - 2
-	if visibleEnd > len(messagesCopy) {
-		visibleEnd = len(messagesCopy)
+	// Build all message lines first to handle scrolling properly
+	var allLines []struct {
+		text  string
+		style tcell.Style
 	}
 
-	// Draw each visible message
-	currentY := startY
-	for i := visibleStart; i < visibleEnd && currentY < cp.y+cp.height-3; i++ {
-		msg := messagesCopy[i]
-
+	for _, msg := range messagesCopy {
 		// Choose color based on role
 		var style tcell.Style
 		switch msg.Role {
@@ -435,49 +550,95 @@ func (cp *ChatPanel) drawMessages() {
 			style = tcell.StyleDefault
 		}
 
-		// Format message
+		// Format and wrap message
 		prefix := fmt.Sprintf("[%s] ", msg.Role)
 		lines := cp.wrapText(prefix+msg.Content, cp.width-4)
 
-		// Draw each line
 		for _, line := range lines {
-			if currentY >= cp.y+cp.height-3 {
-				break
-			}
-
-			// Clear the line first
-			for x := cp.x + 2; x < cp.x+cp.width-2; x++ {
-				cp.screen.SetContent(x, currentY, ' ', nil, tcell.StyleDefault)
-			}
-
-			// Draw the text
-			for j, r := range line {
-				if cp.x+2+j < cp.x+cp.width-2 {
-					cp.screen.SetContent(cp.x+2+j, currentY, r, nil, style)
-				}
-			}
-			currentY++
+			allLines = append(allLines, struct {
+				text  string
+				style tcell.Style
+			}{line, style})
 		}
 
 		// Add spacing between messages
-		if currentY < cp.y+cp.height-3 {
-			currentY++
+		allLines = append(allLines, struct {
+			text  string
+			style tcell.Style
+		}{"", tcell.StyleDefault})
+	}
+
+	// Calculate visible range
+	visibleStart := cp.scrollOffset
+	visibleEnd := visibleStart + messageAreaHeight - 2
+	if visibleEnd > len(allLines) {
+		visibleEnd = len(allLines)
+	}
+	if visibleStart > len(allLines) {
+		visibleStart = 0
+		cp.scrollOffset = 0
+	}
+
+	// Draw visible lines
+	currentY := startY
+	for i := visibleStart; i < visibleEnd && currentY < cp.y+cp.height-3; i++ {
+		line := allLines[i]
+
+		// Clear the line first
+		for x := cp.x + 2; x < cp.x+cp.width-2; x++ {
+			cp.screen.SetContent(x, currentY, ' ', nil, tcell.StyleDefault)
 		}
+
+		// Draw the text
+		for j, r := range line.text {
+			if cp.x+2+j < cp.x+cp.width-2 {
+				cp.screen.SetContent(cp.x+2+j, currentY, r, nil, line.style)
+			}
+		}
+		currentY++
 	}
 
 	// Draw scroll indicator if needed
-	if len(messagesCopy) > messageAreaHeight-2 {
+	if len(allLines) > messageAreaHeight-2 {
 		scrollBarX := cp.x + cp.width - 2
 		scrollBarHeight := messageAreaHeight - 2
 		scrollBarY := startY
 
-		// Calculate thumb position
-		if len(messagesCopy) > 0 {
-			thumbPos := (cp.scrollOffset * scrollBarHeight) / len(messagesCopy)
-			if thumbPos >= 0 && thumbPos < scrollBarHeight {
-				cp.screen.SetContent(scrollBarX, scrollBarY+thumbPos, '█', nil,
+		// Draw scroll track
+		for y := 0; y < scrollBarHeight; y++ {
+			cp.screen.SetContent(scrollBarX, scrollBarY+y, '│', nil,
+				tcell.StyleDefault.Foreground(tcell.ColorDarkGray))
+		}
+
+		// Calculate thumb size and position
+		if len(allLines) > 0 {
+			// Thumb size proportional to visible area
+			thumbSize := max(1, (scrollBarHeight * (messageAreaHeight - 2)) / len(allLines))
+
+			// Thumb position based on scroll offset
+			maxScroll := cp.calculateMaxScroll()
+			var thumbPos int
+			if maxScroll > 0 {
+				thumbPos = (cp.scrollOffset * (scrollBarHeight - thumbSize)) / maxScroll
+			} else {
+				thumbPos = 0
+			}
+
+			// Draw thumb
+			for i := 0; i < thumbSize && thumbPos+i < scrollBarHeight; i++ {
+				cp.screen.SetContent(scrollBarX, scrollBarY+thumbPos+i, '█', nil,
 					tcell.StyleDefault.Foreground(tcell.ColorGray))
 			}
+		}
+
+		// Draw scroll arrows
+		if cp.scrollOffset > 0 {
+			cp.screen.SetContent(scrollBarX, scrollBarY-1, '▲', nil,
+				tcell.StyleDefault.Foreground(tcell.ColorWhite))
+		}
+		if cp.scrollOffset < cp.calculateMaxScroll() {
+			cp.screen.SetContent(scrollBarX, scrollBarY+scrollBarHeight, '▼', nil,
+				tcell.StyleDefault.Foreground(tcell.ColorWhite))
 		}
 	}
 }
