@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hacka-re/cli/internal/logger"
 	"github.com/hacka-re/cli/internal/tui/internal/core"
 )
 
@@ -55,11 +56,20 @@ type ChatMessage struct {
 func (c *ChatClient) StreamCompletion(messages []ChatMessage, callback StreamingCallback) error {
 	config := c.config.Get()
 
+	// Log start of streaming
+	if log := logger.Get(); log != nil {
+		log.Info("[ChatClient] Starting streaming completion")
+		log.Debug("[ChatClient] Provider: %s, Model: %s, Messages: %d", config.Provider, config.Model, len(messages))
+	}
+
 	// Build the request with model-specific compatibility
 	reqBody := c.buildCompatibleRequest(config, messages)
 
 	jsonBody, err := json.Marshal(reqBody)
 	if err != nil {
+		if log := logger.Get(); log != nil {
+			log.Error("[ChatClient] Failed to marshal request: %v", err)
+		}
 		return fmt.Errorf("failed to marshal request: %w", err)
 	}
 
@@ -91,20 +101,38 @@ func (c *ChatClient) StreamCompletion(messages []ChatMessage, callback Streaming
 		}
 	}
 
+	// Log request details
+	if log := logger.Get(); log != nil {
+		log.Debug("[ChatClient] Sending request to: %s", apiURL)
+	}
+
 	// Send the request
 	resp, err := c.client.Do(req)
 	if err != nil {
+		if log := logger.Get(); log != nil {
+			log.Error("[ChatClient] Failed to send request: %v", err)
+		}
 		return fmt.Errorf("failed to send request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
+		if log := logger.Get(); log != nil {
+			log.Error("[ChatClient] API error (status %d): %s", resp.StatusCode, string(body))
+		}
 		return fmt.Errorf("API error (status %d): %s", resp.StatusCode, string(body))
+	}
+
+	if log := logger.Get(); log != nil {
+		log.Info("[ChatClient] Streaming response started (status %d)", resp.StatusCode)
 	}
 
 	// Handle streaming response
 	scanner := bufio.NewScanner(resp.Body)
+	chunkCount := 0
+	totalContent := 0
+
 	for scanner.Scan() {
 		line := scanner.Text()
 
@@ -119,6 +147,9 @@ func (c *ChatClient) StreamCompletion(messages []ChatMessage, callback Streaming
 
 			// Check for end of stream
 			if data == "[DONE]" {
+				if log := logger.Get(); log != nil {
+					log.Info("[ChatClient] Stream complete - chunks: %d, total chars: %d", chunkCount, totalContent)
+				}
 				callback("", true)
 				break
 			}
@@ -126,15 +157,21 @@ func (c *ChatClient) StreamCompletion(messages []ChatMessage, callback Streaming
 			// Parse the JSON chunk
 			var chunk map[string]interface{}
 			if err := json.Unmarshal([]byte(data), &chunk); err != nil {
+				if log := logger.Get(); log != nil {
+					log.Debug("[ChatClient] Skipping malformed chunk: %v", err)
+				}
 				continue // Skip malformed chunks
 			}
 
 			// Extract content based on provider format
 			content := c.extractContent(chunk, config.Provider)
 			if content != "" {
-				// Debug: log chunk content
-				// fmt.Fprintf(os.Stderr, "[STREAM_CHUNK] '%s'\n", content)
+				chunkCount++
+				totalContent += len(content)
 				if err := callback(content, false); err != nil {
+					if log := logger.Get(); log != nil {
+						log.Error("[ChatClient] Callback error: %v", err)
+					}
 					return err
 				}
 			}
@@ -142,7 +179,14 @@ func (c *ChatClient) StreamCompletion(messages []ChatMessage, callback Streaming
 	}
 
 	if err := scanner.Err(); err != nil {
+		if log := logger.Get(); log != nil {
+			log.Error("[ChatClient] Error reading stream: %v", err)
+		}
 		return fmt.Errorf("error reading stream: %w", err)
+	}
+
+	if log := logger.Get(); log != nil {
+		log.Info("[ChatClient] Streaming completed successfully")
 	}
 
 	return nil

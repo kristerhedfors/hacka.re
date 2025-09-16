@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/hacka-re/cli/internal/logger"
 	"github.com/hacka-re/cli/internal/tui/internal/core"
 	"github.com/hacka-re/cli/internal/tui/internal/services"
 )
@@ -262,6 +263,11 @@ func (cp *ChatPanel) sendMessage() {
 		return
 	}
 
+	// Log message sending
+	if log := logger.Get(); log != nil {
+		log.Info("[ChatPanel] Sending message: %s", message)
+	}
+
 	// Handle commands
 	if strings.HasPrefix(message, "/") {
 		cp.handleCommand(message)
@@ -365,6 +371,11 @@ func (cp *ChatPanel) calculateMaxScroll() int {
 
 // streamResponse handles streaming response from the API
 func (cp *ChatPanel) streamResponse() {
+	// Log streaming start
+	if log := logger.Get(); log != nil {
+		log.Info("[ChatPanel] Starting stream response")
+	}
+
 	// Convert messages to API format
 	apiMessages := make([]services.ChatMessage, 0)
 	for _, msg := range cp.messages {
@@ -403,6 +414,13 @@ func (cp *ChatPanel) streamResponse() {
 		defer cp.streamingMutex.Unlock()
 
 		if done {
+			// Log streaming completion
+			if log := logger.Get(); log != nil {
+				if streamingIndex < len(cp.messages) {
+					log.Info("[ChatPanel] Streaming complete, message length: %d", len(cp.messages[streamingIndex].Content))
+				}
+			}
+
 			// Streaming complete
 			cp.isStreaming = false
 			cp.streamingMsg = nil
@@ -435,6 +453,11 @@ func (cp *ChatPanel) streamResponse() {
 	})
 
 	if err != nil {
+		// Log the error
+		if log := logger.Get(); log != nil {
+			log.Error("[ChatPanel] Streaming error: %v", err)
+		}
+
 		// Add error message
 		cp.streamingMutex.Lock()
 		errorMsg := ChatMessage{
