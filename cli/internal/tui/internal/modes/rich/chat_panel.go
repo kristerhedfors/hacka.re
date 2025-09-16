@@ -346,19 +346,19 @@ func (cp *ChatPanel) streamResponse() {
 
 // Draw renders the chat panel
 func (cp *ChatPanel) Draw() {
-	// Draw border - DISABLED for frameless chat
-	// cp.drawBorder()
+	// Draw border
+	cp.drawBorder()
 
-	// Draw title - DISABLED for frameless chat
-	// title := "Chat Interface - ESC to return"
-	// if cp.isStreaming {
-	// 	title = "Chat Interface - Streaming... - ESC to return"
-	// }
-	// titleX := cp.x + (cp.width-len(title))/2
-	// style := tcell.StyleDefault.Foreground(tcell.ColorGreen).Bold(true)
-	// for i, r := range title {
-	// 	cp.screen.SetContent(titleX+i, cp.y, r, nil, style)
-	// }
+	// Draw title
+	title := "Chat Interface - ESC to return"
+	if cp.isStreaming {
+		title = "Chat Interface - Streaming... - ESC to return"
+	}
+	titleX := cp.x + (cp.width-len(title))/2
+	style := tcell.StyleDefault.Foreground(tcell.ColorGreen).Bold(true)
+	for i, r := range title {
+		cp.screen.SetContent(titleX+i, cp.y, r, nil, style)
+	}
 
 	// Show API info
 	config := cp.config.Get()

@@ -135,6 +135,7 @@ Features:
 The chat interface supports both simple messages and complex conversations with context retention.`,
 		Enabled: true,
 		Handler: func() error {
+			// Use the TUI's internal chat panel
 			a.currentPanel = PanelChat
 			return a.showChat()
 		},

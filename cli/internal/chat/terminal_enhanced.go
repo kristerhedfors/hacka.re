@@ -135,7 +135,7 @@ func (tc *TerminalChat) SetModalHandlers(handlers ModalHandlers) {
 
 // Run starts the terminal chat interface
 func (tc *TerminalChat) Run() error {
-	fmt.Fprintf(os.Stderr, "!!!!! TerminalChat.Run() (ENHANCED) CALLED !!!!\n")
+	// fmt.Fprintf(os.Stderr, "!!!!! TerminalChat.Run() (ENHANCED) CALLED !!!!\n")
 	logger.Get().Info("=============== TerminalChat.Run() (ENHANCED) STARTED ===============")
 
 	// Get terminal dimensions
@@ -521,7 +521,7 @@ func (tc *TerminalChat) showPrompt() {
 
 // showWelcome displays the welcome message
 func (tc *TerminalChat) showWelcome() {
-	fmt.Fprintf(os.Stderr, "!!!!! TerminalChat.showWelcome() CALLED - SIMPLIFIED !!!!\n")
+	// fmt.Fprintf(os.Stderr, "!!!!! TerminalChat.showWelcome() CALLED - SIMPLIFIED !!!!\n")
 	logger.Get().Info("showWelcome called in terminal_enhanced")
 
 	// Update terminal size before drawing
@@ -586,7 +586,7 @@ func (tc *TerminalChat) printFormatted(format string, args ...interface{}) {
 
 // runSimpleMode runs in simple mode if raw mode is not available
 func (tc *TerminalChat) runSimpleMode() error {
-	fmt.Fprintf(os.Stderr, "!!!!! TerminalChat.runSimpleMode() FALLBACK !!!!\n")
+	// fmt.Fprintf(os.Stderr, "!!!!! TerminalChat.runSimpleMode() FALLBACK !!!!\n")
 	logger.Get().Info("!!!!! runSimpleMode CALLED - FALLBACK MODE !!!!!")
 	reader := bufio.NewReader(os.Stdin)
 
@@ -700,14 +700,32 @@ func (tc *TerminalChat) processMessage(input string) {
 	// Show thinking indicator (just a newline, no "AI:" prefix)
 	fmt.Print("\n")
 
+	// Update terminal size before streaming
+	tc.updateTerminalSize()
+
 	// Send request
 	var fullResponse strings.Builder
+	var currentLineLength int
 	streamCallback := func(chunk string) error {
 		select {
 		case <-ctx.Done():
 			return context.Canceled
 		default:
-			fmt.Print(chunk)
+			// Handle line wrapping for streaming output
+			for _, char := range chunk {
+				if char == '\n' {
+					fmt.Print("\n")
+					currentLineLength = 0
+				} else {
+					// Check if we need to wrap
+					if currentLineLength >= tc.termWidth-1 {
+						fmt.Print("\n")
+						currentLineLength = 0
+					}
+					fmt.Printf("%c", char)
+					currentLineLength++
+				}
+			}
 			fullResponse.WriteString(chunk)
 			return nil
 		}

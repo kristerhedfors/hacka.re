@@ -180,42 +180,28 @@ func (c *ChatClient) extractContent(chunk map[string]interface{}, provider strin
 
 // getAPIEndpoint returns the appropriate API endpoint based on provider
 func (c *ChatClient) getAPIEndpoint(config *core.Config) string {
+	// Use the same logic as our working API client
+	// Just append /chat/completions to the base URL
+	baseURL := strings.TrimSuffix(config.BaseURL, "/")
+
 	switch config.Provider {
-	case "openai":
-		if config.BaseURL != "" {
-			return config.BaseURL + "/v1/chat/completions"
-		}
-		return "https://api.openai.com/v1/chat/completions"
+	case "openai", "groq":
+		// For OpenAI and Groq, BaseURL already includes /v1
+		return baseURL + "/chat/completions"
 
 	case "anthropic":
-		if config.BaseURL != "" {
-			return config.BaseURL + "/v1/messages"
-		}
-		return "https://api.anthropic.com/v1/messages"
-
-	case "groq":
-		if config.BaseURL != "" {
-			return config.BaseURL + "/openai/v1/chat/completions"
-		}
-		return "https://api.groq.com/openai/v1/chat/completions"
+		// Anthropic uses /messages endpoint
+		return baseURL + "/messages"
 
 	case "ollama":
-		baseURL := config.BaseURL
 		if baseURL == "" {
 			baseURL = "http://localhost:11434"
 		}
 		return baseURL + "/api/chat"
 
 	default:
-		// Custom provider
-		if config.BaseURL != "" {
-			// Assume OpenAI-compatible endpoint
-			if strings.Contains(config.BaseURL, "/v1/chat/completions") {
-				return config.BaseURL
-			}
-			return config.BaseURL + "/v1/chat/completions"
-		}
-		return ""
+		// Custom provider - assume OpenAI-compatible
+		return baseURL + "/chat/completions"
 	}
 }
 

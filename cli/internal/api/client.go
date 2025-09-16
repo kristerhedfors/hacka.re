@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -108,7 +107,7 @@ func (c *Client) SendChatCompletion(messages []Message, streamCallback StreamCal
 		if fixedRequest, canRetry := c.modelCompat.HandleAPIError(err, request); canRetry {
 			// Log the retry attempt
 			logger.Get().Info("Retrying with adjusted parameters")
-			fmt.Fprintf(os.Stderr, "\n[Retrying with adjusted parameters...]\n")
+			logger.Get().Debug("Retrying with adjusted parameters")
 			return c.sendRequestWithRetry(*fixedRequest, messages, streamCallback)
 		}
 	}
@@ -118,6 +117,8 @@ func (c *Client) SendChatCompletion(messages []Message, streamCallback StreamCal
 
 // sendRequestWithRetry sends the actual request
 func (c *Client) sendRequestWithRetry(request ChatRequest, messages []Message, streamCallback StreamCallback) (*ChatResponse, error) {
+	logger.Get().Debug("sendRequestWithRetry called")
+
 	// Marshal request
 	body, err := json.Marshal(request)
 	if err != nil {
@@ -129,6 +130,7 @@ func (c *Client) sendRequestWithRetry(request ChatRequest, messages []Message, s
 
 	// Create HTTP request
 	url := strings.TrimSuffix(c.config.BaseURL, "/") + "/chat/completions"
+	logger.Get().Debug("Base URL: %s, Final URL: %s", c.config.BaseURL, url)
 	logger.Get().Info("API URL: %s", url)
 	logger.Get().Debug("Base URL from config: %s", c.config.BaseURL)
 

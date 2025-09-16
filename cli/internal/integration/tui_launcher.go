@@ -23,7 +23,7 @@ func LaunchTUI(cfg *config.Config) error {
 	// Create callbacks for CLI command integration
 	callbacks := &tui.Callbacks{
 		OnStartChat: func(configInterface interface{}) error {
-			fmt.Fprintf(os.Stderr, "!!!!! TUI OnStartChat CALLBACK TRIGGERED !!!!!\\n")
+			// Debug: TUI OnStartChat callback triggered
 			// Start CLI chat with enhanced terminal interface
 			return startEnhancedChat(cfg)
 		},
@@ -243,11 +243,11 @@ func getStaticModels(provider string) []string {
 
 // startEnhancedChat starts the enhanced chat interface with slash commands
 func startEnhancedChat(cfg *config.Config) error {
-	fmt.Fprintf(os.Stderr, "!!!!! startEnhancedChat CALLED FROM TUI !!!!!\n")
+	// Debug: startEnhancedChat called from TUI
 
 	// Create the terminal chat with proper input handling
 	terminalChat := chat.NewTerminalChat(cfg)
-	fmt.Fprintf(os.Stderr, "!!!!! Created NewTerminalChat: %T !!!!!\n", terminalChat)
+	// Debug: Created NewTerminalChat
 
 	// Set up modal handlers for /menu command
 	terminalChat.SetModalHandlers(chat.ModalHandlers{
@@ -276,6 +276,6 @@ func startEnhancedChat(cfg *config.Config) error {
 	})
 
 	// Run the chat interface
-	fmt.Fprintf(os.Stderr, "!!!!! Calling terminalChat.Run() from startEnhancedChat !!!!\n")
+	// fmt.Fprintf(os.Stderr, "!!!!! Calling terminalChat.Run() from startEnhancedChat !!!!\n")
 	return terminalChat.Run()
 }

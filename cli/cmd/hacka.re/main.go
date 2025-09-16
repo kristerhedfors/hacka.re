@@ -205,7 +205,7 @@ func handleJSONDump(arg string) {
 
 // handleURLArgument processes a hacka.re URL or fragment
 func handleURLArgument(arg string) {
-	fmt.Fprintf(os.Stderr, "!!!!! handleURLArgument(%s) CALLED !!!!\n", arg)
+	// fmt.Fprintf(os.Stderr, "!!!!! handleURLArgument(%s) CALLED !!!!\n", arg)
 	fmt.Println("╔════════════════════════════════════════════╗")
 	fmt.Println("║         hacka.re: serverless agency         ║")
 	fmt.Println("╠════════════════════════════════════════════╣")
