@@ -33,6 +33,7 @@ type EnhancedChat struct {
 
 // NewEnhancedChat creates a new enhanced chat session
 func NewEnhancedChat(cfg *config.Config) *EnhancedChat {
+	fmt.Fprintf(os.Stderr, "!!!!! NewEnhancedChat() CALLED !!!!\n")
 	client := api.NewClient(cfg)
 
 	chat := &EnhancedChat{
@@ -114,6 +115,7 @@ func (ec *EnhancedChat) registerCommands() {
 
 // Run starts the enhanced chat interface
 func (ec *EnhancedChat) Run() error {
+	fmt.Fprintf(os.Stderr, "!!!!! EnhancedChat.Run() CALLED !!!!\n")
 	// Setup signal handling for interrupts
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT)

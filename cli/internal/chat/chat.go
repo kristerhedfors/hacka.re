@@ -44,11 +44,13 @@ type ChatHistory struct {
 
 // NewChat creates a new chat session
 func NewChat(cfg *config.Config) (*Chat, error) {
+	fmt.Fprintf(os.Stderr, "!!!!! NewChat() CALLED - THIS SHOULD NEVER HAPPEN !!!!!\n")
 	client := api.NewClient(cfg)
-	
+
 	// Initialize tcell screen
 	screen, err := tcell.NewScreen()
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "!!!!! tcell.NewScreen() FAILED: %v !!!!!\n", err)
 		return nil, fmt.Errorf("failed to create screen: %w", err)
 	}
 	
@@ -83,8 +85,18 @@ func NewChat(cfg *config.Config) (*Chat, error) {
 
 // Run starts the interactive chat session
 func (c *Chat) Run() error {
-	defer c.screen.Fini()
-	
+	// AGGRESSIVE DEBUG - THIS SHOULD NEVER BE CALLED
+	fmt.Fprintf(os.Stderr, "!!!!! OLD FRAMED Chat.Run() IS BEING CALLED !!!!!\n")
+	fmt.Fprintf(os.Stderr, "!!!!! THIS IS THE WRONG IMPLEMENTATION !!!!!\n")
+	fmt.Fprintf(os.Stderr, "!!!!! c.screen = %v !!!!!\n", c.screen)
+
+	if c.screen != nil {
+		defer c.screen.Fini()
+	} else {
+		fmt.Fprintf(os.Stderr, "!!!!! c.screen is NIL - Chat not properly initialized !!!!!\n")
+		return fmt.Errorf("chat not properly initialized")
+	}
+
 	// Setup signal handling
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
@@ -284,6 +296,7 @@ func (c *Chat) handleKeyEvent(ev *tcell.EventKey) bool {
 
 // handleCommand processes slash commands
 func (c *Chat) handleCommand(cmd string) bool {
+	fmt.Fprintf(os.Stderr, "!!!!! OLD Chat.handleCommand(%s) CALLED !!!!\n", cmd)
 	cmd = strings.TrimSpace(cmd)
 	parts := strings.Fields(cmd)
 	
@@ -590,6 +603,7 @@ func (c *Chat) saveToHistory(input string) {
 // Helper display functions
 
 func (c *Chat) clearScreen() {
+	fmt.Fprintf(os.Stderr, "!!!!! OLD Chat.clearScreen() CALLED !!!!\n")
 	c.screen.Clear()
 	c.screen.Sync()
 	// Also clear terminal
@@ -597,6 +611,7 @@ func (c *Chat) clearScreen() {
 }
 
 func (c *Chat) showWelcome() {
+	fmt.Fprintf(os.Stderr, "!!!!! OLD Chat.showWelcome() CALLED - SHOWING FRAME !!!!\n")
 	fmt.Println("╔════════════════════════════════════════════╗")
 	fmt.Println("║       hacka.re CLI - Streaming Chat        ║")
 	fmt.Println("╚════════════════════════════════════════════╝")

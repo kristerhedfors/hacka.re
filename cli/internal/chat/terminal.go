@@ -34,6 +34,7 @@ type SimpleChat struct {
 
 // NewSimpleChat creates a new simple chat session
 func NewSimpleChat(cfg *config.Config) *SimpleChat {
+	fmt.Fprintf(os.Stderr, "!!!!! NewSimpleChat() CALLED !!!!\n")
 	logger.Get().Info("=============== NewSimpleChat STARTED ===============")
 	logger.Get().Info("Config Provider: %s", cfg.Provider)
 	logger.Get().Info("Config BaseURL: %s", cfg.BaseURL)
@@ -69,6 +70,7 @@ func NewSimpleChat(cfg *config.Config) *SimpleChat {
 
 // Run starts the interactive chat session
 func (sc *SimpleChat) Run() error {
+	fmt.Fprintf(os.Stderr, "!!!!! SimpleChat.Run() CALLED !!!!\n")
 	logger.Get().Info("=============== SimpleChat.Run() STARTED ===============")
 
 	// Setup signal handling for interrupts
@@ -102,8 +104,9 @@ func (sc *SimpleChat) Run() error {
 
 	// Main chat loop
 	for {
-		// Show prompt
-		fmt.Print("\n> ")
+		// Show prompt with provider/model
+		prompt := fmt.Sprintf("\n%s/%s >> ", sc.config.Provider, sc.config.Model)
+		fmt.Print(prompt)
 		logger.Get().Debug("Waiting for user input...")
 
 		// Read input line
@@ -292,8 +295,8 @@ func (sc *SimpleChat) sendMessage(content string) {
 	sc.messages = append(sc.messages, userMsg)
 	logger.Get().Info("Added user message. Total messages now: %d", len(sc.messages))
 
-	// Display user message
-	fmt.Printf("\n[You]: %s\n", content)
+	// Display user message - just echo what they typed
+	// No need to repeat it with [You] prefix since they just typed it
 
 	// Create context for this request
 	ctx, cancel := context.WithCancel(context.Background())
@@ -324,7 +327,7 @@ func (sc *SimpleChat) sendMessage(content string) {
 		if firstChunk {
 			firstChunk = false
 			stopSpinner() // Stop spinner on first chunk
-			fmt.Print("\n[AI]: ")
+			fmt.Print("\n") // Just a newline, no [AI] prefix
 		}
 		fmt.Print(chunk)
 		responseBuilder.WriteString(chunk)
@@ -345,16 +348,16 @@ func (sc *SimpleChat) sendMessage(content string) {
 	if err != nil {
 		logger.Get().Error("API call failed: %v", err)
 		if strings.Contains(err.Error(), "interrupted") {
-			fmt.Println("\n[Response interrupted]")
+			fmt.Println("\n(interrupted)")
 			// Still save partial response if any
 			if responseBuilder.Len() > 0 {
 				sc.messages = append(sc.messages, api.Message{
 					Role:    "assistant",
-					Content: responseBuilder.String() + " [interrupted]",
+					Content: responseBuilder.String() + " (interrupted)",
 				})
 			}
 		} else {
-			fmt.Printf("\n[Error: %v]\n", err)
+			fmt.Printf("\nError: %v\n", err)
 		}
 		return
 	}
@@ -455,32 +458,16 @@ func (sc *SimpleChat) compactHistory() {
 
 // showWelcome displays the welcome message
 func (sc *SimpleChat) showWelcome() {
+	fmt.Fprintf(os.Stderr, "!!!!! SimpleChat.showWelcome() CALLED - NO FRAME !!!!\n")
 	sc.clearScreen()
-	fmt.Println("╔════════════════════════════════════════════╗")
-	fmt.Println("║       hacka.re CLI - Streaming Chat        ║")
-	fmt.Println("╚════════════════════════════════════════════╝")
+	// Simple, clean start - just show essential info
+	fmt.Println("Chat started. Type /help for commands, /exit to quit.")
 	fmt.Println()
-	fmt.Printf("Model: %s\n", sc.config.Model)
-	fmt.Printf("Provider: %s\n", sc.config.Provider)
-	fmt.Printf("Capabilities: %s\n", sc.client.GetModelInfo())
-	fmt.Println()
-	fmt.Println("Commands:")
-	fmt.Println("  /help     - Show all commands")
-	fmt.Println("  /clear    - Clear chat history")
-	fmt.Println("  /compact  - Compact history (save tokens)")
-	fmt.Println("  /exit     - Exit chat")
-	fmt.Println()
-	fmt.Println("Press Ctrl+C to interrupt streaming responses")
-	fmt.Println("─" + strings.Repeat("─", 44))
 }
 
 // showHelp displays help information
 func (sc *SimpleChat) showHelp() {
-	fmt.Println("\n╔════════════════════════════════════════════╗")
-	fmt.Println("║                  HELP                      ║")
-	fmt.Println("╚════════════════════════════════════════════╝")
-	fmt.Println()
-	fmt.Println("Commands:")
+	fmt.Println("\nCommands:")
 	fmt.Println("  /help           Show this help")
 	fmt.Println("  /clear          Clear chat history")
 	fmt.Println("  /compact        Compact history to save tokens")
@@ -500,22 +487,20 @@ func (sc *SimpleChat) showHelp() {
 
 // showHistory displays the chat history
 func (sc *SimpleChat) showHistory() {
-	fmt.Println("\n" + strings.Repeat("─", 50))
-	fmt.Println("CHAT HISTORY")
-	fmt.Println(strings.Repeat("─", 50))
-	
+	fmt.Println("\n--- History ---")
+
 	for _, msg := range sc.messages {
 		switch msg.Role {
 		case "system":
-			fmt.Printf("\n[System]: %s\n", msg.Content)
+			fmt.Printf("\n[system] %s\n", msg.Content)
 		case "user":
-			fmt.Printf("\n[You]: %s\n", msg.Content)
+			fmt.Printf("\n> %s\n", msg.Content)
 		case "assistant":
-			fmt.Printf("\n[AI]: %s\n", msg.Content)
+			fmt.Printf("\n%s\n", msg.Content)
 		}
 	}
-	
-	fmt.Println("\n" + strings.Repeat("─", 50))
+
+	fmt.Println("\n--- End ---")
 }
 
 // showTokenCount estimates and displays token count
@@ -586,33 +571,30 @@ func truncateString(s string, maxLen int) string {
 	return s[:maxLen-3] + "..."
 }
 
-// startSpinner starts a spinner animation and returns a function to stop it
+// startSpinner starts a simple waiting indicator and returns a function to stop it
 func (sc *SimpleChat) startSpinner() func() {
 	done := make(chan bool)
 	stopped := false
-	
-	// Spinner characters for animation
-	spinnerChars := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
-	// Alternative ASCII spinner if Unicode doesn't work
-	// spinnerChars := []string{"|", "/", "-", "\\"}
-	
+
 	go func() {
-		fmt.Print("\n[AI]: ")
-		i := 0
+		// Simple dots animation
+		fmt.Print("\n...")
+		dots := 0
 		for {
 			select {
 			case <-done:
-				// Clear spinner
-				fmt.Print("\r[AI]:     \r") // Clear the line
+				// Clear the dots
+				fmt.Print("\r   \r") // Clear the line
 				return
 			default:
-				fmt.Printf("\r[AI]: %s Thinking...", spinnerChars[i])
-				i = (i + 1) % len(spinnerChars)
-				time.Sleep(100 * time.Millisecond)
+				// Just pulse dots, less intrusive
+				fmt.Printf("\r%s", strings.Repeat(".", (dots%3)+1) + "   ")
+				dots++
+				time.Sleep(500 * time.Millisecond)
 			}
 		}
 	}()
-	
+
 	// Return stop function
 	return func() {
 		if !stopped {

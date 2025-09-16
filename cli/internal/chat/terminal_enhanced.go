@@ -13,6 +13,7 @@ import (
 
 	"github.com/hacka-re/cli/internal/api"
 	"github.com/hacka-re/cli/internal/config"
+	"github.com/hacka-re/cli/internal/logger"
 	"golang.org/x/term"
 )
 
@@ -40,6 +41,12 @@ type TerminalChat struct {
 
 // NewTerminalChat creates a new terminal chat session
 func NewTerminalChat(cfg *config.Config) *TerminalChat {
+	logger.Get().Info("=============== NewTerminalChat (ENHANCED) STARTED ===============")
+	logger.Get().Info("Config Provider: %s", cfg.Provider)
+	logger.Get().Info("Config BaseURL: %s", cfg.BaseURL)
+	logger.Get().Info("Config Model: %s", cfg.Model)
+	logger.Get().Info("Config API Key length: %d", len(cfg.APIKey))
+
 	client := api.NewClient(cfg)
 
 	chat := &TerminalChat{
@@ -60,12 +67,14 @@ func NewTerminalChat(cfg *config.Config) *TerminalChat {
 
 	// Add system prompt if configured
 	if cfg.SystemPrompt != "" {
+		logger.Get().Info("Adding system prompt: %s", cfg.SystemPrompt)
 		chat.messages = append(chat.messages, api.Message{
 			Role:    "system",
 			Content: cfg.SystemPrompt,
 		})
 	}
 
+	logger.Get().Info("TerminalChat created with %d initial messages", len(chat.messages))
 	return chat
 }
 
@@ -126,6 +135,9 @@ func (tc *TerminalChat) SetModalHandlers(handlers ModalHandlers) {
 
 // Run starts the terminal chat interface
 func (tc *TerminalChat) Run() error {
+	fmt.Fprintf(os.Stderr, "!!!!! TerminalChat.Run() (ENHANCED) CALLED !!!!\n")
+	logger.Get().Info("=============== TerminalChat.Run() (ENHANCED) STARTED ===============")
+
 	// Get terminal dimensions
 	tc.updateTerminalSize()
 
@@ -133,10 +145,12 @@ func (tc *TerminalChat) Run() error {
 	var err error
 	tc.oldState, err = term.MakeRaw(int(os.Stdin.Fd()))
 	if err != nil {
+		logger.Get().Warn("Failed to setup raw mode, falling back to simple mode: %v", err)
 		// Fall back to simple mode if raw mode fails
 		return tc.runSimpleMode()
 	}
 	defer term.Restore(int(os.Stdin.Fd()), tc.oldState)
+	logger.Get().Info("Terminal in raw mode")
 
 	// Setup signal handling
 	sigChan := make(chan os.Signal, 1)
@@ -500,45 +514,24 @@ func (tc *TerminalChat) addToHistory(line string) {
 
 // showPrompt shows the input prompt
 func (tc *TerminalChat) showPrompt() {
-	fmt.Print("\n> ")
+	// Show provider/model at the prompt
+	prompt := fmt.Sprintf("\n%s/%s >> ", tc.config.Provider, tc.config.Model)
+	fmt.Print(prompt)
 }
 
 // showWelcome displays the welcome message
 func (tc *TerminalChat) showWelcome() {
+	fmt.Fprintf(os.Stderr, "!!!!! TerminalChat.showWelcome() CALLED - SIMPLIFIED !!!!\n")
+	logger.Get().Info("showWelcome called in terminal_enhanced")
+
 	// Update terminal size before drawing
 	tc.updateTerminalSize()
 
 	fmt.Print("\033[2J\033[H") // Clear screen
 
-	// Create a border that fits the terminal width
-	border := tc.createBorder()
-
-	fmt.Println(border)
-	tc.centerText("hacka.re CLI - Chat Interface")
-	fmt.Println(border)
+	// Simplified welcome - no borders, just essential info
+	fmt.Println("Chat started. Type /help for commands, /exit to quit.")
 	fmt.Println()
-
-	// Format content to fit terminal width
-	tc.printFormatted("  Provider: %s", tc.config.Provider)
-	tc.printFormatted("  Model: %s", tc.config.Model)
-	fmt.Println()
-
-	tc.printFormatted("  Commands (Tab to autocomplete):")
-	tc.printFormatted("    /settings (s)  - Configure API settings")
-	tc.printFormatted("    /prompts (p)   - Manage system prompts")
-	tc.printFormatted("    /help (h)      - Show all commands")
-	tc.printFormatted("    /exit (q)      - Exit application")
-	fmt.Println()
-
-	tc.printFormatted("  Navigation:")
-	tc.printFormatted("    ↑/↓           - Navigate command history")
-	tc.printFormatted("    Tab           - Autocomplete commands")
-	tc.printFormatted("    Ctrl+U        - Clear line")
-	tc.printFormatted("    Ctrl+W        - Delete word")
-	fmt.Println()
-
-	tc.printFormatted("  Type your message or use / for commands")
-	fmt.Println(border)
 }
 
 // createBorder creates a border line that fits the terminal width
@@ -593,6 +586,8 @@ func (tc *TerminalChat) printFormatted(format string, args ...interface{}) {
 
 // runSimpleMode runs in simple mode if raw mode is not available
 func (tc *TerminalChat) runSimpleMode() error {
+	fmt.Fprintf(os.Stderr, "!!!!! TerminalChat.runSimpleMode() FALLBACK !!!!\n")
+	logger.Get().Info("!!!!! runSimpleMode CALLED - FALLBACK MODE !!!!!")
 	reader := bufio.NewReader(os.Stdin)
 
 	// Show welcome
@@ -650,6 +645,8 @@ func (tc *TerminalChat) handleCommand(input string) {
 
 // clearChat clears the chat history
 func (tc *TerminalChat) clearChat() {
+	logger.Get().Info("Clearing chat history")
+	oldCount := len(tc.messages)
 	tc.messages = []api.Message{}
 
 	// Re-add system prompt if configured
@@ -659,22 +656,31 @@ func (tc *TerminalChat) clearChat() {
 			Content: tc.config.SystemPrompt,
 		})
 	}
+	logger.Get().Info("Cleared %d messages, kept system prompt: %v", oldCount, tc.config.SystemPrompt != "")
 
-	// Clear screen
+	// Clear screen - simplified display
 	fmt.Print("\033[2J\033[H")
-	fmt.Println("═══════════════════════════════════════════════════════")
-	fmt.Println("  hacka.re CLI - Chat Interface")
-	fmt.Println("  Chat history cleared")
-	fmt.Println("═══════════════════════════════════════════════════════")
+	fmt.Println("Chat history cleared.")
+	fmt.Println()
 }
 
 // processMessage sends a message to the AI and displays the response
 func (tc *TerminalChat) processMessage(input string) {
+	logger.Get().Info("================== processMessage START (ENHANCED) ==================")
+	logger.Get().Info("User input: '%s'", input)
+
+	// Log current messages before adding new
+	logger.Get().Info("Current messages count: %d", len(tc.messages))
+	for i, msg := range tc.messages {
+		logger.Get().Debug("  Message[%d] Role=%s, Content='%s'", i, msg.Role, msg.Content)
+	}
+
 	// Add user message
 	tc.messages = append(tc.messages, api.Message{
 		Role:    "user",
 		Content: input,
 	})
+	logger.Get().Info("Added user message, total now: %d", len(tc.messages))
 
 	// Create context for this request
 	ctx, cancel := context.WithCancel(context.Background())
@@ -691,8 +697,8 @@ func (tc *TerminalChat) processMessage(input string) {
 		tc.mu.Unlock()
 	}()
 
-	// Show thinking indicator
-	fmt.Print("\nAI: ")
+	// Show thinking indicator (just a newline, no "AI:" prefix)
+	fmt.Print("\n")
 
 	// Send request
 	var fullResponse strings.Builder
@@ -713,11 +719,17 @@ func (tc *TerminalChat) processMessage(input string) {
 		callback = streamCallback
 	}
 
+	logger.Get().Info("Calling SendChatCompletion with %d messages", len(tc.messages))
+	logger.Get().Info("Stream mode: %v", tc.config.StreamResponse)
+
 	response, err := tc.client.SendChatCompletion(tc.messages, callback)
 	if err != nil {
+		logger.Get().Error("API call failed: %v", err)
 		fmt.Printf("\nError: %v\n", err)
 		return
 	}
+
+	logger.Get().Info("API call successful")
 
 	// Add assistant message
 	responseText := fullResponse.String()
