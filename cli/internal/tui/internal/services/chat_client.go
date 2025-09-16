@@ -34,14 +34,15 @@ type StreamingCallback func(chunk string, done bool) error
 
 // ChatRequest represents a chat completion request
 type ChatRequest struct {
-	Model            string         `json:"model"`
-	Messages         []ChatMessage  `json:"messages"`
-	Temperature      float32        `json:"temperature,omitempty"`
-	MaxTokens        int           `json:"max_tokens,omitempty"`
-	Stream          bool          `json:"stream"`
-	TopP            float32       `json:"top_p,omitempty"`
-	FrequencyPenalty float32       `json:"frequency_penalty,omitempty"`
-	PresencePenalty  float32       `json:"presence_penalty,omitempty"`
+	Model               string         `json:"model"`
+	Messages            []ChatMessage  `json:"messages"`
+	Temperature         float32        `json:"temperature,omitempty"`
+	MaxTokens           int           `json:"max_tokens,omitempty"`
+	MaxCompletionTokens int           `json:"max_completion_tokens,omitempty"`
+	Stream             bool          `json:"stream"`
+	TopP               float32       `json:"top_p,omitempty"`
+	FrequencyPenalty   float32       `json:"frequency_penalty,omitempty"`
+	PresencePenalty    float32       `json:"presence_penalty,omitempty"`
 }
 
 // ChatMessage represents a message in the chat
@@ -54,14 +55,8 @@ type ChatMessage struct {
 func (c *ChatClient) StreamCompletion(messages []ChatMessage, callback StreamingCallback) error {
 	config := c.config.Get()
 
-	// Build the request
-	reqBody := ChatRequest{
-		Model:       config.Model,
-		Messages:    messages,
-		Temperature: float32(config.Temperature),
-		MaxTokens:   config.MaxTokens,
-		Stream:      true,
-	}
+	// Build the request with model-specific compatibility
+	reqBody := c.buildCompatibleRequest(config, messages)
 
 	jsonBody, err := json.Marshal(reqBody)
 	if err != nil {
@@ -137,6 +132,8 @@ func (c *ChatClient) StreamCompletion(messages []ChatMessage, callback Streaming
 			// Extract content based on provider format
 			content := c.extractContent(chunk, config.Provider)
 			if content != "" {
+				// Debug: log chunk content
+				// fmt.Fprintf(os.Stderr, "[STREAM_CHUNK] '%s'\n", content)
 				if err := callback(content, false); err != nil {
 					return err
 				}
@@ -176,6 +173,81 @@ func (c *ChatClient) extractContent(chunk map[string]interface{}, provider strin
 	}
 
 	return ""
+}
+
+// buildCompatibleRequest builds a request with model-specific compatibility
+func (c *ChatClient) buildCompatibleRequest(config *core.Config, messages []ChatMessage) ChatRequest {
+	modelName := strings.ToLower(config.Model)
+
+	// Base request
+	req := ChatRequest{
+		Model:    config.Model,
+		Messages: messages,
+		Stream:   true,
+	}
+
+	// Handle model-specific quirks
+	if strings.Contains(modelName, "gpt-5-nano") || strings.Contains(modelName, "gpt-4.1-nano") {
+		// These models require max_completion_tokens instead of max_tokens
+		// and only support temperature = 1.0
+		if config.MaxTokens > 0 {
+			req.MaxCompletionTokens = config.MaxTokens
+			if req.MaxCompletionTokens > 8192 {
+				req.MaxCompletionTokens = 8192
+			}
+		} else {
+			req.MaxCompletionTokens = 2048 // Default
+		}
+		// Don't set temperature for these models (they only accept 1.0)
+
+	} else if strings.Contains(modelName, "gpt-5-mini") || strings.Contains(modelName, "gpt-4.1-mini") {
+		// These models also require max_completion_tokens
+		if config.MaxTokens > 0 {
+			req.MaxCompletionTokens = config.MaxTokens
+			if req.MaxCompletionTokens > 8192 {
+				req.MaxCompletionTokens = 8192
+			}
+		} else {
+			req.MaxCompletionTokens = 2048 // Default
+		}
+		// gpt-5-mini doesn't support custom temperature, gpt-4.1-mini does
+		if strings.Contains(modelName, "gpt-4.1-mini") {
+			req.Temperature = float32(config.Temperature)
+		}
+
+	} else if strings.HasPrefix(modelName, "gpt-5") {
+		// Regular GPT-5 models use max_completion_tokens
+		if config.MaxTokens > 0 {
+			req.MaxCompletionTokens = config.MaxTokens
+			if req.MaxCompletionTokens > 16384 {
+				req.MaxCompletionTokens = 16384
+			}
+		} else {
+			req.MaxCompletionTokens = 2048 // Default
+		}
+		req.Temperature = float32(config.Temperature)
+
+	} else if strings.HasPrefix(modelName, "gpt-4.1") {
+		// GPT-4.1 models use max_completion_tokens
+		if config.MaxTokens > 0 {
+			req.MaxCompletionTokens = config.MaxTokens
+			if req.MaxCompletionTokens > 8192 {
+				req.MaxCompletionTokens = 8192
+			}
+		} else {
+			req.MaxCompletionTokens = 2048 // Default
+		}
+		req.Temperature = float32(config.Temperature)
+
+	} else {
+		// Other models (GPT-4, GPT-3.5, etc.) use traditional max_tokens
+		if config.MaxTokens > 0 {
+			req.MaxTokens = config.MaxTokens
+		}
+		req.Temperature = float32(config.Temperature)
+	}
+
+	return req
 }
 
 // getAPIEndpoint returns the appropriate API endpoint based on provider

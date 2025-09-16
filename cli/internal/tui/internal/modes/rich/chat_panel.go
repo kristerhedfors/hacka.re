@@ -550,36 +550,43 @@ func (cp *ChatPanel) drawInputArea() {
 
 // wrapText wraps text to fit within the given width
 func (cp *ChatPanel) wrapText(text string, width int) []string {
-	var lines []string
-	words := strings.Fields(text)
-	if len(words) == 0 {
-		return []string{""}
+	if width <= 0 {
+		return []string{text}
 	}
 
-	currentLine := ""
-	for _, word := range words {
-		if len(currentLine)+len(word)+1 > width {
-			if currentLine != "" {
-				lines = append(lines, currentLine)
-				currentLine = word
-			} else {
-				// Word is too long, break it
-				for len(word) > width {
-					lines = append(lines, word[:width])
-					word = word[width:]
+	var lines []string
+	// Split by existing newlines first
+	for _, line := range strings.Split(text, "\n") {
+		if len(line) == 0 {
+			lines = append(lines, "")
+			continue
+		}
+
+		// For each line, wrap if needed without changing spacing
+		for len(line) > width {
+			// Try to find a space to break at
+			breakPos := width
+			for i := width - 1; i > width/2; i-- {
+				if line[i] == ' ' {
+					breakPos = i + 1 // Include the space at the end of the line
+					break
 				}
-				currentLine = word
 			}
-		} else {
-			if currentLine == "" {
-				currentLine = word
-			} else {
-				currentLine += " " + word
+			// If no space found, just break at width
+			lines = append(lines, line[:breakPos])
+			line = line[breakPos:]
+			// Trim leading space from continuation if we broke at a space
+			if len(line) > 0 && line[0] == ' ' {
+				line = line[1:]
 			}
 		}
+		if len(line) > 0 {
+			lines = append(lines, line)
+		}
 	}
-	if currentLine != "" {
-		lines = append(lines, currentLine)
+
+	if len(lines) == 0 {
+		lines = append(lines, "")
 	}
 
 	return lines

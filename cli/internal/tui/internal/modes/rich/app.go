@@ -54,8 +54,9 @@ func NewAppWithCallbacks(config *core.ConfigManager, state *core.AppState, event
 		return nil, err
 	}
 
-	// Enable mouse support
-	screen.EnableMouse()
+	// Disable mouse support to allow terminal text selection
+	// Mouse events prevent copy-paste in terminal
+	// screen.EnableMouse() // Commented out to allow text selection
 
 	// Set default style
 	screen.SetStyle(tcell.StyleDefault.Background(tcell.ColorReset).Foreground(tcell.ColorReset))
