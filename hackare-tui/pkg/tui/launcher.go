@@ -48,6 +48,14 @@ type Callbacks struct {
 	// OnLoadConfig is called when configuration needs to be loaded
 	OnLoadConfig func() (interface{}, error)
 
+	// OnPasswordPrompt is called when a password is needed (e.g., for share links)
+	// Returns the password entered by the user, or error if cancelled
+	OnPasswordPrompt func(prompt string) (string, error)
+
+	// OnGetModels is called when dynamic model list is needed for a provider
+	// Returns list of available models for the given provider
+	OnGetModels func(provider string) ([]string, error)
+
 	// OnExit is called when TUI is about to exit
 	OnExit func()
 }

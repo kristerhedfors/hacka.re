@@ -1,13 +1,17 @@
 package integration
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	"strings"
+	"syscall"
 
 	"github.com/hacka-re/cli/internal/chat"
 	"github.com/hacka-re/cli/internal/config"
 	"github.com/hacka-re/cli/internal/share"
 	"github.com/hacka-re/tui/pkg/tui"
+	"golang.org/x/term"
 )
 
 // LaunchTUI launches the hackare-tui interface with CLI integration
@@ -38,9 +42,13 @@ func LaunchTUI(cfg *config.Config) error {
 			// Generate share link using CLI functionality
 			sharedConfig := cfg.ToSharedConfig()
 
-			// For now, create a simple share link
-			// TODO: Add password input and proper share link generation
-			url, err := share.CreateShareableURL(sharedConfig, "default-password", "https://hacka.re/")
+			// Get password from user
+			password, err := getPassword("Enter password for share link: ")
+			if err != nil {
+				return "", fmt.Errorf("failed to read password: %w", err)
+			}
+
+			url, err := share.CreateShareableURL(sharedConfig, password, "https://hacka.re/")
 			if err != nil {
 				return "", fmt.Errorf("failed to generate share link: %w", err)
 			}
@@ -58,6 +66,16 @@ func LaunchTUI(cfg *config.Config) error {
 			// Load CLI config from file
 			configPath := config.GetConfigPath()
 			return config.LoadFromFile(configPath)
+		},
+
+		OnPasswordPrompt: func(prompt string) (string, error) {
+			return getPassword(prompt)
+		},
+
+		OnGetModels: func(provider string) ([]string, error) {
+			// TODO: Implement dynamic model fetching from API
+			// For now, return static lists
+			return getStaticModels(provider), nil
 		},
 
 		OnExit: func() {
@@ -116,7 +134,12 @@ func createCallbacks(cfg *config.Config) *tui.Callbacks {
 
 		OnShareLink: func(configInterface interface{}) (string, error) {
 			sharedConfig := cfg.ToSharedConfig()
-			url, err := share.CreateShareableURL(sharedConfig, "default-password", "https://hacka.re/")
+			// Get password from user
+			password, err := getPassword("Enter password for share link: ")
+			if err != nil {
+				return "", fmt.Errorf("failed to read password: %w", err)
+			}
+			url, err := share.CreateShareableURL(sharedConfig, password, "https://hacka.re/")
 			if err != nil {
 				return "", fmt.Errorf("failed to generate share link: %w", err)
 			}
@@ -133,6 +156,14 @@ func createCallbacks(cfg *config.Config) *tui.Callbacks {
 			return config.LoadFromFile(configPath)
 		},
 
+		OnPasswordPrompt: func(prompt string) (string, error) {
+			return getPassword(prompt)
+		},
+
+		OnGetModels: func(provider string) ([]string, error) {
+			return getStaticModels(provider), nil
+		},
+
 		OnExit: func() {
 			// CLI cleanup if needed
 		},
@@ -143,4 +174,66 @@ func createCallbacks(cfg *config.Config) *tui.Callbacks {
 func isDebugMode() bool {
 	logLevel := os.Getenv("HACKARE_LOG_LEVEL")
 	return logLevel == "DEBUG" || logLevel == "debug"
+}
+
+// getPassword prompts for password input with terminal echo disabled
+func getPassword(prompt string) (string, error) {
+	fmt.Print(prompt)
+
+	// Check if stdin is a terminal
+	if !term.IsTerminal(int(syscall.Stdin)) {
+		// Not a terminal, read normally
+		reader := bufio.NewReader(os.Stdin)
+		password, err := reader.ReadString('\n')
+		if err != nil {
+			return "", err
+		}
+		return strings.TrimSpace(password), nil
+	}
+
+	// Read password with echo disabled
+	bytePassword, err := term.ReadPassword(int(syscall.Stdin))
+	fmt.Println() // Print newline after password input
+	if err != nil {
+		return "", err
+	}
+
+	return string(bytePassword), nil
+}
+
+// getStaticModels returns static model lists for now
+// TODO: Replace with dynamic API fetching
+func getStaticModels(provider string) []string {
+	switch provider {
+	case "openai":
+		return []string{
+			"gpt-4-turbo-preview",
+			"gpt-4",
+			"gpt-3.5-turbo",
+			"gpt-3.5-turbo-16k",
+		}
+	case "anthropic":
+		return []string{
+			"claude-3-opus-20240229",
+			"claude-3-sonnet-20240229",
+			"claude-3-haiku-20240307",
+			"claude-2.1",
+			"claude-2.0",
+		}
+	case "groq":
+		return []string{
+			"llama2-70b-4096",
+			"mixtral-8x7b-32768",
+			"gemma-7b-it",
+		}
+	case "ollama":
+		return []string{
+			"llama2",
+			"codellama",
+			"mistral",
+			"neural-chat",
+		}
+	default:
+		return []string{"custom-model"}
+	}
 }

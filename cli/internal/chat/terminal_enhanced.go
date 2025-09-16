@@ -69,87 +69,18 @@ func NewTerminalChat(cfg *config.Config) *TerminalChat {
 	return chat
 }
 
-// registerCommands sets up all available slash commands (same as before)
+// registerCommands sets up all available slash commands (simplified)
 func (tc *TerminalChat) registerCommands() {
-	// Settings command
+	// Menu command - opens TUI for all configuration
 	tc.commands.Register(&Command{
-		Name:        "settings",
-		Aliases:     []string{"s", "set"},
-		Description: "Open settings configuration",
+		Name:        "menu",
+		Aliases:     []string{"m", "tui"},
+		Description: "Open configuration menu",
 		Handler: func() error {
-			if tc.modalHandlers.OpenSettings != nil {
-				return tc.modalHandlers.OpenSettings(tc.config)
+			if tc.modalHandlers.OpenTUI != nil {
+				return tc.modalHandlers.OpenTUI()
 			}
-			return fmt.Errorf("settings handler not configured")
-		},
-	})
-
-	// Prompts command
-	tc.commands.Register(&Command{
-		Name:        "prompts",
-		Aliases:     []string{"p", "prompt"},
-		Description: "Manage system prompts",
-		Handler: func() error {
-			if tc.modalHandlers.OpenPrompts != nil {
-				return tc.modalHandlers.OpenPrompts(tc.config)
-			}
-			return fmt.Errorf("prompts handler not configured")
-		},
-	})
-
-	// Functions command
-	tc.commands.Register(&Command{
-		Name:        "functions",
-		Aliases:     []string{"f", "func"},
-		Description: "Manage functions (coming soon)",
-		Handler: func() error {
-			if tc.modalHandlers.ShowPlaceholder != nil {
-				tc.modalHandlers.ShowPlaceholder("Functions", "Function management will be available in a future update.")
-				return nil
-			}
-			return fmt.Errorf("placeholder handler not configured")
-		},
-	})
-
-	// MCP command
-	tc.commands.Register(&Command{
-		Name:        "mcp",
-		Aliases:     []string{"m"},
-		Description: "MCP server connections (coming soon)",
-		Handler: func() error {
-			if tc.modalHandlers.ShowPlaceholder != nil {
-				tc.modalHandlers.ShowPlaceholder("MCP Servers", "MCP (Model Context Protocol) integration coming soon.")
-				return nil
-			}
-			return fmt.Errorf("placeholder handler not configured")
-		},
-	})
-
-	// RAG command
-	tc.commands.Register(&Command{
-		Name:        "rag",
-		Aliases:     []string{"r"},
-		Description: "RAG configuration (coming soon)",
-		Handler: func() error {
-			if tc.modalHandlers.ShowPlaceholder != nil {
-				tc.modalHandlers.ShowPlaceholder("RAG", "Retrieval-Augmented Generation will be available soon.")
-				return nil
-			}
-			return fmt.Errorf("placeholder handler not configured")
-		},
-	})
-
-	// Share command
-	tc.commands.Register(&Command{
-		Name:        "share",
-		Aliases:     []string{"sh"},
-		Description: "Share configuration link (coming soon)",
-		Handler: func() error {
-			if tc.modalHandlers.ShowPlaceholder != nil {
-				tc.modalHandlers.ShowPlaceholder("Share Link", "Configuration sharing will be available soon.")
-				return nil
-			}
-			return fmt.Errorf("placeholder handler not configured")
+			return fmt.Errorf("TUI handler not configured")
 		},
 	})
 

@@ -60,99 +60,20 @@ func NewEnhancedChat(cfg *config.Config) *EnhancedChat {
 	return chat
 }
 
-// registerCommands sets up all available slash commands
+// registerCommands sets up all available slash commands (simplified)
 func (ec *EnhancedChat) registerCommands() {
-	// Settings command
+	// Menu command - opens TUI for all configuration
 	ec.commands.Register(&Command{
-		Name:        "settings",
-		Aliases:     []string{"s", "set"},
-		Description: "Open settings configuration",
+		Name:        "menu",
+		Aliases:     []string{"m", "tui"},
+		Description: "Open configuration menu",
 		Handler: func() error {
 			ec.inModal = true
 			defer func() { ec.inModal = false }()
-			if ec.modalHandlers.OpenSettings != nil {
-				return ec.modalHandlers.OpenSettings(ec.config)
+			if ec.modalHandlers.OpenTUI != nil {
+				return ec.modalHandlers.OpenTUI()
 			}
-			return fmt.Errorf("settings handler not configured")
-		},
-	})
-
-	// Prompts command
-	ec.commands.Register(&Command{
-		Name:        "prompts",
-		Aliases:     []string{"p", "prompt"},
-		Description: "Manage system prompts",
-		Handler: func() error {
-			ec.inModal = true
-			defer func() { ec.inModal = false }()
-			if ec.modalHandlers.OpenPrompts != nil {
-				return ec.modalHandlers.OpenPrompts(ec.config)
-			}
-			return fmt.Errorf("prompts handler not configured")
-		},
-	})
-
-	// Functions command (placeholder)
-	ec.commands.Register(&Command{
-		Name:        "functions",
-		Aliases:     []string{"f", "func"},
-		Description: "Manage functions (coming soon)",
-		Handler: func() error {
-			ec.inModal = true
-			defer func() { ec.inModal = false }()
-			if ec.modalHandlers.ShowPlaceholder != nil {
-				ec.modalHandlers.ShowPlaceholder("Functions", "Function management will be available in a future update.")
-				return nil
-			}
-			return fmt.Errorf("placeholder handler not configured")
-		},
-	})
-
-	// MCP command (placeholder)
-	ec.commands.Register(&Command{
-		Name:        "mcp",
-		Aliases:     []string{"m"},
-		Description: "MCP server connections (coming soon)",
-		Handler: func() error {
-			ec.inModal = true
-			defer func() { ec.inModal = false }()
-			if ec.modalHandlers.ShowPlaceholder != nil {
-				ec.modalHandlers.ShowPlaceholder("MCP Servers", "MCP (Model Context Protocol) integration coming soon.")
-				return nil
-			}
-			return fmt.Errorf("placeholder handler not configured")
-		},
-	})
-
-	// RAG command (placeholder)
-	ec.commands.Register(&Command{
-		Name:        "rag",
-		Aliases:     []string{"r"},
-		Description: "RAG configuration (coming soon)",
-		Handler: func() error {
-			ec.inModal = true
-			defer func() { ec.inModal = false }()
-			if ec.modalHandlers.ShowPlaceholder != nil {
-				ec.modalHandlers.ShowPlaceholder("RAG", "Retrieval-Augmented Generation will be available soon.")
-				return nil
-			}
-			return fmt.Errorf("placeholder handler not configured")
-		},
-	})
-
-	// Share command (placeholder)
-	ec.commands.Register(&Command{
-		Name:        "share",
-		Aliases:     []string{"sh"},
-		Description: "Share configuration link (coming soon)",
-		Handler: func() error {
-			ec.inModal = true
-			defer func() { ec.inModal = false }()
-			if ec.modalHandlers.ShowPlaceholder != nil {
-				ec.modalHandlers.ShowPlaceholder("Share Link", "Configuration sharing will be available soon.")
-				return nil
-			}
-			return fmt.Errorf("placeholder handler not configured")
+			return fmt.Errorf("TUI handler not configured")
 		},
 	})
 

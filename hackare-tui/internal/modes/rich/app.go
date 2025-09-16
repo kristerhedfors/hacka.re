@@ -454,7 +454,7 @@ func (a *App) subscribeToEvents() {
 // Panel handler methods
 func (a *App) showSettings() error {
 	// Create settings modal with filterable menu
-	a.settingsModal = NewSettingsModalV2(a.screen, a.config)
+	a.settingsModal = NewSettingsModalV2(a.screen, a.config, a.state)
 
 	// Set callbacks
 	a.settingsModal.onSave = func(cfg *core.Config) error {

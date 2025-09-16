@@ -15,7 +15,30 @@ func StartChatInterface(cfg *config.Config) error {
 
 	// Set up modal handlers
 	terminalChat.SetModalHandlers(chat.ModalHandlers{
+		OpenTUI: func() error {
+			// Clear screen for modal
+			fmt.Print("\033[2J\033[H")
+
+			// Launch TUI main menu
+			if err := integration.LaunchTUI(cfg); err != nil {
+				return err
+			}
+
+			// Always save configuration when exiting TUI
+			configPath := config.GetConfigPath()
+			cfg.SaveToFile(configPath)
+
+			// Clear and redraw chat interface
+			fmt.Print("\033[2J\033[H")
+			fmt.Println("═══════════════════════════════════════════════════════")
+			fmt.Println("  hacka.re CLI - Chat Interface")
+			fmt.Println("  Configuration updated • Type /help for commands")
+			fmt.Println("═══════════════════════════════════════════════════════")
+
+			return nil
+		},
 		OpenSettings: func(cfg *config.Config) error {
+			// Deprecated - redirect to OpenTUI
 			// Clear screen for modal
 			fmt.Print("\033[2J\033[H")
 
@@ -38,6 +61,7 @@ func StartChatInterface(cfg *config.Config) error {
 			return nil
 		},
 		OpenPrompts: func(cfg *config.Config) error {
+			// Deprecated - redirect to OpenTUI
 			// Clear screen for modal
 			fmt.Print("\033[2J\033[H")
 

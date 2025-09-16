@@ -2,6 +2,7 @@ package rich
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -86,6 +87,7 @@ func (s *SettingsMenuItem) formatValue() string {
 type SettingsModalV2 struct {
 	screen   tcell.Screen
 	config   *core.ConfigManager
+	state    *core.AppState  // For accessing callbacks
 	fields   []*SettingsField
 	menu     *FilterableMenu
 
@@ -109,10 +111,11 @@ type SettingsModalV2 struct {
 }
 
 // NewSettingsModalV2 creates a new filterable settings modal
-func NewSettingsModalV2(screen tcell.Screen, config *core.ConfigManager) *SettingsModalV2 {
+func NewSettingsModalV2(screen tcell.Screen, config *core.ConfigManager, state *core.AppState) *SettingsModalV2 {
 	sm := &SettingsModalV2{
 		screen:         screen,
 		config:         config,
+		state:          state,
 		originalValues: make(map[string]interface{}),
 	}
 
@@ -246,8 +249,51 @@ func (sm *SettingsModalV2) initializeFields() {
 	}
 }
 
-// getModelOptions returns model options based on provider (same as before)
+// callGetModels uses reflection to call OnGetModels callback
+// This avoids import cycle with pkg/tui
+func (sm *SettingsModalV2) callGetModels(callbacks interface{}, provider string) []string {
+	val := reflect.ValueOf(callbacks)
+	if val.Kind() == reflect.Ptr && !val.IsNil() {
+		val = val.Elem()
+	}
+
+	// Look for OnGetModels field
+	field := val.FieldByName("OnGetModels")
+	if field.IsValid() && field.Kind() == reflect.Func && !field.IsNil() {
+		// Call the function
+		results := field.Call([]reflect.Value{reflect.ValueOf(provider)})
+		if len(results) == 2 {
+			// Extract []string and error
+			if !results[1].IsNil() {
+				// Error occurred
+				return nil
+			}
+			if results[0].Kind() == reflect.Slice {
+				// Convert to []string
+				models := results[0].Interface().([]string)
+				if len(models) > 0 {
+					return models
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// getModelOptions returns model options based on provider
 func (sm *SettingsModalV2) getModelOptions(provider string) []string {
+	// Try to get models from callback if available
+	if sm.state != nil {
+		if callbacks := sm.state.GetCallbacks(); callbacks != nil {
+			// Use reflection to call OnGetModels if available
+			// This avoids import cycle with pkg/tui
+			if models := sm.callGetModels(callbacks, provider); models != nil {
+				return models
+			}
+		}
+	}
+
+	// Fallback to static lists
 	switch provider {
 	case "openai":
 		return []string{
