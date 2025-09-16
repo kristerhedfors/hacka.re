@@ -5,7 +5,7 @@ import (
 
 	"github.com/hacka-re/cli/internal/chat"
 	"github.com/hacka-re/cli/internal/config"
-	"github.com/hacka-re/cli/internal/ui"
+	"github.com/hacka-re/cli/internal/integration"
 )
 
 // StartChatInterface starts the enhanced chat interface with all modal handlers configured
@@ -19,8 +19,8 @@ func StartChatInterface(cfg *config.Config) error {
 			// Clear screen for modal
 			fmt.Print("\033[2J\033[H")
 
-			// Show settings modal using the new FilterableMenu version
-			if err := ui.ShowSettingsV2(cfg); err != nil {
+			// Launch TUI for settings
+			if err := integration.LaunchTUI(cfg); err != nil {
 				return err
 			}
 
@@ -41,8 +41,8 @@ func StartChatInterface(cfg *config.Config) error {
 			// Clear screen for modal
 			fmt.Print("\033[2J\033[H")
 
-			// Show prompts modal - it will return when user presses ESC
-			if err := ui.ShowPromptsManager(cfg); err != nil {
+			// Launch TUI for prompts management
+			if err := integration.LaunchTUI(cfg); err != nil {
 				return err
 			}
 
@@ -59,8 +59,11 @@ func StartChatInterface(cfg *config.Config) error {
 			// Clear screen for modal
 			fmt.Print("\033[2J\033[H")
 
-			// Show placeholder modal
-			ui.ShowPlaceholderModal(title, message)
+			// Show placeholder message
+			fmt.Printf("══ %s ══\n\n", title)
+			fmt.Println(message)
+			fmt.Println("\nPress Enter to continue...")
+			fmt.Scanln()
 
 			// Clear and redraw chat interface
 			fmt.Print("\033[2J\033[H")

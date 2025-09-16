@@ -12,9 +12,9 @@ import (
 
 	"github.com/hacka-re/cli/internal/chat"
 	"github.com/hacka-re/cli/internal/config"
+	"github.com/hacka-re/cli/internal/integration"
 	"github.com/hacka-re/cli/internal/logger"
 	"github.com/hacka-re/cli/internal/share"
-	"github.com/hacka-re/cli/internal/ui"
 	"golang.org/x/term"
 )
 
@@ -239,7 +239,10 @@ func handleURLArgument(arg string) {
 
 	switch choice {
 	case "1":
-		ui.ShowMainMenu(cfg)  // Use main menu instead of direct settings
+		if err := integration.LaunchTUI(cfg); err != nil {
+			fmt.Fprintf(os.Stderr, "Error launching TUI: %v\n", err)
+			os.Exit(1)
+		}
 	case "2":
 		// Start chat session with loaded config
 		if err := chat.StartChat(cfg); err != nil {
@@ -265,8 +268,11 @@ func showSettingsModal() {
 		cfg = config.NewConfig()
 	}
 
-	// Show the main menu (which includes settings option)
-	ui.ShowMainMenu(cfg)
+	// Launch the TUI
+	if err := integration.LaunchTUI(cfg); err != nil {
+		fmt.Fprintf(os.Stderr, "Error launching TUI: %v\n", err)
+		os.Exit(1)
+	}
 }
 
 // getPassword securely reads a password from stdin
@@ -419,10 +425,8 @@ func generateQRCode(cfg *config.Config, password string) {
 	}
 	
 	// Generate QR code
-	if err := ui.ShowQRCode(url); err != nil {
-		fmt.Fprintf(os.Stderr, "Error generating QR code: %v\n", err)
-		return
-	}
+	fmt.Println("QR code generation has been moved to the TUI interface.")
+	fmt.Println("Use the TUI settings to generate QR codes for sharing.")
 	
 	fmt.Println("\n✓ QR code generated successfully!")
 	fmt.Printf("\nShareable URL:\n%s\n", url)
@@ -467,8 +471,11 @@ func startChatSession(args []string) {
 			fmt.Println("No configuration found. Please configure API settings first.")
 			cfg = config.NewConfig()
 			
-			// Show settings UI first
-			ui.ShowSettingsV2Working(cfg)
+			// Launch TUI for configuration
+			if err := integration.LaunchTUI(cfg); err != nil {
+				fmt.Fprintf(os.Stderr, "Error launching TUI: %v\n", err)
+				return
+			}
 			
 			// Ask if they want to continue to chat
 			fmt.Print("\nConfiguration saved. Start chat session? (y/n): ")
