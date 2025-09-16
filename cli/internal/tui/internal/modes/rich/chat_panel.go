@@ -418,6 +418,8 @@ func (cp *ChatPanel) streamResponse() {
 			if log := logger.Get(); log != nil {
 				if streamingIndex < len(cp.messages) {
 					log.Info("[ChatPanel] Streaming complete, message length: %d", len(cp.messages[streamingIndex].Content))
+				} else {
+					log.Error("[ChatPanel] Streaming complete but index %d out of range (messages: %d)", streamingIndex, len(cp.messages))
 				}
 			}
 
@@ -426,15 +428,30 @@ func (cp *ChatPanel) streamResponse() {
 			cp.streamingMsg = nil
 
 			// Save to state
-			if streamingIndex < len(cp.messages) {
+			if streamingIndex < len(cp.messages) && cp.messages[streamingIndex].Content != "" {
 				cp.state.AddMessage("assistant", cp.messages[streamingIndex].Content)
+			} else if streamingIndex < len(cp.messages) {
+				// Remove empty message if no content was received
+				if log := logger.Get(); log != nil {
+					log.Warn("[ChatPanel] Removing empty assistant message at index %d", streamingIndex)
+				}
+				cp.messages = append(cp.messages[:streamingIndex], cp.messages[streamingIndex+1:]...)
 			}
 		} else {
+			// Log chunk reception
+			if log := logger.Get(); log != nil && chunk != "" {
+				log.Debug("[ChatPanel] Received chunk: %d chars", len(chunk))
+			}
+
 			// Append chunk to streaming message
 			if streamingIndex < len(cp.messages) {
 				cp.messages[streamingIndex].Content += chunk
 				if cp.streamingMsg != nil {
 					cp.streamingMsg.Content = cp.messages[streamingIndex].Content
+				}
+			} else {
+				if log := logger.Get(); log != nil {
+					log.Error("[ChatPanel] Cannot append chunk - index %d out of range (messages: %d)", streamingIndex, len(cp.messages))
 				}
 			}
 
@@ -775,7 +792,6 @@ func (cp *ChatPanel) wrapText(text string, width int) []string {
 
 	return lines
 }
-
 
 // SetDimensions sets the panel dimensions
 func (cp *ChatPanel) SetDimensions(width, height int) {
