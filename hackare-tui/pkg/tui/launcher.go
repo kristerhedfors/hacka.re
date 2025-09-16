@@ -147,6 +147,14 @@ func LaunchTUI(options *LaunchOptions) error {
 			return fmt.Errorf("rich mode error: %w", err)
 		}
 
+		// Check if user intentionally switched to socket mode
+		if appState.GetMode() == core.ModeSocket {
+			// User explicitly selected socket mode, continue to it
+			goto socketMode
+		}
+
+		// Otherwise, user exited normally - don't fall through to socket mode
+		goto exitNormally
 
 	socketMode:
 		fallthrough
@@ -160,6 +168,7 @@ func LaunchTUI(options *LaunchOptions) error {
 		return fmt.Errorf("unsupported mode: %s", uiMode)
 	}
 
+exitNormally:
 	// Call exit callback if provided
 	if options.Callbacks != nil && options.Callbacks.OnExit != nil {
 		options.Callbacks.OnExit()

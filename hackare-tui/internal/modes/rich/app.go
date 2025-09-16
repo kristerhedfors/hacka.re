@@ -15,12 +15,14 @@ type App struct {
 	state    *core.AppState
 	eventBus *core.EventBus
 
-	mainMenu      *FilterableMenu
-	settingsModal *SettingsModalV2
-	chatPanel     *ChatPanel
-	currentPanel  Panel
-	running       bool
-	needsRedraw   bool
+	mainMenu       *FilterableMenu
+	settingsModal  *SettingsModalV2
+	chatPanel      *ChatPanel
+	confirmDialog  *ConfirmDialog
+	showConfirmExit bool
+	currentPanel   Panel
+	running        bool
+	needsRedraw    bool
 }
 
 // Panel represents different application panels
@@ -291,7 +293,7 @@ Your settings and configuration are automatically saved.
 Press Enter to confirm exit, or ESC to cancel.`,
 		Enabled: true,
 		Handler: func() error {
-			a.running = false
+			a.showExitConfirmation()
 			return nil
 		},
 	})
@@ -340,11 +342,29 @@ func (a *App) Run() error {
 
 // handleKeyEvent processes keyboard input
 func (a *App) handleKeyEvent(ev *tcell.EventKey) {
+	// Handle exit confirmation dialog first if it's showing
+	if a.showConfirmExit && a.confirmDialog != nil {
+		confirmed, done := a.confirmDialog.HandleInput(ev)
+		if done {
+			if confirmed {
+				// User confirmed exit
+				a.running = false
+			} else {
+				// User cancelled exit
+				a.showConfirmExit = false
+				a.confirmDialog = nil
+			}
+		}
+		a.needsRedraw = true
+		return
+	}
+
 	switch a.currentPanel {
 	case PanelMainMenu:
 		item, exit := a.mainMenu.HandleInput(ev)
 		if exit {
-			a.running = false
+			// Show exit confirmation dialog
+			a.showExitConfirmation()
 		} else if item != nil {
 			// Check if it's a BasicMenuItem with a handler
 			if basicItem, ok := item.(*BasicMenuItem); ok && basicItem.Handler != nil {
@@ -415,6 +435,11 @@ func (a *App) draw() {
 
 	case PanelRAG:
 		a.drawPlaceholder("RAG Panel", "RAG configuration coming soon.\nPress ESC to return to main menu.")
+	}
+
+	// Draw exit confirmation dialog on top if active
+	if a.showConfirmExit && a.confirmDialog != nil {
+		a.confirmDialog.Draw()
 	}
 
 	a.screen.Show()
@@ -532,4 +557,16 @@ func (a *App) generateShareLink() error {
 func (a *App) showAbout() error {
 	// About panel
 	return nil
+}
+
+// showExitConfirmation displays the exit confirmation dialog
+func (a *App) showExitConfirmation() {
+	a.confirmDialog = NewConfirmDialog(
+		a.screen,
+		"Exit hacka.re?",
+		"Are you sure you want to exit?\n\nWarning: Your current chat history will be lost if you haven't saved it.",
+	)
+	a.confirmDialog.Center()
+	a.showConfirmExit = true
+	a.needsRedraw = true
 }

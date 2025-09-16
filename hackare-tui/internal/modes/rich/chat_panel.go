@@ -3,10 +3,12 @@ package rich
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/hacka-re/tui/internal/core"
+	"github.com/hacka-re/tui/internal/services"
 )
 
 // ChatPanel represents the chat interface panel
@@ -21,11 +23,16 @@ type ChatPanel struct {
 	width, height int
 
 	// Chat state
-	messages     []ChatMessage
-	inputBuffer  string
-	cursorPos    int
-	scrollOffset int
-	isStreaming  bool
+	messages       []ChatMessage
+	inputBuffer    string
+	cursorPos      int
+	scrollOffset   int
+	isStreaming    bool
+	streamingMsg   *ChatMessage
+	streamingMutex sync.Mutex
+
+	// API client
+	chatClient *services.ChatClient
 
 	// UI state
 	focused      bool
@@ -49,20 +56,30 @@ func NewChatPanel(screen tcell.Screen, config *core.ConfigManager, state *core.A
 	panelHeight := h - (padding * 2)
 
 	cp := &ChatPanel{
-		screen:   screen,
-		config:   config,
-		state:    state,
-		eventBus: eventBus,
-		x:        padding,
-		y:        padding,
-		width:    panelWidth,
-		height:   panelHeight,
-		messages: make([]ChatMessage, 0),
-		focused:  true,
+		screen:     screen,
+		config:     config,
+		state:      state,
+		eventBus:   eventBus,
+		x:          padding,
+		y:          padding,
+		width:      panelWidth,
+		height:     panelHeight,
+		messages:   make([]ChatMessage, 0),
+		focused:    true,
+		chatClient: services.NewChatClient(config),
 	}
 
 	// Load existing messages from state if any
 	cp.loadMessagesFromState()
+
+	// Add welcome message if no messages exist
+	if len(cp.messages) == 0 {
+		cp.messages = append(cp.messages, ChatMessage{
+			Role:      "system",
+			Content:   "Welcome to hacka.re chat! Type your message below or use /help for commands.",
+			Timestamp: time.Now(),
+		})
+	}
 
 	return cp
 }
@@ -192,20 +209,11 @@ func (cp *ChatPanel) sendMessage() {
 	// Auto-scroll to bottom
 	cp.scrollToBottom()
 
-	// TODO: Send to API and handle response
-	// For now, just add a placeholder response
-	go func() {
-		time.Sleep(500 * time.Millisecond)
-		response := "Chat functionality is being implemented. Your message was: " + message
-		cp.messages = append(cp.messages, ChatMessage{
-			Role:      "assistant",
-			Content:   response,
-			Timestamp: time.Now(),
-		})
-		cp.state.AddMessage("assistant", response)
-		cp.scrollToBottom()
-		cp.needsRedraw = true
-	}()
+	// Mark as streaming
+	cp.isStreaming = true
+
+	// Send to API in background
+	go cp.streamResponse()
 }
 
 // handleCommand processes chat commands
@@ -243,6 +251,99 @@ func (cp *ChatPanel) scrollToBottom() {
 	}
 }
 
+// streamResponse handles streaming response from the API
+func (cp *ChatPanel) streamResponse() {
+	// Convert messages to API format
+	apiMessages := make([]services.ChatMessage, 0)
+	for _, msg := range cp.messages {
+		// Skip system messages for API
+		if msg.Role == "system" && strings.Contains(msg.Content, "Welcome to hacka.re") {
+			continue
+		}
+		apiMessages = append(apiMessages, services.ChatMessage{
+			Role:    msg.Role,
+			Content: msg.Content,
+		})
+	}
+
+	// Add system prompt from config if configured
+	config := cp.config.Get()
+	if config.SystemPrompt != "" {
+		apiMessages = append([]services.ChatMessage{
+			{Role: "system", Content: config.SystemPrompt},
+		}, apiMessages...)
+	}
+
+	// Create streaming message
+	cp.streamingMutex.Lock()
+	cp.streamingMsg = &ChatMessage{
+		Role:      "assistant",
+		Content:   "",
+		Timestamp: time.Now(),
+	}
+	cp.messages = append(cp.messages, *cp.streamingMsg)
+	streamingIndex := len(cp.messages) - 1
+	cp.streamingMutex.Unlock()
+
+	// Stream the response
+	err := cp.chatClient.StreamCompletion(apiMessages, func(chunk string, done bool) error {
+		cp.streamingMutex.Lock()
+		defer cp.streamingMutex.Unlock()
+
+		if done {
+			// Streaming complete
+			cp.isStreaming = false
+			cp.streamingMsg = nil
+
+			// Save to state
+			if streamingIndex < len(cp.messages) {
+				cp.state.AddMessage("assistant", cp.messages[streamingIndex].Content)
+			}
+		} else {
+			// Append chunk to streaming message
+			if streamingIndex < len(cp.messages) {
+				cp.messages[streamingIndex].Content += chunk
+				if cp.streamingMsg != nil {
+					cp.streamingMsg.Content = cp.messages[streamingIndex].Content
+				}
+			}
+
+			// Auto-scroll to bottom
+			cp.scrollToBottom()
+		}
+
+		// Trigger redraw
+		cp.needsRedraw = true
+		// Send a resize event to trigger screen update
+		if cp.screen != nil {
+			cp.screen.PostEvent(tcell.NewEventResize(0, 0))
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		// Add error message
+		cp.streamingMutex.Lock()
+		errorMsg := ChatMessage{
+			Role:      "system",
+			Content:   fmt.Sprintf("Error: %v", err),
+			Timestamp: time.Now(),
+		}
+		cp.messages = append(cp.messages, errorMsg)
+		cp.isStreaming = false
+		cp.streamingMsg = nil
+		cp.scrollToBottom()
+		cp.needsRedraw = true
+		cp.streamingMutex.Unlock()
+
+		// Trigger redraw
+		if cp.screen != nil {
+			cp.screen.PostEvent(tcell.NewEventResize(0, 0))
+		}
+	}
+}
+
 // Draw renders the chat panel
 func (cp *ChatPanel) Draw() {
 	// Draw border
@@ -250,10 +351,22 @@ func (cp *ChatPanel) Draw() {
 
 	// Draw title
 	title := "Chat Interface - ESC to return"
+	if cp.isStreaming {
+		title = "Chat Interface - Streaming... - ESC to return"
+	}
 	titleX := cp.x + (cp.width-len(title))/2
 	style := tcell.StyleDefault.Foreground(tcell.ColorGreen).Bold(true)
 	for i, r := range title {
 		cp.screen.SetContent(titleX+i, cp.y, r, nil, style)
+	}
+
+	// Show API info
+	config := cp.config.Get()
+	apiInfo := fmt.Sprintf("[%s/%s]", config.Provider, config.Model)
+	infoX := cp.x + 2
+	infoStyle := tcell.StyleDefault.Foreground(tcell.ColorGray)
+	for i, r := range apiInfo {
+		cp.screen.SetContent(infoX+i, cp.y, r, nil, infoStyle)
 	}
 
 	// Draw messages area
@@ -291,17 +404,23 @@ func (cp *ChatPanel) drawMessages() {
 	messageAreaHeight := cp.height - 5 // Leave room for input and borders
 	startY := cp.y + 2
 
+	// Lock for thread-safe message access
+	cp.streamingMutex.Lock()
+	messagesCopy := make([]ChatMessage, len(cp.messages))
+	copy(messagesCopy, cp.messages)
+	cp.streamingMutex.Unlock()
+
 	// Calculate visible messages
 	visibleStart := cp.scrollOffset
 	visibleEnd := visibleStart + messageAreaHeight - 2
-	if visibleEnd > len(cp.messages) {
-		visibleEnd = len(cp.messages)
+	if visibleEnd > len(messagesCopy) {
+		visibleEnd = len(messagesCopy)
 	}
 
 	// Draw each visible message
 	currentY := startY
 	for i := visibleStart; i < visibleEnd && currentY < cp.y+cp.height-3; i++ {
-		msg := cp.messages[i]
+		msg := messagesCopy[i]
 
 		// Choose color based on role
 		var style tcell.Style
@@ -347,14 +466,14 @@ func (cp *ChatPanel) drawMessages() {
 	}
 
 	// Draw scroll indicator if needed
-	if len(cp.messages) > messageAreaHeight-2 {
+	if len(messagesCopy) > messageAreaHeight-2 {
 		scrollBarX := cp.x + cp.width - 2
 		scrollBarHeight := messageAreaHeight - 2
 		scrollBarY := startY
 
 		// Calculate thumb position
-		if len(cp.messages) > 0 {
-			thumbPos := (cp.scrollOffset * scrollBarHeight) / len(cp.messages)
+		if len(messagesCopy) > 0 {
+			thumbPos := (cp.scrollOffset * scrollBarHeight) / len(messagesCopy)
 			if thumbPos >= 0 && thumbPos < scrollBarHeight {
 				cp.screen.SetContent(scrollBarX, scrollBarY+thumbPos, '█', nil,
 					tcell.StyleDefault.Foreground(tcell.ColorGray))
