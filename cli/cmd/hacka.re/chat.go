@@ -13,7 +13,6 @@ import (
 
 // ChatCommand handles the chat subcommand
 func ChatCommand(args []string) {
-	fmt.Fprintln(os.Stderr, "!!!!! ChatCommand CALLED !!!!!")
 
 	// Create a new flagset for the chat command
 	chatFlags := flag.NewFlagSet("chat", flag.ExitOnError)
@@ -70,7 +69,6 @@ func ChatCommand(args []string) {
 
 // startChatWithArgs starts a chat session, optionally loading config from URL
 func startChatWithArgs(args []string) {
-	fmt.Fprintf(os.Stderr, "!!!!! startChatWithArgs() CALLED !!!!\n")
 	var cfg *config.Config
 
 	// Check for session from environment first, then command line

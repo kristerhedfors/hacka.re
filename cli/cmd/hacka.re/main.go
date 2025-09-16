@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/hacka-re/cli/internal/chat"
+	"github.com/hacka-re/cli/internal/app"
 	"github.com/hacka-re/cli/internal/config"
 	"github.com/hacka-re/cli/internal/integration"
 	"github.com/hacka-re/cli/internal/logger"
@@ -19,9 +19,6 @@ import (
 )
 
 func main() {
-	// AGGRESSIVE DEBUGGING - Log immediately to stderr
-	fmt.Fprintf(os.Stderr, "!!!!! MAIN STARTED WITH ARGS: %v !!!!!\n", os.Args)
-	fmt.Fprintf(os.Stderr, "!!!!! BUILD TIME: %s !!!!!\n", time.Now().Format("2006-01-02 15:04:05"))
 
 	// Check for --debug flag early (before subcommand parsing)
 	debugMode := false
@@ -82,7 +79,6 @@ func main() {
 			return
 		case "chat":
 			// Handle chat subcommand
-			fmt.Fprintf(os.Stderr, "!!!!! CALLING ChatCommand DIRECTLY !!!!!\n")
 			ChatCommand(os.Args[2:])
 			return
 		case "help", "-h", "--help":
@@ -205,7 +201,6 @@ func handleJSONDump(arg string) {
 
 // handleURLArgument processes a hacka.re URL or fragment
 func handleURLArgument(arg string) {
-	// fmt.Fprintf(os.Stderr, "!!!!! handleURLArgument(%s) CALLED !!!!\n", arg)
 	fmt.Println("╔════════════════════════════════════════════╗")
 	fmt.Println("║         hacka.re: serverless agency         ║")
 	fmt.Println("╠════════════════════════════════════════════╣")
@@ -271,7 +266,6 @@ func handleURLArgument(arg string) {
 
 // showMainMenu displays the main TUI menu when no arguments are provided
 func showMainMenu() {
-	fmt.Fprintf(os.Stderr, "!!!!! showMainMenu() CALLED !!!!\n")
 	// Load existing configuration or create new
 	cfg, err := config.LoadFromFile(config.GetConfigPath())
 	if err != nil {
@@ -447,7 +441,6 @@ func generateQRCode(cfg *config.Config, password string) {
 // startChatSession is deprecated - use ChatCommand instead
 // Kept for backward compatibility with the legacy --chat flag
 func startChatSession(args []string) {
-	fmt.Fprintf(os.Stderr, "!!!!! DEPRECATED startChatSession() CALLED !!!!\n")
 	var cfg *config.Config
 	
 	// Check if we have a URL/fragment argument
@@ -515,8 +508,8 @@ func startChatSession(args []string) {
 		os.Exit(1)
 	}
 	
-	// Start the chat session
-	if err := chat.StartChat(cfg); err != nil {
+	// Start the chat session using the new interface
+	if err := app.StartChatInterface(cfg); err != nil {
 		fmt.Fprintf(os.Stderr, "Error in chat session: %v\n", err)
 		os.Exit(1)
 	}

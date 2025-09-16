@@ -2,7 +2,6 @@ package app
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/hacka-re/cli/internal/chat"
 	"github.com/hacka-re/cli/internal/config"
@@ -12,13 +11,10 @@ import (
 
 // StartChatInterface starts the enhanced chat interface with all modal handlers configured
 func StartChatInterface(cfg *config.Config) error {
-	fmt.Fprintf(os.Stderr, "!!!!! app.StartChatInterface() CALLED !!!!!\n")
-	logger.Get().Info("!!!!! StartChatInterface CALLED !!!!!")
-	logger.Get().Info("Config: Provider=%s, BaseURL=%s, Model=%s", cfg.Provider, cfg.BaseURL, cfg.Model)
+	logger.Get().Info("StartChatInterface called with Provider=%s, BaseURL=%s, Model=%s", cfg.Provider, cfg.BaseURL, cfg.Model)
 
 	// Create the terminal chat with proper input handling
 	terminalChat := chat.NewTerminalChat(cfg)
-	logger.Get().Info("Created NewTerminalChat instance")
 
 	// Set up modal handlers
 	terminalChat.SetModalHandlers(chat.ModalHandlers{
@@ -106,8 +102,5 @@ func StartChatInterface(cfg *config.Config) error {
 	})
 
 	// Run the chat interface
-	logger.Get().Info("!!!!! Starting terminalChat.Run() !!!!!")
-	err := terminalChat.Run()
-	logger.Get().Info("!!!!! terminalChat.Run() returned with error: %v", err)
-	return err
+	return terminalChat.Run()
 }

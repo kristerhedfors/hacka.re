@@ -16,14 +16,12 @@ import (
 
 // LaunchTUI launches the hackare-tui interface with CLI integration
 func LaunchTUI(cfg *config.Config) error {
-	fmt.Fprintf(os.Stderr, "!!!!! LaunchTUI() CALLED !!!!\n")
 	// Wrap config for TUI compatibility
 	adaptedConfig := WrapConfig(cfg)
 
 	// Create callbacks for CLI command integration
 	callbacks := &tui.Callbacks{
 		OnStartChat: func(configInterface interface{}) error {
-			// Debug: TUI OnStartChat callback triggered
 			// Start CLI chat with enhanced terminal interface
 			return startEnhancedChat(cfg)
 		},
@@ -95,7 +93,6 @@ func LaunchTUI(cfg *config.Config) error {
 	}
 
 	// Launch the TUI
-	fmt.Fprintf(os.Stderr, "!!!!! Calling tui.LaunchTUI() !!!!\n")
 	return tui.LaunchTUI(options)
 }
 
@@ -243,11 +240,8 @@ func getStaticModels(provider string) []string {
 
 // startEnhancedChat starts the enhanced chat interface with slash commands
 func startEnhancedChat(cfg *config.Config) error {
-	// Debug: startEnhancedChat called from TUI
-
 	// Create the terminal chat with proper input handling
 	terminalChat := chat.NewTerminalChat(cfg)
-	// Debug: Created NewTerminalChat
 
 	// Set up modal handlers for /menu command
 	terminalChat.SetModalHandlers(chat.ModalHandlers{
@@ -276,6 +270,5 @@ func startEnhancedChat(cfg *config.Config) error {
 	})
 
 	// Run the chat interface
-	// fmt.Fprintf(os.Stderr, "!!!!! Calling terminalChat.Run() from startEnhancedChat !!!!\n")
 	return terminalChat.Run()
 }

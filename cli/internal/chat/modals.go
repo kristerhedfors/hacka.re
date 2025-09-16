@@ -9,8 +9,3 @@ type ModalHandlers struct {
 	OpenPrompts     func(cfg *config.Config) error  // Deprecated - use OpenTUI
 	ShowPlaceholder func(title, message string)
 }
-
-// SetModalHandlers sets the modal handler functions
-func (ec *EnhancedChat) SetModalHandlers(handlers ModalHandlers) {
-	ec.modalHandlers = handlers
-}
