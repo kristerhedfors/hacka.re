@@ -113,8 +113,8 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error: --json-dump/--view requires a URL, fragment, or encrypted data argument\n")
 		os.Exit(1)
 	} else {
-		// No arguments - show settings modal
-		showSettingsModal()
+		// No arguments - show main menu
+		showMainMenu()
 	}
 }
 
@@ -224,43 +224,24 @@ func handleURLArgument(arg string) {
 	fmt.Println()
 	displayConfig(cfg)
 
-	// Ask what to do next
-	fmt.Println("\nOptions:")
-	fmt.Println("  1. Open settings modal")
-	fmt.Println("  2. Start chat session")
-	fmt.Println("  3. Save configuration to file")
-	fmt.Println("  4. Generate QR code")
-	fmt.Println("  5. Exit")
-	fmt.Print("\nSelect option (1-5): ")
+	// Save configuration automatically
+	configPath := config.GetConfigPath()
+	if err := cfg.SaveToFile(configPath); err != nil {
+		fmt.Printf("Note: Could not save configuration: %v\n", err)
+	} else {
+		fmt.Printf("\n✓ Configuration saved to %s\n", configPath)
+	}
 
-	reader := bufio.NewReader(os.Stdin)
-	choice, _ := reader.ReadString('\n')
-	choice = strings.TrimSpace(choice)
-
-	switch choice {
-	case "1":
-		if err := integration.LaunchTUI(cfg); err != nil {
-			fmt.Fprintf(os.Stderr, "Error launching TUI: %v\n", err)
-			os.Exit(1)
-		}
-	case "2":
-		// Start chat session with loaded config
-		if err := chat.StartChat(cfg); err != nil {
-			fmt.Fprintf(os.Stderr, "Error starting chat: %v\n", err)
-		}
-	case "3":
-		saveConfiguration(cfg)
-	case "4":
-		generateQRCode(cfg, password)
-	case "5":
-		fmt.Println("Goodbye!")
-	default:
-		fmt.Println("Invalid option")
+	// Launch TUI main menu directly
+	fmt.Println("\nLaunching hacka.re interface...")
+	if err := integration.LaunchTUI(cfg); err != nil {
+		fmt.Fprintf(os.Stderr, "Error launching TUI: %v\n", err)
+		os.Exit(1)
 	}
 }
 
-// showSettingsModal displays the main menu when no arguments are provided
-func showSettingsModal() {
+// showMainMenu displays the main TUI menu when no arguments are provided
+func showMainMenu() {
 	// Load existing configuration or create new
 	cfg, err := config.LoadFromFile(config.GetConfigPath())
 	if err != nil {
@@ -268,7 +249,7 @@ func showSettingsModal() {
 		cfg = config.NewConfig()
 	}
 
-	// Launch the TUI
+	// Launch the TUI main menu
 	if err := integration.LaunchTUI(cfg); err != nil {
 		fmt.Fprintf(os.Stderr, "Error launching TUI: %v\n", err)
 		os.Exit(1)
