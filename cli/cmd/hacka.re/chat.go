@@ -17,6 +17,8 @@ func ChatCommand(args []string) {
 	chatFlags := flag.NewFlagSet("chat", flag.ExitOnError)
 	
 	// Define flags
+	chatFlags.Bool("debug", false, "Enable debug logging to /tmp/hacka_debug.log")  // Already handled in main
+	chatFlags.Bool("d", false, "Enable debug logging (short form)")  // Already handled in main
 	help := chatFlags.Bool("help", false, "Show help message")
 	helpShort := chatFlags.Bool("h", false, "Show help message (short form)")
 	
@@ -25,6 +27,7 @@ func ChatCommand(args []string) {
 		fmt.Fprintf(os.Stderr, "Usage: %s chat [OPTIONS] [URL|FRAGMENT|DATA]\n\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "Start an interactive chat session with AI models\n\n")
 		fmt.Fprintf(os.Stderr, "Options:\n")
+		fmt.Fprintf(os.Stderr, "  -d, --debug           Enable debug logging to /tmp/hacka_debug.log\n")
 		fmt.Fprintf(os.Stderr, "  -h, --help            Show this help message\n\n")
 		fmt.Fprintf(os.Stderr, "Arguments:\n")
 		fmt.Fprintf(os.Stderr, "  URL          Full hacka.re URL to load session from\n")

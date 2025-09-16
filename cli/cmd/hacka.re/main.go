@@ -19,16 +19,25 @@ import (
 )
 
 func main() {
-	// Initialize logger based on environment variable
+	// Check for --debug flag early (before subcommand parsing)
+	debugMode := false
+	for _, arg := range os.Args[1:] {
+		if arg == "--debug" || arg == "-d" {
+			debugMode = true
+			break
+		}
+	}
+
+	// Initialize logger based on environment variable or debug flag
 	logLevel := os.Getenv("HACKARE_LOG_LEVEL")
-	if logLevel == "DEBUG" || logLevel == "debug" {
+	if logLevel == "DEBUG" || logLevel == "debug" || debugMode {
 		// Use FIXED log path for consistent debugging
 		logPath := "/tmp/hacka_debug.log"
 
 		if err := logger.InitializeWithPath(logPath, true); err != nil {
 			// Only show this warning if we can't initialize logging
 			// Don't output during normal operation as it would break the TUI
-			if logLevel == "DEBUG" {
+			if logLevel == "DEBUG" || debugMode {
 				// User explicitly wants debug, so warn them
 				fmt.Fprintf(os.Stderr, "Warning: Failed to initialize debug logger: %v\n", err)
 			}
@@ -42,7 +51,18 @@ func main() {
 		logger.Get().Info("════════════════════════════════════════")
 		logger.Get().Info("NEW SESSION STARTED: %s", time.Now().Format("2006-01-02 15:04:05"))
 		logger.Get().Info("Debug log: %s", logPath)
+		logger.Get().Info("Debug mode enabled via: %s", func() string {
+			if debugMode {
+				return "--debug flag"
+			}
+			return "HACKARE_LOG_LEVEL environment variable"
+		}())
 		logger.Get().Info("════════════════════════════════════════")
+
+		// Notify user that debug mode is enabled
+		if debugMode {
+			fmt.Fprintf(os.Stderr, "Debug mode enabled. Log file: /tmp/hacka_debug.log\n")
+		}
 	}
 
 	// Check if first arg is a subcommand
@@ -73,6 +93,8 @@ func main() {
 	// Legacy chat flags for backward compatibility
 	chatMode := flag.Bool("chat", false, "(Deprecated) Use 'hacka.re chat' instead")
 	c := flag.Bool("c", false, "(Deprecated) Use 'hacka.re chat' instead")
+	flag.Bool("debug", false, "Enable debug logging to /tmp/hacka_debug.log")  // Already handled above
+	flag.Bool("d", false, "Enable debug logging (short form)")  // Already handled above
 	help := flag.Bool("help", false, "Show help message")
 	h := flag.Bool("h", false, "Show help message")
 	
@@ -130,6 +152,7 @@ func showMainHelp() {
 	fmt.Fprintf(os.Stderr, "Options:\n")
 	fmt.Fprintf(os.Stderr, "  --json-dump  Decrypt configuration and output as JSON\n")
 	fmt.Fprintf(os.Stderr, "  --view       Same as --json-dump\n")
+	fmt.Fprintf(os.Stderr, "  --debug, -d  Enable debug logging to /tmp/hacka_debug.log\n")
 	fmt.Fprintf(os.Stderr, "  --help, -h   Show this help message\n\n")
 	fmt.Fprintf(os.Stderr, "Arguments (for no command):\n")
 	fmt.Fprintf(os.Stderr, "  URL          Full hacka.re URL (https://hacka.re/#gpt=...)\n")
