@@ -4,20 +4,21 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/signal"
 	"strings"
 	"sync"
 	"syscall"
-	"time"
 
 	"github.com/hacka-re/cli/internal/api"
 	"github.com/hacka-re/cli/internal/config"
+	"github.com/hacka-re/cli/internal/logger"
 	"golang.org/x/term"
 )
 
-// SimpleChat provides a simpler terminal-based chat interface
-type SimpleChat struct {
+// TerminalChat provides an enhanced terminal chat with readline-like features
+type TerminalChat struct {
 	config         *config.Config
 	client         *api.Client
 	messages       []api.Message
@@ -27,540 +28,733 @@ type SimpleChat struct {
 	cancelFunc     context.CancelFunc
 	currentContext context.Context
 	isStreaming    bool
-	lastEscapeTime time.Time
-	reader         *bufio.Reader
+	commands       *CommandRegistry
+	modalHandlers  ModalHandlers
+
+	// Terminal state
+	currentLine    []rune
+	cursorPos      int
+	oldState       *term.State
+	termWidth      int
+	termHeight     int
 }
 
-// NewSimpleChat creates a new simple chat session
-func NewSimpleChat(cfg *config.Config) *SimpleChat {
+// NewTerminalChat creates a new terminal chat session
+func NewTerminalChat(cfg *config.Config) *TerminalChat {
+	logger.Get().Info("=============== NewTerminalChat (ENHANCED) STARTED ===============")
+	logger.Get().Info("Config Provider: %s", cfg.Provider)
+	logger.Get().Info("Config BaseURL: %s", cfg.BaseURL)
+	logger.Get().Info("Config Model: %s", cfg.Model)
+	logger.Get().Info("Config API Key length: %d", len(cfg.APIKey))
+
 	client := api.NewClient(cfg)
-	
-	chat := &SimpleChat{
-		config:     cfg,
-		client:     client,
-		messages:   []api.Message{},
-		history:    []string{},
-		historyPos: -1,
-		reader:     bufio.NewReader(os.Stdin),
+
+	chat := &TerminalChat{
+		config:      cfg,
+		client:      client,
+		messages:    []api.Message{},
+		history:     []string{},
+		historyPos:  -1,
+		commands:    NewCommandRegistry(),
+		currentLine: []rune{},
+		cursorPos:   0,
+		termWidth:   80,  // Default width
+		termHeight:  24,  // Default height
 	}
-	
+
+	// Register all commands
+	chat.registerCommands()
+
 	// Add system prompt if configured
 	if cfg.SystemPrompt != "" {
+		logger.Get().Info("Adding system prompt: %s", cfg.SystemPrompt)
 		chat.messages = append(chat.messages, api.Message{
 			Role:    "system",
 			Content: cfg.SystemPrompt,
 		})
 	}
-	
+
+	logger.Get().Info("TerminalChat created with %d initial messages", len(chat.messages))
 	return chat
 }
 
-// Run starts the interactive chat session
-func (sc *SimpleChat) Run() error {
-	// Setup signal handling for interrupts
+// registerCommands sets up all available slash commands (simplified)
+func (tc *TerminalChat) registerCommands() {
+	// Menu command - opens TUI for all configuration
+	tc.commands.Register(&Command{
+		Name:        "menu",
+		Aliases:     []string{"m", "tui"},
+		Description: "Open configuration menu",
+		Handler: func() error {
+			if tc.modalHandlers.OpenTUI != nil {
+				return tc.modalHandlers.OpenTUI()
+			}
+			return fmt.Errorf("TUI handler not configured")
+		},
+	})
+
+	// Clear command
+	tc.commands.Register(&Command{
+		Name:        "clear",
+		Aliases:     []string{"c", "cls"},
+		Description: "Clear chat history",
+		Handler: func() error {
+			tc.clearChat()
+			return nil
+		},
+	})
+
+	// Help command
+	tc.commands.Register(&Command{
+		Name:        "help",
+		Aliases:     []string{"h", "?"},
+		Description: "Show available commands",
+		Handler: func() error {
+			fmt.Println("\n" + tc.commands.GetHelp())
+			return nil
+		},
+	})
+
+	// Exit command
+	tc.commands.Register(&Command{
+		Name:        "exit",
+		Aliases:     []string{"quit", "q", "e"},
+		Description: "Exit the application",
+		Handler: func() error {
+			fmt.Println("\nGoodbye!")
+			os.Exit(0)
+			return nil
+		},
+	})
+}
+
+// SetModalHandlers sets the modal handler functions
+func (tc *TerminalChat) SetModalHandlers(handlers ModalHandlers) {
+	tc.modalHandlers = handlers
+}
+
+// Run starts the terminal chat interface
+func (tc *TerminalChat) Run() error {
+	logger.Get().Info("TerminalChat.Run() started")
+
+	// Get terminal dimensions
+	tc.updateTerminalSize()
+
+	// Setup terminal for raw mode
+	var err error
+	tc.oldState, err = term.MakeRaw(int(os.Stdin.Fd()))
+	if err != nil {
+		logger.Get().Warn("Failed to setup raw mode, falling back to simple mode: %v", err)
+		// Fall back to simple mode if raw mode fails
+		return tc.runSimpleMode()
+	}
+	defer term.Restore(int(os.Stdin.Fd()), tc.oldState)
+	logger.Get().Info("Terminal in raw mode")
+
+	// Setup signal handling
 	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT)
-	
-	// Handle Ctrl+C gracefully
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
 	go func() {
 		<-sigChan
-		sc.mu.Lock()
-		if sc.isStreaming && sc.cancelFunc != nil {
-			// First Ctrl+C interrupts streaming
-			fmt.Println("\n\n[Interrupted - press Ctrl+C again to exit]")
-			sc.cancelFunc()
-			sc.isStreaming = false
-			sc.mu.Unlock()
-			return
-		}
-		sc.mu.Unlock()
-		// Second Ctrl+C exits
-		fmt.Println("\n\nGoodbye!")
+		// Restore terminal before exit
+		term.Restore(int(os.Stdin.Fd()), tc.oldState)
+		fmt.Println("\n\nUse /exit to quit the application")
 		os.Exit(0)
 	}()
-	
-	// Show welcome message
-	sc.showWelcome()
-	
-	// Main chat loop
+
+	// Show welcome
+	tc.showWelcome()
+
+	// Main loop with raw terminal handling
 	for {
+		// Update terminal size periodically
+		tc.updateTerminalSize()
+
 		// Show prompt
-		fmt.Print("\n> ")
-		
-		// Read input line
-		input, err := sc.readInput()
+		tc.showPrompt()
+
+		// Read input with autocomplete and history
+		input, err := tc.readLineWithFeatures()
 		if err != nil {
-			if err.Error() == "exit" {
-				fmt.Println("\nGoodbye!")
-				return nil
+			if err == io.EOF {
+				fmt.Println("\nUse /exit to quit")
+				continue
 			}
-			fmt.Printf("\nError reading input: %v\n", err)
+			fmt.Printf("\nError: %v\n", err)
 			continue
 		}
-		
-		// Skip empty input
-		if strings.TrimSpace(input) == "" {
+
+		// Process input
+		if input == "" {
 			continue
 		}
-		
-		// Handle commands
-		if strings.HasPrefix(input, "/") {
-			if !sc.handleCommand(input) {
-				return nil
-			}
-			continue
-		}
-		
+
 		// Add to history
-		sc.history = append(sc.history, input)
-		sc.historyPos = len(sc.history)
-		
-		// Send message
-		sc.sendMessage(input)
-	}
-}
+		tc.addToHistory(input)
 
-// readInput reads a line of input with special key handling
-func (sc *SimpleChat) readInput() (string, error) {
-	// For now, use simple line reading
-	// In a production version, we'd use raw terminal mode for better control
-	line, err := sc.reader.ReadString('\n')
-	if err != nil {
-		return "", err
-	}
-	
-	return strings.TrimSpace(line), nil
-}
-
-// handleCommand processes slash commands
-func (sc *SimpleChat) handleCommand(cmd string) bool {
-	cmd = strings.TrimSpace(cmd)
-	parts := strings.Fields(cmd)
-	
-	if len(parts) == 0 {
-		return true
-	}
-	
-	switch parts[0] {
-	case "/clear":
-		// Clear chat history
-		sc.messages = []api.Message{}
-		if sc.config.SystemPrompt != "" {
-			sc.messages = append(sc.messages, api.Message{
-				Role:    "system",
-				Content: sc.config.SystemPrompt,
-			})
-		}
-		sc.clearScreen()
-		fmt.Println("✓ Chat history cleared")
-		
-	case "/compact":
-		// Compact history to save tokens
-		sc.compactHistory()
-		fmt.Println("✓ History compacted")
-		
-	case "/help", "/?":
-		sc.showHelp()
-		
-	case "/exit", "/quit", "/q":
-		return false
-		
-	case "/history":
-		sc.showHistory()
-		
-	case "/model":
-		if len(parts) > 1 {
-			sc.config.Model = strings.Join(parts[1:], " ")
-			fmt.Printf("✓ Model changed to: %s\n", sc.config.Model)
-			fmt.Printf("  Capabilities: %s\n", sc.client.GetModelInfo())
+		// Check for command
+		if IsCommand(input) {
+			tc.handleCommand(input)
 		} else {
-			fmt.Printf("Current model: %s\n", sc.config.Model)
-			fmt.Printf("Capabilities: %s\n", sc.client.GetModelInfo())
+			tc.processMessage(input)
 		}
-		
-	case "/system":
-		if len(parts) > 1 {
-			sc.config.SystemPrompt = strings.Join(parts[1:], " ")
-			// Update system message
-			if len(sc.messages) > 0 && sc.messages[0].Role == "system" {
-				sc.messages[0].Content = sc.config.SystemPrompt
-			} else {
-				sc.messages = append([]api.Message{{
-					Role:    "system",
-					Content: sc.config.SystemPrompt,
-				}}, sc.messages...)
+	}
+}
+
+// readLineWithFeatures reads a line with autocomplete and history support
+func (tc *TerminalChat) readLineWithFeatures() (string, error) {
+	tc.currentLine = []rune{}
+	tc.cursorPos = 0
+
+	// Buffer for reading input
+	buf := make([]byte, 1)
+
+	for {
+		// Read one byte
+		n, err := os.Stdin.Read(buf)
+		if err != nil {
+			return "", err
+		}
+		if n == 0 {
+			continue
+		}
+
+		b := buf[0]
+
+		// Handle special keys
+		switch b {
+		case 0x0D, 0x0A: // Enter
+			line := string(tc.currentLine)
+			fmt.Println() // New line after input
+
+			// Check for autocomplete if it's a partial command
+			if IsCommand(line) {
+				cmdStr, _ := ParseCommand(line)
+				if fullCmd, cmd := tc.commands.Autocomplete(cmdStr); cmd != nil && fullCmd != line {
+					// Show autocomplete suggestion
+					fmt.Printf("Executing: %s\n", fullCmd)
+					return fullCmd, nil
+				}
 			}
-			fmt.Println("✓ System prompt updated")
-		} else {
-			if sc.config.SystemPrompt != "" {
-				fmt.Printf("System prompt: %s\n", sc.config.SystemPrompt)
-			} else {
-				fmt.Println("No system prompt set")
-			}
-		}
-		
-	case "/save":
-		if len(parts) > 1 {
-			filename := strings.Join(parts[1:], " ")
-			sc.saveChat(filename)
-		} else {
-			fmt.Println("Usage: /save <filename>")
-		}
-		
-	case "/load":
-		if len(parts) > 1 {
-			filename := strings.Join(parts[1:], " ")
-			sc.loadChat(filename)
-		} else {
-			fmt.Println("Usage: /load <filename>")
-		}
-		
-	case "/tokens":
-		sc.showTokenCount()
-		
-	case "/config":
-		sc.showConfig()
-		
-	default:
-		fmt.Printf("Unknown command: %s\n", parts[0])
-		fmt.Println("Type /help for available commands")
-	}
-	
-	return true
-}
 
-// sendMessage sends a user message and gets AI response
-func (sc *SimpleChat) sendMessage(content string) {
-	// Add user message
-	userMsg := api.Message{
-		Role:    "user",
-		Content: content,
-	}
-	sc.messages = append(sc.messages, userMsg)
-	
-	// Display user message
-	fmt.Printf("\n[You]: %s\n", content)
-	
-	// Create context for this request
-	ctx, cancel := context.WithCancel(context.Background())
-	sc.mu.Lock()
-	sc.currentContext = ctx
-	sc.cancelFunc = cancel
-	sc.isStreaming = true
-	sc.mu.Unlock()
-	
-	// Start spinner animation
-	stopSpinner := sc.startSpinner()
-	
-	// Prepare for streaming response
-	var responseBuilder strings.Builder
-	firstChunk := true
-	
-	// Send request with streaming
-	response, err := sc.client.SendChatCompletion(sc.messages, func(chunk string) error {
-		// Check if context is cancelled
-		select {
-		case <-ctx.Done():
-			return fmt.Errorf("interrupted by user")
+			return line, nil
+
+		case 0x09: // Tab - autocomplete
+			line := string(tc.currentLine)
+			if IsCommand(line) {
+				tc.handleAutocomplete()
+			}
+
+		case 0x1B: // Escape sequence (arrow keys, etc.)
+			// Read next bytes for escape sequence
+			seq := make([]byte, 2)
+			os.Stdin.Read(seq)
+
+			if seq[0] == '[' {
+				switch seq[1] {
+				case 'A': // Up arrow - previous history
+					tc.navigateHistory(-1)
+				case 'B': // Down arrow - next history
+					tc.navigateHistory(1)
+				case 'C': // Right arrow
+					if tc.cursorPos < len(tc.currentLine) {
+						tc.cursorPos++
+						tc.redrawLine()
+					}
+				case 'D': // Left arrow
+					if tc.cursorPos > 0 {
+						tc.cursorPos--
+						tc.redrawLine()
+					}
+				}
+			}
+
+		case 0x7F, 0x08: // Backspace
+			if tc.cursorPos > 0 {
+				// Remove character before cursor
+				tc.currentLine = append(tc.currentLine[:tc.cursorPos-1], tc.currentLine[tc.cursorPos:]...)
+				tc.cursorPos--
+				tc.redrawLine()
+			}
+
+		case 0x03: // Ctrl+C
+			return "", io.EOF
+
+		case 0x04: // Ctrl+D
+			if len(tc.currentLine) == 0 {
+				return "", io.EOF
+			}
+
+		case 0x15: // Ctrl+U - clear line
+			tc.currentLine = []rune{}
+			tc.cursorPos = 0
+			tc.redrawLine()
+
+		case 0x17: // Ctrl+W - delete word
+			tc.deleteWord()
+
 		default:
+			// Regular character
+			if b >= 0x20 && b < 0x7F {
+				// Insert character at cursor position
+				tc.currentLine = append(tc.currentLine[:tc.cursorPos],
+					append([]rune{rune(b)}, tc.currentLine[tc.cursorPos:]...)...)
+				tc.cursorPos++
+				tc.redrawLine()
+			}
 		}
-		
-		// Print chunk directly for real-time streaming
-		if firstChunk {
-			firstChunk = false
-			stopSpinner() // Stop spinner on first chunk
-			fmt.Print("\n[AI]: ")
-		}
-		fmt.Print(chunk)
-		responseBuilder.WriteString(chunk)
-		
-		return nil
-	})
-	
-	// Stop spinner if still running (in case of error before first chunk)
-	if firstChunk {
-		stopSpinner()
 	}
-	
-	sc.mu.Lock()
-	sc.isStreaming = false
-	sc.cancelFunc = nil
-	sc.mu.Unlock()
-	
+}
+
+// handleAutocomplete handles tab completion
+func (tc *TerminalChat) handleAutocomplete() {
+	line := string(tc.currentLine)
+	cmdStr, _ := ParseCommand(line)
+
+	// Get autocomplete suggestion
+	fullCmd, cmd := tc.commands.Autocomplete(cmdStr)
+	if cmd != nil && fullCmd != line {
+		// Replace current line with autocompleted command
+		tc.currentLine = []rune(fullCmd)
+		tc.cursorPos = len(tc.currentLine)
+		tc.redrawLine()
+	} else {
+		// Show available completions
+		suggestions := tc.commands.GetSuggestions(cmdStr)
+		if len(suggestions) > 0 {
+			fmt.Println()
+
+			// Update terminal size in case it changed
+			tc.updateTerminalSize()
+
+			// Format suggestions to fit terminal width
+			for _, s := range suggestions {
+				if len(s) > tc.termWidth-4 {
+					fmt.Printf("  %s...\n", s[:tc.termWidth-7])
+				} else {
+					fmt.Printf("  %s\n", s)
+				}
+			}
+			tc.showPrompt()
+			tc.redrawLine()
+		}
+	}
+}
+
+// navigateHistory moves through command history
+func (tc *TerminalChat) navigateHistory(direction int) {
+	newPos := tc.historyPos + direction
+
+	if direction < 0 { // Up - go back in history
+		if newPos < len(tc.history) {
+			tc.historyPos = newPos
+			if tc.historyPos >= 0 && tc.historyPos < len(tc.history) {
+				// Get history item from the end
+				historyIndex := len(tc.history) - 1 - tc.historyPos
+				tc.currentLine = []rune(tc.history[historyIndex])
+				tc.cursorPos = len(tc.currentLine)
+				tc.redrawLine()
+			}
+		}
+	} else { // Down - go forward in history
+		if newPos >= 0 {
+			tc.historyPos = newPos
+			if tc.historyPos >= len(tc.history) {
+				// Past the end of history - clear line
+				tc.historyPos = -1
+				tc.currentLine = []rune{}
+				tc.cursorPos = 0
+			} else {
+				// Get history item from the end
+				historyIndex := len(tc.history) - 1 - tc.historyPos
+				tc.currentLine = []rune(tc.history[historyIndex])
+				tc.cursorPos = len(tc.currentLine)
+			}
+			tc.redrawLine()
+		}
+	}
+}
+
+// updateTerminalSize gets the current terminal dimensions
+func (tc *TerminalChat) updateTerminalSize() {
+	width, height, err := term.GetSize(int(os.Stdin.Fd()))
 	if err != nil {
-		if strings.Contains(err.Error(), "interrupted") {
-			fmt.Println("\n[Response interrupted]")
-			// Still save partial response if any
-			if responseBuilder.Len() > 0 {
-				sc.messages = append(sc.messages, api.Message{
-					Role:    "assistant",
-					Content: responseBuilder.String() + " [interrupted]",
-				})
+		// Use defaults if we can't get size
+		tc.termWidth = 80
+		tc.termHeight = 24
+	} else {
+		tc.termWidth = width
+		tc.termHeight = height
+	}
+}
+
+// redrawLine redraws the current input line
+func (tc *TerminalChat) redrawLine() {
+	// Clear current line completely
+	fmt.Print("\r\033[K")
+
+	// Calculate prompt length
+	prompt := "> "
+	promptLen := len(prompt)
+	fmt.Print(prompt)
+
+	line := string(tc.currentLine)
+	availableWidth := tc.termWidth - promptLen - 1 // Leave 1 char margin
+
+	// Handle line wrapping for display
+	displayLine := line
+	displayCursor := tc.cursorPos
+
+	// If line is too long, show a window around cursor
+	if len(line) > availableWidth {
+		// Show a sliding window centered on cursor
+		start := 0
+		if tc.cursorPos > availableWidth/2 {
+			start = tc.cursorPos - availableWidth/2
+			if start+availableWidth > len(line) {
+				start = len(line) - availableWidth
+			}
+		}
+		if start < 0 {
+			start = 0
+		}
+
+		end := start + availableWidth
+		if end > len(line) {
+			end = len(line)
+		}
+
+		displayLine = line[start:end]
+		displayCursor = tc.cursorPos - start
+
+		// Add indicators for more content
+		if start > 0 {
+			displayLine = "…" + displayLine[1:]
+		}
+		if end < len(line) {
+			displayLine = displayLine[:len(displayLine)-1] + "…"
+		}
+	}
+
+	// Check for autocomplete hint (only if at end of line)
+	if IsCommand(line) && tc.cursorPos == len(tc.currentLine) && len(displayLine) < availableWidth-10 {
+		cmdStr, _ := ParseCommand(line)
+		if fullCmd, cmd := tc.commands.Autocomplete(cmdStr); cmd != nil && fullCmd != line && strings.HasPrefix(fullCmd, line) {
+			// Show the typed part normally
+			fmt.Print(displayLine)
+			// Show the autocomplete suggestion in dim (truncate if needed)
+			hint := fullCmd[len(line):]
+			remainingSpace := availableWidth - len(displayLine)
+			if len(hint) > remainingSpace {
+				hint = hint[:remainingSpace]
+			}
+			fmt.Printf("\033[2m%s\033[0m", hint)
+			// Move cursor back to end of typed part
+			if len(hint) > 0 {
+				fmt.Printf("\033[%dD", len(hint))
 			}
 		} else {
-			fmt.Printf("\n[Error: %v]\n", err)
+			fmt.Print(displayLine)
 		}
+	} else {
+		fmt.Print(displayLine)
+	}
+
+	// Position cursor correctly
+	if displayCursor < len(displayLine) {
+		// Move cursor back to correct position
+		moveBack := len(displayLine) - displayCursor
+		if moveBack > 0 {
+			fmt.Printf("\033[%dD", moveBack)
+		}
+	}
+}
+
+// deleteWord deletes the word before cursor
+func (tc *TerminalChat) deleteWord() {
+	if tc.cursorPos == 0 {
 		return
 	}
-	
-	// Add assistant message to history
-	assistantMsg := api.Message{
-		Role:    "assistant",
-		Content: responseBuilder.String(),
+
+	// Find start of word
+	start := tc.cursorPos - 1
+	for start > 0 && tc.currentLine[start] == ' ' {
+		start--
 	}
-	
-	// If no streaming content but response has content, use it
-	if assistantMsg.Content == "" && response != nil && 
-	   len(response.Choices) > 0 {
-		assistantMsg.Content = response.Choices[0].Message.Content
-		fmt.Print(assistantMsg.Content)
+	for start > 0 && tc.currentLine[start-1] != ' ' {
+		start--
 	}
-	
-	sc.messages = append(sc.messages, assistantMsg)
-	fmt.Println() // New line after response
+
+	// Delete from start to cursor
+	tc.currentLine = append(tc.currentLine[:start], tc.currentLine[tc.cursorPos:]...)
+	tc.cursorPos = start
+	tc.redrawLine()
 }
 
-// compactHistory reduces the message history to save tokens
-func (sc *SimpleChat) compactHistory() {
-	if len(sc.messages) <= 10 {
-		return // Don't compact if history is small
+// addToHistory adds a line to history
+func (tc *TerminalChat) addToHistory(line string) {
+	// Don't add empty lines or duplicates
+	if line == "" {
+		return
 	}
-	
-	// Keep system prompt
-	compacted := []api.Message{}
-	systemIdx := -1
-	
-	for i, msg := range sc.messages {
-		if msg.Role == "system" {
-			compacted = append(compacted, msg)
-			systemIdx = i
-			break
-		}
+	if len(tc.history) > 0 && tc.history[len(tc.history)-1] == line {
+		return
 	}
-	
-	// Start after system message
-	startIdx := 0
-	if systemIdx >= 0 {
-		startIdx = systemIdx + 1
+
+	tc.history = append(tc.history, line)
+	tc.historyPos = -1 // Reset position
+
+	// Limit history size
+	if len(tc.history) > 100 {
+		tc.history = tc.history[1:]
 	}
-	
-	// Calculate how many messages to summarize
-	totalMessages := len(sc.messages) - startIdx
-	if totalMessages <= 10 {
-		return // Not enough to compact
-	}
-	
-	// Keep last 8 messages, summarize the rest
-	keepCount := 8
-	summarizeCount := totalMessages - keepCount
-	
-	// Create summary
-	summaryParts := []string{"Previous conversation summary:"}
-	for i := startIdx; i < startIdx+summarizeCount; i++ {
-		msg := sc.messages[i]
-		if msg.Role == "user" {
-			summaryParts = append(summaryParts, 
-				fmt.Sprintf("- User: %s", truncateString(msg.Content, 50)))
-		} else if msg.Role == "assistant" {
-			summaryParts = append(summaryParts,
-				fmt.Sprintf("- Assistant: %s", truncateString(msg.Content, 50)))
-		}
-	}
-	
-	// Add summary as system message
-	if len(summaryParts) > 1 {
-		compacted = append(compacted, api.Message{
-			Role:    "system",
-			Content: strings.Join(summaryParts, "\n"),
-		})
-	}
-	
-	// Keep recent messages
-	for i := startIdx + summarizeCount; i < len(sc.messages); i++ {
-		compacted = append(compacted, sc.messages[i])
-	}
-	
-	sc.messages = compacted
+}
+
+// showPrompt shows the input prompt
+func (tc *TerminalChat) showPrompt() {
+	// Show provider/model at the prompt
+	prompt := fmt.Sprintf("\n%s/%s >> ", tc.config.Provider, tc.config.Model)
+	fmt.Print(prompt)
 }
 
 // showWelcome displays the welcome message
-func (sc *SimpleChat) showWelcome() {
-	sc.clearScreen()
-	fmt.Println("╔════════════════════════════════════════════╗")
-	fmt.Println("║       hacka.re CLI - Streaming Chat        ║")
-	fmt.Println("╚════════════════════════════════════════════╝")
-	fmt.Println()
-	fmt.Printf("Model: %s\n", sc.config.Model)
-	fmt.Printf("Provider: %s\n", sc.config.Provider)
-	fmt.Printf("Capabilities: %s\n", sc.client.GetModelInfo())
-	fmt.Println()
-	fmt.Println("Commands:")
-	fmt.Println("  /help     - Show all commands")
-	fmt.Println("  /clear    - Clear chat history")
-	fmt.Println("  /compact  - Compact history (save tokens)")
-	fmt.Println("  /exit     - Exit chat")
-	fmt.Println()
-	fmt.Println("Press Ctrl+C to interrupt streaming responses")
-	fmt.Println("─" + strings.Repeat("─", 44))
-}
+func (tc *TerminalChat) showWelcome() {
+	logger.Get().Debug("showWelcome called")
 
-// showHelp displays help information
-func (sc *SimpleChat) showHelp() {
-	fmt.Println("\n╔════════════════════════════════════════════╗")
-	fmt.Println("║                  HELP                      ║")
-	fmt.Println("╚════════════════════════════════════════════╝")
-	fmt.Println()
-	fmt.Println("Commands:")
-	fmt.Println("  /help           Show this help")
-	fmt.Println("  /clear          Clear chat history")
-	fmt.Println("  /compact        Compact history to save tokens")
-	fmt.Println("  /exit, /quit    Exit chat")
-	fmt.Println("  /history        Show chat history")
-	fmt.Println("  /save <file>    Save chat to file")
-	fmt.Println("  /load <file>    Load chat from file")
-	fmt.Println("  /model <name>   Change model")
-	fmt.Println("  /system <text>  Set system prompt")
-	fmt.Println("  /tokens         Show token count estimate")
-	fmt.Println("  /config         Show current configuration")
-	fmt.Println()
-	fmt.Println("Controls:")
-	fmt.Println("  Ctrl+C          Interrupt streaming / Exit")
+	// Update terminal size before drawing
+	tc.updateTerminalSize()
+
+	fmt.Print("\033[2J\033[H") // Clear screen
+
+	// Simplified welcome - no borders, just essential info
+	fmt.Println("Chat started. Type /help for commands, /exit to quit.")
 	fmt.Println()
 }
 
-// showHistory displays the chat history
-func (sc *SimpleChat) showHistory() {
-	fmt.Println("\n" + strings.Repeat("─", 50))
-	fmt.Println("CHAT HISTORY")
-	fmt.Println(strings.Repeat("─", 50))
-	
-	for _, msg := range sc.messages {
-		switch msg.Role {
-		case "system":
-			fmt.Printf("\n[System]: %s\n", msg.Content)
-		case "user":
-			fmt.Printf("\n[You]: %s\n", msg.Content)
-		case "assistant":
-			fmt.Printf("\n[AI]: %s\n", msg.Content)
-		}
+// createBorder creates a border line that fits the terminal width
+func (tc *TerminalChat) createBorder() string {
+	width := tc.termWidth
+	if width > 80 {
+		width = 80 // Cap at 80 for readability
 	}
-	
-	fmt.Println("\n" + strings.Repeat("─", 50))
-}
-
-// showTokenCount estimates and displays token count
-func (sc *SimpleChat) showTokenCount() {
-	// Simple estimation: ~4 characters per token
-	totalChars := 0
-	for _, msg := range sc.messages {
-		totalChars += len(msg.Content)
+	if width < 20 {
+		width = 20 // Minimum width
 	}
-	
-	estimatedTokens := totalChars / 4
-	fmt.Printf("\nEstimated tokens in context: ~%d\n", estimatedTokens)
-	fmt.Printf("Messages in history: %d\n", len(sc.messages))
-}
 
-// showConfig displays current configuration
-func (sc *SimpleChat) showConfig() {
-	fmt.Println("\n" + strings.Repeat("─", 50))
-	fmt.Println("CURRENT CONFIGURATION")
-	fmt.Println(strings.Repeat("─", 50))
-	fmt.Printf("Provider:     %s\n", sc.config.Provider)
-	fmt.Printf("Base URL:     %s\n", sc.config.BaseURL)
-	fmt.Printf("Model:        %s\n", sc.config.Model)
-	fmt.Printf("Max Tokens:   %d\n", sc.config.MaxTokens)
-	fmt.Printf("Temperature:  %.2f\n", sc.config.Temperature)
-	fmt.Printf("Stream:       %v\n", sc.config.StreamResponse)
-	if sc.config.SystemPrompt != "" {
-		fmt.Printf("System:       %s\n", truncateString(sc.config.SystemPrompt, 50))
+	border := ""
+	for i := 0; i < width; i++ {
+		border += "═"
 	}
-	fmt.Println(strings.Repeat("─", 50))
+	return border
 }
 
-// saveChat saves the chat history to a file
-func (sc *SimpleChat) saveChat(filename string) {
-	file, err := os.Create(filename)
-	if err != nil {
-		fmt.Printf("Error creating file: %v\n", err)
+// centerText prints centered text within terminal width
+func (tc *TerminalChat) centerText(text string) {
+	width := tc.termWidth
+	if width > 80 {
+		width = 80
+	}
+
+	padding := (width - len(text)) / 2
+	if padding < 0 {
+		padding = 0
+	}
+
+	fmt.Printf("%*s%s\n", padding, "", text)
+}
+
+// printFormatted prints text with proper wrapping for terminal width
+func (tc *TerminalChat) printFormatted(format string, args ...interface{}) {
+	text := fmt.Sprintf(format, args...)
+
+	// For now, just print as-is if it fits
+	if len(text) <= tc.termWidth {
+		fmt.Println(text)
 		return
 	}
-	defer file.Close()
-	
-	writer := bufio.NewWriter(file)
-	for _, msg := range sc.messages {
-		fmt.Fprintf(writer, "[%s]:\n%s\n\n", msg.Role, msg.Content)
+
+	// Otherwise, truncate with ellipsis
+	if tc.termWidth > 3 {
+		fmt.Println(text[:tc.termWidth-3] + "...")
+	} else {
+		fmt.Println(text[:tc.termWidth])
 	}
-	writer.Flush()
-	
-	fmt.Printf("✓ Chat saved to %s\n", filename)
 }
 
-// loadChat loads chat history from a file
-func (sc *SimpleChat) loadChat(filename string) {
-	// This would parse the saved format and restore messages
-	fmt.Printf("Loading from %s not yet implemented\n", filename)
-}
+// runSimpleMode runs in simple mode if raw mode is not available
+func (tc *TerminalChat) runSimpleMode() error {
+	logger.Get().Info("Running in simple mode (fallback)")
+	reader := bufio.NewReader(os.Stdin)
 
-// clearScreen clears the terminal screen
-func (sc *SimpleChat) clearScreen() {
-	// ANSI escape codes for clearing screen
-	fmt.Print("\033[H\033[2J")
-}
+	// Show welcome
+	tc.showWelcome()
 
-// truncateString truncates a string to max length
-func truncateString(s string, maxLen int) string {
-	if len(s) <= maxLen {
-		return s
-	}
-	return s[:maxLen-3] + "..."
-}
-
-// startSpinner starts a spinner animation and returns a function to stop it
-func (sc *SimpleChat) startSpinner() func() {
-	done := make(chan bool)
-	stopped := false
-	
-	// Spinner characters for animation
-	spinnerChars := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
-	// Alternative ASCII spinner if Unicode doesn't work
-	// spinnerChars := []string{"|", "/", "-", "\\"}
-	
-	go func() {
-		fmt.Print("\n[AI]: ")
-		i := 0
-		for {
-			select {
-			case <-done:
-				// Clear spinner
-				fmt.Print("\r[AI]:     \r") // Clear the line
-				return
-			default:
-				fmt.Printf("\r[AI]: %s Thinking...", spinnerChars[i])
-				i = (i + 1) % len(spinnerChars)
-				time.Sleep(100 * time.Millisecond)
+	for {
+		fmt.Print("\n> ")
+		input, err := reader.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				fmt.Println("\nUse /exit to quit")
+				continue
 			}
+			return err
 		}
-	}()
-	
-	// Return stop function
-	return func() {
-		if !stopped {
-			stopped = true
-			close(done)
-			time.Sleep(150 * time.Millisecond) // Give time to clear
+
+		input = strings.TrimSpace(input)
+		if input == "" {
+			continue
+		}
+
+		// Add to history
+		tc.addToHistory(input)
+
+		// Check for command with autocomplete
+		if IsCommand(input) {
+			cmdStr, _ := ParseCommand(input)
+			if fullCmd, cmd := tc.commands.Autocomplete(cmdStr); cmd != nil && fullCmd != input {
+				fmt.Printf("Executing: %s\n", fullCmd)
+				input = fullCmd
+			}
+			tc.handleCommand(input)
+		} else {
+			tc.processMessage(input)
 		}
 	}
 }
 
-// StartChat is the main entry point for the chat interface
-func StartChat(cfg *config.Config) error {
-	// Check if terminal supports raw mode for advanced features
-	if term.IsTerminal(int(syscall.Stdin)) {
-		// Could use advanced terminal handling here
-		// For now, use simple mode
+// handleCommand processes slash commands
+func (tc *TerminalChat) handleCommand(input string) {
+	cmdStr, _ := ParseCommand(input)
+
+	cmd := tc.commands.GetCommand(cmdStr)
+	if cmd == nil {
+		fmt.Printf("Unknown command: %s\n", input)
+		fmt.Println("Type /help for available commands")
+		return
 	}
-	
-	chat := NewSimpleChat(cfg)
-	return chat.Run()
+
+	// Execute the command
+	if err := cmd.Handler(); err != nil {
+		fmt.Printf("Error executing command: %v\n", err)
+	}
+}
+
+// clearChat clears the chat history
+func (tc *TerminalChat) clearChat() {
+	logger.Get().Info("Clearing chat history")
+	oldCount := len(tc.messages)
+	tc.messages = []api.Message{}
+
+	// Re-add system prompt if configured
+	if tc.config.SystemPrompt != "" {
+		tc.messages = append(tc.messages, api.Message{
+			Role:    "system",
+			Content: tc.config.SystemPrompt,
+		})
+	}
+	logger.Get().Info("Cleared %d messages, kept system prompt: %v", oldCount, tc.config.SystemPrompt != "")
+
+	// Clear screen - simplified display
+	fmt.Print("\033[2J\033[H")
+	fmt.Println("Chat history cleared.")
+	fmt.Println()
+}
+
+// processMessage sends a message to the AI and displays the response
+func (tc *TerminalChat) processMessage(input string) {
+	logger.Get().Info("================== processMessage START (ENHANCED) ==================")
+	logger.Get().Info("User input: '%s'", input)
+
+	// Log current messages before adding new
+	logger.Get().Info("Current messages count: %d", len(tc.messages))
+	for i, msg := range tc.messages {
+		logger.Get().Debug("  Message[%d] Role=%s, Content='%s'", i, msg.Role, msg.Content)
+	}
+
+	// Add user message
+	tc.messages = append(tc.messages, api.Message{
+		Role:    "user",
+		Content: input,
+	})
+	logger.Get().Info("Added user message, total now: %d", len(tc.messages))
+
+	// Create context for this request
+	ctx, cancel := context.WithCancel(context.Background())
+	tc.mu.Lock()
+	tc.cancelFunc = cancel
+	tc.currentContext = ctx
+	tc.isStreaming = true
+	tc.mu.Unlock()
+
+	defer func() {
+		tc.mu.Lock()
+		tc.isStreaming = false
+		tc.cancelFunc = nil
+		tc.mu.Unlock()
+	}()
+
+	// Show thinking indicator (just a newline, no "AI:" prefix)
+	fmt.Print("\n")
+
+	// Update terminal size before streaming
+	tc.updateTerminalSize()
+
+	// Send request
+	var fullResponse strings.Builder
+	var currentLineLength int
+	streamCallback := func(chunk string) error {
+		select {
+		case <-ctx.Done():
+			return context.Canceled
+		default:
+			// Handle line wrapping for streaming output
+			for _, char := range chunk {
+				if char == '\n' {
+					fmt.Print("\n")
+					currentLineLength = 0
+				} else {
+					// Check if we need to wrap
+					if currentLineLength >= tc.termWidth-1 {
+						fmt.Print("\n")
+						currentLineLength = 0
+					}
+					fmt.Printf("%c", char)
+					currentLineLength++
+				}
+			}
+			fullResponse.WriteString(chunk)
+			return nil
+		}
+	}
+
+	// Use the client's SendChatCompletion method
+	var callback api.StreamCallback
+	if tc.config.StreamResponse {
+		callback = streamCallback
+	}
+
+	logger.Get().Info("Calling SendChatCompletion with %d messages", len(tc.messages))
+	logger.Get().Info("Stream mode: %v", tc.config.StreamResponse)
+
+	response, err := tc.client.SendChatCompletion(tc.messages, callback)
+	if err != nil {
+		logger.Get().Error("API call failed: %v", err)
+		fmt.Printf("\nError: %v\n", err)
+		return
+	}
+
+	logger.Get().Info("API call successful")
+
+	// Add assistant message
+	responseText := fullResponse.String()
+	if responseText == "" && response != nil && len(response.Choices) > 0 {
+		responseText = response.Choices[0].Message.Content
+		fmt.Println(responseText)
+	}
+
+	tc.messages = append(tc.messages, api.Message{
+		Role:    "assistant",
+		Content: responseText,
+	})
 }

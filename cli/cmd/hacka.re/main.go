@@ -10,25 +10,35 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/hacka-re/cli/internal/chat"
+	"github.com/hacka-re/cli/internal/app"
 	"github.com/hacka-re/cli/internal/config"
+	"github.com/hacka-re/cli/internal/integration"
 	"github.com/hacka-re/cli/internal/logger"
 	"github.com/hacka-re/cli/internal/share"
-	"github.com/hacka-re/cli/internal/ui"
 	"golang.org/x/term"
 )
 
 func main() {
-	// Initialize logger based on environment variable
+
+	// Check for --debug flag early (before subcommand parsing)
+	debugMode := false
+	for _, arg := range os.Args[1:] {
+		if arg == "--debug" || arg == "-d" {
+			debugMode = true
+			break
+		}
+	}
+
+	// Initialize logger based on environment variable or debug flag
 	logLevel := os.Getenv("HACKARE_LOG_LEVEL")
-	if logLevel == "DEBUG" || logLevel == "debug" {
+	if logLevel == "DEBUG" || logLevel == "debug" || debugMode {
 		// Use FIXED log path for consistent debugging
 		logPath := "/tmp/hacka_debug.log"
 
 		if err := logger.InitializeWithPath(logPath, true); err != nil {
 			// Only show this warning if we can't initialize logging
 			// Don't output during normal operation as it would break the TUI
-			if logLevel == "DEBUG" {
+			if logLevel == "DEBUG" || debugMode {
 				// User explicitly wants debug, so warn them
 				fmt.Fprintf(os.Stderr, "Warning: Failed to initialize debug logger: %v\n", err)
 			}
@@ -42,7 +52,18 @@ func main() {
 		logger.Get().Info("════════════════════════════════════════")
 		logger.Get().Info("NEW SESSION STARTED: %s", time.Now().Format("2006-01-02 15:04:05"))
 		logger.Get().Info("Debug log: %s", logPath)
+		logger.Get().Info("Debug mode enabled via: %s", func() string {
+			if debugMode {
+				return "--debug flag"
+			}
+			return "HACKARE_LOG_LEVEL environment variable"
+		}())
 		logger.Get().Info("════════════════════════════════════════")
+
+		// Notify user that debug mode is enabled
+		if debugMode {
+			fmt.Fprintf(os.Stderr, "Debug mode enabled. Log file: /tmp/hacka_debug.log\n")
+		}
 	}
 
 	// Check if first arg is a subcommand
@@ -73,6 +94,8 @@ func main() {
 	// Legacy chat flags for backward compatibility
 	chatMode := flag.Bool("chat", false, "(Deprecated) Use 'hacka.re chat' instead")
 	c := flag.Bool("c", false, "(Deprecated) Use 'hacka.re chat' instead")
+	flag.Bool("debug", false, "Enable debug logging to /tmp/hacka_debug.log")  // Already handled above
+	flag.Bool("d", false, "Enable debug logging (short form)")  // Already handled above
 	help := flag.Bool("help", false, "Show help message")
 	h := flag.Bool("h", false, "Show help message")
 	
@@ -113,8 +136,8 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error: --json-dump/--view requires a URL, fragment, or encrypted data argument\n")
 		os.Exit(1)
 	} else {
-		// No arguments - show settings modal
-		showSettingsModal()
+		// No arguments - show main menu
+		showMainMenu()
 	}
 }
 
@@ -130,6 +153,7 @@ func showMainHelp() {
 	fmt.Fprintf(os.Stderr, "Options:\n")
 	fmt.Fprintf(os.Stderr, "  --json-dump  Decrypt configuration and output as JSON\n")
 	fmt.Fprintf(os.Stderr, "  --view       Same as --json-dump\n")
+	fmt.Fprintf(os.Stderr, "  --debug, -d  Enable debug logging to /tmp/hacka_debug.log\n")
 	fmt.Fprintf(os.Stderr, "  --help, -h   Show this help message\n\n")
 	fmt.Fprintf(os.Stderr, "Arguments (for no command):\n")
 	fmt.Fprintf(os.Stderr, "  URL          Full hacka.re URL (https://hacka.re/#gpt=...)\n")
@@ -224,40 +248,24 @@ func handleURLArgument(arg string) {
 	fmt.Println()
 	displayConfig(cfg)
 
-	// Ask what to do next
-	fmt.Println("\nOptions:")
-	fmt.Println("  1. Open settings modal")
-	fmt.Println("  2. Start chat session")
-	fmt.Println("  3. Save configuration to file")
-	fmt.Println("  4. Generate QR code")
-	fmt.Println("  5. Exit")
-	fmt.Print("\nSelect option (1-5): ")
+	// Save configuration automatically
+	configPath := config.GetConfigPath()
+	if err := cfg.SaveToFile(configPath); err != nil {
+		fmt.Printf("Note: Could not save configuration: %v\n", err)
+	} else {
+		fmt.Printf("\n✓ Configuration saved to %s\n", configPath)
+	}
 
-	reader := bufio.NewReader(os.Stdin)
-	choice, _ := reader.ReadString('\n')
-	choice = strings.TrimSpace(choice)
-
-	switch choice {
-	case "1":
-		ui.ShowMainMenu(cfg)  // Use main menu instead of direct settings
-	case "2":
-		// Start chat session with loaded config
-		if err := chat.StartChat(cfg); err != nil {
-			fmt.Fprintf(os.Stderr, "Error starting chat: %v\n", err)
-		}
-	case "3":
-		saveConfiguration(cfg)
-	case "4":
-		generateQRCode(cfg, password)
-	case "5":
-		fmt.Println("Goodbye!")
-	default:
-		fmt.Println("Invalid option")
+	// Launch TUI main menu directly
+	fmt.Println("\nLaunching hacka.re interface...")
+	if err := integration.LaunchTUI(cfg); err != nil {
+		fmt.Fprintf(os.Stderr, "Error launching TUI: %v\n", err)
+		os.Exit(1)
 	}
 }
 
-// showSettingsModal displays the main menu when no arguments are provided
-func showSettingsModal() {
+// showMainMenu displays the main TUI menu when no arguments are provided
+func showMainMenu() {
 	// Load existing configuration or create new
 	cfg, err := config.LoadFromFile(config.GetConfigPath())
 	if err != nil {
@@ -265,8 +273,11 @@ func showSettingsModal() {
 		cfg = config.NewConfig()
 	}
 
-	// Show the main menu (which includes settings option)
-	ui.ShowMainMenu(cfg)
+	// Launch the TUI main menu
+	if err := integration.LaunchTUI(cfg); err != nil {
+		fmt.Fprintf(os.Stderr, "Error launching TUI: %v\n", err)
+		os.Exit(1)
+	}
 }
 
 // getPassword securely reads a password from stdin
@@ -419,10 +430,8 @@ func generateQRCode(cfg *config.Config, password string) {
 	}
 	
 	// Generate QR code
-	if err := ui.ShowQRCode(url); err != nil {
-		fmt.Fprintf(os.Stderr, "Error generating QR code: %v\n", err)
-		return
-	}
+	fmt.Println("QR code generation has been moved to the TUI interface.")
+	fmt.Println("Use the TUI settings to generate QR codes for sharing.")
 	
 	fmt.Println("\n✓ QR code generated successfully!")
 	fmt.Printf("\nShareable URL:\n%s\n", url)
@@ -467,8 +476,11 @@ func startChatSession(args []string) {
 			fmt.Println("No configuration found. Please configure API settings first.")
 			cfg = config.NewConfig()
 			
-			// Show settings UI first
-			ui.ShowSettingsV2Working(cfg)
+			// Launch TUI for configuration
+			if err := integration.LaunchTUI(cfg); err != nil {
+				fmt.Fprintf(os.Stderr, "Error launching TUI: %v\n", err)
+				return
+			}
 			
 			// Ask if they want to continue to chat
 			fmt.Print("\nConfiguration saved. Start chat session? (y/n): ")
@@ -496,8 +508,8 @@ func startChatSession(args []string) {
 		os.Exit(1)
 	}
 	
-	// Start the chat session
-	if err := chat.StartChat(cfg); err != nil {
+	// Start the chat session using the new interface
+	if err := app.StartChatInterface(cfg); err != nil {
 		fmt.Fprintf(os.Stderr, "Error in chat session: %v\n", err)
 		os.Exit(1)
 	}

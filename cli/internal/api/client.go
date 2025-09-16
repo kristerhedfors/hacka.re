@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
 	"github.com/hacka-re/cli/internal/config"
+	"github.com/hacka-re/cli/internal/logger"
 )
 
 // Client represents an OpenAI-compatible API client
@@ -24,6 +24,10 @@ type Client struct {
 
 // NewClient creates a new API client
 func NewClient(cfg *config.Config) *Client {
+	logger.Get().Info("Creating new API client")
+	logger.Get().Debug("Config - Provider: %s, BaseURL: %s, Model: %s",
+		cfg.Provider, cfg.BaseURL, cfg.Model)
+
 	return &Client{
 		config: cfg,
 		httpClient: &http.Client{
@@ -81,6 +85,8 @@ type StreamCallback func(chunk string) error
 
 // SendChatCompletion sends a chat completion request
 func (c *Client) SendChatCompletion(messages []Message, streamCallback StreamCallback) (*ChatResponse, error) {
+	logger.Get().Debug("SendChatCompletion called with %d messages", len(messages))
+
 	// Build request with model-appropriate parameters
 	request := c.modelCompat.BuildCompatibleRequest(
 		c.config.Model,
@@ -90,32 +96,47 @@ func (c *Client) SendChatCompletion(messages []Message, streamCallback StreamCal
 		c.config.StreamResponse && streamCallback != nil,
 	)
 
+	logger.Get().Debug("Request parameters: model=%s, maxTokens=%d, temperature=%f, stream=%v",
+		request.Model, request.MaxTokens, request.Temperature, request.Stream)
+
 	// First attempt
 	response, err := c.sendRequestWithRetry(request, messages, streamCallback)
 	if err != nil {
+		logger.Get().Error("API request failed: %v", err)
 		// Try to fix the request based on the error
 		if fixedRequest, canRetry := c.modelCompat.HandleAPIError(err, request); canRetry {
 			// Log the retry attempt
-			fmt.Fprintf(os.Stderr, "\n[Retrying with adjusted parameters...]\n")
+			logger.Get().Info("Retrying with adjusted parameters")
+			logger.Get().Debug("Retrying with adjusted parameters")
 			return c.sendRequestWithRetry(*fixedRequest, messages, streamCallback)
 		}
 	}
-	
+
 	return response, err
 }
 
 // sendRequestWithRetry sends the actual request
 func (c *Client) sendRequestWithRetry(request ChatRequest, messages []Message, streamCallback StreamCallback) (*ChatResponse, error) {
+	logger.Get().Debug("sendRequestWithRetry called")
+
 	// Marshal request
 	body, err := json.Marshal(request)
 	if err != nil {
+		logger.Get().Error("Failed to marshal request: %v", err)
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
+	logger.Get().Debug("Request body: %s", string(body))
+
 	// Create HTTP request
 	url := strings.TrimSuffix(c.config.BaseURL, "/") + "/chat/completions"
+	logger.Get().Debug("Base URL: %s, Final URL: %s", c.config.BaseURL, url)
+	logger.Get().Info("API URL: %s", url)
+	logger.Get().Debug("Base URL from config: %s", c.config.BaseURL)
+
 	req, err := http.NewRequest("POST", url, bytes.NewReader(body))
 	if err != nil {
+		logger.Get().Error("Failed to create request: %v", err)
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
@@ -123,18 +144,29 @@ func (c *Client) sendRequestWithRetry(request ChatRequest, messages []Message, s
 	req.Header.Set("Content-Type", "application/json")
 	if c.config.APIKey != "" {
 		req.Header.Set("Authorization", "Bearer "+c.config.APIKey)
+		logger.Get().Debug("API Key set (length: %d)", len(c.config.APIKey))
+	} else {
+		logger.Get().Warn("No API key configured")
 	}
 
+	logger.Get().Debug("Request headers: %v", req.Header)
+
 	// Send request
+	logger.Get().Info("Sending HTTP request to: %s", url)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
+		logger.Get().Error("HTTP request failed: %v", err)
 		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
 	defer resp.Body.Close()
 
+	logger.Get().Info("Response status code: %d", resp.StatusCode)
+	logger.Get().Debug("Response headers: %v", resp.Header)
+
 	// Check status code
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
+		logger.Get().Error("API error (status %d): %s", resp.StatusCode, string(body))
 		return nil, fmt.Errorf("API error (status %d): %s", resp.StatusCode, string(body))
 	}
 

@@ -7,16 +7,19 @@ import (
 
 	"github.com/hacka-re/cli/internal/app"
 	"github.com/hacka-re/cli/internal/config"
+	"github.com/hacka-re/cli/internal/integration"
 	"github.com/hacka-re/cli/internal/share"
-	"github.com/hacka-re/cli/internal/ui"
 )
 
 // ChatCommand handles the chat subcommand
 func ChatCommand(args []string) {
+
 	// Create a new flagset for the chat command
 	chatFlags := flag.NewFlagSet("chat", flag.ExitOnError)
 	
 	// Define flags
+	chatFlags.Bool("debug", false, "Enable debug logging to /tmp/hacka_debug.log")  // Already handled in main
+	chatFlags.Bool("d", false, "Enable debug logging (short form)")  // Already handled in main
 	help := chatFlags.Bool("help", false, "Show help message")
 	helpShort := chatFlags.Bool("h", false, "Show help message (short form)")
 	
@@ -25,6 +28,7 @@ func ChatCommand(args []string) {
 		fmt.Fprintf(os.Stderr, "Usage: %s chat [OPTIONS] [URL|FRAGMENT|DATA]\n\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "Start an interactive chat session with AI models\n\n")
 		fmt.Fprintf(os.Stderr, "Options:\n")
+		fmt.Fprintf(os.Stderr, "  -d, --debug           Enable debug logging to /tmp/hacka_debug.log\n")
 		fmt.Fprintf(os.Stderr, "  -h, --help            Show this help message\n\n")
 		fmt.Fprintf(os.Stderr, "Arguments:\n")
 		fmt.Fprintf(os.Stderr, "  URL          Full hacka.re URL to load session from\n")
@@ -121,15 +125,18 @@ func startChatWithArgs(args []string) {
 			// No existing config, create new one or show settings
 			fmt.Println("No configuration found. Please configure API settings first.")
 			cfg = config.NewConfig()
-			
-			// Show settings UI first
-			ui.ShowSettingsV2(cfg)
-			
+
+			// Launch TUI for configuration
+			if err := integration.LaunchTUI(cfg); err != nil {
+				fmt.Fprintf(os.Stderr, "Error launching TUI: %v\n", err)
+				return
+			}
+
 			// Ask if they want to continue to chat
 			fmt.Print("\nConfiguration saved. Start chat session? (y/n): ")
 			var response string
 			fmt.Scanln(&response)
-			
+
 			if response != "y" && response != "yes" {
 				fmt.Println("Goodbye!")
 				return
