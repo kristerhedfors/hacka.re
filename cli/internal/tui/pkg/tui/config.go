@@ -1,6 +1,6 @@
 package tui
 
-import "github.com/hacka-re/tui/pkg/interfaces"
+import "github.com/hacka-re/cli/internal/tui/pkg/interfaces"
 
 // Re-export the interfaces for convenience
 type ExternalConfig = interfaces.ExternalConfig

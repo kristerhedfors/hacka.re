@@ -6,10 +6,10 @@ import (
 	"log"
 	"os"
 
-	"github.com/hacka-re/tui/internal/core"
-	"github.com/hacka-re/tui/internal/modes/rich"
-	"github.com/hacka-re/tui/internal/modes/socket"
-	"github.com/hacka-re/tui/internal/transport"
+	"github.com/hacka-re/cli/internal/tui/internal/core"
+	"github.com/hacka-re/cli/internal/tui/internal/modes/rich"
+	"github.com/hacka-re/cli/internal/tui/internal/modes/socket"
+	"github.com/hacka-re/cli/internal/tui/internal/transport"
 )
 
 func main() {

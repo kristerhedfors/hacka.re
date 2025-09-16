@@ -2,7 +2,7 @@ package integration
 
 import (
 	"github.com/hacka-re/cli/internal/config"
-	"github.com/hacka-re/tui/pkg/interfaces"
+	"github.com/hacka-re/cli/internal/tui/pkg/interfaces"
 )
 
 // CLIConfigAdapter makes CLI config compatible with hackare-tui

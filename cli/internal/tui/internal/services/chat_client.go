@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hacka-re/tui/internal/core"
+	"github.com/hacka-re/cli/internal/tui/internal/core"
 )
 
 // ChatClient handles API communication for chat

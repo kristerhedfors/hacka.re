@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/hacka-re/tui/internal/core"
-	"github.com/hacka-re/tui/internal/services"
+	"github.com/hacka-re/cli/internal/tui/internal/core"
+	"github.com/hacka-re/cli/internal/tui/internal/services"
 )
 
 // ChatPanel represents the chat interface panel
@@ -346,19 +346,19 @@ func (cp *ChatPanel) streamResponse() {
 
 // Draw renders the chat panel
 func (cp *ChatPanel) Draw() {
-	// Draw border
-	cp.drawBorder()
+	// Draw border - DISABLED for frameless chat
+	// cp.drawBorder()
 
-	// Draw title
-	title := "Chat Interface - ESC to return"
-	if cp.isStreaming {
-		title = "Chat Interface - Streaming... - ESC to return"
-	}
-	titleX := cp.x + (cp.width-len(title))/2
-	style := tcell.StyleDefault.Foreground(tcell.ColorGreen).Bold(true)
-	for i, r := range title {
-		cp.screen.SetContent(titleX+i, cp.y, r, nil, style)
-	}
+	// Draw title - DISABLED for frameless chat
+	// title := "Chat Interface - ESC to return"
+	// if cp.isStreaming {
+	// 	title = "Chat Interface - Streaming... - ESC to return"
+	// }
+	// titleX := cp.x + (cp.width-len(title))/2
+	// style := tcell.StyleDefault.Foreground(tcell.ColorGreen).Bold(true)
+	// for i, r := range title {
+	// 	cp.screen.SetContent(titleX+i, cp.y, r, nil, style)
+	// }
 
 	// Show API info
 	config := cp.config.Get()

@@ -1,8 +1,8 @@
 package adapters
 
 import (
-	"github.com/hacka-re/tui/internal/core"
-	"github.com/hacka-re/tui/pkg/interfaces"
+	"github.com/hacka-re/cli/internal/tui/internal/core"
+	"github.com/hacka-re/cli/internal/tui/pkg/interfaces"
 )
 
 // AdaptExternalConfig adapts external configuration to internal TUI config

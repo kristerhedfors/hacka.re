@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/hacka-re/tui/internal/core"
+	"github.com/hacka-re/cli/internal/tui/internal/core"
 )
 
 // FieldType represents the type of settings field

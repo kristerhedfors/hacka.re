@@ -10,7 +10,7 @@ import (
 	"github.com/hacka-re/cli/internal/chat"
 	"github.com/hacka-re/cli/internal/config"
 	"github.com/hacka-re/cli/internal/share"
-	"github.com/hacka-re/tui/pkg/tui"
+	"github.com/hacka-re/cli/internal/tui/pkg/tui"
 	"golang.org/x/term"
 )
 

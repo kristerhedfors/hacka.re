@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/hacka-re/tui/pkg/interfaces"
-	"github.com/hacka-re/tui/pkg/tui"
+	"github.com/hacka-re/cli/internal/tui/pkg/interfaces"
+	"github.com/hacka-re/cli/internal/tui/pkg/tui"
 )
 
 // ExampleConfig implements the ExternalConfig interface

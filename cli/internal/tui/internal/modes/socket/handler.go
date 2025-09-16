@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/hacka-re/tui/internal/core"
+	"github.com/hacka-re/cli/internal/tui/internal/core"
 )
 
 // Handler manages the socket mode interface

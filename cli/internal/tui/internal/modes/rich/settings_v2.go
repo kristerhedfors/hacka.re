@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/hacka-re/tui/internal/core"
+	"github.com/hacka-re/cli/internal/tui/internal/core"
 )
 
 // SettingsMenuItem implements MenuItem for settings fields
