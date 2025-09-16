@@ -17,6 +17,7 @@ type App struct {
 
 	mainMenu      *FilterableMenu
 	settingsModal *SettingsModalV2
+	chatPanel     *ChatPanel
 	currentPanel  Panel
 	running       bool
 	needsRedraw   bool
@@ -366,6 +367,16 @@ func (a *App) handleKeyEvent(ev *tcell.EventKey) {
 			a.needsRedraw = true
 		}
 
+	case PanelChat:
+		if a.chatPanel != nil {
+			done := a.chatPanel.HandleInput(ev)
+			if done {
+				a.currentPanel = PanelMainMenu
+				a.chatPanel = nil // Reset chat panel to save memory
+			}
+			a.needsRedraw = true
+		}
+
 	default:
 		// Handle other panels
 		if ev.Key() == tcell.KeyEscape {
@@ -389,7 +400,9 @@ func (a *App) draw() {
 		}
 
 	case PanelChat:
-		a.drawPlaceholder("Chat Panel", "Chat interface coming soon.\nPress ESC to return to main menu.")
+		if a.chatPanel != nil {
+			a.chatPanel.Draw()
+		}
 
 	case PanelPrompts:
 		a.drawPlaceholder("Prompts Panel", "Prompt management coming soon.\nPress ESC to return to main menu.")
@@ -475,7 +488,19 @@ func (a *App) showSettings() error {
 }
 
 func (a *App) showChat() error {
-	// Chat panel implementation
+	// Create chat panel if it doesn't exist
+	if a.chatPanel == nil {
+		a.chatPanel = NewChatPanel(a.screen, a.config, a.state, a.eventBus)
+	}
+
+	// Update panel dimensions in case screen size changed
+	w, h := a.screen.Size()
+	padding := 2
+	a.chatPanel.SetDimensions(w-(padding*2), h-(padding*2))
+	a.chatPanel.SetPosition(padding, padding)
+
+	a.currentPanel = PanelChat
+	a.needsRedraw = true
 	return nil
 }
 

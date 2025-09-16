@@ -22,8 +22,8 @@ func LaunchTUI(cfg *config.Config) error {
 	// Create callbacks for CLI command integration
 	callbacks := &tui.Callbacks{
 		OnStartChat: func(configInterface interface{}) error {
-			// Start CLI chat with current config
-			return chat.StartChat(cfg)
+			// Start CLI chat with enhanced terminal interface
+			return startEnhancedChat(cfg)
 		},
 
 		OnBrowse: func(configInterface interface{}) error {
@@ -119,7 +119,7 @@ func LaunchTUIWithMode(cfg *config.Config, mode string) error {
 func createCallbacks(cfg *config.Config) *tui.Callbacks {
 	return &tui.Callbacks{
 		OnStartChat: func(configInterface interface{}) error {
-			return chat.StartChat(cfg)
+			return startEnhancedChat(cfg)
 		},
 
 		OnBrowse: func(configInterface interface{}) error {
@@ -236,4 +236,39 @@ func getStaticModels(provider string) []string {
 	default:
 		return []string{"custom-model"}
 	}
+}
+
+// startEnhancedChat starts the enhanced chat interface with slash commands
+func startEnhancedChat(cfg *config.Config) error {
+	// Create the terminal chat with proper input handling
+	terminalChat := chat.NewTerminalChat(cfg)
+
+	// Set up modal handlers for /menu command
+	terminalChat.SetModalHandlers(chat.ModalHandlers{
+		OpenTUI: func() error {
+			// Clear screen for modal
+			fmt.Print("\033[2J\033[H")
+
+			// Launch TUI main menu
+			if err := LaunchTUI(cfg); err != nil {
+				return err
+			}
+
+			// Always save configuration when exiting TUI
+			configPath := config.GetConfigPath()
+			cfg.SaveToFile(configPath)
+
+			// Clear and redraw chat interface
+			fmt.Print("\033[2J\033[H")
+			fmt.Println("═══════════════════════════════════════════════════════")
+			fmt.Println("  hacka.re CLI - Chat Interface")
+			fmt.Println("  Configuration updated • Type /help for commands")
+			fmt.Println("═══════════════════════════════════════════════════════")
+
+			return nil
+		},
+	})
+
+	// Run the chat interface
+	return terminalChat.Run()
 }

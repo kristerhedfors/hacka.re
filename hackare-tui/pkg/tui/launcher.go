@@ -147,6 +147,7 @@ func LaunchTUI(options *LaunchOptions) error {
 			return fmt.Errorf("rich mode error: %w", err)
 		}
 
+
 	socketMode:
 		fallthrough
 	case core.ModeSocket:
