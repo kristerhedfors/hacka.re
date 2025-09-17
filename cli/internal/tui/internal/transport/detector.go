@@ -75,6 +75,15 @@ func (d *Detector) Detect() (*Capabilities, error) {
 
 // RecommendMode suggests the best UI mode based on capabilities
 func (d *Detector) RecommendMode() core.UIMode {
+	// ============================================================
+	// SOCKET MODE IS CURRENTLY DISABLED - WORKING ON TUI ONLY
+	// ============================================================
+	// Always use rich TUI mode regardless of terminal capabilities
+	// Socket mode is disabled while we focus on TUI development
+	// TODO: Re-enable socket mode detection after TUI is complete
+	return core.ModeRich
+
+	/* ORIGINAL SOCKET MODE DETECTION - DISABLED FOR NOW
 	// If not a terminal at all, use socket mode
 	if !d.caps.IsTerminal {
 		return core.ModeSocket
@@ -107,6 +116,7 @@ func (d *Detector) RecommendMode() core.UIMode {
 
 	// Otherwise, rich mode should work
 	return core.ModeRich
+	*/
 }
 
 // detectColorSupport checks for color terminal support

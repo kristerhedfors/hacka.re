@@ -21,13 +21,17 @@ type FunctionsPage struct {
 	maxScroll         int
 	selectedFunction  *share.Function
 	functionPreview   []string
+	selectedGroup     int  // 0 = default functions, 1 = custom functions
+	focusedOnGroup    bool // true if focused on a group header
 }
 
 // NewFunctionsPage creates a new function calling configuration page
 func NewFunctionsPage(screen tcell.Screen, config *core.ConfigManager, state *core.AppState, eventBus *core.EventBus) *FunctionsPage {
 	page := &FunctionsPage{
-		BasePage:     NewBasePage(screen, config, state, eventBus, "Function Calling", PageTypeFunctions),
-		scrollOffset: 0,
+		BasePage:       NewBasePage(screen, config, state, eventBus, "Function Calling", PageTypeFunctions),
+		scrollOffset:   0,
+		selectedGroup:  0,    // Start with default functions selected
+		focusedOnGroup: true, // Start focused on group header
 	}
 
 	w, h := screen.Size()
@@ -167,8 +171,17 @@ func (fp *FunctionsPage) Draw() {
 	// Clear screen
 	fp.ClearContent()
 
-	// Draw header
+	// Draw header with scroll indicator
 	fp.DrawHeader()
+
+	// Draw scroll position indicator
+	if fp.maxScroll > 0 {
+		scrollInfo := fmt.Sprintf("Scroll: %d/%d", fp.scrollOffset, fp.maxScroll)
+		scrollStyle := tcell.StyleDefault.Foreground(tcell.ColorGray)
+		for i, ch := range scrollInfo {
+			fp.screen.SetContent(w-len(scrollInfo)-2+i, 3, ch, nil, scrollStyle)
+		}
+	}
 
 	// Draw info icon
 	fp.infoIcon.Draw()
@@ -177,15 +190,34 @@ func (fp *FunctionsPage) Draw() {
 	fp.drawContentBorder(2, 5, w-4, h-8)
 
 	// Draw expandable groups with scroll support
-	currentY := 6
+	// When scrollOffset increases, content should move UP (decrease Y)
+	baseY := 6
+	currentY := baseY - fp.scrollOffset
+
+	// Draw selection indicator for the focused group
+	if fp.selectedGroup == 0 && fp.focusedOnGroup {
+		// Highlight default functions header
+		selectionStyle := tcell.StyleDefault.Background(tcell.ColorDarkBlue).Foreground(tcell.ColorYellow)
+		for x := 2; x < w-2; x++ {
+			fp.screen.SetContent(x, currentY, ' ', nil, selectionStyle)
+		}
+	}
 
 	// Default functions group
-	fp.defaultFunctions.SetExpanded(true) // Always expanded in read-only view
+	fp.defaultFunctions.Y = currentY
 	linesDrawn := fp.defaultFunctions.Draw()
 	currentY += linesDrawn + 1
 
+	// Draw selection indicator for custom functions
+	if fp.selectedGroup == 1 && fp.focusedOnGroup {
+		// Highlight custom functions header
+		selectionStyle := tcell.StyleDefault.Background(tcell.ColorDarkBlue).Foreground(tcell.ColorYellow)
+		for x := 2; x < w-2; x++ {
+			fp.screen.SetContent(x, currentY, ' ', nil, selectionStyle)
+		}
+	}
+
 	// Custom functions group
-	fp.customFunctions.SetExpanded(true) // Always expanded in read-only view
 	fp.customFunctions.Y = currentY
 	linesDrawn = fp.customFunctions.Draw()
 	currentY += linesDrawn
@@ -199,7 +231,7 @@ func (fp *FunctionsPage) Draw() {
 	fp.tokenUsageBar.Draw()
 
 	// Draw instructions
-	instructions := " I:Info | ↑↓:Scroll | Enter:View Function | ESC:Back "
+	instructions := " ↑↓:Navigate | Space/Enter:Expand/Collapse | I:Info | ESC:Back "
 	instructionStyle := tcell.StyleDefault.Foreground(tcell.ColorYellow)
 	fp.DrawCenteredText(h-2, instructions, instructionStyle)
 }
@@ -344,20 +376,38 @@ func (fp *FunctionsPage) HandleInput(ev *tcell.EventKey) bool {
 		return true // Exit the page
 
 	case tcell.KeyUp:
-		if fp.scrollOffset > 0 {
+		// Navigate between groups or scroll
+		if fp.selectedGroup > 0 {
+			fp.selectedGroup = 0
+			fp.focusedOnGroup = true
+		} else if fp.scrollOffset > 0 {
 			fp.scrollOffset--
 		}
 		return false
 
 	case tcell.KeyDown:
-		if fp.scrollOffset < fp.maxScroll {
-			fp.scrollOffset++
+		// Navigate between groups or scroll
+		if fp.selectedGroup < 1 {
+			fp.selectedGroup = 1
+			fp.focusedOnGroup = true
+		} else {
+			// Allow scrolling down if there's more content
+			fp.maxScroll = 10 // Approximate for now
+			if fp.scrollOffset < fp.maxScroll {
+				fp.scrollOffset++
+			}
 		}
 		return false
 
 	case tcell.KeyEnter:
-		// Toggle selected group expansion or show function details
-		// In read-only mode, we just show the preview
+		// Toggle expansion of currently selected group
+		if fp.focusedOnGroup {
+			if fp.selectedGroup == 0 {
+				fp.defaultFunctions.Toggle()
+			} else {
+				fp.customFunctions.Toggle()
+			}
+		}
 		return false
 
 	case tcell.KeyRune:
@@ -368,8 +418,8 @@ func (fp *FunctionsPage) HandleInput(ev *tcell.EventKey) bool {
 			return false
 
 		case ' ':
-			// Toggle expansion of focused group
-			if fp.defaultFunctions.IsExpanded() {
+			// Toggle expansion of currently selected group
+			if fp.selectedGroup == 0 {
 				fp.defaultFunctions.Toggle()
 			} else {
 				fp.customFunctions.Toggle()

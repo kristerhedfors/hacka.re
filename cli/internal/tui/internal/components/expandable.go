@@ -66,6 +66,11 @@ func (eg *ExpandableGroup) ClearItems() {
 // Draw renders the expandable group
 func (eg *ExpandableGroup) Draw() int {
 	currentY := eg.Y
+	_, h := eg.screen.Size()
+
+	// Define content area bounds (leaving space for header/footer)
+	minY := 6  // Start of content area
+	maxY := h - 4 // End of content area
 
 	// Draw the header with expand/collapse indicator
 	indicator := "▶"
@@ -73,35 +78,45 @@ func (eg *ExpandableGroup) Draw() int {
 		indicator = "▼"
 	}
 
-	// Draw indicator and title
-	headerStyle := eg.style.Bold(true)
-	DrawText(eg.screen, eg.X, currentY, indicator+" "+eg.title, headerStyle)
+	// Only draw if within visible bounds
+	if currentY >= minY && currentY < maxY {
+		// Draw indicator and title
+		headerStyle := eg.style.Bold(true)
+		DrawText(eg.screen, eg.X, currentY, indicator+" "+eg.title, headerStyle)
+	}
 	currentY++
 
 	// If expanded, draw the items
 	if eg.isExpanded {
 		for _, item := range eg.items {
-			x := eg.X + 2 // Base indentation for items
-			if item.Indented {
-				x += 2 // Additional indentation
+			// Skip items outside visible bounds
+			if currentY >= maxY {
+				break // Stop drawing if we've gone below visible area
 			}
 
-			text := item.Text
-			if item.IsCheckbox {
-				checkbox := "[ ]"
-				if item.IsChecked {
-					checkbox = "[x]"
+			if currentY >= minY {
+				x := eg.X + 2 // Base indentation for items
+				if item.Indented {
+					x += 2 // Additional indentation
 				}
-				text = checkbox + " " + text
-			}
 
-			// Truncate text if too long
-			maxLen := eg.width - (x - eg.X)
-			if len(text) > maxLen && maxLen > 3 {
-				text = text[:maxLen-3] + "..."
-			}
+				text := item.Text
+				if item.IsCheckbox {
+					checkbox := "[ ]"
+					if item.IsChecked {
+						checkbox = "[x]"
+					}
+					text = checkbox + " " + text
+				}
 
-			DrawText(eg.screen, x, currentY, text, item.Style)
+				// Truncate text if too long
+				maxLen := eg.width - (x - eg.X)
+				if len(text) > maxLen && maxLen > 3 {
+					text = text[:maxLen-3] + "..."
+				}
+
+				DrawText(eg.screen, x, currentY, text, item.Style)
+			}
 			currentY++
 		}
 	}

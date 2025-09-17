@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"fmt"
+	// "fmt" // Unused - socket mode disabled
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
@@ -251,6 +251,9 @@ Share links allow you to transfer settings between devices securely.`,
 		},
 	})
 
+	/* ============================================================
+	   SOCKET MODE OPTION DISABLED - WORKING ON TUI ONLY
+	   ============================================================
 	a.mainMenu.AddItem(&components.BasicMenuItem{
 		Number:      7,
 		Title:       "Switch to Socket Mode",
@@ -271,9 +274,10 @@ Useful for SSH, telnet, or serial connections.`,
 			return fmt.Errorf("switching to socket mode")
 		},
 	})
+	*/
 
 	a.mainMenu.AddItem(&components.BasicMenuItem{
-		Number:      8,
+		Number:      7,
 		Title:       "About",
 		Description: "About hacka.re Terminal UI",
 		Info: `hacka.re Terminal UI v2.0
@@ -295,7 +299,7 @@ Built with Go, tcell, and love.`,
 	})
 
 	a.mainMenu.AddItem(&components.BasicMenuItem{
-		Number:      9,
+		Number:      8,
 		Title:       "Exit",
 		Description: "Exit the application",
 		Info: `Exit the hacka.re Terminal UI.
@@ -309,6 +313,36 @@ Press Enter to confirm exit, or ESC to cancel.`,
 			return nil
 		},
 	})
+}
+
+// SetInitialPanel sets the panel to display when the app starts
+func (a *App) SetInitialPanel(panelName string) {
+	switch panelName {
+	case "functions":
+		a.currentPanel = PanelFunctions
+		a.showFunctions()
+	case "prompts":
+		a.currentPanel = PanelPrompts
+		a.showPrompts()
+	case "mcp":
+		a.currentPanel = PanelMCP
+		a.showMCP()
+	case "rag":
+		a.currentPanel = PanelRAG
+		a.showRAG()
+	case "share":
+		a.currentPanel = PanelShare
+		a.generateShareLink()
+	case "settings":
+		a.currentPanel = PanelSettings
+		a.showSettings()
+	case "chat":
+		a.currentPanel = PanelChat
+		a.showChat()
+	default:
+		// Stay on main menu
+		a.currentPanel = PanelMainMenu
+	}
 }
 
 // Run starts the application main loop

@@ -127,12 +127,21 @@ func (tc *TerminalChat) registerCommands() {
 		},
 	})
 
-	// Functions command
+	// Functions command - launches TUI with Functions panel
 	tc.commands.Register(&Command{
 		Name:        "functions",
 		Aliases:     []string{"f", "func", "fn"},
-		Description: "Show function calling configuration",
+		Description: "Open function calling configuration",
 		Handler: func() error {
+			// Launch TUI with Functions panel pre-selected
+			if tc.modalHandlers.OpenTUIWithPanel != nil {
+				return tc.modalHandlers.OpenTUIWithPanel("functions")
+			}
+			// Fallback to main TUI if specific panel handler not available
+			if tc.modalHandlers.OpenTUI != nil {
+				return tc.modalHandlers.OpenTUI()
+			}
+			// Fallback to static display if TUI not available
 			fmt.Println("\n════ Function Calling ════\n")
 			fmt.Println("Default Functions:")
 			fmt.Println("  ▶ RC4 Encryption (2 functions)")
@@ -146,6 +155,7 @@ func (tc *TerminalChat) registerCommands() {
 			fmt.Println("\nCustom Functions:")
 			fmt.Println("  (No custom functions defined)")
 			fmt.Println("\nToken Usage: ~1,200 / 128,000 tokens")
+			fmt.Println("\nNote: Use /menu to access the full interactive interface with arrow key navigation")
 			return nil
 		},
 	})
