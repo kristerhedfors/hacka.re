@@ -83,6 +83,9 @@ type Config struct {
 	// MCP Servers
 	MCPServers []MCPServer `json:"mcpServers,omitempty"`
 
+	// API Keys for services
+	ShodanAPIKey string `json:"shodanApiKey,omitempty"`
+
 	// File path for persistence
 	ConfigFile string `json:"-"`
 }
