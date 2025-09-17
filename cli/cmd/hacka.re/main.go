@@ -80,6 +80,10 @@ func main() {
 			// Handle chat subcommand
 			ChatCommand(os.Args[2:])
 			return
+		case "function":
+			// Handle function subcommand
+			FunctionCommand(os.Args[2:])
+			return
 		case "help", "-h", "--help":
 			// Show main help with subcommands
 			showMainHelp()
@@ -148,6 +152,7 @@ func showMainHelp() {
 	fmt.Fprintf(os.Stderr, "  browse       Start web server and open browser\n")
 	fmt.Fprintf(os.Stderr, "  serve        Start web server without opening browser\n")
 	fmt.Fprintf(os.Stderr, "  chat         Start interactive chat session with AI models\n")
+	fmt.Fprintf(os.Stderr, "  function     Manage JavaScript functions for tool calling\n")
 	fmt.Fprintf(os.Stderr, "  (no command) Launch settings or process shared configuration\n\n")
 	fmt.Fprintf(os.Stderr, "Options:\n")
 	fmt.Fprintf(os.Stderr, "  --json-dump  Decrypt configuration and output as JSON\n")
