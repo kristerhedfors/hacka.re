@@ -1,6 +1,8 @@
 package pages
 
 import (
+	"fmt"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/hacka-re/cli/internal/tui/internal/core"
 )
@@ -14,8 +16,8 @@ const (
 	PageTypePrompts
 	PageTypeFunctions
 	PageTypeMCP
-	PageTypeKnowledge
-	PageTypeShareLink
+	PageTypeRAG
+	PageTypeShare
 )
 
 // Page defines the interface for all pages in the application
@@ -145,4 +147,29 @@ func (p *BasePage) DrawCenteredText(y int, text string, style tcell.Style) {
 	w, _ := p.screen.Size()
 	x := (w - len(text)) / 2
 	p.DrawText(x, y, text, style)
+}
+
+// ClearContent clears the entire screen content area
+func (p *BasePage) ClearContent() {
+	w, h := p.screen.Size()
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			p.screen.SetContent(x, y, ' ', nil, tcell.StyleDefault)
+		}
+	}
+}
+
+// DrawHeader draws a standard page header with title
+func (p *BasePage) DrawHeader() {
+	w, _ := p.screen.Size()
+
+	// Draw title
+	title := fmt.Sprintf(" %s ", p.title)
+	titleStyle := tcell.StyleDefault.Foreground(tcell.ColorGreen).Bold(true)
+	p.DrawCenteredText(1, title, titleStyle)
+
+	// Draw separator line
+	for x := 0; x < w; x++ {
+		p.screen.SetContent(x, 2, '─', nil, tcell.StyleDefault.Foreground(tcell.ColorGray))
+	}
 }

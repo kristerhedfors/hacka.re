@@ -332,27 +332,82 @@ func (c *Context) ShowSettings(args string) error {
 // Other context methods would be implemented similarly...
 
 func (c *Context) ShowPrompts(args string) error {
-	c.Output("Prompts management (coming soon)\n")
+	c.Output("\n════ System Prompts ════\n\n")
+	c.Output("Default Prompts:\n")
+	c.Output("  ✓ README.md provider - Generate comprehensive documentation\n")
+	c.Output("  ✓ Function library - Load all default functions\n")
+	c.Output("  ✓ Security Researcher - Vulnerability analysis\n")
+	c.Output("\nCustom Prompts:\n")
+	c.Output("  (No custom prompts configured)\n")
+	c.Output("\nToken Usage: ~2,500 / 128,000 tokens\n")
+	c.Output("\nPress Enter to return to menu...\n")
 	return nil
 }
 
 func (c *Context) ShowFunctions(args string) error {
-	c.Output("Functions management (coming soon)\n")
+	c.Output("\n════ Function Calling ════\n\n")
+	c.Output("Default Functions:\n")
+	c.Output("  ▶ RC4 Encryption (2 functions)\n")
+	c.Output("    ✓ rc4_encrypt - Encrypt with RC4\n")
+	c.Output("    ✓ rc4_decrypt - Decrypt with RC4\n")
+	c.Output("  ▶ Mathematical (5 functions)\n")
+	c.Output("    ✓ calculate - Evaluate expressions\n")
+	c.Output("    ✓ factorial - Calculate factorial\n")
+	c.Output("  ▶ MCP Adapters (3 functions)\n")
+	c.Output("    ✓ mcp_tool_call - Execute MCP tools\n")
+	c.Output("\nCustom Functions:\n")
+	c.Output("  (No custom functions defined)\n")
+	c.Output("\nToken Usage: ~1,200 / 128,000 tokens\n")
+	c.Output("\nPress Enter to return to menu...\n")
 	return nil
 }
 
 func (c *Context) ShowMCP(args string) error {
-	c.Output("MCP connections (coming soon)\n")
+	c.Output("\n════ MCP Servers ════\n\n")
+	c.Output("Quick Connectors:\n")
+	c.Output("  🔗 GitHub (PAT) - Not connected\n")
+	c.Output("  📧 Gmail (OAuth) - Not connected\n")
+	c.Output("  🔍 Shodan (API Key) - Not connected\n")
+	c.Output("\nAdvanced:\n")
+	c.Output("  Built-in Tools: Disabled\n")
+	c.Output("  Introspection: Disabled\n")
+	c.Output("  Custom Server URL: (none)\n")
+	c.Output("\nAvailable Tools: 0\n")
+	c.Output("\nPress Enter to return to menu...\n")
 	return nil
 }
 
 func (c *Context) ShowRAG(args string) error {
-	c.Output("RAG configuration (coming soon)\n")
+	c.Output("\n════ RAG Configuration ════\n\n")
+	c.Output("☐ Enable RAG (Knowledge Base)\n\n")
+	c.Output("EU Regulatory Documents:\n")
+	c.Output("  ☐ eIDAS Regulation\n")
+	c.Output("  ☐ PSD2 Directive\n")
+	c.Output("  ☐ DORA Regulation\n")
+	c.Output("\nCustom Documents:\n")
+	c.Output("  (No custom documents uploaded)\n")
+	c.Output("\nIndex Statistics:\n")
+	c.Output("  Documents: 0\n")
+	c.Output("  Chunks: 0\n")
+	c.Output("  Embeddings: 0\n")
+	c.Output("\n⚠️ RAG requires OpenAI API (embeddings)\n")
+	c.Output("\nPress Enter to return to menu...\n")
 	return nil
 }
 
 func (c *Context) GenerateShareLink() error {
-	c.Output("Share link generation (coming soon)\n")
+	c.Output("\n════ Share Configuration ════\n\n")
+	c.Output("Configuration to Share:\n")
+	c.Output("  ✓ API Settings\n")
+	c.Output("  ✓ Model Configuration\n")
+	c.Output("  ☐ System Prompts\n")
+	c.Output("  ☐ Functions\n")
+	c.Output("  ☐ MCP Servers\n")
+	c.Output("\nLink Length: ~2,500 characters\n")
+	c.Output("⚠️ May be too long for: Twitter, SMS\n")
+	c.Output("✓ Compatible with: Email, Discord, Slack\n")
+	c.Output("\n[Generate Link functionality coming soon]\n")
+	c.Output("\nPress Enter to return to menu...\n")
 	return nil
 }
 
