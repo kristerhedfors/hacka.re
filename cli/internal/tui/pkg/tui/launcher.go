@@ -3,9 +3,9 @@ package tui
 import (
 	"fmt"
 
+	"github.com/hacka-re/cli/internal/tui/internal"
 	"github.com/hacka-re/cli/internal/tui/internal/adapters"
 	"github.com/hacka-re/cli/internal/tui/internal/core"
-	"github.com/hacka-re/cli/internal/tui/internal/modes/rich"
 	"github.com/hacka-re/cli/internal/tui/internal/modes/socket"
 	"github.com/hacka-re/cli/internal/tui/internal/transport"
 )
@@ -138,7 +138,7 @@ func LaunchTUI(options *LaunchOptions) error {
 	// Start the appropriate UI mode
 	switch uiMode {
 	case core.ModeRich:
-		app, err := rich.NewAppWithCallbacks(configManager, appState, eventBus, options.Callbacks)
+		app, err := internal.NewAppWithCallbacks(configManager, appState, eventBus, options.Callbacks)
 		if err != nil {
 			// Fall back to socket mode if rich mode fails
 			goto socketMode

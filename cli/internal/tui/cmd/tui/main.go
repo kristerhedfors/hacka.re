@@ -6,8 +6,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/hacka-re/cli/internal/tui/internal"
 	"github.com/hacka-re/cli/internal/tui/internal/core"
-	"github.com/hacka-re/cli/internal/tui/internal/modes/rich"
 	"github.com/hacka-re/cli/internal/tui/internal/modes/socket"
 	"github.com/hacka-re/cli/internal/tui/internal/transport"
 )
@@ -91,7 +91,7 @@ func main() {
 	// Start the appropriate UI mode
 	switch uiMode {
 	case core.ModeRich:
-		app, err := rich.NewApp(configManager, appState, eventBus)
+		app, err := internal.NewApp(configManager, appState, eventBus)
 		if err != nil {
 			fmt.Printf("Failed to initialize rich mode: %v\n", err)
 			fmt.Println("Falling back to socket mode...")
