@@ -22,19 +22,24 @@ type FunctionsPage struct {
 	selectedFunction  *share.Function
 	functionPreview   []string
 	selectedGroup     int  // 0 = default functions, 1 = custom functions
-	focusedOnGroup    bool // true if focused on a group header
+	selectedItemIndex int  // Index of selected item within the group (-1 = group header)
+	visibleHeight     int  // Height of the visible content area
+	totalLines        int  // Total number of lines in content
 }
 
 // NewFunctionsPage creates a new function calling configuration page
 func NewFunctionsPage(screen tcell.Screen, config *core.ConfigManager, state *core.AppState, eventBus *core.EventBus) *FunctionsPage {
+	_, h := screen.Size()
 	page := &FunctionsPage{
-		BasePage:       NewBasePage(screen, config, state, eventBus, "Function Calling", PageTypeFunctions),
-		scrollOffset:   0,
-		selectedGroup:  0,    // Start with default functions selected
-		focusedOnGroup: true, // Start focused on group header
+		BasePage:          NewBasePage(screen, config, state, eventBus, "Function Calling", PageTypeFunctions),
+		scrollOffset:      0,
+		selectedGroup:     0,  // Start with default functions selected
+		selectedItemIndex: -1, // Start on group header
+		visibleHeight:     h - 12, // Account for header, footer, borders
+		totalLines:        0,
 	}
 
-	w, h := screen.Size()
+	w, _ := screen.Size()
 
 	// Initialize components
 	page.defaultFunctions = components.NewExpandableGroup(screen, 3, 6, w-6, "Default Functions")
@@ -174,12 +179,27 @@ func (fp *FunctionsPage) Draw() {
 	// Draw header with scroll indicator
 	fp.DrawHeader()
 
-	// Draw scroll position indicator
-	if fp.maxScroll > 0 {
-		scrollInfo := fmt.Sprintf("Scroll: %d/%d", fp.scrollOffset, fp.maxScroll)
+	// Draw scroll position indicator and selection info
+	if fp.maxScroll > 0 || fp.scrollOffset > 0 {
+		groupName := "Default"
+		if fp.selectedGroup == 1 {
+			groupName = "Custom"
+		}
+		itemInfo := "Header"
+		if fp.selectedItemIndex >= 0 {
+			itemInfo = fmt.Sprintf("Item %d", fp.selectedItemIndex + 1)
+		}
+		scrollInfo := fmt.Sprintf("%s: %s | Scroll: %d/%d", groupName, itemInfo, fp.scrollOffset, fp.maxScroll)
 		scrollStyle := tcell.StyleDefault.Foreground(tcell.ColorGray)
+		// Clear previous text first
+		for x := w-40; x < w-2; x++ {
+			fp.screen.SetContent(x, 3, ' ', nil, tcell.StyleDefault)
+		}
+		// Draw new text
 		for i, ch := range scrollInfo {
-			fp.screen.SetContent(w-len(scrollInfo)-2+i, 3, ch, nil, scrollStyle)
+			if w-len(scrollInfo)-2+i >= 0 {
+				fp.screen.SetContent(w-len(scrollInfo)-2+i, 3, ch, nil, scrollStyle)
+			}
 		}
 	}
 
@@ -194,32 +214,102 @@ func (fp *FunctionsPage) Draw() {
 	baseY := 6
 	currentY := baseY - fp.scrollOffset
 
-	// Draw selection indicator for the focused group
-	if fp.selectedGroup == 0 && fp.focusedOnGroup {
-		// Highlight default functions header
+	// Draw default functions group
+	defaultY := currentY
+	// Highlight header if selected
+	if fp.selectedGroup == 0 && fp.selectedItemIndex == -1 && currentY >= 6 && currentY < h-4 {
 		selectionStyle := tcell.StyleDefault.Background(tcell.ColorDarkBlue).Foreground(tcell.ColorYellow)
-		for x := 2; x < w-2; x++ {
+		for x := 3; x < w-3; x++ {
 			fp.screen.SetContent(x, currentY, ' ', nil, selectionStyle)
 		}
 	}
-
-	// Default functions group
 	fp.defaultFunctions.Y = currentY
 	linesDrawn := fp.defaultFunctions.Draw()
+
+	// Highlight selected item within default functions if expanded
+	if fp.selectedGroup == 0 && fp.selectedItemIndex >= 0 && fp.defaultFunctions.IsExpanded() {
+		// Calculate the actual screen Y position for the selected item
+		// defaultY is already adjusted for scroll, so just add the item offset
+		actualY := defaultY + 1 + fp.selectedItemIndex // +1 for header
+		if actualY >= 6 && actualY < h-4 {
+			// Draw item highlight
+			selectionStyle := tcell.StyleDefault.Background(tcell.ColorDarkBlue).Foreground(tcell.ColorWhite)
+			for x := 5; x < w-3; x++ {
+				fp.screen.SetContent(x, actualY, ' ', nil, selectionStyle)
+			}
+			// Redraw the item text with highlight
+			items := fp.defaultFunctions.GetItems()
+			if fp.selectedItemIndex < len(items) {
+				item := items[fp.selectedItemIndex]
+				x := 7 // Base indentation
+				if item.Indented {
+					x += 2
+				}
+				text := item.Text
+				if item.IsCheckbox {
+					checkbox := "[ ]"
+					if item.IsChecked {
+						checkbox = "[x]"
+					}
+					text = checkbox + " " + text
+				}
+				for i, ch := range text {
+					if i < w-x-3 {
+						fp.screen.SetContent(x+i, actualY, ch, nil, selectionStyle)
+					}
+				}
+			}
+		}
+	}
 	currentY += linesDrawn + 1
 
-	// Draw selection indicator for custom functions
-	if fp.selectedGroup == 1 && fp.focusedOnGroup {
-		// Highlight custom functions header
+	// Draw custom functions group
+	customY := currentY
+	// Highlight header if selected
+	if fp.selectedGroup == 1 && fp.selectedItemIndex == -1 && currentY >= 6 && currentY < h-4 {
 		selectionStyle := tcell.StyleDefault.Background(tcell.ColorDarkBlue).Foreground(tcell.ColorYellow)
-		for x := 2; x < w-2; x++ {
+		for x := 3; x < w-3; x++ {
 			fp.screen.SetContent(x, currentY, ' ', nil, selectionStyle)
 		}
 	}
-
-	// Custom functions group
 	fp.customFunctions.Y = currentY
 	linesDrawn = fp.customFunctions.Draw()
+
+	// Highlight selected item within custom functions if expanded
+	if fp.selectedGroup == 1 && fp.selectedItemIndex >= 0 && fp.customFunctions.IsExpanded() {
+		// Calculate the actual screen Y position for the selected item
+		// customY is already adjusted for scroll, so just add the item offset
+		actualY := customY + 1 + fp.selectedItemIndex // +1 for header
+		if actualY >= 6 && actualY < h-4 {
+			// Draw item highlight
+			selectionStyle := tcell.StyleDefault.Background(tcell.ColorDarkBlue).Foreground(tcell.ColorWhite)
+			for x := 5; x < w-3; x++ {
+				fp.screen.SetContent(x, actualY, ' ', nil, selectionStyle)
+			}
+			// Redraw the item text with highlight
+			items := fp.customFunctions.GetItems()
+			if fp.selectedItemIndex < len(items) {
+				item := items[fp.selectedItemIndex]
+				x := 7 // Base indentation
+				if item.Indented {
+					x += 2
+				}
+				text := item.Text
+				if item.IsCheckbox {
+					checkbox := "[ ]"
+					if item.IsChecked {
+						checkbox = "[x]"
+					}
+					text = checkbox + " " + text
+				}
+				for i, ch := range text {
+					if i < w-x-3 {
+						fp.screen.SetContent(x+i, actualY, ch, nil, selectionStyle)
+					}
+				}
+			}
+		}
+	}
 	currentY += linesDrawn
 
 	// Draw function preview if selected
@@ -335,6 +425,81 @@ func (fp *FunctionsPage) drawFunctionPreview() {
 	}
 }
 
+// findNextSelectableItem finds the next checkbox or header item
+func (fp *FunctionsPage) findNextSelectableItem(items []components.ExpandableItem, currentIndex int) int {
+	for i := currentIndex + 1; i < len(items); i++ {
+		if items[i].IsCheckbox || (!items[i].Indented && strings.Contains(items[i].Text, ":")) {
+			return i
+		}
+	}
+	return -2 // No more selectable items
+}
+
+// findPreviousSelectableItem finds the previous checkbox or header item
+func (fp *FunctionsPage) findPreviousSelectableItem(items []components.ExpandableItem, currentIndex int) int {
+	for i := currentIndex - 1; i >= 0; i-- {
+		if items[i].IsCheckbox || (!items[i].Indented && strings.Contains(items[i].Text, ":")) {
+			return i
+		}
+	}
+	return -1 // Back to header
+}
+
+// findLastSelectableItem finds the last checkbox or header item
+func (fp *FunctionsPage) findLastSelectableItem(items []components.ExpandableItem) int {
+	for i := len(items) - 1; i >= 0; i-- {
+		if items[i].IsCheckbox || (!items[i].Indented && strings.Contains(items[i].Text, ":")) {
+			return i
+		}
+	}
+	return -1 // No selectable items
+}
+
+// handleScrollForSelection adjusts scroll offset based on current selection
+func (fp *FunctionsPage) handleScrollForSelection() {
+	// Calculate the absolute line position of current selection
+	var currentLine int
+
+	if fp.selectedGroup == 0 {
+		// Default functions group
+		currentLine = 0 // Header is at line 0
+		if fp.selectedItemIndex >= 0 && fp.defaultFunctions.IsExpanded() {
+			// Add lines for each item before the selected one
+			currentLine += fp.selectedItemIndex + 1 // +1 to skip header
+		}
+	} else {
+		// Custom functions group - calculate position after default functions
+		currentLine = 1 // Default functions header
+		if fp.defaultFunctions.IsExpanded() {
+			currentLine += len(fp.defaultFunctions.GetItems())
+		}
+		currentLine += 1 // Gap between groups
+
+		if fp.selectedItemIndex >= 0 && fp.customFunctions.IsExpanded() {
+			currentLine += fp.selectedItemIndex + 1 // +1 to skip header
+		}
+	}
+
+	// Calculate visible position
+	visibleY := currentLine - fp.scrollOffset
+
+	// Scroll down if selection is too close to bottom
+	if visibleY >= fp.visibleHeight - 3 {
+		fp.scrollOffset = currentLine - (fp.visibleHeight - 4)
+		if fp.scrollOffset < 0 {
+			fp.scrollOffset = 0
+		}
+	}
+
+	// Scroll up if selection is above visible area
+	if visibleY < 2 {
+		fp.scrollOffset = currentLine - 2
+		if fp.scrollOffset < 0 {
+			fp.scrollOffset = 0
+		}
+	}
+}
+
 // wrapText wraps text to fit within the specified width
 func (fp *FunctionsPage) wrapText(text string, width int) []string {
 	if len(text) <= width {
@@ -376,37 +541,94 @@ func (fp *FunctionsPage) HandleInput(ev *tcell.EventKey) bool {
 		return true // Exit the page
 
 	case tcell.KeyUp:
-		// Navigate between groups or scroll
-		if fp.selectedGroup > 0 {
-			fp.selectedGroup = 0
-			fp.focusedOnGroup = true
-		} else if fp.scrollOffset > 0 {
-			fp.scrollOffset--
+		// Navigate through items within groups
+		if fp.selectedGroup == 1 {
+			// In custom functions group
+			if fp.selectedItemIndex > -1 {
+				// Find previous selectable item
+				items := fp.customFunctions.GetItems()
+				prevIndex := fp.findPreviousSelectableItem(items, fp.selectedItemIndex)
+				fp.selectedItemIndex = prevIndex
+				fp.handleScrollForSelection()
+			} else {
+				// At custom functions header, move to default functions
+				fp.selectedGroup = 0
+				if fp.defaultFunctions.IsExpanded() {
+					// Select last selectable item in default functions
+					items := fp.defaultFunctions.GetItems()
+					fp.selectedItemIndex = fp.findLastSelectableItem(items)
+				} else {
+					// Select header if collapsed
+					fp.selectedItemIndex = -1
+				}
+				fp.handleScrollForSelection()
+			}
+		} else {
+			// In default functions group
+			if fp.selectedItemIndex > -1 {
+				// Find previous selectable item
+				items := fp.defaultFunctions.GetItems()
+				prevIndex := fp.findPreviousSelectableItem(items, fp.selectedItemIndex)
+				fp.selectedItemIndex = prevIndex
+				fp.handleScrollForSelection()
+			}
+			// If at header, stay there
 		}
 		return false
 
 	case tcell.KeyDown:
-		// Navigate between groups or scroll
-		if fp.selectedGroup < 1 {
-			fp.selectedGroup = 1
-			fp.focusedOnGroup = true
-		} else {
-			// Allow scrolling down if there's more content
-			fp.maxScroll = 10 // Approximate for now
-			if fp.scrollOffset < fp.maxScroll {
-				fp.scrollOffset++
+		// Navigate through items within groups
+		if fp.selectedGroup == 0 {
+			// In default functions group
+			if fp.defaultFunctions.IsExpanded() {
+				// Find next selectable item (checkbox or header)
+				items := fp.defaultFunctions.GetItems()
+				nextIndex := fp.findNextSelectableItem(items, fp.selectedItemIndex)
+				if nextIndex != -2 { // -2 means no more items
+					fp.selectedItemIndex = nextIndex
+					fp.handleScrollForSelection()
+				} else {
+					// No more items in default functions, move to custom functions
+					fp.selectedGroup = 1
+					fp.selectedItemIndex = -1 // Select header
+					fp.handleScrollForSelection()
+				}
+			} else {
+				// Group is collapsed - move to custom functions
+				fp.selectedGroup = 1
+				fp.selectedItemIndex = -1
+				fp.handleScrollForSelection()
 			}
+		} else {
+			// In custom functions group
+			if fp.customFunctions.IsExpanded() {
+				// Find next selectable item
+				items := fp.customFunctions.GetItems()
+				nextIndex := fp.findNextSelectableItem(items, fp.selectedItemIndex)
+				if nextIndex != -2 {
+					fp.selectedItemIndex = nextIndex
+					fp.handleScrollForSelection()
+				}
+				// If at last item, stay there
+			}
+			// If collapsed, stay on header
 		}
 		return false
 
 	case tcell.KeyEnter:
-		// Toggle expansion of currently selected group
-		if fp.focusedOnGroup {
+		// Toggle expansion when on header, or select item when on item
+		if fp.selectedItemIndex == -1 {
+			// On header - toggle expansion
 			if fp.selectedGroup == 0 {
 				fp.defaultFunctions.Toggle()
+				// If expanding and no items selected, stay on header
+				// If collapsing, also stay on header
 			} else {
 				fp.customFunctions.Toggle()
 			}
+		} else {
+			// On an item - could trigger item-specific action
+			// For now, just acknowledge selection
 		}
 		return false
 
@@ -418,11 +640,34 @@ func (fp *FunctionsPage) HandleInput(ev *tcell.EventKey) bool {
 			return false
 
 		case ' ':
-			// Toggle expansion of currently selected group
-			if fp.selectedGroup == 0 {
-				fp.defaultFunctions.Toggle()
+			// Space toggles expansion when on header or checkbox when on item
+			if fp.selectedItemIndex == -1 {
+				// On header - toggle expansion
+				if fp.selectedGroup == 0 {
+					fp.defaultFunctions.Toggle()
+				} else {
+					fp.customFunctions.Toggle()
+				}
 			} else {
-				fp.customFunctions.Toggle()
+				// On an item - toggle checkbox if it has one
+				var items []components.ExpandableItem
+				if fp.selectedGroup == 0 {
+					items = fp.defaultFunctions.GetItems()
+				} else {
+					items = fp.customFunctions.GetItems()
+				}
+				if fp.selectedItemIndex < len(items) {
+					item := &items[fp.selectedItemIndex]
+					if item.IsCheckbox {
+						item.IsChecked = !item.IsChecked
+						// Update the item in the group
+						if fp.selectedGroup == 0 {
+							fp.defaultFunctions.UpdateItem(fp.selectedItemIndex, *item)
+						} else {
+							fp.customFunctions.UpdateItem(fp.selectedItemIndex, *item)
+						}
+					}
+				}
 			}
 			return false
 		}

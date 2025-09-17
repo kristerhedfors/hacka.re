@@ -63,6 +63,18 @@ func (eg *ExpandableGroup) ClearItems() {
 	eg.items = []ExpandableItem{}
 }
 
+// GetItems returns the items in the group
+func (eg *ExpandableGroup) GetItems() []ExpandableItem {
+	return eg.items
+}
+
+// UpdateItem updates an item at the specified index
+func (eg *ExpandableGroup) UpdateItem(index int, item ExpandableItem) {
+	if index >= 0 && index < len(eg.items) {
+		eg.items[index] = item
+	}
+}
+
 // Draw renders the expandable group
 func (eg *ExpandableGroup) Draw() int {
 	currentY := eg.Y
