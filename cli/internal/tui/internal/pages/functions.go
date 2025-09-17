@@ -234,16 +234,17 @@ func (fp *FunctionsPage) Draw() {
 		if actualY >= 6 && actualY < h-4 {
 			// Draw item highlight
 			selectionStyle := tcell.StyleDefault.Background(tcell.ColorDarkBlue).Foreground(tcell.ColorWhite)
-			for x := 5; x < w-3; x++ {
+			for x := 3; x < w-3; x++ {
 				fp.screen.SetContent(x, actualY, ' ', nil, selectionStyle)
 			}
 			// Redraw the item text with highlight
 			items := fp.defaultFunctions.GetItems()
 			if fp.selectedItemIndex < len(items) {
 				item := items[fp.selectedItemIndex]
-				x := 7 // Base indentation
+				// Use same positioning as ExpandableGroup component (X + 2 base, +2 more if indented)
+				x := fp.defaultFunctions.X + 2 // Same as component base indentation
 				if item.Indented {
-					x += 2
+					x += 2 // Same additional indentation as component
 				}
 				text := item.Text
 				if item.IsCheckbox {
@@ -283,16 +284,17 @@ func (fp *FunctionsPage) Draw() {
 		if actualY >= 6 && actualY < h-4 {
 			// Draw item highlight
 			selectionStyle := tcell.StyleDefault.Background(tcell.ColorDarkBlue).Foreground(tcell.ColorWhite)
-			for x := 5; x < w-3; x++ {
+			for x := 3; x < w-3; x++ {
 				fp.screen.SetContent(x, actualY, ' ', nil, selectionStyle)
 			}
 			// Redraw the item text with highlight
 			items := fp.customFunctions.GetItems()
 			if fp.selectedItemIndex < len(items) {
 				item := items[fp.selectedItemIndex]
-				x := 7 // Base indentation
+				// Use same positioning as ExpandableGroup component (X + 2 base, +2 more if indented)
+				x := fp.customFunctions.X + 2 // Same as component base indentation
 				if item.Indented {
-					x += 2
+					x += 2 // Same additional indentation as component
 				}
 				text := item.Text
 				if item.IsCheckbox {
